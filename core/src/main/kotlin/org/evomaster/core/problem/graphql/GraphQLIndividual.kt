@@ -2,7 +2,7 @@ package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.problem.httpws.service.HttpWsIndividual
+import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
@@ -14,7 +14,7 @@ class GraphQLIndividual(
         private val actions: MutableList<GraphQLAction>,
         val sampleType: SampleType,
         dbInitialization: MutableList<DbAction> = mutableListOf()
-) : HttpWsIndividual(dbInitialization= dbInitialization, children = dbInitialization.plus(actions)) {
+) : ApiWsIndividual(dbInitialization= dbInitialization, children = dbInitialization.plus(actions)) {
 
     override fun copyContent(): Individual {
 

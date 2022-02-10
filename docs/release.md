@@ -83,6 +83,24 @@ However, it might take some hours before those are in sync with Maven Central,
 which you can check at [https://search.maven.org/](https://search.maven.org/).
 
 
+## NPM Release
+
+After the version number has been updated with `version.py` script, need to make a release on NPM as well.
+From folder:
+
+`client-js/evomaster-client-js`
+
+run the following commands:
+```
+npm run build
+npm login
+npm publish
+```
+
+Note that login will ask for username/password.
+The release is linked to NPM's user `arcuri82`.
+Password is ???.
+
 ## GitHub Release
 
 Push the version changes in the `pom.xml` files on Git.

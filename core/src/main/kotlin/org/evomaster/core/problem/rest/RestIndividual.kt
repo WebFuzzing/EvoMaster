@@ -2,8 +2,7 @@ package org.evomaster.core.problem.rest
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.httpws.service.HttpWsIndividual
+import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
@@ -12,7 +11,6 @@ import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
@@ -33,7 +31,7 @@ class RestIndividual(
 
         trackOperator: TrackOperator? = null,
         index : Int = -1
-): HttpWsIndividual (dbInitialization, trackOperator, index, mutableListOf<StructuralElement>().apply {
+): ApiWsIndividual(dbInitialization, trackOperator, index, mutableListOf<StructuralElement>().apply {
     addAll(dbInitialization); addAll(resourceCalls)
 }) {
 

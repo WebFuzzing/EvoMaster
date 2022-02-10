@@ -6,27 +6,23 @@ namespace EvoMaster.Client.Util.Extensions {
         //Intended to do as computeIfAbsent does in Java
         public static TVal ComputeIfAbsent<TKey, TVal>(this IDictionary<TKey, TVal> dictionary, TKey key,
             Func<TKey, TVal> func) {
-            dictionary.TryGetValue(key, out var val);
+            var has = dictionary.TryGetValue(key, out var val);
 
-            if (val != null) return val;
+            if (has) return val;
 
             //TODO: check if it is needed to rethrow exceptions here
             val = func(key);
 
             if (val != null) {
-                dictionary.Add(key, val);
+                dictionary.TryAdd(key, val);
             }
 
             return val;
         }
-    }
 
-    public static class ObjectExtensions {
-        public static T RequireNonNull<T>(this object obj) {
-            if (obj == null)
-                throw new NullReferenceException();
-
-            return (T)obj;
+        public static void TryAddOrUpdate<TKey, TVal>(this IDictionary<TKey, TVal> dictionary, TKey key, TVal val) {
+            var addResult = dictionary.TryAdd(key, val);
+            if (!addResult) dictionary[key] = val;
         }
     }
 }

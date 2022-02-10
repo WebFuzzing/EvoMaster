@@ -81,11 +81,11 @@ object OpenApiAccess {
                     */
                     Thread.sleep(1_000)
                 } else {
-                    throw IllegalStateException("Failed to connect to $openApiUrl: ${e.message}")
+                    throw SutProblemException("Failed to connect to $openApiUrl: ${e.message}")
                 }
             }
         }
 
-        throw IllegalStateException("Failed to connect to $openApiUrl")
+        throw SutProblemException("Check if schema's URL is correct. Failed to connect to $openApiUrl")
     }
 }

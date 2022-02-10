@@ -3,15 +3,11 @@ package org.evomaster.core.problem.httpws.service
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.httpws.service.auth.*
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -19,29 +15,16 @@ import org.slf4j.LoggerFactory
  * Common code shared among sampler that rely on a RemoteController, and
  * that use HTTP, ie typically Web Services like REST and GraphQL
  */
-abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
+abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpWsSampler::class.java)
     }
 
 
-    protected val authentications: MutableList<AuthenticationInfo> = mutableListOf()
+    protected val authentications: MutableList<HttpWsAuthenticationInfo> = mutableListOf()
 
-    var sqlInsertBuilder: SqlInsertBuilder? = null
-        protected set
 
-    var existingSqlData : List<DbAction> = listOf()
-        protected set
-    /**
-     * When genes are created, those are not necessarily initialized.
-     * The reason is that some genes might depend on other genes (eg., foreign keys in SQL).
-     * So, once all genes are created, we force their initialization, which will also randomize their values.
-     */
-    fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
-        //action.seeGenes().forEach { it.randomize(randomness, false) }
-        action.randomize(randomness, false)
-    }
 
     /**
      * Given the current schema definition, create a random action among the available ones.
@@ -57,7 +40,7 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
         return action
     }
 
-    fun getRandomAuth(noAuthP: Double): AuthenticationInfo {
+    fun getRandomAuth(noAuthP: Double): HttpWsAuthenticationInfo {
         if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
             return NoAuth()
         } else {
@@ -71,8 +54,9 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
     protected fun addAuthFromConfig(){
 
         val headers = listOf(config.header0, config.header1, config.header2)
+                .filter { it.isNotBlank() }
 
-        if(headers.all { it.isBlank() }){
+        if(headers.isEmpty()){
             return //nothing to do
         }
 
@@ -128,45 +112,11 @@ abstract class HttpWsSampler<T> : Sampler<T>() where T : Individual{
         }
 
 
-        val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
+        val auth = HttpWsAuthenticationInfo(i.name.trim(), headers, cookieLogin, jsonTokenPostLogin)
 
         authentications.add(auth)
         return
     }
 
-    protected fun updateConfigForTestOutput(infoDto: SutInfoDto) {
-        if (config.outputFormat == OutputFormat.DEFAULT) {
-            try {
-                val format = OutputFormat.valueOf(infoDto.defaultOutputFormat?.toString()!!)
-                config.outputFormat = format
-            } catch (e: Exception) {
-                throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
-            }
-        }
-    }
-
-    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
-
-        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
-            ?: throw IllegalStateException("No DB schema is available")
-
-        DbActionUtils.randomizeDbActionGenes(actions, randomness)
-
-        if (log.isTraceEnabled){
-            log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,
-                actions.joinToString(",") {
-                    if (it is DbAction) it.getResolvedName() else it.getName()
-                })
-        }
-
-        return actions
-    }
-
-    fun canInsertInto(tableName: String) : Boolean {
-        //TODO might need to refactor/remove once we deal with VIEWs
-        return sqlInsertBuilder?.isTable(tableName) ?: false
-    }
-
-    abstract fun initSqlInfo(infoDto: SutInfoDto)
 
 }

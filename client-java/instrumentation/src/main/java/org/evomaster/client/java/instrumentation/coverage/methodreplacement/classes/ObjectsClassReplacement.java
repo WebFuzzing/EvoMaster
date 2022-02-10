@@ -18,6 +18,10 @@ public class ObjectsClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
     public static boolean equals(Object left, Object right, String idTemplate) {
 
+        if(left instanceof String && right instanceof String){
+            ExecutionTracer.handleTaintForStringEquals((String) left, (String) right, false);
+        }
+
         boolean result = Objects.equals(left, right);
         if (idTemplate == null) {
             return result;

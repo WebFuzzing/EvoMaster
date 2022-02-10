@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action

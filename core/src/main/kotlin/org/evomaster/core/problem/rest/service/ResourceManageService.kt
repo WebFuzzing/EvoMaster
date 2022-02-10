@@ -8,7 +8,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.resource.*
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.search.Action
@@ -73,7 +73,7 @@ class ResourceManageService {
     /**
      * this function is used to initialized ad-hoc individuals for resource-based individual
      */
-    fun createAdHocIndividuals(auth: AuthenticationInfo, adHocInitialIndividuals : MutableList<RestIndividual>, maxTestSize: Int){
+    fun createAdHocIndividuals(auth: HttpWsAuthenticationInfo, adHocInitialIndividuals : MutableList<RestIndividual>, maxTestSize: Int){
         val sortedResources = cluster.getCluster().values.sortedByDescending { it.getTokenMap().size }.asSequence()
 
         //GET, PATCH, DELETE

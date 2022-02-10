@@ -13,9 +13,9 @@ export class TaintInputName {
     //Pattern.compile("\\Q"+PREFIX+"\\E\\d+\\Q"+POSTFIX+"\\E");
     private static regex = TaintInputName.PREFIX + "\\d+" + TaintInputName.POSTFIX
 
-    private static partialMatch = new RegExp(TaintInputName.regex);
+    private static partialMatch = new RegExp(TaintInputName.regex, "i");
 
-    private static fullMatch = new RegExp("^" + TaintInputName.regex + "$");
+    private static fullMatch = new RegExp("^" + TaintInputName.regex + "$", "i");
 
     /**
      * Check if a given string value is a tainted value

@@ -24,19 +24,20 @@ namespace EvoMaster.Instrumentation {
             Value = value;
             ActionIndex = actionIndex;
         }
-        
-        public static TargetInfo NotReached(int theId){
+
+        public static TargetInfo NotReached(int theId) {
             return new TargetInfo(theId, null, 0d, -1);
         }
 
-        public TargetInfo WithMappedId(int theId){
-            if(MappedId != null){
+        public TargetInfo WithMappedId(int theId) {
+            if (MappedId != null) {
                 throw new ArgumentException("Id already existing");
             }
+
             return new TargetInfo(theId, DescriptiveId, Value, ActionIndex);
         }
 
-        public TargetInfo WithNoDescriptiveId(){
+        public TargetInfo WithNoDescriptiveId() {
             return new TargetInfo(MappedId, null, Value, ActionIndex);
         }
     }

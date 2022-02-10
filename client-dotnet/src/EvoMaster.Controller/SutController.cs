@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using EvoMaster.Client.Util;
 using EvoMaster.Controller.Api;
 using EvoMaster.Controller.Problem;
 using EvoMaster.Instrumentation;
+using EvoMaster.Instrumentation.StaticState;
+using EvoMaster.Instrumentation_Shared;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,8 +21,8 @@ namespace EvoMaster.Controller {
     ///ie the system under test (SUT)
     ///</summary>
     public abstract class SutController : ISutHandler {
-        private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
-        private string controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
+        private int _controllerPort = ControllerConstants.DefaultControllerPort;
+        private string _controllerHost = ControllerConstants.DefaultControllerHost;
 
         //TODO: To be added
         //private final SqlHandler sqlHandler = new SqlHandler();
@@ -30,7 +34,7 @@ namespace EvoMaster.Controller {
         // private DbSchemaDto SchemaDto;
 
         //For each action in a test, keep track of the extra heuristics, if any
-        private readonly ICollection<ExtraHeuristicsDto> extras = new SynchronizedCollection<ExtraHeuristicsDto>();
+        private readonly ICollection<ExtraHeuristicsDto> _extras = new SynchronizedCollection<ExtraHeuristicsDto>();
 
         //TODO: Commented this out just to prevent warning
         private int _actionIndex = -1;
@@ -74,19 +78,19 @@ namespace EvoMaster.Controller {
         }
 
         public int GetControllerPort() {
-            return controllerPort;
+            return _controllerPort;
         }
 
         public void SetControllerPort(int controllerPort) {
-            this.controllerPort = controllerPort;
+            this._controllerPort = controllerPort;
         }
 
         public string GetControllerHost() {
-            return controllerHost;
+            return _controllerHost;
         }
 
-        public void setControllerHost(String controllerHost) {
-            this.controllerHost = controllerHost;
+        public void SetControllerHost(string controllerHost) {
+            this._controllerHost = controllerHost;
         }
 
         //TODO: Complete this method
@@ -117,7 +121,7 @@ namespace EvoMaster.Controller {
 
         //TODO: Complete this method
         public void ResetExtraHeuristics() {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         //TODO: Complete this method
@@ -160,13 +164,14 @@ namespace EvoMaster.Controller {
          * Man: I modified this, please check Amid.
          */
         public void NewTest() {
-            //_actionIndex = -1;
+            _actionIndex = -1;
 
-            // resetExtraHeuristics();
-            // extras.clear();
+             ResetExtraHeuristics();
+             _extras.Clear();
             NewTestSpecificHandler();
         }
-
+        
+        
         /**
          * As some heuristics are based on which action (eg HTTP call, or click of button)
          * in the test sequence is executed, and their order, we need to keep track of which
@@ -176,12 +181,12 @@ namespace EvoMaster.Controller {
          */
         //TODO: Complete this method. Man: modified, please check
         public void NewAction(ActionDto dto) {
-            // if (dto.index > extras.size()) {
-            //     extras.add(computeExtraHeuristics());
-            // }
-            // this.actionIndex = dto.index;
-            //
-            // resetExtraHeuristics();
+            if (dto.Index > _extras.Count) {
+                //_extras.Add(ComputeExtraHeuristics());
+            }
+            this._actionIndex = dto.Index;
+            
+            ResetExtraHeuristics();
 
             NewActionSpecificHandler(dto);
         }
@@ -341,10 +346,25 @@ namespace EvoMaster.Controller {
 
         public abstract UnitsInfoDto GetUnitsInfoDto();
 
-        //TODO: Complete this method
-        // protected UnitsInfoDto GetUnitsInfoDto (UnitsInfoRecorder recorder) {
+        protected UnitsInfoDto GetUnitsInfoDto(UnitsInfoRecorder recorder) {
+            if (recorder == null) {
+                return null;
+            }
 
-        // }
+            var dto = new UnitsInfoDto {
+                NumberOfBranches = recorder.GetNumberOfBranches(),
+                NumberOfLines = recorder.GetNumberOfLines(),
+                NumberOfReplacedMethodsInSut = recorder.GetNumberOfReplacedMethodsInSut(),
+                NumberOfReplacedMethodsInThirdParty = recorder.GetNumberOfReplacedMethodsInThirdParty(),
+                NumberOfTrackedMethods = recorder.GetNumberOfTrackedMethods(),
+                UnitNames = recorder.GetUnitNames(),
+                ParsedDtos = recorder.GetParsedDtos(),
+                NumberOfInstrumentedNumberComparisons = recorder.GetNumberOfInstrumentedNumberComparisons()
+            };
+            return dto;
+        }
+
+        public abstract void SetKillSwitch(bool b);
 
         private IHostBuilder CreateHostBuilder() =>
             Host.CreateDefaultBuilder()
@@ -352,7 +372,7 @@ namespace EvoMaster.Controller {
                     services.Add(ServiceDescriptor.Singleton(typeof(SutController), this));
                 })
                 .ConfigureWebHostDefaults(webBuilder => {
-                    webBuilder.UseStartup<Startup>().UseUrls($"http://*:{controllerPort}");
+                    webBuilder.UseStartup<Startup>().UseUrls($"http://*:{_controllerPort}");
                 });
 
         protected int GetEphemeralTcpPort() {
@@ -360,7 +380,7 @@ namespace EvoMaster.Controller {
 
             tcpListener.Start();
 
-            int port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
+            var port = ((IPEndPoint) tcpListener.LocalEndpoint).Port;
 
             tcpListener.Stop();
 

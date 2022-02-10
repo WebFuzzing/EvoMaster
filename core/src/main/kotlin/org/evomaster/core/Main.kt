@@ -19,6 +19,8 @@ import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.rpc.service.RPCModule
 import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
@@ -89,8 +91,8 @@ class Main {
                                 "\n  Make sure the EvoMaster Driver for the system under test is running correctly.")
 
                     is SutProblemException ->
-                        logError("ERROR in the Remote EvoMaster Driver: ${cause.message}" +
-                                "\n  Look at the logs of the EvoMaster Driver to help debugging this problem.")
+                        logError("ERROR related to the system under test: ${cause.message}" +
+                                "\n  For white-box testing, look at the logs of the EvoMaster Driver to help debugging this problem.")
 
                     else ->
                         LoggingUtil.getInfoLogger().error(inRed("[ERROR] ") +
@@ -200,6 +202,22 @@ class Main {
                     }
                 }
 
+                val n = data.find { it.header == Statistics.DISTINCT_ACTIONS }!!.element.toInt()
+
+                when(config.problemType){
+                    EMConfig.ProblemType.REST -> {
+                        val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
+                        val p = String.format("%.0f", (k.toDouble()/n) * 100 )
+                        info("Successfully executed (HTTP code 2xx) $k endpoints out of $n ($p%)")
+                    }
+                    EMConfig.ProblemType.GRAPHQL ->{
+                        val k = data.find { it.header == Statistics.GQL_NO_ERRORS }!!.element.toInt()
+                        val p = String.format("%.0f", (k.toDouble()/n) * 100 )
+                        info("Successfully executed (no 'errors') $k endpoints out of $n ($p%)")
+                    }
+                    //TODO others, eg RPC
+                }
+
                 if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
                         config.maxTime == config.defaultMaxTime) {
                     info(inGreen("To obtain better results, use the '--maxTime' option" +
@@ -243,6 +261,8 @@ class Main {
                     config.problemType = EMConfig.ProblemType.REST
                 } else if (info.graphQLProblem != null){
                     config.problemType = EMConfig.ProblemType.GRAPHQL
+                } else if (info.rpcProblem != null){
+                    config.problemType = EMConfig.ProblemType.RPC
                 } else {
                     throw IllegalStateException("Can connect to the EM Driver, but cannot infer the 'problemType'")
                 }
@@ -268,6 +288,14 @@ class Main {
                         GraphQLBlackBoxModule(config.bbExperiments)
                     } else {
                         GraphQLModule()
+                    }
+                }
+
+                EMConfig.ProblemType.RPC ->{
+                    if (config.blackBox){
+                        throw IllegalStateException("NOT SUPPORT black-box for RPC yet")
+                    }else{
+                        RPCModule()
                     }
                 }
 
@@ -342,6 +370,25 @@ class Main {
             }
         }
 
+        private fun getAlgorithmKeyRPC(config: EMConfig): Key<out SearchAlgorithm<RPCIndividual>> {
+
+            return when {
+                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+                    Key.get(object : TypeLiteral<RandomAlgorithm<RPCIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MIO ->
+                    Key.get(object : TypeLiteral<MioAlgorithm<RPCIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.WTS ->
+                    Key.get(object : TypeLiteral<WtsAlgorithm<RPCIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MOSA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
+
+                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
+            }
+        }
+
         private fun getAlgorithmKeyRest(config: EMConfig): Key<out SearchAlgorithm<RestIndividual>> {
 
             return when {
@@ -373,6 +420,7 @@ class Main {
             val key = when (config.problemType) {
                 EMConfig.ProblemType.REST -> getAlgorithmKeyRest(config)
                 EMConfig.ProblemType.GRAPHQL -> getAlgorithmKeyGraphQL(config)
+                EMConfig.ProblemType.RPC -> getAlgorithmKeyRPC(config)
                 else -> throw IllegalStateException("Unrecognized problem type ${config.problemType}")
             }
 
@@ -468,7 +516,7 @@ class Main {
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
                 splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshotTimestamp) }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshotTimestamp) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult, snapshotTimestamp)
@@ -479,7 +527,7 @@ class Main {
                     TODO refactor all the PartialOracle stuff that is meant for only REST
                  */
 
-                writer.writeTests(solution, controllerInfoDto?.fullName, snapshotTimestamp)
+                writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshotTimestamp)
             }
         }
 
@@ -505,7 +553,7 @@ class Main {
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
                 splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshot) }
+                        .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
                 if (config.executiveSummary) {
                     writeExecSummary(injector, controllerInfoDto, splitResult)
@@ -516,7 +564,7 @@ class Main {
                     TODO refactor all the PartialOracle stuff that is meant for only REST
                  */
 
-                writer.writeTests(solution, controllerInfoDto?.fullName)
+                writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath,)
             }
         }
 
@@ -609,7 +657,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto == null || controllerInfoDto.fullName != null)
-            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName, snapshotTimestamp)
+            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshotTimestamp)
         }
     }
 }

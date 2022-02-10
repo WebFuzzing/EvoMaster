@@ -1,11 +1,11 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
-import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.util.ParamUtil
@@ -19,22 +19,22 @@ import java.net.URLEncoder
 
 
 class RestCallAction(
-        /**
+    /**
          * Identifier unique within the individual
          * **/
         val id:String,
-        val verb: HttpVerb,
-        val path: RestPath,
-        parameters: MutableList<Param>,
-        auth: AuthenticationInfo = NoAuth(),
-        /**
+    val verb: HttpVerb,
+    val path: RestPath,
+    parameters: MutableList<Param>,
+    auth: HttpWsAuthenticationInfo = NoAuth(),
+    /**
          * If true, it means that it will
          * instruct to save the "location" header of the HTTP response for future
          * use by following calls. Typical case is to save the location of
          * a resource generated with a POST
          */
         var saveLocation: Boolean = false,
-        /**
+    /**
          * Specify to use the "location" header of a
          * previous POST as path. As there might be different
          * POSTs creating different resources in the same test,
@@ -45,8 +45,8 @@ class RestCallAction(
          * path coming from a previous POST
          */
         var locationId: String? = null,
-        val produces: List<String> = listOf(),
-        val responseRefs : MutableMap<String, String> = mutableMapOf()
+    val produces: List<String> = listOf(),
+    val responseRefs : MutableMap<String, String> = mutableMapOf()
 ) : HttpWsAction(auth, parameters) {
 
     /**

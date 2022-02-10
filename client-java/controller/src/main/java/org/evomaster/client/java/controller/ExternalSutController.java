@@ -54,12 +54,16 @@ public abstract class ExternalSutController extends SutController {
      */
     private volatile String javaCommand = "java";
 
+    public int getWaitingSecondsForIncomingConnection() {
+        return 20_000;
+    }
+
     @Override
     public final void setupForGeneratedTest(){
         //TODO how to handle P6Spy here??? We don't want the spy.log files
     }
 
-    public void setInstrumentation(boolean instrumentation) {
+    public final void setInstrumentation(boolean instrumentation) {
         this.instrumentation = instrumentation;
     }
 
@@ -138,7 +142,7 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public String startSut() {
+    public final String startSut() {
 
         SimpleLogger.info("Going to start the SUT");
 
@@ -286,13 +290,13 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public boolean isSutRunning() {
+    public final boolean isSutRunning() {
         return process != null && process.isAlive();
     }
 
 
     @Override
-    public void stopSut() {
+    public final void stopSut() {
 
         SimpleLogger.info("Going to stop the SUT");
 
@@ -357,7 +361,7 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public void setKillSwitch(boolean b) {
+    public final void setKillSwitch(boolean b) {
         checkInstrumentation();
 
         serverController.setKillSwitch(b);
@@ -365,11 +369,21 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public void setExecutingInitSql(boolean executingInitSql) {
+    public final void setExecutingInitSql(boolean executingInitSql) {
         checkInstrumentation();
         serverController.setExecutingInitSql(executingInitSql);
         // sync executingInitSql on the local ExecutionTracer
         ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
+
+    @Override
+    public final String getExecutableFullPath(){
+        validateJarPath();
+
+        //this might be relative
+        String path = getPathToExecutableJar();
+
+        return Paths.get(path).toAbsolutePath().toString();
     }
 
     //-----------------------------------------
@@ -434,10 +448,6 @@ public abstract class ExternalSutController extends SutController {
 
                         String line = scanner.nextLine();
 
-//                        if(line.startsWith(P6SpyFormatter.PREFIX)){
-//                            StandardOutputTracker.handleSqlLine(this, line);
-//                        }
-
                         if(!muted) {
                             SimpleLogger.info("SUT: " + line);
                         } else if(errorBuffer != null){
@@ -457,13 +467,17 @@ public abstract class ExternalSutController extends SutController {
                         this could happen if it was started with some misconfiguration, or
                         if it has been stopped
                      */
-                    if(process == null){
+                    if (process == null) {
                         SimpleLogger.warn("SUT was manually terminated ('process' reference is null)");
-                    } else if(! process.isAlive()){
-                        SimpleLogger.warn("SUT was terminated before initialization. Exit code: " + process.exitValue());
+                    } else if(!initialized) {
+                        if (!process.isAlive()) {
+                            SimpleLogger.warn("SUT was terminated before initialization. Exit code: " + process.exitValue());
+                        } else {
+                            SimpleLogger.warn("SUT is still alive, but its output was closed before" +
+                                    " producing the initialization message.");
+                        }
                     } else {
-                        SimpleLogger.warn("SUT is still alive, but its output was closed before" +
-                                " producing the initialization message.");
+                        SimpleLogger.info("Process output has been closed");
                     }
 
                     latch.countDown();
@@ -475,9 +489,5 @@ public abstract class ExternalSutController extends SutController {
 
             outputPrinter.start();
         }
-    }
-
-    public int getWaitingSecondsForIncomingConnection() {
-        return 20_000;
     }
 }

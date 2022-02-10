@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig

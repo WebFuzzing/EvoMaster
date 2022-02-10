@@ -8,6 +8,7 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.instrumentation.SqlInfo;
@@ -26,6 +27,10 @@ import static org.evomaster.client.java.controller.internal.db.ParserUtils.*;
  * Class used to act upon SQL commands executed by the SUT
  */
 public class SqlHandler {
+
+    private final static Set<String> booleanConstantNames = Collections.unmodifiableSet(
+            new LinkedHashSet<>(Arrays.asList("t","true","f","false","yes","y","no","n","on","off","unknown"))
+    );
 
     /**
      * Computing heuristics on SQL is expensive, as we need to run
@@ -54,6 +59,12 @@ public class SqlHandler {
     private volatile boolean calculateHeuristics;
 
     private volatile boolean extractSqlExecution;
+
+    /**
+     * WARNING: in general we shouldn't use mutable DTO as internal data structures.
+     * But, here, what we need is very simple (just checking for names).
+     */
+    private volatile DbSchemaDto schema;
 
     public SqlHandler() {
         buffer = new CopyOnWriteArrayList<>();
@@ -84,6 +95,10 @@ public class SqlHandler {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public void setSchema(DbSchemaDto schema) {
+        this.schema = schema;
     }
 
     /**
@@ -140,6 +155,11 @@ public class SqlHandler {
         return executionDto;
     }
 
+    /**
+     * compute (SELECT, DELETE and UPDATE) sql distance for sql commands which exists in [buffer]
+     *      Note that we skip `SELECT 1` (typically for testing sql connection) since its distance is 0
+     * @return a list of heuristics for sql commands
+     */
     public List<PairCommandDistance> getDistances() {
 
         if (connection == null || !calculateHeuristics) {
@@ -149,7 +169,7 @@ public class SqlHandler {
 
         buffer.stream()
                 .forEach(sql -> {
-                    if (isSelect(sql) || isDelete(sql) || isUpdate(sql)) {
+                    if (!isSelectOne(sql) && (isSelect(sql) || isDelete(sql) || isUpdate(sql))) {
                         double dist;
                         try {
                              dist = computeDistance(sql);
@@ -259,7 +279,7 @@ public class SqlHandler {
      *  Check the fields involved in the WHERE clause (if any).
      *  Return a map from table name to column names of the involved fields.
      */
-    public static Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
+    public Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
 
         /*
            TODO
@@ -269,31 +289,52 @@ public class SqlHandler {
 
         Map<String, Set<String>> data = new HashMap<>();
 
-        SqlNameContext context = new SqlNameContext(statement);
-
+        // move getWhere before SqlNameContext, otherwise null where would cause exception in new SqlNameContext
         Expression where = ParserUtils.getWhere(statement);
         if (where == null) {
             return data;
         }
 
+        SqlNameContext context = new SqlNameContext(statement);
+        if(schema != null) {
+            context.setSchema(schema);
+        }
+
         ExpressionVisitor visitor = new ExpressionVisitorAdapter() {
             @Override
             public void visit(Column column) {
-                String cn = column.getColumnName();
-
-                if(cn.equals("false")){
-                    /*
-                        This is a bug in the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
-                        we use this workaround.
-                        TODO remove it once library upgraded/fixed
-                     */
-                    return;
-                }
 
                 String tn = context.getTableName(column);
 
                 if(tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){
                     // TODO handle it properly when ll have support for sub-selects
+                    return;
+                }
+
+                String cn = column.getColumnName().toLowerCase();
+
+                if(! context.hasColumn(tn, cn)) {
+
+                    /*
+                        This is an issue with the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
+                        we use this workaround.
+
+                        The problem is that some SQL databases do not have support for boolean types, so parser can
+                        interpret constants like TRUE as column names.
+                        And all databases have differences on how booleans are treated, eg.
+                        - H2: TRUE, FALSE, and UNKNOWN (NULL).
+                          http://www.h2database.com/html/datatypes.html#boolean_type
+                        - Postgres:  true, yes, on, 1, false, no, off, 0 (as well as abbreviations like t and f)
+                          https://www.postgresql.org/docs/9.5/datatype-boolean.html
+
+                     */
+
+                    if (booleanConstantNames.contains(cn)) {
+                        //case in which a boolean constant is wrongly treated as a column name.
+                        //TODO not sure what we can really do here without modifying the parser
+                    } else {
+                        SimpleLogger.warn("Cannot find column '" + cn +"' in table '" + tn +"'");
+                    }
                     return;
                 }
 
