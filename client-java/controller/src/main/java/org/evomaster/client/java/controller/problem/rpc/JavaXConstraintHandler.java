@@ -58,6 +58,7 @@ public class JavaXConstraintHandler {
 
     private static boolean handleCollection(CollectionParam param, Annotation annotation){
         if (handleNotEmpty(annotation)){
+            param.setNullable(false);
             param.setMinSize(1);
             return true;
         }
@@ -75,6 +76,7 @@ public class JavaXConstraintHandler {
 
     private static boolean handleMapParam(MapParam param, Annotation annotation){
         if (handleNotEmpty(annotation)){
+            param.setNullable(false);
             param.setMinSize(1);
             return true;
         }
@@ -92,6 +94,7 @@ public class JavaXConstraintHandler {
 
     private static boolean handleStringParam(StringParam param, Annotation annotation) {
         if (handleNotBlank(annotation)){
+            param.setNullable(false);
             param.setMinSize(1);
             return true;
         }
@@ -119,22 +122,20 @@ public class JavaXConstraintHandler {
 
     private static boolean handleNotBlank(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("NotBlank")){
-            return true;
-        }
-        return false;
+        return cons.getSimpleName().equals("NotBlank");
     }
 
     private static boolean handleNotEmpty(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("NotEmpty")){
-            return true;
-        }
-        return false;
+        return cons.getSimpleName().equals("NotEmpty");
     }
 
     private static Integer[] handleSize(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
+        /*
+            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Size.html
+            null elements are considered valid.
+         */
         if (cons.getSimpleName().equals("Size")){
             Integer[] size = new Integer[2];
 
@@ -152,6 +153,10 @@ public class JavaXConstraintHandler {
 
     private static Long handleMax(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
+        /*
+            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Max.html
+            null elements are considered valid.
+         */
         if (cons.getSimpleName().equals("Max")){
             try {
                 return (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
@@ -164,6 +169,10 @@ public class JavaXConstraintHandler {
 
     private static Long handleMin(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
+        /*
+            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Min.html
+            null elements are considered valid.
+         */
         if (cons.getSimpleName().equals("Min")){
             try {
                 return (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
