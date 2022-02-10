@@ -10,6 +10,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.internal.db.DbCleanSpecification;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
 import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
@@ -46,6 +47,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -70,6 +72,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * For each action in a test, keep track of the extra heuristics, if any
      */
     private final List<ExtraHeuristicsDto> extras = new CopyOnWriteArrayList<>();
+
+    /**
+     * track all tables accessed in a test
+     */
+    private final List<String> accessedTables = new CopyOnWriteArrayList<>();
+
+
+    /**
+     * a map of table to a set of commands which are to insert data into the db
+     */
+    private final Map<String, Set<String>> tableInitSqlMap = new HashMap<>();
 
     /**
      * a map of interface schemas for RPC service under test
@@ -271,9 +284,56 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
             ExecutionDto executionDto = sqlHandler.getExecutionDto();
             dto.databaseExecutionDto = executionDto;
+            // set accessed table
+            accessedTables.addAll(executionDto.deletedData);
+            accessedTables.addAll(executionDto.insertedData.keySet());
+            accessedTables.addAll(executionDto.queriedData.keySet());
+            accessedTables.addAll(executionDto.insertedData.keySet());
+            accessedTables.addAll(executionDto.updatedData.keySet());
         }
 
         return dto;
+    }
+
+    public void cleanAccessedTables(){
+        DbCleanSpecification emDbClean = cleanDbWithEMDbCleaner();
+        if (emDbClean == null) return;
+        if (emDbClean.connection == null || !emDbClean.employSmartDbClean) return;
+
+        DbCleaner.clearDatabase(emDbClean.connection, emDbClean.schemaName,  null, accessedTables, emDbClean.dbType);
+
+        List<String> tableDataToInit = accessedTables.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toList());
+
+        // init db script
+        if (emDbClean.initSqlScript != null && (tableInitSqlMap.isEmpty()
+                || !tableDataToInit.isEmpty())){
+            try {
+                setExecutingInitSql(true);
+                if (tableInitSqlMap.isEmpty()){
+                    Map<String, Set<String>> map = SqlScriptRunner.execScript(emDbClean.connection, emDbClean.initSqlScript);
+                    tableInitSqlMap.putAll(map);
+                }else{
+                    tableDataToInit.forEach(a->{
+                        tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(c->{
+                            try {
+                                SqlScriptRunner.execCommand(emDbClean.connection, c);
+                            } catch (SQLException e) {
+                                throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
+                            }
+                        });
+                    });
+                }
+
+            } catch (SQLException e) {
+                throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
+            }finally {
+                setExecutingInitSql(false);
+            }
+        }
+    }
+
+    public void addTableToInserted(List<String> tables){
+        accessedTables.addAll(tables);
     }
 
 
@@ -405,6 +465,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         actionIndex = -1;
         resetExtraHeuristics();
         extras.clear();
+
+        //clean all accessed table in a test
+        accessedTables.clear();
 
         newTestSpecificHandler();
     }
@@ -775,6 +838,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     @Override
     public List<CustomizedNotNullAnnotationForRPCDto> specifyCustomizedNotNullAnnotation() {
+        return null;
+    }
+
+
+    /**
+     * clean db with EM DbCleaner utility
+     * @return a specification about how to clean the db
+     */
+    public DbCleanSpecification cleanDbWithEMDbCleaner(){
         return null;
     }
 }

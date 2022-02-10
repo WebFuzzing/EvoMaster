@@ -344,6 +344,8 @@ public class EMController {
                      */
                     if (dto.resetState != null && dto.resetState) {
                         try {
+                            // clean db with accessed tables
+                            noKillSwitchForceCheck(() -> sutController.cleanAccessedTables());
                             /*
                                 This should not fail... but, as it is user code, it might fail...
                                 When it does, it is a major issue, as it can leave the system in
@@ -587,6 +589,9 @@ public class EMController {
                     going to be instrumented (as not in org.evomaster)
              */
             sutController.setExecutingInitSql(true);
+
+            // collect info about tables to insert
+            noKillSwitch(()-> sutController.addTableToInserted(dto.insertions.stream().map(x-> x.targetTable).collect(Collectors.toList())));
 
             SimpleLogger.debug("Received database command");
 
