@@ -3,6 +3,8 @@ package org.evomaster.client.java.controller.internal.db.h2;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 
@@ -11,15 +13,18 @@ import java.util.List;
 
 public class DatabaseFakeH2SutController extends EmbeddedSutController {
 
-    private final Connection connection;
+    private final Connection sqlConnection;
 
     public DatabaseFakeH2SutController(Connection connection) {
-        this.connection = connection;
+        this.sqlConnection = connection;
     }
 
     @Override
-    public Connection getConnection() {
-        return connection;
+    public DbSpecification setDbSpecification() {
+        return new DbSpecification(){{
+            dbType = DatabaseType.H2;
+            connection = sqlConnection;
+        }};
     }
 
     @Override

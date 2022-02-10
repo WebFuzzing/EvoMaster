@@ -10,7 +10,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
-import org.evomaster.client.java.controller.internal.db.DbCleanSpecification;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
 import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
@@ -190,7 +190,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     @Override
     public InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous) {
 
-        Connection connection = getConnection();
+        Connection connection = getConnectionIfExist();
         if (connection == null) {
             throw new IllegalStateException("No connection to database");
         }
@@ -230,8 +230,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * the SUT is started.
      */
     public final void initSqlHandler() {
-        sqlHandler.setConnection(getConnection());
+        sqlHandler.setConnection(getConnectionIfExist());
         sqlHandler.setSchema(getSqlDatabaseSchema());
+    }
+
+    public final Connection getConnectionIfExist(){
+        return setDbSpecification() == null? null: setDbSpecification().connection;
     }
 
     public final void resetExtraHeuristics() {
@@ -296,7 +300,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public void cleanAccessedTables(){
-        DbCleanSpecification emDbClean = cleanDbWithEMDbCleaner();
+        DbSpecification emDbClean = setDbSpecification();
         if (emDbClean == null) return;
         if (emDbClean.connection == null || !emDbClean.employSmartDbClean) return;
 
@@ -343,19 +347,19 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * So the database must be up and running.
      *
      * @return a DTO with the schema information
-     * @see SutController#getConnection
+     * @see SutController#setDbSpecification
      */
     public final DbSchemaDto getSqlDatabaseSchema() {
         if (schemaDto != null) {
             return schemaDto;
         }
 
-        if (getConnection() == null) {
+        if (setDbSpecification() == null || setDbSpecification().connection == null) {
             return null;
         }
 
         try {
-            schemaDto = SchemaExtractor.extract(getConnection());
+            schemaDto = SchemaExtractor.extract(setDbSpecification().connection);
         } catch (Exception e) {
             SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage());
             return null;
@@ -738,7 +742,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *
      * @return {@code null} if the SUT does not use any SQL database
      */
-    public abstract Connection getConnection();
+    @Deprecated
+    public Connection getConnection(){
+        throw new IllegalStateException("This deprecated method should never be called");
+    }
 
     /**
      * If the system under test (SUT) uses a SQL database, we need to specify
@@ -843,10 +850,35 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
 
     /**
-     * clean db with EM DbCleaner utility
-     * @return a specification about how to clean the db
+     * <p>
+     * If the system under test (SUT) uses a SQL database, we need to have a
+     * configured DbSpecification to access/reset it.
+     * </p>
+     *
+     * <p>
+     * When accessing a {@code Connection} object to reset the state of
+     * the application, we suggest to save it to field (eg when starting the
+     * application), and set such field with {@link DbSpecification#connection}.
+     * This connection object will be used by EvoMaster to analyze the state of
+     * the database to create better test cases.
+     * </p>
+     *
+     * <p>
+     * To handle db in the context of testing, there might be a need to initialize
+     * data into database with a sql script. such info could be specified with
+     * {@link DbSpecification#dbType}
+     * </p>
+     *
+     * <p>
+     * With EvoMaster, we also support a smart DB cleaner by removing all data in tables
+     * which has been accessed after each test. In order to achieve this, we requires user
+     * to set a set of info such as database type with {@link DbSpecification#dbType},
+     * schema name with {@link DbSpecification#schemaName} (TODO might remove later).
+     * In addition, we also provide an option (default is {@code true}) to configure
+     * if such cleaner is preferred with {@link DbSpecification#employSmartDbClean}.
+     * </p>
+     *
+     * @return {@code null} if the SUT does not use any SQL database
      */
-    public DbCleanSpecification cleanDbWithEMDbCleaner(){
-        return null;
-    }
+    public abstract DbSpecification setDbSpecification();
 }

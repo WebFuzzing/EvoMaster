@@ -8,7 +8,6 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
-import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
@@ -595,7 +594,7 @@ public class EMController {
 
             SimpleLogger.debug("Received database command");
 
-            Connection connection = noKillSwitch(() -> sutController.getConnection());
+            Connection connection = noKillSwitch(() -> sutController.getConnectionIfExist());
             if (connection == null) {
                 String msg = "No active database connection";
                 SimpleLogger.warn(msg);

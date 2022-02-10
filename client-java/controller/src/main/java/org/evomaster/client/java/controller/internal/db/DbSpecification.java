@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 
 import java.sql.Connection;
 
-public class DbCleanSpecification {
+public class DbSpecification {
 
     /**
      * specify a type of the database

@@ -11,6 +11,6 @@ class ExistingDataController : SpringRestMySqlController(ExistingDataApp::class.
     override fun resetStateOfSUT() {
         super.resetStateOfSUT()
 
-        SqlScriptRunner.execScript(connection, "INSERT INTO X (id) VALUES (42)")
+        SqlScriptRunner.execScript(dbConnection, "INSERT INTO X (id) VALUES (42)")
     }
 }

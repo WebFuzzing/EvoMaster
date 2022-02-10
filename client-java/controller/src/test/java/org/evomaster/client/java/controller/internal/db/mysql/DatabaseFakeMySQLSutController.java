@@ -3,6 +3,8 @@ package org.evomaster.client.java.controller.internal.db.mysql;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 
@@ -18,8 +20,11 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
     }
 
     @Override
-    public Connection getConnection() {
-        return connection;
+    public DbSpecification setDbSpecification() {
+        return new DbSpecification(){{
+            dbType = DatabaseType.H2;
+            connection = connection;
+        }};
     }
 
     @Override
