@@ -59,16 +59,17 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
 
 
 
-        var resVarName = createUniqueResponseVariableName()
+        val resVarName = createUniqueResponseVariableName()
 
         lines.addEmpty()
 
-        resVarName = handleActionExecution(lines, resVarName, rpcCallResult, rpcCallAction)
+        // null varName representing that the test script generation fails, then skip its assertions
+        val varName = handleActionExecution(lines, resVarName, rpcCallResult, rpcCallAction)
         // append additional info after the execution, eg, last statement
         appendAdditionalInfo(lines, rpcCallResult)
 
         if (config.enableBasicAssertions){
-            if (rpcCallAction.response!=null){
+            if (rpcCallAction.response!=null && varName != null){
                 if (rpcCallResult.hasResponse())
                     handleAssertions(lines, resVarName, rpcCallResult)
                 else{
@@ -98,7 +99,7 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
 
     }
 
-    private fun handleActionExecution(lines: Lines, resVarName: String, rpcCallResult: RPCCallResult, rpcCallAction: RPCCallAction): String{
+    private fun handleActionExecution(lines: Lines, resVarName: String, rpcCallResult: RPCCallResult, rpcCallAction: RPCCallAction): String?{
 
         if (config.enablePureRPCTestGeneration){
             val script = rpcCallResult.getTestScript()
@@ -110,6 +111,7 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
             }else{
                 log.warn("fail to get test script from em driver")
                 executeActionWithSutHandler(lines, resVarName, rpcCallAction)
+                return null
             }
         }else{
             val authAction = rpcHandler.getRPCAuthActionDto(rpcCallAction)
