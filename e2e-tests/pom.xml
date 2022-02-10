@@ -21,7 +21,6 @@
         <module>spring-graphql</module>
         <module>spring-rest-mysql</module>
         <module>micronaut-rest-api</module>
-        <module>micronaut-patio-api-version</module>
         <module>spring-rpc</module>
     </modules>
 

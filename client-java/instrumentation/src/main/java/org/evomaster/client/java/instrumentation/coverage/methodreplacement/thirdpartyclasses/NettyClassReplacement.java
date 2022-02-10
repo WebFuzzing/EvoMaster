@@ -20,14 +20,5 @@ public class NettyClassReplacement extends ThirdPartyMethodReplacementClass {
         type = ReplacementType.TRACKER,
         id = "isKeepAliveDefault_boolean_class",
         usageFilter = UsageFilter.ONLY_SUT)
-    public static boolean isKeepAliveDefault(Object caller) {
-        /*
-            Micronaut 1.3.4 closes the connection when there is a server error
-            (in micronaut case it checks for http status code > 299) or isKeepAliveDefault()
-            set to false (default false). This method replacement is to change it to true.
-
-            TODO: the implementation needs to be reviewed
-        */
-        return false;
-    }
+    public static boolean isKeepAliveDefault(Object caller) { return true; }
 }

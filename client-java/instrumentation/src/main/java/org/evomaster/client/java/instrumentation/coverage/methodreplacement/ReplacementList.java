@@ -31,6 +31,10 @@ public class ReplacementList {
                 new MapClassReplacement(),
                 new MatcherClassReplacement(),
                 new MethodClassReplacement(),
+                new MicronautConfigurationReplacement(),
+                new MicronautNettyHttpServerReplacement(),
+                new NettyClassReplacement(),
+                new NettyHttpUtilClassReplacement(),
                 new ObjectsClassReplacement(),
                 new PatternClassReplacement(),
                 new PreparedStatementClassReplacement(),
@@ -38,11 +42,7 @@ public class ReplacementList {
                 new StringClassReplacement(),
                 new ShortClassReplacement(),
                 new ServletRequestClassReplacement(),
-                new WebRequestClassReplacement(),
-                new NettyClassReplacement(),
-                new MicronautNettyHttpServerReplacement(),
-//                new NettyHttpUtilClassReplacement(), // TODO: implementation should be reviewed
-                new MicronautConfigurationReplacement()
+                new WebRequestClassReplacement()
         );
     }
 

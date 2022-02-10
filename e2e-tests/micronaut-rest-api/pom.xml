@@ -15,9 +15,6 @@
         <packaging>jar</packaging>
         <exec.mainClass>com.foo.micronaut.rest.MicronautApplication</exec.mainClass>
         <micronaut.runtime>netty</micronaut.runtime>
-<!--        <micronaut.data.version>1.0.2</micronaut.data.version>-->
-<!--        <micronaut.version>3.2.5</micronaut.version>-->
-<!--        <micronaut-openapi.version>3.2.0</micronaut-openapi.version>-->
     </properties>
 
 

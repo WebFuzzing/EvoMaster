@@ -21,15 +21,6 @@ public class MicronautNettyHttpServerReplacement extends ThirdPartyMethodReplace
             type = ReplacementType.TRACKER,
             id = "isKeepAlive_boolean_class",
             usageFilter = UsageFilter.ONLY_SUT)
-    public static boolean isKeepAlive(Object caller) {
-        /*
-            Micronaut 1.3.4 closes the connection when there is a server error
-            (in micronaut case it checks for http status code > 299) or isKeepAliveDefault()
-            set to false (default false). This method replacement is to change it to true.
-
-            TODO: the implementation needs to be reviewed
-        */
-        return true;
-    }
+    public static boolean isKeepAlive(Object caller) { return true; }
 
 }

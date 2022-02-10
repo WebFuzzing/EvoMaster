@@ -49,7 +49,7 @@ public class NettyHttpUtilClassReplacement extends ThirdPartyMethodReplacementCl
             throw new NullPointerException();
         }
 
-        Method original = getOriginal(singleton, "setKeepAlive_void_class", caller);
+        Method original = getOriginal(singleton, "setKeepAlive2_void_class", caller);
 
         try {
             // the below implementation allows to keep the connection alive always even the code sets to false
