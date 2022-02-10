@@ -476,7 +476,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             if (response != null){
                 try{
                     // successful execution
-                    NamedTypedValue resSchema = endpointSchema.getResponse().copyStructure();
+                    NamedTypedValue resSchema = endpointSchema.getResponse().copyStructureWithProperties();
                     resSchema.setValueBasedOnInstance(response);
                     responseDto.rpcResponse = resSchema.getDto();
                     if (dto.doGenerateAssertions && dto.responseVariable != null)

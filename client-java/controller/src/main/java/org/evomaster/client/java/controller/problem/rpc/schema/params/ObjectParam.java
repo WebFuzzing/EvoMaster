@@ -82,7 +82,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             List<NamedTypedValue> values = new ArrayList<>();
 
             for (ParamDto p: dto.innerContent){
-                NamedTypedValue f = fields.stream().filter(s-> s.sameParam(p)).findFirst().get().copyStructure();
+                NamedTypedValue f = fields.stream().filter(s-> s.sameParam(p)).findFirst().get().copyStructureWithProperties();
                 f.setValueBasedOnDto(p);
                 values.add(f);
             }
@@ -102,7 +102,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             throw new RuntimeException("ERROR: fail to get class with the name"+getType().getFullTypeName()+" Msg:"+e.getMessage());
         }
         for (NamedTypedValue f: fields){
-            NamedTypedValue copy = f.copyStructure();
+            NamedTypedValue copy = f.copyStructureWithProperties();
             try {
                 if (f.accessibleSchema == null || f.accessibleSchema.isAccessible){
                     Field fi = clazz.getDeclaredField(f.getName());

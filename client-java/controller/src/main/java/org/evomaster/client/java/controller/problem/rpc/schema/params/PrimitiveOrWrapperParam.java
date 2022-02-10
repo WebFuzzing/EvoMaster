@@ -122,4 +122,12 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
      */
     abstract public String getPrimitiveValue(String responseVarName);
 
+    @Override
+    public void copyProperties(NamedTypedValue copy) {
+        super.copyProperties(copy);
+        if (copy instanceof PrimitiveOrWrapperParam){
+            ((PrimitiveOrWrapperParam)copy).setMin(min);
+            ((PrimitiveOrWrapperParam)copy).setMax(max);
+        }
+    }
 }

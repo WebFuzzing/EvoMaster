@@ -130,7 +130,23 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         return dto;
     }
 
+    public NamedTypedValue<T, V> copyStructureWithProperties(){
+        NamedTypedValue copy = copyStructure();
+        copyProperties(copy);
+        return copy;
+    }
+
     public abstract NamedTypedValue<T, V> copyStructure();
+
+    public void copyProperties(NamedTypedValue copy){
+        copy.setNullable(isNullable);
+        copy.setHasDependentCandidates(isHasDependentCandidates());
+        if (getCandidates() != null && !getCandidates().isEmpty())
+            copy.setCandidates(getCandidates().stream().map(c-> c.copyStructureWithProperties()).collect(Collectors.toList()));
+        if (getCandidateReferences()!= null && !getCandidateReferences().isEmpty())
+            copy.setCandidateReferences(new ArrayList<>(getCandidateReferences()));
+
+    }
 
 
     /**

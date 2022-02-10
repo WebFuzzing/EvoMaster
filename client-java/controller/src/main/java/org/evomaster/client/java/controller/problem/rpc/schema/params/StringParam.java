@@ -150,4 +150,14 @@ public class StringParam extends NamedTypedValue<StringType, String> {
         return getValue() == null? null:"\""+CodeJavaGenerator.handleEscapeCharInString(getValue())+"\"";
     }
 
+    @Override
+    public void copyProperties(NamedTypedValue copy) {
+        super.copyProperties(copy);
+        if (copy instanceof StringParam){
+            ((StringParam)copy).setMax(max);
+            ((StringParam)copy).setMin(min);
+            ((StringParam)copy).setMinSize(minSize);
+            ((StringParam)copy).setMinSize(minSize);
+        }
+    }
 }

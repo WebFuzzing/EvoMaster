@@ -151,8 +151,8 @@ public class EndpointSchema {
     public EndpointSchema copyStructure(){
         return new EndpointSchema(
                 name, interfaceName, clientTypeName,
-                requestParams == null? null: requestParams.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
-                response == null? null: response.copyStructure(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
+                requestParams == null? null: requestParams.stream().map(NamedTypedValue::copyStructureWithProperties).collect(Collectors.toList()),
+                response == null? null: response.copyStructureWithProperties(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructureWithProperties).collect(Collectors.toList()),
                 authRequired, requiredAuthCandidates, relatedCustomizedCandidates);
     }
 

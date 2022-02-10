@@ -243,7 +243,7 @@ public class RPCEndpointsBuilder {
                 JsonNode node = objectMapper.readTree(jsonString);
                 List<NamedTypedValue> fields = new ArrayList<>();
                 for (NamedTypedValue f: ((ObjectParam) inputParam).getType().getFields()){
-                    NamedTypedValue v = f.copyStructure();
+                    NamedTypedValue v = f.copyStructureWithProperties();
                     if (node.has(v.getName())){
                         setNamedValueBasedOnCandidates(f, node.textValue());
                         fields.add(v);
@@ -420,7 +420,7 @@ public class RPCEndpointsBuilder {
                 EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items, clazz);
                 EnumParam param = new EnumParam(name, enumType, accessibleSchema);
                 //register this type in the schema
-                schema.registerType(enumType.copy(), param.copyStructure());
+                schema.registerType(enumType.copy(), param.copyStructureWithProperties());
                 namedValue = param;
             } else if (clazz.isArray()){
 
@@ -648,7 +648,7 @@ public class RPCEndpointsBuilder {
             ){
                 dto.combinedKeyValuePairs.forEach(p->{
                     if (p.fieldKey.equals(namedTypedValue.getName())){
-                        NamedTypedValue copy = namedTypedValue.copyStructure();
+                        NamedTypedValue copy = namedTypedValue.copyStructureWithProperties();
                         boolean ok = setNamedValueBasedOnCandidates(copy, p.fieldValue);
                         if (ok){
                             if (!candidateReferences.contains(""+i)){
@@ -686,7 +686,7 @@ public class RPCEndpointsBuilder {
         if (namedTypedValue instanceof PrimitiveOrWrapperParam || namedTypedValue instanceof StringParam || namedTypedValue instanceof ByteBufferParam){
 
             for (String v: customizedRequestValueDto.keyValues.values){
-                NamedTypedValue copy= namedTypedValue.copyStructure();
+                NamedTypedValue copy= namedTypedValue.copyStructureWithProperties();
                 handled = handled && setNamedValueBasedOnCandidates(copy, v);
                 candidates.add(copy);
             }

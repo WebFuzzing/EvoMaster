@@ -38,7 +38,7 @@ public class ObjectType extends TypeSchema {
         List<NamedTypedValue> cfields = new ArrayList<>();
         if (fields != null){
             for (NamedTypedValue f: fields){
-                cfields.add(f.copyStructure());
+                cfields.add(f.copyStructureWithProperties());
             }
         }
         ObjectType objectType = new ObjectType(getType(), getFullTypeName(), cfields ,getClazz());

@@ -54,7 +54,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
         if (!dto.innerContent.isEmpty()){
             NamedTypedValue t = getType().getTemplate();
             List<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
-                NamedTypedValue v = t.copyStructure();
+                NamedTypedValue v = t.copyStructureWithProperties();
                 v.setValueBasedOnDto(s);
                 return v;
             }).collect(Collectors.toList());
@@ -67,7 +67,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
         NamedTypedValue t = getType().getTemplate();
         List<NamedTypedValue> values = new ArrayList<>();
         for (Object e : (Object[]) instance){
-            NamedTypedValue copy = t.copyStructure();
+            NamedTypedValue copy = t.copyStructureWithProperties();
             copy.setValueBasedOnInstance(e);
             values.add(copy);
         }
