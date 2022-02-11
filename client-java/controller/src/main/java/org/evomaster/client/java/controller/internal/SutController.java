@@ -82,7 +82,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     /**
      * a map of table to a set of commands which are to insert data into the db
      */
-    private final Map<String, Set<String>> tableInitSqlMap = new HashMap<>();
+    private final Map<String, Set<String>> tableInitSqlMap = new LinkedHashMap<>();
 
     /**
      * a map of interface schemas for RPC service under test
@@ -308,7 +308,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         DbCleaner.clearDatabase(emDbClean.connection, emDbClean.schemaName,  null, accessedTables, emDbClean.dbType);
 
-        List<String> tableDataToInit = accessedTables.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toList());
+        Set<String> tableDataToInit = accessedTables.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
 
         // init db script
         if (emDbClean.initSqlScript != null && (tableInitSqlMap.isEmpty()
