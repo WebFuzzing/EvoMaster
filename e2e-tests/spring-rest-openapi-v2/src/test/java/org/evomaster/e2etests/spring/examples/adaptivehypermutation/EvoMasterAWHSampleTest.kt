@@ -65,6 +65,7 @@ internal class EvoMasterAWHSampleTest {
     
     @BeforeEach
     fun initTest() {
+        controller.resetDatabase()
         controller.resetStateOfSUT()
     }
     
