@@ -430,7 +430,7 @@ public class RPCEndpointsBuilder {
                 Class<?> templateClazz = null;
                 if (genericType instanceof GenericArrayType){
                     type = ((GenericArrayType)genericType).getGenericComponentType();
-                    templateClazz = getTemplateClass(type);
+                    templateClazz = getTemplateClass(type, genericTypeMap);
                 }else {
                     templateClazz = clazz.getComponentType();
                 }
@@ -448,7 +448,7 @@ public class RPCEndpointsBuilder {
                 if (genericType == null)
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-                Class<?> templateClazz = getTemplateClass(type);
+                Class<?> templateClazz = getTemplateClass(type, genericTypeMap);
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
@@ -463,11 +463,11 @@ public class RPCEndpointsBuilder {
                 Type keyType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
-                Class<?> keyTemplateClazz = getTemplateClass(keyType);
+                Class<?> keyTemplateClazz = getTemplateClass(keyType, genericTypeMap);
                 NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 keyTemplate.setNullable(false);
 
-                Class<?> valueTemplateClazz = getTemplateClass(valueType);
+                Class<?> valueTemplateClazz = getTemplateClass(valueType, genericTypeMap);
                 NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate), null), clazz);
                 mtype.depth = getDepthLevel(clazz, depth);
@@ -760,11 +760,15 @@ public class RPCEndpointsBuilder {
         return false;
     }
 
-    private static Class<?> getTemplateClass(Type type){
-        if (type instanceof ParameterizedType){
-            return  (Class<?>) ((ParameterizedType)type).getRawType();
-        }else if (type instanceof Class)
-            return  (Class<?>) type;
+    private static Class<?> getTemplateClass(Type type, Map<TypeVariable, Type> genericTypeMap){
+        Type actualType = type;
+        if (type instanceof TypeVariable)
+            actualType = getActualType(genericTypeMap, (TypeVariable) type);
+
+        if (actualType instanceof ParameterizedType){
+            return  (Class<?>) ((ParameterizedType)actualType).getRawType();
+        }else if (actualType instanceof Class)
+            return  (Class<?>) actualType;
         throw new RuntimeException("unhanded type:"+ type);
     }
 
