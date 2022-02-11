@@ -1,9 +1,14 @@
 package com.foo.wiremock;
 
-public class WiremockApplication {
+
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
+public class WireMockApplication {
 
     public static void main(String[] args) {
-        WireMockServer wireMockServer = new WireMockServer(wireMockConfig().port(8089)); //No-args constructor will start on port 8080, no HTTPS
-        wireMockServer.start();
+
     }
 }
