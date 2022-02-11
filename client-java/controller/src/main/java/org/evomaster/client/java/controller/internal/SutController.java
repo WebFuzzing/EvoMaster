@@ -80,6 +80,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
 
     /**
+     * a map of table to fk target tables
+     */
+    private final Map<String, List<String>> fkMap = new LinkedHashMap<>();
+
+
+    /**
      * a map of table to a set of commands which are to insert data into the db
      */
     private final Map<String, Set<String>> tableInitSqlMap = new LinkedHashMap<>();
@@ -303,14 +309,32 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return dto;
     }
 
+    private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
+        for (String t: accessedTables){
+            String key = formatTableName(t);
+            if (!tablesToClean.contains(key)){
+                tablesToClean.add(key);
+                List<String> fk = fkMap.entrySet().stream().filter(e-> e.getValue().contains(key) && !tablesToClean.contains(e.getKey())).map(Map.Entry::getKey).collect(Collectors.toList());
+                if (!fk.isEmpty())
+                    getTableToClean(fk, tablesToClean);
+            }
+        }
+    }
+
+    private String formatTableName(String name) {
+        return name.toUpperCase();
+    }
+
     public void cleanAccessedTables(){
         DbSpecification emDbClean = getDbSpecification();
         if (emDbClean == null) return;
         if (getConnectionIfExist() == null || !emDbClean.employSmartDbClean || accessedTables.isEmpty()) return;
 
-        DbCleaner.clearDatabase(getConnectionIfExist(), emDbClean.schemaName,  null, accessedTables, emDbClean.dbType);
+        List<String> tablesToClean = new ArrayList<>();
+        getTableToClean(accessedTables, tablesToClean);
+        DbCleaner.clearDatabase(getConnectionIfExist(), emDbClean.schemaName,  null, tablesToClean, emDbClean.dbType);
 
-        Set<String> tableDataToInit = accessedTables.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
+        Set<String> tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
 
 
         // init db script
@@ -370,6 +394,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         } catch (Exception e) {
             SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage());
             return null;
+        }
+
+        if (fkMap.isEmpty()){
+            schemaDto.tables.forEach(t->{
+                fkMap.putIfAbsent(t.name, new ArrayList<>());
+                if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
+                    t.foreignKeys.forEach(f->{
+                        fkMap.get(t.name).add(f.targetTable.toUpperCase());
+                    });
+                }
+            });
         }
 
         return schemaDto;
