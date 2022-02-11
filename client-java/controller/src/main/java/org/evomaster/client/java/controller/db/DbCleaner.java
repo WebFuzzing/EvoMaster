@@ -100,34 +100,39 @@ public class DbCleaner {
     }
 
     public static void clearDatabase(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type){
-        clearDatabase(connection, schemaName, tablesToSkip, type, true);
+        clearDatabase(connection, getSchemaName(schemaName,type), tablesToSkip, type, true);
     }
 
     public static void clearDatabase(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type, boolean doResetSequence){
-        clearDatabase(connection, schemaName, tablesToSkip, null, type, doResetSequence);
+        clearDatabase(connection, getSchemaName(schemaName,type), tablesToSkip, null, type, doResetSequence);
     }
 
     public static void clearDatabase(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean, DatabaseType type){
-        clearDatabase(connection, schemaName, tableToSkip, tableToClean, type, true);
+        clearDatabase(connection, getSchemaName(schemaName,type), tableToSkip, tableToClean, type, true);
     }
 
     public static void clearDatabase(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean, DatabaseType type, boolean doResetSequence){
-        clearDatabase(getDefaultReties(type), connection, schemaName, tableToSkip, tableToClean, type, false, doResetSequence);
+        clearDatabase(getDefaultReties(type), connection, getSchemaName(schemaName,type), tableToSkip, tableToClean, type, false, doResetSequence);
     }
 
     public static void dropDatabaseTables(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type){
         if (type != DatabaseType.MYSQL && type != DatabaseType.MARIADB)
             throw new IllegalArgumentException("Dropping tables are not supported by "+type);
-        clearDatabase(getDefaultReties(type), connection, schemaName, tablesToSkip, null, type, true, true);
+        clearDatabase(getDefaultReties(type), connection, getSchemaName(schemaName,type), tablesToSkip, null, type, true, true);
     }
 
 
     public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tablesToSkip ) {
-        clearDatabase_Postgres(connection, schemaName, tablesToSkip, null);
+        clearDatabase_Postgres(connection, getSchemaName(schemaName,DatabaseType.POSTGRES), tablesToSkip, null);
     }
 
     public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean ) {
-        clearDatabase(getDefaultReties(DatabaseType.POSTGRES), connection, schemaName, tableToSkip, tableToClean, DatabaseType.POSTGRES, false, true);
+        clearDatabase(getDefaultReties(DatabaseType.POSTGRES), connection, getSchemaName(schemaName,DatabaseType.POSTGRES), tableToSkip, tableToClean, DatabaseType.POSTGRES, false, true);
+    }
+
+    private static String getSchemaName(String schemaName, DatabaseType type){
+        if (schemaName != null) return schemaName;
+        return getDefaultSchema(type);
     }
 
     /**

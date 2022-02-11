@@ -13,17 +13,18 @@ import java.util.List;
 
 public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
 
-    private final Connection connection;
+    private final Connection sqlConnection;
 
     public DatabaseFakeMySQLSutController(Connection connection) {
-        this.connection = connection;
+        this.sqlConnection = connection;
     }
 
     @Override
     public DbSpecification setDbSpecification() {
         return new DbSpecification(){{
-            dbType = DatabaseType.H2;
-            connection = connection;
+            dbType = DatabaseType.MYSQL;
+            connection = sqlConnection;
+            employSmartDbClean = false;
         }};
     }
 

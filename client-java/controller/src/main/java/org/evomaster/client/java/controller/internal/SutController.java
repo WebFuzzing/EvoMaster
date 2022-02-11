@@ -289,11 +289,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             ExecutionDto executionDto = sqlHandler.getExecutionDto();
             dto.databaseExecutionDto = executionDto;
             // set accessed table
-            accessedTables.addAll(executionDto.deletedData);
-            accessedTables.addAll(executionDto.insertedData.keySet());
-            accessedTables.addAll(executionDto.queriedData.keySet());
-            accessedTables.addAll(executionDto.insertedData.keySet());
-            accessedTables.addAll(executionDto.updatedData.keySet());
+            if (executionDto != null){
+                accessedTables.addAll(executionDto.deletedData);
+                accessedTables.addAll(executionDto.insertedData.keySet());
+                accessedTables.addAll(executionDto.queriedData.keySet());
+                accessedTables.addAll(executionDto.insertedData.keySet());
+                accessedTables.addAll(executionDto.updatedData.keySet());
+            }
         }
 
         return dto;
