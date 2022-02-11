@@ -150,7 +150,7 @@ public interface SutHandler {
      * <p>
      * When accessing a {@code Connection} object to reset the state of
      * the application, we suggest to save it to field (eg when starting the
-     * application), and set such field with {@link DbSpecification#connection}.
+     * application), and set such field with {@link DbSpecification#connections}.
      * This connection object will be used by EvoMaster to analyze the state of
      * the database to create better test cases.
      * </p>
@@ -173,23 +173,24 @@ public interface SutHandler {
      * @return {@code null} if the SUT does not use any SQL database
      */
 
-    DbSpecification setDbSpecification();
+    DbSpecification getDbSpecification();
 
 
     /**
      * <p>
      * reset database if the smart db cleaning is employed
+     * TODO need to discuss with Andrea about this
      * </p>
      */
     default void resetDatabase(){
-        DbSpecification spec = setDbSpecification();
-        if (spec==null || spec.connection == null || !spec.employSmartDbClean){
+        DbSpecification spec = getDbSpecification();
+        if (spec==null || spec.connections == null || spec.connections.isEmpty() || !spec.employSmartDbClean){
             return;
         }
-        DbCleaner.clearDatabase(spec.connection, spec.schemaName, null, null, spec.dbType);
+        DbCleaner.clearDatabase(spec.connections.get(0), spec.schemaName, null, null, spec.dbType);
         if (spec.initSqlScript != null) {
             try {
-                SqlScriptRunner.execScript(spec.connection, spec.initSqlScript);
+                SqlScriptRunner.execScript(spec.connections.get(0), spec.initSqlScript);
             } catch (SQLException e) {
                 throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
             }

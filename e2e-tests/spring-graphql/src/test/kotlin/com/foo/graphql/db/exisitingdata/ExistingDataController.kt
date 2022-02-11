@@ -16,8 +16,8 @@ class ExistingDataController : SpringWithDbController(ExistingDataApplication::c
 //        rep.save(ExistingDataX(42L, "Foo"))
     }
 
-    override fun setDbSpecification(): DbSpecification? {
-        val spec = super.setDbSpecification();
+    override fun getDbSpecification(): DbSpecification? {
+        val spec = super.getDbSpecification();
         spec?.initSqlScript = "INSERT INTO EXISTING_DATAX (ID, NAME) VALUES (42, 'Foo')";
         return spec
     }

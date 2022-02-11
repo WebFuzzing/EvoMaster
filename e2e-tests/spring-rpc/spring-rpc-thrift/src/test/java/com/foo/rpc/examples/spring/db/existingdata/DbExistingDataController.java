@@ -55,8 +55,8 @@ public class DbExistingDataController extends SpringWithDbController {
     }
 
     @Override
-    public DbSpecification setDbSpecification() {
-        DbSpecification spec = super.setDbSpecification();
+    public DbSpecification getDbSpecification() {
+        DbSpecification spec = super.getDbSpecification();
         if (spec !=null)
             spec.initSqlScript = "INSERT INTO EXISTING_DATA_ENTITYX (ID, NAME) VALUES (42, 'Foo')";
         return spec;

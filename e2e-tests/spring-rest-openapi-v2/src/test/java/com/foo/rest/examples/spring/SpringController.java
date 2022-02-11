@@ -77,7 +77,7 @@ public abstract class SpringController extends EmbeddedSutController {
     }
 
     @Override
-    public DbSpecification setDbSpecification() {
+    public DbSpecification getDbSpecification() {
         return null;
     }
 

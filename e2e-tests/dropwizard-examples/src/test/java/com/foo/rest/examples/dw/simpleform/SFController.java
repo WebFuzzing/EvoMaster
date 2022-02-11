@@ -79,7 +79,7 @@ public class SFController extends EmbeddedSutController {
     }
 
     @Override
-    public DbSpecification setDbSpecification() {
+    public DbSpecification getDbSpecification() {
         return null;
     }
 

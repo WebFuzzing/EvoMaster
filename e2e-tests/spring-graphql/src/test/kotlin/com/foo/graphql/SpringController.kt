@@ -46,7 +46,7 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
         return "com.foo.graphql."
     }
 
-    override fun setDbSpecification(): DbSpecification? {
+    override fun getDbSpecification(): DbSpecification? {
         return null
     }
 

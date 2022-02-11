@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 
 import java.sql.Connection;
+import java.util.Arrays;
 import java.util.List;
 
 public class DatabaseFakeH2SutController extends EmbeddedSutController {
@@ -20,10 +21,10 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
     }
 
     @Override
-    public DbSpecification setDbSpecification() {
+    public DbSpecification getDbSpecification() {
         return new DbSpecification(){{
             dbType = DatabaseType.H2;
-            connection = sqlConnection;
+            connections = Arrays.asList(sqlConnection);
             employSmartDbClean = false;
         }};
     }

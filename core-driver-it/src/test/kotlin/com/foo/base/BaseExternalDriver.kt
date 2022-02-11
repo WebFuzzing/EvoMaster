@@ -26,7 +26,7 @@ class BaseExternalDriver : ExternalSutController(){
         return 90
     }
 
-    override fun setDbSpecification(): DbSpecification? {
+    override fun getDbSpecification(): DbSpecification? {
         return null
     }
 

@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.internal.db;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 
 import java.sql.Connection;
+import java.util.List;
 
 public class DbSpecification {
 
@@ -14,7 +15,7 @@ public class DbSpecification {
     /**
      * sql connection
      */
-    public Connection connection;
+    public List<Connection> connections;
 
     /**
      * schema name

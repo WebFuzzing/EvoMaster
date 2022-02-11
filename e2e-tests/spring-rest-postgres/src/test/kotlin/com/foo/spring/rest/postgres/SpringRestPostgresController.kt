@@ -13,6 +13,7 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.jdbc.core.JdbcTemplate
 import org.testcontainers.containers.GenericContainer
 import java.sql.Connection
+import java.util.*
 
 /**
  * Created by arcuri82 on 21-Jun-19.
@@ -108,9 +109,9 @@ abstract class SpringRestPostgresController(
         return null
     }
 
-    override fun setDbSpecification(): DbSpecification? {
+    override fun getDbSpecification(): DbSpecification? {
         return DbSpecification().apply {
-            connection = sqlConnection
+            connections = Arrays.asList(sqlConnection)
             dbType = DatabaseType.POSTGRES
         }
     }

@@ -55,7 +55,7 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
         return listOf()
     }
 
-    override fun setDbSpecification(): DbSpecification? {
+    override fun getDbSpecification(): DbSpecification? {
         return null
     }
 

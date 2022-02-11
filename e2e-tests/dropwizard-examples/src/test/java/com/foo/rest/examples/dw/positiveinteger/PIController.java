@@ -80,7 +80,7 @@ public class PIController extends EmbeddedSutController {
     }
 
     @Override
-    public DbSpecification setDbSpecification() {
+    public DbSpecification getDbSpecification() {
         return null;
     }
 

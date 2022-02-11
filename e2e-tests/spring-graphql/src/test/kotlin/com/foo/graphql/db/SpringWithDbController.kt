@@ -8,6 +8,7 @@ import org.springframework.boot.SpringApplication
 import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Connection
 import java.sql.SQLException
+import java.util.*
 
 
 abstract class SpringWithDbController(applicationClass: Class<*>) : SpringController(applicationClass) {
@@ -72,9 +73,9 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
 //        dbconnection = null
     }
 
-    override fun setDbSpecification(): DbSpecification? = DbSpecification()
+    override fun getDbSpecification(): DbSpecification? = DbSpecification()
         .apply {
-        connection = dbconnection
+        connections = Arrays.asList(dbconnection)
         dbType = DatabaseType.H2
     }
 

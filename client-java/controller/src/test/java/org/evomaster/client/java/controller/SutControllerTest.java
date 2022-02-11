@@ -58,7 +58,7 @@ public class SutControllerTest {
         }
 
         @Override
-        public DbSpecification setDbSpecification() {
+        public DbSpecification getDbSpecification() {
             return null;
         }
 

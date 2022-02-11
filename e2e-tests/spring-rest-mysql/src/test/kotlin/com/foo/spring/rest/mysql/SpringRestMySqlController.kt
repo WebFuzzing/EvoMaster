@@ -14,6 +14,8 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.testcontainers.containers.GenericContainer
 import java.sql.Connection
 import java.sql.DriverManager
+import java.util.*
+import kotlin.collections.HashMap
 
 abstract class SpringRestMySqlController (
     private val applicationClass: Class<*>
@@ -117,10 +119,10 @@ abstract class SpringRestMySqlController (
         return null
     }
 
-    override fun setDbSpecification(): DbSpecification? {
+    override fun getDbSpecification(): DbSpecification? {
         return DbSpecification().apply {
             dbType = DatabaseType.MYSQL
-            connection = dbConnection
+            connections = Arrays.asList(dbConnection)
             schemaName = MYSQL_DB_NAME
         }
     }

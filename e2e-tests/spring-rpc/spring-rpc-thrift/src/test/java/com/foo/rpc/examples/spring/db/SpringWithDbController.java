@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 public abstract class SpringWithDbController extends SpringController {
 
@@ -74,10 +75,10 @@ public abstract class SpringWithDbController extends SpringController {
     }
 
     @Override
-    public DbSpecification setDbSpecification() {
+    public DbSpecification getDbSpecification() {
         return new DbSpecification(){{
             dbType = DatabaseType.H2;
-            connection = sqlConnection;
+            connections = Arrays.asList(sqlConnection);
         }};
     }
 

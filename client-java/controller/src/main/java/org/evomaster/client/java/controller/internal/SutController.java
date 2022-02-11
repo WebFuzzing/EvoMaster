@@ -235,7 +235,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final Connection getConnectionIfExist(){
-        return setDbSpecification() == null? null: setDbSpecification().connection;
+        return (getDbSpecification() == null
+                || getDbSpecification().connections == null
+                || getDbSpecification().connections.isEmpty())? null: getDbSpecification().connections.get(0);
     }
 
     public final void resetExtraHeuristics() {
@@ -302,11 +304,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public void cleanAccessedTables(){
-        DbSpecification emDbClean = setDbSpecification();
+        DbSpecification emDbClean = getDbSpecification();
         if (emDbClean == null) return;
-        if (emDbClean.connection == null || !emDbClean.employSmartDbClean) return;
+        if (getConnectionIfExist() == null || !emDbClean.employSmartDbClean) return;
 
-        DbCleaner.clearDatabase(emDbClean.connection, emDbClean.schemaName,  null, accessedTables, emDbClean.dbType);
+        DbCleaner.clearDatabase(getConnectionIfExist(), emDbClean.schemaName,  null, accessedTables, emDbClean.dbType);
 
         Set<String> tableDataToInit = accessedTables.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
 
@@ -317,14 +319,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             try {
                 setExecutingInitSql(true);
                 if (tableInitSqlMap.isEmpty()){
-                    Map<String, Set<String>> map = SqlScriptRunner.execScript(emDbClean.connection, emDbClean.initSqlScript);
+                    Map<String, Set<String>> map = SqlScriptRunner.execScript(getConnectionIfExist(), emDbClean.initSqlScript);
                     tableInitSqlMap.putAll(map);
                 }else{
                     tableDataToInit.forEach(a->{
                         tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
                             tableInitSqlMap.get(t).forEach(c->{
                                 try {
-                                   SqlScriptRunner.execCommand(emDbClean.connection, c);
+                                   SqlScriptRunner.execCommand(getConnectionIfExist(), c);
                                 } catch (SQLException e) {
                                     throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
                                 }
@@ -352,19 +354,19 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * So the database must be up and running.
      *
      * @return a DTO with the schema information
-     * @see SutController#setDbSpecification
+     * @see SutController#getDbSpecification
      */
     public final DbSchemaDto getSqlDatabaseSchema() {
         if (schemaDto != null) {
             return schemaDto;
         }
 
-        if (setDbSpecification() == null || setDbSpecification().connection == null) {
+        if (getDbSpecification() == null || getDbSpecification().connections == null) {
             return null;
         }
 
         try {
-            schemaDto = SchemaExtractor.extract(setDbSpecification().connection);
+            schemaDto = SchemaExtractor.extract(getConnectionIfExist());
         } catch (Exception e) {
             SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage());
             return null;
