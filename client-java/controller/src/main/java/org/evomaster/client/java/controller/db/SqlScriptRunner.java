@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.db;
 
+import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.insert.Insert;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
@@ -360,10 +362,10 @@ public class SqlScriptRunner {
                 result = execCommand(conn, command+";");
 
             if (ParserUtils.isInsert(command) && result != null){
-                result.getAllTables().forEach(t->{
-                    tableSqlMap.putIfAbsent(t, new HashSet<>());
-                    tableSqlMap.get(t).add(command+";");
-                });
+                Insert stmt = (Insert) ParserUtils.asStatement(command);
+                Table table = stmt.getTable();
+                tableSqlMap.putIfAbsent(table.getName(), new HashSet<>());
+                tableSqlMap.get(table.getName()).add(command+";");
             }
         }
 

@@ -5,7 +5,6 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
-import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -176,6 +175,12 @@ public interface SutHandler {
 
     DbSpecification setDbSpecification();
 
+
+    /**
+     * <p>
+     * reset database if the smart db cleaning is employed
+     * </p>
+     */
     default void resetDatabase(){
         DbSpecification spec = setDbSpecification();
         if (spec==null || spec.connection == null || !spec.employSmartDbClean){

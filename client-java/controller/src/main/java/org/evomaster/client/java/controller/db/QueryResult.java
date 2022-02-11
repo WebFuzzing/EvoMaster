@@ -143,11 +143,4 @@ public class QueryResult {
 
         return dto;
     }
-
-    /**
-     * @return a list of tables with the query
-     */
-    public List<String> getAllTables(){
-        return variableDescriptors.stream().map(x-> x.getTableName()).collect(Collectors.toList());
-    }
 }

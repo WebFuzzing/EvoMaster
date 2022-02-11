@@ -310,6 +310,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         Set<String> tableDataToInit = accessedTables.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
 
+
         // init db script
         if (emDbClean.initSqlScript != null && (tableInitSqlMap.isEmpty()
                 || !tableDataToInit.isEmpty())){
@@ -320,12 +321,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     tableInitSqlMap.putAll(map);
                 }else{
                     tableDataToInit.forEach(a->{
-                        tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(c->{
-                            try {
-                                SqlScriptRunner.execCommand(emDbClean.connection, c);
-                            } catch (SQLException e) {
-                                throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
-                            }
+                        tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
+                            tableInitSqlMap.get(t).forEach(c->{
+                                try {
+                                   SqlScriptRunner.execCommand(emDbClean.connection, c);
+                                } catch (SQLException e) {
+                                    throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
+                                }
+                            });
                         });
                     });
                 }
