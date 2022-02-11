@@ -596,7 +596,6 @@ public class RPCEndpointsBuilder {
         for (int i = 0; i < typeVariables.length; i++){
             map.put(typeVariables[i], actualTypes[i]);
         }
-        handleGenericType(clazz.getSuperclass(), clazz.getGenericSuperclass(), map);
     }
 
     private static Type getActualType(Map<TypeVariable, Type> map, TypeVariable typeVariable){
