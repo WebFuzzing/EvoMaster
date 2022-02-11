@@ -95,7 +95,7 @@ abstract class SpringRestPostgresController(
     }
 
     override fun resetStateOfSUT() {
-        DbCleaner.clearDatabase_Postgres(sqlConnection, "public", listOf("flyway_schema_history"))
+//        DbCleaner.clearDatabase_Postgres(sqlConnection, "public", listOf("flyway_schema_history"))
     }
 
     override fun getProblemInfo(): ProblemInfo {
@@ -113,6 +113,7 @@ abstract class SpringRestPostgresController(
         return DbSpecification().apply {
             connections = Arrays.asList(sqlConnection)
             dbType = DatabaseType.POSTGRES
+            schemaName = "public"
         }
     }
 

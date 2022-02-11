@@ -306,7 +306,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public void cleanAccessedTables(){
         DbSpecification emDbClean = getDbSpecification();
         if (emDbClean == null) return;
-        if (getConnectionIfExist() == null || !emDbClean.employSmartDbClean) return;
+        if (getConnectionIfExist() == null || !emDbClean.employSmartDbClean || accessedTables.isEmpty()) return;
 
         DbCleaner.clearDatabase(getConnectionIfExist(), emDbClean.schemaName,  null, accessedTables, emDbClean.dbType);
 
