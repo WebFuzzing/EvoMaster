@@ -3,8 +3,11 @@ package org.evomaster.client.java.controller;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.utils.SimpleLogger;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -170,6 +173,23 @@ public interface SutHandler {
      *
      * @return {@code null} if the SUT does not use any SQL database
      */
-    public abstract DbSpecification setDbSpecification();
+
+    DbSpecification setDbSpecification();
+
+    default void resetDatabase(){
+        DbSpecification spec = setDbSpecification();
+        if (spec==null || spec.connection == null || !spec.employSmartDbClean){
+            return;
+        }
+        DbCleaner.clearDatabase(spec.connection, spec.schemaName, null, null, spec.dbType);
+        if (spec.initSqlScript != null) {
+            try {
+                SqlScriptRunner.execScript(spec.connection, spec.initSqlScript);
+            } catch (SQLException e) {
+                throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
+            }
+        }
+    }
+
 
 }
