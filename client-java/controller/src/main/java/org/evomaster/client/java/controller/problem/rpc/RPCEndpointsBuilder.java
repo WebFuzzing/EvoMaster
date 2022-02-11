@@ -492,7 +492,8 @@ public class RPCEndpointsBuilder {
                     getAllFields(clazz, fieldList, rpcType);
 
                     Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
-                    handleGenericType(clazz, genericTypeMap);
+                    handleGenericSuperclass(clazz, genericTypeMap);
+                    handleGenericType(clazz, genericType, genericTypeMap);
 
                     for(Field f: fieldList){
                         // skip final field
@@ -571,7 +572,7 @@ public class RPCEndpointsBuilder {
         return namedValue;
     }
 
-    private static void handleGenericType(Class clazz, Map<TypeVariable, Type> map){
+    private static void handleGenericSuperclass(Class clazz, Map<TypeVariable, Type> map){
         if (clazz.getGenericSuperclass() == null || !(clazz.getGenericSuperclass() instanceof ParameterizedType)) return;
         Type[] actualTypes = ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments();
         if (((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments().length == 0) return;
@@ -582,7 +583,20 @@ public class RPCEndpointsBuilder {
         for (int i = 0; i < typeVariables.length; i++){
             map.put(typeVariables[i], actualTypes[i]);
         }
-        handleGenericType(clazz.getSuperclass(), map);
+        handleGenericSuperclass(clazz.getSuperclass(), map);
+    }
+
+    private static void handleGenericType(Class<?> clazz, Type genericType, Map<TypeVariable, Type> map){
+        if (!(genericType instanceof ParameterizedType)) return;
+        Type[] actualTypes = ((ParameterizedType) genericType).getActualTypeArguments();
+        TypeVariable[] typeVariables = clazz.getTypeParameters();
+        if (typeVariables.length != actualTypes.length){
+            throw new RuntimeException("Error: fail to handle generic types in Dto");
+        }
+        for (int i = 0; i < typeVariables.length; i++){
+            map.put(typeVariables[i], actualTypes[i]);
+        }
+        handleGenericType(clazz.getSuperclass(), clazz.getGenericSuperclass(), map);
     }
 
     private static Type getActualType(Map<TypeVariable, Type> map, TypeVariable typeVariable){
