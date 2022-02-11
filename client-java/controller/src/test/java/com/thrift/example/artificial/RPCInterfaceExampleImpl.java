@@ -166,4 +166,25 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         dto.setMessage(dto.getMessage()!=null? dto.getCode().stream().map(x-> x+1).collect(Collectors.toList()): Arrays.asList(0));
         return dto;
     }
+
+    @Override
+    public GenericDto<Integer, String> handleGenericIntString(GenericDto<Integer, String> dto) {
+        dto.data1 = dto.data1 == null? 0 : dto.data1+1;
+        dto.data2 = dto.data2 == null? "generic" : "generic"+dto.data2;
+        return dto;
+    }
+
+    @Override
+    public GenericDto<StringChildDto, String> handleGenericObjectString(GenericDto<StringChildDto, String> dto) {
+        if (dto.data1 == null)
+            dto.data1 = new StringChildDto(){{
+                setMessage(child_mark);
+                setCode(child_mark);
+            }};
+        else{
+         dto.data1 = handledInheritedGenericStringDto(dto.data1);
+        }
+        dto.data2 =  dto.data2 == null? "generic" : "generic"+dto.data2;
+        return dto;
+    }
 }

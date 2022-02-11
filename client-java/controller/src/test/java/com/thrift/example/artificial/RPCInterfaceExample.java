@@ -56,4 +56,8 @@ public interface RPCInterfaceExample {
     IntChildDto handledInheritedGenericIntDto(IntChildDto dto);
 
     ListChildDto handledInheritedGenericListDto(ListChildDto dto);
+
+    GenericDto<Integer, String> handleGenericIntString(GenericDto<Integer, String> dto);
+
+    GenericDto<StringChildDto, String> handleGenericObjectString(GenericDto<StringChildDto, String> dto);
 }
