@@ -54,10 +54,15 @@ public class DbCleaner {
             disableReferentialIntegrity(statement, type);
 
 
-            cleanDataInTables(tableToSkip, tableToClean, statement, type, schemaName, isSingleCleanCommand(type), doDropTable);
+            List<String> cleanedTable = cleanDataInTables(tableToSkip, tableToClean, statement, type, schemaName, isSingleCleanCommand(type), doDropTable);
 
-            if (doResetSequence)
-                resetSequences(statement, type, schemaName);
+            if (doResetSequence){
+                List<String> sequenceToClean = null;
+                if (type == DatabaseType.MYSQL || type == DatabaseType.MARIADB)
+                    sequenceToClean = cleanedTable;
+                resetSequences(statement, type, schemaName, sequenceToClean);
+            }
+
 
             enableReferentialIntegrity(statement, type);
             statement.close();
@@ -144,8 +149,9 @@ public class DbCleaner {
      * @param singleCommand specify whether to execute the SQL commands (e.g., truncate table/tables) by single command
      * @param doDropTable specify whether to drop tables which is only for MySQL and MariaDB now.
      * @throws SQLException are exceptions during sql execution
+     * @return a list of tables which have been cleaned
      */
-    private static void cleanDataInTables(List<String> tableToSkip, List<String> tableToClean, Statement statement, DatabaseType type, String schema, boolean singleCommand, boolean doDropTable) throws SQLException {
+    private static List<String> cleanDataInTables(List<String> tableToSkip, List<String> tableToClean, Statement statement, DatabaseType type, String schema, boolean singleCommand, boolean doDropTable) throws SQLException {
         if (tableToSkip != null && (!tableToSkip.isEmpty()) && tableToClean != null && (!tableToClean.isEmpty()) )
             throw new IllegalArgumentException("tableToSkip and tableToClean cannot be configured at the same time.");
 
@@ -230,6 +236,7 @@ public class DbCleaner {
                 }
             }
         }
+        return tablesToClear;
     }
 
 
@@ -256,7 +263,7 @@ public class DbCleaner {
         statement.executeUpdate("TRUNCATE TABLE " + table);
     }
 
-    private static void resetSequences(Statement s, DatabaseType type, String schemaName) throws SQLException {
+    private static void resetSequences(Statement s, DatabaseType type, String schemaName, List<String> sequenceToClean) throws SQLException {
         ResultSet rs;// Idem for sequences
         Set<String> sequences = new HashSet<>();
 
@@ -266,7 +273,8 @@ public class DbCleaner {
         }
         rs.close();
         for (String seq : sequences) {
-            s.executeUpdate(resetSequenceCommand(seq, type));
+            if (sequenceToClean == null || sequenceToClean.isEmpty() || sequenceToClean.stream().anyMatch(x-> x.equalsIgnoreCase(seq)))
+                s.executeUpdate(resetSequenceCommand(seq, type));
         }
 
         /*
