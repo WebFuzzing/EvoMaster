@@ -292,7 +292,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             if (executionDto != null){
                 accessedTables.addAll(executionDto.deletedData);
                 accessedTables.addAll(executionDto.insertedData.keySet());
-                accessedTables.addAll(executionDto.queriedData.keySet());
+//                accessedTables.addAll(executionDto.queriedData.keySet());
                 accessedTables.addAll(executionDto.insertedData.keySet());
                 accessedTables.addAll(executionDto.updatedData.keySet());
             }
@@ -850,37 +850,4 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return null;
     }
 
-
-    /**
-     * <p>
-     * If the system under test (SUT) uses a SQL database, we need to have a
-     * configured DbSpecification to access/reset it.
-     * </p>
-     *
-     * <p>
-     * When accessing a {@code Connection} object to reset the state of
-     * the application, we suggest to save it to field (eg when starting the
-     * application), and set such field with {@link DbSpecification#connection}.
-     * This connection object will be used by EvoMaster to analyze the state of
-     * the database to create better test cases.
-     * </p>
-     *
-     * <p>
-     * To handle db in the context of testing, there might be a need to initialize
-     * data into database with a sql script. such info could be specified with
-     * {@link DbSpecification#dbType}
-     * </p>
-     *
-     * <p>
-     * With EvoMaster, we also support a smart DB cleaner by removing all data in tables
-     * which has been accessed after each test. In order to achieve this, we requires user
-     * to set a set of info such as database type with {@link DbSpecification#dbType},
-     * schema name with {@link DbSpecification#schemaName} (TODO might remove later).
-     * In addition, we also provide an option (default is {@code true}) to configure
-     * if such cleaner is preferred with {@link DbSpecification#employSmartDbClean}.
-     * </p>
-     *
-     * @return {@code null} if the SUT does not use any SQL database
-     */
-    public abstract DbSpecification setDbSpecification();
 }
