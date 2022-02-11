@@ -25,7 +25,7 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
         return new DbSpecification(){{
             dbType = DatabaseType.H2;
             connections = Arrays.asList(sqlConnection);
-            employSmartDbClean = false;
+            employSmartDbClean = true;
         }};
     }
 

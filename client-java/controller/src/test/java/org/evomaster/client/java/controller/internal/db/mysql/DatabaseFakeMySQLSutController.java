@@ -25,7 +25,8 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
         return new DbSpecification(){{
             dbType = DatabaseType.MYSQL;
             connections = Arrays.asList(sqlConnection);
-            employSmartDbClean = false;
+            employSmartDbClean = true;
+            schemaName = "test";
         }};
     }
 
