@@ -206,7 +206,7 @@ class RPCEndpointsHandler {
         problem.schemas.forEach { i->
             i.types.sortedBy { it.type.depth }
                 .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
-                typeCache[t.type.fullTypeName] = handleObjectType(t)
+                typeCache[t.type.fullTypeNameWithGenericType] = handleObjectType(t)
             }
 
         }

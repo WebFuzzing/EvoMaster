@@ -47,6 +47,10 @@ public class TypeSchema {
         return fullTypeName;
     }
 
+    public String getFullTypeNameWithGenericType(){
+        return fullTypeName;
+    }
+
     public TypeSchema copy(){
         return new TypeSchema(type, fullTypeName, clazz);
     }
@@ -54,6 +58,7 @@ public class TypeSchema {
     public TypeDto getDto(){
         TypeDto dto = new TypeDto();
         dto.fullTypeName = fullTypeName;
+        dto.fullTypeNameWithGenericType = getFullTypeNameWithGenericType();
         dto.depth = depth;
         return dto;
     }

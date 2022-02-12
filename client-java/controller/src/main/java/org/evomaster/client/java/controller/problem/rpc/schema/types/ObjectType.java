@@ -16,10 +16,16 @@ public class ObjectType extends TypeSchema {
      */
     private final List<NamedTypedValue> fields;
 
+    /**
+     * a list of generic types
+     */
+    private final List<String> genericTypes;
 
-    public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields, Class<?> clazz) {
+
+    public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields, Class<?> clazz, List<String> genericTypes) {
         super(type, fullTypeName, clazz);
         this.fields = fields;
+        this.genericTypes = genericTypes;
     }
 
     public List<NamedTypedValue> getFields() {
@@ -41,8 +47,17 @@ public class ObjectType extends TypeSchema {
                 cfields.add(f.copyStructureWithProperties());
             }
         }
-        ObjectType objectType = new ObjectType(getType(), getFullTypeName(), cfields ,getClazz());
+        List<String> genericTypes = this.genericTypes != null? new ArrayList<>(this.genericTypes): null;
+        ObjectType objectType = new ObjectType(getType(), getFullTypeName(), cfields ,getClazz(), genericTypes);
         objectType.depth = depth;
         return objectType;
+    }
+
+    @Override
+    public String getFullTypeNameWithGenericType() {
+        if (genericTypes == null || genericTypes.isEmpty())
+            return getFullTypeName();
+        else
+            return String.format("%s<%s>", getFullTypeName(), String.join(", ", genericTypes));
     }
 }

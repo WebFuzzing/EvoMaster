@@ -484,6 +484,9 @@ public class RPCEndpointsBuilder {
 
                 long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName()))).count();
 
+                handleGenericSuperclass(clazz, genericTypeMap);
+                List<String> genericTypes = handleGenericType(clazz, genericType, genericTypeMap);
+
                 if (cycleSize == 1){
                     List<NamedTypedValue> fields = new ArrayList<>();
 
@@ -492,10 +495,6 @@ public class RPCEndpointsBuilder {
                     // field list
                     List<Field> fieldList = new ArrayList<>();
                     getAllFields(clazz, fieldList, rpcType);
-
-//                    Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
-                    handleGenericSuperclass(clazz, genericTypeMap);
-                    handleGenericType(clazz, genericType, genericTypeMap);
 
                     for(Field f: fieldList){
                         // skip final field
@@ -546,14 +545,14 @@ public class RPCEndpointsBuilder {
 
                     handleNativeRPCConstraints(clazz, fields, rpcType);
 
-                    ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz);
+                    ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz, genericTypes);
                     otype.setOriginalType(originalType);
                     otype.depth = getDepthLevel(clazz, depth);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = oparam;
                 }else {
-                    CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz);
+                    CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz, genericTypes);
                     otype.depth = getDepthLevel(clazz, depth);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
                     schema.registerType(otype.copy(), oparam);
@@ -588,16 +587,24 @@ public class RPCEndpointsBuilder {
         handleGenericSuperclass(clazz.getSuperclass(), map);
     }
 
-    private static void handleGenericType(Class<?> clazz, Type genericType, Map<TypeVariable, Type> map){
-        if (!(genericType instanceof ParameterizedType)) return;
+    private static List<String> handleGenericType(Class<?> clazz, Type genericType, Map<TypeVariable, Type> map){
+        if (!(genericType instanceof ParameterizedType)) return null;
+        List<String> genericTypes = new ArrayList<>();
         Type[] actualTypes = ((ParameterizedType) genericType).getActualTypeArguments();
         TypeVariable[] typeVariables = clazz.getTypeParameters();
         if (typeVariables.length != actualTypes.length){
             throw new RuntimeException("Error: fail to handle generic types in Dto");
         }
         for (int i = 0; i < typeVariables.length; i++){
+            Type a = actualTypes[i];
+            if (a instanceof TypeVariable)
+                a = getActualType(map, (TypeVariable) a);
+            if (a != null)
+                genericTypes.add(a.getTypeName());
+
             map.put(typeVariables[i], actualTypes[i]);
         }
+        return genericTypes;
     }
 
     private static Type getActualType(Map<TypeVariable, Type> map, TypeVariable typeVariable){
