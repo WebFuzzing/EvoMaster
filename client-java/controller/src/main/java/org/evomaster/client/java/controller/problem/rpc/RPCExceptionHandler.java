@@ -116,7 +116,7 @@ public class RPCExceptionHandler {
         if (endpointSchema.getExceptions() == null) return null;
 
         for (NamedTypedValue p : endpointSchema.getExceptions()){
-            String type = p.getType().getFullTypeName();
+            String type = p.getType().getFullTypeNameWithGenericType();
             // skip to handle root TException here
             if (rpcType == RPCType.THRIFT && type.equals(THRIFT_EXCEPTION_ROOT))
                 continue;

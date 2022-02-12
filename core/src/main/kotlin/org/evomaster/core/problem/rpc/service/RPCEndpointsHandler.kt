@@ -674,9 +674,9 @@ class RPCEndpointsHandler {
     }
 
     private fun handleObjectType(type: ParamDto): Gene{
-        val typeName = type.type.fullTypeName
+        val typeName = type.type.fullTypeNameWithGenericType
         if (type.innerContent.isEmpty()){
-            LoggingUtil.uniqueWarn(log, "Object with name (${type.type.fullTypeName}) has empty fields")
+            LoggingUtil.uniqueWarn(log, "Object with name (${type.type.fullTypeNameWithGenericType}) has empty fields")
             //return MapGene(typeName, PairGene.createStringPairGene(StringGene( "field"), isFixedFirst = true))
             return ObjectGene(typeName, listOf(), refType = typeName)
         }
@@ -687,8 +687,8 @@ class RPCEndpointsHandler {
     }
 
     private fun handleObjectParam(param: ParamDto): Gene{
-        val objType = typeCache[param.type.fullTypeName]
-            ?:throw IllegalStateException("missing ${param.type.fullTypeName} in typeCache")
+        val objType = typeCache[param.type.fullTypeNameWithGenericType]
+            ?:throw IllegalStateException("missing ${param.type.fullTypeNameWithGenericType} in typeCache")
         return objType.copy().apply { this.name = param.name }
     }
 
