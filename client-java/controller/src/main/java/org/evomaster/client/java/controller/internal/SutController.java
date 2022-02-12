@@ -313,10 +313,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         for (String t: accessedTables){
             String key = formatTableName(t);
             if (!tablesToClean.contains(key)){
-                tablesToClean.add(key);
-                List<String> fk = fkMap.entrySet().stream().filter(e-> e.getValue().contains(key) && !tablesToClean.contains(e.getKey())).map(Map.Entry::getKey).collect(Collectors.toList());
-                if (!fk.isEmpty())
-                    getTableToClean(fk, tablesToClean);
+                if (fkMap.get(key) != null){
+                    tablesToClean.add(key);
+                    List<String> fk = fkMap.entrySet().stream().filter(e-> e.getValue().contains(key) && !tablesToClean.contains(e.getKey())).map(Map.Entry::getKey).collect(Collectors.toList());
+                    if (!fk.isEmpty())
+                        getTableToClean(fk, tablesToClean);
+                }else {
+                    SimpleLogger.uniqueWarn("Cannot find the table "+key+" in ["+String.join(",", fkMap.keySet())+"]");
+                }
+
             }
         }
     }

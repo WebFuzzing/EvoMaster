@@ -72,6 +72,6 @@ public class TypeSchema {
     }
 
     public String getTypeNameForInstance(){
-        return getFullTypeName();
+        return getFullTypeNameWithGenericType();
     }
 }
