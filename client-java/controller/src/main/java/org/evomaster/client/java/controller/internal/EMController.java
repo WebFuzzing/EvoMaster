@@ -545,7 +545,8 @@ public class EMController {
                     // TODO handle exception on responseDto later
                     String msg = "Thrown exception: " + e.getMessage();
                     SimpleLogger.error(msg, e);
-                    return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+                    responseDto.error500Msg = msg;
+                    return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
                 }
 
             }

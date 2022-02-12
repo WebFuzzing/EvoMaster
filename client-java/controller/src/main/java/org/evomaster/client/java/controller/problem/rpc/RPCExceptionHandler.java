@@ -103,8 +103,9 @@ public class RPCExceptionHandler {
                 SimpleLogger.error("Fail to extract exception type info for an exception "+ e.getClass().getName());
             }
 
-        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |  IllegalAccessException ex) {
-            throw new IllegalStateException("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
+        } catch (ClassNotFoundException ex) {
+            SimpleLogger.error("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
+            //throw new IllegalStateException("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
         }
 
         return dto;
@@ -132,15 +133,21 @@ public class RPCExceptionHandler {
         return null;
     }
 
-    private static void handleTException(Object e, RPCExceptionInfoDto dto) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
+    private static void handleTException(Object e, RPCExceptionInfoDto dto)  {
         dto.exceptionName = e.getClass().getName();
         dto.exceptionMessage = getExceptionMessage(e);
 
-        Method getType = e.getClass().getDeclaredMethod("getType");
-        getType.setAccessible(true);
-        int type = (int) getType.invoke(e);
+        Method getType = null;
+        try {
+            getType = e.getClass().getDeclaredMethod("getType");
+            getType.setAccessible(true);
+            int type = (int) getType.invoke(e);
 
-        dto.type = getExceptionType(extract(e), type);
+            dto.type = getExceptionType(extract(e), type);
+        } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException ex) {
+            SimpleLogger.error("Fail to get type of TException with getType() "+ex.getMessage());
+        }
+
 
     }
 

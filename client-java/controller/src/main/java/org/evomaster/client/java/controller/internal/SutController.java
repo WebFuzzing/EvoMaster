@@ -582,7 +582,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
                 return;
             } catch (Exception e){
-                throw new RuntimeException("ERROR: fail to handle exception instance to dto "+ e.getMessage());
+                SimpleLogger.error("ERROR: fail to handle exception instance to dto "+ e.getMessage());
+                //throw new RuntimeException("ERROR: fail to handle exception instance to dto "+ e.getMessage());
             }
         }
 
@@ -598,13 +599,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     else
                         responseDto.jsonResponse = objectMapper.writeValueAsString(response);
                 } catch (Exception e){
-                    throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
+                    SimpleLogger.error("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
+                    //throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
                 }
 
                 try {
                     responseDto.customizedCallResultCode = categorizeBasedOnResponse(response);
                 } catch (Exception e){
-                    throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
+                    SimpleLogger.error("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
+                    //throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
                 }
             }
         }
