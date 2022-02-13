@@ -40,41 +40,52 @@ public class RPCExceptionHandler {
                 exceptionToHandle = cause;
                 isCause = true;
             }
-
         }
 
+        boolean handled = false;
+        RPCExceptionInfoDto exceptionInfoDto = null;
         try {
-            dto.exceptionInfoDto = handleDefinedException(exceptionToHandle, endpointSchema, type);
-            if (dto.exceptionInfoDto != null) {
+            exceptionInfoDto = handleExceptionNameAndMessage(e);
+
+            handled = handleDefinedException(exceptionToHandle, endpointSchema, type, exceptionInfoDto);
+            if (handled) {
+                dto.exceptionInfoDto = exceptionInfoDto;
                 dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
                 return;
             }
         } catch (ClassNotFoundException ex) {
+            dto.exceptionInfoDto = exceptionInfoDto;
             throw new RuntimeException("ERROR: fail to handle defined exception for "+type+" with error msg:"+ ex);
         }
 
         // handling defined exception for each RPC
         switch (type){
-            case THRIFT: dto.exceptionInfoDto = handleThrift(exceptionToHandle, endpointSchema); break;
+            case THRIFT: handled = handleThrift(exceptionToHandle, endpointSchema, exceptionInfoDto); break;
             case GENERAL: break; // do nothing
             default: throw new RuntimeException("ERROR: NOT SUPPORT exception handling for "+type);
         }
-        if (dto.exceptionInfoDto == null) {
-            dto.exceptionInfoDto = handleUnexpectedException(exceptionToHandle);
+        if (handled) {
+            handleUnexpectedException(exceptionToHandle, exceptionInfoDto);
+            dto.exceptionInfoDto = exceptionInfoDto;
         }
 
         dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
     }
 
-    private static RPCExceptionInfoDto handleUnexpectedException(Object e){
-        RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
+    private static void handleUnexpectedException(Object e, RPCExceptionInfoDto dto){
+
         dto.type = RPCExceptionType.UNEXPECTED_EXCEPTION;
+
+    }
+
+    private static RPCExceptionInfoDto handleExceptionNameAndMessage(Object e){
+        RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
 
         if (Exception.class.isAssignableFrom(e.getClass())){
             dto.exceptionName = e.getClass().getName();
             dto.exceptionMessage = getExceptionMessage(e);
         }else
-            throw new RuntimeException("ERROR: the exception is not java.lang.Exception "+e.getClass().getName());
+            SimpleLogger.error("ERROR: the exception is not java.lang.Exception "+e.getClass().getName());
 
         return dto;
     }
@@ -88,18 +99,17 @@ public class RPCExceptionHandler {
      * @param endpointSchema is the schema of this endpoint
      * @return extracted exception dto
      */
-    private static RPCExceptionInfoDto handleThrift(Object e, EndpointSchema endpointSchema)  {
-        RPCExceptionInfoDto dto = null;
-
+    private static boolean handleThrift(Object e, EndpointSchema endpointSchema, RPCExceptionInfoDto dto)  {
+        boolean handled = false;
         try {
             if (!isRootThriftException(e)){
                 SimpleLogger.error("Exception e is not an instance of TException of Thrift, and it is "+ e.getClass().getName());
-                return dto;
+                return false;
             }
-            dto = new RPCExceptionInfoDto();
-            handleTException(e, dto);
 
-            if (dto.type == null){
+            handled = handleTException(e, dto);
+
+            if (!handled){
                 SimpleLogger.error("Fail to extract exception type info for an exception "+ e.getClass().getName());
             }
 
@@ -108,13 +118,13 @@ public class RPCExceptionHandler {
             //throw new IllegalStateException("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
         }
 
-        return dto;
+        return handled;
     }
 
 
-    private static RPCExceptionInfoDto handleDefinedException(Object e, EndpointSchema endpointSchema, RPCType rpcType) throws ClassNotFoundException {
+    private static boolean handleDefinedException(Object e, EndpointSchema endpointSchema, RPCType rpcType, RPCExceptionInfoDto dto) throws ClassNotFoundException {
 
-        if (endpointSchema.getExceptions() == null) return null;
+        if (endpointSchema.getExceptions() == null) return false;
 
         for (NamedTypedValue p : endpointSchema.getExceptions()){
             String type = p.getType().getFullTypeNameWithGenericType();
@@ -122,20 +132,16 @@ public class RPCExceptionHandler {
             if (rpcType == RPCType.THRIFT && type.equals(THRIFT_EXCEPTION_ROOT))
                 continue;
             if (isInstanceOf(e, type)){
-                RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
                 p.setValueBasedOnInstance(e);
                 dto.exceptionDto = p.getDto();
                 dto.type = RPCExceptionType.CUSTOMIZED_EXCEPTION;
-                dto.exceptionName = e.getClass().getName();
-                return dto;
+                return true;
             }
         }
-        return null;
+        return false;
     }
 
-    private static void handleTException(Object e, RPCExceptionInfoDto dto)  {
-        dto.exceptionName = e.getClass().getName();
-        dto.exceptionMessage = getExceptionMessage(e);
+    private static boolean handleTException(Object e, RPCExceptionInfoDto dto)  {
 
         Method getType = null;
         try {
@@ -144,12 +150,11 @@ public class RPCExceptionHandler {
             int type = (int) getType.invoke(e);
 
             dto.type = getExceptionType(extract(e), type);
+            return true;
         } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException ex) {
-            dto.type = RPCExceptionType.UNEXPECTED_EXCEPTION;
             SimpleLogger.error("Fail to get type of TException with getType() "+ex.getMessage());
         }
-
-
+        return false;
     }
 
     private static String getExceptionMessage(Object e)  {
