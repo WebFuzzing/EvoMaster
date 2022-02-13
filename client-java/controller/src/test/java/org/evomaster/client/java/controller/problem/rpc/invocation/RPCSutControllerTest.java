@@ -156,7 +156,7 @@ public class RPCSutControllerTest {
         rpcController.executeAction(dto, responseDto);
 
         assertEquals(10, responseDto.testScript.size());
-        assertEquals("com.thrift.example.artificial.GenericDto res1 = null;", responseDto.testScript.get(0));
+        assertEquals("com.thrift.example.artificial.GenericDto<java.lang.Integer, java.lang.String> res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
         assertEquals(" com.thrift.example.artificial.GenericDto<java.lang.Integer, java.lang.String> arg0 = null;", responseDto.testScript.get(2));
         assertEquals(" {", responseDto.testScript.get(3));
@@ -189,7 +189,7 @@ public class RPCSutControllerTest {
         rpcController.executeAction(dto, responseDto);
 
         assertEquals(15, responseDto.testScript.size());
-        assertEquals("com.thrift.example.artificial.GenericDto res1 = null;", responseDto.testScript.get(0));
+        assertEquals("com.thrift.example.artificial.GenericDto<com.thrift.example.artificial.StringChildDto, java.lang.String> res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
         assertEquals(" com.thrift.example.artificial.GenericDto<com.thrift.example.artificial.StringChildDto, java.lang.String> arg0 = null;", responseDto.testScript.get(2));
         assertEquals(" {", responseDto.testScript.get(3));
