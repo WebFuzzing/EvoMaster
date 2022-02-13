@@ -45,7 +45,7 @@ public class RPCExceptionHandler {
         boolean handled = false;
         RPCExceptionInfoDto exceptionInfoDto = null;
         try {
-            exceptionInfoDto = handleExceptionNameAndMessage(e);
+            exceptionInfoDto = handleExceptionNameAndMessage(exceptionToHandle);
 
             handled = handleDefinedException(exceptionToHandle, endpointSchema, type, exceptionInfoDto);
             if (handled) {
@@ -64,10 +64,11 @@ public class RPCExceptionHandler {
             case GENERAL: break; // do nothing
             default: throw new RuntimeException("ERROR: NOT SUPPORT exception handling for "+type);
         }
-        if (handled) {
+        if (!handled) {
             handleUnexpectedException(exceptionToHandle, exceptionInfoDto);
-            dto.exceptionInfoDto = exceptionInfoDto;
         }
+
+        dto.exceptionInfoDto = exceptionInfoDto;
 
         dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
     }
