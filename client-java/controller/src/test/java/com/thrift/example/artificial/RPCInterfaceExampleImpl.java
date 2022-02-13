@@ -1,10 +1,7 @@
 package com.thrift.example.artificial;
 
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -185,6 +182,27 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
          dto.data1 = handledInheritedGenericStringDto(dto.data1);
         }
         dto.data2 =  dto.data2 == null? "generic" : "generic"+dto.data2;
+        return dto;
+    }
+
+    @Override
+    public NestedGenericDto<String> handleNestedGenericString(NestedGenericDto<String> dto) {
+        if (dto.intData == null){
+            dto.intData = new GenericDto<String, Integer>(){{
+                data1 = child_mark;
+                data2 = 0;
+            }};
+        }
+        if (dto.stringData == null){
+            dto.stringData = new GenericDto<String, String>(){{
+                data1 = child_mark;
+                data2 = child_mark;
+            }};
+        }
+        if (dto.list == null){
+            dto.list = Arrays.asList(child_mark, child_mark);
+        }
+
         return dto;
     }
 }

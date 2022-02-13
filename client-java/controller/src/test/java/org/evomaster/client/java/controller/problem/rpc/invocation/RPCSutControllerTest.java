@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.invocation;
 
+import com.thrift.example.artificial.*;
 import io.restassured.RestAssured;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
@@ -54,6 +55,92 @@ public class RPCSutControllerTest {
         rpcController.stopSut();
     }
 
+
+    @Test
+    public void testTypes(){
+        List<String> types = interfaceSchemas.get(0).types.stream().map(t-> t.type.fullTypeNameWithGenericType).collect(Collectors.toList());
+        assertTrue(types.contains(GenericResponse.class.getName()));
+        assertTrue(types.contains(ObjectResponse.class.getName()));
+        assertTrue(types.contains(CycleAObj.class.getName()));
+        assertTrue(types.contains(CycleBObj.class.getName()));
+        assertTrue(types.contains(ConstrainedRequest.class.getName()));
+        assertTrue(types.contains(CustomizedRequestA.class.getName()));
+        assertTrue(types.contains(CustomizedRequestB.class.getName()));
+        assertTrue(types.contains(AuthLoginDto.class.getName()));
+        assertTrue(types.contains(PrivateFieldInResponseDto.class.getName()));
+        assertTrue(types.contains(ByteResponse.class.getName()));
+
+        assertTrue(types.contains(StringChildDto.class.getName()));
+        assertTrue(types.contains(IntChildDto.class.getName()));
+        assertTrue(types.contains(ListChildDto.class.getName()));
+        assertTrue(types.contains(GenericDto.class.getName()+"<"+Integer.class.getName()+", "+String.class.getName()+">"));
+        assertTrue(types.contains(GenericDto.class.getName()+"<"+StringChildDto.class.getName()+", "+String.class.getName()+">"));
+        assertTrue(types.contains(NestedGenericDto.class.getName()+"<"+String.class.getName()+">"));
+        assertTrue(types.contains(GenericDto.class.getName()+"<"+String.class.getName()+", "+Integer.class.getName()+">"));
+
+    }
+
+    @Test
+    public void testHandleNestedGenericString(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("handleNestedGenericString")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).innerContent = null;
+        rpcController.executeAction(dto, responseDto);
+
+
+        assertEquals(5, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.NestedGenericDto<java.lang.String> res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" com.thrift.example.artificial.NestedGenericDto<java.lang.String> arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handleNestedGenericString(arg0);", responseDto.testScript.get(3));
+        assertEquals("}", responseDto.testScript.get(4));
+
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals("java.lang.NullPointerException", responseDto.exceptionInfoDto.exceptionName);
+
+        dto = dtos.get(0).copy();
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        dto.maxAssertionForDataInCollection = 4;
+        dto.requestParams.get(0).innerContent.get(0).innerContent = null;
+        dto.requestParams.get(0).innerContent.get(1).innerContent = null;
+        dto.requestParams.get(0).innerContent.get(2).innerContent = null;
+        rpcController.executeAction(dto, responseDto);
+
+
+        assertEquals(11, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.NestedGenericDto<java.lang.String> res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" com.thrift.example.artificial.NestedGenericDto<java.lang.String> arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" {", responseDto.testScript.get(3));
+        assertEquals("  arg0 = new com.thrift.example.artificial.NestedGenericDto<java.lang.String>();", responseDto.testScript.get(4));
+        assertEquals("  arg0.intData = null;", responseDto.testScript.get(5));
+        assertEquals("  arg0.stringData = null;", responseDto.testScript.get(6));
+        assertEquals("  arg0.list = null;", responseDto.testScript.get(7));
+        assertEquals(" }", responseDto.testScript.get(8));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handleNestedGenericString(arg0);", responseDto.testScript.get(9));
+        assertEquals("}", responseDto.testScript.get(10));
+
+        assertEquals("assertEquals(\"child\", res1.intData.data1);", responseDto.assertionScript.get(0));
+        assertEquals("assertEquals(0, res1.intData.data2.intValue());", responseDto.assertionScript.get(1));
+        assertEquals("assertEquals(\"child\", res1.stringData.data1);", responseDto.assertionScript.get(2));
+        assertEquals("assertEquals(\"child\", res1.stringData.data2);", responseDto.assertionScript.get(3));
+        assertEquals("assertEquals(2, res1.list.size());", responseDto.assertionScript.get(4));
+        assertEquals("assertEquals(\"child\", res1.list.get(0));", responseDto.assertionScript.get(5));
+        assertEquals("assertEquals(\"child\", res1.list.get(1));", responseDto.assertionScript.get(6));
+
+    }
+
     @Test
     public void testHandleGenericIntString(){
         List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("handleGenericIntString")).collect(Collectors.toList());
@@ -71,9 +158,9 @@ public class RPCSutControllerTest {
         assertEquals(10, responseDto.testScript.size());
         assertEquals("com.thrift.example.artificial.GenericDto res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
-        assertEquals(" com.thrift.example.artificial.GenericDto arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" com.thrift.example.artificial.GenericDto<java.lang.Integer, java.lang.String> arg0 = null;", responseDto.testScript.get(2));
         assertEquals(" {", responseDto.testScript.get(3));
-        assertEquals("  arg0 = new com.thrift.example.artificial.GenericDto();", responseDto.testScript.get(4));
+        assertEquals("  arg0 = new com.thrift.example.artificial.GenericDto<java.lang.Integer, java.lang.String>();", responseDto.testScript.get(4));
         assertEquals("  arg0.data1 = null;", responseDto.testScript.get(5));
         assertEquals("  arg0.data2 = null;", responseDto.testScript.get(6));
         assertEquals(" }", responseDto.testScript.get(7));
@@ -104,9 +191,9 @@ public class RPCSutControllerTest {
         assertEquals(15, responseDto.testScript.size());
         assertEquals("com.thrift.example.artificial.GenericDto res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
-        assertEquals(" com.thrift.example.artificial.GenericDto arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" com.thrift.example.artificial.GenericDto<com.thrift.example.artificial.StringChildDto, java.lang.String> arg0 = null;", responseDto.testScript.get(2));
         assertEquals(" {", responseDto.testScript.get(3));
-        assertEquals("  arg0 = new com.thrift.example.artificial.GenericDto();", responseDto.testScript.get(4));
+        assertEquals("  arg0 = new com.thrift.example.artificial.GenericDto<com.thrift.example.artificial.StringChildDto, java.lang.String>();", responseDto.testScript.get(4));
         assertEquals("  arg0.data1 = null;", responseDto.testScript.get(5));
         assertEquals("  {", responseDto.testScript.get(6));
         assertEquals("   arg0.data1 = new com.thrift.example.artificial.StringChildDto();", responseDto.testScript.get(7));

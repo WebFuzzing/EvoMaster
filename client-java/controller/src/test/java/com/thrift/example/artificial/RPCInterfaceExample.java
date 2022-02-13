@@ -60,4 +60,6 @@ public interface RPCInterfaceExample {
     GenericDto<Integer, String> handleGenericIntString(GenericDto<Integer, String> dto);
 
     GenericDto<StringChildDto, String> handleGenericObjectString(GenericDto<StringChildDto, String> dto);
+
+    NestedGenericDto<String> handleNestedGenericString(NestedGenericDto<String> dto);
 }

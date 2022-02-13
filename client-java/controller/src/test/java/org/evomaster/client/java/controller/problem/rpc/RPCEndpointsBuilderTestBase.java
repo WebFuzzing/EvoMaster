@@ -63,6 +63,6 @@ public abstract class RPCEndpointsBuilderTestBase {
     }
 
     public boolean containType(List<NamedTypedValue> params, String fullTypeName){
-        return params.stream().anyMatch(s-> s.getType().getFullTypeName().equals(fullTypeName));
+        return params.stream().anyMatch(s-> s.getType().getFullTypeNameWithGenericType().equals(fullTypeName));
     }
 }

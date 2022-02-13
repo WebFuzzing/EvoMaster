@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedData
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
+import org.glassfish.jersey.server.model.Suspendable;
 import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
@@ -33,7 +34,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 25;
+        return 26;
     }
 
     @Override
@@ -116,6 +117,27 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                     }};
                 }}
         );
+    }
+
+    @Test
+    public void testNestedGeneric() throws ClassNotFoundException {
+        EndpointSchema endpoint = getOneEndpoint("handleNestedGenericString");
+        assertNotNull(endpoint.getResponse());
+        assertNotNull(endpoint.getRequestParams());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+        assertEquals(3, ((ObjectParam)p1).getType().getFields().size());
+        assertNull(((ObjectParam)p1).getValue());
+        Object p1Instance = p1.newInstance();
+        assertNull(p1Instance);
+        List<String> testScript = p1.newInstanceWithJava(0);
+        ParamDto dto  = p1.getDto();
+        dto.innerContent = null;
+        p1.setValueBasedOnDto(dto);
+        List<String> testScriptWithDto =  p1.newInstanceWithJava(0);
+        assertEquals(testScript, testScriptWithDto);
     }
 
     @Test
@@ -238,8 +260,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
         NamedTypedValue p1 = endpoint.getRequestParams().get(0);
         checkConstrainedRequest(p1);
-        checkConstrainedRequest(p1.copyStructureWithProperties()
-        );
+        checkConstrainedRequest(p1.copyStructureWithProperties());
 
         NamedTypedValue p2 = endpoint.getRequestParams().get(1);
         assertTrue(p2 instanceof StringParam);
