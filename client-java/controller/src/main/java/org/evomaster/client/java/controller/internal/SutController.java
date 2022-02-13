@@ -311,23 +311,29 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
         for (String t: accessedTables){
-            String key = formatTableName(t);
-            if (!tablesToClean.contains(key)){
-                if (fkMap.get(key) != null){
-                    tablesToClean.add(key);
-                    List<String> fk = fkMap.entrySet().stream().filter(e-> e.getValue().contains(key) && !tablesToClean.contains(e.getKey())).map(Map.Entry::getKey).collect(Collectors.toList());
+            if (!findInCollectionIgnoreCase(t, tablesToClean).isPresent()){
+                if (findInMapIgnoreCase(t, fkMap).isPresent()){
+                    tablesToClean.add(t);
+                    List<String> fk = fkMap.entrySet().stream().filter(e->
+                            findInCollectionIgnoreCase(t, e.getValue()).isPresent()
+                                    && !findInCollectionIgnoreCase(e.getKey(), tablesToClean).isPresent()).map(Map.Entry::getKey).collect(Collectors.toList());
                     if (!fk.isEmpty())
                         getTableToClean(fk, tablesToClean);
                 }else {
-                    SimpleLogger.uniqueWarn("Cannot find the table "+key+" in ["+String.join(",", fkMap.keySet())+"]");
+                    SimpleLogger.uniqueWarn("Cannot find the table "+t+" in ["+String.join(",", fkMap.keySet())+"]");
                 }
 
             }
         }
     }
 
-    private String formatTableName(String name) {
-        return name.toUpperCase();
+
+    private Optional<String> findInCollectionIgnoreCase(String name, Collection<String> list){
+        return list.stream().filter(i-> i.equalsIgnoreCase(name)).findFirst();
+    }
+
+    private Optional<? extends Map.Entry<String, ?>> findInMapIgnoreCase(String name, Map<String, ?> list){
+        return list.entrySet().stream().filter(x-> x.getKey().equalsIgnoreCase(name)).findFirst();
     }
 
     public void cleanAccessedTables(){
