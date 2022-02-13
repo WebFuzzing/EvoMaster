@@ -145,6 +145,7 @@ public class RPCExceptionHandler {
 
             dto.type = getExceptionType(extract(e), type);
         } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException ex) {
+            dto.type = RPCExceptionType.UNEXPECTED_EXCEPTION;
             SimpleLogger.error("Fail to get type of TException with getType() "+ex.getMessage());
         }
 
