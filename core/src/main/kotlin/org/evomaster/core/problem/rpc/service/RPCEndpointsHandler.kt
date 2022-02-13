@@ -351,6 +351,7 @@ class RPCEndpointsHandler {
             // set null value
             if (gene.gene is ObjectGene || gene.gene is DateTimeGene){
                 dto.innerContent = null
+                dto.stringValue = null
             }
             return
         }

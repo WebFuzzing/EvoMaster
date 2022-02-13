@@ -21,6 +21,12 @@ public class CodeJavaGenerator {
      */
     private final static String GET_CLIENT_METHOD = "getRPCClient";
 
+
+    public static String handleClasNameWithGeneric(String fullName, List<String> genericTypes){
+        if (genericTypes == null || genericTypes.isEmpty()) return fullName;
+        return String.format("%s<%s>", fullName, String.join(", ", genericTypes));
+    }
+
     /**
      * handle escape char in string in java
      *      https://docs.oracle.com/javase/tutorial/java/data/characters.html

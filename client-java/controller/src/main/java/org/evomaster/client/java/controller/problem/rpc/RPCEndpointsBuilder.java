@@ -348,7 +348,7 @@ public class RPCEndpointsBuilder {
         NamedTypedValue response = null;
         if (!method.getReturnType().equals(Void.TYPE)) {
             Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
-            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null, null, null, null, null,genericTypeMap  );
+            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null, null, null, null, null, genericTypeMap);
         }
 
         List<NamedTypedValue> exceptions = null;
@@ -407,7 +407,10 @@ public class RPCEndpointsBuilder {
     private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth,
                                          Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization, AccessibleSchema accessibleSchema,
                                          List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations, Class<?> originalType, Map<TypeVariable, Type> genericTypeMap) {
-        depth.add(getObjectTypeNameWithFlag(clazz, clazz.getName()));
+        handleGenericSuperclass(clazz, genericTypeMap);
+        List<String> genericTypes = handleGenericType(clazz, genericType, genericTypeMap);
+        String clazzWithGenericTypes = CodeJavaGenerator.handleClasNameWithGeneric(clazz.getName(), genericTypes);
+        depth.add(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes));
         NamedTypedValue namedValue = null;
 
         try{
@@ -482,10 +485,10 @@ public class RPCEndpointsBuilder {
                     throw new RuntimeException("NOT handle "+clazz.getName()+" class in java yet");
                 }
 
-                long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName()))).count();
+                long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes))).count();
 
-                handleGenericSuperclass(clazz, genericTypeMap);
-                List<String> genericTypes = handleGenericType(clazz, genericType, genericTypeMap);
+
+
 
                 if (cycleSize == 1){
                     List<NamedTypedValue> fields = new ArrayList<>();
@@ -574,6 +577,7 @@ public class RPCEndpointsBuilder {
     }
 
     private static void handleGenericSuperclass(Class clazz, Map<TypeVariable, Type> map){
+        if (isNotCustomizedObject(clazz)) return;
         if (clazz.getGenericSuperclass() == null || !(clazz.getGenericSuperclass() instanceof ParameterizedType)) return;
         Type[] actualTypes = ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments();
         if (((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments().length == 0) return;
@@ -588,6 +592,7 @@ public class RPCEndpointsBuilder {
     }
 
     private static List<String> handleGenericType(Class<?> clazz, Type genericType, Map<TypeVariable, Type> map){
+        if (isNotCustomizedObject(clazz)) return null;
         if (!(genericType instanceof ParameterizedType)) return null;
         List<String> genericTypes = new ArrayList<>();
         Type[] actualTypes = ((ParameterizedType) genericType).getActualTypeArguments();

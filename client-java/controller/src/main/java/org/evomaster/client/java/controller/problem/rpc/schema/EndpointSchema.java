@@ -178,7 +178,7 @@ public class EndpointSchema {
     public List<String> newInvocationWithJava(String responseVarName, String controllerVarName){
         List<String> javaCode = new ArrayList<>();
         if (response != null){
-            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getFullTypeName(), responseVarName, null));
+            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getFullTypeNameWithGenericType(), responseVarName, null));
         }
         javaCode.add("{");
         int indent = 1;

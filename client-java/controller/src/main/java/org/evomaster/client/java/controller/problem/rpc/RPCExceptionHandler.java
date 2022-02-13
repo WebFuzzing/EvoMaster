@@ -104,7 +104,7 @@ public class RPCExceptionHandler {
         boolean handled = false;
         try {
             if (!isRootThriftException(e)){
-                SimpleLogger.error("Exception e is not an instance of TException of Thrift, and it is "+ e.getClass().getName());
+                //SimpleLogger.info("Exception e is not an instance of TException of Thrift, and it is "+ e.getClass().getName());
                 return false;
             }
 
