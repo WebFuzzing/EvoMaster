@@ -6,6 +6,7 @@ import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.TupleGene
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -33,7 +34,7 @@ class GraphQLActionStructureTest :StructuralElementBaseTest(){
 
         val name = ((root.parameters[0] as GQReturnParam).gene as ObjectGene).fields[1]
 
-        assertTrue(name is BooleanGene)
+        assertTrue(name is TupleGene)
 
         val path = listOf(0, 0, 1)
         assertEquals(name, root.targetWithIndex(path))
