@@ -5,7 +5,8 @@ import java.util.List;
 
 public class AssertionsUtil {
 
-    private final static List<String> skipKeywords = Arrays.asList("time", "token", "random","date","hour", "minute","second");
+    private final static List<String> skipKeywords_en = Arrays.asList("time", "token", "random","date","hour", "minute","second");
+    private final static List<String> skipKeywords_ch = Arrays.asList("秘钥", "随机");
 
     /**
      * there might exist dependent or random values
@@ -17,6 +18,7 @@ public class AssertionsUtil {
      */
     public static boolean getAssertionsWithComment(String assertionScript){
         if (assertionScript == null) return false;
-        return skipKeywords.stream().anyMatch(k-> assertionScript.toLowerCase().contains(k));
+        return skipKeywords_en.stream().anyMatch(k-> assertionScript.toLowerCase().contains(k))
+                || skipKeywords_ch.stream().anyMatch(assertionScript::contains);
     }
 }
