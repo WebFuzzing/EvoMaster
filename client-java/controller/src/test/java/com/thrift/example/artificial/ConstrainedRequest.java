@@ -29,6 +29,9 @@ public class ConstrainedRequest {
     @CustomAnnotation(name = "kind", necessity = Necessity.REQUIRED)
     public EnumKind kind;
 
+    @Pattern(regexp = "\\d{4}-\\d{1,2}-\\d{1,2}")
+    public String date;
+
     //TODO eg, @DecimalMin(value = "0.1", inclusive = false)
 
     /*

@@ -270,7 +270,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     private void checkConstrainedRequest(NamedTypedValue p){
         assertTrue(p instanceof ObjectParam);
         assertTrue(p.isNullable());
-        assertEquals(8, ((ObjectParam) p).getType().getFields().size());
+        assertEquals(9, ((ObjectParam) p).getType().getFields().size());
         for (NamedTypedValue f : ((ObjectParam) p).getType().getFields()) {
             if (f.getName().equals("list")) {
                 assertTrue(f instanceof ListParam);
@@ -306,6 +306,10 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
             } else if(f.getName().equals("kind")){
                 assertTrue(f instanceof EnumParam);
                 assertFalse(f.isNullable());
+            } else if(f.getName().equals("date")){
+                assertTrue(f instanceof  StringParam);
+                assertTrue(f.isNullable());
+                assertNotNull(((StringParam) f).getPattern());
             }else
                 fail("do not handle param " + f.getName());
         }
