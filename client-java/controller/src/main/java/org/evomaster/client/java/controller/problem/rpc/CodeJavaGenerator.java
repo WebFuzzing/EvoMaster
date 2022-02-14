@@ -278,7 +278,11 @@ public class CodeJavaGenerator {
      * @return an assertion for equal with junit
      */
     public static String junitAssertEquals(String expectedValue, String variableName){
-        return String.format("assertEquals(%s, %s)", expectedValue, variableName) + appendLast();
+        String assertionScript= String.format("assertEquals(%s, %s)", expectedValue, variableName) + appendLast();
+        if (AssertionsUtil.getAssertionsWithComment(assertionScript)){
+            return "//" + assertionScript;
+        }
+        return assertionScript;
     }
 
     /**
@@ -287,7 +291,11 @@ public class CodeJavaGenerator {
      * @return a null assertion with junit
      */
     public static String junitAssertNull(String variableName){
-        return String.format("assertNull(%s)", variableName) + appendLast();
+        String assertionScript= String.format("assertNull(%s)", variableName) + appendLast();
+        if (AssertionsUtil.getAssertionsWithComment(assertionScript)){
+            return "//" + assertionScript;
+        }
+        return assertionScript;
     }
 
     /**
@@ -314,7 +322,11 @@ public class CodeJavaGenerator {
      * @return a True assertion with numbersMatch method.
      */
     public static String junitAssertNumbersMatch(String expectedValue, String variableName){
-        return String.format("assertTrue(numbersMatch(%s, %s))", expectedValue, variableName) + appendLast();
+        String assertionScript= String.format("assertTrue(numbersMatch(%s, %s))", expectedValue, variableName) + appendLast();
+        if (AssertionsUtil.getAssertionsWithComment(assertionScript)){
+            return "//" + assertionScript;
+        }
+        return assertionScript;
     }
 
     /**

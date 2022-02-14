@@ -6,7 +6,9 @@ import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionType;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -51,7 +53,7 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
 
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
-        if (!dto.innerContent.isEmpty()){
+        if (dto.innerContent!= null && !dto.innerContent.isEmpty()){
             NamedTypedValue t = getType().getTemplate();
             List<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
                 NamedTypedValue v = t.copyStructureWithProperties();
@@ -66,7 +68,9 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
     protected void setValueBasedOnValidInstance(Object instance) {
         NamedTypedValue t = getType().getTemplate();
         List<NamedTypedValue> values = new ArrayList<>();
-        for (Object e : (Object[]) instance){
+        int length = Array.getLength(instance);
+        for (int i = 0; i < length; i++){
+            Object e = Array.get(instance, i);
             NamedTypedValue copy = t.copyStructureWithProperties();
             copy.setValueBasedOnInstance(e);
             values.add(copy);
