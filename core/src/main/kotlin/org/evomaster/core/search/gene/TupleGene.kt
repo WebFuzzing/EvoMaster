@@ -164,4 +164,8 @@ class TupleGene(
         throw IllegalArgumentException("impact is null or not TupleGeneImpact, ${additionalGeneMutationInfo.impact}")
     }
 
+    override fun copyContent(): Gene {
+        return TupleGene(name, elements.map(Gene::copyContent), lastElementTreatedSpecially)
+    }
+
 }
