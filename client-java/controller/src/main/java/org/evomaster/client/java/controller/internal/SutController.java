@@ -343,8 +343,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         List<String> tablesToClean = new ArrayList<>();
         getTableToClean(accessedTables, tablesToClean);
-        DbCleaner.clearDatabase(getConnectionIfExist(), emDbClean.schemaName,  null, tablesToClean, emDbClean.dbType);
+        if (tablesToClean.isEmpty()) return;
 
+        DbCleaner.clearDatabase(getConnectionIfExist(), emDbClean.schemaName,  null, tablesToClean, emDbClean.dbType);
         Set<String> tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
 
 
