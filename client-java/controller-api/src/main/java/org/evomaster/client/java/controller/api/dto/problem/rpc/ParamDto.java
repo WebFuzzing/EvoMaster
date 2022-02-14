@@ -58,6 +58,11 @@ public class ParamDto {
     public Long maxValue;
 
     /**
+     * pattern specified with regex exp
+     */
+    public String pattern;
+
+    /**
      * a list of candidates for the param customized by user
      */
     public List<ParamDto> candidates;
@@ -83,6 +88,7 @@ public class ParamDto {
         copy.minSize = minSize;
         copy.minValue = minValue;
         copy.maxValue = maxValue;
+        copy.pattern = pattern;
 
         if (candidates != null)
             copy.candidates = candidates.stream().map(ParamDto::copy).collect(Collectors.toList());

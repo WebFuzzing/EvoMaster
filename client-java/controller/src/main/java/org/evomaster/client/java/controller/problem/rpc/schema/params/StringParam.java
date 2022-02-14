@@ -39,6 +39,11 @@ public class StringParam extends NamedTypedValue<StringType, String> {
      */
     private Long max;
 
+    /**
+     * pattern specified with regular expression
+     */
+    private String pattern;
+
     public StringParam(String name, StringType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
     }
@@ -82,6 +87,14 @@ public class StringParam extends NamedTypedValue<StringType, String> {
         this.max = max;
     }
 
+    public String getPattern() {
+        return pattern;
+    }
+
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
+    }
+
     @Override
     public Object newInstance() {
         return getValue();
@@ -111,6 +124,8 @@ public class StringParam extends NamedTypedValue<StringType, String> {
             dto.minValue = min;
         if (max != null)
             dto.maxValue = max;
+        if (pattern != null)
+            dto.pattern = pattern;
         return dto;
     }
 
@@ -158,6 +173,7 @@ public class StringParam extends NamedTypedValue<StringType, String> {
             ((StringParam)copy).setMin(min);
             ((StringParam)copy).setMinSize(minSize);
             ((StringParam)copy).setMinSize(minSize);
+            ((StringParam)copy).setPattern(pattern);
         }
     }
 }

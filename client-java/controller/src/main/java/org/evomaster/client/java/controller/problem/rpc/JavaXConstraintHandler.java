@@ -117,6 +117,12 @@ public class JavaXConstraintHandler {
             return true;
         }
 
+        String pattern = handlePattern(annotation);
+        if (pattern != null){
+            param.setPattern(pattern);
+            return true;
+        }
+
         return false;
     }
 
@@ -145,6 +151,24 @@ public class JavaXConstraintHandler {
                 return size;
             } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
                 throw new RuntimeException("ERROR: fail to process size");
+            }
+
+        }
+        return null;
+    }
+
+    private static String handlePattern(Annotation annotation)  {
+        Class<?> cons = annotation.annotationType();
+        /*
+            based on https://docs.oracle.com/javaee/7/api/javax/validation/constraints/Pattern.html
+            null elements are considered valid.
+         */
+        if (cons.getSimpleName().equals("Pattern")){
+
+            try {
+                return (String) annotation.annotationType().getDeclaredMethod("regexp").invoke(annotation);
+            } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
+                throw new RuntimeException("ERROR: fail to process regexp");
             }
 
         }
