@@ -441,7 +441,7 @@ public class RPCEndpointsBuilder {
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
-                ctype.depth = getDepthLevel(clazz, depth);
+                ctype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                 namedValue = new ArrayParam(name, ctype, accessibleSchema);
 
             } else if (clazz == ByteBuffer.class){
@@ -455,7 +455,7 @@ public class RPCEndpointsBuilder {
                 NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
-                ctype.depth = getDepthLevel(clazz, depth);
+                ctype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                 if (List.class.isAssignableFrom(clazz))
                     namedValue = new ListParam(name, ctype, accessibleSchema);
                 else
@@ -473,7 +473,7 @@ public class RPCEndpointsBuilder {
                 Class<?> valueTemplateClazz = getTemplateClass(valueType, genericTypeMap);
                 NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate), null), clazz);
-                mtype.depth = getDepthLevel(clazz, depth);
+                mtype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                 namedValue = new MapParam(name, mtype, accessibleSchema);
             } else if (Date.class.isAssignableFrom(clazz)){
                 if (clazz == Date.class)
@@ -550,13 +550,13 @@ public class RPCEndpointsBuilder {
 
                     ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz, genericTypes);
                     otype.setOriginalType(originalType);
-                    otype.depth = getDepthLevel(clazz, depth);
+                    otype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = oparam;
                 }else {
                     CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz, genericTypes);
-                    otype.depth = getDepthLevel(clazz, depth);
+                    otype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = oparam;
@@ -883,8 +883,8 @@ public class RPCEndpointsBuilder {
         return null;
     }
 
-    private static int getDepthLevel(Class clazz, List<String> depth){
-        String tag = getObjectTypeNameWithFlag(clazz, clazz.getName());
+    private static int getDepthLevel(Class clazz, List<String> depth, String clazzFullNameWithGeneric){
+        String tag = getObjectTypeNameWithFlag(clazz, clazzFullNameWithGeneric);
         int start = Math.max(0, depth.lastIndexOf(tag));
         return depth.subList(start, depth.size()).stream().filter(s-> !s.equals(tag) && s.startsWith(OBJECT_FLAG)).collect(Collectors.toSet()).size();
     }
