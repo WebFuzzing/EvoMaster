@@ -105,6 +105,7 @@ class DbActionGeneBuilder {
                 ColumnDataType.ARRAY_VARCHAR, //FIXME need general solution for arrays
                 ColumnDataType.TINYTEXT,
                 ColumnDataType.TEXT,
+                ColumnDataType.LONGTEXT,
                 ColumnDataType.VARCHAR,
                 ColumnDataType.CLOB,
                 ColumnDataType.MEDIUMTEXT,
