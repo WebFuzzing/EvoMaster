@@ -575,6 +575,10 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0 = new java.util.Date(" + time + "L);", javacode.get(3));
         assertEquals("}", javacode.get(4));
 
+        List<String> assertions = p1.newAssertionWithJava(0, "res1", -1);
+        assertEquals(1, assertions.size());
+        assertTrue(assertions.get(0).contains("// runtime value is "));
+
     }
 
     @Test
@@ -796,13 +800,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(param.getType() instanceof ObjectType);
 
         List<NamedTypedValue> fs = ((ObjectType) param.getType()).getFields();
-        assertEquals(6, fs.size());
+        assertEquals(7, fs.size());
         assertTrue(fs.get(0) instanceof StringParam);
         assertTrue(fs.get(1) instanceof IntParam);
         assertTrue(fs.get(2) instanceof DoubleParam);
         assertTrue(fs.get(3) instanceof ObjectParam);
         assertTrue(fs.get(4) instanceof ArrayParam);
         assertTrue(fs.get(5) instanceof ArrayParam);
+        assertTrue(fs.get(6) instanceof LongParam);
 
         assertTrue(fs.get(3).getType() instanceof CycleObjectType);
 

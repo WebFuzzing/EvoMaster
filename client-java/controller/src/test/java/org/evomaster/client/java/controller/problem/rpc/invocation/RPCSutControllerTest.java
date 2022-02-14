@@ -81,6 +81,36 @@ public class RPCSutControllerTest {
     }
 
     @Test
+    public void testObjectResponseAssertion(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("objResponse")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(0, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        assertEquals(4, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.ObjectResponse res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).objResponse();", responseDto.testScript.get(2));
+        assertEquals("}", responseDto.testScript.get(3));
+
+        assertEquals(7, responseDto.assertionScript.size());
+        assertEquals("assertEquals(\"foo\", res1.f1);", responseDto.assertionScript.get(0));
+        assertEquals("assertEquals(42, res1.f2);", responseDto.assertionScript.get(1));
+        assertEquals("assertTrue(numbersMatch(0.42, res1.f3));", responseDto.assertionScript.get(2));
+        assertEquals("assertNull(res1.cycle);", responseDto.assertionScript.get(3));
+        assertEquals("assertEquals(3, res1.f4.length);", responseDto.assertionScript.get(4));
+        assertEquals("assertNull(res1.f5);", responseDto.assertionScript.get(5));
+        assertTrue(responseDto.assertionScript.get(6).contains("//assertEquals"));
+    }
+
+    @Test
     public void testHandleNestedGenericString(){
         List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("handleNestedGenericString")).collect(Collectors.toList());
         assertEquals(1, dtos.size());

@@ -73,6 +73,7 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         response.f2 = 42;
         response.f3 = 0.42;
         response.f4 = new double[]{0.0, 0.5, 1.0};
+        response.systemTime = System.nanoTime();
         return response;
     }
 
