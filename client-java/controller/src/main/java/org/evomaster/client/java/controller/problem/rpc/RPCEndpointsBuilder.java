@@ -650,7 +650,7 @@ public class RPCEndpointsBuilder {
                     Modifier.isPublic(m.getModifiers()) &&
                             m.getName().equalsIgnoreCase("set"+field.getName()) &&
                             m.getParameterCount() == 1 &&
-                            m.getParameterTypes()[0].equals(field.getType())
+                            (m.getParameterTypes()[0].equals(field.getType()) || m.getParameterTypes()[0].equals(PrimitiveOrWrapperParam.getPrimitiveOrWrapper(field.getType())))
             ).collect(Collectors.toList());
         }
         if (found.size() == 1)

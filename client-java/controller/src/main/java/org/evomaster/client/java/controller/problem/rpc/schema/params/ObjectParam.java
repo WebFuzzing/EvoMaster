@@ -4,11 +4,14 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.ObjectType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,7 +40,8 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                     if (vins != null)
                         f.set(instance, vins);
                 } else if(v.accessibleSchema.setterMethodName != null){
-                    Method m = clazz.getMethod(v.accessibleSchema.setterMethodName, v.getType().getClazz());
+                    Method m =  getSetter(clazz, v.accessibleSchema.setterMethodName, v.getType(), v.getType().getClazz(), 0);
+                            //clazz.getMethod(v.accessibleSchema.setterMethodName, v.getType().getClazz());
                     m.invoke(instance, v.newInstance());
                 }
             }
@@ -52,6 +56,22 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             throw new RuntimeException("fail to access the method:"+clazzName+" with error msg:"+e.getMessage());
         } catch (InvocationTargetException e) {
             throw new RuntimeException("fail to invoke the setter method:"+clazzName+" with error msg:"+e.getMessage());
+        }
+    }
+
+    private Method getSetter(Class<?> clazz, String setterName, TypeSchema type, Class<?> typeClass, int attemptTimes) throws NoSuchMethodException {
+
+        try {
+            Method m = clazz.getMethod(setterName, type.getClazz());
+            return m;
+        } catch (NoSuchMethodException e) {
+            if (type instanceof PrimitiveOrWrapperType && attemptTimes == 0){
+                Type p = PrimitiveOrWrapperParam.getPrimitiveOrWrapper(type.getClazz());
+                if (p instanceof Class){
+                    return getSetter(clazz, setterName, type, (Class)p, 1);
+                }
+            }
+            throw e;
         }
     }
 
