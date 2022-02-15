@@ -10,6 +10,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
@@ -348,35 +349,55 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         DbCleaner.clearDatabase(getConnectionIfExist(), emDbClean.schemaName,  null, tablesToClean, emDbClean.dbType);
         Set<String> tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
 
-
         // init db script
-        if (emDbClean.initSqlScript != null && (tableInitSqlMap.isEmpty()
-                || !tableDataToInit.isEmpty())){
-            try {
-                setExecutingInitSql(true);
-                if (tableInitSqlMap.isEmpty()){
-                    Map<String, Set<String>> map = SqlScriptRunner.execScript(getConnectionIfExist(), emDbClean.initSqlScript);
-                    tableInitSqlMap.putAll(map);
-                }else{
-                    tableDataToInit.forEach(a->{
-                        tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
-                            tableInitSqlMap.get(t).forEach(c->{
-                                try {
-                                   SqlScriptRunner.execCommand(getConnectionIfExist(), c);
-                                } catch (SQLException e) {
-                                    throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
-                                }
-                            });
+        try {
+            setExecutingInitSql(true);
+            boolean initAll = initSqlScriptAndGetInsertMap(getConnectionIfExist(), emDbClean);
+            if (!initAll && !tableDataToInit.isEmpty()){
+                tableDataToInit.forEach(a->{
+                    tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
+                        tableInitSqlMap.get(t).forEach(c->{
+                            try {
+                                SqlScriptRunner.execCommand(getConnectionIfExist(), c);
+                            } catch (SQLException e) {
+                                throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
+                            }
                         });
                     });
-                }
+                });
+            }
+        }catch (SQLException e) {
+            throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
+        }finally {
+            setExecutingInitSql(false);
+        }
+    }
 
-            } catch (SQLException e) {
-                throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
-            }finally {
-                setExecutingInitSql(false);
+    /**
+     *
+     * @param dbSpecification contains info of the db connection
+     * @return whether the init script is executed
+     */
+    private boolean initSqlScriptAndGetInsertMap(Connection connection, DbSpecification dbSpecification) throws SQLException {
+        if (dbSpecification.initSqlOnResourcePath == null
+                && dbSpecification.initSqlScript == null) return false;
+        if (tableInitSqlMap.isEmpty()){
+            List<String> all = new ArrayList<>();
+            if (dbSpecification.initSqlOnResourcePath != null){
+               all.addAll(SqlScriptRunnerCached.extractSqlScriptFromResourceFile(dbSpecification.initSqlOnResourcePath));
+            }
+            if (dbSpecification.initSqlScript != null){
+                all.addAll(SqlScriptRunner.extractSql(dbSpecification.initSqlScript));
+            }
+            if (!all.isEmpty()){
+                // collect insert sql commands map, key is table name, and value is a list sql insert commands
+                tableInitSqlMap.putAll(SqlScriptRunner.extractSqlTableMap(all));
+                // execute all commands
+                SqlScriptRunner.runCommands(connection, all);
+                return true;
             }
         }
+        return false;
     }
 
     public void addTableToInserted(List<String> tables){

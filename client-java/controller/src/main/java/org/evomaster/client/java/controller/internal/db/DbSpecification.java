@@ -29,6 +29,13 @@ public class DbSpecification {
     public String initSqlScript;
 
     /**
+     * a resource path where the init sql script is
+     * Note that this parameter is specific to resource path,
+     * not a path to the file.
+     */
+    public String initSqlOnResourcePath;
+
+    /**
      * specify whether to employ the smart db clean by cleaning all
      * data in table which have been accessed after every test
      * Default is True

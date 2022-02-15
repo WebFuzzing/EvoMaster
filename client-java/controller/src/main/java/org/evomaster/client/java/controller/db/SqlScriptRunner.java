@@ -351,24 +351,35 @@ public class SqlScriptRunner {
      * @param conn a connection to db
      * @param script represents a sql script
      * @throws SQLException if the execution of the command fails
-     * @return a map of table to a set of commands which are to insert data into the table
      */
-    public static Map<String, Set<String>> execScript(Connection conn, String script) throws SQLException {
-        Map<String, Set<String>> tableSqlMap = new HashMap<>();
+    public static void execScript(Connection conn, String script) throws SQLException {
         String[] commands = script.split(";");
         for (String command : commands){
-            QueryResult result = null;
             if (!command.replaceAll("\n","").isEmpty())
-                result = execCommand(conn, command+";");
+                execCommand(conn, command+";");
+        }
+    }
 
-            if (ParserUtils.isInsert(command) && result != null){
+    public static List<String> extractSql(String script){
+        String[] commands = script.split(";");
+        return Arrays.stream(commands).filter(s-> !s.replaceAll("\n","").isEmpty()).map(s-> s+";").collect(Collectors.toList());
+    }
+
+    /**
+     *
+     * @param commands
+     * @return
+     */
+    public static  Map<String, Set<String>> extractSqlTableMap(List<String> commands){
+        Map<String, Set<String>> tableSqlMap = new HashMap<>();
+        for (String command: commands){
+            if (ParserUtils.isInsert(command)){
                 Insert stmt = (Insert) ParserUtils.asStatement(command);
                 Table table = stmt.getTable();
                 tableSqlMap.putIfAbsent(table.getName(), new HashSet<>());
                 tableSqlMap.get(table.getName()).add(command+";");
             }
         }
-
         return tableSqlMap;
     }
 
