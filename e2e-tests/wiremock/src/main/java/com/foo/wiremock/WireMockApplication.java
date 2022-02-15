@@ -1,14 +1,18 @@
 package com.foo.wiremock;
 
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.hamcrest.Matchers.is;
+import static io.restassured.RestAssured.given;
 
 public class WireMockApplication {
 
-    public static void main(String[] args) {
-
+    public void callApi(int port) {
+        given()
+                .when()
+                .get("http://localhost:" + port +"/api/call")
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .body(is("Working"));
     }
 }

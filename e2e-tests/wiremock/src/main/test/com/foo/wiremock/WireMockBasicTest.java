@@ -4,7 +4,6 @@ package com.foo.wiremock;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,5 +48,11 @@ public class WireMockBasicTest {
                 .assertThat()
                 .statusCode(200)
                 .body(is("Working"));
+    }
+
+    @Test
+    public void testApplicationCall() {
+        WireMockApplication wireMockApplication = new WireMockApplication();
+        wireMockApplication.callApi(wireMockServer.port());
     }
 }
