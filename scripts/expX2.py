@@ -88,7 +88,7 @@ EXP_ID = "evomaster"
 
 if len(sys.argv) < 9 or len(sys.argv) > 11:
     print(
-        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <maxActions> <minutesPerRun> <nJobs> <configFilter?> <sutFilter? eg a,b>")
+        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <maxActions> <minutesPerRun> <nJobs> <configFilter?> <sutFilter?>")
     exit(1)
 
 
@@ -127,14 +127,16 @@ MINUTES_PER_RUN = int(sys.argv[7])
 # Also not that in the same .sh script there can be experiments only for a single SUT.
 NJOBS = int(sys.argv[8])
 
-# Specify a string to filter CONFIGS to be included
+# An optional string to filter CONFIGS to be included
 # None or `all` represents all CONFIGS should be included
 # Default is None
 CONFIGFILTER = None
 if len(sys.argv) > 9:
     CONFIGFILTER = str(sys.argv[9])
 
-# Specify a string to filter suts to be included based on their names
+#
+# An optional string to filter suts to be included based on their names
+# A string could refer to multiple suts separated by a `,` like a,b
 # None or `all` represents all Suts should be included
 # Default is None
 SUTFILTER = None
@@ -208,6 +210,10 @@ if SUTFILTER is not None and SUTFILTER.lower() != "all":
     filteredsut = list(filter(lambda x: x.name.lower() in (f.lower() for f in SUTFILTER.split(",")), SUTS))
     if len(filteredsut) > 0:
         SUTS = filteredsut
+    else:
+        print("ERROR: None of specified SUT exists")
+        exit(1)
+
 
 # Specify if using any industrial case study
 USING_IND = False
@@ -574,9 +580,13 @@ def createJobs():
 
     ## filter config if specified
     if CONFIGFILTER is not None and CONFIGFILTER.lower() != "all":
-            filtered = list(filter(lambda x: x.filterKey is None or x.filterKey.lower() == CONFIGFILTER.lower(), CONFIGS))
-            if len(filtered) > 0:
-                CONFIGS = filtered
+        filtered = list(filter(lambda x: x.filterKey is None or x.filterKey.lower() == CONFIGFILTER.lower(), CONFIGS))
+        if len(filtered) > 0:
+            CONFIGS = filtered
+        else:
+            print("ERROR: Specified filter tag is undefined")
+            exit(1)
+
 
     NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
     SUT_WEIGHTS = sum(map(lambda x: x.timeWeight, SUTS))
@@ -604,7 +614,7 @@ def createJobs():
 
             for config in CONFIGS:
 
-                for setting in config.genAllSettings():
+                for setting in config.generateAllSettings():
 
                     # first run in current script: we need to create all the initializing preambles
                     if state.counter == 0:
@@ -646,14 +656,9 @@ def createJobs():
     print("Total budget: " + str(CPUS * sum(state.waits) / 60) + " hours")
 
 
-
-############################################################################
-### Custom
-### Following will need to be changed based on what kind of experiments
-### we want to run.
-############################################################################
-
 class ParameterSetting:
+    # name is the same name used in the EM parameters
+    # values are possible settings regarding the parameter
     def __init__(self, name, values):
         self.name = name
         self.values = values
@@ -664,7 +669,9 @@ class ParameterSetting:
             exit("a value at the index "+ str(index) + " does not exist")
         return (self.name, self.values[index])
 
+# Each Config object has a list of ParameterSetting objects
 class Config:
+    # settings is an array of ParameterSetting objects
     def __init__(self, settings, filterKey=None):
         self.filterKey = filterKey
         self.settings = settings
@@ -672,7 +679,8 @@ class Config:
         for s in self.settings:
             self.numOfSettings *= s.count
 
-    def genAllSettings(self):
+    # generate all settings for configured parameters
+    def generateAllSettings(self):
         all = []
         lst = [0] * len(self.settings)
         while lst is not None:
@@ -696,13 +704,7 @@ class Config:
                 lst[i] = 0
         return None
 
-    def setting(self, index):
-        if index >= self.count:
-            exit("a setting at the index "+ str(index) + " does not exist")
-        return self.values[index]
-
-
-### NOTE there is no need to update this method
+# set customized parameters
 def customParameters(seed, setting):
 
     params = ""
@@ -729,23 +731,35 @@ def is_float(input):
         return False
     return True
 
+
+############################################################################
+### Custom
+### Following will need to be changed based on what kind of experiments
+### we want to run.
+############################################################################
+
 def getConfigs():
 
     # array of configuration objects. We will run experiments for each of
     # these configurations
+    # each Config object has a list of ParameterSetting objects
    CONFIGS = []
 
-   # example
-   ALGO_MIO = ParameterSetting("algorithm",["MIO"])
-   ALGO_RANDOM = ParameterSetting("algorithm",["RANDOM"])
+   ### Example (step1) on how to specify ParameterSetting objects
 
-   PR5 = ParameterSetting("probOfRandomSampling",[0.5])
-   PR = ParameterSetting("probOfRandomSampling",[0.1, 0.2])
+   # ALGO_MIO = ParameterSetting("algorithm",["MIO"])
+   # ALGO_RANDOM = ParameterSetting("algorithm",["RANDOM"])
+   
+   # PR5 = ParameterSetting("probOfRandomSampling",[0.5])
+   # PR = ParameterSetting("probOfRandomSampling",[0.1, 0.2])
 
-   foo = Config([ALGO_MIO, PR5], "foo")
-   bar = Config([ALGO_RANDOM, PR], "bar")
-   CONFIGS.append(foo)
-   CONFIGS.append(bar)
+   ### Example (step2) on how to define Config objects with specified ParameterSetting objects
+   # foo = Config([ALGO_MIO, PR5], "foo")
+   # bar = Config([ALGO_RANDOM, PR], "bar")
+
+   ### Example (step2) on employing Config objects for the experiments
+   # CONFIGS.append(foo)
+   # CONFIGS.append(bar)
 
    return CONFIGS
 
