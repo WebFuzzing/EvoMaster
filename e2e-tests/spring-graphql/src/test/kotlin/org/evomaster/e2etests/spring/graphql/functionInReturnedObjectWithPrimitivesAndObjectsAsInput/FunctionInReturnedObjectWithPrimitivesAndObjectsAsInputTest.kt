@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.graphql.functionInReturnedObjectWithPrimitivesAndObjectsAsInput
 
-import com.foo.graphql.base.BaseController
+import com.foo.graphql.functionInReturnedObjectWithPrimitivesAndObjectsAsInput.FunctionInReturnedObjectWithPrimitivesAndObjectsAsInputController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -13,7 +13,7 @@ class FunctionInReturnedObjectWithPrimitivesAndObjectsAsInputTest : SpringTestBa
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(BaseController())
+            initClass(FunctionInReturnedObjectWithPrimitivesAndObjectsAsInputController())
         }
     }
 

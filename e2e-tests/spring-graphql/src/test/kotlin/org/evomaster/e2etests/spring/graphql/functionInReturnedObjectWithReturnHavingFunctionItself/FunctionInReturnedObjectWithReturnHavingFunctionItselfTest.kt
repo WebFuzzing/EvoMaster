@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.graphql.functionInReturnedObjectWithReturnHavingFunctionItself
 
-import com.foo.graphql.base.BaseController
+import com.foo.graphql.functionInReturnedObjectWithReturnHavingFunctionItself.FunctionInReturnedObjectWithReturnHavingFunctionItselfController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -13,7 +13,7 @@ class FunctionInReturnedObjectWithReturnHavingFunctionItselfTest : SpringTestBas
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(BaseController())
+            initClass(FunctionInReturnedObjectWithReturnHavingFunctionItselfController())
         }
     }
 

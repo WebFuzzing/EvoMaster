@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.graphql.functionInReturnedObjectWithReturnPrimitives
 
 
-import com.foo.graphql.base.BaseController
+import com.foo.graphql.functionInReturnedObjectWithReturnPrimitives.FunctionInReturnedObjectWithReturnPrimitivesController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -14,7 +14,7 @@ class FunctionInReturnedObjectWithReturnPrimitivesTest : SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(BaseController())
+            initClass(FunctionInReturnedObjectWithReturnPrimitivesController())
         }
     }
 
