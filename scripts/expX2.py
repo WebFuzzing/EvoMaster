@@ -664,6 +664,7 @@ class ParameterSetting:
         self.values = values
         self.count = len(self.values)
 
+    # get a parameter value at index
     def pvalue(self, index):
         if index >= len(self.values):
             exit("a value at the index "+ str(index) + " does not exist")
@@ -691,7 +692,7 @@ class Config:
             lst = self.plus1(lst)
         return all
 
-
+    # next setting
     def plus1(self, lst):
         if lst[0] < self.settings[0].count - 1:
             lst[0] = lst[0] + 1
@@ -749,7 +750,7 @@ def getConfigs():
 
    # ALGO_MIO = ParameterSetting("algorithm",["MIO"])
    # ALGO_RANDOM = ParameterSetting("algorithm",["RANDOM"])
-   
+
    # PR5 = ParameterSetting("probOfRandomSampling",[0.5])
    # PR = ParameterSetting("probOfRandomSampling",[0.1, 0.2])
 
