@@ -658,13 +658,13 @@ def createJobs():
 
 class ParameterSetting:
     # name is the same name used in the EM parameters
-    # values are possible settings regarding the parameter
+    # values is an array of configured values regarding the parameter
     def __init__(self, name, values):
         self.name = name
         self.values = values
         self.count = len(self.values)
 
-    # get a parameter value at index
+    # get a parameter name with its value at index
     def pvalue(self, index):
         if index >= len(self.values):
             exit("a value at the index "+ str(index) + " does not exist")
@@ -758,7 +758,7 @@ def getConfigs():
    # foo = Config([ALGO_MIO, PR5], "foo")
    # bar = Config([ALGO_RANDOM, PR], "bar")
 
-   ### Example (step2) on employing Config objects for the experiments
+   ### Example (step3) on employing Config objects for the experiments
    # CONFIGS.append(foo)
    # CONFIGS.append(bar)
 
