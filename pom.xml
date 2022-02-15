@@ -131,6 +131,8 @@
         <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
         <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
         <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
+        <micronaut.version>3.3.1</micronaut.version>
+        <micronaut.openapi.version>4.0.0</micronaut.openapi.version>
     </properties>
 
 
