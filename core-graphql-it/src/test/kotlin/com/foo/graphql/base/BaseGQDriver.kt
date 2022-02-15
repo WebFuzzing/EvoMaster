@@ -42,7 +42,7 @@ class BaseGQDriver : EmbeddedSutController(){
         return "com.foo.graphql.base"
     }
 
-    override fun getDbSpecification(): DbSpecification? {
+    override fun getDbSpecifications(): MutableList<DbSpecification>? {
         return null
     }
 

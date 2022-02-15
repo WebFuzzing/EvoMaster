@@ -4,7 +4,6 @@ import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.db.DbCleaner
 import org.evomaster.client.java.controller.internal.db.DbSpecification
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
@@ -13,7 +12,6 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.jdbc.core.JdbcTemplate
 import org.testcontainers.containers.GenericContainer
 import java.sql.Connection
-import java.util.*
 
 /**
  * Created by arcuri82 on 21-Jun-19.
@@ -109,13 +107,11 @@ abstract class SpringRestPostgresController(
         return null
     }
 
-    override fun getDbSpecification(): DbSpecification? {
-        return DbSpecification().apply {
-            connections = Arrays.asList(sqlConnection)
-            dbType = DatabaseType.POSTGRES
-            schemaName = "public"
-        }
-    }
+    override fun getDbSpecifications(): MutableList<DbSpecification>? = mutableListOf(DbSpecification().apply {
+        connection = sqlConnection
+        dbType = DatabaseType.POSTGRES
+        schemaNames = listOf("public")
+    })
 
     override fun getDatabaseDriverName(): String? {
         return "org.postgresql.Driver"

@@ -119,13 +119,11 @@ abstract class SpringRestMySqlController (
         return null
     }
 
-    override fun getDbSpecification(): DbSpecification? {
-        return DbSpecification().apply {
-            dbType = DatabaseType.MYSQL
-            connections = Arrays.asList(dbConnection)
-            schemaName = MYSQL_DB_NAME
-        }
-    }
+    override fun getDbSpecifications(): MutableList<DbSpecification>? = mutableListOf(DbSpecification().apply {
+        dbType = DatabaseType.MYSQL
+        connection = dbConnection
+        schemaNames = listOf(MYSQL_DB_NAME)
+    })
 
 
     override fun getDatabaseDriverName(): String? {

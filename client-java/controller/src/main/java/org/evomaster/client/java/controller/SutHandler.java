@@ -150,7 +150,7 @@ public interface SutHandler {
      * <p>
      * When accessing a {@code Connection} object to reset the state of
      * the application, we suggest to save it to field (eg when starting the
-     * application), and set such field with {@link DbSpecification#connections}.
+     * application), and set such field with {@link DbSpecification#connection}.
      * This connection object will be used by EvoMaster to analyze the state of
      * the database to create better test cases.
      * </p>
@@ -165,7 +165,7 @@ public interface SutHandler {
      * With EvoMaster, we also support a smart DB cleaner by removing all data in tables
      * which has been accessed after each test. In order to achieve this, we requires user
      * to set a set of info such as database type with {@link DbSpecification#dbType},
-     * schema name with {@link DbSpecification#schemaName} (TODO might remove later).
+     * schema name with {@link DbSpecification#schemaNames} (TODO might remove later).
      * In addition, we also provide an option (default is {@code true}) to configure
      * if such cleaner is preferred with {@link DbSpecification#employSmartDbClean}.
      * </p>
@@ -173,7 +173,7 @@ public interface SutHandler {
      * @return {@code null} if the SUT does not use any SQL database
      */
 
-    DbSpecification getDbSpecification();
+    List<DbSpecification> getDbSpecifications();
 
 
     /**
@@ -183,17 +183,23 @@ public interface SutHandler {
      * </p>
      */
     default void resetDatabase(){
-        DbSpecification spec = getDbSpecification();
-        if (spec==null || spec.connections == null || spec.connections.isEmpty() || !spec.employSmartDbClean){
-            return;
-        }
-        DbCleaner.clearDatabase(spec.connections.get(0), spec.schemaName, null, null, spec.dbType);
-        if (spec.initSqlScript != null) {
-            try {
-                SqlScriptRunner.execScript(spec.connections.get(0), spec.initSqlScript);
-            } catch (SQLException e) {
-                throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
-            }
+        if (getDbSpecifications()!= null && !getDbSpecifications().isEmpty()){
+            getDbSpecifications().forEach(spec->{
+                if (spec==null || spec.connection == null || !spec.employSmartDbClean){
+                    return;
+                }
+                if (spec.schemaNames == null || spec.schemaNames.isEmpty())
+                    DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType);
+                else
+                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, null, spec.dbType));
+                if (spec.initSqlScript != null) {
+                    try {
+                        SqlScriptRunner.execScript(spec.connection, spec.initSqlScript);
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
+                    }
+                }
+            });
         }
     }
 

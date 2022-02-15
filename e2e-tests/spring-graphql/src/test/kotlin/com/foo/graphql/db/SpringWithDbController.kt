@@ -73,11 +73,11 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
 //        dbconnection = null
     }
 
-    override fun getDbSpecification(): DbSpecification? = DbSpecification()
+    override fun getDbSpecifications(): MutableList<DbSpecification>? =mutableListOf(DbSpecification()
         .apply {
-        connections = Arrays.asList(dbconnection)
-        dbType = DatabaseType.H2
-    }
+            connection = dbconnection
+            dbType = DatabaseType.H2
+        })
 
     override fun getDatabaseDriverName() = "org.h2.Driver"
 }

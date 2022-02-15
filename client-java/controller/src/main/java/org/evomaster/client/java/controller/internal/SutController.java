@@ -242,9 +242,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final Connection getConnectionIfExist(){
-        return (getDbSpecification() == null
-                || getDbSpecification().connections == null
-                || getDbSpecification().connections.isEmpty())? null: getDbSpecification().connections.get(0);
+        return (getDbSpecifications() == null
+                || getDbSpecifications().isEmpty())? null: getDbSpecifications().get(0).connection;
     }
 
     public final void resetExtraHeuristics() {
@@ -338,15 +337,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public void cleanAccessedTables(){
-        DbSpecification emDbClean = getDbSpecification();
-        if (emDbClean == null) return;
+        if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) return;
+        if (getDbSpecifications().size() > 1)
+            throw new RuntimeException("Error: DO NOT SUPPORT MULTIPLE SQL CONNECTION YET");
+
+        DbSpecification emDbClean = getDbSpecifications().get(0);
         if (getConnectionIfExist() == null || !emDbClean.employSmartDbClean || accessedTables.isEmpty()) return;
 
         List<String> tablesToClean = new ArrayList<>();
         getTableToClean(accessedTables, tablesToClean);
         if (tablesToClean.isEmpty()) return;
 
-        DbCleaner.clearDatabase(getConnectionIfExist(), emDbClean.schemaName,  null, tablesToClean, emDbClean.dbType);
+        if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
+            emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
+        }else
+            DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
         Set<String> tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
 
         // init db script
@@ -411,14 +416,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * So the database must be up and running.
      *
      * @return a DTO with the schema information
-     * @see SutController#getDbSpecification
+     * @see SutHandler#getDbSpecifications
      */
     public final DbSchemaDto getSqlDatabaseSchema() {
         if (schemaDto != null) {
             return schemaDto;
         }
 
-        if (getDbSpecification() == null || getDbSpecification().connections == null) {
+        if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) {
             return null;
         }
 

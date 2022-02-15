@@ -21,12 +21,12 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
     }
 
     @Override
-    public DbSpecification getDbSpecification() {
-        return new DbSpecification(){{
+    public List<DbSpecification> getDbSpecifications() {
+        return Arrays.asList(new DbSpecification(){{
             dbType = DatabaseType.H2;
-            connections = Arrays.asList(sqlConnection);
+            connection = sqlConnection;
             employSmartDbClean = true;
-        }};
+        }});
     }
 
     @Override

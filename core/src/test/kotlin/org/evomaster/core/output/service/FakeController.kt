@@ -21,7 +21,7 @@ class FakeController : SutHandler {
         return null
     }
 
-    override fun getDbSpecification(): DbSpecification? {
+    override fun getDbSpecifications(): MutableList<DbSpecification>? {
         return null
     }
 }

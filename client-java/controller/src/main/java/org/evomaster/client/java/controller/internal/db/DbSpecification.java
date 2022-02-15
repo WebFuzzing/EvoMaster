@@ -15,13 +15,13 @@ public class DbSpecification {
     /**
      * sql connection
      */
-    public List<Connection> connections;
+    public Connection connection;
 
     /**
      * schema name
      * TODO might remove this later if we could get such info with the connection
      */
-    public String schemaName;
+    public List<String> schemaNames;
 
     /**
      * a script to initialize the data in database

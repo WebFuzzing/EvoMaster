@@ -49,7 +49,7 @@ class RemoteControllerTest {
             return null
         }
 
-        override fun getDbSpecification(): DbSpecification? {
+        override fun getDbSpecifications(): MutableList<DbSpecification>? {
             return null
         }
 

@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class DbExistingDataController extends SpringWithDbController {
 
@@ -55,10 +56,10 @@ public class DbExistingDataController extends SpringWithDbController {
     }
 
     @Override
-    public DbSpecification getDbSpecification() {
-        DbSpecification spec = super.getDbSpecification();
-        if (spec !=null)
-            spec.initSqlScript = "INSERT INTO EXISTING_DATA_ENTITYX (ID, NAME) VALUES (42, 'Foo')";
+    public List<DbSpecification> getDbSpecifications() {
+        List<DbSpecification> spec = super.getDbSpecifications();
+        if (spec !=null && !spec.isEmpty())
+            spec.get(0).initSqlScript = "INSERT INTO EXISTING_DATA_ENTITYX (ID, NAME) VALUES (42, 'Foo')";
         return spec;
     }
 }

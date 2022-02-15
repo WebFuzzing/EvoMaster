@@ -14,9 +14,10 @@ class ExistingDataController : SpringRestMySqlController(ExistingDataApp::class.
 //        SqlScriptRunner.execScript(dbConnection, "INSERT INTO X (id) VALUES (42)")
     }
 
-    override fun getDbSpecification(): DbSpecification? {
-        val spec = super.getDbSpecification()
-        spec?.initSqlScript = "INSERT INTO X (id) VALUES (42);"
+    override fun getDbSpecifications(): MutableList<DbSpecification>? {
+        val spec = super.getDbSpecifications()
+        if (spec != null && spec.isNotEmpty())
+            spec[0].initSqlScript = "INSERT INTO X (id) VALUES (42);"
         return spec
     }
 }
