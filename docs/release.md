@@ -101,6 +101,22 @@ Note that login will ask for username/password.
 The release is linked to NPM's user `arcuri82`.
 Password is ???.
 
+## NuGet Release
+
+After the version number has been updated with `version.py` script, need to make a release on NuGet as well for the .NET libraries.
+
+First, build .NET libraries with:
+
+`dotnet build`
+
+Then, execute:
+
+`./client-dotnet/publish.sh ???` 
+
+It takes as input the API-KEY linked to the namespace `EvoMaster.*`.
+Note: API-KEYs only last 1 year, and then a new one needs to be created.
+
+
 ## GitHub Release
 
 Push the version changes in the `pom.xml` files on Git.
