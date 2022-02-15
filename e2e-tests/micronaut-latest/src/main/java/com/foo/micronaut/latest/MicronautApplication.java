@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.info.Info;
         info = @Info(
                 title = "micronaut",
                 version = "latest",
-                description = "Micronaut E2E Test API"))
+                description = "Micronaut Latest E2E Test API"))
 public class MicronautApplication {
 
     private ApplicationContext context;

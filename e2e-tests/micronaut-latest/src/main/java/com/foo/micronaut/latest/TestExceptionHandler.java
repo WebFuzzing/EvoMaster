@@ -13,7 +13,6 @@ import jakarta.inject.Singleton;
 @Requires(classes = {TestException.class, ExceptionHandler.class})
 public class TestExceptionHandler implements ExceptionHandler<TestException, HttpResponse<String>> {
 
-
     @Override
     public HttpResponse<String> handle(HttpRequest request, TestException exception) {
         return HttpResponse.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"message\":\"Crashed\"}");

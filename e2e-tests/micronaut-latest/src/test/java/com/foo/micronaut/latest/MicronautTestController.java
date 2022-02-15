@@ -53,7 +53,7 @@ public class MicronautTestController extends EmbeddedSutController {
 
     @Override
     public String getPackagePrefixesToCover() {
-        return "com.foo.micronaut.rest";
+        return "com.foo.micronaut.latest";
     }
 
     @Override
