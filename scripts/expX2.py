@@ -207,11 +207,12 @@ SUTS = [
 ]
 
 if SUTFILTER is not None and SUTFILTER.lower() != "all":
-    filteredsut = list(filter(lambda x: x.name.lower() in (f.lower() for f in SUTFILTER.split(",")), SUTS))
-    if len(filteredsut) > 0:
+    specifiedsut = SUTFILTER.split(",")
+    filteredsut = list(filter(lambda x: x.name.lower() in (f.lower() for f in specifiedsut), SUTS))
+    if len(filteredsut) > 0 and len(filteredsut) == len(specifiedsut):
         SUTS = filteredsut
     else:
-        print("ERROR: None of specified SUT exists")
+        print("ERROR: cannot find all specified SUTs. Please check them again.")
         exit(1)
 
 
