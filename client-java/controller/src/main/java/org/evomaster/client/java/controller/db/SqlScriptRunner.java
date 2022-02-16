@@ -353,10 +353,9 @@ public class SqlScriptRunner {
      * @throws SQLException if the execution of the command fails
      */
     public static void execScript(Connection conn, String script) throws SQLException {
-        String[] commands = script.split(";");
+        List<String> commands = extractSql(script);
         for (String command : commands){
-            if (!command.replaceAll("\n","").isEmpty())
-                execCommand(conn, command+";");
+            execCommand(conn, command+";");
         }
     }
 
@@ -367,7 +366,10 @@ public class SqlScriptRunner {
      */
     public static List<String> extractSql(String script){
         String[] commands = script.split(";");
-        return Arrays.stream(commands).filter(s-> !s.replaceAll("\n","").isEmpty()).map(s-> s+";").collect(Collectors.toList());
+        return Arrays.stream(commands).filter(
+                s-> !s.replaceAll("\r\n","") // on Windows
+                        .replaceAll("\n","") // on Unix
+                        .isEmpty()).map(s-> s+";").collect(Collectors.toList());
     }
 
     /**
