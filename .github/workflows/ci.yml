@@ -3,7 +3,7 @@ name: CI
 on: [push]
 
 env:
-  evomaster-version: 1.4.0
+  evomaster-version: 1.4.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of
