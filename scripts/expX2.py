@@ -135,9 +135,11 @@ if len(sys.argv) > 9:
     CONFIGFILTER = str(sys.argv[9])
 
 #
-# An optional string to filter suts to be included based on their names
-# A string could refer to multiple suts separated by a `,` like a,b
-# None or `all` represents all Suts should be included
+# An optional string to filter SUTs to be included based on their names
+# A string could refer to multiple SUTs separated by a `,` like a,b
+# Note that
+# None or `all` represents all SUTs should be included
+# and only consider unique ones, eg, create one experiment setting for a,a
 # Default is None
 SUTFILTER = None
 if len(sys.argv) > 10:
@@ -207,13 +209,17 @@ SUTS = [
 ]
 
 if SUTFILTER is not None and SUTFILTER.lower() != "all":
-    specifiedsut = SUTFILTER.split(",")
-    filteredsut = list(filter(lambda x: x.name.lower() in (f.lower() for f in specifiedsut), SUTS))
-    if len(filteredsut) > 0 and len(filteredsut) == len(specifiedsut):
-        SUTS = filteredsut
-    else:
-        print("ERROR: cannot find all specified SUTs. Please check them again.")
-        exit(1)
+    filteredsut = []
+    unfound = []
+
+    for s in list(set(SUTFILTER.split(","))):
+        found = list(filter(lambda x: x.name.lower() == s.lower(), SUTS))
+        if len(found) == 0:
+            print("ERROR: cannot find the specified sut "+s)
+            exit(1)
+        filteredsut.extend(found)
+
+    SUTS = filteredsut
 
 
 # Specify if using any industrial case study
