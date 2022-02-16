@@ -595,7 +595,7 @@ def createJobs():
             exit(1)
 
 
-    NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
+    NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * sum(map(lambda o: o.numOfSettings, CONFIGS))
     SUT_WEIGHTS = sum(map(lambda x: x.timeWeight, SUTS))
     # For example, if we have 30 runs and 5 SUTs, the total budget
     # to distribute among the different jobs/scripts is 150.
