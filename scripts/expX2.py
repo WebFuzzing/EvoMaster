@@ -86,10 +86,11 @@ EXP_ID = "evomaster"
 
 
 
-if len(sys.argv) != 9:
+if len(sys.argv) < 9 or len(sys.argv) > 11:
     print(
-        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <maxActions> <minutesPerRun> <nJobs>")
+        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <maxActions> <minutesPerRun> <nJobs> <configFilter?> <sutFilter?>")
     exit(1)
+
 
 ### input parameters
 
@@ -126,6 +127,23 @@ MINUTES_PER_RUN = int(sys.argv[7])
 # Also not that in the same .sh script there can be experiments only for a single SUT.
 NJOBS = int(sys.argv[8])
 
+# An optional string to filter CONFIGS to be included
+# None or `all` represents all CONFIGS should be included
+# Default is None
+CONFIGFILTER = None
+if len(sys.argv) > 9:
+    CONFIGFILTER = str(sys.argv[9])
+
+#
+# An optional string to filter SUTs to be included based on their names
+# A string could refer to multiple SUTs separated by a `,` like a,b
+# Note that
+# None or `all` represents all SUTs should be included
+# and only consider unique ones, eg, create one experiment setting for a,a
+# Default is None
+SUTFILTER = None
+if len(sys.argv) > 10:
+    SUTFILTER = str(sys.argv[10])
 
 # input parameter validation
 if MIN_SEED > MAX_SEED:
@@ -189,6 +207,20 @@ SUTS = [
         Sut("sampleproject",1,DOTNET_3),
         Sut("menu-api",1,DOTNET_3)
 ]
+
+if SUTFILTER is not None and SUTFILTER.lower() != "all":
+    filteredsut = []
+    unfound = []
+
+    for s in list(set(SUTFILTER.split(","))):
+        found = list(filter(lambda x: x.name.lower() == s.lower(), SUTS))
+        if len(found) == 0:
+            print("ERROR: cannot find the specified sut "+s)
+            exit(1)
+        filteredsut.extend(found)
+
+    SUTS = filteredsut
+
 
 # Specify if using any industrial case study
 USING_IND = False
@@ -488,8 +520,8 @@ def writeWithHeadAndFooter(code, port, sut, timeout):
 
 
 
-def createOneJob(state, sut, seed, config):
-    code = addJobBody(state.port, sut, seed, config)
+def createOneJob(state, sut, seed, setting):
+    code = addJobBody(state.port, sut, seed, setting)
     state.updateBudget(sut.timeWeight)
     state.jobsLeft -= 1
     state.opened = True
@@ -507,12 +539,12 @@ def getJavaCommand(sut):
     return JAVA
 
 
-def addJobBody(port, sut, seed, config):
+def addJobBody(port, sut, seed, setting):
     script = io.StringIO()
 
     em_log = LOG_DIR + "/log_em_" + sut.name + "_" + str(port) + ".txt"
 
-    params = customParameters(seed, config)
+    params = customParameters(seed, setting)
 
     ### standard
     params += " --stoppingCriterion=FITNESS_EVALUATIONS"
@@ -553,6 +585,16 @@ def createJobs():
 
     CONFIGS = getConfigs()
 
+    ## filter config if specified
+    if CONFIGFILTER is not None and CONFIGFILTER.lower() != "all":
+        filtered = list(filter(lambda x: x.filterKey is None or x.filterKey.lower() == CONFIGFILTER.lower(), CONFIGS))
+        if len(filtered) > 0:
+            CONFIGS = filtered
+        else:
+            print("ERROR: Specified filter tag is undefined")
+            exit(1)
+
+
     NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
     SUT_WEIGHTS = sum(map(lambda x: x.timeWeight, SUTS))
     # For example, if we have 30 runs and 5 SUTs, the total budget
@@ -579,34 +621,36 @@ def createJobs():
 
             for config in CONFIGS:
 
-                # first run in current script: we need to create all the initializing preambles
-                if state.counter == 0:
-                    code = createOneJob(state, sut, seed, config)
+                for setting in config.generateAllSettings():
 
-                # can we add this new run to the current opened script?
-                elif(
-                        # we need to check if we would not exceed the budget limit per job
-                        (state.counter + sut.timeWeight) <= state.perJob
-                        # however, that check must be ignored if we cannot open/create any new script file
-                        # for the current SUT
-                        or not state.hasSpareJobs() or
-                        # this case is bit more tricky... let's say only few runs are left that
-                        # we need to allocate in a script, but they are so few that they would need
-                        # only a small percentage of a new script capacity (eg, less than 30%).
-                        # In such a case, to avoid getting very imbalanced execution times,
-                        # we could just add those few runs to the current script.
-                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight)
-                     ):
-                    code += addJobBody(state.port, sut, seed, config)
-                    state.updateBudget(sut.timeWeight)
+                    # first run in current script: we need to create all the initializing preambles
+                    if state.counter == 0:
+                        code = createOneJob(state, sut, seed, setting)
 
-                else:
-                    writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
-                    state.resetTmpForNewRun()
-                    code = createOneJob(state, sut, seed, config)
+                    # can we add this new run to the current opened script?
+                    elif(
+                            # we need to check if we would not exceed the budget limit per job
+                            (state.counter + sut.timeWeight) <= state.perJob
+                            # however, that check must be ignored if we cannot open/create any new script file
+                            # for the current SUT
+                            or not state.hasSpareJobs() or
+                            # this case is bit more tricky... let's say only few runs are left that
+                            # we need to allocate in a script, but they are so few that they would need
+                            # only a small percentage of a new script capacity (eg, less than 30%).
+                            # In such a case, to avoid getting very imbalanced execution times,
+                            # we could just add those few runs to the current script.
+                            (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight)
+                         ):
+                        code += addJobBody(state.port, sut, seed, setting)
+                        state.updateBudget(sut.timeWeight)
 
-                # keep track that a new run has been handled
-                completedForSut += 1
+                    else:
+                        writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
+                        state.resetTmpForNewRun()
+                        code = createOneJob(state, sut, seed, setting)
+
+                    # keep track that a new run has been handled
+                    completedForSut += 1
 
         if state.opened:
             writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
@@ -619,6 +663,82 @@ def createJobs():
     print("Total budget: " + str(CPUS * sum(state.waits) / 60) + " hours")
 
 
+class ParameterSetting:
+    # name is the same name used in the EM parameters
+    # values is an array of configured values regarding the parameter
+    def __init__(self, name, values):
+        self.name = name
+        self.values = values
+        self.count = len(self.values)
+
+    # get a parameter name with its value at index
+    def pvalue(self, index):
+        if index >= len(self.values):
+            exit("a value at the index "+ str(index) + " does not exist")
+        return (self.name, self.values[index])
+
+# Each Config object has a list of ParameterSetting objects
+class Config:
+    # settings is an array of ParameterSetting objects
+    def __init__(self, settings, filterKey=None):
+        self.filterKey = filterKey
+        self.settings = settings
+        self.numOfSettings = 1
+        for s in self.settings:
+            self.numOfSettings *= s.count
+
+    # generate all settings for configured parameters
+    def generateAllSettings(self):
+        all = []
+        lst = [0] * len(self.settings)
+        while lst is not None:
+            e = []
+            for i in range(len(lst)):
+                e.append(self.settings[i].pvalue(lst[i]))
+            all.append(e)
+            lst = self.plus1(lst)
+        return all
+
+    # next setting
+    def plus1(self, lst):
+        if lst[0] < self.settings[0].count - 1:
+            lst[0] = lst[0] + 1
+            return lst
+        for i in range(len(lst)):
+            if lst[i] < self.settings[i].count-1:
+                lst[i] = lst[i] + 1
+                return lst
+            else:
+                lst[i] = 0
+        return None
+
+# set customized parameters
+def customParameters(seed, setting):
+
+    params = ""
+
+    label = ""
+
+    ### set parameter based on the setting
+    for ps in setting:
+        params += " --" + str(ps[0]) + "=" + str(ps[1])
+        ### set label based on each value of the parameter
+        if is_float(str(ps[1])) and float(ps[1]) <= 1.0:
+            label += "_" + str(int(float(ps[1]) * 100))
+        else:
+            label += "_" + str(ps[1])
+
+    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
+
+    return params
+
+def is_float(input):
+    try:
+        float(input)
+    except ValueError:
+        return False
+    return True
+
 
 ############################################################################
 ### Custom
@@ -626,40 +746,28 @@ def createJobs():
 ### we want to run.
 ############################################################################
 
-
-class Config:
-    i=42
-    # def __init__(self):
-
-
-
-def customParameters(seed, config):
-
-    params = ""
-
-    ### Custom for these experiments
-    params += " "
-
-    # For each experiment configuration, we MUST create a unique label, with also the seed used.
-    # We need this to create unique file names for the generated test suites, so that EvoMaster
-    # does not override already generated tests from experiment runs that have already finished.
-    label = ""
-    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
-
-
-    return params
-
-
 def getConfigs():
 
     # array of configuration objects. We will run experiments for each of
     # these configurations
+    # each Config object has a list of ParameterSetting objects
    CONFIGS = []
 
-   CONFIGS.append(Config())
+   ### Example (step1) on how to specify ParameterSetting objects
 
-#    if CLUSTER:
-#    else:
+   # ALGO_MIO = ParameterSetting("algorithm",["MIO"])
+   # ALGO_RANDOM = ParameterSetting("algorithm",["RANDOM"])
+
+   # PR5 = ParameterSetting("probOfRandomSampling",[0.5])
+   # PR = ParameterSetting("probOfRandomSampling",[0.1, 0.2])
+
+   ### Example (step2) on how to define Config objects with specified ParameterSetting objects
+   # foo = Config([ALGO_MIO, PR5], "foo")
+   # bar = Config([ALGO_RANDOM, PR], "bar")
+
+   ### Example (step3) on employing Config objects for the experiments
+   # CONFIGS.append(foo)
+   # CONFIGS.append(bar)
 
    return CONFIGS
 
