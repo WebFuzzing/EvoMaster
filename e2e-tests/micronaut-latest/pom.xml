@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>evomaster-e2e-tests-micronaut-latest</artifactId>
-    <packaging>${packaging}</packaging>
+    <packaging>jar</packaging>
 
     <parent>
         <groupId>org.evomaster</groupId>
@@ -12,7 +12,6 @@
     </parent>
 
     <properties>
-        <packaging>jar</packaging>
         <exec.mainClass>com.foo.micronaut.latest.MicronautApplication</exec.mainClass>
         <micronaut.runtime>netty</micronaut.runtime>
     </properties>
@@ -142,11 +141,11 @@
                             <version>${micronaut.version}</version>
                         </path>
 
-<!--                        <path>-->
-<!--                            <groupId>io.micronaut</groupId>-->
-<!--                            <artifactId>micronaut-inject-java</artifactId>-->
-<!--                            <version>${micronaut.version}</version>-->
-<!--                        </path>-->
+                        <path>
+                            <groupId>io.micronaut</groupId>
+                            <artifactId>micronaut-inject-java</artifactId>
+                            <version>${micronaut.version}</version>
+                        </path>
 
                         <path>
                             <groupId>io.micronaut.openapi</groupId>
