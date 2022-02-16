@@ -243,9 +243,23 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         sqlHandler.setSchema(getSqlDatabaseSchema());
     }
 
+
+    /**
+     * TODO further handle multiple connections
+     * @return sql connection if there exists
+     */
     public final Connection getConnectionIfExist(){
         return (getDbSpecifications() == null
                 || getDbSpecifications().isEmpty())? null: getDbSpecifications().get(0).connection;
+    }
+
+    /**
+     *
+     * @return whether to employ smart db clean
+     */
+    public final boolean doEmploySmartDbClean(){
+        return getDbSpecifications() != null
+                && !getDbSpecifications().isEmpty() && getDbSpecifications().get(0).employSmartDbClean;
     }
 
     public final void resetExtraHeuristics() {
@@ -437,6 +451,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         try {
             schemaDto = SchemaExtractor.extract(getConnectionIfExist());
+            Objects.requireNonNull(schemaDto);
+            schemaDto.employSmartDbClean = doEmploySmartDbClean();
         } catch (Exception e) {
             SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage());
             return null;

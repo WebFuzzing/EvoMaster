@@ -556,7 +556,8 @@ class TestSuiteWriter {
                 //TODO add resetDatabase
                 addStatement("await $controller.resetStateOfSUT()", lines)
             } else if (format.isJavaOrKotlin()) {
-                addStatement("$controller.resetDatabase()", lines)
+                if (config.employSmartDbClean == true)
+                    addStatement("$controller.resetDatabase()", lines)
                 addStatement("$controller.resetStateOfSUT()", lines)
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)

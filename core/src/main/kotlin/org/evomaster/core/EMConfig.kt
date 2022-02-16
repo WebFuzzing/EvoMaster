@@ -1563,6 +1563,11 @@ class EMConfig {
             "Note that zero means tht only size of the collection would be asserted and a negative value means all data in the collection should be asserted.")
     var maxAssertionForDataInCollection = -1
 
+    @Experimental
+    @Cfg("Specify whether to employ smart database clean to clear data in the database if the SUT has." +
+            "`null` represents to employ the setting specified on the EM driver side")
+    var employSmartDbClean : Boolean? = null
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
