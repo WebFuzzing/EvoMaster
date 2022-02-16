@@ -182,6 +182,9 @@ The reasoning is to force the downloading of all the dependencies from Maven Cen
 to check if anything is missing.
 And this is why it was important to build the non-SNAPSHOT with `package` instead of `install`. 
 
+Note: the change to the version number for new release needs to be done (and pushed) on the `develop` branch. Then, `master` has to pull from `develop`, and push it.
+Once the release (from `master` branch) is done on GitHub, switch back to `develop`, and push the new SNAPSHOT update.
+In other words, `master` branch should always point to last commit of latest release, and no SNAPSHOT. 
 
 ## Example Update
 
