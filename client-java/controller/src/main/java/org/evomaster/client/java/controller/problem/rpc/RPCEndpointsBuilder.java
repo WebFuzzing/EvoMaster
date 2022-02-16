@@ -409,7 +409,7 @@ public class RPCEndpointsBuilder {
                                          List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations, Class<?> originalType, Map<TypeVariable, Type> genericTypeMap) {
         handleGenericSuperclass(clazz, genericTypeMap);
         List<String> genericTypes = handleGenericType(clazz, genericType, genericTypeMap);
-        String clazzWithGenericTypes = CodeJavaGenerator.handleClasNameWithGeneric(clazz.getName(), genericTypes);
+        String clazzWithGenericTypes = CodeJavaGenerator.handleClassNameWithGeneric(clazz.getName(), genericTypes);
         depth.add(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes));
         NamedTypedValue namedValue = null;
 

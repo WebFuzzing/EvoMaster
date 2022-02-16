@@ -47,6 +47,8 @@ import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -83,13 +85,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     /**
      * a map of table to fk target tables
      */
-    private final Map<String, List<String>> fkMap = new LinkedHashMap<>();
+    private final Map<String, List<String>> fkMap = new ConcurrentHashMap<>();
 
 
     /**
      * a map of table to a set of commands which are to insert data into the db
      */
-    private final Map<String, Set<String>> tableInitSqlMap = new LinkedHashMap<>();
+    private final Map<String, List<String>> tableInitSqlMap = new ConcurrentHashMap<>();
 
     /**
      * a map of interface schemas for RPC service under test
@@ -309,34 +311,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return dto;
     }
 
-    private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
-        for (String t: accessedTables){
-            if (!findInCollectionIgnoreCase(t, tablesToClean).isPresent()){
-                if (findInMapIgnoreCase(t, fkMap).isPresent()){
-                    tablesToClean.add(t);
-                    List<String> fk = fkMap.entrySet().stream().filter(e->
-                            findInCollectionIgnoreCase(t, e.getValue()).isPresent()
-                                    && !findInCollectionIgnoreCase(e.getKey(), tablesToClean).isPresent()).map(Map.Entry::getKey).collect(Collectors.toList());
-                    if (!fk.isEmpty())
-                        getTableToClean(fk, tablesToClean);
-                }else {
-                    SimpleLogger.uniqueWarn("Cannot find the table "+t+" in ["+String.join(",", fkMap.keySet())+"]");
-                }
-
-            }
-        }
-    }
-
-
-    private Optional<String> findInCollectionIgnoreCase(String name, Collection<String> list){
-        return list.stream().filter(i-> i.equalsIgnoreCase(name)).findFirst();
-    }
-
-    private Optional<? extends Map.Entry<String, ?>> findInMapIgnoreCase(String name, Map<String, ?> list){
-        return list.entrySet().stream().filter(x-> x.getKey().equalsIgnoreCase(name)).findFirst();
-    }
-
-    public void cleanAccessedTables(){
+    /**
+     * perform smart db clean by cleaning the data in accessed table
+     */
+    public final void cleanAccessedTables(){
         if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) return;
         if (getDbSpecifications().size() > 1)
             throw new RuntimeException("Error: DO NOT SUPPORT MULTIPLE SQL CONNECTION YET");
@@ -379,6 +357,41 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
+     * collect info about what table are manipulated by evo in order to generate data directly into it
+     * @param tables a list of name of tables
+     */
+    public void addTableToInserted(List<String> tables){
+        accessedTables.addAll(tables);
+    }
+
+    private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
+        for (String t: accessedTables){
+            if (!findInCollectionIgnoreCase(t, tablesToClean).isPresent()){
+                if (findInMapIgnoreCase(t, fkMap).isPresent()){
+                    tablesToClean.add(t);
+                    List<String> fk = fkMap.entrySet().stream().filter(e->
+                            findInCollectionIgnoreCase(t, e.getValue()).isPresent()
+                                    && !findInCollectionIgnoreCase(e.getKey(), tablesToClean).isPresent()).map(Map.Entry::getKey).collect(Collectors.toList());
+                    if (!fk.isEmpty())
+                        getTableToClean(fk, tablesToClean);
+                }else {
+                    SimpleLogger.uniqueWarn("Cannot find the table "+t+" in ["+String.join(",", fkMap.keySet())+"]");
+                }
+
+            }
+        }
+    }
+
+
+    private Optional<String> findInCollectionIgnoreCase(String name, Collection<String> list){
+        return list.stream().filter(i-> i.equalsIgnoreCase(name)).findFirst();
+    }
+
+    private Optional<? extends Map.Entry<String, ?>> findInMapIgnoreCase(String name, Map<String, ?> list){
+        return list.entrySet().stream().filter(x-> x.getKey().equalsIgnoreCase(name)).findFirst();
+    }
+
+    /**
      *
      * @param dbSpecification contains info of the db connection
      * @return whether the init script is executed
@@ -404,11 +417,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
         return false;
     }
-
-    public void addTableToInserted(List<String> tables){
-        accessedTables.addAll(tables);
-    }
-
 
     /**
      * Extra information about the SQL Database Schema, if any is present.

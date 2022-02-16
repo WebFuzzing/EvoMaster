@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -22,7 +21,7 @@ public class CodeJavaGenerator {
     private final static String GET_CLIENT_METHOD = "getRPCClient";
 
 
-    public static String handleClasNameWithGeneric(String fullName, List<String> genericTypes){
+    public static String handleClassNameWithGeneric(String fullName, List<String> genericTypes){
         if (genericTypes == null || genericTypes.isEmpty()) return fullName;
         return String.format("%s<%s>", fullName, String.join(", ", genericTypes));
     }

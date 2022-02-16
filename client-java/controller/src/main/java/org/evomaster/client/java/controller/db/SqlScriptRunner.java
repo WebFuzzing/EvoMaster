@@ -360,23 +360,28 @@ public class SqlScriptRunner {
         }
     }
 
+    /**
+     *
+     * @param script is a SQL script
+     * @return a list of SQL commands based on the script
+     */
     public static List<String> extractSql(String script){
         String[] commands = script.split(";");
         return Arrays.stream(commands).filter(s-> !s.replaceAll("\n","").isEmpty()).map(s-> s+";").collect(Collectors.toList());
     }
 
     /**
-     *
-     * @param commands
-     * @return
+     * extract a map from table name to a list of SQL INSERT commands for initializing data into the table
+     * @param commands a list of SQL commands to be extracted
+     * @return the map from table name (key) to a list of SQL INSERT commands (values) on the table
      */
-    public static  Map<String, Set<String>> extractSqlTableMap(List<String> commands){
-        Map<String, Set<String>> tableSqlMap = new HashMap<>();
+    public static  Map<String, List<String>> extractSqlTableMap(List<String> commands){
+        Map<String, List<String>> tableSqlMap = new HashMap<>();
         for (String command: commands){
             if (ParserUtils.isInsert(command)){
                 Insert stmt = (Insert) ParserUtils.asStatement(command);
                 Table table = stmt.getTable();
-                tableSqlMap.putIfAbsent(table.getName(), new HashSet<>());
+                tableSqlMap.putIfAbsent(table.getName(), new ArrayList<>());
                 tableSqlMap.get(table.getName()).add(command+";");
             }
         }

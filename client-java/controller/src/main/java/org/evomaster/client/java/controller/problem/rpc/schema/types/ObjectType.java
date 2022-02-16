@@ -59,6 +59,6 @@ public class ObjectType extends TypeSchema {
         if (genericTypes == null || genericTypes.isEmpty())
             return getFullTypeName();
         else
-            return CodeJavaGenerator.handleClasNameWithGeneric(getFullTypeName(),genericTypes);
+            return CodeJavaGenerator.handleClassNameWithGeneric(getFullTypeName(),genericTypes);
     }
 }

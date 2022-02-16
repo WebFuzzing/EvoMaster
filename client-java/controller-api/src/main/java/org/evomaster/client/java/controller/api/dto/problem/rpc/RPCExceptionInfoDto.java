@@ -28,7 +28,11 @@ public class RPCExceptionInfoDto {
     public ParamDto exceptionDto;
 
     /**
-     * if the exception is a cause of java.lang.UndeclaredThrowableException
+     * https://docs.oracle.com/javase/8/docs/api/java/lang/reflect/UndeclaredThrowableException.html
+     * java.lang.UndeclaredThrowableException could be thrown by an endpoint invocation
+     * in order to further analyze the exact exception, we analyze its cause.
+     * This attribute represents whether this RPCExceptionInfoDto is based on the cause of UndeclaredThrowableException
+     *
      */
     public boolean isCauseOfUndeclaredThrowable;
 }
