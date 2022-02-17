@@ -136,7 +136,6 @@
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
         <micronaut.test.version>3.0.5</micronaut.test.version>
         <swagger.annotations.version>2.1.10</swagger.annotations.version>
-        <javax.validation.api.version>2.0.1.Final</javax.validation.api.version>
     </properties>
 
 
@@ -769,11 +768,7 @@
                 <artifactId>swagger-annotations</artifactId>
                 <version>${swagger.annotations.version}</version>
             </dependency>
-            <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${javax.validation.api.version}</version>
-            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
