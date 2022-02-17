@@ -131,8 +131,12 @@
         <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
         <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
         <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
+        <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
         <micronaut.version>3.2.7</micronaut.version>
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
+        <micronaut.test.version>3.0.5</micronaut.test.version>
+        <swagger.annotations.version>2.1.10</swagger.annotations.version>
+        <javax.validation.api.version>2.0.1.Final</javax.validation.api.version>
     </properties>
 
 
@@ -705,7 +709,7 @@
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-bom</artifactId>
                 <version>${micronaut.version}</version>
-                <type>pom</type>
+<!--                <type>pom</type>-->
 <!--                <scope>import</scope>-->
             </dependency>
 
@@ -722,7 +726,7 @@
             <dependency>
                 <groupId>io.micronaut.test</groupId>
                 <artifactId>micronaut-test-junit5</artifactId>
-                <version>3.0.5</version>
+                <version>${micronaut.test.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
@@ -745,9 +749,14 @@
                 <version>${micronaut.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-core</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>jakarta.annotation</groupId>
                 <artifactId>jakarta.annotation-api</artifactId>
-                <version>2.0.0</version>
+                <version>${jakarta.annotation.version}</version>
             </dependency>
 
             <dependency>
@@ -758,9 +767,13 @@
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
-                <version>2.1.10</version>
+                <version>${swagger.annotations.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${javax.validation.api.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -894,29 +907,6 @@
                         <target>${java.version}</target>
                         <encoding>${project.build.sourceEncoding}</encoding>
 
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>io.micronaut</groupId>
-                                <artifactId>micronaut-http-validation</artifactId>
-                            </path>
-
-                            <path>
-                                <groupId>io.micronaut</groupId>
-                                <artifactId>micronaut-inject-java</artifactId>
-                            </path>
-
-                            <path>
-                                <groupId>io.micronaut.openapi</groupId>
-                                <artifactId>micronaut-openapi</artifactId>
-                                <version>${micronaut.openapi.version}</version>
-                            </path>
-
-                        </annotationProcessorPaths>
-
-                        <compilerArgs>
-                            <arg>-Amicronaut.processing.group=com.foo.micronaut.latest</arg>
-                            <arg>-Amicronaut.processing.module=micronaut-latest</arg>
-                        </compilerArgs>
                     </configuration>
                     <executions>
                         <!-- Replacing default-compile as it is treated specially by maven -->
@@ -1092,6 +1082,12 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+
+                <!-- Micronaut build plugin -->
+                <plugin>
+                    <groupId>io.micronaut.build</groupId>
+                    <artifactId>micronaut-maven-plugin</artifactId>
                 </plugin>
 
             </plugins>
