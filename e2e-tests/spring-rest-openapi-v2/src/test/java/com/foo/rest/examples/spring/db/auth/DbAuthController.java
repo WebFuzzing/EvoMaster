@@ -29,10 +29,10 @@ public class DbAuthController extends SpringWithDbController {
 
     @Override
     public void resetStateOfSUT() {
-        DbCleaner.clearDatabase_H2(connection);
+        DbCleaner.clearDatabase_H2(sqlConnection);
 
         try {
-            SqlScriptRunner.execInsert(connection,
+            SqlScriptRunner.execInsert(sqlConnection,
                     "insert into Auth_User_Entity(user_id,password) values('"+userId+"','"+password+"');");
         } catch (SQLException e) {
             throw new RuntimeException(e);

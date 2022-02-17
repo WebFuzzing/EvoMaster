@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
+import com.thrift.example.artificial.Necessity;
 import com.thrift.example.artificial.RPCInterfaceExampleImpl;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
@@ -8,6 +9,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public abstract class RPCEndpointsBuilderTestBase {
 
-    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new RPCInterfaceExampleImpl(), null, null, null, null, getAuthInfo(), getCustomizedValueInRequests());
+    public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new RPCInterfaceExampleImpl(), null, null, null, null, getAuthInfo(), getCustomizedValueInRequests(), specifyCustomizedNotNullAnnotation());
 
     public abstract String getInterfaceName();
 
@@ -25,6 +27,16 @@ public abstract class RPCEndpointsBuilderTestBase {
 
     public List<CustomizedRequestValueDto> getCustomizedValueInRequests(){
         return null;
+    }
+
+    public List<CustomizedNotNullAnnotationForRPCDto> specifyCustomizedNotNullAnnotation() {
+        return Arrays.asList(
+                new CustomizedNotNullAnnotationForRPCDto(){{
+                    annotationType = "com.thrift.example.artificial.CustomAnnotation";
+                    annotationMethod = "necessity";
+                    equalsTo = Necessity.REQUIRED;
+                }}
+        );
     }
 
     public List<AuthenticationDto> getAuthInfo(){return null;}
@@ -51,6 +63,6 @@ public abstract class RPCEndpointsBuilderTestBase {
     }
 
     public boolean containType(List<NamedTypedValue> params, String fullTypeName){
-        return params.stream().anyMatch(s-> s.getType().getFullTypeName().equals(fullTypeName));
+        return params.stream().anyMatch(s-> s.getType().getFullTypeNameWithGenericType().equals(fullTypeName));
     }
 }

@@ -35,12 +35,12 @@ class MapGene<K, V>(
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
             throw IllegalArgumentException(
-                "minSize (${minSize}) is greater than maxSize ($maxSize)")
+                "MapGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
         }
 
         if (maxSize != null && elements.size > maxSize!!) {
             throw IllegalArgumentException(
-                    "More elements (${elements.size}) than allowed ($maxSize)")
+                "MapGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
     }
 
@@ -108,7 +108,8 @@ class MapGene<K, V>(
             throw IllegalStateException("Cannot mutate a immutable array")
         }
         val mutable = elements.filter { it.isMutable() }
-        if ( mutable.isEmpty() || mutable.size > getMaxSizeOrDefault()){
+        if ( getMinSizeOrDefault() !=getMaxSizeOrDefault() // if min == max, the size is not mutable
+               && (mutable.isEmpty() || mutable.size > getMaxSizeOrDefault())){
             return listOf()
         }
 

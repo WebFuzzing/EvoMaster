@@ -3,7 +3,8 @@ package com.foo.spring.rest.postgres
 import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.db.DbCleaner
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.internal.db.DbSpecification
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 import org.springframework.boot.SpringApplication
@@ -28,7 +29,7 @@ abstract class SpringRestPostgresController(
             .apply{withEnv("POSTGRES_HOST_AUTH_METHOD","trust")}
 
 
-    private var connection: Connection? = null
+    private var sqlConnection: Connection? = null
 
 
     init {
@@ -62,10 +63,10 @@ abstract class SpringRestPostgresController(
         )!!
 
 
-        connection?.close()
+        sqlConnection?.close()
 
         val jdbc = ctx!!.getBean(JdbcTemplate::class.java)
-        connection = jdbc.dataSource!!.connection
+        sqlConnection = jdbc.dataSource!!.connection
 
         return "http://localhost:" + getSutPort()
     }
@@ -92,7 +93,7 @@ abstract class SpringRestPostgresController(
     }
 
     override fun resetStateOfSUT() {
-        DbCleaner.clearDatabase_Postgres(connection, "public", listOf("flyway_schema_history"))
+//        DbCleaner.clearDatabase_Postgres(sqlConnection, "public", listOf("flyway_schema_history"))
     }
 
     override fun getProblemInfo(): ProblemInfo {
@@ -106,9 +107,11 @@ abstract class SpringRestPostgresController(
         return null
     }
 
-    override fun getConnection(): Connection? {
-        return connection
-    }
+    override fun getDbSpecifications(): MutableList<DbSpecification>? = mutableListOf(DbSpecification().apply {
+        connection = sqlConnection
+        dbType = DatabaseType.POSTGRES
+        schemaNames = listOf("public")
+    })
 
     override fun getDatabaseDriverName(): String? {
         return "org.postgresql.Driver"

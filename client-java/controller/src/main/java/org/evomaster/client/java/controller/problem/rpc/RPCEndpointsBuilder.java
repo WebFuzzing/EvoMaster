@@ -61,6 +61,20 @@ public class RPCEndpointsBuilder {
         validateKeyValues(customizedRequestValueDtos);
     }
 
+    /**
+     * validate specified notNullAnnotations
+     * @param notNullAnnotations are specified customized annotation representing if any field of RPC dto is required
+     */
+    public static void validateCustomizedNotNullAnnotationForRPCDto(List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations){
+        if (notNullAnnotations == null || notNullAnnotations.isEmpty()) return;
+        notNullAnnotations.forEach(s->{
+            if (s.annotationType == null)
+                throw new IllegalArgumentException("Driver Config Error: annotationType should not be null");
+            if ((s.annotationMethod == null) ^ (s.equalsTo == null))
+                throw new IllegalArgumentException("Driver Config Error: annotationMethod and equalsTo should be specified at the same time");
+        });
+    }
+
 
     private static void validateKeyValues(List<CustomizedRequestValueDto> customizedRequestValueDtos){
         List<String> handled = new ArrayList<>();
@@ -130,7 +144,8 @@ public class RPCEndpointsBuilder {
                                         List<String> skipEndpointsByName, List<String> skipEndpointsByAnnotation,
                                         List<String> involveEndpointsByName, List<String> involveEndpointsByAnnotation,
                                         List<AuthenticationDto> authenticationDtoList,
-                                        List<CustomizedRequestValueDto> customizedRequestValueDtos) {
+                                        List<CustomizedRequestValueDto> customizedRequestValueDtos,
+                                        List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations) {
         List<EndpointSchema> endpoints = new ArrayList<>();
         List<EndpointSchema> endpointsForAuth = new ArrayList<>();
         List<String> skippedEndpoints = new ArrayList<>();
@@ -141,7 +156,7 @@ public class RPCEndpointsBuilder {
 
             for (Method m : interfaze.getDeclaredMethods()) {
                 if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation))
-                    endpoints.add(build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos));
+                    endpoints.add(build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos, notNullAnnotations));
                 else {
                     skippedEndpoints.add(m.getName());
                 }
@@ -149,7 +164,7 @@ public class RPCEndpointsBuilder {
                 List<AuthenticationDto> auths = getAuthEndpointInInterface(authenticationDtoList, interfaceName, m);
                 if (auths != null && !auths.isEmpty()){
                     // handle endpoint which is for auth setup
-                    EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos);
+                    EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos,notNullAnnotations);
                     endpointsForAuth.add(authEndpoint);
                     for (AuthenticationDto auth: auths){
                         EndpointSchema copy = authEndpoint.copyStructure();
@@ -228,7 +243,7 @@ public class RPCEndpointsBuilder {
                 JsonNode node = objectMapper.readTree(jsonString);
                 List<NamedTypedValue> fields = new ArrayList<>();
                 for (NamedTypedValue f: ((ObjectParam) inputParam).getType().getFields()){
-                    NamedTypedValue v = f.copyStructure();
+                    NamedTypedValue v = f.copyStructureWithProperties();
                     if (node.has(v.getName())){
                         setNamedValueBasedOnCandidates(f, node.textValue());
                         fields.add(v);
@@ -313,7 +328,8 @@ public class RPCEndpointsBuilder {
     }
 
     private static EndpointSchema build(InterfaceSchema schema, Method method, RPCType rpcType, List<AuthenticationDto> authenticationDtoList,
-                                        List<CustomizedRequestValueDto> customizedRequestValueDtos) {
+                                        List<CustomizedRequestValueDto> customizedRequestValueDtos,
+                                        List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations) {
         List<NamedTypedValue> requestParams = new ArrayList<>();
 
         List<AuthenticationDto> authAnnotationDtos = getSpecificRelatedAuth(authenticationDtoList, method);
@@ -324,14 +340,15 @@ public class RPCEndpointsBuilder {
         Set<String> relatedCustomization = new HashSet<>();
 
         for (Parameter p : method.getParameters()) {
-            requestParams.add(buildInputParameter(schema, p, rpcType, getRelatedCustomization(customizedRequestValueDtos, method), relatedCustomization));
+            requestParams.add(buildInputParameter(schema, p, rpcType, getRelatedCustomization(customizedRequestValueDtos, method), relatedCustomization, notNullAnnotations));
         }
 
 
 
         NamedTypedValue response = null;
         if (!method.getReturnType().equals(Void.TYPE)) {
-            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null, null, null);
+            Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
+            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null, null, null, null, null, genericTypeMap);
         }
 
         List<NamedTypedValue> exceptions = null;
@@ -339,7 +356,7 @@ public class RPCEndpointsBuilder {
             exceptions = new ArrayList<>();
             for (int i = 0; i < method.getExceptionTypes().length; i++){
                 NamedTypedValue exception = build(schema, method.getExceptionTypes()[i],
-                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>(), null, null, null);
+                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>(), null, null, null, null, null, null);
                 exceptions.add(exception);
             }
         }
@@ -373,21 +390,27 @@ public class RPCEndpointsBuilder {
     }
 
     private static NamedTypedValue buildInputParameter(InterfaceSchema schema, Parameter parameter, RPCType type,
-                                                       Map<Integer,CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization) {
+                                                       Map<Integer,CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization,
+                                                       List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations) {
         String name = parameter.getName();
         Class<?> clazz = parameter.getType();
         List<String> depth = new ArrayList<>();
-        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, customizationDtos, relatedCustomization, null);
+        Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
+        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
 
         for (Annotation annotation: parameter.getAnnotations()){
-            handleConstraint(namedTypedValue, annotation);
+            handleConstraint(namedTypedValue, annotation, notNullAnnotations);
         }
         return namedTypedValue;
     }
 
     private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth,
-                                         Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization, AccessibleSchema accessibleSchema) {
-        depth.add(getObjectTypeNameWithFlag(clazz, clazz.getName()));
+                                         Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization, AccessibleSchema accessibleSchema,
+                                         List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations, Class<?> originalType, Map<TypeVariable, Type> genericTypeMap) {
+        handleGenericSuperclass(clazz, genericTypeMap);
+        List<String> genericTypes = handleGenericType(clazz, genericType, genericTypeMap);
+        String clazzWithGenericTypes = CodeJavaGenerator.handleClassNameWithGeneric(clazz.getName(), genericTypes);
+        depth.add(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes));
         NamedTypedValue namedValue = null;
 
         try{
@@ -395,13 +418,14 @@ public class RPCEndpointsBuilder {
             if (PrimitiveOrWrapperType.isPrimitiveOrTypes(clazz)) {
                 namedValue = PrimitiveOrWrapperParam.build(name, clazz, accessibleSchema);
             } else if (clazz == String.class) {
-                namedValue = new StringParam(name, accessibleSchema);
+                StringType stringType = new StringType();
+                namedValue = new StringParam(name, stringType, accessibleSchema);
             } else if (clazz.isEnum()) {
                 String [] items = Arrays.stream(clazz.getEnumConstants()).map(Object::toString).toArray(String[]::new);
                 EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items, clazz);
                 EnumParam param = new EnumParam(name, enumType, accessibleSchema);
                 //register this type in the schema
-                schema.registerType(enumType.copy(), param.copyStructure());
+                schema.registerType(enumType.copy(), param.copyStructureWithProperties());
                 namedValue = param;
             } else if (clazz.isArray()){
 
@@ -409,15 +433,15 @@ public class RPCEndpointsBuilder {
                 Class<?> templateClazz = null;
                 if (genericType instanceof GenericArrayType){
                     type = ((GenericArrayType)genericType).getGenericComponentType();
-                    templateClazz = getTemplateClass(type);
+                    templateClazz = getTemplateClass(type, genericTypeMap);
                 }else {
                     templateClazz = clazz.getComponentType();
                 }
 
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
-                ctype.depth = getDepthLevel(clazz, depth);
+                ctype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                 namedValue = new ArrayParam(name, ctype, accessibleSchema);
 
             } else if (clazz == ByteBuffer.class){
@@ -427,11 +451,11 @@ public class RPCEndpointsBuilder {
                 if (genericType == null)
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
-                Class<?> templateClazz = getTemplateClass(type);
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null);
+                Class<?> templateClazz = getTemplateClass(type, genericTypeMap);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
-                ctype.depth = getDepthLevel(clazz, depth);
+                ctype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                 if (List.class.isAssignableFrom(clazz))
                     namedValue = new ListParam(name, ctype, accessibleSchema);
                 else
@@ -442,14 +466,14 @@ public class RPCEndpointsBuilder {
                 Type keyType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
-                Class<?> keyTemplateClazz = getTemplateClass(keyType);
-                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos, relatedCustomization, null);
+                Class<?> keyTemplateClazz = getTemplateClass(keyType, genericTypeMap);
+                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 keyTemplate.setNullable(false);
 
-                Class<?> valueTemplateClazz = getTemplateClass(valueType);
-                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos, relatedCustomization, null);
+                Class<?> valueTemplateClazz = getTemplateClass(valueType, genericTypeMap);
+                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate), null), clazz);
-                mtype.depth = getDepthLevel(clazz, depth);
+                mtype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                 namedValue = new MapParam(name, mtype, accessibleSchema);
             } else if (Date.class.isAssignableFrom(clazz)){
                 if (clazz == Date.class)
@@ -461,22 +485,28 @@ public class RPCEndpointsBuilder {
                     throw new RuntimeException("NOT handle "+clazz.getName()+" class in java yet");
                 }
 
-                long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazz.getName()))).count();
+                long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes))).count();
+
+
+
 
                 if (cycleSize == 1){
                     List<NamedTypedValue> fields = new ArrayList<>();
 
-                    Field thrift_metamap = null;
-
                     Map<Integer, CustomizedRequestValueDto> objRelatedCustomizationDtos = getCustomizationBasedOnSpecifiedType(customizationDtos, clazz.getName());
 
-                    for(Field f: clazz.getDeclaredFields()){
-                        if (doSkipReflection(f.getName()) || doSkipField(f, rpcType))
+                    // field list
+                    List<Field> fieldList = new ArrayList<>();
+                    getAllFields(clazz, fieldList, rpcType);
+
+                    for(Field f: fieldList){
+                        // skip final field
+                        if (Modifier.isFinal(f.getModifiers()))
                             continue;
-                        if (rpcType == RPCType.THRIFT && isMetaMap(f)){
-                            thrift_metamap = f;
+
+                        if (doSkipReflection(f.getName()))
                             continue;
-                        }
+
                         AccessibleSchema faccessSchema = null;
                         //check accessible
                         if (Modifier.isPublic(f.getModifiers())){
@@ -484,26 +514,49 @@ public class RPCEndpointsBuilder {
                         } else{
                             // find getter and setter
                             faccessSchema = new AccessibleSchema(false, findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
+                            if (faccessSchema.getterMethodName == null || faccessSchema.setterMethodName == null){
+                                SimpleLogger.warn("Error: skip the field "+f.getName()+" since its setter/getter is not found");
+                                continue;
+                            }
                         }
-                        NamedTypedValue field = build(schema, f.getType(), f.getGenericType(),f.getName(), rpcType, depth, objRelatedCustomizationDtos, relatedCustomization, faccessSchema);
+
+                        Class<?> fType = f.getType();
+                        Class<?> foriginalType = null;
+                        Type fGType = f.getGenericType();
+
+                        if (f.getGenericType() instanceof TypeVariable){
+                            foriginalType = f.getType();
+                            Type actualType = getActualType(genericTypeMap, (TypeVariable) f.getGenericType());
+                            if (actualType instanceof Class){
+                                fType = (Class<?>) actualType;
+                                fGType = fType;
+                            }else if (actualType instanceof ParameterizedType){
+                                fGType = actualType;
+                                if (((ParameterizedType) actualType).getRawType() instanceof Class<?>)
+                                    fType = (Class<?>) ((ParameterizedType) actualType).getRawType();
+                                else
+                                    throw new RuntimeException("Error: Fail to handle actual type of a generic type");
+                            }
+                        }
+
+                        NamedTypedValue field = build(schema, fType, fGType,f.getName(), rpcType, depth, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, foriginalType, genericTypeMap);
                         for (Annotation annotation : f.getAnnotations()){
-                            handleConstraint(field, annotation);
+                            handleConstraint(field, annotation, notNullAnnotations);
                         }
                         fields.add(field);
                     }
 
-                    if (thrift_metamap!=null){
-                        handleMetaMap(thrift_metamap, fields);
-                    }
+                    handleNativeRPCConstraints(clazz, fields, rpcType);
 
-                    ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz);
-                    otype.depth = getDepthLevel(clazz, depth);
+                    ObjectType otype = new ObjectType(clazz.getSimpleName(), clazz.getName(), fields, clazz, genericTypes);
+                    otype.setOriginalType(originalType);
+                    otype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = oparam;
                 }else {
-                    CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz);
-                    otype.depth = getDepthLevel(clazz, depth);
+                    CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz, genericTypes);
+                    otype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
                     schema.registerType(otype.copy(), oparam);
                     namedValue = oparam;
@@ -514,11 +567,68 @@ public class RPCEndpointsBuilder {
                     name, clazz.getName(), genericType==null?"null":genericType.getTypeName(), genericType==null?"null":genericType.getClass().getName(), String.join(",", depth), e.getMessage()));
         }
 
+        namedValue.getType().setOriginalType(originalType);
+
         if (customizationDtos!=null){
             handleNamedValueWithCustomizedDto(namedValue, customizationDtos, relatedCustomization);
         }
 
         return namedValue;
+    }
+
+    private static void handleGenericSuperclass(Class clazz, Map<TypeVariable, Type> map){
+        if (isNotCustomizedObject(clazz)) return;
+        if (clazz.getGenericSuperclass() == null || !(clazz.getGenericSuperclass() instanceof ParameterizedType)) return;
+        Type[] actualTypes = ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments();
+        if (((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments().length == 0) return;
+        TypeVariable[] typeVariables = clazz.getSuperclass().getTypeParameters();
+        if (typeVariables.length != actualTypes.length){
+            throw new RuntimeException("Error: fail to handle generic types in Dto");
+        }
+        for (int i = 0; i < typeVariables.length; i++){
+            map.put(typeVariables[i], actualTypes[i]);
+        }
+        handleGenericSuperclass(clazz.getSuperclass(), map);
+    }
+
+    private static List<String> handleGenericType(Class<?> clazz, Type genericType, Map<TypeVariable, Type> map){
+        if (isNotCustomizedObject(clazz)) return null;
+        if (!(genericType instanceof ParameterizedType)) return null;
+        List<String> genericTypes = new ArrayList<>();
+        Type[] actualTypes = ((ParameterizedType) genericType).getActualTypeArguments();
+        TypeVariable[] typeVariables = clazz.getTypeParameters();
+        if (typeVariables.length != actualTypes.length){
+            throw new RuntimeException("Error: fail to handle generic types in Dto");
+        }
+        for (int i = 0; i < typeVariables.length; i++){
+            Type a = actualTypes[i];
+            if (a instanceof TypeVariable)
+                a = getActualType(map, (TypeVariable) a);
+            if (a != null)
+                genericTypes.add(a.getTypeName());
+
+            map.put(typeVariables[i], actualTypes[i]);
+        }
+        return genericTypes;
+    }
+
+    private static Type getActualType(Map<TypeVariable, Type> map, TypeVariable typeVariable){
+        Type t = map.get(typeVariable);
+        if (t == null) return null;
+        if (t instanceof TypeVariable)
+            return getActualType(map, (TypeVariable) t);
+        return t;
+    }
+
+    private static void getAllFields(Class<?> clazz, List<Field> fieldList, RPCType type){
+        if (type == RPCType.THRIFT && isNativeThriftDto(clazz)){
+            getFieldForNativeThriftDto(clazz, fieldList);
+            return;
+        }
+
+        fieldList.addAll(0, Arrays.asList(clazz.getDeclaredFields()));
+        if (!Exception.class.isAssignableFrom(clazz) && clazz.getSuperclass() != null && clazz.getSuperclass() != Object.class)
+            getAllFields(clazz.getSuperclass(), fieldList, type);
     }
 
     private static Map<Integer, CustomizedRequestValueDto> getCustomizationBasedOnSpecifiedType(Map<Integer, CustomizedRequestValueDto> customizationDtos, String objTypeName){
@@ -540,7 +650,7 @@ public class RPCEndpointsBuilder {
                     Modifier.isPublic(m.getModifiers()) &&
                             m.getName().equalsIgnoreCase("set"+field.getName()) &&
                             m.getParameterCount() == 1 &&
-                            m.getParameterTypes()[0].equals(field.getType())
+                            (m.getParameterTypes()[0].equals(field.getType()) || m.getParameterTypes()[0].equals(PrimitiveOrWrapperParam.getPrimitiveOrWrapper(field.getType())))
             ).collect(Collectors.toList());
         }
         if (found.size() == 1)
@@ -565,7 +675,7 @@ public class RPCEndpointsBuilder {
             ){
                 dto.combinedKeyValuePairs.forEach(p->{
                     if (p.fieldKey.equals(namedTypedValue.getName())){
-                        NamedTypedValue copy = namedTypedValue.copyStructure();
+                        NamedTypedValue copy = namedTypedValue.copyStructureWithProperties();
                         boolean ok = setNamedValueBasedOnCandidates(copy, p.fieldValue);
                         if (ok){
                             if (!candidateReferences.contains(""+i)){
@@ -603,7 +713,7 @@ public class RPCEndpointsBuilder {
         if (namedTypedValue instanceof PrimitiveOrWrapperParam || namedTypedValue instanceof StringParam || namedTypedValue instanceof ByteBufferParam){
 
             for (String v: customizedRequestValueDto.keyValues.values){
-                NamedTypedValue copy= namedTypedValue.copyStructure();
+                NamedTypedValue copy= namedTypedValue.copyStructureWithProperties();
                 handled = handled && setNamedValueBasedOnCandidates(copy, v);
                 candidates.add(copy);
             }
@@ -634,9 +744,12 @@ public class RPCEndpointsBuilder {
         return true;
     }
 
-    private static void handleConstraint(NamedTypedValue namedTypedValue, Annotation annotation){
+    private static void handleConstraint(NamedTypedValue namedTypedValue, Annotation annotation, List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations){
         if (annotation.annotationType().getName().startsWith("javax.validation.constraints")){
             JavaXConstraintHandler.handleParam(namedTypedValue, annotation);
+        } else if (notNullAnnotations != null && !notNullAnnotations.isEmpty()){
+            boolean isRequired = notNullAnnotations.stream().anyMatch(a-> isRequired(annotation, a));
+            namedTypedValue.setNullable(!isRequired);
         }
         // remove the log for the moment, might need it later
 //        else {
@@ -644,11 +757,30 @@ public class RPCEndpointsBuilder {
 //        }
     }
 
-    private static Class<?> getTemplateClass(Type type){
-        if (type instanceof ParameterizedType){
-            return  (Class<?>) ((ParameterizedType)type).getRawType();
-        }else if (type instanceof Class)
-            return  (Class<?>) type;
+    private static boolean isRequired(Annotation annotation, CustomizedNotNullAnnotationForRPCDto notNullAnnotations){
+        if (annotation.annotationType().getName().equals(notNullAnnotations.annotationType)){
+            if (notNullAnnotations.annotationMethod != null && notNullAnnotations.equalsTo !=null){
+                try {
+                    return annotation.annotationType().getDeclaredMethod(notNullAnnotations.annotationMethod).invoke(annotation).equals(notNullAnnotations.equalsTo);
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                    SimpleLogger.uniqueWarn("Error: fail to invoke the specified method in the annotation with the error msg:"+e.getMessage());
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static Class<?> getTemplateClass(Type type, Map<TypeVariable, Type> genericTypeMap){
+        Type actualType = type;
+        if (type instanceof TypeVariable)
+            actualType = getActualType(genericTypeMap, (TypeVariable) type);
+
+        if (actualType instanceof ParameterizedType){
+            return  (Class<?>) ((ParameterizedType)actualType).getRawType();
+        }else if (actualType instanceof Class)
+            return  (Class<?>) actualType;
         throw new RuntimeException("unhanded type:"+ type);
     }
 
@@ -662,37 +794,6 @@ public class RPCEndpointsBuilder {
         return name.equals("$jacocoData");
     }
 
-    private final static List<String> THRIFT_SKIP = Arrays.asList(
-            "org.apache.thrift.protocol.TStruct",
-            "org.apache.thrift.protocol.TField",
-            "org.apache.thrift.TFieldIdEnum",
-            "org.apache.thrift.scheme.SchemeFactory"
-    );
-
-    private static boolean doSkipField(Field field, RPCType type){
-        switch (type){
-            case THRIFT: {
-                return THRIFT_SKIP.contains(field.getType().getName()) || doSkipFieldByName(field.getName(), type) || doSkipSchemas(field);
-            }
-            default: return false;
-        }
-    }
-
-    // old version of thrift for ind1 case study
-    private static boolean doSkipSchemas(Field field){
-        if (!field.getName().equals("schemes")) return false;
-
-        return Map.class.isAssignableFrom(field.getType())
-                && getTemplateClass(((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]).isAssignableFrom(Class.class);
-    }
-
-    private static boolean doSkipFieldByName(String name, RPCType type){
-        switch (type){
-            case THRIFT: return name.equals("__isset_bitfield") || name.equals("__isset_bit_vector") || name.matches("^__(.+)_ISSET_ID$");
-            default: return false;
-        }
-    }
-
     private static boolean isMetaMap(Field field){
         boolean result = field.getName().equals("metaDataMap")
                 && Map.class.isAssignableFrom(field.getType());
@@ -702,6 +803,48 @@ public class RPCEndpointsBuilder {
         Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
         return valueType.getTypeName().equals("org.apache.thrift.meta_data.FieldMetaData");
+
+    }
+
+    private final static String NATIVE_THRIFT_DTO_INTERFACE = "org.apache.thrift.TBase";
+    private final static String NATIVE_THRIFT_FIELD_SCHEMA = "metaDataMap";
+
+    private static boolean isNativeThriftDto(Class<?> clazz){
+        return clazz.getInterfaces().length > 0 && Arrays.stream(clazz.getInterfaces()).anyMatch(i-> i.getName().equals(NATIVE_THRIFT_DTO_INTERFACE));
+    }
+
+    private static void getFieldForNativeThriftDto(Class<?> clazz, List<Field> fields){
+        try {
+            Field metaMap_field = clazz.getDeclaredField(NATIVE_THRIFT_FIELD_SCHEMA);
+            if (isMetaMap(metaMap_field)){
+                Object metaMap = metaMap_field.get(null);
+
+                if (metaMap instanceof Map){
+                    for (Object f : ((Map)metaMap).values()){
+                        Field fname = f.getClass().getDeclaredField("fieldName");
+                        fname.setAccessible(true);
+                        String name = (String) fname.get(f);
+                        fields.add(clazz.getDeclaredField(name));
+                    }
+                }
+            }
+
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            SimpleLogger.uniqueWarn("Error: fail to get the metaDataMap field in native dto");
+        }
+
+    }
+
+    private static void handleNativeRPCConstraints(Class<?> clazz, List<NamedTypedValue> fields, RPCType type){
+        if (type == RPCType.THRIFT && isNativeThriftDto(clazz)){
+            try {
+                Field metaMap_field = clazz.getDeclaredField(NATIVE_THRIFT_FIELD_SCHEMA);
+                if (isMetaMap(metaMap_field))
+                    handleMetaMap(metaMap_field, fields);
+            } catch (NoSuchFieldException e) {
+                SimpleLogger.uniqueWarn("Error: fail to get the metaDataMap field in native dto");
+            }
+        }
 
     }
 
@@ -740,8 +883,8 @@ public class RPCEndpointsBuilder {
         return null;
     }
 
-    private static int getDepthLevel(Class clazz, List<String> depth){
-        String tag = getObjectTypeNameWithFlag(clazz, clazz.getName());
+    private static int getDepthLevel(Class clazz, List<String> depth, String clazzFullNameWithGeneric){
+        String tag = getObjectTypeNameWithFlag(clazz, clazzFullNameWithGeneric);
         int start = Math.max(0, depth.lastIndexOf(tag));
         return depth.subList(start, depth.size()).stream().filter(s-> !s.equals(tag) && s.startsWith(OBJECT_FLAG)).collect(Collectors.toSet()).size();
     }
