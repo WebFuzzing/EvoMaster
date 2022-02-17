@@ -52,7 +52,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
         if (dto.innerContent!= null && !dto.innerContent.isEmpty()){
             NamedTypedValue t = getType().getTemplate();
             Set<NamedTypedValue> values = dto.innerContent.stream().map(s-> {
-                NamedTypedValue v = t.copyStructure();
+                NamedTypedValue v = t.copyStructureWithProperties();
                 v.setValueBasedOnDto(s);
                 return v;
             }).collect(Collectors.toSet());
@@ -66,7 +66,7 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
         // employ linked hash set to avoid flaky tests
         Set<NamedTypedValue> values = new LinkedHashSet<>();
         for (Object e : (Set) instance){
-            NamedTypedValue copy = t.copyStructure();
+            NamedTypedValue copy = t.copyStructureWithProperties();
             copy.setValueBasedOnInstance(e);
             values.add(copy);
         }

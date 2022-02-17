@@ -551,12 +551,17 @@ class TestSuiteWriter {
 
 
         lines.block {
+
             if (format.isJavaScript()) {
+                //TODO add resetDatabase
                 addStatement("await $controller.resetStateOfSUT()", lines)
             } else if (format.isJavaOrKotlin()) {
+                if (config.employSmartDbClean == true)
+                    addStatement("$controller.resetDatabase()", lines)
                 addStatement("$controller.resetStateOfSUT()", lines)
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)
+                //TODO add resetDatabase
                 addStatement("$fixture.controller.ResetStateOfSut()", lines)
             }
         }

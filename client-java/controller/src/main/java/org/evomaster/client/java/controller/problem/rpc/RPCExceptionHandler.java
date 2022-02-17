@@ -11,6 +11,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.UndeclaredThrowableException;
 
 /**
  * handle RPC exception, for instance
@@ -30,32 +31,62 @@ public class RPCExceptionHandler {
      */
     public static void handle(Object e, ActionResponseDto dto, EndpointSchema endpointSchema, RPCType type){
 
+        Object exceptionToHandle = e;
+        boolean isCause = false;
+        // handle undeclared throwable exception
+        if (UndeclaredThrowableException.class.isAssignableFrom(e.getClass())){
+            Object cause = getExceptionCause(e);
+            if (cause != null){
+                exceptionToHandle = cause;
+                isCause = true;
+            }
+        }
+
+        boolean handled = false;
+        RPCExceptionInfoDto exceptionInfoDto = null;
         try {
-            dto.exceptionInfoDto = handleDefinedException(e, endpointSchema, type);
-            if (dto.exceptionInfoDto != null) return;
+            exceptionInfoDto = handleExceptionNameAndMessage(exceptionToHandle);
+
+            handled = handleDefinedException(exceptionToHandle, endpointSchema, type, exceptionInfoDto);
+            if (handled) {
+                dto.exceptionInfoDto = exceptionInfoDto;
+                dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
+                return;
+            }
         } catch (ClassNotFoundException ex) {
+            dto.exceptionInfoDto = exceptionInfoDto;
             throw new RuntimeException("ERROR: fail to handle defined exception for "+type+" with error msg:"+ ex);
         }
 
         // handling defined exception for each RPC
         switch (type){
-            case THRIFT: dto.exceptionInfoDto = handleThrift(e, endpointSchema); break;
+            case THRIFT: handled = handleThrift(exceptionToHandle, endpointSchema, exceptionInfoDto); break;
             case GENERAL: break; // do nothing
             default: throw new RuntimeException("ERROR: NOT SUPPORT exception handling for "+type);
         }
-        if (dto.exceptionInfoDto != null) return;
+        if (!handled) {
+            handleUnexpectedException(exceptionToHandle, exceptionInfoDto);
+        }
 
-        dto.exceptionInfoDto = handleUnexpectedException(e);
+        dto.exceptionInfoDto = exceptionInfoDto;
+
+        dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
     }
 
-    private static RPCExceptionInfoDto handleUnexpectedException(Object e){
-        RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
+    private static void handleUnexpectedException(Object e, RPCExceptionInfoDto dto){
+
         dto.type = RPCExceptionType.UNEXPECTED_EXCEPTION;
+
+    }
+
+    private static RPCExceptionInfoDto handleExceptionNameAndMessage(Object e){
+        RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
+
         if (Exception.class.isAssignableFrom(e.getClass())){
             dto.exceptionName = e.getClass().getName();
             dto.exceptionMessage = getExceptionMessage(e);
         }else
-            throw new RuntimeException("ERROR: the exception is not java.lang.Exception "+e.getClass().getName());
+            SimpleLogger.error("ERROR: the exception is not java.lang.Exception "+e.getClass().getName());
 
         return dto;
     }
@@ -69,60 +100,62 @@ public class RPCExceptionHandler {
      * @param endpointSchema is the schema of this endpoint
      * @return extracted exception dto
      */
-    private static RPCExceptionInfoDto handleThrift(Object e, EndpointSchema endpointSchema)  {
-        RPCExceptionInfoDto dto = null;
-
+    private static boolean handleThrift(Object e, EndpointSchema endpointSchema, RPCExceptionInfoDto dto)  {
+        boolean handled = false;
         try {
             if (!isRootThriftException(e)){
-                SimpleLogger.error("Exception e is not an instance of TException of Thrift, and it is "+ e.getClass().getName());
-                return dto;
+                //SimpleLogger.info("Exception e is not an instance of TException of Thrift, and it is "+ e.getClass().getName());
+                return false;
             }
-            dto = new RPCExceptionInfoDto();
-            handleTException(e, dto);
 
-            if (dto.type == null){
+            handled = handleTException(e, dto);
+
+            if (!handled){
                 SimpleLogger.error("Fail to extract exception type info for an exception "+ e.getClass().getName());
             }
 
-        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |  IllegalAccessException ex) {
-            throw new IllegalStateException("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
+        } catch (ClassNotFoundException ex) {
+            SimpleLogger.error("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
+            //throw new IllegalStateException("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
         }
 
-        return dto;
+        return handled;
     }
 
 
-    private static RPCExceptionInfoDto handleDefinedException(Object e, EndpointSchema endpointSchema, RPCType rpcType) throws ClassNotFoundException {
+    private static boolean handleDefinedException(Object e, EndpointSchema endpointSchema, RPCType rpcType, RPCExceptionInfoDto dto) throws ClassNotFoundException {
 
-        if (endpointSchema.getExceptions() == null) return null;
+        if (endpointSchema.getExceptions() == null) return false;
 
         for (NamedTypedValue p : endpointSchema.getExceptions()){
-            String type = p.getType().getFullTypeName();
+            String type = p.getType().getFullTypeNameWithGenericType();
             // skip to handle root TException here
             if (rpcType == RPCType.THRIFT && type.equals(THRIFT_EXCEPTION_ROOT))
                 continue;
             if (isInstanceOf(e, type)){
-                RPCExceptionInfoDto dto = new RPCExceptionInfoDto();
                 p.setValueBasedOnInstance(e);
                 dto.exceptionDto = p.getDto();
                 dto.type = RPCExceptionType.CUSTOMIZED_EXCEPTION;
-                dto.exceptionName = e.getClass().getName();
-                return dto;
+                return true;
             }
         }
-        return null;
+        return false;
     }
 
-    private static void handleTException(Object e, RPCExceptionInfoDto dto) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
-        dto.exceptionName = e.getClass().getName();
-        dto.exceptionMessage = getExceptionMessage(e);
+    private static boolean handleTException(Object e, RPCExceptionInfoDto dto)  {
 
-        Method getType = e.getClass().getDeclaredMethod("getType");
-        getType.setAccessible(true);
-        int type = (int) getType.invoke(e);
+        Method getType = null;
+        try {
+            getType = e.getClass().getDeclaredMethod("getType");
+            getType.setAccessible(true);
+            int type = (int) getType.invoke(e);
 
-        dto.type = getExceptionType(extract(e), type);
-
+            dto.type = getExceptionType(extract(e), type);
+            return true;
+        } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException ex) {
+            SimpleLogger.error("Fail to get type of TException with getType() "+ex.getMessage());
+        }
+        return false;
     }
 
     private static String getExceptionMessage(Object e)  {
@@ -131,6 +164,24 @@ public class RPCExceptionHandler {
             getMessage = e.getClass().getMethod("getMessage");
             getMessage.setAccessible(true);
             return (String) getMessage.invoke(e);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
+            SimpleLogger.error("Error: fail to get message of the exception with "+ex.getMessage());
+            return null;
+        }
+    }
+
+
+    private static Object getExceptionCause(Object e)  {
+        Method getCause = null;
+        try {
+            getCause = e.getClass().getMethod("getCause");
+            getCause.setAccessible(true);
+            Object exp = getCause.invoke(e);
+            if (exp != null) return exp;
+
+            getCause = e.getClass().getMethod("getUndeclaredThrowable");
+            getCause.setAccessible(true);
+            return getCause.invoke(e);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
             SimpleLogger.error("Error: fail to get message of the exception with "+ex.getMessage());
             return null;

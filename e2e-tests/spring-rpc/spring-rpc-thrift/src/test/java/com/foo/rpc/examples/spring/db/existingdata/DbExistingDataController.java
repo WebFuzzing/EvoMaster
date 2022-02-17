@@ -6,10 +6,12 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class DbExistingDataController extends SpringWithDbController {
 
@@ -45,11 +47,19 @@ public class DbExistingDataController extends SpringWithDbController {
     public void resetStateOfSUT() {
         super.resetStateOfSUT();
 
-        ExistingDataEntityX x = new ExistingDataEntityX();
-        x.setId(42L);
-        x.setName("Foo");
+//        ExistingDataEntityX x = new ExistingDataEntityX();
+//        x.setId(42L);
+//        x.setName("Foo");
+//
+//        ExistingDataRepositoryX rep = ctx.getBean(ExistingDataRepositoryX.class);
+//        rep.save(x);
+    }
 
-        ExistingDataRepositoryX rep = ctx.getBean(ExistingDataRepositoryX.class);
-        rep.save(x);
+    @Override
+    public List<DbSpecification> getDbSpecifications() {
+        List<DbSpecification> spec = super.getDbSpecifications();
+        if (spec !=null && !spec.isEmpty())
+            spec.get(0).initSqlScript = "INSERT INTO EXISTING_DATA_ENTITYX (ID, NAME) VALUES (42, 'Foo')";
+        return spec;
     }
 }

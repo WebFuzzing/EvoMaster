@@ -188,7 +188,7 @@ public class DateType extends TypeSchema {
         String[] strValues = stringValue.split(" ");
         assert strValues.length == 3;
 
-        List<IntParam> values = dateFields.stream().map(IntParam::copyStructure).collect(Collectors.toList());
+        List<IntParam> values = dateFields.stream().map(x-> (IntParam)x.copyStructureWithProperties()).collect(Collectors.toList());
         //date
         String[] dateValues = strValues[0].split("-");
         assert dateValues.length == 3;

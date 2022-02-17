@@ -39,6 +39,15 @@ public class StringParam extends NamedTypedValue<StringType, String> {
      */
     private Long max;
 
+    /**
+     * pattern specified with regular expression
+     */
+    private String pattern;
+
+    public StringParam(String name, StringType type, AccessibleSchema accessibleSchema) {
+        super(name, type, accessibleSchema);
+    }
+
     public StringParam(String name, AccessibleSchema accessibleSchema) {
         super(name, new StringType(), accessibleSchema);
     }
@@ -78,6 +87,14 @@ public class StringParam extends NamedTypedValue<StringType, String> {
         this.max = max;
     }
 
+    public String getPattern() {
+        return pattern;
+    }
+
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
+    }
+
     @Override
     public Object newInstance() {
         return getValue();
@@ -85,7 +102,7 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     @Override
     public StringParam copyStructure() {
-        return new StringParam(getName(), accessibleSchema);
+        return new StringParam(getName(), getType(),accessibleSchema);
     }
 
     @Override
@@ -107,6 +124,8 @@ public class StringParam extends NamedTypedValue<StringType, String> {
             dto.minValue = min;
         if (max != null)
             dto.maxValue = max;
+        if (pattern != null)
+            dto.pattern = pattern;
         return dto;
     }
 
@@ -117,17 +136,14 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        String value = null;
-        if (getValue() != null)
-            value = getValueAsJavaString();
 
         String code;
         if (accessibleSchema == null || accessibleSchema.isAccessible)
-            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value);
+            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
         else{
             if (accessibleSchema.setterMethodName == null)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, value);
+            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString());
         }
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
     }
@@ -146,7 +162,18 @@ public class StringParam extends NamedTypedValue<StringType, String> {
 
     @Override
     public String getValueAsJavaString() {
-        return "\""+CodeJavaGenerator.handleEscapeCharInString(getValue())+"\"";
+        return getValue() == null? null:"\""+CodeJavaGenerator.handleEscapeCharInString(getValue())+"\"";
     }
 
+    @Override
+    public void copyProperties(NamedTypedValue copy) {
+        super.copyProperties(copy);
+        if (copy instanceof StringParam){
+            ((StringParam)copy).setMax(max);
+            ((StringParam)copy).setMin(min);
+            ((StringParam)copy).setMinSize(minSize);
+            ((StringParam)copy).setMinSize(minSize);
+            ((StringParam)copy).setPattern(pattern);
+        }
+    }
 }

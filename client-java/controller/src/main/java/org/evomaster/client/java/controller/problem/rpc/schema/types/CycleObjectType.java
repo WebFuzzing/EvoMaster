@@ -5,14 +5,15 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedData
 import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * cycle object
  */
 public class CycleObjectType extends ObjectType{
 
-    public CycleObjectType(String type, String fullTypeName, Class<?> clazz) {
-        super(type, fullTypeName, new ArrayList<>(), clazz);
+    public CycleObjectType(String type, String fullTypeName, Class<?> clazz, List<String> genericTypes) {
+        super(type, fullTypeName, new ArrayList<>(), clazz, genericTypes);
     }
 
     @Override
