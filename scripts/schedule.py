@@ -33,9 +33,11 @@ SCRIPTS_FOLDER = os.path.join(FOLDER, "scripts")
 buffer = []
 
 #collect name of all bash files
-scripts = [f for f in os.listdir(SCRIPTS_FOLDER) if os.path.isfile(os.path.join(SCRIPTS_FOLDER, f)) and f.startswith("evomaster") and f.endswith(".sh")]
+scripts = [f for f in os.listdir(SCRIPTS_FOLDER) if os.path.isfile(os.path.join(SCRIPTS_FOLDER, f))  and f.endswith(".sh")]
+# and f.startswith("evomaster")
+# as we might want to use this script for BB experiments, let's not bind it to EvoMaster
 
-print("There are " + str(len(scripts)) + " EvoMaster script files")
+print("There are " + str(len(scripts)) + " Bash script files")
 
 random.shuffle(scripts)
 
