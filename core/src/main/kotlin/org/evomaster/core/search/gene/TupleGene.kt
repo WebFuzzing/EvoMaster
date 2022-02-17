@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.TupleGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -65,8 +66,72 @@ class TupleGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        //for now, it is specific to graphql with functions in returned types
-        TODO("Not yet implemented")
+        val buffer = StringBuffer()
+
+        //need the name for input and return
+        buffer.append("$name")
+
+        //printout the inputs. See later if a refactoring is needed
+        if (elements.dropLast(1).isNotEmpty()) {
+            buffer.append("(")
+            val s=elements.dropLast(1).map {
+
+                if (it is EnumGene<*> ||
+                    (it is OptionalGene && it.gene is EnumGene<*>) ||
+                    (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is EnumGene<*>) ||
+                    (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is OptionalGene && it.gene.template.gene is EnumGene<*>) ||
+                    (it is ArrayGene<*> && it.template is EnumGene<*>) ||
+                    (it is ArrayGene<*> && it.template is OptionalGene && it.template.gene is EnumGene<*>)
+                ) {
+                    val i = it.getValueAsRawString()
+                    "${it.name} : $i"
+                } else {
+                    if (it is ObjectGene || (it is OptionalGene && it.gene is ObjectGene)) {
+                        val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                        " $i"
+                    } else {
+                        if (it is ArrayGene<*> || (it is OptionalGene && it.gene is ArrayGene<*>)) {
+                            val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
+                            "${it.name} : $i"
+                        } else {
+                            val mode =
+                                if (ParamUtil.getValueGene(it) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
+                            val i = it.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
+                            "${it.name} : $i"
+                        }
+                    }
+                }
+
+            }.joinToString(",").replace("\"", "\\\"")
+            //see another way: eg, joinTo(buffer, ", ").toString().replace("\"", "\\\"") to buffer
+            buffer.append(s)
+            buffer.append(")")
+        }
+
+        //printout the return
+        val returnGene = elements.last()
+
+        buffer.append(
+            if (returnGene is OptionalGene) {
+                assert(returnGene.gene is ObjectGene)
+                returnGene.gene.getValueAsPrintableString(
+                    previousGenes,
+                    GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
+                    targetFormat,
+                    extraCheck = true
+                )
+            } else
+                if (returnGene is ObjectGene) {
+                    returnGene.getValueAsPrintableString(
+                        previousGenes,
+                        GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
+                        targetFormat,
+                        extraCheck = true
+                    )
+                } else ""
+        )
+        return buffer.toString()
+
     }
 
 
