@@ -752,11 +752,6 @@
                 <artifactId>micronaut-core</artifactId>
                 <version>${micronaut.version}</version>
             </dependency>
-            <dependency>
-                <groupId>jakarta.annotation</groupId>
-                <artifactId>jakarta.annotation-api</artifactId>
-                <version>${jakarta.annotation.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
