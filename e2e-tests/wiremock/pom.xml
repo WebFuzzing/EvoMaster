@@ -12,15 +12,14 @@
     <artifactId>wiremock</artifactId>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+<!--        <maven.compiler.source>11</maven.compiler.source>-->
+<!--        <maven.compiler.target>11</maven.compiler.target>-->
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8</artifactId>
-            <version>${wiremock.version}</version>
         </dependency>
         <dependency>
             <groupId>io.rest-assured</groupId>
