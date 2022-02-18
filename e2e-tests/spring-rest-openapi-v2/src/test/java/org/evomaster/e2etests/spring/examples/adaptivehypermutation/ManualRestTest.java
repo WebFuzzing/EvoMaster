@@ -376,6 +376,6 @@ public class ManualRestTest extends AHypermuationTestBase{
 
     @AfterEach
     public void reset(){
-        controller.resetDatabase();
+        controller.resetDatabase(null);
     }
 }
