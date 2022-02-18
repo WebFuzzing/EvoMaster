@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class WireMockBasicTest {
@@ -62,6 +62,6 @@ public class WireMockBasicTest {
 
         WireMockApplication wireMockApplication = new WireMockApplication();
         String results = wireMockApplication.callApi(wireMockServer.port());
-        assertEquals(MOCK_RESPONSE, results, "Test passed");
+        assertEquals(MOCK_RESPONSE, results);
     }
 }
