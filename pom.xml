@@ -708,8 +708,6 @@
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-bom</artifactId>
                 <version>${micronaut.version}</version>
-<!--                <type>pom</type>-->
-<!--                <scope>import</scope>-->
             </dependency>
 
             <dependency>
@@ -1072,12 +1070,6 @@
                             </goals>
                         </execution>
                     </executions>
-                </plugin>
-
-                <!-- Micronaut build plugin -->
-                <plugin>
-                    <groupId>io.micronaut.build</groupId>
-                    <artifactId>micronaut-maven-plugin</artifactId>
                 </plugin>
 
             </plugins>
