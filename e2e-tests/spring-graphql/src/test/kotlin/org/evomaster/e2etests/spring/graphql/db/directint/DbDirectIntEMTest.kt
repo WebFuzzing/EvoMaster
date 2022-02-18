@@ -34,10 +34,15 @@ class DbDirectIntEMTest : SpringTestBase() {
     fun testBest_MIO(){
         testRunEM(EMConfig.SecondaryObjectiveStrategy.BEST_MIN)
     }
+
+
     private fun testRunEM(strategy : EMConfig.SecondaryObjectiveStrategy) {
+        val outputFolder = "GQL_DirectIntEM_$strategy"
+        val outputTestName = "org.foo.graphql.DirectIntEM_$strategy"
+
         runTestHandlingFlakyAndCompilation(
-            "GQL_DirectIntEM_$strategy",
-            "org.foo.graphql.DirectIntEM_$strategy",
+            outputFolder,
+            outputTestName,
             7000
         ) { args: MutableList<String> ->
 
@@ -64,6 +69,10 @@ class DbDirectIntEMTest : SpringTestBase() {
             assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, nonEmptyReturn, false)
             assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"get\":[]")
             assertNoneWithErrors(solution)
+
+            assertTextInTests(outputFolder, outputTestName,
+                "controller.resetDatabase(listOf(\"db_direct_int\"))"
+            )
         }
     }
 }

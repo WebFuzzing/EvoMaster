@@ -39,9 +39,12 @@ public class DbDirectIntEMTest extends SpringRPCTestBase {
 
 
     private void testRunEM(EMConfig.SecondaryObjectiveStrategy strategy) throws Throwable {
+        final String outputFolder = "DbDirectEM_"+ strategy;
+        final String outputTestName = "org.bar.db.DirectEM_" + strategy;
+
         runTestHandlingFlakyAndCompilation(
-                "DbDirectIntEM",
-                "org.bar.db.DirectEM_" + strategy,
+                outputFolder,
+                outputTestName,
                 7_000,
                 (args) -> {
 
@@ -57,6 +60,8 @@ public class DbDirectIntEMTest extends SpringRPCTestBase {
                     assertTrue(solution.getIndividuals().size() >= 1);
                     assertContentInResponseForEndpoint(solution, DbDirectIntService.Iface.class.getName()+":get", "400");
                     assertContentInResponseForEndpoint(solution, DbDirectIntService.Iface.class.getName()+":get", "200");
+
+                    assertTextInTests(outputFolder, outputTestName, "controller.resetDatabase(listOf(\"db_direct_int_entity\"))");
                 });
     }
 }

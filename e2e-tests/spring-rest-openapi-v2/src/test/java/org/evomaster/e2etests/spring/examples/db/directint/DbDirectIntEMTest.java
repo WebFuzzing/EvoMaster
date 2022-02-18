@@ -33,9 +33,12 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
 
     private void testRunEM(EMConfig.SecondaryObjectiveStrategy strategy) throws Throwable {
 
+        final String outputFolder = "DbDirectEM_"+ strategy;
+        final String outputTestName = "org.bar.db.DirectEM_" + strategy;
+
         runTestHandlingFlakyAndCompilation(
-                "DbDirectEM",
-                "org.bar.db.DirectEM_" + strategy,
+                outputFolder,
+                outputTestName,
                 7_000,
                 (args) -> {
                     args.add("--secondaryObjectiveStrategy");
@@ -54,6 +57,8 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/directint/", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
+
+                    assertTextInTests(outputFolder, outputTestName, "controller.resetDatabase(listOf(\"db_direct_int_entity\"))");
                 });
     }
 }
