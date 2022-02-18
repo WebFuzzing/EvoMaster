@@ -53,7 +53,7 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
             List<IntParam> values = new ArrayList<>();
 
             for (ParamDto p: dto.innerContent){
-                IntParam f = fields.stream().filter(s-> s.sameParam(p)).findFirst().get().copyStructure();
+                IntParam f = (IntParam) fields.stream().filter(s-> s.sameParam(p)).findFirst().get().copyStructureWithProperties();
                 f.setValueBasedOnDto(p);
                 values.add(f);
             }

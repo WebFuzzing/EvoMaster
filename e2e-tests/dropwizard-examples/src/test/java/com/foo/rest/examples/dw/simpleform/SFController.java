@@ -1,12 +1,12 @@
 package com.foo.rest.examples.dw.simpleform;
 
 import org.evomaster.client.java.controller.EmbeddedSutController;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 
-import java.sql.Connection;
 import java.util.List;
 
 public class SFController extends EmbeddedSutController {
@@ -79,7 +79,7 @@ public class SFController extends EmbeddedSutController {
     }
 
     @Override
-    public Connection getConnection() {
+    public List<DbSpecification> getDbSpecifications() {
         return null;
     }
 

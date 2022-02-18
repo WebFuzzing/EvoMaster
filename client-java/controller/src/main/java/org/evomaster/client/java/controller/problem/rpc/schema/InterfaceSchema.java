@@ -114,12 +114,12 @@ public final class InterfaceSchema{
      *              note that multiple params could belong to the same type schema
      */
     public void registerType(TypeSchema type, NamedTypedValue param){
-        String typeName = type.getFullTypeName();
+        String typeName = type.getFullTypeNameWithGenericType();
         if (!(type instanceof CycleObjectType)){
             typeCollections.put(typeName, type);
         }
         if (!(param.getType() instanceof CycleObjectType))
-            objParamCollections.put(param.getType().getFullTypeName(), param);
+            objParamCollections.put(param.getType().getFullTypeNameWithGenericType(), param);
     }
 
     public Map<String, NamedTypedValue> getObjParamCollections() {

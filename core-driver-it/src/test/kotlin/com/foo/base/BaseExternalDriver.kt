@@ -3,9 +3,9 @@ package com.foo.base
 import org.evomaster.client.java.controller.ExternalSutController
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.internal.db.DbSpecification
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
-import java.sql.Connection
 
 
 class BaseExternalDriver : ExternalSutController(){
@@ -26,7 +26,7 @@ class BaseExternalDriver : ExternalSutController(){
         return 90
     }
 
-    override fun getConnection(): Connection? {
+    override fun getDbSpecifications(): MutableList<DbSpecification>? {
         return null
     }
 

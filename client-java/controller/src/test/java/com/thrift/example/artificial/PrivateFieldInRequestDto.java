@@ -33,4 +33,24 @@ public class PrivateFieldInRequestDto {
     public void setStringList(List<String> stringList) {
         this.stringList = stringList;
     }
+
+    private EnumKind priEnum;
+
+    public void setPriEnum(EnumKind priEnum) {
+        this.priEnum = priEnum;
+    }
+
+    public EnumKind getPriEnum() {
+        return priEnum;
+    }
+
+    private Boolean priBoolean;
+
+    public void setPriBoolean(Boolean priBoolean) {
+        this.priBoolean = priBoolean;
+    }
+
+    public Boolean getPriBoolean() {
+        return priBoolean;
+    }
 }

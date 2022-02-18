@@ -3,7 +3,10 @@ package org.evomaster.client.java.controller;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -137,5 +140,68 @@ public interface SutHandler {
      * @return if the authentication is set up successfully
      */
     default boolean handleLocalAuthenticationSetup(String authenticationInfo){return true;}
+
+    /**
+     * <p>
+     * If the system under test (SUT) uses a SQL database, we need to have a
+     * configured DbSpecification to access/reset it.
+     * </p>
+     *
+     * <p>
+     * When accessing a {@code Connection} object to reset the state of
+     * the application, we suggest to save it to field (eg when starting the
+     * application), and set such field with {@link DbSpecification#connection}.
+     * This connection object will be used by EvoMaster to analyze the state of
+     * the database to create better test cases.
+     * </p>
+     *
+     * <p>
+     * To handle db in the context of testing, there might be a need to initialize
+     * data into database with a sql script. such info could be specified with
+     * {@link DbSpecification#dbType}
+     * </p>
+     *
+     * <p>
+     * With EvoMaster, we also support a smart DB cleaner by removing all data in tables
+     * which has been accessed after each test. In order to achieve this, we requires user
+     * to set a set of info such as database type with {@link DbSpecification#dbType},
+     * schema name with {@link DbSpecification#schemaNames} (TODO might remove later).
+     * In addition, we also provide an option (default is {@code true}) to configure
+     * if such cleaner is preferred with {@link DbSpecification#employSmartDbClean}.
+     * </p>
+     *
+     * @return {@code null} if the SUT does not use any SQL database
+     */
+
+    List<DbSpecification> getDbSpecifications();
+
+
+    /**
+     * <p>
+     * reset database if the smart db cleaning is employed
+     * TODO need to discuss with Andrea about this
+     * </p>
+     */
+    default void resetDatabase(){
+        if (getDbSpecifications()!= null && !getDbSpecifications().isEmpty()){
+            getDbSpecifications().forEach(spec->{
+                if (spec==null || spec.connection == null || !spec.employSmartDbClean){
+                    return;
+                }
+                if (spec.schemaNames == null || spec.schemaNames.isEmpty())
+                    DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType);
+                else
+                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, null, spec.dbType));
+                if (spec.initSqlScript != null) {
+                    try {
+                        SqlScriptRunner.execScript(spec.connection, spec.initSqlScript);
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
+                    }
+                }
+            });
+        }
+    }
+
 
 }

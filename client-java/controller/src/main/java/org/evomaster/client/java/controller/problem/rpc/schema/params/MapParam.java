@@ -61,7 +61,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
         if (dto.innerContent!= null && !dto.innerContent.isEmpty()){
             PairParam t = getType().getTemplate();
             List<PairParam> values = dto.innerContent.stream().map(s-> {
-                PairParam c = t.copyStructure();
+                PairParam c = (PairParam) t.copyStructureWithProperties();
                 c.setValueBasedOnDto(s);
                 return c;
             }).collect(Collectors.toList());
@@ -76,7 +76,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
         PairParam t = getType().getTemplate();
         List<PairParam> values = new ArrayList<>();
         for (Object e : ((Map) instance).entrySet()){
-            PairParam copy = t.copyStructure();
+            PairParam copy = (PairParam) t.copyStructureWithProperties();
             copy.setValueBasedOnInstance(e);
             values.add(copy);
         }
@@ -176,5 +176,14 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
 
     public void setMaxSize(Integer maxSize) {
         this.maxSize = maxSize;
+    }
+
+    @Override
+    public void copyProperties(NamedTypedValue copy) {
+        super.copyProperties(copy);
+        if (copy instanceof MapParam){
+            ((MapParam)copy).setMinSize(minSize);
+            ((MapParam)copy).setMaxSize(maxSize);
+        }
     }
 }

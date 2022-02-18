@@ -36,6 +36,16 @@ public class SqlScriptRunnerCached {
          */
     public static void runScriptFromResourceFile(Connection connection, String resourcePath) {
 
+        List<String> sql = extractSqlScriptFromResourceFile(resourcePath);
+
+        SqlScriptRunner.runCommands(connection, sql);
+    }
+
+    /**
+     * extract sql script based on a given resource path
+     * @return a list of sql commands
+     */
+    public static List<String> extractSqlScriptFromResourceFile(String resourcePath){
         List<String> sql = cache.get(resourcePath);
 
         if(sql == null){
@@ -47,7 +57,6 @@ public class SqlScriptRunnerCached {
 
             cache.put(resourcePath, sql);
         }
-
-        SqlScriptRunner.runCommands(connection, sql);
+        return sql;
     }
 }

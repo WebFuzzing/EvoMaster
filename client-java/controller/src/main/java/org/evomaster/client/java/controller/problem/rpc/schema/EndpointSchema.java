@@ -151,8 +151,8 @@ public class EndpointSchema {
     public EndpointSchema copyStructure(){
         return new EndpointSchema(
                 name, interfaceName, clientTypeName,
-                requestParams == null? null: requestParams.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
-                response == null? null: response.copyStructure(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
+                requestParams == null? null: requestParams.stream().map(NamedTypedValue::copyStructureWithProperties).collect(Collectors.toList()),
+                response == null? null: response.copyStructureWithProperties(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructureWithProperties).collect(Collectors.toList()),
                 authRequired, requiredAuthCandidates, relatedCustomizedCandidates);
     }
 
@@ -178,7 +178,7 @@ public class EndpointSchema {
     public List<String> newInvocationWithJava(String responseVarName, String controllerVarName){
         List<String> javaCode = new ArrayList<>();
         if (response != null){
-            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getFullTypeName(), responseVarName, null));
+            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getFullTypeNameWithGenericType(), responseVarName, null));
         }
         javaCode.add("{");
         int indent = 1;

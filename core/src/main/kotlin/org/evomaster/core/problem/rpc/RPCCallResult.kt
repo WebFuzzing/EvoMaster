@@ -85,8 +85,12 @@ class RPCCallResult : ActionResult {
     fun isNotNullHandledResponse() = getResultValue(HANDLED_RESULTS) == HANDLED_RESULTS_NOT_NULL
     fun isNotEmptyHandledResponse() = getResultValue(HANDLED_COLLECTION_RESULTS) == HANDLED_COLLECTION_RESULTS_NOTEMPTY
 
-    fun setFailedCall(){
+    /**
+     * RPC fails to be processed with error msg if it has
+     */
+    fun setFailedCall(msg: String? = null){
         addResultValue(INVOCATION_CODE, RPCCallResultCategory.FAILED.name)
+        if (msg != null) setErrorMessage(msg)
     }
 
     fun failedCall(): Boolean{

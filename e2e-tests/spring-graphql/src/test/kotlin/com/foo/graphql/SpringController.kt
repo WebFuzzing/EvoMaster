@@ -3,11 +3,11 @@ package com.foo.graphql
 import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.internal.db.DbSpecification
 import org.evomaster.client.java.controller.problem.GraphQlProblem
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.springframework.boot.SpringApplication
 import org.springframework.context.ConfigurableApplicationContext
-import java.sql.Connection
 
 abstract class SpringController(protected val applicationClass: Class<*>) : EmbeddedSutController() {
 
@@ -46,7 +46,7 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
         return "com.foo.graphql."
     }
 
-    override fun getConnection(): Connection? {
+    override fun getDbSpecifications(): MutableList<DbSpecification>? {
         return null
     }
 
