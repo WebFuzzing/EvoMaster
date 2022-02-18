@@ -1,8 +1,8 @@
-package com.foo.wiremock;
-
+package org.evomaster.wiremock;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
+import com.foo.wiremock.WireMockApplication;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import org.junit.jupiter.api.AfterEach;
@@ -33,16 +33,16 @@ public class WireMockBasicTest {
         wireMockServer.stubFor(get("/api/call")
                 .willReturn(
                         aResponse()
-                        .withHeader("Content-Type", "text/plain")
-                        .withStatus(200)
-                        .withBody("Working")));
+                                .withHeader("Content-Type", "text/plain")
+                                .withStatus(200)
+                                .withBody("Working")));
     }
 
     @Test
     public void testServiceStatus() {
 
         given()
-            .when()
+                .when()
                 .get("http://localhost:" + wireMockServer.port() +"/api/call")
                 .then()
                 .assertThat()
