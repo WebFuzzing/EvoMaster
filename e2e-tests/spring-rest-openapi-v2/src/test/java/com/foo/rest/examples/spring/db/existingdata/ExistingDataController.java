@@ -1,6 +1,9 @@
 package com.foo.rest.examples.spring.db.existingdata;
 
 import com.foo.rest.examples.spring.db.SpringWithDbController;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
+
+import java.util.List;
 
 /**
  * Created by arcuri82 on 19-Jun-19.
@@ -15,11 +18,19 @@ public class ExistingDataController extends SpringWithDbController {
     public void resetStateOfSUT() {
         super.resetStateOfSUT();
 
-        ExistingDataEntityX x = new ExistingDataEntityX();
-        x.setId(42L);
-        x.setName("Foo");
+//        ExistingDataEntityX x = new ExistingDataEntityX();
+//        x.setId(42L);
+//        x.setName("Foo");
+//
+//        ExistingDataRepositoryX rep = ctx.getBean(ExistingDataRepositoryX.class);
+//        rep.save(x);
+    }
 
-        ExistingDataRepositoryX rep = ctx.getBean(ExistingDataRepositoryX.class);
-        rep.save(x);
+    @Override
+    public List<DbSpecification> getDbSpecifications() {
+        List<DbSpecification> spec =  super.getDbSpecifications();
+        if (spec != null && !spec.isEmpty())
+            spec.get(0).initSqlScript= "INSERT INTO EXISTING_DATA_ENTITYX (ID, NAME) VALUES (42, 'Foo')";
+        return spec;
     }
 }

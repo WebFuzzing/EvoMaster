@@ -96,49 +96,50 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 }
             }
 
-
-
-            // check exception
-            if (response.exceptionInfoDto != null){
-                actionResult.setRPCException(response.exceptionInfoDto)
-                if (response.exceptionInfoDto.type == RPCExceptionType.CUSTOMIZED_EXCEPTION){
-                    if (response.exceptionInfoDto.exceptionDto!=null){
-                        actionResult.setCustomizedExceptionBody(rpcHandler.getParamDtoJson(response.exceptionInfoDto.exceptionDto))
-                    } else
-                        log.warn("ERROR: missing customized exception dto")
-                }
-            } else{
-                actionResult.setSuccess()
-                if (response.customizedCallResultCode != null){
-                    actionResult.setCustomizedBusinessLogicCode(response.customizedCallResultCode)
-                }
-
-                // check response
-                if (response.rpcResponse !=null){
-                    Lazy.assert { action.responseTemplate != null }
-                    val responseParam = action.responseTemplate!!.copyContent()
-                    rpcHandler.setGeneBasedOnParamDto(responseParam.gene, response.rpcResponse)
-                    action.response = responseParam
-
-                    //extract response type
-                    actionResult.setHandledResponse(false)
-                    val valueGene = ParamUtil.getValueGene(responseParam.gene)
-                    if (valueGene is CollectionGene){
-                        actionResult.setHandledCollectionResponse(valueGene.isEmpty())
+            if (response.error500Msg != null){
+                actionResult.setFailedCall(response.error500Msg)
+            }else{
+                // check exception
+                if (response.exceptionInfoDto != null){
+                    actionResult.setRPCException(response.exceptionInfoDto)
+                    if (response.exceptionInfoDto.type == RPCExceptionType.CUSTOMIZED_EXCEPTION){
+                        if (response.exceptionInfoDto.exceptionDto!=null){
+                            actionResult.setCustomizedExceptionBody(rpcHandler.getParamDtoJson(response.exceptionInfoDto.exceptionDto))
+                        } else
+                            log.warn("ERROR: missing customized exception dto")
+                    }
+                } else{
+                    actionResult.setSuccess()
+                    if (response.customizedCallResultCode != null){
+                        actionResult.setCustomizedBusinessLogicCode(response.customizedCallResultCode)
                     }
 
-                    if (config.enableRPCAssertionWithInstance){
-                        if (response.assertionScript == null){
-                            log.warn("empty test assertions")
-                        }else{
-                            actionResult.setAssertionScript(response.assertionScript)
+                    // check response
+                    if (response.rpcResponse !=null){
+                        Lazy.assert { action.responseTemplate != null }
+                        val responseParam = action.responseTemplate!!.copyContent()
+                        rpcHandler.setGeneBasedOnParamDto(responseParam.gene, response.rpcResponse)
+                        action.response = responseParam
+
+                        //extract response type
+                        actionResult.setHandledResponse(false)
+                        val valueGene = ParamUtil.getValueGene(responseParam.gene)
+                        if (valueGene is CollectionGene){
+                            actionResult.setHandledCollectionResponse(valueGene.isEmpty())
                         }
+
+                        if (config.enableRPCAssertionWithInstance){
+                            if (response.assertionScript == null){
+                                log.warn("empty test assertions")
+                            }else{
+                                actionResult.setAssertionScript(response.assertionScript)
+                            }
+                        }
+                    } else {
+                        actionResult.setHandledResponse(true)
                     }
-                } else {
-                    actionResult.setHandledResponse(true)
+
                 }
-
-
             }
         }else{
             actionResult.setFailedCall()

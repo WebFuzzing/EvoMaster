@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller;
 
 import io.restassured.RestAssured;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.controller.api.Formats;
@@ -12,11 +13,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.ws.rs.core.MediaType;
-import java.sql.Connection;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -59,7 +58,7 @@ public class SutControllerTest {
         }
 
         @Override
-        public Connection getConnection() {
+        public List<DbSpecification> getDbSpecifications() {
             return null;
         }
 

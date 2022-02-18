@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -20,6 +19,12 @@ public class CodeJavaGenerator {
      * a method in SutHandler in order to get RPC client
      */
     private final static String GET_CLIENT_METHOD = "getRPCClient";
+
+
+    public static String handleClassNameWithGeneric(String fullName, List<String> genericTypes){
+        if (genericTypes == null || genericTypes.isEmpty()) return fullName;
+        return String.format("%s<%s>", fullName, String.join(", ", genericTypes));
+    }
 
     /**
      * handle escape char in string in java
@@ -272,7 +277,11 @@ public class CodeJavaGenerator {
      * @return an assertion for equal with junit
      */
     public static String junitAssertEquals(String expectedValue, String variableName){
-        return String.format("assertEquals(%s, %s)", expectedValue, variableName) + appendLast();
+        String assertionScript= String.format("assertEquals(%s, %s)", expectedValue, variableName) + appendLast();
+        if (AssertionsUtil.getAssertionsWithComment(assertionScript)){
+            return "//" + assertionScript;
+        }
+        return assertionScript;
     }
 
     /**
@@ -281,7 +290,11 @@ public class CodeJavaGenerator {
      * @return a null assertion with junit
      */
     public static String junitAssertNull(String variableName){
-        return String.format("assertNull(%s)", variableName) + appendLast();
+        String assertionScript= String.format("assertNull(%s)", variableName) + appendLast();
+        if (AssertionsUtil.getAssertionsWithComment(assertionScript)){
+            return "//" + assertionScript;
+        }
+        return assertionScript;
     }
 
     /**
@@ -308,7 +321,11 @@ public class CodeJavaGenerator {
      * @return a True assertion with numbersMatch method.
      */
     public static String junitAssertNumbersMatch(String expectedValue, String variableName){
-        return String.format("assertTrue(numbersMatch(%s, %s))", expectedValue, variableName) + appendLast();
+        String assertionScript= String.format("assertTrue(numbersMatch(%s, %s))", expectedValue, variableName) + appendLast();
+        if (AssertionsUtil.getAssertionsWithComment(assertionScript)){
+            return "//" + assertionScript;
+        }
+        return assertionScript;
     }
 
     /**

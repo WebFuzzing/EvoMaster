@@ -41,8 +41,8 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
         if (dto.innerContent.size() == 2){
-            NamedTypedValue first = getType().getFirstTemplate().copyStructure();
-            NamedTypedValue second = getType().getSecondTemplate().copyStructure();
+            NamedTypedValue first = getType().getFirstTemplate().copyStructureWithProperties();
+            NamedTypedValue second = getType().getSecondTemplate().copyStructureWithProperties();
             first.setValueBasedOnDto(dto.innerContent.get(0));
             second.setValueBasedOnDto(dto.innerContent.get(1));
             setValue(new AbstractMap.SimpleEntry(first, second));
@@ -53,8 +53,8 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     @Override
     protected void setValueBasedOnValidInstance(Object instance) {
         if (instance == null) return;
-        NamedTypedValue first = getType().getFirstTemplate().copyStructure();
-        NamedTypedValue second = getType().getSecondTemplate().copyStructure();
+        NamedTypedValue first = getType().getFirstTemplate().copyStructureWithProperties();
+        NamedTypedValue second = getType().getSecondTemplate().copyStructureWithProperties();
         first.setValueBasedOnInstance(((Map.Entry)instance).getKey());
         second.setValueBasedOnInstance(((Map.Entry)instance).getValue());
         setValue(new AbstractMap.SimpleEntry(first, second));

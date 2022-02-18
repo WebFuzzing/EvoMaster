@@ -64,5 +64,11 @@ public class ActionResponseDto {
      */
     public CustomizedCallResultCode customizedCallResultCode;
 
+    /**
+     * with rpc, we need to return generated scripts and assertions
+     * then instead of only return msg, we return this dto with error msg
+     */
+    public String error500Msg;
+
 
 }

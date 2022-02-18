@@ -12,4 +12,6 @@ public class DbSchemaDto {
     public List<TableDto> tables = new ArrayList<>();
 
     public List<EnumeratedTypeDto> enumeraredTypes = new ArrayList<>();
+
+    public boolean employSmartDbClean;
 }
