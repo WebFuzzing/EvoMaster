@@ -107,4 +107,11 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
             EMConfig.MaxTestSizeStrategy.DPC_DECREASING -> apc.getExploratoryValue(config.maxTestSize, config.dpcTargetTestSize)
         }
     }
+
+    /**
+     * extract tables with additional FK tables
+     */
+    open fun extractFkTables(tables: Set<String>): Set<String>{
+        return tables
+    }
 }

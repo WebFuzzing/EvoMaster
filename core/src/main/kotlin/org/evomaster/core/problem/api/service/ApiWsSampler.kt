@@ -81,4 +81,11 @@ abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
 
     abstract fun initSqlInfo(infoDto: SutInfoDto)
 
+    override fun extractFkTables(tables: Set<String>): Set<String> {
+        if(sqlInsertBuilder == null || tables.isEmpty()) return tables
+        val allSet = mutableSetOf<String>()
+        sqlInsertBuilder!!.extractFkTable(tables, allSet)
+        return allSet
+    }
+
 }
