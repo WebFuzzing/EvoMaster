@@ -50,7 +50,7 @@ def runScript(s):
 
     command = ["bash", os.path.join("scripts", s)]
 
-    handler = subprocess.Popen(command, shell=SHELL, cwd=FOLDER)
+    handler = subprocess.Popen(command, shell=SHELL, cwd=FOLDER, start_new_session=True)
     buffer.append(handler)
 
 for s in scripts:
@@ -80,5 +80,6 @@ for h in buffer:
 
 print("All jobs are completed")
 
+#TODO how to make sure no subprocess is left hanging?
 
 
