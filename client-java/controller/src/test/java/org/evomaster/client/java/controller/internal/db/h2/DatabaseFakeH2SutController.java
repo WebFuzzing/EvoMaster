@@ -15,9 +15,15 @@ import java.util.List;
 public class DatabaseFakeH2SutController extends EmbeddedSutController {
 
     private final Connection sqlConnection;
+    private final String initScript;
 
     public DatabaseFakeH2SutController(Connection connection) {
+        this(connection, null);
+    }
+
+    public DatabaseFakeH2SutController(Connection connection, String initScript) {
         this.sqlConnection = connection;
+        this.initScript = initScript;
     }
 
     @Override
@@ -26,6 +32,7 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
             dbType = DatabaseType.H2;
             connection = sqlConnection;
             employSmartDbClean = true;
+            initSqlScript = initScript;
         }});
     }
 
