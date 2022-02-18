@@ -10,11 +10,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class WireMockBasicTest {
 
     WireMockServer wireMockServer;
+
+    private final String MOCK_RESPONSE = "Working";
 
     @BeforeEach
     public void initializeServer() {
@@ -35,24 +38,30 @@ public class WireMockBasicTest {
                         aResponse()
                                 .withHeader("Content-Type", "text/plain")
                                 .withStatus(200)
-                                .withBody("Working")));
+                                .withBody(MOCK_RESPONSE)));
     }
 
     @Test
     public void testServiceStatus() {
-
+        /// This test confirms that the WireMock is working
         given()
                 .when()
                 .get("http://localhost:" + wireMockServer.port() +"/api/call")
                 .then()
                 .assertThat()
                 .statusCode(200)
-                .body(is("Working"));
+                .body(is(MOCK_RESPONSE));
     }
 
     @Test
     public void testApplicationCall() {
+        /**
+         This test simulates the API call from the application to an external
+         service in this case the URL for the external API is for the moment
+         hardcoded */
+
         WireMockApplication wireMockApplication = new WireMockApplication();
-        wireMockApplication.callApi(wireMockServer.port());
+        String results = wireMockApplication.callApi(wireMockServer.port());
+        assertEquals(MOCK_RESPONSE, results, "Test passed");
     }
 }

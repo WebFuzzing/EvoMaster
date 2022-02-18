@@ -6,13 +6,10 @@ import static io.restassured.RestAssured.given;
 
 public class WireMockApplication {
 
-    public void callApi(int port) {
-        given()
+    public String callApi(int port) {
+        return given()
                 .when()
                 .get("http://localhost:" + port +"/api/call")
-                .then()
-                .assertThat()
-                .statusCode(200)
-                .body(is("Working"));
+                .body().asString();
     }
 }
