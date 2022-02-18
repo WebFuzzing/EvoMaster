@@ -647,9 +647,10 @@ class SqlInsertBuilder(
         tables.forEach { t->
             if (!all.contains(t))
                 all.add(t)
-            val fk = extractFkTable(t)
-            if (fk.isNotEmpty())
-               extractFkTable(fk, all)
+            val fk = extractFkTable(t).filterNot { all.contains(it) }.toSet()
+            if (fk.isNotEmpty()){
+                extractFkTable(fk, all)
+            }
         }
     }
 
