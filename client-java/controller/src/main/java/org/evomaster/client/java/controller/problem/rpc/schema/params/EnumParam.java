@@ -70,10 +70,15 @@ public class EnumParam extends NamedTypedValue<EnumType, Integer> {
 
     @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
-        String value = null;
-        if (getValue() != null)
-            value = CodeJavaGenerator.enumValue(getType().getFullTypeName(), getType().getItems()[getValue()]);
-        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, value));
+        String code;
+        if (accessibleSchema == null || accessibleSchema.isAccessible)
+            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+        else{
+            if (accessibleSchema.setterMethodName == null)
+                throw new IllegalStateException("Error: private field, but there is no setter method");
+            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+        }
+        return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
     }
 
     @Override

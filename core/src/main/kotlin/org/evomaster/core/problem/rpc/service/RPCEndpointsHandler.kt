@@ -12,7 +12,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
@@ -21,6 +23,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.impact.impactinfocollection.value.SeededGeneImpact
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -206,7 +209,7 @@ class RPCEndpointsHandler {
         problem.schemas.forEach { i->
             i.types.sortedBy { it.type.depth }
                 .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
-                typeCache[t.type.fullTypeName] = handleObjectType(t)
+                typeCache[t.type.fullTypeNameWithGenericType] = handleObjectType(t)
             }
 
         }
@@ -351,6 +354,7 @@ class RPCEndpointsHandler {
             // set null value
             if (gene.gene is ObjectGene || gene.gene is DateTimeGene){
                 dto.innerContent = null
+                dto.stringValue = null
             }
             return
         }
@@ -361,6 +365,7 @@ class RPCEndpointsHandler {
             is FloatGene -> dto.stringValue = valueGene.value.toString()
             is BooleanGene -> dto.stringValue = valueGene.value.toString()
             is StringGene -> dto.stringValue = valueGene.getValueAsRawString()
+            is RegexGene -> dto.stringValue = valueGene.getValueAsRawString()
             is EnumGene<*> -> dto.stringValue = valueGene.index.toString()
             is SeededGene<*> -> dto.stringValue = getValueForSeededGene(valueGene)
             is LongGene -> dto.stringValue = valueGene.value.toString()
@@ -430,6 +435,9 @@ class RPCEndpointsHandler {
                 is FloatGene -> valueGene.value = dto.stringValue.toFloat()
                 is BooleanGene -> valueGene.value = dto.stringValue.toBoolean()
                 is StringGene -> valueGene.value = dto.stringValue
+                is RegexGene -> {
+                    // TODO set value based on RegexGene
+                }
                 is LongGene -> valueGene.value = dto.stringValue.toLong()
                 is EnumGene<*> -> valueGene.index = dto.stringValue.toInt()
                 is SeededGene<*> -> {
@@ -521,7 +529,10 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT,
             RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> valueGene is IntegerGene
             RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> valueGene is BooleanGene
-            RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR, RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> valueGene is StringGene
+            RPCSupportedDataType.P_CHAR,
+            RPCSupportedDataType.CHAR,
+            RPCSupportedDataType.STRING,
+            RPCSupportedDataType.BYTEBUFFER -> valueGene is StringGene || (valueGene is RegexGene && dto.pattern != null)
             RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> valueGene is DoubleGene
             RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> valueGene is FloatGene
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> valueGene is LongGene
@@ -571,11 +582,25 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name, min = param.minValue, max = param.maxValue)
             RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT -> IntegerGene(param.name, min = param.minValue?.toInt()?:Short.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Short.MAX_VALUE.toInt())
             RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> IntegerGene(param.name, min = param.minValue?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Byte.MAX_VALUE.toInt())
-            RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> StringGene(param.name).apply {
-                if (param.minValue != null || param.maxValue != null){
-                    // add specification based on constraint info
-                    specializationGenes.add(LongGene(param.name, min=param.minValue, max = param.maxValue))
+            RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> {
+                var strGene : Gene? = null
+                if (param.pattern != null){
+                    try {
+                        strGene = RegexHandler.createGeneForEcma262(param.pattern).apply {this.name = param.name}
+                    } catch (e: Exception) {
+                        LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${param.pattern}")
+                    }
                 }
+                if (strGene == null){
+                    strGene = StringGene(param.name).apply {
+                        if (param.minValue != null || param.maxValue != null){
+                            // add specification based on constraint info
+                            specializationGenes.add(LongGene(param.name, min=param.minValue, max = param.maxValue))
+                        }
+                    }
+                }
+                strGene
+
             }
             RPCSupportedDataType.ENUM -> handleEnumParam(param)
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param)
@@ -674,9 +699,9 @@ class RPCEndpointsHandler {
     }
 
     private fun handleObjectType(type: ParamDto): Gene{
-        val typeName = type.type.fullTypeName
+        val typeName = type.type.fullTypeNameWithGenericType
         if (type.innerContent.isEmpty()){
-            LoggingUtil.uniqueWarn(log, "Object with name (${type.type.fullTypeName}) has empty fields")
+            LoggingUtil.uniqueWarn(log, "Object with name (${type.type.fullTypeNameWithGenericType}) has empty fields")
             //return MapGene(typeName, PairGene.createStringPairGene(StringGene( "field"), isFixedFirst = true))
             return ObjectGene(typeName, listOf(), refType = typeName)
         }
@@ -687,8 +712,8 @@ class RPCEndpointsHandler {
     }
 
     private fun handleObjectParam(param: ParamDto): Gene{
-        val objType = typeCache[param.type.fullTypeName]
-            ?:throw IllegalStateException("missing ${param.type.fullTypeName} in typeCache")
+        val objType = typeCache[param.type.fullTypeNameWithGenericType]
+            ?:throw IllegalStateException("missing ${param.type.fullTypeNameWithGenericType} in typeCache")
         return objType.copy().apply { this.name = param.name }
     }
 

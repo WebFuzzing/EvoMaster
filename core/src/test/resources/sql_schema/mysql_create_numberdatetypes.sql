@@ -1,5 +1,5 @@
 CREATE TABLE BoundedNumberTable (
-    bc bigint(20) NOT NULL,
+    bc bigint(20) UNSIGNED NOT NULL,
     dd DOUBLE,
     dc1 decimal(10,2) NOT NULL,
     dc2 decimal(5,3) NOT NULL,

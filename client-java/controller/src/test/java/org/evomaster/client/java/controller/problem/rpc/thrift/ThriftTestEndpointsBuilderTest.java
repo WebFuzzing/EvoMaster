@@ -282,8 +282,8 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(6, javaCode.size());
         assertEquals("java.nio.ByteBuffer arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
-        assertEquals(" byte[] arg0_byteArray = \"foo\".getBytes(StandardCharsets.UTF_8);", javaCode.get(2));
-        assertEquals(" arg0 = ByteBuffer.allocate(arg0_byteArray.length);", javaCode.get(3));
+        assertEquals(" byte[] arg0_byteArray = \"foo\".getBytes(java.nio.charset.StandardCharsets.UTF_8);", javaCode.get(2));
+        assertEquals(" arg0 = java.nio.ByteBuffer.allocate(arg0_byteArray.length);", javaCode.get(3));
         assertEquals(" arg0.put(arg0_byteArray);", javaCode.get(4));
         assertEquals("}", javaCode.get(5));
 

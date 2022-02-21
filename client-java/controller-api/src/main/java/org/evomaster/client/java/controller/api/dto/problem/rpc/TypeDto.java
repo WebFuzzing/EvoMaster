@@ -10,6 +10,10 @@ public class TypeDto {
     public String fullTypeName;
 
     /**
+     * full type name with generic types if it has
+     */
+    public String fullTypeNameWithGenericType;
+    /**
      * extracted type for the param
      */
     public RPCSupportedDataType type;

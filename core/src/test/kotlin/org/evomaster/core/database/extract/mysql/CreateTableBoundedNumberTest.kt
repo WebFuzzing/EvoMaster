@@ -6,8 +6,8 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.DoubleGene
 import org.evomaster.core.search.gene.FloatGene
 import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.LongGene
 import org.evomaster.core.search.gene.sql.SqlNullable
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -32,6 +32,7 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
             assertEquals(8, size)
             assertEquals(listOf("bc", "dd", "dc1", "dc2", "dc3", "dc4", "tc1","tc2"), map { it.name })
             assertEquals(listOf(-1, -1, 2, 3, 1, 1, -1, -1), map { it.precision })
+            assertTrue(this[0].isUnsigned)
             assertEquals(10, this[2].size)
             assertFalse(this[2].isUnsigned)
             assertEquals(5, this[3].size)
@@ -50,6 +51,13 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
         actions[0].seeGenes().apply {
             assertEquals(8, size)
             assertEquals(listOf("bc", "dd", "dc1", "dc2", "dc3", "dc4", "tc1", "tc2"), map { it.name })
+
+            val bc = this[0]
+            assertTrue(bc is LongGene)
+            (bc as LongGene).apply {
+                assertNotNull(this.min)
+                assertEquals(0L, this.min)
+            }
 
             val dd = this[1]
             assertTrue(dd is SqlNullable)

@@ -33,9 +33,11 @@ SCRIPTS_FOLDER = os.path.join(FOLDER, "scripts")
 buffer = []
 
 #collect name of all bash files
-scripts = [f for f in os.listdir(SCRIPTS_FOLDER) if os.path.isfile(os.path.join(SCRIPTS_FOLDER, f)) and f.startswith("evomaster") and f.endswith(".sh")]
+scripts = [f for f in os.listdir(SCRIPTS_FOLDER) if os.path.isfile(os.path.join(SCRIPTS_FOLDER, f))  and f.endswith(".sh")]
+# and f.startswith("evomaster")
+# as we might want to use this script for BB experiments, let's not bind it to EvoMaster
 
-print("There are " + str(len(scripts)) + " EvoMaster script files")
+print("There are " + str(len(scripts)) + " Bash script files")
 
 random.shuffle(scripts)
 
@@ -48,7 +50,7 @@ def runScript(s):
 
     command = ["bash", os.path.join("scripts", s)]
 
-    handler = subprocess.Popen(command, shell=SHELL, cwd=FOLDER)
+    handler = subprocess.Popen(command, shell=SHELL, cwd=FOLDER, start_new_session=True)
     buffer.append(handler)
 
 for s in scripts:
@@ -78,5 +80,6 @@ for h in buffer:
 
 print("All jobs are completed")
 
+#TODO how to make sure no subprocess is left hanging?
 
 

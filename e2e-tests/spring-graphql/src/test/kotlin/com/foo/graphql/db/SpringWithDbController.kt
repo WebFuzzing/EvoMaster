@@ -1,13 +1,14 @@
 package com.foo.graphql.db
 
 import com.foo.graphql.SpringController
-import org.evomaster.client.java.controller.db.DbCleaner
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.internal.db.DbSpecification
 import org.hibernate.dialect.H2Dialect
 import org.springframework.boot.SpringApplication
 import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Connection
 import java.sql.SQLException
-import kotlin.random.Random.Default.nextInt
+import java.util.*
 
 
 abstract class SpringWithDbController(applicationClass: Class<*>) : SpringController(applicationClass) {
@@ -63,16 +64,20 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
 
 
     override fun resetStateOfSUT() {
-        if (dbconnection != null)
-            DbCleaner.clearDatabase_H2(dbconnection)
+//        if (dbconnection != null)
+//            DbCleaner.clearDatabase_H2(dbconnection)
     }
 
     override fun stopSut() {
         super.stopSut()
-        dbconnection = null
+//        dbconnection = null
     }
 
-    override fun getConnection() = dbconnection
+    override fun getDbSpecifications(): MutableList<DbSpecification>? =mutableListOf(DbSpecification()
+        .apply {
+            connection = dbconnection
+            dbType = DatabaseType.H2
+        })
 
     override fun getDatabaseDriverName() = "org.h2.Driver"
 }

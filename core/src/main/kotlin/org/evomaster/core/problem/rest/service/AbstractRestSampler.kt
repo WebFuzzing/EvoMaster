@@ -84,7 +84,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         postInits()
 
-        updateConfigForTestOutput(infoDto)
+        updateConfigBasedOnSutInfoDto(infoDto)
 
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(

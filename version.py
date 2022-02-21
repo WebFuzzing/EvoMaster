@@ -62,6 +62,9 @@ def replaceInCS():
     replacement = '         <Version>'+version+'</Version>\n'
     replace("client-dotnet/common.props", regex, replacement)
 
+    regex = re.compile(r'.*VERSION.*=.*')
+    replacement = 'VERSION='+reducedVersion+'\n'
+    replace("client-dotnet/publish.sh", regex, replacement)
 
 
 SHELL = platform.system() == 'Windows'
