@@ -50,8 +50,12 @@ class TupleGene(
         val log: Logger = LoggerFactory.getLogger(TupleGene::class.java)
     }
 
+    /*
+    For GQL, the last element of the Tuple represents a return type gene.
+    It is a special gene that will be treated with the Boolean selection.
+     */
     fun getSpecialGene(): Gene? {
-        TODO("Not yet implemented")
+
         if (lastElementTreatedSpecially) {
             return elements.last()
         }
