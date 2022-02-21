@@ -142,6 +142,7 @@ class TestSuiteWriter {
 
         val accessedTable = mutableSetOf<String>()
         solution.individuals.forEach { e->
+            //TODO will need to be refactored when supporting Web Frontend
             if (e.individual is ApiWsIndividual){
                accessedTable.addAll(e.individual.getInsertTableNames())
             }

@@ -363,10 +363,13 @@ public class SqlScriptRunner {
      *
      * @param conn a connection to db
      * @param script represents a sql script
-     * @param tablesToInsert represents if only insert table which exists in this list
+     * @param tablesToInsert represents insertions are executed only on the tables in this list.
+     *                       insertions for other tables will be skipped.
+     *                       if it is null or empty, nothing will be inserted.
      * @throws SQLException if the execution of the command fails
      */
     public static void execScript(Connection conn, String script, List<String> tablesToInsert) throws SQLException {
+        if (tablesToInsert == null || tablesToInsert.isEmpty()) return;
         List<String> commands = extractSql(script);
         for (String command : commands){
             if(shouldExecuteInsert(command, tablesToInsert)){

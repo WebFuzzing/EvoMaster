@@ -643,7 +643,7 @@ class SqlInsertBuilder(
      * @param tables to check
      * @param all is a complete set of tables with their fk
      */
-    fun extractFkTable(tables: Set<String>, all: MutableSet<String>){
+    fun extractFkTable(tables: Set<String>, all: MutableSet<String> = mutableSetOf()): Set<String>{
         tables.forEach { t->
             if (!all.contains(t))
                 all.add(t)
@@ -652,6 +652,7 @@ class SqlInsertBuilder(
                 extractFkTable(fk, all)
             }
         }
+        return all.toSet()
     }
 
     private fun extractFkTable(tableName: String): Set<String>{

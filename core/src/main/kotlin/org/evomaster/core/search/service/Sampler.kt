@@ -112,6 +112,6 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      * extract tables with additional FK tables
      */
     open fun extractFkTables(tables: Set<String>): Set<String>{
-        return tables
+        throw IllegalStateException("FK tables have not been not handled yet")
     }
 }
