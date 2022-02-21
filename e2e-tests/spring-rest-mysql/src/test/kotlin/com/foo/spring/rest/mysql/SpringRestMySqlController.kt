@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.db.DbCleaner
+import org.evomaster.client.java.controller.internal.db.DbSpecification
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 import org.hibernate.dialect.MySQL8Dialect
@@ -14,6 +14,8 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.testcontainers.containers.GenericContainer
 import java.sql.Connection
 import java.sql.DriverManager
+import java.util.*
+import kotlin.collections.HashMap
 
 abstract class SpringRestMySqlController (
     private val applicationClass: Class<*>
@@ -38,7 +40,7 @@ abstract class SpringRestMySqlController (
         .apply { withExposedPorts(MYSQL_PORT) }
 
 
-    private var connection: Connection? = null
+    var dbConnection: Connection? = null
 
     init {
         super.setControllerPort(0)
@@ -53,7 +55,7 @@ abstract class SpringRestMySqlController (
         val port = mysql.getMappedPort(MYSQL_PORT)
         val url = "jdbc:mysql://$host:$port/$MYSQL_DB_NAME"
 
-        connection = DriverManager.getConnection(url, "test", "test")
+        dbConnection = DriverManager.getConnection(url, "test", "test")
 
 
         ctx = SpringApplication.run(applicationClass,
@@ -69,10 +71,10 @@ abstract class SpringRestMySqlController (
         )!!
 
 
-        connection?.close()
+        dbConnection?.close()
 
         val jdbc = ctx!!.getBean(JdbcTemplate::class.java)
-        connection = jdbc.dataSource!!.connection
+        dbConnection = jdbc.dataSource!!.connection
 
         return "http://localhost:" + getSutPort()
     }
@@ -98,12 +100,12 @@ abstract class SpringRestMySqlController (
     }
 
     override fun resetStateOfSUT() {
-        DbCleaner.clearDatabase(
-            connection,
-            MYSQL_DB_NAME,
-            listOf(),
-            DatabaseType.MYSQL
-        )
+//        DbCleaner.clearDatabase(
+//            dbConnection,
+//            MYSQL_DB_NAME,
+//            listOf(),
+//            DatabaseType.MYSQL
+//        )
     }
 
     override fun getProblemInfo(): ProblemInfo {
@@ -117,9 +119,11 @@ abstract class SpringRestMySqlController (
         return null
     }
 
-    override fun getConnection(): Connection? {
-        return connection
-    }
+    override fun getDbSpecifications(): MutableList<DbSpecification>? = mutableListOf(DbSpecification().apply {
+        dbType = DatabaseType.MYSQL
+        connection = dbConnection
+        schemaNames = listOf(MYSQL_DB_NAME)
+    })
 
 
     override fun getDatabaseDriverName(): String? {

@@ -3,7 +3,7 @@ name: CI
 on: [push]
 
 env:
-  evomaster-version: 1.3.1
+  evomaster-version: 1.4.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of
@@ -11,6 +11,7 @@ env:
   # For some "hilarious" case, see:
   # https://github.com/EMResearch/EvoMaster/issues/447
   release-jdk: 17
+  build-jdk: 1.8
   retention-days: 3
 
 
@@ -22,48 +23,18 @@ env:
 
 jobs:
 
-  build:
+  base:
     runs-on: ubuntu-latest
 
     steps:
       # Checkout code
       - uses: actions/checkout@v2
 
-      # Build/test for .Net
-      - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: 3.1.x
-      - name: Clean .Net
-        run: dotnet clean
-      - name: Build with .Net
-        run: dotnet build --configuration Release
-      - name: Tests for .Net
-        run: dotnet test
-
-      # Build/test for JavaScript
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-      - run: npm ci
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm run build
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm run test
-        working-directory: ./client-js/evomaster-client-js
-      - run: npm ci
-        working-directory: ./client-js/integration-tests
-      - run: npm run build
-        working-directory: ./client-js/integration-tests
-      - run: npm run test
-        working-directory: ./client-js/integration-tests
-
       # Build/test for JDK
-      - name: Setup JDK 8
+      - name: Setup JDK ${{env.build-jdk}}
         uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: ${{env.build-jdk}}
       - name: Cache Maven packages
         uses: actions/cache@v2
         with:
@@ -74,7 +45,6 @@ jobs:
         run: mvn clean verify --fae
         env:
           CI_env: GithubAction
-
       - name: Upload evomaster.jar
         uses: actions/upload-artifact@v2
         with:
@@ -82,21 +52,9 @@ jobs:
           path: core/target/evomaster.jar
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
-
-      # E2E for JS. Must be run AFTER the JS and Core builds
-      - name: E2E for JavaScript
-        run:  bash ./client-js/e2e-tests/e2e.sh
-
-      # E2E for C#. Must be run AFTER the C# and Core builds
-      - name: E2E for C#
-        run:  bash ./e2e-tests/dotnet-rest/scripts/e2e.sh
-
-
       # Upload coverage results
       - name: Upload coverage to CodeCov
         run: curl -s https://codecov.io/bash | bash
-
-
       # Only once coverage is uploaded, we try to build with other versions of Java, as "mvn clean" would delete those reports
       # However, the latest LTS is fully built (with tests) on a different job
       - name: Setup JDK 11
@@ -105,6 +63,7 @@ jobs:
           java-version: 11
       - name: Compile with JDK 11
         run: mvn clean verify -DskipTests
+
 
   latest-LTS:
     # run on a different OS from main build.
@@ -131,9 +90,75 @@ jobs:
           CI_env: GithubAction
 
 
+  nodejs:
+    needs: base
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # Build/test for JavaScript
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - run: npm ci
+        working-directory: ./client-js/evomaster-client-js
+      - run: npm run build
+        working-directory: ./client-js/evomaster-client-js
+      - run: npm run test
+        working-directory: ./client-js/evomaster-client-js
+      - run: npm ci
+        working-directory: ./client-js/integration-tests
+      - run: npm run build
+        working-directory: ./client-js/integration-tests
+      - run: npm run test
+        working-directory: ./client-js/integration-tests
+      - name: Setup JDK ${{env.build-jdk}}
+        uses: actions/setup-java@v1
+        with:
+            java-version: ${{env.build-jdk}}
+      - name: Download fat jar
+        uses: actions/download-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target
+      # E2E for JS. Must be run AFTER the JS and Core builds
+      - name: E2E for JavaScript
+        run:  bash ./client-js/e2e-tests/e2e.sh
 
-  windows:
-    needs: build
+
+  dotnet:
+    needs: base
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # Build/test for .Net
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.x
+      - name: Clean .NET
+        run: dotnet clean
+      - name: Build with .NET
+        run: dotnet build --configuration Release
+      - name: Unit tests for .NET
+        run: dotnet test
+      - name: Setup JDK ${{env.build-jdk}}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{env.build-jdk}}
+      - name: Download fat jar
+        uses: actions/download-artifact@v2
+        with:
+          name: evomaster.jar
+          path: core/target
+      # E2E for C#. Must be run AFTER the C# and Core builds
+      - name: E2E for C#
+        run:  bash ./e2e-tests/dotnet-rest/scripts/e2e.sh
+
+
+
+  installer-for-windows:
+    needs: base
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -157,8 +182,8 @@ jobs:
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
-  osx:
-    needs: build
+  installer-for-osx:
+    needs: base
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -182,8 +207,8 @@ jobs:
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
-  debian:
-    needs: build
+  installer-for-debian:
+    needs: base
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

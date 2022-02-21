@@ -3,11 +3,11 @@ package com.foo.graphql.base
 import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.internal.db.DbSpecification
 import org.evomaster.client.java.controller.problem.GraphQlProblem
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.springframework.boot.SpringApplication
 import org.springframework.context.ConfigurableApplicationContext
-import java.sql.Connection
 
 
 class BaseGQDriver : EmbeddedSutController(){
@@ -42,7 +42,7 @@ class BaseGQDriver : EmbeddedSutController(){
         return "com.foo.graphql.base"
     }
 
-    override fun getConnection(): Connection? {
+    override fun getDbSpecifications(): MutableList<DbSpecification>? {
         return null
     }
 

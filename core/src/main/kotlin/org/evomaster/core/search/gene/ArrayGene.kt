@@ -51,12 +51,12 @@ class ArrayGene<T>(
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
             throw IllegalArgumentException(
-                "minSize (${minSize}) is greater than maxSize ($maxSize)")
+                "ArrayGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
         }
 
         if (maxSize != null && elements.size > maxSize!!) {
             throw IllegalArgumentException(
-                    "More elements (${elements.size}) than allowed ($maxSize)")
+                "ArrayGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
 
         // might not check min size in constructor
@@ -140,7 +140,8 @@ class ArrayGene<T>(
             throw IllegalStateException("Cannot mutate a immutable array")
         }
         val mutable = elements.filter { it.isMutable() }
-        if ( mutable.isEmpty() || mutable.size > getMaxSizeOrDefault()){
+        if (getMinSizeOrDefault()!=getMaxSizeOrDefault() // if min == max, the size is not mutable
+                && (mutable.isEmpty() || mutable.size > getMaxSizeOrDefault())){
             return listOf()
         }
         val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)

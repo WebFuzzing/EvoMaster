@@ -37,6 +37,12 @@ if [ $? -ne 0 ] ; then
    exit 1
 fi
 
+$WB /e2e-tests/dotnet-rest/test/RestApis.Tests.StringEquals  EmbeddedEvoMasterController.cs 500 false CONSTANT_OK CONSTANT_FAIL
+if [ $? -ne 0 ] ; then
+   echo $(date) "ERROR: Test failed for StringEquals."
+   exit 1
+fi
+
 
 ### Black-Box Testing ###
 # Note that here we will run the original, NON-instrumented version of the SUT

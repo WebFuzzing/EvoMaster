@@ -75,6 +75,23 @@ These 10 scripts can then be started in parallel with `foo/runAll.sh`.
 Once all experiments are finished, the generated `statistics.csv` files can be collected to analyze the results. 
 
 
+Generating _N_ bash scripts does not mean that all of them will take the exact amount of time.
+Running all of them in parallel would hence be inefficient.
+Assume you can run _K_ jobs in parallel, let's say 5, based on CPU cores and memory available.
+Then, it makes sense to generate _N>K_ bash scripts, and then use the script `schedule.py` to run them, e.g., using:
+
+```
+schedule.py 5 foo
+```
+
+This will run all the experiments in `foo`, with _K=5_ jobs in parallel (out of the total _N=10_).
+Each time a job ends, a new one is started.
+Where the value of _K_ depends on available resources, _N_ can be arbitrary, as long as _N>=K_.
+Can make sense to have something like _N=100_, or at least _N>3K_. 
+
+
+
+
 
 
 

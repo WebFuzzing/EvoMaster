@@ -101,6 +101,22 @@ Note that login will ask for username/password.
 The release is linked to NPM's user `arcuri82`.
 Password is ???.
 
+## NuGet Release
+
+After the version number has been updated with `version.py` script, need to make a release on NuGet as well for the .NET libraries.
+
+First, build .NET libraries with:
+
+`dotnet build`
+
+Then, execute:
+
+`./client-dotnet/publish.sh ???` 
+
+It takes as input the API-KEY linked to the namespace `EvoMaster.*`.
+Note: API-KEYs only last 1 year, and then a new one needs to be created.
+
+
 ## GitHub Release
 
 Push the version changes in the `pom.xml` files on Git.
@@ -166,6 +182,9 @@ The reasoning is to force the downloading of all the dependencies from Maven Cen
 to check if anything is missing.
 And this is why it was important to build the non-SNAPSHOT with `package` instead of `install`. 
 
+Note: the change to the version number for new release needs to be done (and pushed) on the `develop` branch. Then, `master` has to pull from `develop`, and push it.
+Once the release (from `master` branch) is done on GitHub, switch back to `develop`, and push the new SNAPSHOT update.
+In other words, `master` branch should always point to last commit of latest release, and no SNAPSHOT. 
 
 ## Example Update
 

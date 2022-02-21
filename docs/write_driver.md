@@ -246,6 +246,36 @@ The idea then is to mount the folder, in which the database writes, directly in 
 
 For an example, you can look at the E2E tests in EvoMaster, like the class [com.foo.spring.rest.postgres.SpringRestPostgresController](https://github.com/EMResearch/EvoMaster/blob/master/e2e-tests/spring-rest-postgres/src/test/kotlin/com/foo/spring/rest/postgres/SpringRestPostgresController.kt). 
 
+
+## MongoDB Database
+
+Although at the current moment _EvoMaster_ does not analyze how MongoDB databases are accessed at runtime, it is important still to reset their state (to avoid dependencies among generated tests).
+Compared to SQL databases, MongoDB is easier to reset.
+Can use directly the APIs of MongoDB.
+For example, given a reference to `com.mongodb.MongoClient`, you can have:
+```
+public void resetStateOfSUT() {
+    mongoClient.getDatabase("foo").drop();
+}        
+```
+
+As for any external service, we reccomend to start them with Docker.
+For example:
+
+```
+private static final GenericContainer mongodb =  
+         new GenericContainer("mongo:3.2")
+                .withExposedPorts(27017);
+```
+
+In Spring, the connection URL can then be set with:
+```
+--spring.data.mongodb.uri=mongodb://"+mongodb.getContainerIpAddress()+":"+mongodb.getMappedPort(27017)+"/foo"
+```
+
+
+
+
 ## Code Coverage  
  
 When _EvoMaster_ evolves test cases, it tries to maximize code coverage in the SUT.

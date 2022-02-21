@@ -12,22 +12,22 @@
 
     <ItemGroup>
 
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
-        <PackageReference Include="xunit" Version="2.4.0" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
-        <PackageReference Include="coverlet.collector" Version="1.0.1" />
-<!--        <PackageReference Include="EvoMaster.Instrumentation" Version="1.1.1-SNAPSHOT"/>-->
-<!--        <PackageReference Include="EvoMaster.Controller" Version="1.1.1-SNAPSHOT"/>-->
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0"/>
+        <PackageReference Include="xunit" Version="2.4.0"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0"/>
+        <PackageReference Include="coverlet.collector" Version="1.0.1"/>
+        <!--        <PackageReference Include="EvoMaster.Instrumentation" Version="1.1.1-SNAPSHOT"/>-->
+        <!--        <PackageReference Include="EvoMaster.Controller" Version="1.1.1-SNAPSHOT"/>-->
     </ItemGroup>
 
     <Target Name="PostClean" AfterTargets="Clean">
-        <RemoveDir Directories="generated" />
-        <RemoveDir Directories="bin-temp" />
+        <RemoveDir Directories="generated"/>
+        <RemoveDir Directories="bin-temp"/>
     </Target>
-    
+
     <ItemGroup>
-        <ProjectReference Include="../../src/RestApis.HelloWorld/RestApis.HelloWorld.csproj" />
-        <ProjectReference Include="../../../../client-dotnet/src/EvoMaster.Controller/EvoMaster.Controller.csproj" />
+        <ProjectReference Include="../../src/RestApis.HelloWorld/RestApis.HelloWorld.csproj"/>
+        <ProjectReference Include="../../../../client-dotnet/src/EvoMaster.Controller/EvoMaster.Controller.csproj"/>
     </ItemGroup>
 
     <!-- Read all the comments below to get an understanding of what's happening for putting up the scaffolding
@@ -57,7 +57,7 @@
 
         <!-- Run the instrumentation and specify bin-temp as output directory -->
         <Exec Command="cd $(OutputPath)
-			  dotnet EvoMaster.Instrumentation.dll @(Sut) @(TempDirectory)"/>
+        dotnet EvoMaster.Instrumentation.dll @(Sut) @(TempDirectory)"/>
 
     </Target>
 
@@ -70,5 +70,5 @@
         <Exec Command="cp @(SutPath) $(OutputPath)" Condition="$(OS.Contains('Unix'))"/>
         <Exec Command="copy @(SutPath) $(OutputPath)" Condition="$(OS.Contains('Windows'))"/>
     </Target>
-    
+
 </Project>

@@ -58,6 +58,7 @@ public class JavaXConstraintHandler {
 
     private static boolean handleCollection(CollectionParam param, Annotation annotation){
         if (handleNotEmpty(annotation)){
+            param.setNullable(false);
             param.setMinSize(1);
             return true;
         }
@@ -75,6 +76,7 @@ public class JavaXConstraintHandler {
 
     private static boolean handleMapParam(MapParam param, Annotation annotation){
         if (handleNotEmpty(annotation)){
+            param.setNullable(false);
             param.setMinSize(1);
             return true;
         }
@@ -92,6 +94,7 @@ public class JavaXConstraintHandler {
 
     private static boolean handleStringParam(StringParam param, Annotation annotation) {
         if (handleNotBlank(annotation)){
+            param.setNullable(false);
             param.setMinSize(1);
             return true;
         }
@@ -114,27 +117,31 @@ public class JavaXConstraintHandler {
             return true;
         }
 
+        String pattern = handlePattern(annotation);
+        if (pattern != null){
+            param.setPattern(pattern);
+            return true;
+        }
+
         return false;
     }
 
     private static boolean handleNotBlank(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("NotBlank")){
-            return true;
-        }
-        return false;
+        return cons.getSimpleName().equals("NotBlank");
     }
 
     private static boolean handleNotEmpty(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("NotEmpty")){
-            return true;
-        }
-        return false;
+        return cons.getSimpleName().equals("NotEmpty");
     }
 
     private static Integer[] handleSize(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
+        /*
+            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Size.html
+            null elements are considered valid.
+         */
         if (cons.getSimpleName().equals("Size")){
             Integer[] size = new Integer[2];
 
@@ -150,8 +157,30 @@ public class JavaXConstraintHandler {
         return null;
     }
 
+    private static String handlePattern(Annotation annotation)  {
+        Class<?> cons = annotation.annotationType();
+        /*
+            based on https://docs.oracle.com/javaee/7/api/javax/validation/constraints/Pattern.html
+            null elements are considered valid.
+         */
+        if (cons.getSimpleName().equals("Pattern")){
+
+            try {
+                return (String) annotation.annotationType().getDeclaredMethod("regexp").invoke(annotation);
+            } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
+                throw new RuntimeException("ERROR: fail to process regexp");
+            }
+
+        }
+        return null;
+    }
+
     private static Long handleMax(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
+        /*
+            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Max.html
+            null elements are considered valid.
+         */
         if (cons.getSimpleName().equals("Max")){
             try {
                 return (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
@@ -164,6 +193,10 @@ public class JavaXConstraintHandler {
 
     private static Long handleMin(Annotation annotation)  {
         Class<?> cons = annotation.annotationType();
+        /*
+            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Min.html
+            null elements are considered valid.
+         */
         if (cons.getSimpleName().equals("Min")){
             try {
                 return (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
