@@ -57,6 +57,17 @@
               },
               "isDeprecated": false,
               "deprecationReason": null
+            },
+            {
+              "name": "page2",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
             }
           ],
           "inputFields": null,

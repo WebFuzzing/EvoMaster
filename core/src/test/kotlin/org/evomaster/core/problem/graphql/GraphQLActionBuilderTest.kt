@@ -917,7 +917,9 @@ class GraphQLActionBuilderTest {
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
-        assertEquals(1, actionCluster.size)
+        assertEquals(2, actionCluster.size)
+        val page2 = actionCluster.get("page2") as GraphQLAction
+
         val page = actionCluster.get("page") as GraphQLAction
         assertEquals(2, page.parameters.size)
         assertTrue(page.parameters[0] is GQInputParam)
