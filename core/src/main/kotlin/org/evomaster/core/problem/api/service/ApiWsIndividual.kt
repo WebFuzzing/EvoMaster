@@ -93,4 +93,11 @@ abstract class ApiWsIndividual (
     fun removeInitDbActions(actions: List<DbAction>) {
         dbInitialization.removeAll(actions)
     }
+
+    /**
+     * @return a list table names which are used to insert data directly
+     */
+    fun getInsertTableNames(): List<String>{
+        return dbInitialization.filterNot { it.representExistingData }.map { it.table.name }
+    }
 }

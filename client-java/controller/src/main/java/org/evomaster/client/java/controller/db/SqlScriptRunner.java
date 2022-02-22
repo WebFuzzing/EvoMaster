@@ -361,6 +361,25 @@ public class SqlScriptRunner {
 
     /**
      *
+     * @param conn a connection to db
+     * @param script represents a sql script
+     * @param tablesToInsert represents insertions are executed only on the tables in this list.
+     *                       insertions for other tables will be skipped.
+     *                       if it is null or empty, nothing will be inserted.
+     * @throws SQLException if the execution of the command fails
+     */
+    public static void execScript(Connection conn, String script, List<String> tablesToInsert) throws SQLException {
+        if (tablesToInsert == null || tablesToInsert.isEmpty()) return;
+        List<String> commands = extractSql(script);
+        for (String command : commands){
+            if(shouldExecuteInsert(command, tablesToInsert)){
+                execCommand(conn, command+";");
+            }
+        }
+    }
+
+    /**
+     *
      * @param script is a SQL script
      * @return a list of SQL commands based on the script
      */
@@ -422,6 +441,14 @@ public class SqlScriptRunner {
         statement.close();
 
         return queryResult;
+    }
+
+    private static boolean shouldExecuteInsert(String command, List<String> tablesToInsert){
+        if (!ParserUtils.isInsert(command)) return true;
+        if (tablesToInsert == null || tablesToInsert.isEmpty()) return false;
+        Insert stmt = (Insert) ParserUtils.asStatement(command);
+        Table table = stmt.getTable();
+        return table!= null && tablesToInsert.stream().anyMatch(t-> t.equalsIgnoreCase(table.getName()));
     }
 
 }

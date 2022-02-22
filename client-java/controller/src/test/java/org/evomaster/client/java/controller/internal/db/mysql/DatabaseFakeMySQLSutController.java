@@ -15,9 +15,15 @@ import java.util.List;
 public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
 
     private final Connection sqlConnection;
+    private final String initScript;
 
     public DatabaseFakeMySQLSutController(Connection connection) {
+        this(connection, null);
+    }
+
+    public DatabaseFakeMySQLSutController(Connection connection, String initScript) {
         this.sqlConnection = connection;
+        this.initScript = initScript;
     }
 
     @Override
@@ -27,6 +33,7 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
             connection = sqlConnection;
             employSmartDbClean = true;
             schemaNames = Arrays.asList("test");
+            initSqlScript = initScript;
         }});
     }
 

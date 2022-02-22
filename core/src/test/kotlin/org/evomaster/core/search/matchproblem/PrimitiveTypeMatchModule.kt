@@ -15,6 +15,10 @@ import org.evomaster.core.search.service.mutator.*
 class PrimitiveTypeMatchModule : AbstractModule() {
 
     override fun configure() {
+        bind(object : TypeLiteral<Sampler<*>>() {})
+            .to(PrimitiveTypeMatchSampler::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Sampler<PrimitiveTypeMatchIndividual>>() {})
                 .to(PrimitiveTypeMatchSampler::class.java)
                 .asEagerSingleton()
