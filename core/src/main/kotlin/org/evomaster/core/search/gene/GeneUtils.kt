@@ -50,7 +50,8 @@ object GeneUtils {
         GQL_INPUT_ARRAY_MODE,
         BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE,
         BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE,
-        GQL_STR_VALUE
+        GQL_STR_VALUE,
+        GQL_NONE_MODE
     }
 
     fun getDelta(
@@ -155,6 +156,7 @@ object GeneUtils {
             EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE,
             EscapeMode.BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE,
             EscapeMode.BOOLEAN_SELECTION_NESTED_MODE,
+            EscapeMode.GQL_NONE_MODE,
             EscapeMode.GQL_INPUT_ARRAY_MODE,
             EscapeMode.GQL_INPUT_MODE -> string
             EscapeMode.GQL_STR_VALUE -> applyGQLStr(string, format)
