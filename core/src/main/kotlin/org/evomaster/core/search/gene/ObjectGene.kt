@@ -300,7 +300,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         buffer.append(selection.map {
             val s: String = when (it) {
                 is TupleGene -> {
-                    it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.NONE, targetFormat, extraCheck = true)
+                    it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.GQL_NONE_MODE, targetFormat, extraCheck = true)
                 }
                 is OptionalGene -> {
                     assert(it.gene is ObjectGene)
