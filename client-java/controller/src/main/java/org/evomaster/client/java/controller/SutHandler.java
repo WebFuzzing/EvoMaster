@@ -179,22 +179,22 @@ public interface SutHandler {
     /**
      * <p>
      * reset database if the smart db cleaning is employed
-     * TODO need to discuss with Andrea about this
      * </p>
      */
-    default void resetDatabase(){
+    default void resetDatabase(List<String> tablesToClean){
         if (getDbSpecifications()!= null && !getDbSpecifications().isEmpty()){
             getDbSpecifications().forEach(spec->{
                 if (spec==null || spec.connection == null || !spec.employSmartDbClean){
                     return;
                 }
                 if (spec.schemaNames == null || spec.schemaNames.isEmpty())
-                    DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType);
+                    DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
                 else
-                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, null, spec.dbType));
+                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
                 if (spec.initSqlScript != null) {
                     try {
-                        SqlScriptRunner.execScript(spec.connection, spec.initSqlScript);
+                        // init data only if the table exists in [tablesToClean]
+                        SqlScriptRunner.execScript(spec.connection, spec.initSqlScript, tablesToClean);
                     } catch (SQLException e) {
                         throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
                     }

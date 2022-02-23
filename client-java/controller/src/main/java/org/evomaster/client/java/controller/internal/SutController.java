@@ -334,23 +334,28 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new RuntimeException("Error: DO NOT SUPPORT MULTIPLE SQL CONNECTION YET");
 
         DbSpecification emDbClean = getDbSpecifications().get(0);
-        if (getConnectionIfExist() == null || !emDbClean.employSmartDbClean || accessedTables.isEmpty()) return;
+        if (getConnectionIfExist() == null || !emDbClean.employSmartDbClean) return;
 
-        List<String> tablesToClean = new ArrayList<>();
-        getTableToClean(accessedTables, tablesToClean);
-        if (tablesToClean.isEmpty()) return;
-
-        if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
-            emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
-        }else
-            DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
-        Set<String> tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
-
-        // init db script
         try {
             setExecutingInitSql(true);
+
+            // clean accessed tables
+            Set<String> tableDataToInit = null;
+            if (!accessedTables.isEmpty()){
+                List<String> tablesToClean = new ArrayList<>();
+                getTableToClean(accessedTables, tablesToClean);
+                if (!tablesToClean.isEmpty()){
+                    if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
+                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
+                    }else
+                        DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
+                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
+                }
+            }
+
+            // init db script
             boolean initAll = initSqlScriptAndGetInsertMap(getConnectionIfExist(), emDbClean);
-            if (!initAll && !tableDataToInit.isEmpty()){
+            if (!initAll && tableDataToInit!= null &&!tableDataToInit.isEmpty()){
                 tableDataToInit.forEach(a->{
                     tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
                         tableInitSqlMap.get(t).forEach(c->{

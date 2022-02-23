@@ -144,9 +144,9 @@ class TupleGene(
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         if (elements.isNotEmpty())
-            elements.forEach {
-                it.randomize(randomness, false)
-            }
+        elements.forEach {
+            it.randomize(randomness, false)
+        }
     }
 
     override fun copyValueFrom(other: Gene) {
