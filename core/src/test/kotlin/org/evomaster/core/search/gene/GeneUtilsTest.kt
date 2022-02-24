@@ -9,6 +9,7 @@ import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.*
 
@@ -366,6 +367,66 @@ internal class GeneUtilsTest {
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
         assertEquals("{foo{...onA{a1}b1,b2}}", res)//with the name foo and without "...on" for the object B
+    }
+
+    /*
+    The tests below are temporary, to remove
+     */
+    @Disabled
+    @Test
+    fun testRepaireBooleanSectionTuple() {
+
+        val objBoolean = ObjectGene(
+            "bouquets", listOf(
+                TupleGene(
+                    "store", listOf(
+                        OptionalGene(
+                            "store",
+                            ObjectGene(
+                                "store", listOf(
+                                    TupleGene(
+                                        "adress",
+                                        listOf(BooleanGene("adress", true))
+                                    ),
+                                    TupleGene(
+                                        "bouquet",
+                                        listOf(
+                                            OptionalGene(
+                                                "bouquet",
+                                                CycleObjectGene("bouquet")
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        GeneUtils.repairBooleanSelection(objBoolean)
+
+        assertTrue(objBoolean.fields.any { it is CycleObjectGene })
+    }
+    @Disabled
+    @Test
+    fun testRepaireBooleanSectionCycle() {
+
+        val objBoolean = ObjectGene(
+            "foo", listOf(
+                BooleanGene("a", true),
+                OptionalGene(
+                    "bouquet",
+                    CycleObjectGene("bouquet"),true
+                )
+            )
+        )
+
+        GeneUtils.repairBooleanSelection(objBoolean)
+
+        assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
+        assertFalse(objBoolean.fields.any { it is OptionalGene && it.gene is CycleObjectGene  })
     }
 
 }
