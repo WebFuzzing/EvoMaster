@@ -265,32 +265,16 @@ internal class GeneUtilsTest {
         val objPetType = pettypes.parameters[0].gene as ObjectGene
         assertEquals(2, objPetType.fields.size)
 
-        // assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "id" })
-        // assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "name" })
-        assertTrue(objPetType.fields.any { it is TupleGene && it.name == "id" })
-        assertTrue(objPetType.fields.any { it is TupleGene && it.name == "name" })
+         assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "id" })
+         assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "name" })
 
-        val tupleId = objPetType.fields.first { it.name == "id" } as TupleGene
-        assertEquals(1, tupleId.elements.size)
-        assertTrue(tupleId.elements.any { it is BooleanGene && it.name == "id" })
 
-        val tupleName = objPetType.fields.first { it.name == "name" } as TupleGene
-        assertEquals(1, tupleName.elements.size)
-        assertTrue(tupleName.elements.any { it is BooleanGene && it.name == "name" })
-
-       // (objPetType.fields[0] as BooleanGene).value = false
-        // (objPetType.fields[1] as BooleanGene).value = false
-        (tupleId.elements.first { it is BooleanGene && it.name == "id" } as BooleanGene).value = false
-        (tupleName.elements.first { it is BooleanGene && it.name == "name" } as BooleanGene).value = false
-
-       // assertFalse(objPetType.fields.any{ it is BooleanGene && it.value})
-        assertFalse(tupleId.elements.any { it is BooleanGene && it.value})
-        
+        (objPetType.fields[0] as BooleanGene).value = false
+         (objPetType.fields[1] as BooleanGene).value = false
+        assertFalse(objPetType.fields.any{ it is BooleanGene && it.value})
         GeneUtils.repairBooleanSelection(objPetType)
+        assertTrue(objPetType.fields.any{ it is BooleanGene && it.value})
 
-        //assertTrue(objPetType.fields.any{ it is BooleanGene && it.value})
-        //hardcoded assertion, but when putting in the general framework it will be fixed
-        assertTrue(tupleId.elements.any { it is BooleanGene && it.name == "id" && it.value })
     }
 
 
