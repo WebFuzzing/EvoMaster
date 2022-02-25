@@ -31,23 +31,12 @@ class GraphQLActionBuilderTest {
         assertTrue(pettypes.parameters[0].gene is ObjectGene)
         val objPetType = pettypes.parameters[0].gene as ObjectGene
         assertEquals(2, objPetType.fields.size)
-
-        assertTrue(objPetType.fields.any { it is TupleGene && it.name == "id" })
-        assertTrue(objPetType.fields.any { it is TupleGene && it.name == "name" })
-
-        val tupleId = objPetType.fields.first { it.name == "id" } as TupleGene
-        assertEquals(1, tupleId.elements.size)
-        assertTrue(tupleId.elements.any { it is BooleanGene && it.name == "id" })
-
-        val tupleName = objPetType.fields.first { it.name == "name" } as TupleGene
-        assertEquals(1, tupleName.elements.size)
-        assertTrue(tupleName.elements.any { it is BooleanGene && it.name == "name" })
-
-        //TODO copy function
-      //  val gQlReturn = GQReturnParam(pettypes.parameters[0].name, pettypes.parameters[0].gene)
-        //val gQlInputcopy = gQlReturn.copy()
-        //assertEquals(gQlReturn.name, gQlInputcopy.name)
-        //assertEquals(gQlReturn.gene.name, gQlInputcopy.gene.name)
+        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "name" })
+        val gQlReturn = GQReturnParam(pettypes.parameters[0].name, pettypes.parameters[0].gene)
+        val gQlInputcopy = gQlReturn.copy()
+        assertEquals(gQlReturn.name, gQlInputcopy.name)
+        assertEquals(gQlReturn.gene.name, gQlInputcopy.gene.name)
         /**/
         val vets = actionCluster.get("vets") as GraphQLAction
         assertEquals(1, vets.parameters.size)
@@ -55,33 +44,15 @@ class GraphQLActionBuilderTest {
         assertTrue(vets.parameters[0].gene is ObjectGene)
         val objVets = vets.parameters[0].gene as ObjectGene
         assertEquals(4, objVets.fields.size)
+        assertTrue(objVets.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objVets.fields.any { it is BooleanGene && it.name == "firstName" })
+        assertTrue(objVets.fields.any { it is BooleanGene && it.name == "lastName" })
+        assertTrue(objVets.fields.any { it is OptionalGene && it.name == "specialties" })
 
-        assertTrue(objVets.fields.any { it is TupleGene && it.name == "id" })
-        assertTrue(objVets.fields.any { it is TupleGene && it.name == "firstName" })
-        assertTrue(objVets.fields.any { it is TupleGene && it.name == "lastName" })
-        assertTrue(objVets.fields.any { it is TupleGene && it.name == "specialties" })
-
-        val tupleIdVets = objVets.fields.first { it.name == "id" } as TupleGene
-        assertEquals(1, tupleIdVets.elements.size)
-        assertTrue(tupleIdVets.elements.any { it is BooleanGene && it.name == "id" })
-
-        val tupleFirstNameVets = objVets.fields.first { it.name == "firstName" } as TupleGene
-        assertEquals(1, tupleFirstNameVets.elements.size)
-        assertTrue(tupleFirstNameVets.elements.any { it is BooleanGene && it.name == "firstName" })
-
-        val tupleLastNameVets = objVets.fields.first { it.name == "lastName" } as TupleGene
-        assertEquals(1, tupleLastNameVets.elements.size)
-        assertTrue(tupleLastNameVets.elements.any { it is BooleanGene && it.name == "lastName" })
-
-        val tupleSpecialties = objVets.fields.first { it.name == "specialties" } as TupleGene
-        assertEquals(1, tupleSpecialties.elements.size)
-        assertTrue(tupleSpecialties.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "specialties" })
-
-        val objSpecialties = (tupleSpecialties.elements.last() as OptionalGene).gene as ObjectGene
-        assertEquals(2, objSpecialties.fields.size)
-        assertTrue(objSpecialties.fields.any { it is TupleGene && it.name == "id" })
-        assertTrue(objSpecialties.fields.any { it is TupleGene && it.name == "name" })
-
+        val objSpecialty = (objVets.fields.first { it.name == "specialties" } as OptionalGene).gene as ObjectGene
+        assertEquals(2, objSpecialty.fields.size)
+        assertTrue(objSpecialty.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objSpecialty.fields.any { it is BooleanGene && it.name == "name" })
         /**/
         val owners = actionCluster.get("owners") as GraphQLAction
         assertEquals(3, owners.parameters.size)
@@ -101,51 +72,27 @@ class GraphQLActionBuilderTest {
         /**/
         val owner = owners.parameters[2].gene as ObjectGene
         assertEquals(7, owner.fields.size)
-
-        assertTrue(owner.fields.any { it is TupleGene && it.name == "id" })
-        assertTrue(owner.fields.any { it is TupleGene && it.name == "firstName" })
-        assertTrue(owner.fields.any { it is TupleGene && it.name == "lastName" })
-        assertTrue(owner.fields.any { it is TupleGene && it.name == "address" })
-        assertTrue(owner.fields.any { it is TupleGene && it.name == "city" })
-        assertTrue(owner.fields.any { it is TupleGene && it.name == "telephone" })
-        assertTrue(owner.fields.any { it is TupleGene && it.name == "pets" })
-
-        val tupleIdOwner = owner.fields.first { it.name == "id" } as TupleGene
-        assertEquals(1, tupleIdOwner.elements.size)
-        assertTrue(tupleIdOwner.elements.any { it is BooleanGene && it.name == "id" })
-
-        val tupleFirstNameOwner = owner.fields.first { it.name == "firstName" } as TupleGene
-        assertEquals(1, tupleFirstNameOwner.elements.size)
-        assertTrue(tupleFirstNameOwner.elements.any { it is BooleanGene && it.name == "firstName" })
-
-        val tupleLastNameOwner = owner.fields.first { it.name == "lastName" } as TupleGene
-        assertEquals(1, tupleLastNameOwner.elements.size)
-        assertTrue(tupleLastNameOwner.elements.any { it is BooleanGene && it.name == "lastName" })
-
-        val tuplePets = owner.fields.first { it.name == "pets" } as TupleGene
-        assertEquals(1, tuplePets.elements.size)
-        assertTrue(tuplePets.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pets" })
-
-        val objPets = (tuplePets.elements.last() as OptionalGene).gene as ObjectGene
-        assertEquals(6, objPets.fields.size)
-        assertTrue(objPets.fields.any { it is TupleGene && it.name == "id" })
-        assertTrue(objPets.fields.any { it is TupleGene && it.name == "name" })
-        assertTrue(objPets.fields.any { it is TupleGene && it.name == "birthDate" })
-        assertTrue(objPets.fields.any { it is TupleGene && it.name == "type" })
-        assertTrue(objPets.fields.any { it is TupleGene && it.name == "visits" })
-
-        val tupleVisits = objPets.fields.first { it.name == "visits" } as TupleGene
-        assertEquals(1, tupleVisits.elements.size)
-        assertTrue(tupleVisits.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "visits" })
-
-        val objVisits = (tupleVisits.elements.last() as OptionalGene).gene as ObjectGene
-        assertEquals(2, objVisits.fields.size)
-        assertTrue(objVisits.fields.any { it is TupleGene && it.name == "visits" })
-        assertTrue(objVisits.fields.any { it is TupleGene && it.name == "totalCount" })
-
-  //todo
-
-//        GeneUtils.repairBooleanSelection(owner); // this should not fail
+        assertTrue(owner.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(owner.fields.any { it is BooleanGene && it.name == "firstName" })
+        assertTrue(owner.fields.any { it is BooleanGene && it.name == "lastName" })
+        assertTrue(owner.fields.any { it is BooleanGene && it.name == "address" })
+        assertTrue(owner.fields.any { it is BooleanGene && it.name == "city" })
+        assertTrue(owner.fields.any { it is BooleanGene && it.name == "telephone" })
+        assertTrue(owner.fields.any { it is OptionalGene && it.name == "pets" })
+        val objPet = ((owner.fields.first { it.name == "pets" }) as OptionalGene).gene as ObjectGene
+        assertEquals(6, objPet.fields.size)
+        assertTrue(objPet.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objPet.fields.any { it is BooleanGene && it.name == "name" })
+        assertTrue(objPet.fields.any { it is BooleanGene && it.name == "birthDate" })
+        assertTrue(objPet.fields.any { it is OptionalGene && it.name == "type" })
+        assertTrue(objPet.fields.any { it is OptionalGene && it.name == "visits" })
+        assertTrue(objPet.fields[5] is OptionalGene)
+        val objVisitConnection = (objPet.fields[5] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objVisitConnection.fields.size)
+        assertTrue(objVisitConnection.fields[0] is BooleanGene)
+        assertTrue(objVisitConnection.fields.any { it is BooleanGene && it.name == "totalCount" })
+        assertTrue(objVisitConnection.fields.any { it is OptionalGene && it.name == "visits" })
+        GeneUtils.repairBooleanSelection(owner); // this should not fail
         /**/
         val pet = actionCluster.get("pet") as GraphQLAction
         assertEquals(2, pet.parameters.size)
@@ -156,15 +103,8 @@ class GraphQLActionBuilderTest {
         assertTrue(pet.parameters[1].gene is ObjectGene)
         val objPet2 = (pet.parameters[1].gene as ObjectGene)
         assertEquals(6, objPet2.fields.size)
-
-        assertTrue(objPet2.fields.any { it is TupleGene && it.name == "visits" })
-
-        val tupleVisits2 = objPet2.fields.first { it.name == "visits" } as TupleGene
-        assertEquals(1, tupleVisits2.elements.size)
-        assertTrue(tupleVisits2.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "visits" })
-
-        //todo
-        //GeneUtils.repairBooleanSelection(objPet2); // this should not fail
+        assertTrue(objPet2.fields.any { it is OptionalGene && it.name == "visits" })
+        GeneUtils.repairBooleanSelection(objPet2); // this should not fail
         /**/
         val specialties = actionCluster.get("specialties") as GraphQLAction
         assertEquals(1, specialties.parameters.size)
@@ -172,8 +112,7 @@ class GraphQLActionBuilderTest {
         assertTrue(specialties.parameters[0].gene is ObjectGene)
 
     }
-
-    @Disabled
+@Disabled
     @Test
     fun anigListSchemaTest() {
 
@@ -237,7 +176,7 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
+@Disabled
     @Test
     fun bitquerySchemaTest() {
 
@@ -260,7 +199,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun catalysisHubSchemaTest() {
 
@@ -322,12 +260,11 @@ class GraphQLActionBuilderTest {
         assertTrue(continents.parameters[0] is GQInputParam)
         assertTrue(continents.parameters[1] is GQReturnParam)
         assertTrue(continents.parameters[1].gene is ObjectGene)
-
         val objContinents = continents.parameters[1].gene as ObjectGene
-        assertTrue(objContinents.fields[2] is TupleGene)
+        assertTrue(objContinents.fields[2] is OptionalGene)
+        val objCountry = (objContinents.fields[2] as OptionalGene).gene as ObjectGene
+        assertTrue(objCountry.fields[7] is OptionalGene)
 
-        val tupleCountry = objContinents.fields[2] as TupleGene
-        assertTrue(tupleCountry.elements.any { it is OptionalGene })
     }
 
     @Test
@@ -348,7 +285,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun digitransitHSLSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -375,7 +311,6 @@ class GraphQLActionBuilderTest {
         assertTrue(objAgency.fields.any { it is BooleanGene && it.name == "phone" })
     }
 
-    @Disabled
     @Test
     fun eHRISchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -462,25 +397,13 @@ class GraphQLActionBuilderTest {
         assertEquals(2, ppackage.parameters.size)
         assertTrue(ppackage.parameters[0] is GQInputParam)
         assertTrue(ppackage.parameters[0].gene is StringGene)
+        val objPackage = ppackage.parameters[1].gene as ObjectGene
+        assertTrue(objPackage.fields.any { it is BooleanGene && it.name == "isMain" })
+        assertTrue(objPackage.fields[2] is OptionalGene)
+        val objVersion = (objPackage.fields[2] as OptionalGene).gene as ObjectGene
+        objVersion.fields.any { it is BooleanGene && it.name == "name" }
         assertTrue(ppackage.parameters[1] is GQReturnParam)
         assertTrue(ppackage.parameters[1].gene is ObjectGene)
-
-        val objPackage = ppackage.parameters[1].gene as ObjectGene
-        assertTrue(objPackage.fields.any { it is TupleGene && it.name == "isMain" })
-        assertTrue(objPackage.fields.any { it is TupleGene && it.name == "version" })
-
-        val tupleIsMain = objPackage.fields.first { it.name == "isMain" } as TupleGene
-        assertTrue(tupleIsMain.elements.any { it is BooleanGene && it.name == "isMain" })
-
-        val tupleVersion = objPackage.fields.first { it.name == "version" } as TupleGene
-        assertTrue(tupleVersion.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "version" })
-
-        val objVersion = (tupleVersion.elements.last() as OptionalGene).gene as ObjectGene
-        assertTrue(objVersion.fields.any { it is TupleGene && it.name == "name" })
-
-        val tupleName = objVersion.fields.first { it.name == "name" } as TupleGene
-        assertEquals(1, tupleName.elements.size)
-        assertTrue(tupleName.elements.any { it is BooleanGene && it.name == "name" })
 
     }
 
@@ -496,7 +419,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun travelgateXSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -564,10 +486,7 @@ class GraphQLActionBuilderTest {
         assertTrue((coresUpcoming.parameters[0].gene as OptionalGene).gene is ObjectGene)
         assertTrue(coresUpcoming.parameters[5].gene is ObjectGene)
         val objCore = coresUpcoming.parameters[5].gene as ObjectGene
-        assertTrue(objCore.fields.any { it is TupleGene && it.name == "water_landing" })
-
-        val tupleWaterLanding = objCore.fields.first { it.name == "water_landing" } as TupleGene
-        assertTrue(tupleWaterLanding.elements.any { it is BooleanGene && it.name == "water_landing" })
+        assertTrue(objCore.fields.any { it is BooleanGene && it.name == "water_landing" })
 
     }
 
@@ -583,7 +502,6 @@ class GraphQLActionBuilderTest {
     }
 
 
-    @Disabled
     @Test
     fun interfaceEgTest() {
 
@@ -629,7 +547,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun interfaceInternalEgTest() {
 
@@ -682,7 +599,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun unionInternalEgTest() {
 
@@ -723,7 +639,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun unionInternalRecEgTest() {
 
@@ -791,7 +706,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun interfaceHisTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -828,20 +742,17 @@ class GraphQLActionBuilderTest {
 
         assertEquals(1, actionCluster.size)
     }
-
     @Test
     fun handleAllCyclesInObjectFieldsTest() {
 
-        val objI = ObjectGene("obj2", listOf(OptionalGene("cyc", CycleObjectGene("a"), isActive = true)))
+        val objI=ObjectGene("obj2", listOf(OptionalGene("cyc",CycleObjectGene("a"),isActive = true)))
 
-        val obj = OptionalGene("obj1", ObjectGene("obj1", listOf(objI)), isActive = true)
+        val obj =  OptionalGene("obj1",ObjectGene("obj1", listOf(objI)),isActive = true)
 
         assertTrue(obj.isActive)
 
-        obj.flatView().forEach {
-            if (it is ObjectGene)
-                GraphQLActionBuilder.handleAllCyclesInObjectFields(it)
-        }
+        obj.flatView().forEach {if (it is ObjectGene)
+            GraphQLActionBuilder.handleAllCyclesInObjectFields(it)  }
 
         assertTrue(!obj.isActive)
 
@@ -862,46 +773,25 @@ class GraphQLActionBuilderTest {
         assertTrue(a.parameters[0] is GQReturnParam)
         assertTrue(a.parameters[0].gene is ObjectGene)
 
-        val objA = a.parameters[0].gene as ObjectGene
+        val objA = a.parameters[0].gene as ObjectGene//first level
         assertEquals(3, objA.fields.size)
+        assertTrue(objA.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objA.fields.any { it is OptionalGene && it.name == "b" })// second level
+        assertTrue(objA.fields.any { it is OptionalGene && it.name == "f" })// second level
 
-        assertTrue(objA.fields.any { it is TupleGene && it.name == "id" })
-        assertTrue(objA.fields.any { it is TupleGene && it.name == "b" })
-        assertTrue(objA.fields.any { it is TupleGene && it.name == "f" })
-
-        val tupleId = objA.fields.first { it.name == "id" } as TupleGene
-        assertEquals(1, tupleId.elements.size)
-        assertTrue(tupleId.elements.any { it is BooleanGene && it.name == "id" })
-
-        val tupleB = objA.fields.first { it.name == "b" } as TupleGene
-        assertEquals(1, tupleB.elements.size)
-        assertTrue(tupleB.elements.any { it is OptionalGene && it.name == "b" })
-
-        val tupleF = objA.fields.first { it.name == "f" } as TupleGene
-        assertEquals(1, tupleF.elements.size)
-        assertTrue(tupleF.elements.any { it is OptionalGene && it.name == "f" })
-
-        val objB = (tupleB.elements.first { it.name == "b" } as OptionalGene).gene as ObjectGene
+        val objB = (objA.fields.first { it.name == "b" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objB.fields.size)
-        assertTrue(objB.fields.any { it is TupleGene && it.name == "c" })
+        assertTrue(objB.fields.any { it is OptionalGene && it.name == "c" })//third level
 
-        val tupleC = objB.fields.first { it.name == "c" } as TupleGene
-        assertEquals(1, tupleC.elements.size)
-        assertTrue(tupleC.elements.any { it is OptionalGene && it.name == "c" })
-
-        val objC = (tupleC.elements.first { it.name == "c" } as OptionalGene).gene as ObjectGene
+        val objC = (objB.fields[0] as OptionalGene).gene as ObjectGene
         assertEquals(1, objC.fields.size)
-        assertTrue(objC.fields.any { it is TupleGene && it.name == "d" })
+        assertTrue(objC.fields.any { it is OptionalGene && it.name == "d" })//fourth level
 
-        val tupleD = objC.fields.first { it.name == "d" } as TupleGene
-        assertEquals(1, tupleD.elements.size)
-        assertTrue(tupleD.elements.any { it is OptionalGene && it.name == "d" })
-
-        val objD = (tupleD.elements.first { it.name == "d" } as OptionalGene).gene as ObjectGene
+        val objD = (objC.fields[0] as OptionalGene).gene as ObjectGene
         assertEquals(2, objD.fields.size)
-        assertTrue(objD.fields.any { it is TupleGene && it.name == "e" })
+        assertTrue(objD.fields.any { it is OptionalGene && it.name == "e" })//fifth level
 
-        val objF = (tupleF.elements.first { it.name == "f" } as OptionalGene).gene as ObjectGene
+        val objF = (objA.fields.first { it.name == "f" } as OptionalGene).gene as ObjectGene// second level
         assertEquals(1, objF.fields.size)
 
     }
@@ -930,50 +820,39 @@ class GraphQLActionBuilderTest {
         val objPage = page.parameters[1].gene as ObjectGene
 
         assertEquals(8, objPage.fields.size)
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "pageInfo" })
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "users" })
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "pageInfo2" })
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "pageInfo3" })
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "users2" })
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "pageInfo4" })
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "pageInfo5" })
-        assertTrue(objPage.fields.any { it is TupleGene && it.name == "users3" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo" })
+        //a tuple is optional or not todo
+         assertTrue(objPage.fields.any { it  is TupleGene && it.name == "users" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo2" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo3" })
+         assertTrue(objPage.fields.any { it  is TupleGene && it.name == "users2" })
+        assertTrue(objPage.fields.any { it is BooleanGene && it.name == "pageInfo4" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo5" })
+          assertTrue(objPage.fields.any { it  is TupleGene && it.name == "users3" })
 
-        val tuplePageInfo = objPage.fields.first { it.name == "pageInfo" } as TupleGene
-        assertEquals(1, tuplePageInfo.elements.size)
-        assertTrue(tuplePageInfo.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo" })
 
-        val objPageInfo = (tuplePageInfo.elements.last() as OptionalGene).gene as ObjectGene
+
+        val objPageInfo = (objPage.fields.first { it.name == "pageInfo" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objPageInfo.fields.size)
-        assertTrue(objPageInfo.fields.any { it is TupleGene && it.name == "total" })
-        val tupleTotal = objPageInfo.fields.first { it.name == "total" } as TupleGene
-        assertEquals(1, tupleTotal.elements.size)
-        assertTrue(tupleTotal.elements.any { it is BooleanGene && it.name == "total" })
+        assertTrue(objPageInfo.fields.any { it is BooleanGene && it.name == "total" })
 
-        val tuplePageInfo2 = objPage.fields.first { it.name == "pageInfo2" } as TupleGene
-        assertEquals(1, tuplePageInfo2.elements.size)
-        assertTrue(tuplePageInfo2.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo2" })
+        val objPageInfo2 = (objPage.fields.first { it.name == "pageInfo2" } as OptionalGene).gene as ObjectGene
 
-        val objPageInfo2 = (tuplePageInfo2.elements.last() as OptionalGene).gene as ObjectGene
         assertEquals(1, objPageInfo2.fields.size)
-        assertTrue(objPageInfo2.fields.any { it is TupleGene && it.name == "total2" })
-        val tupleTotal2 = objPageInfo2.fields.first { it.name == "total2" } as TupleGene
+        assertTrue(objPageInfo2.fields.any { it is  TupleGene && it.name == "total2" })
+        val tupleTotal2 = objPageInfo2.fields.first { it.name == "total2" }  as TupleGene
         assertEquals(2, tupleTotal2.elements.size)
         assertTrue(tupleTotal2.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "id" })
         assertTrue(tupleTotal2.elements.any { it is BooleanGene && it.name == "total2" })
 
-        val tuplePageInfo3 = objPage.fields.first { it.name == "pageInfo3" } as TupleGene
-        assertEquals(1, tuplePageInfo3.elements.size)
-        assertTrue(tuplePageInfo3.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo3" })
 
-        val objPageInfo3 = (tuplePageInfo3.elements.last() as OptionalGene).gene as ObjectGene
+        val objPageInfo3 = (objPage.fields.first { it.name == "pageInfo3" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objPageInfo3.fields.size)
-        assertTrue(objPageInfo3.fields.any { it is TupleGene && it.name == "total3" })
-        val tupleTotal3 = objPageInfo3.fields.first { it.name == "total3" } as TupleGene
-        assertEquals(1, tupleTotal3.elements.size)
-        assertTrue(tupleTotal3.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "total3" })
 
-        val objTotal3 = (tupleTotal3.elements.last() as OptionalGene).gene as ObjectGene
+        assertTrue(objPageInfo3.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "total3" })
+
+
+        val objTotal3 = (objPageInfo3.fields.first { it.name == "total3" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objTotal3.fields.size)
         assertTrue(objTotal3.fields.any { it is TupleGene && it.name == "price" })
 
@@ -983,7 +862,10 @@ class GraphQLActionBuilderTest {
         assertTrue(tuplePrice.elements.any { it is OptionalGene && it.gene is StringGene && it.name == "Name" })
         assertTrue(tuplePrice.elements.any { it is BooleanGene && it.name == "price" })
 
-        val tupleUsers2 = objPage.fields.first { it.name == "users2" } as TupleGene
+        /*
+
+         */
+        val tupleUsers2 = objPage.fields.first { it.name == "users2" }  as TupleGene
         assertEquals(2, tupleUsers2.elements.size)
         //This name is correct since it belongs to the input
         assertTrue(tupleUsers2.elements.any { it is OptionalGene && it.gene is StringGene && it.name == "Search2" })
@@ -991,50 +873,56 @@ class GraphQLActionBuilderTest {
 
         val objUser2 = (tupleUsers2.elements.last() as OptionalGene).gene as ObjectGene
         assertEquals(1, objUser2.fields.size)
-        assertTrue(objUser2.fields.any { it is TupleGene && it.name == "about2" })
+        assertTrue(objUser2.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "about2" })
 
-        val tupleAbout2 = objUser2.fields.first { it.name == "about2" } as TupleGene
-        assertEquals(1, tupleAbout2.elements.size)
-        assertTrue(tupleAbout2.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "about2" })
+        /*
 
-
-        val objAbout2 = (tupleAbout2.elements.last() as OptionalGene).gene as ObjectGene
+         */
+        val objAbout2 = (objUser2.fields.first { it.name == "about2" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objAbout2.fields.size)
         assertTrue(objAbout2.fields.any { it is TupleGene && it.name == "html" })
 
-        val tupleHtml = objAbout2.fields.first { it.name == "html" } as TupleGene
+        val tupleHtml = objAbout2.fields.first { it.name == "html" }  as TupleGene
         assertEquals(2, tupleHtml.elements.size)
         //This name is correct since it belongs to the input
         assertTrue(tupleHtml.elements.any { it is OptionalGene && it.gene is StringGene && it.name == "Name" })
-        assertTrue(tupleHtml.elements.any { it is BooleanGene && it.name == "html" })
+        assertTrue(tupleHtml.elements.any { it  is BooleanGene && it.name == "html" })
 
 
-        val tuplePageInfo4 = objPage.fields.first { it.name == "pageInfo4" } as TupleGene
-        assertEquals(1, tuplePageInfo4.elements.size)
-        assertTrue(tuplePageInfo4.elements.any { it is BooleanGene && it.name == "pageInfo4" })
+        /*
 
+         */
 
-        val tuplePageInfo5 = objPage.fields.first { it.name == "pageInfo5" } as TupleGene
-        assertEquals(1, tuplePageInfo5.elements.size)
-        assertTrue(tuplePageInfo5.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo5" })
-
-        val objPageInfo5 = (tuplePageInfo5.elements.last() as OptionalGene).gene as ObjectGene
+        val objPageInfo5 = (objPage.fields.first { it.name == "pageInfo5" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objPageInfo5.fields.size)
-        assertTrue(objPageInfo5.fields.any { it is TupleGene && it.name == "total4" })
+        assertTrue(objPageInfo5.fields.any { it is BooleanGene && it.name == "total4" })
 
-        val tupleTotal4 = objPageInfo5.fields.first { it.name == "total4" } as TupleGene
-        assertEquals(1, tupleTotal4.elements.size)
-        assertTrue(tupleTotal4.elements.any { it is BooleanGene && it.name == "total4" })
+        /*
 
-
-        val tupleUsers3 = objPage.fields.first { it.name == "users3" } as TupleGene
+        */
+        val tupleUsers3 = objPage.fields.first { it.name == "users3" }  as TupleGene
         assertEquals(3, tupleUsers3.elements.size)
         //This name is correct since it belongs to the input
         assertTrue(tupleUsers3.elements.any { it is OptionalGene && it.gene is StringGene && it.name == "Search" })
         assertTrue(tupleUsers3.elements.any { it is ArrayGene<*> && it.template is ObjectGene && it.name == "store" })
+
         val objStore = (tupleUsers3.elements.first { it.name == "store" } as ArrayGene<*>).template as ObjectGene
         assertEquals(1, objStore.fields.size)
         assertTrue(objStore.fields.any { it is IntegerGene && it.name == "id" })
+
+        assertTrue(tupleUsers3.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "users3" })
+
+/////////////7
+
+        val objUser3 = (tupleUsers3.elements.last() as OptionalGene).gene as ObjectGene
+        assertEquals(1, objUser3.fields.size)
+        assertTrue(objUser3.fields.any { it is TupleGene && it.name == "about3"  })
+
+        val tupleAbout3 = objUser3.fields.first { it.name == "about3" }  as TupleGene
+        assertEquals(2, tupleHtml.elements.size)
+        assertTrue(tupleAbout3.elements.any { it is OptionalGene && it.gene is BooleanGene && it.name == "AsHtml2" })
+        assertTrue(tupleAbout3.elements.any { it is BooleanGene && it.name == "about3" })
+
 
     }
 
@@ -1055,7 +943,7 @@ class GraphQLActionBuilderTest {
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
-        assertEquals(1, actionCluster.size)
+        assertEquals(2, actionCluster.size)
         val page = actionCluster.get("page") as GraphQLAction
         assertEquals(2, page.parameters.size)
         assertTrue(page.parameters[0] is GQInputParam)
@@ -1066,31 +954,22 @@ class GraphQLActionBuilderTest {
         val objPage = (page.parameters[1].gene as OptionalGene).gene as ObjectGene
 
         assertEquals(8, objPage.fields.size)
-        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "pageInfo" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo" })
         assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "users" })
-        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "pageInfo2" })
-        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "pageInfo3" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo2" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo3" })
         assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "users2" })
-        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "pageInfo4" })
-        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "pageInfo5" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is StringGene && it.name == "pageInfo4" })
+        assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo5" })
         assertTrue(objPage.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "users3" })
 
-        val tuplePageInfo = (objPage.fields.first { it.name == "pageInfo" } as OptionalGene).gene as TupleGene
-        assertEquals(1, tuplePageInfo.elements.size)
-        assertTrue(tuplePageInfo.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo" })
 
-        val objPageInfo = (tuplePageInfo.elements.last() as OptionalGene).gene as ObjectGene
+        val objPageInfo = (objPage.fields.first { it.name == "pageInfo" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objPageInfo.fields.size)
-        assertTrue(objPageInfo.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "total" })
-        val tupleTotal = (objPageInfo.fields.first { it.name == "total" } as OptionalGene).gene as TupleGene
-        assertEquals(1, tupleTotal.elements.size)
-        assertTrue(tupleTotal.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "total" })
+        assertTrue(objPageInfo.fields.any { it is OptionalGene && it.gene is IntegerGene && it.name == "total" })
 
-        val tuplePageInfo2 = (objPage.fields.first { it.name == "pageInfo2" } as OptionalGene).gene as TupleGene
-        assertEquals(1, tuplePageInfo2.elements.size)
-        assertTrue(tuplePageInfo2.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo2" })
+        val objPageInfo2 = (objPage.fields.first { it.name == "pageInfo2" } as OptionalGene).gene as ObjectGene
 
-        val objPageInfo2 = (tuplePageInfo2.elements.last() as OptionalGene).gene as ObjectGene
         assertEquals(1, objPageInfo2.fields.size)
         assertTrue(objPageInfo2.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "total2" })
         val tupleTotal2 = (objPageInfo2.fields.first { it.name == "total2" } as OptionalGene).gene as TupleGene
@@ -1098,18 +977,14 @@ class GraphQLActionBuilderTest {
         assertTrue(tupleTotal2.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "id" })
         assertTrue(tupleTotal2.elements.any { it is OptionalGene && it.gene is BooleanGene && it.name == "total2" })
 
-        val tuplePageInfo3 = (objPage.fields.first { it.name == "pageInfo3" } as OptionalGene).gene as TupleGene
-        assertEquals(1, tuplePageInfo3.elements.size)
-        assertTrue(tuplePageInfo3.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo3" })
 
-        val objPageInfo3 = (tuplePageInfo3.elements.last() as OptionalGene).gene as ObjectGene
+        val objPageInfo3 = (objPage.fields.first { it.name == "pageInfo3" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objPageInfo3.fields.size)
-        assertTrue(objPageInfo3.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "total3" })
-        val tupleTotal3 = (objPageInfo3.fields.first { it.name == "total3" } as OptionalGene).gene as TupleGene
-        assertEquals(1, tupleTotal3.elements.size)
-        assertTrue(tupleTotal3.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "total3" })
 
-        val objTotal3 = (tupleTotal3.elements.last() as OptionalGene).gene as ObjectGene
+        assertTrue(objPageInfo3.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "total3" })
+
+
+        val objTotal3 = (objPageInfo3.fields.first { it.name == "total3" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objTotal3.fields.size)
         assertTrue(objTotal3.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "price" })
 
@@ -1118,7 +993,6 @@ class GraphQLActionBuilderTest {
         //This name is correct since it belongs to the input
         assertTrue(tuplePrice.elements.any { it is OptionalGene && it.gene is StringGene && it.name == "Name" })
         assertTrue(tuplePrice.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "price" })
-
 
         /*
 
@@ -1131,16 +1005,12 @@ class GraphQLActionBuilderTest {
 
         val objUser2 = (tupleUsers2.elements.last() as OptionalGene).gene as ObjectGene
         assertEquals(1, objUser2.fields.size)
-        assertTrue(objUser2.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "about2" })
-
-        val tupleAbout2 = (objUser2.fields.first { it.name == "about2" } as OptionalGene).gene as TupleGene
-        assertEquals(1, tupleAbout2.elements.size)
-        assertTrue(tupleAbout2.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "about2" })
+        assertTrue(objUser2.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "about2" })
 
         /*
 
          */
-        val objAbout2 = (tupleAbout2.elements.last() as OptionalGene).gene as ObjectGene
+        val objAbout2 = (objUser2.fields.first { it.name == "about2" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objAbout2.fields.size)
         assertTrue(objAbout2.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "html" })
 
@@ -1150,30 +1020,16 @@ class GraphQLActionBuilderTest {
         assertTrue(tupleHtml.elements.any { it is OptionalGene && it.gene is StringGene && it.name == "Name" })
         assertTrue(tupleHtml.elements.any { it is OptionalGene && it.gene is BooleanGene && it.name == "html" })
 
-        /*
-
-         */
-        val tuplePageInfo4 = (objPage.fields.first { it.name == "pageInfo4" } as OptionalGene).gene as TupleGene
-        assertEquals(1, tuplePageInfo4.elements.size)
-        assertTrue(tuplePageInfo4.elements.any { it is OptionalGene && it.gene is StringGene && it.name == "pageInfo4" })
 
         /*
 
          */
 
-        val tuplePageInfo5 = (objPage.fields.first { it.name == "pageInfo5" } as OptionalGene).gene as TupleGene
-        assertEquals(1, tuplePageInfo5.elements.size)
-        assertTrue(tuplePageInfo5.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo5" })
-
-        val objPageInfo5 = (tuplePageInfo5.elements.last() as OptionalGene).gene as ObjectGene
+        val objPageInfo5 = (objPage.fields.first { it.name == "pageInfo5" } as OptionalGene).gene as ObjectGene
         assertEquals(1, objPageInfo5.fields.size)
-        assertTrue(objPageInfo5.fields.any { it is OptionalGene && it.gene is TupleGene && it.name == "total4" })
+        assertTrue(objPageInfo5.fields.any { it is OptionalGene && it.gene is EnumGene<*> && it.name == "total4" })
 
-        val tupleTotal4 = (objPageInfo5.fields.first { it.name == "total4" } as OptionalGene).gene as TupleGene
-        assertEquals(1, tupleTotal4.elements.size)
-        assertTrue(tupleTotal4.elements.any { it is OptionalGene && it.gene is EnumGene<*> && it.name == "total4" })
-
-        val enumTotal4 = (tupleTotal4.elements.last() as OptionalGene).gene as EnumGene<*>
+        val enumTotal4 = (objPageInfo5.fields.first { it.name == "total4" } as OptionalGene).gene as EnumGene<*>
         assertEquals(2, enumTotal4.values.size)
         assertTrue(enumTotal4.values.any { it == "TOTALENUM1" })
         assertTrue(enumTotal4.values.any { it == "TOTALENUM2" })
