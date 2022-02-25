@@ -18,7 +18,7 @@ class GQLInterfacesEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled
+
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(

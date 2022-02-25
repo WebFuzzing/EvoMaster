@@ -21,7 +21,7 @@ class GQLUnionInternalEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled
+
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(

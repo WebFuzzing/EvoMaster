@@ -19,7 +19,7 @@ class GQLUnionEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled
+
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(

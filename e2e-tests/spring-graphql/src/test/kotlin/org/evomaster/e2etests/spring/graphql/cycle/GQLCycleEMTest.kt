@@ -19,7 +19,7 @@ class GQLCycleEMTest : SpringTestBase() {
     }
 
 
-    @Disabled
+
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
