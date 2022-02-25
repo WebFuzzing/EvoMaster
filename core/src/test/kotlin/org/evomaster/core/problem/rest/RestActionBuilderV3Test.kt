@@ -231,6 +231,11 @@ class RestActionBuilderV3Test{
         loadAndAssertActions("/swagger/artificial/positive_integer_swagger.json", 2)
     }
 
+    @Test
+    fun testSchemaWithErrorEndpoint() {
+        loadAndAssertActions("/swagger/artificial/positive_integer_swagger_errors.json", 1)
+    }
+
 
     @Test
     fun testOCVN() {
