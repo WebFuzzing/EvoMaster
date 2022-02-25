@@ -34,7 +34,7 @@ class GraphQLActionStructureTest :StructuralElementBaseTest(){
 
         val name = ((root.parameters[0] as GQReturnParam).gene as ObjectGene).fields[1]
 
-        assertTrue(name is TupleGene)
+        assertTrue(name is BooleanGene)
 
         val path = listOf(0, 0, 1)
         assertEquals(name, root.targetWithIndex(path))
