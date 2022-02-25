@@ -548,6 +548,54 @@ class GraphQLActionBuilderTest {
     }
 
     @Test
+    fun interfaceEgFunctionTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceEgFunction.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(1, actionCluster.size)
+
+        val stores = actionCluster.get("stores") as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val interfaceObjectStore = stores.parameters[0].gene as ObjectGene
+        assertEquals(2, interfaceObjectStore.fields.size)
+
+        assertTrue(interfaceObjectStore.fields[0] is OptionalGene)
+        assertTrue((interfaceObjectStore.fields[0] as OptionalGene).gene is ObjectGene)
+        val objPotStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(1, objPotStore.fields.size)
+
+        //optional or not
+        assertTrue(objPotStore.fields.any { it is TupleGene && it.name == "address" })
+
+        val tupleAddress = objPotStore.fields.first { it.name == "address" }  as TupleGene
+        assertEquals(2, tupleAddress.elements.size)
+        //This name is correct since it belongs to the input
+        assertTrue(tupleAddress.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "y" })
+        assertTrue(tupleAddress.elements.any { it is BooleanGene && it.name == "address" })
+
+        assertTrue(interfaceObjectStore.fields[1] is OptionalGene)
+        assertTrue((interfaceObjectStore.fields[1] as OptionalGene).gene is ObjectGene)
+        val objStore = (interfaceObjectStore.fields[1] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objStore.fields.size)
+        assertTrue(objStore.fields.any { it is TupleGene && it.name == "id" })
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "name" })
+
+        val tupleId = objStore.fields.first { it.name == "id" }  as TupleGene
+
+        assertEquals(2, tupleId.elements.size)
+        assertTrue(tupleId.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "x" })
+        assertTrue(tupleId.elements.any { it is BooleanGene && it.name == "id" })
+
+    }
+
+    @Test
     fun interfaceInternalEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
