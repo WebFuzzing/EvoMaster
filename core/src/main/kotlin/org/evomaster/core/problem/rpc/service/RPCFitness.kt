@@ -42,12 +42,18 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
         val fv = FitnessValue(individual.size().toDouble())
 
+        log.warn("tmp-evomaster-log: RPC fitness evaluation starts")
+
         run loop@{
             individual.seeActions().forEachIndexed { index, action->
+                log.warn("tmp-evomaster-log: action$index starts")
                 val ok = executeNewAction(action, index, actionResults)
+                log.warn("tmp-evomaster-log: action$index ends")
                 if (!ok) return@loop
             }
         }
+
+        log.warn("tmp-evomaster-log: RPC response analysis starts")
 
         val dto = updateFitnessAfterEvaluation(targets, individual, fv)
                 ?: return null
@@ -67,7 +73,8 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
-
+        log.warn("tmp-evomaster-log: RPC response analysis ends")
+        log.warn("tmp-evomaster-log: RPC fitness evaluation ends")
         return EvaluatedIndividual(fv, individual.copy() as RPCIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
 
     }
