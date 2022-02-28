@@ -536,16 +536,19 @@ public class EMController {
                 ActionResponseDto responseDto = new ActionResponseDto();
                 responseDto.index = index;
                 try{
+                    SimpleLogger.warn("tmp-log: start to execute RPC action");
                     sutController.executeAction(dto.rpcCall, responseDto);
                     if (authResponseDto!= null && authResponseDto.testScript!=null && !authResponseDto.testScript.isEmpty()){
                         responseDto.testScript.addAll(0, authResponseDto.testScript);
                     }
+                    SimpleLogger.warn("tmp-log: successfully execute RPC action");
                     return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
                 }catch (Exception e){
                     // TODO handle exception on responseDto later
                     String msg = "Thrown exception: " + e.getMessage();
                     SimpleLogger.error(msg, e);
                     responseDto.error500Msg = msg;
+                    SimpleLogger.warn("tmp-log: fail to execute RPC action");
                     return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
                 }
 
