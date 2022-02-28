@@ -633,9 +633,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         Object response;
         try {
-            SimpleLogger.warn("tmp-log: invocation starts");
+            long startTime = System.nanoTime();
+            SimpleLogger.warn("tmp-log: invocation starts "+ dto.actionName);
             response = executeRPCEndpoint(dto, false);
-            SimpleLogger.warn("tmp-log: invocation ends");
+            long endTime = System.nanoTime();
+            double execution = (endTime - startTime)/1000000000.0;
+            SimpleLogger.warn("tmp-log: invocation "+dto.actionName+"ends that takes (s):"+String.format("%.2f", execution));
         } catch (Exception e) {
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
         }
