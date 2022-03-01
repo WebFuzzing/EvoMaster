@@ -188,27 +188,32 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 fields<----
            }
        */
-        val selection = includedFields.filter {
-            when (it) {
-                is TupleGene -> true
-                is OptionalGene -> it.isActive
-                is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
-                is BooleanGene -> it.value
-                else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
-            }
-        }
+        val selection = selection(includedFields)
 
-        buffer.append(selection.map {
+        buffer.append(selection.joinToString(",") {
             val s: String = when (it) {
                 is TupleGene -> {
-                    it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.GQL_NONE_MODE, targetFormat, extraCheck = true)
+                    it.getValueAsPrintableString(
+                        previousGenes,
+                        GeneUtils.EscapeMode.GQL_NONE_MODE,
+                        targetFormat,
+                        extraCheck = true
+                    )
                 }
                 is OptionalGene -> {
                     assert(it.gene is ObjectGene)
-                    it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
+                    it.gene.getValueAsPrintableString(
+                        previousGenes,
+                        GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
+                        targetFormat
+                    )
                 }
                 is ObjectGene -> {//todo check
-                    it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
+                    it.getValueAsPrintableString(
+                        previousGenes,
+                        GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
+                        targetFormat
+                    )
                 }
                 is BooleanGene -> {
                     it.name
@@ -218,7 +223,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 }
             }
             s
-        }.joinToString(","))
+        })
 
     }
 
@@ -291,15 +296,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             buffer.append("{")
         }
 
-        val selection = includedFields.filter {
-            when (it) {
-                is TupleGene -> true
-                is OptionalGene -> it.isActive
-                is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
-                is BooleanGene -> it.value
-                else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
-            }
-        }
+        val selection = selection(includedFields)
 
         buffer.append(selection.map {
             val s: String = when (it) {
@@ -326,6 +323,19 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         if (!name.endsWith(GqlConst.INTERFACE_BASE_TAG)) {
             buffer.append("}")
         }
+    }
+
+    private fun selection(includedFields: List<Gene>): List<Gene> {
+        val selection = includedFields.filter {
+            when (it) {
+                is TupleGene -> true
+                is OptionalGene -> it.isActive
+                is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
+                is BooleanGene -> it.value
+                else -> throw RuntimeException("BUG in EvoMaster: unexpected type ${it.javaClass}")
+            }
+        }
+        return selection
     }
 
     private fun openXml(tagName: String) = "<$tagName>"

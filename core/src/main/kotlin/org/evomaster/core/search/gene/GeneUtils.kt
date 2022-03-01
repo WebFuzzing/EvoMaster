@@ -440,10 +440,10 @@ object GeneUtils {
 
         if (shouldApplyBooleanSelection(gene)) {
             val selectedGene = handleBooleanSelection(gene)
-            if (selectedGene is OptionalGene) {
-                return selectedGene.gene as ObjectGene
+            return if (selectedGene is OptionalGene) {
+                selectedGene.gene as ObjectGene
             } else {
-                return selectedGene as ObjectGene
+                selectedGene as ObjectGene
             }
         }
         throw IllegalArgumentException("Invalid input type: ${gene.javaClass}")
@@ -457,7 +457,7 @@ object GeneUtils {
         if (obj.fields.isEmpty()
             || obj.fields.count { it !is OptionalGene && it !is BooleanGene && it !is TupleGene } > 0
         ) {
-            throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean")
+            throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean or tuple")
         }
 
         val selected = obj.fields.filter {
@@ -474,14 +474,12 @@ object GeneUtils {
                 ) {
                     repairBooleanSelection(it.gene)
                 } else if ( //looking into objects inside a tuple
-                    isTupleOptionalObjetNotCycle(it)){
+                    isTupleOptionalObjetNotCycle(it)) {
                     repairBooleanSelection(((it as TupleGene).elements.last() as OptionalGene).gene as ObjectGene)
-
                 }
             }
         } else {
             //must select at least one
-
             val candidates = obj.fields.filter {
                 (it is OptionalGene && it.selectable) || it is BooleanGene ||
                         (it is TupleGene && isLastCandidate(it))
@@ -496,30 +494,28 @@ object GeneUtils {
                     assert(selectedGene.gene !is CycleObjectGene)
                     repairBooleanSelection(selectedGene.gene)
                 }
-            } else {
+            } else
                 if (selectedGene is TupleGene) {
                     val lastElement = selectedGene.elements.last()
-
-                    if (lastElement is OptionalGene) {
-                        lastElement.isActive = true
-                        if (lastElement.gene is ObjectGene) {
-                            assert(lastElement.gene !is CycleObjectGene)
-                            repairBooleanSelection(lastElement.gene)
-                        }
-
-                    } else {
-                        if (lastElement is BooleanGene) {
-                            lastElement.value = true
-                        }
-                    }
-                } else {
+                    isLastElementInTupleOptional(lastElement)
+                } else
                     (selectedGene as BooleanGene).value = true
-                }
-            }
         }
     }
 
-    fun shouldApplyBooleanSelection(gene: Gene) =
+    private fun isLastElementInTupleOptional(lastElement: Gene) {
+        if (lastElement is OptionalGene) {
+            lastElement.isActive = true
+            if (lastElement.gene is ObjectGene) {
+                assert(lastElement.gene !is CycleObjectGene)
+                repairBooleanSelection(lastElement.gene)
+            }
+        } else
+            if (lastElement is BooleanGene)
+                lastElement.value = true
+    }
+
+    private fun shouldApplyBooleanSelection(gene: Gene) =
         (gene is OptionalGene && gene.gene is ObjectGene)
                 || gene is ObjectGene
                 || (gene is ArrayGene<*> && gene.template is ObjectGene)
@@ -536,23 +532,20 @@ object GeneUtils {
                     Any basic field will be represented with a BooleanGene (selected/unselected).
                     But for objects we need to use an Optional
                  */
-                if (gene.gene is ObjectGene) {
+                if (gene.gene is ObjectGene)
                     OptionalGene(gene.name, handleBooleanSelection(gene.gene))
-                } else {
-                    if (gene.gene is ArrayGene<*>) {
+                else
+                    if (gene.gene is ArrayGene<*>)
                         handleBooleanSelection(gene.gene.template)
-                    } else {
-                        if (gene.gene is TupleGene) {
+                    else
+                        if (gene.gene is TupleGene)
                             TupleGene(
                                 gene.name,
                                 gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last()))
                             )
-                        } else {
-                            // on by default, but can be deselected during the search
+                        else
+                        // on by default, but can be deselected during the search
                             BooleanGene(gene.name, true)
-                        }
-                    }
-                }
             }
             is CycleObjectGene -> {
                 gene
@@ -583,7 +576,6 @@ object GeneUtils {
             mode == EscapeMode.GQL_STR_VALUE
 
     private fun isLastSelected(gene: TupleGene): Boolean {
-        //val x= gene.elements.last{ it is BooleanGene && it.value }
         val lastElement = gene.elements[gene.elements.size - 1]
         return (lastElement is OptionalGene && lastElement.isActive) || (lastElement is BooleanGene && lastElement.value)
 
@@ -599,7 +591,6 @@ object GeneUtils {
         (it is TupleGene && it.elements.last() is OptionalGene
                 && (it.elements.last() as OptionalGene).gene is ObjectGene &&
                 (it.elements.last() as OptionalGene).gene !is CycleObjectGene)
-
 
 }
 
