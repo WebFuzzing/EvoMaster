@@ -444,7 +444,7 @@ class GraphQLActionBuilderTest {
         assertTrue(logging.parameters[0].gene is ObjectGene)
     }
 
-    @Disabled
+
     @Test
     fun universeSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -687,6 +687,56 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Test
+    fun unionInternalFunctionsEgTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalFunctionsEg.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(1, actionCluster.size)
+
+        val stores = actionCluster.get("stores") as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val objectStore = stores.parameters[0].gene as ObjectGene
+        assertEquals(2, objectStore.fields.size)
+        assertTrue(objectStore.fields[0] is BooleanGene)
+        assertTrue(objectStore.fields[1] is OptionalGene)
+        assertTrue((objectStore.fields[1] as OptionalGene).gene is ObjectGene)
+        val unionObjBouquet = (objectStore.fields[1] as OptionalGene).gene as ObjectGene
+        assertEquals(2, unionObjBouquet.fields.size)
+
+        assertTrue(unionObjBouquet.fields[0] is OptionalGene)
+        assertTrue((unionObjBouquet.fields[0] as OptionalGene).gene is ObjectGene)
+        val objFlower = (unionObjBouquet.fields[0] as OptionalGene).gene as ObjectGene
+        assertTrue(objFlower.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objFlower.fields.any { it is BooleanGene && it.name == "color" })
+        assertTrue(objFlower.fields.any { it is TupleGene && it.name == "name" })
+
+        val tupleName = objFlower.fields.first { it.name == "name" }  as TupleGene
+        assertEquals(2, tupleName.elements.size)
+        assertTrue(tupleName.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "x" })
+        assertTrue(tupleName.elements.any { it is BooleanGene && it.name == "name" })
+        /**/
+        assertTrue(unionObjBouquet.fields[1] is OptionalGene)
+        assertTrue((unionObjBouquet.fields[1] as OptionalGene).gene is ObjectGene)
+        val objPot = (unionObjBouquet.fields[1] as OptionalGene).gene as ObjectGene
+
+        assertTrue(objPot.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objPot.fields.any { it is BooleanGene && it.name == "size" })
+        assertTrue(objPot.fields.any { it is TupleGene && it.name == "color" })
+
+        val tupleColor = objPot.fields.first { it.name == "color" }  as TupleGene
+        assertEquals(2, tupleColor.elements.size)
+        assertTrue(tupleColor.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "y" })
+        assertTrue(tupleColor.elements.any { it is BooleanGene && it.name == "color" })
+
+    }
     @Test
     fun unionInternalRecEgTest() {
 
