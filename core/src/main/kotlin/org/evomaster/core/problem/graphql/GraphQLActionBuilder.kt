@@ -217,7 +217,7 @@ object GraphQLActionBuilder {
                         "//Args?: ${element?.tableFieldWithArgs} // "
             )
         }
-        println(state.tables.size)
+        println(state.argsTables.size)
 
 
         println("I am the table:////////////////////////////////////////////////////////////////////// ")
