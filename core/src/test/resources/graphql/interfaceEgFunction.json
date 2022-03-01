@@ -21,7 +21,15 @@
           "fields": [
             {
               "name": "id",
-              "args": [],
+              "args": [{
+                "name": "x",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }],
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -76,7 +84,15 @@
           "fields": [
             {
               "name": "id",
-              "args": [],
+              "args": [{
+                "name": "x",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }],
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -106,17 +122,15 @@
             },
             {
               "name": "address",
-              "args": [
-                {
-                  "name": "y",
-                  "type": {
-                    "kind": "SCALAR",
-                    "name": "Int",
-                    "ofType": null
-                  },
-                  "defaultValue": null
-                }
-              ],
+              "args": [{
+                "name": "y",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }],
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -180,17 +194,15 @@
           "fields": [
             {
               "name": "id",
-              "args": [
-                {
-                  "name": "x",
-                  "type": {
-                    "kind": "SCALAR",
-                    "name": "Int",
-                    "ofType": null
-                  },
-                  "defaultValue": null
-                }
-              ],
+              "args": [{
+                "name": "x",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }],
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
