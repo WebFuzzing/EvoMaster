@@ -34,7 +34,7 @@ object GraphQLActionBuilder {
         /**
          * A data structure used to store information extracted from the schema about input types eg, Input types.
          */
-        val argsTables: MutableList<Table> = mutableListOf(),
+        var argsTables: MutableList<Table> = mutableListOf(),
         /*
         * An intermediate data structure used for extracting argsTables
        */
@@ -202,6 +202,7 @@ object GraphQLActionBuilder {
          * merging argsTables with tempArgsTables: extracting argsTables: 2/2
          */
         state.argsTables.addAll(state.tempArgsTables)
+        state.argsTables = state.argsTables.distinctBy { Pair(it.tableType, it.tableField) }.toMutableList()//remove redundant elements
         state.tables =
             state.tables.distinctBy { Pair(it.tableType, it.tableField) }.toMutableList()//remove redundant elements
         println("I am the arg table:////////////////////////////////////////////////////////////////////// ")
