@@ -1,0 +1,53 @@
+type Query {
+    page(PerPage:Int):Page
+    Page2: Int
+}
+
+type Page {
+    pageInfo: PageInfo
+    pageInfo2: PageInfo2
+    pageInfo3: PageInfo3
+    pageInfo4: String
+    pageInfo5: PageInfo5
+    users(Search:String): User
+    users2(Search2:String): User2
+    users3(Search: String, store: Store) : User3
+}
+
+type PageInfo {
+    total: Int
+}
+type PageInfo2 {
+    total2(id:Int):Boolean
+}
+type PageInfo3 {
+    total3: Total3
+}
+type  PageInfo5 {
+
+    total4: EnumTestType
+}
+
+type Total3 {
+    Price(Name:String):Int
+}
+type User{
+    about(AsHtml:Boolean):String
+}
+type User2 {
+    about2: About2
+}
+type User3 {
+    about3(AsHtml2:Boolean): String
+}
+type About2 {
+    Html(Name:String):Boolean
+}
+input Store {
+    Id:Int
+}
+enum EnumTestType {
+    TOTALENUM1,
+    TOTALENUM2,
+
+}
