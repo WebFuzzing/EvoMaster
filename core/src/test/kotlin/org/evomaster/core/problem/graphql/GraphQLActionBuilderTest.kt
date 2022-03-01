@@ -176,7 +176,7 @@ class GraphQLActionBuilderTest {
 
     }
 
-@Disabled
+
     @Test
     fun bitquerySchemaTest() {
 
@@ -195,7 +195,7 @@ class GraphQLActionBuilderTest {
         assertTrue(algorand.parameters[1].gene is ObjectGene)
         val objAlgorand = algorand.parameters[1].gene as ObjectGene
         assertEquals(7, objAlgorand.fields.size)
-        assertTrue(objAlgorand.fields.any { it is OptionalGene && it.name == "address" })
+        assertTrue(objAlgorand.fields.any { it is TupleGene && it.name == "address" })
 
     }
 
