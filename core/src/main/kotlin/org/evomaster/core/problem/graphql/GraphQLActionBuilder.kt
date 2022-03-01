@@ -1636,10 +1636,10 @@ object GraphQLActionBuilder {
                 fields.add(constructedTuple)
 
             } else
-                /*
-                The field is without arguments.
-                regular object field (the return)
-                 */
+            /*
+            The field is without arguments.
+            regular object field (the return)
+             */
                 constructReturn(
                     ktfType,
                     state,
@@ -1669,13 +1669,14 @@ object GraphQLActionBuilder {
         maxNumberOfGenes: Int,
         tupleElements: MutableList<Gene>
     ) {
-        if (ktfType.lowercase() == GqlConst.OBJECT) {
+
+        if (ktf.lowercase() == GqlConst.LIST) {
             val gene =
                 getReturnGene(
                     state,
                     tableElement.tableFieldType,
-                    ktfType,
                     ktf,
+                    ktfType,
                     tableElement.tableFieldType,
                     history,
                     isKindOfTableFieldTypeOptional,
@@ -1690,21 +1691,14 @@ object GraphQLActionBuilder {
                 )
             tupleElements.add(gene)
         } else
-            if (ktfType.lowercase() == GqlConst.SCALAR) {
-
-                val gene = createScalarGene(
-                    tableElement.tableFieldType,
-                    tableElement.tableField,
-                )
-                tupleElements.add(gene)
-            } else
-                if (ktf.lowercase() == GqlConst.LIST) {
+            when (ktfType.lowercase()) {
+                GqlConst.OBJECT -> {
                     val gene =
                         getReturnGene(
                             state,
                             tableElement.tableFieldType,
-                            ktf,
                             ktfType,
+                            ktf,
                             tableElement.tableFieldType,
                             history,
                             isKindOfTableFieldTypeOptional,
@@ -1718,57 +1712,65 @@ object GraphQLActionBuilder {
                             tableElement.tableFieldWithArgs
                         )
                     tupleElements.add(gene)
-                } else
-                    if (ktfType.lowercase() == GqlConst.ENUM) {
-                        val gene = createEnumGene(
+                }
+                GqlConst.SCALAR -> {
+                    val gene = createScalarGene(
+                        tableElement.tableFieldType,
+                        tableElement.tableField,
+                    )
+                    tupleElements.add(gene)
+                }
+                GqlConst.ENUM -> {
+                    val gene = createEnumGene(
+                        tableElement.tableField,
+                        tableElement.enumValues
+                    )
+                    tupleElements.add(gene)
+                }
+                GqlConst.UNION -> {
+                    val template =
+                        getReturnGene(
+                            state,
+                            tableElement.tableFieldType,
+                            ktfType,
+                            ktf,
+                            tableElement.tableFieldType,
+                            history,
+                            isKindOfTableFieldTypeOptional,
+                            isKindOfTableFieldOptional,
+                            tableElement.enumValues,
                             tableElement.tableField,
-                            tableElement.enumValues
+                            tableElement.unionTypes,
+                            tableElement.interfaceTypes,
+                            accum,
+                            maxNumberOfGenes,
+                            tableElement.tableFieldWithArgs
                         )
-                        tupleElements.add(gene)
-                    } else
-                        if (ktfType.lowercase() == GqlConst.UNION) {
-                            val template =
-                                getReturnGene(
-                                    state,
-                                    tableElement.tableFieldType,
-                                    ktfType,
-                                    ktf,
-                                    tableElement.tableFieldType,
-                                    history,
-                                    isKindOfTableFieldTypeOptional,
-                                    isKindOfTableFieldOptional,
-                                    tableElement.enumValues,
-                                    tableElement.tableField,
-                                    tableElement.unionTypes,
-                                    tableElement.interfaceTypes,
-                                    accum,
-                                    maxNumberOfGenes,
-                                    tableElement.tableFieldWithArgs
-                                )
-                            tupleElements.add(template)
-                        } else
-                            if (ktfType.lowercase() == GqlConst.INTERFACE) {
-                                val template =
-                                    getReturnGene(
-                                        state,
-                                        tableElement.tableFieldType,
-                                        ktfType,
-                                        ktf,
-                                        tableElement.tableFieldType,
-                                        history,
-                                        isKindOfTableFieldTypeOptional,
-                                        isKindOfTableFieldOptional,
-                                        tableElement.enumValues,
-                                        tableElement.tableField,
-                                        tableElement.unionTypes,
-                                        tableElement.interfaceTypes,
-                                        accum,
-                                        maxNumberOfGenes,
-                                        tableElement.tableFieldWithArgs
-                                    )
-                                tupleElements.add(template)
+                    tupleElements.add(template)
 
-                            }
+                }
+                GqlConst.INTERFACE -> {
+                    val template =
+                        getReturnGene(
+                            state,
+                            tableElement.tableFieldType,
+                            ktfType,
+                            ktf,
+                            tableElement.tableFieldType,
+                            history,
+                            isKindOfTableFieldTypeOptional,
+                            isKindOfTableFieldOptional,
+                            tableElement.enumValues,
+                            tableElement.tableField,
+                            tableElement.unionTypes,
+                            tableElement.interfaceTypes,
+                            accum,
+                            maxNumberOfGenes,
+                            tableElement.tableFieldWithArgs
+                        )
+                    tupleElements.add(template)
+                }
+            }
     }
 
     /**
