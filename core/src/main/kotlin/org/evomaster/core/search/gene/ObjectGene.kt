@@ -190,6 +190,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
        */
         val selection = includedFields.filter {
             when (it) {
+                is TupleGene -> true
                 is OptionalGene -> it.isActive
                 is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
                 is BooleanGene -> it.value
@@ -199,6 +200,9 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
         buffer.append(selection.map {
             val s: String = when (it) {
+                is TupleGene -> {
+                    it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.GQL_NONE_MODE, targetFormat, extraCheck = true)
+                }
                 is OptionalGene -> {
                     assert(it.gene is ObjectGene)
                     it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE, targetFormat)
