@@ -35,9 +35,9 @@ public class JavaXConstraintHandler {
             case SIZE: solved = handleSize(namedTypedValue, annotation); break;
             case PATTERN: solved = handlePattern(namedTypedValue, annotation); break;
             case DECIMAL_MAX:
-            case MAX: solved = handleMax(namedTypedValue, annotation); break;
+            case MAX: solved = handleMax(namedTypedValue, annotation, supportType); break;
             case DECIMAL_MIN:
-            case MIN: solved = handleMin(namedTypedValue, annotation); break;
+            case MIN: solved = handleMin(namedTypedValue, annotation, supportType); break;
         }
 
         if (!solved){
@@ -149,7 +149,7 @@ public class JavaXConstraintHandler {
         return true;
     }
 
-    private static boolean handleMax(NamedTypedValue namedTypedValue, Annotation annotation){
+    private static boolean handleMax(NamedTypedValue namedTypedValue, Annotation annotation, JavaXConstraintSupportType supportType){
 
          /*
             based on
@@ -158,9 +158,16 @@ public class JavaXConstraintHandler {
             null elements are considered valid.
          */
         Long max = null;
+        Boolean inclusive = true;
         try {
             // TODO might change long to BigDecimal
-            max = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+            if (supportType == JavaXConstraintSupportType.DECIMAL_MAX){
+                String maxStr =  (String) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+                max = Long.valueOf(maxStr);
+                inclusive = (Boolean) annotation.annotationType().getDeclaredMethod("inclusive").invoke(annotation);
+            }else
+                max = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
             throw new RuntimeException("ERROR: fail to process max");
         }
@@ -169,6 +176,9 @@ public class JavaXConstraintHandler {
             SimpleLogger.error("ERROR: Max value is null");
             return false;
         }
+
+        if (inclusive != null && !inclusive)
+            max = max - 1;
 
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
             ((PrimitiveOrWrapperParam)namedTypedValue).setMax(max);
@@ -182,11 +192,19 @@ public class JavaXConstraintHandler {
         return true;
     }
 
-    private static boolean handleMin(NamedTypedValue namedTypedValue, Annotation annotation){
+    private static boolean handleMin(NamedTypedValue namedTypedValue, Annotation annotation, JavaXConstraintSupportType supportType){
 
         Long min = null;
+        Boolean inclusive = true;
         try {
-            min = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+            // TODO might change long to BigDecimal
+            if (supportType == JavaXConstraintSupportType.DECIMAL_MIN){
+                String minStr = (String) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+                min = Long.valueOf(minStr);
+                inclusive = (Boolean) annotation.annotationType().getDeclaredMethod("inclusive").invoke(annotation);
+            }else
+                min = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
             throw new RuntimeException("ERROR: fail to process min");
         }
@@ -195,6 +213,9 @@ public class JavaXConstraintHandler {
             SimpleLogger.error("ERROR: Min value is null");
             return false;
         }
+
+        if (inclusive != null && !inclusive)
+            min = min + 1;
 
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
             ((PrimitiveOrWrapperParam)namedTypedValue).setMin(min);

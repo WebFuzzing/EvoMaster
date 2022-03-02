@@ -32,7 +32,13 @@ public class ConstrainedRequest {
     @Pattern(regexp = "\\d{4}-\\d{1,2}-\\d{1,2}")
     public String date;
 
-    //TODO eg, @DecimalMin(value = "0.1", inclusive = false)
+    @DecimalMax(value = "10")
+    @DecimalMin(value = "1")
+    public long longWithDecimalMinMax;
+
+    @DecimalMax(value = "10", inclusive = false)
+    @DecimalMin(value = "1", inclusive = false)
+    public Long longWithInclusiveFDecimalMainMax;
 
     /*
         all more example based on
