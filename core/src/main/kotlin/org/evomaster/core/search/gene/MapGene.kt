@@ -105,6 +105,8 @@ class MapGene<K, V>(
     override fun isMutable(): Boolean {
         //it wouldn't make much sense to have 0, but let's just be safe here
         return getMaxSizeOrDefault() > 0
+                // it is not mutable if the size could not be changed and none of the element is mutable
+                && (!(getMinSizeOrDefault() == getMaxSizeOrDefault() && elements.size == getMinSizeOrDefault() && elements.none { it.isMutable() }))
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -112,13 +114,14 @@ class MapGene<K, V>(
             throw IllegalStateException("Cannot mutate a immutable array")
         }
         val mutable = elements.filter { it.isMutable() }
-        if ( getMinSizeOrDefault() !=getMaxSizeOrDefault() // if min == max, the size is not mutable
-               && (mutable.isEmpty() || mutable.size > getMaxSizeOrDefault())){
-            return listOf()
-        }
+
+        // if min == max, the size is not mutable
+        if(getMinSizeOrDefault() == getMaxSizeOrDefault() && elements.size == getMinSizeOrDefault())
+            return mutable
+        // if mutable is empty, modify size
+        if (mutable.isEmpty()) return listOf()
 
         val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
-
         return if (randomness.nextBoolean(p)) listOf() else mutable
     }
 
@@ -136,7 +139,7 @@ class MapGene<K, V>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.size == getMinSizeOrDefault() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
+        if(elements.size == getMinSizeOrDefault() || elements.isEmpty() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
             val gene = addRandomElement(randomness, false)
             addElement(gene)
         } else {
