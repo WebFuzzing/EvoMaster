@@ -34,12 +34,16 @@ class MapGene<K, V>(
     init {
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
-            throw IllegalArgumentException(
+//            throw IllegalArgumentException(
+//                "MapGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
+            log.warn(
                 "MapGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
         }
 
         if (maxSize != null && elements.size > maxSize!!) {
-            throw IllegalArgumentException(
+//            throw IllegalArgumentException(
+//                "MapGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
+            log.warn(
                 "MapGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
     }
@@ -134,8 +138,7 @@ class MapGene<K, V>(
 
         if(elements.size == getMinSizeOrDefault() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
             val gene = addRandomElement(randomness, false)
-            elements.add(gene)
-            addChild(gene)
+            addElement(gene)
         } else {
             log.trace("Removing gene in mutation")
             val removed = elements.removeAt(randomness.nextInt(elements.size))
