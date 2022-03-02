@@ -9,7 +9,9 @@ public enum JavaXConstraintSupportType {
     SIZE("Size"),
     PATTERN("Pattern"),
     MAX("Max"),
-    MIN("Min");
+    MIN("Min"),
+    DECIMAL_MAX("DecimalMax"),
+    DECIMAL_MIN("DecimalMin");
 
     public final String annotation;
 

@@ -34,7 +34,9 @@ public class JavaXConstraintHandler {
             case NOT_BLANK: solved = handleNotBlank(namedTypedValue); break;
             case SIZE: solved = handleSize(namedTypedValue, annotation); break;
             case PATTERN: solved = handlePattern(namedTypedValue, annotation); break;
+            case DECIMAL_MAX:
             case MAX: solved = handleMax(namedTypedValue, annotation); break;
+            case DECIMAL_MIN:
             case MIN: solved = handleMin(namedTypedValue, annotation); break;
         }
 
@@ -150,11 +152,14 @@ public class JavaXConstraintHandler {
     private static boolean handleMax(NamedTypedValue namedTypedValue, Annotation annotation){
 
          /*
-            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Max.html
+            based on
+            https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Max.html
+            https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/DecimalMax.html
             null elements are considered valid.
          */
         Long max = null;
         try {
+            // TODO might change long to BigDecimal
             max = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
             throw new RuntimeException("ERROR: fail to process max");
