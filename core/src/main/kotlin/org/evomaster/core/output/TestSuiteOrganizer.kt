@@ -6,7 +6,6 @@ import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import kotlin.reflect.KFunction1
@@ -254,17 +253,10 @@ class SortingHelper {
          * that have the same code, the ones with the most covered targets will be at the top (among their sub-group).
          */
 
-        /*
-            Man: please check here whether this is right place to check problem,
-                this would lead to problems for RPC, then skip to sort it for the moment
-         */
-        if (!inds.any { it.individual is RPCIndividual }){
-            comparators.asReversed().forEach {
-                //solution.individuals.sortWith(it)
-                inds.sortWith(it)
-            }
+        comparators.asReversed().forEach {
+            //solution.individuals.sortWith(it)
+            inds.sortWith(it)
         }
-
 
         //return solution.individuals.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}
         return inds.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}
