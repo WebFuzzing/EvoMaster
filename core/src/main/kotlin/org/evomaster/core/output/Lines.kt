@@ -2,7 +2,7 @@ package org.evomaster.core.output
 
 
 /**
- * Class used to created an indented version of a list of strings, each
+ * Class used to create an indented version of a list of strings, each
  * one representing a line
  */
 class Lines {
@@ -53,6 +53,22 @@ class Lines {
         }
         val spaces = 4
         buffer.add(padding(spaces * indentation) + line)
+    }
+
+    fun replaceInCurrent(regex: Regex, replacement: String){
+        if(buffer.isEmpty()){
+            return
+        }
+
+        buffer[buffer.lastIndex] = buffer.last().replace(regex, replacement)
+    }
+
+    fun currentContains(s: String) : Boolean{
+        if(buffer.isEmpty()){
+            return false
+        }
+
+        return buffer.last().contains(s)
     }
 
     /**

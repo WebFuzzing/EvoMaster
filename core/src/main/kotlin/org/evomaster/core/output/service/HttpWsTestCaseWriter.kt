@@ -501,7 +501,15 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             lines.add(".ok(res => res.status)")
         }
 
-        if (config.enableBasicAssertions) {
+        //Why this check? seems wrong...
+        //if (config.enableBasicAssertions) {
+            //lines.appendSemicolon(format)
+        //}
+
+        if(lines.currentContains("//")){
+            //a ; after a comment // would be ignored otherwise
+            lines.replaceInCurrent(Regex("\\s*//"), "; //")
+        } else {
             lines.appendSemicolon(format)
         }
 
