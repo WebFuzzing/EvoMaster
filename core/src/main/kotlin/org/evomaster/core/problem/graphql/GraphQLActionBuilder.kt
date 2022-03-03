@@ -734,7 +734,7 @@ object GraphQLActionBuilder {
             methodType.equals(GqlConst.QUERY_TYPE, true) -> GQMethodType.QUERY
             methodType.equals(GqlConst.MUTATION, true) -> GQMethodType.MUTATION
             else -> {
-                log.warn("Entry point is not found.")
+                log.warn("GraphQL Entry point: $methodType is not found.")
                 return
             }
         }
