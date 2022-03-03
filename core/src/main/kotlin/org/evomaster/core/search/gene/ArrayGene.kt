@@ -50,17 +50,12 @@ class ArrayGene<T>(
         }
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
-//            throw IllegalArgumentException(
-//                "ArrayGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
-            log.warn("ArrayGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
-        }
+            throw IllegalArgumentException(
+                "ArrayGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)") }
 
         if (maxSize != null && elements.size > maxSize!!) {
-//            throw IllegalArgumentException(
-//                "ArrayGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
-
-            log.warn("ArrayGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
-
+            throw IllegalArgumentException(
+                "ArrayGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
 
         // might not check min size in constructor

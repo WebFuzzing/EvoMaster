@@ -38,6 +38,8 @@ public class JavaXConstraintHandler {
             case MAX: solved = handleMax(namedTypedValue, annotation, supportType); break;
             case DECIMAL_MIN:
             case MIN: solved = handleMin(namedTypedValue, annotation, supportType); break;
+            default:
+                SimpleLogger.error("ERROR: Not handle "+ supportType.annotation);
         }
 
         if (!solved){
@@ -91,7 +93,7 @@ public class JavaXConstraintHandler {
             size[0] = (Integer) annotation.annotationType().getDeclaredMethod("min").invoke(annotation);
             size[1] = (Integer) annotation.annotationType().getDeclaredMethod("max").invoke(annotation);
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
-            throw new RuntimeException("ERROR: fail to process Size");
+            throw new RuntimeException("ERROR: fail to process Size "+e.getMessage());
         }
 
         if (size[0] == null){
@@ -132,7 +134,7 @@ public class JavaXConstraintHandler {
         try {
             pattern = (String) annotation.annotationType().getDeclaredMethod("regexp").invoke(annotation);
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
-            throw new RuntimeException("ERROR: fail to process regexp");
+            throw new RuntimeException("ERROR: fail to process regexp "+e.getMessage());
         }
 
         if (pattern == null){
@@ -169,7 +171,7 @@ public class JavaXConstraintHandler {
                 max = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
 
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
-            throw new RuntimeException("ERROR: fail to process max");
+            throw new RuntimeException("ERROR: fail to process max "+e.getMessage());
         }
 
         if (max == null){
@@ -206,7 +208,7 @@ public class JavaXConstraintHandler {
                 min = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
 
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
-            throw new RuntimeException("ERROR: fail to process min");
+            throw new RuntimeException("ERROR: fail to process min "+e.getMessage());
         }
 
         if (min == null){

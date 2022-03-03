@@ -34,16 +34,12 @@ class MapGene<K, V>(
     init {
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
-//            throw IllegalArgumentException(
-//                "MapGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
-            log.warn(
+            throw IllegalArgumentException(
                 "MapGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
         }
 
         if (maxSize != null && elements.size > maxSize!!) {
-//            throw IllegalArgumentException(
-//                "MapGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
-            log.warn(
+            throw IllegalArgumentException(
                 "MapGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
     }

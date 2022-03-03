@@ -97,7 +97,7 @@ class TestSuiteWriter {
 
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
-            // NEED to check with Andrea, skip to sort RPC for the moment
+            // TODO skip to sort RPC for the moment
             if (solution.individuals.any { it.individual is RPCIndividual }){
                 var counter = 0
                 solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
