@@ -906,7 +906,7 @@ object GraphQLActionBuilder {
             )
 
             //Remove primitive types (scalar and enum) from return params
-            if (isReturnPrimitive(gene)) params.add(GQReturnParam(methodName, gene))
+            if (isReturnNotPrimitive(gene)) params.add(GQReturnParam(methodName, gene))
 
         } else {
             //The action does not contain arguments, it only contains a return type
@@ -929,13 +929,13 @@ object GraphQLActionBuilder {
                 tableFieldWithArgs
             )
             //Remove primitive types (scalar and enum) from return params
-            if (isReturnPrimitive(gene)) params.add(GQReturnParam(methodName, gene))
+            if (isReturnNotPrimitive(gene)) params.add(GQReturnParam(methodName, gene))
         }
 
         return params
     }
 
-    private fun isReturnPrimitive(
+    private fun isReturnNotPrimitive(
         gene: Gene,
     ) = (gene.name.lowercase() != "scalar"
             && !(gene is OptionalGene && gene.gene.name == "scalar")
