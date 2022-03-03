@@ -497,13 +497,13 @@ object GeneUtils {
             } else
                 if (selectedGene is TupleGene) {
                     val lastElement = selectedGene.elements.last()
-                    isLastElementInTupleOptional(lastElement)
+                    repairTupleLastElement(lastElement)
                 } else
                     (selectedGene as BooleanGene).value = true
         }
     }
 
-    private fun isLastElementInTupleOptional(lastElement: Gene) {
+    private fun repairTupleLastElement(lastElement: Gene) {
         if (lastElement is OptionalGene) {
             lastElement.isActive = true
             if (lastElement.gene is ObjectGene) {
