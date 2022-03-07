@@ -168,7 +168,7 @@ class ArrayGene<T>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.size == getMinSizeOrDefault() || elements.isEmpty() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
+        if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             addElement(gene)
