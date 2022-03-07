@@ -39,15 +39,24 @@ interface CollectionGene {
 
 
     /**
-     * @return max size of elements allowed in the collection gene
+     * @return max size of elements referred in the collection gene
      */
     fun getMaxSizeOrDefault() : Int
 
     /**
-     * @return min size of elements should exist in the collection gene
+     * @return max size of elements allowed in the collection gene
+     */
+    fun getSpecifiedMaxSize() : Int?
+
+    /**
+     * @return min size of elements referred in the collection gene
      */
     fun getMinSizeOrDefault() : Int
 
+    /**
+     * @return min size of elements should exist in the collection gene
+     */
+    fun getSpecifiedMinSize() : Int?
 
     /**
      * @param filterMutable represents if only consider mutable genes
@@ -58,12 +67,12 @@ interface CollectionGene {
     fun getGeneName() : String
 
     fun checkConstraintsForAdd(){
-        if (getMaxSizeOrDefault() == getSizeOfElements(false))
+        if (getSpecifiedMaxSize() == getSizeOfElements(false))
             throw IllegalStateException("maxSize is ${getMaxSizeOrDefault()} and minSize is ${getMinSizeOrDefault()} and sizeOfElements is ${getSizeOfElements(false)} (${getSizeOfElements(true)}), cannot add more elements for the gene ${getGeneName()}")
     }
 
     fun checkConstraintsForRemoval(){
-        if (getMinSizeOrDefault() == getSizeOfElements(false))
+        if (getSpecifiedMinSize() == getSizeOfElements(false))
             throw IllegalStateException("maxSize is ${getMaxSizeOrDefault()} and minSize is ${getMinSizeOrDefault()} and sizeOfElements is ${getSizeOfElements(false)} (${getSizeOfElements(true)}), cannot remove any element for the gene ${getGeneName()}")
     }
 

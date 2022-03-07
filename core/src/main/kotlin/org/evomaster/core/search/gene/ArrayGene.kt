@@ -282,6 +282,10 @@ class ArrayGene<T>(
 
     override fun getMinSizeOrDefault() = minSize?: 0
 
+    override fun getSpecifiedMaxSize() = maxSize
+
+    override fun getSpecifiedMinSize() = minSize
+
     override fun getGeneName() = name
 
     override fun getSizeOfElements(filterMutable: Boolean): Int {
