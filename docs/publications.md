@@ -29,7 +29,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * A. Martin-Lopez, A. Arcuri, S. Segura, A. Ruiz-Cortes.
   *Black-Box and White-Box Test Case Generation for RESTful APIs: Enemies or Allies?*
-  IEEE International Symposium on Software Reliability Engineering (ISSRE). (*to appear*)
+  IEEE International Symposium on Software Reliability Engineering (ISSRE). 
   [[PDF](publications/2021_issre.pdf)]
  
 * M. Zhang, A. Arcuri.
