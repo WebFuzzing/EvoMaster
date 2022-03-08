@@ -12,7 +12,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2022
 
-* M. Zhang, A. Belhadi, A. Arcuri
+* M. Zhang, A. Belhadi, A. Arcuri.
   *JavaScript Instrumentation for Search-Based Software Testing: A Study with RESTful APIs*.
   IEEE International Conference on Software Testing, Validation and Verification (ICST). (*to appear*)
   [[PDF](publications/2022_icst.pdf)]
