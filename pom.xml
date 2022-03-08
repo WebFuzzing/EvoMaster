@@ -665,6 +665,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>io.rest-assured</groupId>
                 <artifactId>rest-assured</artifactId>
                 <version>4.3.0</version>
@@ -898,6 +904,7 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <encoding>${project.build.sourceEncoding}</encoding>
+
                     </configuration>
                     <executions>
                         <!-- Replacing default-compile as it is treated specially by maven -->

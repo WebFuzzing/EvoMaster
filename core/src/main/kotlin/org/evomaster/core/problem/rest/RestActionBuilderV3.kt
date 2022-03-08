@@ -58,6 +58,7 @@ object RestActionBuilderV3 {
         dtoCache.clear()
 
         val skipped = mutableListOf<String>()
+        val errorEndpoints = mutableListOf<String>()
 
         val basePath = getBasePathFromURL(swagger)
 
@@ -95,17 +96,17 @@ object RestActionBuilderV3 {
                         //TODO should we do something with it for doParseDescription?
                     }
 
-                    if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get, swagger, doParseDescription)
-                    if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post, swagger, doParseDescription)
-                    if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put, swagger, doParseDescription)
-                    if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch, swagger, doParseDescription)
-                    if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options, swagger, doParseDescription)
-                    if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete, swagger, doParseDescription)
-                    if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace, swagger, doParseDescription)
-                    if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, doParseDescription)
+                    if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get, swagger, doParseDescription, errorEndpoints)
+                    if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post, swagger, doParseDescription, errorEndpoints)
+                    if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put, swagger, doParseDescription, errorEndpoints)
+                    if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch, swagger, doParseDescription, errorEndpoints)
+                    if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options, swagger, doParseDescription, errorEndpoints)
+                    if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete, swagger, doParseDescription, errorEndpoints)
+                    if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace, swagger, doParseDescription, errorEndpoints)
+                    if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, doParseDescription, errorEndpoints)
                 }
 
-        checkSkipped(skipped, endpointsToSkip, actionCluster)
+        checkSkipped(skipped, endpointsToSkip, actionCluster, errorEndpoints)
     }
 
 
@@ -149,12 +150,15 @@ object RestActionBuilderV3 {
             restPath: RestPath,
             operation: Operation,
             swagger: OpenAPI,
-            doParseDescription: Boolean) {
+            doParseDescription: Boolean,
+            errorEndpoints : MutableList<String> = mutableListOf()
+    ) {
 
-        val params = extractParams(verb, restPath, operation, swagger)
-        repairParams(params, restPath)
+        try{
+            val params = extractParams(verb, restPath, operation, swagger)
+            repairParams(params, restPath)
 
-        val produces = operation.responses?.values //different response objects based on HTTP code
+            val produces = operation.responses?.values //different response objects based on HTTP code
                 ?.filter { it.content != null && it.content.isNotEmpty() }
                 //each response can have different media-types
                 ?.flatMap { it.content.keys }
@@ -162,10 +166,10 @@ object RestActionBuilderV3 {
                 ?.toList()
                 ?: listOf()
 
-        val actionId = "$verb$restPath${idGenerator.incrementAndGet()}"
-        val action = RestCallAction(actionId, verb, restPath, params, produces = produces)
+            val actionId = "$verb$restPath${idGenerator.incrementAndGet()}"
+            val action = RestCallAction(actionId, verb, restPath, params, produces = produces)
 
-        //TODO update for new parser
+            //TODO update for new parser
 //                        /*This section collects information regarding the types of data that are
 //                        used in the response of an action (if such data references are provided in the
 //                        swagger definition
@@ -178,15 +182,20 @@ object RestActionBuilderV3 {
 //                            }
 //                        }
 
-        if (doParseDescription) {
-            var info = operation.description
-            if (!info.isNullOrBlank() && !info.endsWith(".")) info += "."
-            if (!operation.summary.isNullOrBlank()) info = if (info == null) operation.summary else (info + " " + operation.summary)
-            if (!info.isNullOrBlank() && !info.endsWith(".")) info += "."
-            action.initTokens(info)
+            if (doParseDescription) {
+                var info = operation.description
+                if (!info.isNullOrBlank() && !info.endsWith(".")) info += "."
+                if (!operation.summary.isNullOrBlank()) info = if (info == null) operation.summary else (info + " " + operation.summary)
+                if (!info.isNullOrBlank() && !info.endsWith(".")) info += "."
+                action.initTokens(info)
+            }
+
+            actionCluster[action.getName()] = action
+        }catch (e: Exception){
+            log.warn("Fail to parse endpoint $verb$restPath due to "+e.message)
+            errorEndpoints.add("$verb$restPath")
         }
 
-        actionCluster[action.getName()] = action
     }
 
 
@@ -685,7 +694,7 @@ object RestActionBuilderV3 {
     }
 
 
-    private fun checkSkipped(skipped: MutableList<String>, endpointsToSkip: List<String>, actionCluster: MutableMap<String, Action>) {
+    private fun checkSkipped(skipped: MutableList<String>, endpointsToSkip: List<String>, actionCluster: MutableMap<String, Action>, errorEndpoints: MutableList<String>) {
         if (skipped.size != endpointsToSkip.size) {
             val msg = "${endpointsToSkip.size} were set to be skipped, but only ${skipped.size}" +
                     " were found in the schema"
@@ -705,6 +714,10 @@ object RestActionBuilderV3 {
                 0 -> warn("There is _NO_ usable RESTful API endpoint defined in the schema configuration")
                 1 -> info("There is only one usable RESTful API endpoint defined in the schema configuration")
                 else -> info("There are $n usable RESTful API endpoints defined in the schema configuration")
+            }
+
+            if (errorEndpoints.isNotEmpty()){
+                warn("There are ${errorEndpoints.size} endpoints which might have errors and would not be handled in the generation")
             }
         }
     }

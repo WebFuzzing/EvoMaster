@@ -52,6 +52,7 @@ class ImpactUtils {
                 is StringGene -> StringGeneImpact(id, gene)
                 is Base64StringGene -> StringGeneImpact(id, gene.data)
                 is ObjectGene -> ObjectGeneImpact(id, gene)
+                is TupleGene -> TupleGeneImpact(id, gene)
                 is MapGene<*, *>-> MapGeneImpact(id)
                 is PairGene<*, *> -> throw IllegalStateException("do not count impacts for PairGene yet")
                 is ArrayGene<*> -> ArrayGeneImpact(id)

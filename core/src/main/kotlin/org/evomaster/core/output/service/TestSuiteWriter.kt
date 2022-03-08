@@ -4,8 +4,11 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
+import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.BlackBoxUtils
+import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -47,6 +50,9 @@ class TestSuiteWriter {
     @Inject
     private lateinit var partialOracles: PartialOracles
 
+    @Inject(optional = true)
+    private lateinit var sampler: Sampler<*>
+
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
 
@@ -87,11 +93,16 @@ class TestSuiteWriter {
 
         classFields(lines, config.outputFormat)
 
-        beforeAfterMethods(controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
+        beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
-            testSuiteOrganizer.sortTests(solution, config.customNaming)
+            // TODO skip to sort RPC for the moment
+            if (solution.individuals.any { it.individual is RPCIndividual }){
+                var counter = 0
+                solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
+            }else
+                testSuiteOrganizer.sortTests(solution, config.customNaming)
         } catch (ex: Exception) {
             var counter = 0
             log.warn(
@@ -131,6 +142,33 @@ class TestSuiteWriter {
         return lines.toString()
     }
 
+    private fun handleResetDatabaseInput(solution: Solution<*>): String{
+        if (!config.outputFormat.isJavaOrKotlin())
+            throw IllegalStateException("DO NOT SUPPORT resetDatabased for "+ config.outputFormat)
+
+        val accessedTable = mutableSetOf<String>()
+        solution.individuals.forEach { e->
+            //TODO will need to be refactored when supporting Web Frontend
+            if (e.individual is ApiWsIndividual){
+               accessedTable.addAll(e.individual.getInsertTableNames())
+            }
+            e.fitness.databaseExecutions.values.forEach { de->
+                accessedTable.addAll(de.insertedData.map { it.key })
+                accessedTable.addAll(de.updatedData.map { it.key })
+                accessedTable.addAll(de.deletedData)
+            }
+        }
+        val all = sampler.extractFkTables(accessedTable)
+
+        if (all.isEmpty()) return "null"
+
+        val input = all.joinToString(",") { "\"$it\"" }
+        return when{
+            config.outputFormat.isJava() -> "Arrays.asList($input)"
+            config.outputFormat.isKotlin() -> "listOf($input)"
+            else -> throw IllegalStateException("DO NOT SUPPORT resetDatabased for "+ config.outputFormat)
+        }
+    }
 
 
     private fun saveToDisk(
@@ -527,7 +565,7 @@ class TestSuiteWriter {
         }
     }
 
-    private fun initTestMethod(lines: Lines, name: TestSuiteFileName) {
+    private fun initTestMethod(solution: Solution<*>, lines: Lines, name: TestSuiteFileName) {
 
         if (config.blackBox) {
             return
@@ -556,8 +594,9 @@ class TestSuiteWriter {
                 //TODO add resetDatabase
                 addStatement("await $controller.resetStateOfSUT()", lines)
             } else if (format.isJavaOrKotlin()) {
-                if (config.employSmartDbClean == true)
-                    addStatement("$controller.resetDatabase()", lines)
+                if (config.employSmartDbClean == true){
+                    addStatement("$controller.resetDatabase(${handleResetDatabaseInput(solution)})", lines)
+                }
                 addStatement("$controller.resetStateOfSUT()", lines)
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)
@@ -573,6 +612,7 @@ class TestSuiteWriter {
     }
 
     private fun beforeAfterMethods(
+        solution: Solution<*>,
         controllerName: String?,
         controllerInput: String?,
         lines: Lines,
@@ -602,7 +642,7 @@ class TestSuiteWriter {
         }
         lines.addEmpty(2)
 
-        initTestMethod(lines, testSuiteFileName)
+        initTestMethod(solution, lines, testSuiteFileName)
         lines.addEmpty(2)
     }
 

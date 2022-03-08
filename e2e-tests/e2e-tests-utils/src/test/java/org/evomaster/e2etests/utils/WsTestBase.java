@@ -25,8 +25,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -435,5 +439,24 @@ public abstract class WsTestBase {
         if (outputFormat != null){
             args.replaceAll(s -> s.replace(OutputFormat.KOTLIN_JUNIT_5.name(), outputFormat.name()));
         }
+    }
+
+    /**
+     * assert a certain text in the generated tests
+     * @param outputFolder the folder where the test is
+     * @param className the complete test name
+     * @param content is the content to check
+     */
+    protected void assertTextInTests(String outputFolder, String className, String content) {
+        String path = outputFolderPath(outputFolder)+ "/"+String.join("/", className.split("\\."))+".kt";
+        Path test = Paths.get(path);
+        try {
+            boolean ok = Files.lines(test).anyMatch(l-> l.contains(content));
+            String msg = "Cannot find "+content+" in "+className+" in "+outputFolder;
+            assertTrue(ok, msg);
+        }catch (IOException e){
+            throw new IllegalStateException("Fail to get the test "+className+" in "+outputFolder+" with error "+ e.getMessage());
+        }
+
     }
 }

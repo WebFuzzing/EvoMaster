@@ -638,6 +638,27 @@ class SqlInsertBuilder(
         }
     }
 
+    /**
+     * extract tables with additional fk tables
+     * @param tables to check
+     * @param all is a complete set of tables with their fk
+     */
+    fun extractFkTable(tables: Set<String>, all: MutableSet<String> = mutableSetOf()): Set<String>{
+        tables.forEach { t->
+            if (!all.contains(t))
+                all.add(t)
+            val fk = extractFkTable(t).filterNot { all.contains(it) }.toSet()
+            if (fk.isNotEmpty()){
+                extractFkTable(fk, all)
+            }
+        }
+        return all.toSet()
+    }
+
+    private fun extractFkTable(tableName: String): Set<String>{
+        return tables.filter { t-> t.value.foreignKeys.any { f-> f.targetTable.equals(tableName, ignoreCase = true) } }.keys
+    }
+
 
     private fun formatSelect(columnNames: List<String>, tableName: String): String {
         return "SELECT ${columnNames.joinToString(",") { formatNameInSql(it) }} FROM ${formatNameInSql(tableName)}"

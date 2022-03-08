@@ -16,6 +16,11 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class ConstantModule : AbstractModule() {
 
     override fun configure() {
+
+        bind(object : TypeLiteral<Sampler<*>>() {})
+            .to(ConstantSampler::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Sampler<ConstantIndividual>>() {})
                 .to(ConstantSampler::class.java)
                 .asEagerSingleton()
