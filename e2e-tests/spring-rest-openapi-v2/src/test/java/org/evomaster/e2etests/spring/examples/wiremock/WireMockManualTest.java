@@ -27,6 +27,11 @@ public class WireMockManualTest extends WireMockTestBase{
 
     @Test
     public void testExternalCall() {
+        /**
+         * The echo call only response the given input when it's only alpha
+         * characters. The first call suppose to send false, since it has
+         * numeric characters in it.
+         * */
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/external/123")
                 .then()

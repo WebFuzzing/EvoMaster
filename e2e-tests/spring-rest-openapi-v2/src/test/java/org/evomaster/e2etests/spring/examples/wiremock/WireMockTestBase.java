@@ -17,7 +17,7 @@ public class WireMockTestBase extends SpringTestBase {
     @BeforeAll
     public static void initClass() throws Exception {
         // For the moment port is set to 10101
-        wireMockServer = new WireMockServer(new WireMockConfiguration().port(10101).extensions(new ResponseTemplateTransformer(false)));
+        wireMockServer = new WireMockServer(new WireMockConfiguration().port(52768).extensions(new ResponseTemplateTransformer(false)));
         wireMockServer.start();
 
         // WireMock endpoint will respond the third value of the request path

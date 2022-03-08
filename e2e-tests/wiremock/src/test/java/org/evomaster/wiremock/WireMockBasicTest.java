@@ -56,9 +56,10 @@ public class WireMockBasicTest {
     @Test
     public void testApplicationCall() {
         /**
-         This test simulates the API call from the application to an external
-         service in this case the URL for the external API is for the moment
-         hardcoded */
+         * This test simulates the API call from the application to an external
+         * service in this case the URL for the external API is for the moment
+         * hardcoded
+         * */
 
         WireMockApplication wireMockApplication = new WireMockApplication();
         String results = wireMockApplication.callApi(wireMockServer.port());

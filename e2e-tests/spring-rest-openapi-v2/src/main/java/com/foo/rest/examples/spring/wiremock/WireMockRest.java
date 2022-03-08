@@ -1,7 +1,6 @@
 package com.foo.rest.examples.spring.wiremock;
 
 import com.foo.rest.examples.spring.strings.StringsResponseDto;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,8 +44,12 @@ public class WireMockRest {
 
         RestTemplate restTemplate = new RestTemplate();
 
-        //
-        String uri = "http://localhost:10101/api/echo/" + key;
+        /**
+         * The URL below is hard coded with the port of Wiremock.
+         * When the key is alpha characters echo endpoint will
+         * respond with the given value, otherwise Not Found!
+        */
+        String uri = "http://localhost:52768/api/echo/" + key;
 
         ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
