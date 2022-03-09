@@ -113,69 +113,7 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
-    @Test
-    fun anigListSchemaTest() {
 
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/AniList.json").readText()
-
-        val config = EMConfig()
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
-
-        assertEquals(54, actionCluster.size)
-        val page = actionCluster["Page"] as GraphQLAction
-        assertEquals(3, page.parameters.size)
-        assertTrue(page.parameters[0] is GQInputParam)
-        assertTrue((page.parameters[0].gene as OptionalGene).gene is IntegerGene)
-        assertTrue((page.parameters[1].gene as OptionalGene).gene is IntegerGene)
-
-        assertTrue(page.parameters[1] is GQInputParam)
-        assertTrue(page.parameters[2] is GQReturnParam)
-
-        //primitive type that is not part of the search
-        val genreCollection = actionCluster["GenreCollection"] as GraphQLAction
-
-        val mediaTagCollection = actionCluster["MediaTagCollection"] as GraphQLAction
-        assertTrue(mediaTagCollection.parameters[1].gene is ObjectGene)
-
-        val objPage = page.parameters[2].gene as ObjectGene
-        assertTrue(objPage.fields[0] is OptionalGene)
-        val objPageInfo = (objPage.fields[0] as OptionalGene).gene as ObjectGene
-        objPageInfo.fields.any { it is BooleanGene && it.name == "Total" }
-        assertTrue(objPageInfo.fields[0] is BooleanGene)
-        /**/
-        val media = actionCluster["Media"] as GraphQLAction
-        assertEquals(67, media.parameters.size)
-        assertTrue((media.parameters[6].gene as OptionalGene).gene is EnumGene<*>)
-
-        val objMedia = media.parameters[66].gene as ObjectGene
-        assertTrue(objMedia.fields.any { it is BooleanGene && it.name == "type" })
-        /**/
-        val notification = actionCluster["Notification"] as GraphQLAction
-        assertEquals(4, notification.parameters.size)
-        assertTrue(notification.parameters[0] is GQInputParam)
-        assertTrue(notification.parameters[3] is GQReturnParam)
-
-
-        assertTrue(notification.parameters[3].gene is ObjectGene)
-        val unionObjectsNotificationUnion = notification.parameters[3].gene as ObjectGene
-        assertEquals(14, unionObjectsNotificationUnion.fields.size)
-
-        assertTrue(unionObjectsNotificationUnion.fields[0] is OptionalGene)
-        assertTrue((unionObjectsNotificationUnion.fields[0] as OptionalGene).gene is ObjectGene)
-        val objAiringNotification = (unionObjectsNotificationUnion.fields[0] as OptionalGene).gene as ObjectGene
-        assertEquals(7, objAiringNotification.fields.size)
-        assertTrue(objAiringNotification.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objAiringNotification.fields.any { it is OptionalGene && it.name == "media" })
-
-
-        val objMediaa = (objAiringNotification.fields.first { it.name == "media" } as OptionalGene).gene as ObjectGene
-        assertEquals(53, objMediaa.fields.size)
-        assertTrue(objMediaa.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objMediaa.fields.any { it is BooleanGene && it.name == "modNotes" })
-
-    }
 
 
     @Test
@@ -346,18 +284,7 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
-    @Test
-    fun gitLabSchemaTest() {
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitLab.json").readText()
 
-        val config = EMConfig()
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
-
-        assertEquals(169, actionCluster.size)
-
-    }
 
     @Test
     fun graphQLJobsSchemaTest() {
@@ -378,7 +305,7 @@ class GraphQLActionBuilderTest {
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
-        assertEquals(9, actionCluster.size)
+        assertEquals(35, actionCluster.size)
 
     }
 
@@ -443,16 +370,7 @@ class GraphQLActionBuilderTest {
     }
 
 
-    @Test
-    fun universeSchemaTest() {
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Universe.json").readText()
 
-        val config = EMConfig()
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
-
-        assertEquals(87, actionCluster.size)
-    }
 
     @Test
     fun recEgTest() {
@@ -1071,4 +989,93 @@ class GraphQLActionBuilderTest {
     }
 
 
+
+
+    @Disabled
+    @Test
+    fun anigListSchemaTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/AniList.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(54, actionCluster.size)
+        val page = actionCluster["Page"] as GraphQLAction
+        assertEquals(3, page.parameters.size)
+        assertTrue(page.parameters[0] is GQInputParam)
+        assertTrue((page.parameters[0].gene as OptionalGene).gene is IntegerGene)
+        assertTrue((page.parameters[1].gene as OptionalGene).gene is IntegerGene)
+
+        assertTrue(page.parameters[1] is GQInputParam)
+        assertTrue(page.parameters[2] is GQReturnParam)
+
+        //primitive type that is not part of the search
+        val genreCollection = actionCluster["GenreCollection"] as GraphQLAction
+
+        val mediaTagCollection = actionCluster["MediaTagCollection"] as GraphQLAction
+        assertTrue(mediaTagCollection.parameters[1].gene is ObjectGene)
+
+        val objPage = page.parameters[2].gene as ObjectGene
+        assertTrue(objPage.fields[0] is OptionalGene)
+        val objPageInfo = (objPage.fields[0] as OptionalGene).gene as ObjectGene
+        objPageInfo.fields.any { it is BooleanGene && it.name == "Total" }
+        assertTrue(objPageInfo.fields[0] is BooleanGene)
+        /**/
+        val media = actionCluster["Media"] as GraphQLAction
+        assertEquals(67, media.parameters.size)
+        assertTrue((media.parameters[6].gene as OptionalGene).gene is EnumGene<*>)
+
+        val objMedia = media.parameters[66].gene as ObjectGene
+        assertTrue(objMedia.fields.any { it is BooleanGene && it.name == "type" })
+        /**/
+        val notification = actionCluster["Notification"] as GraphQLAction
+        assertEquals(4, notification.parameters.size)
+        assertTrue(notification.parameters[0] is GQInputParam)
+        assertTrue(notification.parameters[3] is GQReturnParam)
+
+
+        assertTrue(notification.parameters[3].gene is ObjectGene)
+        val unionObjectsNotificationUnion = notification.parameters[3].gene as ObjectGene
+        assertEquals(14, unionObjectsNotificationUnion.fields.size)
+
+        assertTrue(unionObjectsNotificationUnion.fields[0] is OptionalGene)
+        assertTrue((unionObjectsNotificationUnion.fields[0] as OptionalGene).gene is ObjectGene)
+        val objAiringNotification = (unionObjectsNotificationUnion.fields[0] as OptionalGene).gene as ObjectGene
+        assertEquals(7, objAiringNotification.fields.size)
+        assertTrue(objAiringNotification.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objAiringNotification.fields.any { it is OptionalGene && it.name == "media" })
+
+
+        val objMediaa = (objAiringNotification.fields.first { it.name == "media" } as OptionalGene).gene as ObjectGene
+        assertEquals(53, objMediaa.fields.size)
+        assertTrue(objMediaa.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objMediaa.fields.any { it is BooleanGene && it.name == "modNotes" })
+
+    }
+
+    @Disabled
+    @Test
+    fun gitLabSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitLab.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(169, actionCluster.size)
+
+    }
+
+    @Test
+    fun universeSchemaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Universe.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(87, actionCluster.size)
+    }
 }
