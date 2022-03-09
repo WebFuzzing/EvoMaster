@@ -793,7 +793,7 @@ object GraphQLActionBuilder {
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
-        val history: Deque<String> = ArrayDeque<String>()
+        val history: Deque<String> = ArrayDeque()
 
         if (tableFieldWithArgs) {
 
