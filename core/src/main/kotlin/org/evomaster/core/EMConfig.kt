@@ -1559,9 +1559,10 @@ class EMConfig {
     var enableRPCAssertionWithInstance = false
 
     @Experimental
-    @Cfg("Specify a maximum number of data in a collection to be asserted in generated tests." +
-            "Note that zero means tht only size of the collection would be asserted and a negative value means all data in the collection should be asserted.")
-    var maxAssertionForDataInCollection = -1
+    @Cfg("Specify a maximum number of data in a collection to be asserted in the generated tests." +
+            " Note that zero means that only the size of the collection will be asserted." +
+            " A negative value means all data in the collection will be asserted (i.e., no limit).")
+    var maxAssertionForDataInCollection = 3
 
     @Experimental
     @Cfg("Specify whether to employ smart database clean to clear data in the database if the SUT has." +

@@ -506,13 +506,23 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             //lines.appendSemicolon(format)
         //}
 
-        if(lines.currentContains("//")){
-            //a ; after a comment // would be ignored otherwise
-            lines.replaceInCurrent(Regex("\\s*//"), "; //")
-        } else {
-            lines.appendSemicolon(format)
+        if(lines.shouldUseSemicolon(format)) {
+            if (lines.currentContains("//")) {
+                //a ; after a comment // would be ignored otherwise
+                if(lines.isCurrentACommentLine()){
+                    //let's not lose identation
+                    lines.replaceInCurrent(Regex("//"), "; //")
+                } else {
+                    //there can be any number of spaces between the statement and the //
+                    lines.replaceInCurrent(Regex("\\s*//"), "; //")
+                }
+
+            } else {
+                lines.appendSemicolon(format)
+            }
         }
 
+        //TODO what was the reason for this?
         if(!format.isCsharp()) {
             lines.deindent(2)
         }
