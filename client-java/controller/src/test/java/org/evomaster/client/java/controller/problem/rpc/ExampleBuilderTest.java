@@ -270,7 +270,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     private void checkConstrainedRequest(NamedTypedValue p){
         assertTrue(p instanceof ObjectParam);
         assertTrue(p.isNullable());
-        assertEquals(9, ((ObjectParam) p).getType().getFields().size());
+        assertEquals(11, ((ObjectParam) p).getType().getFields().size());
         for (NamedTypedValue f : ((ObjectParam) p).getType().getFields()) {
             if (f.getName().equals("list")) {
                 assertTrue(f instanceof ListParam);
@@ -310,6 +310,16 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 assertTrue(f instanceof  StringParam);
                 assertTrue(f.isNullable());
                 assertNotNull(((StringParam) f).getPattern());
+            }else if(f.getName().equals("longWithDecimalMinMax")){
+                assertTrue(f instanceof LongParam);
+                assertEquals(1L, ((LongParam) f).getMin());
+                assertEquals(10L, ((LongParam) f).getMax());
+                assertFalse(f.isNullable());
+            }else if(f.getName().equals("longWithInclusiveFDecimalMainMax")){
+                assertTrue(f instanceof LongParam);
+                assertEquals(2L, ((LongParam) f).getMin());
+                assertEquals(9L, ((LongParam) f).getMax());
+                assertTrue(f.isNullable());
             }else
                 fail("do not handle param " + f.getName());
         }
