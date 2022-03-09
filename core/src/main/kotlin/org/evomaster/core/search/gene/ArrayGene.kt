@@ -51,8 +51,7 @@ class ArrayGene<T>(
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
             throw IllegalArgumentException(
-                "ArrayGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
-        }
+                "ArrayGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)") }
 
         if (maxSize != null && elements.size > maxSize!!) {
             throw IllegalArgumentException(
@@ -113,6 +112,8 @@ class ArrayGene<T>(
             elements can be mutated: we can mutate between empty and 1-element arrays
          */
         return getMaxSizeOrDefault() > 0
+                // it is not mutable if the size could not be changed and none of the element is mutable
+                && (!(getMinSizeOrDefault() == getMaxSizeOrDefault() && elements.size == getMinSizeOrDefault() && elements.none { it.isMutable() }))
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -140,10 +141,12 @@ class ArrayGene<T>(
             throw IllegalStateException("Cannot mutate a immutable array")
         }
         val mutable = elements.filter { it.isMutable() }
-        if (getMinSizeOrDefault()!=getMaxSizeOrDefault() // if min == max, the size is not mutable
-                && (mutable.isEmpty() || mutable.size > getMaxSizeOrDefault())){
-            return listOf()
-        }
+        // if min == max, the size is not mutable
+        if(getMinSizeOrDefault() == getMaxSizeOrDefault() && elements.size == getMinSizeOrDefault())
+            return mutable
+        // if mutable is empty, modify size
+        if (mutable.isEmpty()) return listOf()
+
         val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
         return if (randomness.nextBoolean(p)) listOf() else mutable
     }
@@ -165,11 +168,10 @@ class ArrayGene<T>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.size == getMinSizeOrDefault() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
+        if(elements.size == getMinSizeOrDefault() || elements.isEmpty() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
             val gene = template.copy() as T
             gene.randomize(randomness, false)
-            elements.add(gene)
-            addChild(gene)
+            addElement(gene)
         }else{
             log.trace("Remvoving gene in mutation")
             val removed = elements.removeAt(randomness.nextInt(elements.size))

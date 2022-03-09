@@ -463,7 +463,13 @@ class RPCEndpointsHandler {
                 }
                 is ArrayGene<*> -> {
                     val template = valueGene.template
-                    dto.innerContent.forEach { p->
+                    dto.innerContent.run {
+                        if (valueGene.maxSize!=null && valueGene.maxSize!! < size){
+                            log.warn("ArrayGene: responses have more elements than it allows, i.e., max is ${valueGene.maxSize} but the actual is ${size}")
+                            subList(0, valueGene.maxSize!!)
+                        }else
+                            this
+                    }.forEach { p->
                         val copy = template.copyContent()
                         // TODO need to handle cycle object gene in responses
                         if (copy !is CycleObjectGene){
@@ -474,7 +480,13 @@ class RPCEndpointsHandler {
                 }
                 is MapGene<*, *> ->{
                     val template = valueGene.template
-                    dto.innerContent.forEach { p->
+                    dto.innerContent.run {
+                        if (valueGene.maxSize!=null && valueGene.maxSize!! < size){
+                            log.warn("MapGene: responses have more elements than it allows, i.e., max is ${valueGene.maxSize} but the actual is ${size}")
+                            subList(0, valueGene.maxSize!!)
+                        }else
+                            this
+                    }.forEach { p->
                         val copy = template.copyContent()
                         setGeneBasedOnParamDto(copy, p)
                         valueGene.addElement(copy)

@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.BlackBoxUtils
+import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
@@ -96,7 +97,12 @@ class TestSuiteWriter {
 
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
-            testSuiteOrganizer.sortTests(solution, config.customNaming)
+            // TODO skip to sort RPC for the moment
+            if (solution.individuals.any { it.individual is RPCIndividual }){
+                var counter = 0
+                solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
+            }else
+                testSuiteOrganizer.sortTests(solution, config.customNaming)
         } catch (ex: Exception) {
             var counter = 0
             log.warn(
