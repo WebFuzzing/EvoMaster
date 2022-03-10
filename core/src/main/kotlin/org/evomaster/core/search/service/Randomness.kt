@@ -21,6 +21,14 @@ class Randomness {
 
     private val random = Random()
 
+    init {
+        /*
+            this is needed just for EM tests. during EM execution, it is taken
+            from the seed in EMConfig
+         */
+        updateSeed(42)
+    }
+
     @PostConstruct
     private fun initialize() {
         updateSeed(configuration.seed)
