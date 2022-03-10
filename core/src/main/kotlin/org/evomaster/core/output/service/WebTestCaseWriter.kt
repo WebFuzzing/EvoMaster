@@ -253,8 +253,23 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
             return
         }
 
-        list.forEachIndexed {  index, value ->
-            handleAssertionsOnField(value, lines, "$fieldPath[$index]", responseVariableName)
+        val limit = if(config.maxAssertionForDataInCollection >= 0){
+            //there are more elements than we can print
+            config.maxAssertionForDataInCollection
+        } else {
+            Int.MAX_VALUE
+        }
+
+        val skipped =  list.size - limit
+
+        for(i in list.indices){
+            if(i == limit){
+                break
+            }
+            handleAssertionsOnField(list[i], lines, "$fieldPath[$i]", responseVariableName)
+        }
+        if(skipped > 0){
+            lines.add("// Skipping assertions on the remaining $skipped elements. This limit of $limit elements can be increased in the configurations")
         }
     }
 

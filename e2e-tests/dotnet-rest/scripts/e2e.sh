@@ -19,7 +19,7 @@ if [ $? -ne 0 ] ; then
    exit 1
 fi
 
-$WB /e2e-tests/dotnet-rest/test/RestApis.Tests.Animals  EmbeddedEvoMasterController.cs 100 true Cat
+$WB /e2e-tests/dotnet-rest/test/RestApis.Tests.Animals  EmbeddedEvoMasterController.cs 100 true Horse
 if [ $? -ne 0 ] ; then
    echo $(date) "ERROR: Test failed for Animals. Exist status " $?
    exit 1
