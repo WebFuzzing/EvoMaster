@@ -258,6 +258,21 @@ class RestActionBuilderV3Test{
         loadAndAssertActions("/swagger/sut/scout-api.json", 49)
     }
 
+    @Test
+    fun testLanguageTool(){
+        loadAndAssertActions("/swagger/sut/languagetool.json", 2)
+    }
+
+    @Test
+    fun testRestCountries(){
+        loadAndAssertActions("/swagger/sut/restcountries.yaml", 22)
+    }
+
+    @Test
+    fun testCwaVerification(){
+        loadAndAssertActions("/swagger/sut/cwa_verification.json", 5)
+    }
+
 
     @Test
     fun testBranches() {

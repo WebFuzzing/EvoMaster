@@ -1,0 +1,342 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "LanguageTool API",
+    "description": "Check texts for style and grammar issues with LanguageTool. See <a href='http://wiki.languagetool.org/public-http-api'>our wiki</a> for access limitations.",
+    "version": "1.0.2"
+  },
+  "host": "localhost:8081",
+  "schemes": [
+    "http"
+  ],
+  "basePath": "/v2",
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/x-www-form-urlencoded"
+  ],
+  "paths": {
+    "/check": {
+      "post": {
+        "summary": "Check a text",
+        "description": "The main feature - check a text with LanguageTool for possible style and grammar issues.",
+        "parameters": [
+          {
+            "name": "text",
+            "in": "formData",
+            "type": "string",
+            "description": "The text to be checked. This or 'data' is required.",
+            "required": false
+          },
+          {
+            "name": "data",
+            "in": "formData",
+            "type": "string",
+            "description": "The text to be checked, given as a JSON document that specifies what's text and what's markup. This or 'text' is required. Markup will be ignored when looking for errors. Example text: <pre>A &lt;b>test&lt;/b></pre>JSON for the example text: <pre>{\"annotation\":[\n {\"text\": \"A \"},\n {\"markup\": \"&lt;b>\"},\n {\"text\": \"test\"},\n {\"markup\": \"&lt;/b>\"}\n]}</pre> <p>If you have markup that should be interpreted as whitespace, like <tt>&lt;p&gt;</tt> in HTML, you can have it interpreted like this: <pre>{\"markup\": \"&lt;p&gt;\", \"interpretAs\": \"\\n\\n\"}</pre><p>The 'data' feature is not limited to HTML or XML, it can be used for any kind of markup.",
+            "required": false
+          },
+          {
+            "name": "language",
+            "in": "formData",
+            "type": "string",
+            "description": "A language code like `en-US`, `de-DE`, `fr`, or `auto` to guess the language automatically (see `preferredVariants` below). For languages with variants (English, German, Portuguese) spell checking will only be activated when you specify the variant, e.g. `en-GB` instead of just `en`.",
+            "required": true
+          },
+          {
+            "name": "altLanguages",
+            "in": "formData",
+            "type": "string",
+            "description": "EXPERIMENTAL: Comma-separated list of language codes to check if a word is not similar to one of the main language (parameter `language`). Unknown words that are similar to a word from the main language will still be considered errors but with type `Hint`. For languages with variants (English, German, Portuguese) you need to specify the variant, e.g. `en-GB` instead of just `en`.",
+            "required": false
+          },
+          {
+            "name": "motherTongue",
+            "in": "formData",
+            "type": "string",
+            "description": "A language code of the user's native language, enabling false friends checks for some language pairs."
+          },
+          {
+            "name": "preferredVariants",
+            "in": "formData",
+            "type": "string",
+            "description": "Comma-separated list of preferred language variants. The language detector used with `language=auto` can detect e.g. English, but it cannot decide whether British English or American English is used. Thus this parameter can be used to specify the preferred variants like `en-GB` and `de-AT`. Only available with `language=auto`."
+          },
+          {
+            "name": "enabledRules",
+            "in": "formData",
+            "type": "string",
+            "description": "IDs of rules to be enabled, comma-separated"
+          },
+          {
+            "name": "disabledRules",
+            "in": "formData",
+            "type": "string",
+            "description": "IDs of rules to be disabled, comma-separated"
+          },
+          {
+            "name": "enabledCategories",
+            "in": "formData",
+            "type": "string",
+            "description": "IDs of categories to be enabled, comma-separated"
+          },
+          {
+            "name": "disabledCategories",
+            "in": "formData",
+            "type": "string",
+            "description": "IDs of categories to be disabled, comma-separated"
+          },
+          {
+            "name": "enabledOnly",
+            "in": "formData",
+            "type": "boolean",
+            "default": false,
+            "description": "If true, only the rules and categories whose IDs are specified with `enabledRules` or `enabledCategories` are enabled."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the result of checking the text",
+            "schema": {
+              "properties": {
+                "software": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "version",
+                    "buildDate",
+                    "apiVersion"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Usually 'LanguageTool'."
+                    },
+                    "version": {
+                      "type": "string",
+                      "description": "A version string like '3.3' or '3.4-SNAPSHOT'."
+                    },
+                    "buildDate": {
+                      "type": "string",
+                      "description": "Date when the software was built, e.g. '2016-05-25'."
+                    },
+                    "apiVersion": {
+                      "type": "integer",
+                      "description": "Version of this API response. We don't expect to make incompatible changes, so this can also be increased for newly added fields."
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "An optional warning, e.g. when the API format is not stable."
+                    },
+                    "premium": {
+                      "type": "boolean",
+                      "description": "true if you're using a Premium account with all the premium text checks (since LanguageTool 4.2)"
+                    }
+                  }
+                },
+                "language": {
+                  "type": "object",
+                  "description": "The language used for checking the text.",
+                  "required": [
+                    "name",
+                    "code",
+                    "detectedLanguage"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Language name like 'French' or 'English (US)'."
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "ISO 639-1 code like 'en', 'en-US', or 'ca-ES-valencia'."
+                    },
+                    "detectedLanguage": {
+                      "type": "object",
+                      "description": "The automatically detected text language (might be different from the language actually used for checking).",
+                      "required": [
+                        "name",
+                        "code"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "Language name like 'French' or 'English (US)'."
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "ISO 639-1 code like 'en', 'en-US', or 'ca-ES-valencia'."
+                        },
+                        "confidence": {
+                          "type": "number",
+                          "description": "Estimate of the probability of the submitted text being in the detected language. Between 0 and 1."
+                        }
+                      }
+                    }
+                  }
+                },
+                "matches": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "message",
+                      "offset",
+                      "length",
+                      "replacements",
+                      "context",
+                      "sentence"
+                    ],
+                    "properties": {
+                      "message": {
+                        "type": "string",
+                        "description": "Message about the error displayed to the user."
+                      },
+                      "shortMessage": {
+                        "type": "string",
+                        "description": "An optional shorter version of 'message'."
+                      },
+                      "offset": {
+                        "type": "integer",
+                        "description": "The 0-based character offset of the error in the text."
+                      },
+                      "length": {
+                        "type": "integer",
+                        "description": "The length of the error in characters."
+                      },
+                      "replacements": {
+                        "type": "array",
+                        "description": "Replacements that might correct the error. The array can be empty, in this case there is no suggested replacement.",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "string",
+                              "description": "the replacement string"
+                            }
+                          }
+                        }
+                      },
+                      "context": {
+                        "type": "object",
+                        "required": [
+                          "text",
+                          "offset",
+                          "length"
+                        ],
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "description": "Context of the error, i.e. the error and some text to the left and to the left."
+                          },
+                          "offset": {
+                            "type": "integer",
+                            "description": "The 0-based character offset of the error in the context text."
+                          },
+                          "length": {
+                            "type": "integer",
+                            "description": "The length of the error in characters in the context."
+                          }
+                        }
+                      },
+                      "sentence": {
+                        "type": "string",
+                        "description": "The sentence the error occurred in (since LanguageTool 4.0 or later)"
+                      },
+                      "rule": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "description",
+                          "category"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "An rule's identifier that's unique for this language."
+                          },
+                          "subId": {
+                            "type": "string",
+                            "description": "An optional sub identifier of the rule, used when several rules are grouped."
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "urls": {
+                            "type": "array",
+                            "description": "An optional array of URLs with a more detailed description of the error.",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "value": {
+                                  "type": "string",
+                                  "description": "the URL"
+                                }
+                              }
+                            }
+                          },
+                          "issueType": {
+                            "type": "string",
+                            "description": "The <a href=\"http://www.w3.org/International/multilingualweb/lt/drafts/its20/its20.html#lqissue-typevalues\">Localization Quality Issue Type</a>. This is not defined for all languages, in which case it will always be 'Uncategorized'."
+                          },
+                          "category": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "description": "A category's identifier that's unique for this language."
+                              },
+                              "name": {
+                                "type": "string",
+                                "description": "A short description of the category."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/languages": {
+      "get": {
+        "summary": "Get a list of supported languages.",
+        "responses": {
+          "200": {
+            "description": "An array of language objects.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "code",
+                  "longCode"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "a language name like 'French' or 'English (Australia)'"
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "a language code like 'en'"
+                  },
+                  "longCode": {
+                    "type": "string",
+                    "description": "a language code like 'en-US' or 'ca-ES-valencia'"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
