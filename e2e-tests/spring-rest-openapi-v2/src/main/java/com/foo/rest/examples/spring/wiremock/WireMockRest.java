@@ -33,29 +33,33 @@ public class WireMockRest {
     }
 
     @RequestMapping(
-            value = "/external/{key}",
+            value = "/external",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public StringsResponseDto externalCall(
-            @PathVariable("key") String key
-    ) {
+    public StringsResponseDto externalCall() {
         StringsResponseDto stringsResponseDto = new StringsResponseDto();
 
         RestTemplate restTemplate = new RestTemplate();
 
         /**
-         * The URL below is hard coded with the port of Wiremock.
-         * When the key is alpha characters echo endpoint will
-         * respond with the given value, otherwise Not Found!
-        */
-        String uri = "http://localhost:52768/api/echo/" + key;
+         * Below code will call the external api to fetch the response
+         * as foo, if it's a success it'll return true otherwise false.
+         * Java DNS cache manipulator will replace the target hostname
+         * to resolve to localhost, so the WireMock will act as the
+         * target server.
+         */
+        String uri = "http://foo.bar/api/echo";
 
-        ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
+        try {
+            ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
-        if (response.getBody().equals(key)) {
-            stringsResponseDto.valid = true;
-        } else {
+            if (response.getStatusCode().equals(200) && response.getBody().equals("foo")) {
+                stringsResponseDto.valid = true;
+            } else {
+                stringsResponseDto.valid = false;
+            }
+        } catch (Exception e) {
             stringsResponseDto.valid = false;
         }
         return stringsResponseDto;
