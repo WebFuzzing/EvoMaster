@@ -19,6 +19,10 @@ class BlackBoxRestModule(
                 .to(RestSampler::class.java)
                 .asEagerSingleton()
 
+        bind(object : TypeLiteral<Sampler<*>>() {})
+                .to(RestSampler::class.java)
+                .asEagerSingleton()
+
         bind(RestSampler::class.java)
                 .asEagerSingleton()
 
