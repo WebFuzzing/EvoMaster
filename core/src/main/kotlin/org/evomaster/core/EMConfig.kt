@@ -1500,6 +1500,9 @@ class EMConfig {
             " from previous HTTP calls affecting the current one")
     var killSwitch = true
 
+    @Cfg("Number of milliseconds we are going to wait to get a response on a TCP connection, e.g., " +
+            "when making HTTP calls to a Web API")
+    var tcpTimeoutMs = 30_000
 
     @Cfg("Whether to skip failed SQL commands in the generated test files")
     var skipFailureSQLInTestFile = true
