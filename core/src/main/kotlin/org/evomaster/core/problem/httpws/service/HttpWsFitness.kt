@@ -40,23 +40,22 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
         }
     }
 
-
-    protected val clientConfiguration = ClientConfig()
-            .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
-            .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
-            //workaround bug in Jersey client
-            .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-            .property(ClientProperties.FOLLOW_REDIRECTS, false)
-
-
-
-    protected var client: Client = ClientBuilder.newClient(clientConfiguration)
+    protected lateinit var client : Client
 
 
     @PostConstruct
     protected fun initialize() {
 
-       log.debug("Initializing {}", HttpWsFitness::class.simpleName)
+        log.debug("Initializing {}", HttpWsFitness::class.simpleName)
+
+        val clientConfiguration = ClientConfig()
+                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
+                .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
+                //workaround bug in Jersey client
+                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+                .property(ClientProperties.FOLLOW_REDIRECTS, false)
+
+        client = ClientBuilder.newClient(clientConfiguration)
 
         if (!config.blackBox || config.bbExperiments) {
             rc.checkConnection()
