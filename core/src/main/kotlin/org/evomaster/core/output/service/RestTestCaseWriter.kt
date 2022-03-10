@@ -130,7 +130,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         handleLocationHeader(call, res, responseVariableName, lines)
         handleResponseAfterTheCall(call, res, responseVariableName, lines)
 
-        if (shouldCheckExpectations()) {
+        if (shouldCheckExpectations() && !res.failedCall()) {
             handleExpectationSpecificLines(call, lines, res, responseVariableName)
         }
     }

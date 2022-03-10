@@ -59,7 +59,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
 
         handlePreCallSetup(call, lines, res)
 
-        if (needsResponseVariable(call, res)) {
+        if (needsResponseVariable(call, res) && !res.failedCall()) {
             when {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
                 format.isJava() -> lines.append("ValidatableResponse $resVarName = ")

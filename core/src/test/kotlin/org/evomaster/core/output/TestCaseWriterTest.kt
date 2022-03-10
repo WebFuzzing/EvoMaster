@@ -1002,7 +1002,6 @@ class TestCaseWriterTest {
             add(".get(baseUrlOfSut + \"\");")
             deindent()
             deindent()
-            add("")
             deindent()
             add("} catch(Exception e){")
             add("}")
