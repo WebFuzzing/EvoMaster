@@ -1,5 +1,6 @@
 package org.evomaster.e2etests.spring.examples.wiremock;
 
+import com.alibaba.dcm.DnsCacheManipulator;
 import com.foo.rest.examples.spring.wiremock.WireMockController;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -21,8 +22,15 @@ public class WireMockManualTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
-        // For the moment port is set to 10101
-        wireMockServer = new WireMockServer(new WireMockConfiguration().port(52768).extensions(new ResponseTemplateTransformer(false)));
+        // DNS cache manipulator sets the IP for foo.bar to a different loopback address
+        DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
+
+        /**
+         * For the moment port is set to 8080, under a different loopback address
+         * Ports 80 and 443 can be set, but require sudo permission, so application
+         * should run as root
+         * */
+        wireMockServer = new WireMockServer(new WireMockConfiguration().bindAddress("127.0.0.2").port(8080).extensions(new ResponseTemplateTransformer(false)));
         wireMockServer.start();
 
         // WireMock endpoint will respond the third value of the request path
@@ -49,6 +57,7 @@ public class WireMockManualTest extends SpringTestBase {
     @AfterEach
     public void shutdownServer() {
         wireMockServer.stop();
+        DnsCacheManipulator.clearDnsCache();
     }
 
     @Test
@@ -71,17 +80,7 @@ public class WireMockManualTest extends SpringTestBase {
     @Test
     public void testExternalCall() {
         /**
-         * The echo call only response the given input when it's only alpha
-         * characters. The first call suppose to send false, since it has
-         * numeric characters in it.
-         * */
-//        given().accept(ContentType.JSON)
-//                .get(baseUrlOfSut + "/api/wiremock/external/123")
-//                .then()
-//                .statusCode(200)
-//                .body("valid", is(false));
-        /**
-         * Test modified to check whether the external call is a success or
+         * The test will check whether the external call is a success or
          * not. If the target host replaced with the Wiremock, it'll respond
          * true otherwise false.
          * */
@@ -89,6 +88,6 @@ public class WireMockManualTest extends SpringTestBase {
                 .get(baseUrlOfSut + "/api/wiremock/external")
                 .then()
                 .statusCode(200)
-                .body("valid", is(false));
+                .body("valid", is(true));
     }
 }

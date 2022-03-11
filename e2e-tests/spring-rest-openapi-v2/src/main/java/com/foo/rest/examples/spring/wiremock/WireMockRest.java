@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import javax.ws.rs.core.MediaType;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 @RestController
 @RequestMapping(path = "/api/wiremock")
@@ -43,18 +45,19 @@ public class WireMockRest {
         RestTemplate restTemplate = new RestTemplate();
 
         /**
-         * Below code will call the external api to fetch the response
-         * as foo, if it's a success it'll return true otherwise false.
+         * Below code will call the external api with the value `foo`
+         * to fetch the response as foo, if it's a success it'll return
+         * true otherwise false.
          * Java DNS cache manipulator will replace the target hostname
          * to resolve to localhost, so the WireMock will act as the
          * target server.
          */
-        String uri = "http://foo.bar/api/echo";
+        String uri = "http://foo.bar:8080/api/echo/foo";
 
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
-            if (response.getStatusCode().equals(200) && response.getBody().equals("foo")) {
+            if (response.getStatusCode().value() == 200 && response.getBody().equals("foo")) {
                 stringsResponseDto.valid = true;
             } else {
                 stringsResponseDto.valid = false;
