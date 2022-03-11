@@ -5,11 +5,9 @@ import io.mockk.mockk
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
-import org.evomaster.core.problem.rest.service.RestSampler
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito
-import org.mockito.Mockito.mock
+
 
 class BlackBoxUtilsTest{
 
