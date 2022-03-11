@@ -41,10 +41,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic(Fragment).json").readText()
 
-        val state = TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        StateBuilder.initTablesInfo(schemaObj)
+        val state = StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
