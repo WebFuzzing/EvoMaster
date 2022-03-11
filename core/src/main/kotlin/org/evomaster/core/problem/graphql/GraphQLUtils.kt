@@ -2,6 +2,8 @@ package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
+import org.evomaster.core.problem.graphql.builder.Table
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.util.ParamUtil
@@ -216,12 +218,12 @@ object GraphQLUtils {
      * objectFieldsHistory: a set used in the management of already constructed nodes
      */
     fun constructGraph(
-        state: GraphQLActionBuilder.TempState,
-        typeName: String,
-        fieldName: String,
-        graph: MutableMap<String, GraphInfo>,
-        history: MutableList<String>,
-        objectFieldsHistory: MutableSet<String>
+            state: GraphQLActionBuilder.TempState,
+            typeName: String,
+            fieldName: String,
+            graph: MutableMap<String, GraphInfo>,
+            history: MutableList<String>,
+            objectFieldsHistory: MutableSet<String>
     ): MutableMap<String, GraphInfo> {
 
         for (element in state.tables) {
@@ -299,11 +301,11 @@ object GraphQLUtils {
             .toLowerCase() == GqlConst.SCALAR || element.kindOfTableFieldType.toString().toLowerCase() == GqlConst.ENUM
 
     private fun getInterfaceNodes(
-        history: MutableList<String>,
-        element: Table,
-        state: GraphQLActionBuilder.TempState,
-        graph: MutableMap<String, GraphInfo>,
-        objectFieldsHistory: MutableSet<String>
+            history: MutableList<String>,
+            element: Table,
+            state: GraphQLActionBuilder.TempState,
+            graph: MutableMap<String, GraphInfo>,
+            objectFieldsHistory: MutableSet<String>
     ) {
         if (history.count { it == element.tableFieldType } <= 1) {// the interface type object already treated
             constructGraph(
@@ -336,11 +338,11 @@ object GraphQLUtils {
     }
 
     private fun getUnionNodes(
-        history: MutableList<String>,
-        element: Table,
-        graph: MutableMap<String, GraphInfo>,
-        state: GraphQLActionBuilder.TempState,
-        objectFieldsHistory: MutableSet<String>
+            history: MutableList<String>,
+            element: Table,
+            graph: MutableMap<String, GraphInfo>,
+            state: GraphQLActionBuilder.TempState,
+            objectFieldsHistory: MutableSet<String>
     ) {
         if (history.count { it == element.tableFieldType } <= 1) {// the union type object is already treated
             element.unionTypes.forEach { ob ->
@@ -365,11 +367,11 @@ object GraphQLUtils {
     }
 
     private fun getObjectNode(
-        history: MutableList<String>,
-        element: Table,
-        objectFieldsHistory: MutableSet<String>,
-        state: GraphQLActionBuilder.TempState,
-        graph: MutableMap<String, GraphInfo>
+            history: MutableList<String>,
+            element: Table,
+            objectFieldsHistory: MutableSet<String>,
+            state: GraphQLActionBuilder.TempState,
+            graph: MutableMap<String, GraphInfo>
     ) {
         if (history.count { it == element.tableFieldType } <= 1) {
             if (!objectFieldsHistory.contains(element.tableFieldType)) {

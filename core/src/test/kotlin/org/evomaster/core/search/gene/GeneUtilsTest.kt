@@ -3,13 +3,12 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.database.DbActionGeneBuilder
 import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.problem.graphql.GraphQLAction
-import org.evomaster.core.problem.graphql.GraphQLActionBuilder
+import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.PetClinicCheckMain
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.*
 

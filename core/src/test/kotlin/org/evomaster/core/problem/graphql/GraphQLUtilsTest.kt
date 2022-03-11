@@ -1,10 +1,10 @@
 package org.evomaster.core.problem.graphql
 
 import com.google.gson.Gson
+import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.schema.SchemaObj
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*

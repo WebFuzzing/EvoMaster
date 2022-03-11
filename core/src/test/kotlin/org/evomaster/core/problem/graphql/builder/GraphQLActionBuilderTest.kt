@@ -1,6 +1,7 @@
-package org.evomaster.core.problem.graphql
+package org.evomaster.core.problem.graphql.builder
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action

@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.graphql
+package org.evomaster.core.problem.graphql.builder
 
 import org.evomaster.core.problem.graphql.schema.__TypeKind
 

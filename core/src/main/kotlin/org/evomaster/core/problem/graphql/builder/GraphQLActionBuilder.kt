@@ -1,8 +1,12 @@
-package org.evomaster.core.problem.graphql
+package org.evomaster.core.problem.graphql.builder
 
 import com.google.gson.Gson
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.graphql.GQMethodType
+import org.evomaster.core.problem.graphql.GqlConst
+import org.evomaster.core.problem.graphql.GraphQLAction
+import org.evomaster.core.problem.graphql.KindX
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.graphql.schema.*
@@ -19,8 +23,21 @@ import java.util.concurrent.atomic.AtomicInteger
 object GraphQLActionBuilder {
 
     private val log: Logger = LoggerFactory.getLogger(GraphQLActionBuilder::class.java)
+
+    /**
+     * Used to create unique IDs
+     */
     private val idGenerator = AtomicInteger()
 
+    /**
+     * TODO potential for refactring, as not thread-safe
+     */
+    private var accum: Int = 0
+
+    /**
+     * Specific terms/keywords used in the generated JSON schema retrieved
+     * with an introspective query
+     */
     private val systemTypes = listOf(
             "__Schema", "__Directive", "__DirectiveLocation", "__EnumValue",
             "__Field", "__InputValue", "__Type", "__TypeKind"
@@ -28,11 +45,15 @@ object GraphQLActionBuilder {
 
     data class TempState(
             /**
-             * A data structure used to store information extracted from the schema eg, Objects types.
+             * A data structure used to store information extracted from the schema, i.e., all Objects types,
+             * including not only queries/mutations, but also all other object definitions, as well as all
+             * interfaces and unions
              */
             var tables: MutableList<Table> = mutableListOf(),
             /**
              * A data structure used to store information extracted from the schema about input types eg, Input types.
+             * Those are the input parameters to the functions (eg, in top-level queries/mutations, as well as nested
+             * functions in object definitions)
              */
             var argsTables: MutableList<Table> = mutableListOf(),
             /*
@@ -45,17 +66,17 @@ object GraphQLActionBuilder {
             var tempUnionTables: MutableList<Table> = mutableListOf()
     )
 
-    private var accum: Int = 0
 
     /**
      * @param schema: the schema extracted from a GraphQL API, as a JSON string
      * @param actionCluster: for each mutation/query in the schema, populate this map with
      *                      new action templates.
+     * @param treeDepth:  maximum depth for the created objects, to avoid HUGE data structures
      */
     fun addActionsFromSchema(
             schema: String,
             actionCluster: MutableMap<String, Action>,
-            maxNumberOfGenes: Int = Int.MAX_VALUE
+            treeDepth: Int = Int.MAX_VALUE  //no restrictions by default
     ) {
         val schemaObj: SchemaObj = try {
             Gson().fromJson(schema, SchemaObj::class.java)
@@ -87,7 +108,7 @@ object GraphQLActionBuilder {
                             element.enumValues,
                             element.unionTypes,
                             element.interfaceTypes,
-                            maxNumberOfGenes,
+                            treeDepth,
                     )
                 }
             }
