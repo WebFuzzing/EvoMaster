@@ -1,23 +1,20 @@
-package org.evomaster.e2etests.spring.graphql.unionInternal
+package org.evomaster.e2etests.spring.graphql.unionFunctions
 
 
-
-import com.foo.graphql.unionInternal.UnionInternalController
+import com.foo.graphql.unionFunctions.UnionFunctionsController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-
-class GQLUnionInternalEMTest : SpringTestBase() {
+class GQLUnionFunctionsEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(UnionInternalController())
+            initClass(UnionFunctionsController())
         }
     }
 
@@ -25,8 +22,8 @@ class GQLUnionInternalEMTest : SpringTestBase() {
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-                "GQL_UnionInternalEM",
-                "org.foo.graphql.UnionInternalEM",
+                "GQL_UnionFunctionsEM",
+                "org.foo.graphql.UnionFunctionsEM",
                 20
         ) { args: MutableList<String> ->
 

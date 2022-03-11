@@ -1,23 +1,20 @@
-package org.evomaster.e2etests.spring.graphql.unionInternal
+package org.evomaster.e2etests.spring.graphql.functionInReturnedObjectWithReturnPrimitives
 
 
-
-import com.foo.graphql.unionInternal.UnionInternalController
+import com.foo.graphql.functionInReturnedObjectWithReturnPrimitives.FunctionInReturnedObjectWithReturnPrimitivesController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-
-class GQLUnionInternalEMTest : SpringTestBase() {
+class FunctionInReturnedObjectWithReturnPrimitivesTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(UnionInternalController())
+            initClass(FunctionInReturnedObjectWithReturnPrimitivesController())
         }
     }
 
@@ -25,9 +22,9 @@ class GQLUnionInternalEMTest : SpringTestBase() {
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-                "GQL_UnionInternalEM",
-                "org.foo.graphql.UnionInternalEM",
-                20
+            "GQL_FunctionInReturnedObjectWithReturnPrimitivesTestEM",
+            "org.foo.graphql.FunctionInReturnedObjectWithReturnPrimitivesTestEM",
+            20
         ) { args: MutableList<String> ->
 
             args.add("--problemType")
