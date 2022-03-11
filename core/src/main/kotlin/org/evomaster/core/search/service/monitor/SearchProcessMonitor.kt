@@ -44,7 +44,7 @@ class SearchProcessMonitor: SearchListener {
     @Inject
     private lateinit var idMapper: IdMapper
 
-    @Inject
+    @Inject(optional = true)
     private lateinit var writer: TestSuiteWriter
 
     @Inject(optional = true)
