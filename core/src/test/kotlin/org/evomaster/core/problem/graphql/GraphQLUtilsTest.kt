@@ -2,6 +2,8 @@ package org.evomaster.core.problem.graphql
 
 import com.google.gson.Gson
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
+import org.evomaster.core.problem.graphql.builder.StateBuilder
+import org.evomaster.core.problem.graphql.builder.TempState
 import org.evomaster.core.problem.graphql.schema.SchemaObj
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -16,10 +18,9 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/MelodyRepo2.json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state = StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(4, GraphQLUtils.getGraphSize(queryGraph))
@@ -40,10 +41,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic(Fragment).json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+        val state = TempState()
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
@@ -62,10 +63,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic(Fragment2).json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
@@ -85,10 +86,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/CyclesEg.json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(3, GraphQLUtils.getGraphSize(queryGraph))
@@ -108,10 +109,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/UniverseCycles(Fragment).json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val mutationGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "mutation", " ", mutationGraph, mutableListOf(), mutableSetOf())
         assertEquals(4, GraphQLUtils.getGraphSize(mutationGraph))
@@ -132,10 +133,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalEg(Fragment).json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
@@ -156,10 +157,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg(Fragment).json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
@@ -178,10 +179,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(6, GraphQLUtils.getGraphSize(queryGraph))
@@ -200,10 +201,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(5, GraphQLUtils.getGraphSize(queryGraph))
@@ -223,10 +224,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceEg.json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(4, GraphQLUtils.getGraphSize(queryGraph))
@@ -246,10 +247,10 @@ class GraphQLUtilsTest {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceHis.json").readText()
 
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(16, GraphQLUtils.getGraphSize(queryGraph))
@@ -268,10 +269,10 @@ class GraphQLUtilsTest {
     fun allNodesReachableTest() {
 
         val json = GraphQLUtilsTest::class.java.getResource("/graphql/abstract.json").readText()
-        val state = GraphQLActionBuilder.TempState()
+
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
-        GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+        val state =StateBuilder.initTablesInfo(schemaObj)
         val queryGraph: MutableMap<String, GraphQLUtils.GraphInfo> = mutableMapOf()
         GraphQLUtils.constructGraph(state, "query", " ", queryGraph, mutableListOf(), mutableSetOf())
         assertEquals(7, GraphQLUtils.getGraphSize(queryGraph))
@@ -355,10 +356,10 @@ class GraphQLUtilsTest {
         jsonFiles["recEg2"] = GraphQLUtilsTest::class.java.getResource("/graphql/recEg2.json").readText()
 
         jsonFiles.forEach {
-            val state = GraphQLActionBuilder.TempState()
+
             val gson = Gson()
             val schemaObj: SchemaObj = gson.fromJson(it.value, SchemaObj::class.java)
-            GraphQLActionBuilder.initTablesInfo(schemaObj, state)
+            val state =StateBuilder.initTablesInfo(schemaObj)
 
             var visitedVertex: MutableSet<String> = mutableSetOf()
             var stack: Deque<String> = ArrayDeque<String>()

@@ -2,8 +2,8 @@ package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.builder.Table
+import org.evomaster.core.problem.graphql.builder.TempState
 import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.util.ParamUtil
@@ -218,7 +218,7 @@ object GraphQLUtils {
      * objectFieldsHistory: a set used in the management of already constructed nodes
      */
     fun constructGraph(
-            state: GraphQLActionBuilder.TempState,
+            state: TempState,
             typeName: String,
             fieldName: String,
             graph: MutableMap<String, GraphInfo>,
@@ -229,24 +229,24 @@ object GraphQLUtils {
         for (element in state.tables) {
             val kOTFT = element.kindOfTableFieldType.toString().toLowerCase()
 
-            if (element.tableType?.toLowerCase() != typeName.toLowerCase()) {
+            if (element.typeName?.toLowerCase() != typeName.toLowerCase()) {
                 continue
             }
             if (isRoot(typeName)) {//First entry point
                 if (kOTFT == GqlConst.OBJECT) {
                     history.add(element.tableFieldType)
-                    addEdge(element.tableType!!.toLowerCase(), element.tableFieldType, element.tableField, graph)
+                    addEdge(element.typeName!!.toLowerCase(), element.tableFieldType, element.fieldName, graph)
                     getObjectNode(history, element, objectFieldsHistory, state, graph)
                 }
                 if (isScalarOrEnum(element)) //Primitive type: create a field and add it
-                    graph[element.tableType!!.toLowerCase()]?.fields?.add(element.tableField)
+                    graph[element.typeName!!.toLowerCase()]?.fields?.add(element.fieldName)
 
                 if (kOTFT == GqlConst.INTERFACE) {
                     history.add(element.tableFieldType)// add interface type object to the history
                     addEdge(
-                        element.tableType!!.toLowerCase(),
+                        element.typeName!!.toLowerCase(),
                         element.tableFieldType,
-                        element.tableField,
+                        element.fieldName,
                         graph
                     )//from a query node to the interface type object
                     getInterfaceNodes(history, element, state, graph, objectFieldsHistory)
@@ -254,9 +254,9 @@ object GraphQLUtils {
                 if (kOTFT == GqlConst.UNION) {
                     history.add(element.tableFieldType)// add union type object to the history
                     addEdge(
-                        element.tableType!!.toLowerCase(),
+                        element.typeName!!.toLowerCase(),
                         element.tableFieldType,
-                        element.tableField,
+                        element.fieldName,
                         graph
                     )//from a query node to the union type object
                     getUnionNodes(history, element, graph, state, objectFieldsHistory)
@@ -265,18 +265,18 @@ object GraphQLUtils {
             } else {//Second entry
                 if (kOTFT == GqlConst.OBJECT) {
                     history.add(element.tableFieldType)
-                    addEdge(typeName, element.tableFieldType, element.tableField, graph)
+                    addEdge(typeName, element.tableFieldType, element.fieldName, graph)
                     getObjectNode(history, element, objectFieldsHistory, state, graph)
                 }
                 if (isScalarOrEnum(element)) //Primitive type: create a field and add it
-                    graph[typeName]?.fields?.add(element.tableField)
+                    graph[typeName]?.fields?.add(element.fieldName)
 
                 if (kOTFT == GqlConst.UNION) {
                     history.add(element.tableFieldType)// add union type object to the history
                     addEdge(
                         typeName,
                         element.tableFieldType,
-                        element.tableField,
+                        element.fieldName,
                         graph
                     )//from a node to the union type object
                     getUnionNodes(history, element, graph, state, objectFieldsHistory)
@@ -286,7 +286,7 @@ object GraphQLUtils {
                     addEdge(
                         typeName,
                         element.tableFieldType,
-                        element.tableField,
+                        element.fieldName,
                         graph
                     )//from a node to the interface type object
                     getInterfaceNodes(history, element, state, graph, objectFieldsHistory)
@@ -303,7 +303,7 @@ object GraphQLUtils {
     private fun getInterfaceNodes(
             history: MutableList<String>,
             element: Table,
-            state: GraphQLActionBuilder.TempState,
+            state: TempState,
             graph: MutableMap<String, GraphInfo>,
             objectFieldsHistory: MutableSet<String>
     ) {
@@ -341,7 +341,7 @@ object GraphQLUtils {
             history: MutableList<String>,
             element: Table,
             graph: MutableMap<String, GraphInfo>,
-            state: GraphQLActionBuilder.TempState,
+            state: TempState,
             objectFieldsHistory: MutableSet<String>
     ) {
         if (history.count { it == element.tableFieldType } <= 1) {// the union type object is already treated
@@ -370,12 +370,12 @@ object GraphQLUtils {
             history: MutableList<String>,
             element: Table,
             objectFieldsHistory: MutableSet<String>,
-            state: GraphQLActionBuilder.TempState,
+            state: TempState,
             graph: MutableMap<String, GraphInfo>
     ) {
         if (history.count { it == element.tableFieldType } <= 1) {
             if (!objectFieldsHistory.contains(element.tableFieldType)) {
-                constructGraph(state, element.tableFieldType, element.tableField, graph, history, objectFieldsHistory)
+                constructGraph(state, element.tableFieldType, element.fieldName, graph, history, objectFieldsHistory)
                 history.remove(element.tableFieldType)
                 objectFieldsHistory.add(element.tableFieldType)
             } else {

@@ -7,13 +7,16 @@ import org.evomaster.core.problem.graphql.schema.__TypeKind
  * */
 class Table(
         /**
-         * Describing the name of the table type
+         * Specify the name of the table type.
+         * For example, Query in petclinic.graphqls
          */
-        var tableType: String? = null,
+        var typeName: String? = null,
         /**
-         * Describing the name of the table field
+         * Specify the name of the field in the table.
+         * for example pettypes (inside Query) in petclinic.graphqls.
+         * Ie. the name of field in a node
          */
-        var tableField: String = "",
+        var fieldName: String = "",
         /**
          * Describing the kind of the tableField, eg: LIST
          */
@@ -52,4 +55,8 @@ class Table(
           */
         var interfaceTypes: MutableList<String> = mutableListOf()
 
-)
+){
+
+        val uniqueId = if(typeName == null)  fieldName else "$typeName.$fieldName"
+
+}
