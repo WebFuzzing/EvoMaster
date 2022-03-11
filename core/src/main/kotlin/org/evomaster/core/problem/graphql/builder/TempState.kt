@@ -16,6 +16,8 @@ data class TempState(
          * functions in object definitions)
          */
         var argsTables: MutableList<Table> = mutableListOf(),
+
+        var argsTablesIndexedByName : MutableMap<String, List<Table>> = mutableMapOf(),
         /*
         * An intermediate data structure used for extracting argsTables
        */

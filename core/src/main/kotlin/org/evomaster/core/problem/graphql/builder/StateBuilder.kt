@@ -84,18 +84,26 @@ object StateBuilder {
         state.tables =
                 state.tables.distinctBy { Pair(it.typeName, it.fieldName) }.toMutableList()//remove redundant elements
 
-        initTablesIndexedByName(state)
-
+        initTablesAndArgsTablesIndexedByName(state)
         return state
     }
 
-    private fun initTablesIndexedByName(state: TempState){
-
-        val names = state.tables.map { it.typeName }.filterNotNull().toSet()
-
-        for(n in names) {
+    private fun initTablesAndArgsTablesIndexedByName(state: TempState){
+        /*
+        A set of all possible names
+         */
+        val namesInTable = state.tables.map { it.typeName }.filterNotNull().toSet()
+        val namesInArgsTable = state.argsTables.map { it.typeName }.filterNotNull().toSet()
+        /*
+        Attach to each name its tables
+         */
+        for(n in namesInTable) {
             val list = state.tables.filter { it.typeName == n }
             state.tablesIndexedByName[n] = list
+        }
+        for(n in namesInArgsTable) {
+            val list = state.argsTables.filter { it.typeName == n }
+            state.argsTablesIndexedByName[n] = list
         }
     }
 

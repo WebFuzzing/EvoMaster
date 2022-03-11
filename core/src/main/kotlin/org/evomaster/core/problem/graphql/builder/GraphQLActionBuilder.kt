@@ -229,13 +229,11 @@ object GraphQLActionBuilder {
 
         val params = mutableListOf<Param>()
         val history: Deque<String> = ArrayDeque()
+        val selectionInArgs = state.argsTablesIndexedByName[methodName] ?: listOf()
 
         if (tableFieldWithArgs) {
 
-            for (element in state.argsTables) {
-
-                if (element.typeName == methodName) {
-
+            for (element in selectionInArgs) {
                     if (element.kindOfTableFieldType == SCALAR || element.kindOfTableFieldType == ENUM) {//array scalar type or array enum type, the gene is constructed from getInputGene to take the correct names
                         val gene = getInputScalarListOrEnumListGene(
                                 state,
@@ -270,7 +268,6 @@ object GraphQLActionBuilder {
                         )
                         params.add(GQInputParam(element.fieldName, gene))
                     }
-                }
             }
 
             //handling the return param, should put all the fields optional
@@ -930,9 +927,12 @@ object GraphQLActionBuilder {
         /*Look after each field (not tuple) and construct it recursively
           */
 
-        val selection = state.tablesIndexedByName.get(tableType) ?: listOf()
+        val selection = state.tablesIndexedByName[tableType] ?: listOf()
+
 
         for (tableElement in selection) {
+
+            val selectionInArgs = state.argsTablesIndexedByName[tableElement.fieldName] ?: listOf()
             /*
             Contains the elements of a tuple
              */
@@ -950,8 +950,7 @@ object GraphQLActionBuilder {
                 /*
              Construct field s arguments (the n-1 elements of the tuple) first
              */
-                for (argElement in state.argsTables) {
-                    if (argElement.typeName == tableElement.fieldName) {
+                for (argElement in selectionInArgs) {
                         if (argElement.kindOfTableFieldType == SCALAR || argElement.kindOfTableFieldType == ENUM) {
                             /*
                         array scalar type or array enum type, the gene is constructed from getInputGene to take the correct names
@@ -994,7 +993,7 @@ object GraphQLActionBuilder {
                             )
                             tupleElements.add(gene)
                         }
-                    }
+
                 }
                 /*
              Construct the last element (the return)
