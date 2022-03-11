@@ -561,7 +561,12 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-    abstract fun hasParameterChild(a: RestCallAction): Boolean
+    fun hasParameterChild(a: RestCallAction): Boolean {
+        return sampler.seeAvailableActions()
+                .filterIsInstance<RestCallAction>()
+                .map { it.path }
+                .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
+    }
 
     private fun locationName(id: String): String {
         return "location_$id"

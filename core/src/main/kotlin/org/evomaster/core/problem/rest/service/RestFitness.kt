@@ -21,8 +21,6 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         private val log: Logger = LoggerFactory.getLogger(RestFitness::class.java)
     }
 
-    @Inject
-    private lateinit var sampler: RestSampler
 
     override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
@@ -107,13 +105,4 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
-
-
-
-    override fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-                .filterIsInstance<RestCallAction>()
-                .map { it.path }
-                .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
-    }
 }

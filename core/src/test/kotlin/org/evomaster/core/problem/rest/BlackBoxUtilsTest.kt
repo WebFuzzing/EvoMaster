@@ -1,8 +1,15 @@
 package org.evomaster.core.problem.rest
 
+import io.mockk.every
+import io.mockk.mockk
+import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.EMConfig
-import org.junit.jupiter.api.Assertions.*
+import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.RestSampler
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
+import org.mockito.Mockito.mock
 
 class BlackBoxUtilsTest{
 
@@ -15,7 +22,7 @@ class BlackBoxUtilsTest{
         config.bbTargetUrl = target
         config.bbSwaggerUrl = "$target/swagger.json"
 
-        assertEquals(target, BlackBoxUtils.restUrl(config))
+        assertEquals(target, BlackBoxUtils.targetUrl(config))
     }
 
 
@@ -28,7 +35,7 @@ class BlackBoxUtilsTest{
         config.bbTargetUrl = target
         config.bbSwaggerUrl = "http://192.168.1.42:12345/swagger.json"
 
-        assertEquals(target, BlackBoxUtils.restUrl(config))
+        assertEquals(target, BlackBoxUtils.targetUrl(config))
     }
 
 
@@ -38,10 +45,13 @@ class BlackBoxUtilsTest{
         val target = "http://localhost:8080"
 
         val config = EMConfig()
+        config.problemType = EMConfig.ProblemType.REST
         config.bbTargetUrl = ""
         config.bbSwaggerUrl = "$target/swagger.json"
 
-        assertEquals(target, BlackBoxUtils.restUrl(config))
+        val sampler = mockk<AbstractRestSampler>()
+        every{sampler.swagger} returns OpenAPI()
+        assertEquals(target, BlackBoxUtils.targetUrl(config, sampler))
     }
 
     @Test
@@ -50,9 +60,13 @@ class BlackBoxUtilsTest{
         val target = "http://localhost"
 
         val config = EMConfig()
+        config.problemType = EMConfig.ProblemType.REST
         config.bbTargetUrl = ""
         config.bbSwaggerUrl = "$target/swagger.json"
 
-        assertEquals(target, BlackBoxUtils.restUrl(config))
+        val sampler = mockk<AbstractRestSampler>()
+        every{sampler.swagger} returns OpenAPI()
+
+        assertEquals(target, BlackBoxUtils.targetUrl(config,sampler))
     }
 }
