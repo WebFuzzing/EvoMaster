@@ -33,7 +33,12 @@ object GraphQLActionBuilder {
      */
     private var accum: Int = 0
 
+    val state  = StateBuilder.initTablesInfo(schemaObj)
 
+    /*
+       In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
+     */
+    private val mutationQueryConstants = listOf(GqlConst.MUTATION, GqlConst.QUERY, GqlConst.ROOT, GqlConst.QUERY_TYPE)
 
 
     /**
@@ -53,31 +58,13 @@ object GraphQLActionBuilder {
             throw SutProblemException("Failed to parse the schema of the SUT as a JSON object: ${e.message}")
         }
 
-        val state  = StateBuilder.initTablesInfo(schemaObj)
+
 
         if (schemaObj.data.__schema.queryType != null || schemaObj.data.__schema.mutationType != null) {
             for (element in state.tables) {
-                /*
-                In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
-                 */
-                if (element.typeName?.lowercase() == GqlConst.MUTATION || element.typeName?.lowercase() == GqlConst.QUERY || element.typeName?.lowercase() == GqlConst.ROOT || element?.typeName?.lowercase() == GqlConst.QUERY_TYPE) {
-                    handleOperation(
-                            state,
-                            actionCluster,
-                            element.fieldName,
-                            element.typeName,
-                            element.tableFieldType,
-                            element.kindOfTableFieldType.toString(),
-                            element.kindOfTableField.toString(),
-                            element.typeName.toString(),
-                            element.isKindOfTableFieldTypeOptional,
-                            element.isKindOfTableFieldOptional,
-                            element.tableFieldWithArgs,
-                            element.enumValues,
-                            element.unionTypes,
-                            element.interfaceTypes,
-                            treeDepth,
-                    )
+
+                if (mutationQueryConstants.contains(element.typeName.lowercase())) {
+                    handleOperation(state, actionCluster, treeDepth, element)
                 }
             }
         } else {
@@ -90,49 +77,24 @@ object GraphQLActionBuilder {
     private fun handleOperation(
             state: TempState,
             actionCluster: MutableMap<String, Action>,
-            methodName: String?,
-            methodType: String?,
-            tableFieldType: String,
-            kindOfTableFieldType: String,
-            kindOfTableField: String?,
-            tableType: String,
-            isKindOfTableFieldTypeOptional: Boolean,
-            isKindOfTableFieldOptional: Boolean,
-            tableFieldWithArgs: Boolean,
-            enumValues: MutableList<String>,
-            unionTypes: MutableList<String>,
-            interfaceTypes: MutableList<String>,
-            maxNumberOfGenes: Int
+            treeDepth: Int,
+            table: Table
     ) {
-        if (methodName == null) {
-            log.warn("Skipping operation, as no method name is defined.")
-            return
-        }
-        if (methodType == null) {
-            log.warn("Skipping operation, as no method type is defined.")
-            return
-        }
+
         val type = when {
-            methodType.equals(GqlConst.QUERY, true) -> GQMethodType.QUERY
-            /*
-               In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
-                */
-            methodType.equals(GqlConst.ROOT, true) -> GQMethodType.QUERY
-            methodType.equals(GqlConst.QUERY_TYPE, true) -> GQMethodType.QUERY
-            methodType.equals(GqlConst.MUTATION, true) -> GQMethodType.MUTATION
+            table.typeName.equals(GqlConst.QUERY, true) -> GQMethodType.QUERY
+            table.typeName.equals(GqlConst.ROOT, true) -> GQMethodType.QUERY
+            table.typeName.equals(GqlConst.QUERY_TYPE, true) -> GQMethodType.QUERY
+            table.typeName.equals(GqlConst.MUTATION, true) -> GQMethodType.MUTATION
             else -> {
                 log.warn("GraphQL Entry point: $methodType is not found.")
                 return
             }
         }
 
-        val actionId = "$methodName${idGenerator.incrementAndGet()}"
+        val actionId = "${table.fieldName}${idGenerator.incrementAndGet()}"
 
-        val params = extractParams(
-                state, methodName, tableFieldType, kindOfTableFieldType, kindOfTableField,
-                tableType, isKindOfTableFieldTypeOptional,
-                isKindOfTableFieldOptional, tableFieldWithArgs, enumValues, unionTypes, interfaceTypes, maxNumberOfGenes
-        )
+        val params = extractParams(state, treeDepth, table)
 
         //Note: if a return param is a primitive type it will be null
 
@@ -193,9 +155,8 @@ object GraphQLActionBuilder {
         params.map { it.gene }.forEach { GeneUtils.preventLimit(it, true) }
 
         //Create the action
-        val action = GraphQLAction(actionId, methodName, type, params)
+        val action = GraphQLAction(actionId, table.fieldName, type, params)
         actionCluster[action.getName()] = action
-
     }
 
     fun handleAllCyclesInObjectFields(gene: ObjectGene) {
@@ -212,108 +173,42 @@ object GraphQLActionBuilder {
 
     private fun extractParams(
             state: TempState,
-            methodName: String,
-            tableFieldType: String,
-            kindOfTableFieldType: String,
-            kindOfTableField: String?,
-            tableType: String,
-            isKindOfTableFieldTypeOptional: Boolean,
-            isKindOfTableFieldOptional: Boolean,
-            tableFieldWithArgs: Boolean,
-            enumValues: MutableList<String>,
-            unionTypes: MutableList<String>,
-            interfaceTypes: MutableList<String>,
-            maxNumberOfGenes: Int
+            treeDepth: Int,
+            table: Table
 
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
         val history: Deque<String> = ArrayDeque()
-        val selectionInArgs = state.argsTablesIndexedByName[methodName] ?: listOf()
 
-        if (tableFieldWithArgs) {
+        if (table.tableFieldWithArgs) {
+
+            val selectionInArgs = state.argsTablesIndexedByName[table.fieldName]
+                    ?: throw IllegalStateException("No arguments found for ${table.uniqueId}")
 
             for (element in selectionInArgs) {
                     if (element.kindOfTableFieldType == SCALAR || element.kindOfTableFieldType == ENUM) {//array scalar type or array enum type, the gene is constructed from getInputGene to take the correct names
-                        val gene = getInputScalarListOrEnumListGene(
-                                state,
-                                element.tableFieldType,
-                                element.kindOfTableField.toString(),
-                                element.kindOfTableFieldType.toString(),
-                                element.typeName.toString(),
-                                history,
-                                element.isKindOfTableFieldTypeOptional,
-                                element.isKindOfTableFieldOptional,
-                                element.enumValues,
-                                element.fieldName,
-                                element.tableFieldWithArgs
-                        )
+                        val gene = getInputScalarListOrEnumListGene(state, history, element)
                         params.add(GQInputParam(element.fieldName, gene))
 
                     } else {//for input objects types and objects types
-                        val gene = getInputGene(
-                                state,
-                                element.tableFieldType,
-                                element.kindOfTableField.toString(),
-                                element.kindOfTableFieldType.toString(),
-                                element.typeName.toString(),
-                                history,
-                                element.isKindOfTableFieldTypeOptional,
-                                element.isKindOfTableFieldOptional,
-                                element.enumValues,
-                                element.fieldName,
-                                element.unionTypes,
-                                element.interfaceTypes, maxNumberOfGenes,
-                                element.tableFieldWithArgs
-                        )
+                        val gene = getInputGene(state, history, element)
                         params.add(GQInputParam(element.fieldName, gene))
                     }
             }
 
             //handling the return param, should put all the fields optional
-            val gene = getReturnGene(
-                    state,
-                    tableFieldType,
-                    kindOfTableField,
-                    kindOfTableFieldType,
-                    tableType,
-                    history,
-                    isKindOfTableFieldTypeOptional,
-                    isKindOfTableFieldOptional,
-                    enumValues,
-                    methodName,
-                    unionTypes,
-                    interfaceTypes,
-                    accum,
-                    maxNumberOfGenes,
-                    tableFieldWithArgs
-            )
+            val gene = getReturnGene(state, history, accum, table)
 
             //Remove primitive types (scalar and enum) from return params
-            if (isReturnNotPrimitive(gene)) params.add(GQReturnParam(methodName, gene))
+            if (isReturnNotPrimitive(gene)) params.add(GQReturnParam(table.fieldName, gene))
 
         } else {
             //The action does not contain arguments, it only contains a return type
             //in handling the return param, should put all the fields optional
-            val gene = getReturnGene(
-                    state,
-                    tableFieldType,
-                    kindOfTableField,
-                    kindOfTableFieldType,
-                    tableType,
-                    history,
-                    isKindOfTableFieldTypeOptional,
-                    isKindOfTableFieldOptional,
-                    enumValues,
-                    methodName,
-                    unionTypes,
-                    interfaceTypes,
-                    accum,
-                    maxNumberOfGenes,
-                    tableFieldWithArgs
-            )
+            val gene = getReturnGene(state, history, accum, table)
             //Remove primitive types (scalar and enum) from return params
-            if (isReturnNotPrimitive(gene)) params.add(GQReturnParam(methodName, gene))
+            if (isReturnNotPrimitive(gene)) params.add(GQReturnParam(table.fieldName, gene))
         }
 
         return params
@@ -347,19 +242,14 @@ object GraphQLActionBuilder {
      */
     private fun getInputScalarListOrEnumListGene(
             state: TempState,
-            tableFieldType: String,
-            kindOfTableField: String?,
-            kindOfTableFieldType: String,
-            tableType: String,
             history: Deque<String>,
-            isKindOfTableFieldTypeOptional: Boolean,
-            isKindOfTableFieldOptional: Boolean,
-            enumValues: MutableList<String>,
-            methodName: String,
-            tableFieldWithArgs: Boolean
+            table: Table
     ): Gene {
 
-        when (kindOfTableField?.lowercase()) {
+        //TODO example swapping variables
+        //table.copy(typeName = table.fieldName, fieldName = table.typeName)
+
+        when (table.kindOfTableField.lowercase()) {
             GqlConst.LIST ->
                 return if (isKindOfTableFieldOptional) {
                     val template = getInputScalarListOrEnumListGene(

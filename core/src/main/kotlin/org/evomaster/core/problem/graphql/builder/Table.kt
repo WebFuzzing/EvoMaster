@@ -3,57 +3,62 @@ package org.evomaster.core.problem.graphql.builder
 import org.evomaster.core.problem.graphql.schema.__TypeKind
 
 /**
- * Intermediate data structure to parse and organize the object graphQl-schema types
+ * Intermediate data structure to parse and organize the object graphQl-schema types.
+ *
+ * WARN: this class MUST be kept immutable
  * */
-class Table(
+data class Table(
         /**
          * Specify the name of the table type.
          * For example, Query in petclinic.graphqls
          */
-        var typeName: String? = null,
+        val typeName: String,
         /**
          * Specify the name of the field in the table.
          * for example pettypes (inside Query) in petclinic.graphqls.
-         * Ie. the name of field in a node
+         * Ie. the name of field in a node.
+         *
+         * This must always be present.
          */
-        var fieldName: String = "",
+        val fieldName: String,
         /**
          * Describing the kind of the tableField, eg: LIST
          */
-        var kindOfTableField: __TypeKind? = null,
+        val kindOfTableField: __TypeKind = __TypeKind.NULL, // TODO check this NULL
         /**
          * Describing if the kind of the table field is nullable
          */
-        var isKindOfTableFieldOptional: Boolean = false,
+        val isKindOfTableFieldOptional: Boolean = false,
         /**
-         * Describing the type of the table field
+         * Describing the type of the table field.
+         * For example, the name of the object representing this type.
          */
-        var tableFieldType: String = "",
+        val tableFieldType: String = "",
         /**
          * Describing the kind of the tableFieldType, eg: SCALAR, OBJECT,INPUT_OBJECT, ENUM
          */
-        var kindOfTableFieldType: __TypeKind? = null,
+        val kindOfTableFieldType: __TypeKind,
         /**
          * Describing if the kind of the table field type is nullable
          */
-        var isKindOfTableFieldTypeOptional: Boolean = false,
+        val isKindOfTableFieldTypeOptional: Boolean = false,
         /**
          * Describing if the table field has arguments
          */
-        var tableFieldWithArgs: Boolean = false,
+        val tableFieldWithArgs: Boolean = false,
 
         /*
          * Containing the enum values
          */
-        var enumValues: MutableList<String> = mutableListOf(),
+        val enumValues: List<String> = listOf(),
         /*
          * Containing the union possible types
          */
-        var unionTypes: MutableList<String> = mutableListOf(),
+        val unionTypes: List<String> = listOf(),
         /*
          * Containing the interface possible types
           */
-        var interfaceTypes: MutableList<String> = mutableListOf()
+        val interfaceTypes: List<String> = listOf()
 
 ){
 
