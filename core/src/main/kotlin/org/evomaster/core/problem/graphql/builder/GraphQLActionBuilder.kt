@@ -647,9 +647,8 @@ object GraphQLActionBuilder {
             maxNumberOfGenes: Int
     ): Gene {
         val fields: MutableList<Gene> = mutableListOf()
-        for (element in state.argsTables) {
-            if (element.typeName == tableType) {
-
+        val selectionInArgs = state.argsTablesIndexedByName[tableType] ?: listOf()
+        for (element in selectionInArgs) {
                 if (element.kindOfTableFieldType.toString().lowercase() == GqlConst.SCALAR) {
                     val field = element.fieldName
                     val template = getInputGene(
@@ -668,7 +667,7 @@ object GraphQLActionBuilder {
                             element.tableFieldWithArgs
                     )
                     fields.add(template)
-                } else {
+                } else
                     if (element.kindOfTableField.toString().lowercase() == GqlConst.LIST) {
                         val template = getInputGene(
                                 state,
@@ -726,9 +725,6 @@ object GraphQLActionBuilder {
                             )
                             fields.add(template)
                         }
-                }
-
-            }
         }
         return ObjectGene(methodName, fields, tableType)
     }
