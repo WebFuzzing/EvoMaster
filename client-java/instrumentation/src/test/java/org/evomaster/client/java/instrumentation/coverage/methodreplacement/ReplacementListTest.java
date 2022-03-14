@@ -34,7 +34,7 @@ class ReplacementListTest {
                     continue;
                 }
 
-                assertTrue(Modifier.isStatic(m.getModifiers()), "Replacement methods must be static");
+                assertTrue(Modifier.isStatic(m.getModifiers()), "Issue with " + mrc.getClass() + ": Replacement methods must be static");
 
                 if (r.type() == ReplacementType.BOOLEAN) {
                     assertSame(m.getReturnType(), Boolean.TYPE,
