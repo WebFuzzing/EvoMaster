@@ -265,6 +265,28 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         NamedTypedValue p2 = endpoint.getRequestParams().get(1);
         assertTrue(p2 instanceof StringParam);
         assertFalse(p2.isNullable());
+
+        ConstrainedRequest input = new ConstrainedRequest();
+        p1.setValueBasedOnInstance(input);
+        ParamDto dto = p1.getDto();
+        dto.innerContent.get(1).stringValue = null;
+        dto.innerContent.get(2).stringValue = null;
+        p1.setValueBasedOnDto(dto);
+        List<String> javaCode  = p1.newInstanceWithJava(0);
+        assertEquals(13, javaCode.size());
+        assertEquals("com.thrift.example.artificial.ConstrainedRequest arg0 = null;", javaCode.get(0));
+        assertEquals("{", javaCode.get(1));
+        assertEquals(" arg0 = new com.thrift.example.artificial.ConstrainedRequest();", javaCode.get(2));
+        assertEquals(" arg0.list = null;", javaCode.get(3));
+        assertEquals(" arg0.notBlankString = null;", javaCode.get(4));
+        assertEquals(" arg0.nullableString = null;", javaCode.get(5));
+        assertEquals(" arg0.stringSize = null;", javaCode.get(6));
+        assertEquals(" arg0.listSize = null;", javaCode.get(7));
+        assertEquals(" arg0.kind = null;", javaCode.get(8));
+        assertEquals(" arg0.date = null;", javaCode.get(9));
+        assertEquals(" arg0.longWithDecimalMinMax = 0L;", javaCode.get(10));
+        assertEquals(" arg0.longWithInclusiveFDecimalMainMax = null;", javaCode.get(11));
+        assertEquals("}", javaCode.get(12));
     }
 
     private void checkConstrainedRequest(NamedTypedValue p){
