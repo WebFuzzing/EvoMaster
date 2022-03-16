@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
@@ -342,6 +343,15 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     log.warn("TCP connection to SUT problem: ${e.cause!!.message}")
                     rcr.setTcpProblem(true)
                     return false
+                }
+                config.blackBox && TcpUtils.isRefusedConnection(e) -> {
+                    /*
+                        This might happen if we have wrong info of API location, eg host/servers in
+                        the schema are wrong or static with hardcoded TCP ports
+                     */
+                    throw SutProblemException("Failed to connect API with TCP." +
+                            " Is the API up and running at '${getBaseUrl()}' ?" +
+                            " If not, the location can be overridden with --bbTargetUrl")
                 }
                 else -> throw e
             }
