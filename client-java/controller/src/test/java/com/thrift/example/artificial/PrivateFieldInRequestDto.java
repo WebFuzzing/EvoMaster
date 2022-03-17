@@ -53,4 +53,15 @@ public class PrivateFieldInRequestDto {
     public Boolean getPriBoolean() {
         return priBoolean;
     }
+
+
+    private boolean pribool;
+
+    public boolean isPribool() {
+        return pribool;
+    }
+
+    public void setPribool(boolean pribool) {
+        this.pribool = pribool;
+    }
 }

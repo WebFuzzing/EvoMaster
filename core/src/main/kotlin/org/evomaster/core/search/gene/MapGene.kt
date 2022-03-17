@@ -135,7 +135,7 @@ class MapGene<K, V>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.size == getMinSizeOrDefault() || elements.isEmpty() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
+        if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
             val gene = addRandomElement(randomness, false)
             addElement(gene)
         } else {
@@ -229,8 +229,7 @@ class MapGene<K, V>(
      * we replace the existing one with [element]
      */
     fun addElement(element: PairGene<K, V>){
-        if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, cannot add more elements for the gene $name")
+        checkConstraintsForAdd()
 
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
@@ -245,8 +244,7 @@ class MapGene<K, V>(
      */
     fun addElement(element: Gene) : Boolean{
         element as? PairGene<K, V> ?:return false
-        if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, cannot add more elements for the gene $name")
+        checkConstraintsForAdd()
 
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
@@ -305,7 +303,18 @@ class MapGene<K, V>(
         return elements.isEmpty()
     }
 
-    fun getMaxSizeOrDefault() = maxSize?: ArrayGene.MAX_SIZE
+    override fun getMaxSizeOrDefault() = maxSize?: ArrayGene.MAX_SIZE
 
-    fun getMinSizeOrDefault() = minSize?: 0
+    override fun getMinSizeOrDefault() = minSize?: 0
+
+    override fun getSpecifiedMaxSize() = maxSize
+
+    override fun getSpecifiedMinSize() = minSize
+
+    override fun getGeneName() = name
+
+    override fun getSizeOfElements(filterMutable: Boolean): Int {
+        if (!filterMutable) return elements.size
+        return elements.count { it.isMutable() }
+    }
 }

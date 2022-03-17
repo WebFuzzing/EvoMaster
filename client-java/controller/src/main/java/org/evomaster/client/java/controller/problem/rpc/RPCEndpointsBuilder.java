@@ -642,7 +642,7 @@ public class RPCEndpointsBuilder {
         if (findGetter){
             found = Arrays.stream(clazz.getMethods()).filter(m->
                     Modifier.isPublic(m.getModifiers()) &&
-                            m.getName().equalsIgnoreCase("get"+field.getName()) &&
+                            (m.getName().equalsIgnoreCase("get"+field.getName()) || m.getName().equalsIgnoreCase("is"+field.getName())) &&
                             m.getParameterCount() == 0
             ).collect(Collectors.toList());
         }else {

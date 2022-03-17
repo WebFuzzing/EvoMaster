@@ -58,11 +58,15 @@ public class JavaXConstraintHandler {
 
         namedTypedValue.setNullable(false);
 
+        //https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/NotEmpty.html
+
         if (namedTypedValue instanceof  CollectionParam){
             ((CollectionParam) namedTypedValue).setMinSize(1);
         } else if (namedTypedValue instanceof MapParam){
             ((MapParam) namedTypedValue).setMinSize(1);
-        } else {
+        } else if(namedTypedValue instanceof StringParam) {
+            ((StringParam) namedTypedValue).setMinSize(1);
+        }else {
             SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotEmpty");
             return false;
         }
@@ -73,6 +77,10 @@ public class JavaXConstraintHandler {
     private static boolean handleNotBlank(NamedTypedValue namedTypedValue){
         namedTypedValue.setNullable(false);
 
+        /*
+            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/NotBlank.html
+            NotBlank is applied to CharSequence
+         */
         if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setMinSize(1);
         } else {
