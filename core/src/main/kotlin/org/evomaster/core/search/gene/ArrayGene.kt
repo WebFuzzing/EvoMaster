@@ -168,7 +168,7 @@ class ArrayGene<T>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.size == getMinSizeOrDefault() || elements.isEmpty() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
+        if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             addElement(gene)
@@ -250,8 +250,7 @@ class ArrayGene<T>(
      * add an element [element] to [elements]
      */
     fun addElement(element: T){
-        if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, Cannot add more elements for the gene $name")
+        checkConstraintsForAdd()
 
         elements.add(element)
         addChild(element)
@@ -266,8 +265,7 @@ class ArrayGene<T>(
      */
     fun addElement(element: Gene) : Boolean{
         element as? T ?: return false
-        if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, cannot add more elements for the gene $name")
+        checkConstraintsForAdd()
 
         elements.add(element)
         addChild(element)
@@ -280,7 +278,18 @@ class ArrayGene<T>(
         return elements.isEmpty()
     }
 
-    fun getMaxSizeOrDefault() = maxSize?: MAX_SIZE
+    override fun getMaxSizeOrDefault() = maxSize?: MAX_SIZE
 
-    fun getMinSizeOrDefault() = minSize?: 0
+    override fun getMinSizeOrDefault() = minSize?: 0
+
+    override fun getSpecifiedMaxSize() = maxSize
+
+    override fun getSpecifiedMinSize() = minSize
+
+    override fun getGeneName() = name
+
+    override fun getSizeOfElements(filterMutable: Boolean): Int {
+        if (!filterMutable) return elements.size
+        return elements.count { it.isMutable() }
+    }
 }
