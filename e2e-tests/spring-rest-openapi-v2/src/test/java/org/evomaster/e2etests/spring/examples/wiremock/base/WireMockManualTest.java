@@ -1,7 +1,7 @@
-package org.evomaster.e2etests.spring.examples.wiremock;
+package org.evomaster.e2etests.spring.examples.wiremock.base;
 
 import com.alibaba.dcm.DnsCacheManipulator;
-import com.foo.rest.examples.spring.wiremock.WireMockController;
+import com.foo.rest.examples.spring.wiremock.base.WireMockController;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;

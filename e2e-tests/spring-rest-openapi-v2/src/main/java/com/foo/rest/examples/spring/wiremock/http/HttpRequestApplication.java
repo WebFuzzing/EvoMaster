@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.wiremock;
+package com.foo.rest.examples.spring.wiremock.http;
 
 import com.foo.rest.examples.spring.SwaggerConfiguration;
 import org.springframework.boot.SpringApplication;
@@ -8,9 +8,9 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class WireMockApplication extends SwaggerConfiguration {
+public class HttpRequestApplication extends SwaggerConfiguration {
 
     public static void main(String[] args) {
-        SpringApplication.run(WireMockApplication.class, args);
+        SpringApplication.run(HttpRequestApplication.class, args);
     }
 }
