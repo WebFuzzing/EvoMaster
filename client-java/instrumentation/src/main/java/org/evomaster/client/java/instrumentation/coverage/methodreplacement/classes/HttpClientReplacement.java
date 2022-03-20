@@ -17,5 +17,6 @@ public class HttpClientReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.TRACKER, usageFilter = UsageFilter.ONLY_SUT, replacingStatic = false)
     public void openServer(HttpClient caller, String server, int port) throws IOException {
         // TODO: Ideal place to replace server information when there is a HTTP request
+        // Ignore this for now
     }
 }

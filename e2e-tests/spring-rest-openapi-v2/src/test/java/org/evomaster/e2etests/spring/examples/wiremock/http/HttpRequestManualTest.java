@@ -7,7 +7,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import io.restassured.http.ContentType;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -27,14 +27,17 @@ public class HttpRequestManualTest extends SpringTestBase {
         wireMockServer = new WireMockServer(new WireMockConfiguration().bindAddress("127.0.0.2").port(8080).extensions(new ResponseTemplateTransformer(false)));
         wireMockServer.start();
 
-        // WireMock endpoint will respond the third value of the request path
+        /**
+         * WireMock endpoint will respond the third value of the request path
+         * as JSON response.
+         * */
         wireMockServer.stubFor(get(urlMatching("/api/echo/([a-z]*)"))
                 .atPriority(1)
                 .willReturn(
                         aResponse()
-                                .withHeader("Content-Type", "text/plain")
+                                .withHeader("Content-Type", "application/json")
                                 .withStatus(200)
-                                .withBody("{{request.path.[2]}}")
+                                .withBody("{\"message\": \"{{request.path.[2]}}\"}")
                                 .withTransformers("response-template")));
 
         // to prevent from the 404 when no matching stub below stub is added
@@ -48,16 +51,45 @@ public class HttpRequestManualTest extends SpringTestBase {
         SpringTestBase.initClass(httpRequestController);
     }
 
-    @AfterEach
-    public void shutdownServer() {
+    @AfterAll
+    public static void shutdownServer() {
         wireMockServer.stop();
         DnsCacheManipulator.clearDnsCache();
     }
 
     @Test
-    public void testExternalCall() {
+    public void testURLConnection() {
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/wiremock/external")
+                .get(baseUrlOfSut + "/api/wiremock/external/url")
+                .then()
+                .statusCode(200)
+                .body("valid", is(true));
+    }
+
+    @Test
+    public void testHttpClient() {
+        // Note: Test for Java 11 HttpClient not implemented
+
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/wiremock/external/http")
+                .then()
+                .statusCode(200)
+                .body("valid", is(true));
+    }
+
+    @Test
+    public void testApacheHttpClient() {
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/wiremock/external/apache")
+                .then()
+                .statusCode(200)
+                .body("valid", is(true));
+    }
+
+    @Test
+    public void testOkHttpClient() {
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/wiremock/external/okhttp")
                 .then()
                 .statusCode(200)
                 .body("valid", is(true));
