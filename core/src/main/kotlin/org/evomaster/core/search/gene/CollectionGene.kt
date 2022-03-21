@@ -37,4 +37,13 @@ interface CollectionGene {
      */
     fun isEmpty() : Boolean
 
+    /**
+     *
+     * a max size could be huge by default, eg, 2147483647
+     * eg, https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Size.html#max--
+     * to avoid such huge number of elements in collection
+     * @return a max size used in randomizing size
+     */
+    fun getMaxSizeUsedInRandomize() : Int
+
 }

@@ -10,6 +10,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.min
 
 
 /**
@@ -126,7 +127,7 @@ class ArrayGene<T>(
         //maybe not so important here to complicate code to enable forceNewValue
         clearElements()
         log.trace("Randomizing ArrayGene")
-        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeOrDefault())
+        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         (0 until n).forEach {
             val gene = template.copy() as T
 //            gene.parent = this
@@ -283,4 +284,8 @@ class ArrayGene<T>(
     fun getMaxSizeOrDefault() = maxSize?: MAX_SIZE
 
     fun getMinSizeOrDefault() = minSize?: 0
+
+    override fun getMaxSizeUsedInRandomize(): Int {
+        return min(MAX_SIZE, getMaxSizeOrDefault())
+    }
 }
