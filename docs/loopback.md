@@ -9,6 +9,6 @@ the following command.
 
 >> This is not persistent, each restart this will be disabled. So each 
 > time have to enable it before executing tests related to wiremock 
-> module.
+> module. By creating a launch daemon in macOS it can be made persistent.
 
 _For other operating systems, steps will be added soon once tested._

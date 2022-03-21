@@ -7,7 +7,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import io.restassured.http.ContentType;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -54,8 +54,8 @@ public class WireMockManualTest extends SpringTestBase {
         SpringTestBase.initClass(wireMockController);
     }
 
-    @AfterEach
-    public void shutdownServer() {
+    @AfterAll
+    public static void shutdownServer() {
         wireMockServer.stop();
         DnsCacheManipulator.clearDnsCache();
     }
