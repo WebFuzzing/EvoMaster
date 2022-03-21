@@ -165,11 +165,16 @@ class ImpactUtils {
                             mutatedGeneSpecification.mutatedGeneInfo().contains(it) || mutatedGeneSpecification.mutatedDbGeneInfo().contains(it)
                     }.forEach { mutatedg->
                         val id = generateGeneId(a, mutatedg)
+                        /*
+                           index for db gene might be changed if new insertions are added.
+                           then there is a need to update the index in previous based on the number of added
+                         */
+                        val indexInPrevious = index - (if (isInit && !mutatedGeneSpecification.addedExistingDataInitialization.contains(a)) mutatedGeneSpecification.addedExistingDataInitialization.size else 0)
                         val previous = findGeneById(
                                 individual=previousIndividual,
                                 id = id,
                                 actionName = a.getName(),
-                                indexOfAction = index,
+                                indexOfAction = indexInPrevious,
                                 isDb = isInit
                         )
                         list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName(), numOfMutatedGene = num))
@@ -211,7 +216,7 @@ class ImpactUtils {
             if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)).size) return null
             val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
             if (action.getName() != actionName)
-                throw IllegalArgumentException("mismatched gene mutated info")
+                throw IllegalArgumentException("mismatched gene mutated info ${action.getName()} vs. $actionName")
             return action.seeGenes().find { generateGeneId(action, it) == id }
         }
 
