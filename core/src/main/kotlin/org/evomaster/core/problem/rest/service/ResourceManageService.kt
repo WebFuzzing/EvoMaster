@@ -216,8 +216,14 @@ class ResourceManageService {
                     previousDbActions = bindWith?.flatMap { it.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>} ?: listOf())
 
                 if(!created){
-                    // a resource might be impossible to create with sql or endpoint, then use info instead of warning
-                    log.info("it is unlikely to prepare a resource for $resourceKey with SQL/REST action")
+                    /*
+                        a resource might be impossible to create with sql or endpoint,
+                        then use debug instead of warning
+                            e.g., could not find the post/put corresponding post/put
+                                could not identify related SQL table based on name
+                                could not find accessed tables
+                     */
+                    log.debug("it is unlikely to prepare a resource for $resourceKey with SQL/REST action")
                     //LoggingUtil.uniqueWarn(log, "it is unlikely to prepare a resource for $resourceKey with SQL/REST action")
                 }else{
                     call.status =  ResourceStatus.CREATED_SQL
