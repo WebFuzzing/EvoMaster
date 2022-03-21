@@ -9,6 +9,7 @@ import io.restassured.http.ContentType;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -66,7 +67,7 @@ public class HttpRequestManualTest extends SpringTestBase {
                 .body("valid", is(true));
     }
 
-    @Test
+    @Disabled
     public void testHttpClient() {
         // Note: Test for Java 11 HttpClient not implemented
 
@@ -86,7 +87,7 @@ public class HttpRequestManualTest extends SpringTestBase {
                 .body("valid", is(true));
     }
 
-    @Test
+    @Disabled
     public void testOkHttpClient() {
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/external/okhttp")
