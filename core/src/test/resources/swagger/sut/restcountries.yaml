@@ -1,0 +1,377 @@
+openapi: 3.0.0
+servers:
+  - url: 'http://localhost:8080/rest'
+info:
+  description: 'REST countries API'
+  title: REST countries API
+  version: v2.0.5
+paths:
+  /v1/all:
+    get:
+      operationId: v1All
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v1/alpha/{alphacode}:
+    get:
+      operationId: v1Alphacode
+      parameters:
+        - name: alphacode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v1/alpha:
+    get:
+      operationId: v1Alphacodes
+      parameters:
+        - name: codes
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v1/currency/{currency}:
+    get:
+      operationId: v1Currency
+      parameters:
+        - name: currency
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v1/name/{name}:
+    get:
+      operationId: v1Name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fullText
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v1/callingcode/{callingcode}:
+    get:
+      operationId: v1Callingcode
+      parameters:
+        - name: callingcode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v1/capital/{capital}:
+    get:
+      operationId: v1Capital
+      parameters:
+        - name: capital
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v1/region/{region}:
+    get:
+      operationId: v1Region
+      parameters:
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v1/subregion/{subregion}:
+    get:
+      operationId: v1Subregion
+      parameters:
+        - name: subregion
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v1/lang/{lang}:
+    get:
+      operationId: v1Lang
+      parameters:
+        - name: lang
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/all:
+    get:
+      operationId: v2All
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/alpha/{alphacode}:
+    get:
+      operationId: v2Alphacode
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: alphacode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/alpha:
+    get:
+      operationId: v2Alphacodes
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: codes
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/currency/{currency}:
+    get:
+      operationId: v2Currency
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: currency
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/name/{name}:
+    get:
+      operationId: v2Name
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fullText
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/callingcode/{callingcode}:
+    get:
+      operationId: v2Callingcode
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: callingcode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/capital/{capital}:
+    get:
+      operationId: v2Capital
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: capital
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/region/{region}:
+    get:
+      operationId: v2Region
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/subregion/{subregion}:
+    get:
+      operationId: v2Subregion
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: subregion
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/lang/{lang}:
+    get:
+      operationId: v2Lang
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: lang
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/demonym/{demonym}:
+    get:
+      operationId: v2Demonym
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: demonym
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+  /v2/regionalbloc/{regionalbloc}:
+    get:
+      operationId: v2Regionalbloc
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: regionalbloc
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+        default:
+          description: Other responses
+components:
+  schemas: { }

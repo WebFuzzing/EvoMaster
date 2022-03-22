@@ -413,14 +413,14 @@ class TestSuiteWriter {
                 lines.add("private static final SutHandler $controller = new $controllerName($executable);")
                 lines.add("private static String $baseUrlOfSut;")
             } else {
-                lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
+                lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
-                lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\"")
+                lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
             }
         } else if (config.outputFormat.isJavaScript()) {
 
@@ -428,7 +428,7 @@ class TestSuiteWriter {
                 lines.add("const $controller = new $controllerName();")
                 lines.add("let $baseUrlOfSut;")
             } else {
-                lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
+                lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
         } else if (config.outputFormat.isCsharp()) {
             lines.add("private static readonly HttpClient Client = new HttpClient ();")

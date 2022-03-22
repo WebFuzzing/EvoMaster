@@ -30,7 +30,7 @@ abstract class HttpWsCallResult : ActionResult {
      * object with info
      */
     fun failedCall(): Boolean{
-        return getInfiniteLoop() || getTimedout()
+        return getInfiniteLoop() || getTimedout() || getTcpProblem()
     }
 
 

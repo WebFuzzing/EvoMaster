@@ -23,10 +23,7 @@ import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.service.ExtraHeuristicsLogger
-import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.search.service.IdMapper
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -56,6 +53,9 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
 
     @Inject
     protected lateinit var writer: TestSuiteWriter
+
+    @Inject
+    protected lateinit var sampler: Sampler<T>
 
     lateinit var infoDto: SutInfoDto
 

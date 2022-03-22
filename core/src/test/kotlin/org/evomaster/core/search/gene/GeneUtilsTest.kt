@@ -9,6 +9,7 @@ import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.*
 
@@ -263,15 +264,17 @@ internal class GeneUtilsTest {
         assertTrue(pettypes.parameters[0].gene is ObjectGene)
         val objPetType = pettypes.parameters[0].gene as ObjectGene
         assertEquals(2, objPetType.fields.size)
-        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "id" })
-        assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "name" })
+
+         assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "id" })
+         assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "name" })
+
 
         (objPetType.fields[0] as BooleanGene).value = false
-        (objPetType.fields[1] as BooleanGene).value = false
-
+         (objPetType.fields[1] as BooleanGene).value = false
         assertFalse(objPetType.fields.any{ it is BooleanGene && it.value})
         GeneUtils.repairBooleanSelection(objPetType)
         assertTrue(objPetType.fields.any{ it is BooleanGene && it.value})
+
     }
 
 
@@ -349,5 +352,4 @@ internal class GeneUtilsTest {
 
         assertEquals("{foo{...onA{a1}b1,b2}}", res)//with the name foo and without "...on" for the object B
     }
-
 }

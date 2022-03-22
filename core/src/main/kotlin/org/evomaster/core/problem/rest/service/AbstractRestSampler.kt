@@ -33,7 +33,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
-    protected lateinit var swagger: OpenAPI
+    lateinit var swagger: OpenAPI
+        protected set
 
     @PostConstruct
     open fun initialize() {
