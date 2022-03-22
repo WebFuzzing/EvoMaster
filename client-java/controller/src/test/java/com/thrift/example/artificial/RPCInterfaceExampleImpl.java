@@ -206,4 +206,15 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
         return dto;
     }
+
+    @Override
+    public void handleException(String type) throws Exception {
+        if (type == null)
+            throw new NullPointerException("null");
+        if (type.equals("state"))
+            throw new IllegalStateException(type);
+        if (type.equals("argument"))
+            throw new IllegalArgumentException(type);
+        throw new RuntimeException(type);
+    }
 }
