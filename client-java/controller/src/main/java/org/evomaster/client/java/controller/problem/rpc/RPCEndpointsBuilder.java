@@ -160,6 +160,9 @@ public class RPCEndpointsBuilder {
                         EndpointSchema endpointSchema = build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos, notNullAnnotations);
                         endpoints.add(endpointSchema);
                     }catch (RuntimeException exception){
+                        /*
+                            TODO might send such log to core in order to better identify problems which is not handled yet
+                         */
                         SimpleLogger.error("EM Driver Error: fail to handle the endpoint schema "+m.getName()+" with the error msg:"+exception.getMessage());
                     }
                 } else {
