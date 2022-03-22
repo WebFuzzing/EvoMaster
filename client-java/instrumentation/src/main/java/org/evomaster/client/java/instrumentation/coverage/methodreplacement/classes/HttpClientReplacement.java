@@ -13,6 +13,9 @@ import java.net.URL;
 
 
 public class HttpClientReplacement implements MethodReplacementClass {
+
+    // Note: Ignore this
+
     @Override
     public Class<?> getTargetClass() {
         return HttpClient.class;
@@ -50,7 +53,7 @@ public class HttpClientReplacement implements MethodReplacementClass {
 //    usageFilter = UsageFilter.ONLY_SUT,
     replacingStatic = false)
     public static void openServer(HttpClient caller, String server, int port) throws IOException {
-        System.out.println(server + " " +  port);
+        // TODO
     }
 
 }

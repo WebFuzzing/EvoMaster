@@ -21,7 +21,7 @@ public class ReplacementList {
                 new DoubleClassReplacement(),
                 new FloatClassReplacement(),
                 new GsonClassReplacement(),
-                new HttpClientReplacement(),
+//                new HttpClientReplacement(),
                 new Http11ProcessorReplacementClass(),
                 new HttpServletRequestClassReplacement(),
                 new IntegerClassReplacement(),
