@@ -490,7 +490,7 @@ public class RPCEndpointsBuilder {
                     namedValue = new DateParam(name, accessibleSchema);
                 else
                     throw new RuntimeException("NOT support "+clazz.getName()+" date type in java yet");
-            } else if (Exception.class.isAssignableFrom(clazz)){
+            } else if (Exception.class.isAssignableFrom(clazz) && clazz.getName().startsWith("java")){
                 // note that here we only extract class name and message
                 StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage"));
                 ObjectType exceptionType = new ObjectType(clazz.getSimpleName(), clazz.getName(), Collections.singletonList(msgField), clazz, genericTypes);
