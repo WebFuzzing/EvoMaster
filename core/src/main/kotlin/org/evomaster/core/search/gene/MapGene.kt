@@ -306,11 +306,11 @@ class MapGene<K, V>(
         return elements.isEmpty()
     }
 
-    fun getMaxSizeOrDefault() = maxSize?: ArrayGene.MAX_SIZE
+    override fun getMaxSizeOrDefault() = maxSize?: getDefaultMaxSize()
 
-    fun getMinSizeOrDefault() = minSize?: 0
+    override fun getMinSizeOrDefault() = minSize?: 0
 
-    override fun getMaxSizeUsedInRandomize(): Int {
-        return min(ArrayGene.MAX_SIZE, getMaxSizeOrDefault())
-    }
+
+    override fun getDefaultMaxSize() = (if (getMinSizeOrDefault() >= MAX_SIZE) (getMinSizeOrDefault() + MAX_SIZE) else MAX_SIZE)
+
 }

@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.impact.impactinfocollection.CollectionImpact
 import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import kotlin.math.min
 
 /**
  * created by manzh on 2020-06-06
@@ -39,11 +40,31 @@ interface CollectionGene {
 
     /**
      *
-     * a max size could be huge by default, eg, 2147483647
-     * eg, https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Size.html#max--
-     * to avoid such huge number of elements in collection
+     * a max size could be huge by default in the schema, eg, 2147483647
+     * https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Size.html#max--
+     * to avoid such huge number of elements in collection used in further mutation or randomization
      * @return a max size used in randomizing size
      */
-    fun getMaxSizeUsedInRandomize() : Int
+    fun getMaxSizeUsedInRandomize() : Int {
+        return min(getDefaultMaxSize(), getMaxSizeOrDefault())
+    }
+
+    /**
+     * @return the max size configured in the schema or the default one in evomaster
+     */
+    fun getMaxSizeOrDefault() : Int
+
+    /**
+     * @return the min size configured in the schema or the default one in evomaster
+     */
+    fun getMinSizeOrDefault() : Int
+
+    /**
+     * the default MaxSize here is set in evomaster
+     * for handling mutation and randomizing values (avoid handling huge amount elements)
+     *
+     * but the default maxsize might be modified based on the specified minSize
+     */
+    fun getDefaultMaxSize() : Int
 
 }
