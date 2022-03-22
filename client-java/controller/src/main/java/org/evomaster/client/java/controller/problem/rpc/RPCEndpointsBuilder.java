@@ -155,29 +155,39 @@ public class RPCEndpointsBuilder {
             InterfaceSchema schema = new InterfaceSchema(interfaceName, endpoints, getClientClass(client) , rpcType, skippedEndpoints, authEndpoints, endpointsForAuth);
 
             for (Method m : interfaze.getDeclaredMethods()) {
-                if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation))
-                    endpoints.add(build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos, notNullAnnotations));
-                else {
+                if (filterMethod(m, skipEndpointsByName, skipEndpointsByAnnotation, involveEndpointsByName, involveEndpointsByAnnotation)){
+                    try{
+                        EndpointSchema endpointSchema = build(schema, m, rpcType, authenticationDtoList, customizedRequestValueDtos, notNullAnnotations);
+                        endpoints.add(endpointSchema);
+                    }catch (RuntimeException exception){
+                        SimpleLogger.error("EM Driver Error: fail to handle the endpoint schema "+m.getName()+" with the error msg:"+exception.getMessage());
+                    }
+                } else {
                     skippedEndpoints.add(m.getName());
                 }
 
                 List<AuthenticationDto> auths = getAuthEndpointInInterface(authenticationDtoList, interfaceName, m);
                 if (auths != null && !auths.isEmpty()){
-                    // handle endpoint which is for auth setup
-                    EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos,notNullAnnotations);
-                    endpointsForAuth.add(authEndpoint);
-                    for (AuthenticationDto auth: auths){
-                        EndpointSchema copy = authEndpoint.copyStructure();
-                        if (auth.jsonAuthEndpoint == null){
-                            throw new IllegalArgumentException("Driver Config Error: now we only support auth info specified with JsonAuthRPCEndpointDto");
-                        }
-                        int index = authenticationDtoList.indexOf(auth);
+                    try{
+                        // handle endpoint which is for auth setup
+                        EndpointSchema authEndpoint = build(schema, m, rpcType, null, customizedRequestValueDtos,notNullAnnotations);
+                        endpointsForAuth.add(authEndpoint);
 
-                        // set value based on specified info
-                        if (copy.getRequestParams().size() != auth.jsonAuthEndpoint.jsonPayloads.size())
-                            throw new IllegalArgumentException("Driver Config Error: mismatched size of jsonPayloads ("+auth.jsonAuthEndpoint.classNames.size()+") with real endpoint ("+authEndpoint.getRequestParams().size()+").");
-                        setAuthEndpoint(copy, auth.jsonAuthEndpoint);
-                        authEndpoints.put(index, copy);
+                        for (AuthenticationDto auth: auths){
+                            EndpointSchema copy = authEndpoint.copyStructure();
+                            if (auth.jsonAuthEndpoint == null){
+                                throw new IllegalArgumentException("Driver Config Error: now we only support auth info specified with JsonAuthRPCEndpointDto");
+                            }
+                            int index = authenticationDtoList.indexOf(auth);
+
+                            // set value based on specified info
+                            if (copy.getRequestParams().size() != auth.jsonAuthEndpoint.jsonPayloads.size())
+                                throw new IllegalArgumentException("Driver Config Error: mismatched size of jsonPayloads ("+auth.jsonAuthEndpoint.classNames.size()+") with real endpoint ("+authEndpoint.getRequestParams().size()+").");
+                            setAuthEndpoint(copy, auth.jsonAuthEndpoint);
+                            authEndpoints.put(index, copy);
+                        }
+                    }catch (RuntimeException exception){
+                        SimpleLogger.error("EM Driver Error: fail to handle the authEndpoint schema "+m.getName()+" with the error msg:"+exception.getMessage());
                     }
                 }
             }
@@ -480,7 +490,12 @@ public class RPCEndpointsBuilder {
                     namedValue = new DateParam(name, accessibleSchema);
                 else
                     throw new RuntimeException("NOT support "+clazz.getName()+" date type in java yet");
-            }else {
+            } else if (Exception.class.isAssignableFrom(clazz)){
+                // note that here we only extract class name and message
+                StringParam msgField = new StringParam("message", new AccessibleSchema(false, null, "getMessage"));
+                ObjectType exceptionType = new ObjectType(clazz.getSimpleName(), clazz.getName(), Collections.singletonList(msgField), clazz, genericTypes);
+                namedValue = new ObjectParam(name, exceptionType, accessibleSchema);
+            } else {
                 if (clazz.getName().startsWith("java")){
                     throw new RuntimeException("NOT handle "+clazz.getName()+" class in java yet");
                 }
