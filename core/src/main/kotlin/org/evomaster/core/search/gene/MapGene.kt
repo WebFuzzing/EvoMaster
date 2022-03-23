@@ -10,6 +10,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.min
 
 
 /**
@@ -89,7 +90,7 @@ class MapGene<K, V>(
 
         elements.clear()
         log.trace("Randomizing MapGene")
-        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeOrDefault())
+        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         (0 until n).forEach {
             val gene = addRandomElement(randomness, false)
             // if the key of gene exists, the value would be replaced with the latest one
@@ -303,10 +304,6 @@ class MapGene<K, V>(
         return elements.isEmpty()
     }
 
-    override fun getMaxSizeOrDefault() = maxSize?: ArrayGene.MAX_SIZE
-
-    override fun getMinSizeOrDefault() = minSize?: 0
-
     override fun getSpecifiedMaxSize() = maxSize
 
     override fun getSpecifiedMinSize() = minSize
@@ -317,4 +314,12 @@ class MapGene<K, V>(
         if (!filterMutable) return elements.size
         return elements.count { it.isMutable() }
     }
+
+    override fun getMaxSizeOrDefault() = maxSize?: getDefaultMaxSize()
+
+    override fun getMinSizeOrDefault() = minSize?: 0
+
+
+    override fun getDefaultMaxSize() = (if (getMinSizeOrDefault() >= MAX_SIZE) (getMinSizeOrDefault() + MAX_SIZE) else MAX_SIZE)
+
 }

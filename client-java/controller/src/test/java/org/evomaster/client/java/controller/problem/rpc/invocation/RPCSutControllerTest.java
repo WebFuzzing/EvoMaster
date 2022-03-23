@@ -55,7 +55,6 @@ public class RPCSutControllerTest {
         rpcController.stopSut();
     }
 
-
     @Test
     public void testTypes(){
         List<String> types = interfaceSchemas.get(0).types.stream().map(t-> t.type.fullTypeNameWithGenericType).collect(Collectors.toList());
@@ -78,6 +77,42 @@ public class RPCSutControllerTest {
         assertTrue(types.contains(NestedGenericDto.class.getName()+"<"+String.class.getName()+">"));
         assertTrue(types.contains(GenericDto.class.getName()+"<"+String.class.getName()+", "+Integer.class.getName()+">"));
 
+    }
+
+    @Test
+    public void testJavaException(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("handleException")).collect(Collectors.toList());
+
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+
+        ParamDto param = dto.requestParams.get(0);
+        param.stringValue = null;
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(NullPointerException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("null", responseDto.exceptionInfoDto.exceptionMessage);
+
+        param.stringValue = "state";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(IllegalStateException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("state", responseDto.exceptionInfoDto.exceptionMessage);
+
+        param.stringValue = "argument";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(IllegalArgumentException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("argument", responseDto.exceptionInfoDto.exceptionMessage);
+
+        param.stringValue = "foo";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(RuntimeException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("foo", responseDto.exceptionInfoDto.exceptionMessage);
     }
 
     @Test

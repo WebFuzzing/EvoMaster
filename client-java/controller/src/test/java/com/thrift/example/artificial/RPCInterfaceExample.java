@@ -62,4 +62,6 @@ public interface RPCInterfaceExample {
     GenericDto<StringChildDto, String> handleGenericObjectString(GenericDto<StringChildDto, String> dto);
 
     NestedGenericDto<String> handleNestedGenericString(NestedGenericDto<String> dto);
+
+    void handleException(String type) throws Exception;
 }
