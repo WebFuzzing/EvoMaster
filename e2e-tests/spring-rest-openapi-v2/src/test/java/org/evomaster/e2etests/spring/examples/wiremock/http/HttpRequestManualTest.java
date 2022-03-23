@@ -78,7 +78,7 @@ public class HttpRequestManualTest extends SpringTestBase {
                 .body("valid", is(true));
     }
 
-    @Test
+    @Disabled
     public void testApacheHttpClient() {
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/external/apache")

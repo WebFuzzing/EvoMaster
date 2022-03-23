@@ -28,6 +28,10 @@ public class HttpRequestRest {
             produces = MediaType.APPLICATION_JSON
     )
     public StringsResponseDto usingURLConnection() {
+        /**
+         * proxyprint, catwatch, and caw all are using HttpURLConnection as the base library
+         * to call external services via HTTP.
+         * */
         StringsResponseDto stringsResponseDto = new StringsResponseDto();
 
         try {
