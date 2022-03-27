@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,28 @@ public class RPCSutControllerTest {
         assertTrue(types.contains(NestedGenericDto.class.getName()+"<"+String.class.getName()+">"));
         assertTrue(types.contains(GenericDto.class.getName()+"<"+String.class.getName()+", "+Integer.class.getName()+">"));
 
+    }
+
+    @Test
+    public void testEnumWithConstructor(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("handleEnumWithConstructor")).collect(Collectors.toList());
+
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+
+        ParamDto param = dto.requestParams.get(0);
+        param.stringValue = "{}";
+        param.innerContent.get(0).stringValue="0";
+        rpcController.executeAction(dto, responseDto);
+        assertNull(responseDto.exceptionInfoDto);
+        assertEquals(9, responseDto.testScript.size());
     }
 
     @Test

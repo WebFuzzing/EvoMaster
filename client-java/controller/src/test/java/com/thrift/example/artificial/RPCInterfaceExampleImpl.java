@@ -217,4 +217,10 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
             throw new IllegalArgumentException(type);
         throw new RuntimeException(type);
     }
+
+    @Override
+    public String handleEnumWithConstructor(ObjectEnum arg1) {
+        if (arg1 == null || arg1.enumWithConstructor == null) return null;
+        return arg1.enumWithConstructor.getDesc();
+    }
 }

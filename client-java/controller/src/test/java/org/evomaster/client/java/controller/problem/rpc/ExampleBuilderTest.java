@@ -34,7 +34,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 27;
+        return 28;
     }
 
     @Override
@@ -117,6 +117,27 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                     }};
                 }}
         );
+    }
+
+
+    @Test
+    public void testEnumWithConstructor(){
+        EndpointSchema endpoint = getOneEndpoint("handleEnumWithConstructor");
+        assertNotNull(endpoint.getResponse());
+        assertNotNull(endpoint.getRequestParams());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+
+        ObjectEnum objectEnum = new ObjectEnum(){{
+            enumWithConstructor = EnumWithConstructor.FIRST;
+        }};
+
+        p1.setValueBasedOnInstance(objectEnum);
+        List<String> testScript = p1.newInstanceWithJava(0);
+
+        testScript.forEach(System.out::println);
     }
 
     @Test
