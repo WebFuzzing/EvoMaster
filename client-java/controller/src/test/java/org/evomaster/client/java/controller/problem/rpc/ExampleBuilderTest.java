@@ -137,7 +137,12 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         p1.setValueBasedOnInstance(objectEnum);
         List<String> testScript = p1.newInstanceWithJava(0);
 
-        testScript.forEach(System.out::println);
+        assertEquals(5, testScript.size());
+        assertEquals("com.thrift.example.artificial.ObjectEnum arg0 = null;", testScript.get(0));
+        assertEquals("{", testScript.get(1));
+        assertEquals(" arg0 = new com.thrift.example.artificial.ObjectEnum();", testScript.get(2));
+        assertEquals(" arg0.enumWithConstructor = com.thrift.example.artificial.EnumWithConstructor.FIRST;", testScript.get(3));
+        assertEquals("}", testScript.get(4));
     }
 
     @Test

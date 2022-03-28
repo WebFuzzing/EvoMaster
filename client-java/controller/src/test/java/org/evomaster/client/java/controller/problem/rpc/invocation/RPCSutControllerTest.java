@@ -100,6 +100,8 @@ public class RPCSutControllerTest {
         rpcController.executeAction(dto, responseDto);
         assertNull(responseDto.exceptionInfoDto);
         assertEquals(9, responseDto.testScript.size());
+        assertEquals(1, responseDto.assertionScript.size());
+        assertEquals("first", responseDto.rpcResponse.stringValue);
     }
 
     @Test

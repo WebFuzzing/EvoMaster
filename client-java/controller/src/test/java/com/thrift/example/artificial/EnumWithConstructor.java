@@ -33,4 +33,13 @@ public enum EnumWithConstructor {
     public List<EnumKind> getKindList() {
         return kindList;
     }
+
+    @Override
+    public String toString() {
+        return "EnumWithConstructor{" +
+                "code=" + code +
+                ", desc='" + desc + '\'' +
+                ", kindList=" + kindList +
+                '}';
+    }
 }

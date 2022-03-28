@@ -434,7 +434,7 @@ public class RPCEndpointsBuilder {
                 StringType stringType = new StringType();
                 namedValue = new StringParam(name, stringType, accessibleSchema);
             } else if (clazz.isEnum()) {
-                String [] items = Arrays.stream(clazz.getEnumConstants()).map(Object::toString).toArray(String[]::new);
+                String [] items = Arrays.stream(clazz.getEnumConstants()).map(e-> getNameEnumConstant(e)).toArray(String[]::new);
                 EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items, clazz);
                 EnumParam param = new EnumParam(name, enumType, accessibleSchema);
                 //register this type in the schema
@@ -592,6 +592,16 @@ public class RPCEndpointsBuilder {
         }
 
         return namedValue;
+    }
+
+    private static String getNameEnumConstant(Object object) {
+        try {
+            Method name = object.getClass().getMethod("name");
+            name.setAccessible(true);
+            return (String) name.invoke(object);
+        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            return object.toString();
+        }
     }
 
     private static void handleGenericSuperclass(Class clazz, Map<TypeVariable, Type> map){
