@@ -2,21 +2,19 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.service.mutator.StructureMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class RestStructureMutator : StructureMutator() {
+class RestStructureMutator : ApiWsStructureMutator() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestStructureMutator::class.java)
@@ -27,88 +25,12 @@ class RestStructureMutator : StructureMutator() {
 
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-
-        if (!config.shouldGenerateSqlData()) {
-            return
-        }
-
-        val ind = individual.individual as? RestIndividual
-                ?: throw IllegalArgumentException("Invalid individual type")
-
-        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
-                //TODO likely to remove/change once we ll support VIEWs
-                .filter { sampler.canInsertInto(it.key) }
-
-        if (fw.isEmpty()) {
-            return
-        }
-
-        if(ind.dbInitialization.isEmpty()
-                || ! ind.dbInitialization.any { it.representExistingData }) {
-            //add existing data only once
-            ind.dbInitialization.addAll(0, sampler.existingSqlData)
-            mutatedGenes?.addedInitializationGenes?.addAll( sampler.existingSqlData.flatMap { it.seeGenes() })
-        }
-
-        val max = config.maxSqlInitActionsPerMissingData
-
-        var missing = findMissing(fw, ind)
-
-        while (!missing.isEmpty()) {
-
-            val first = missing.entries.first()
-
-            val k = randomness.nextInt(1, max)
-
-            (0 until k).forEach {
-                val insertions = sampler.sampleSqlInsertion(first.key, first.value)
-                /*
-                    New action should be before existing one, but still after the
-                    initializing ones
-                 */
-                val position = sampler.existingSqlData.size
-                ind.dbInitialization.addAll(position, insertions)
-                mutatedGenes?.addedInitializationGenes?.addAll(insertions.flatMap { it.seeGenes() })
-            }
-
-            /*
-                When we miss A and B, and we add for A, it can still happen that
-                then B is covered as well. For example, if A has a non-null
-                foreign key to B, then generating an action for A would also
-                imply generating an action for B as well.
-                So, we need to recompute "missing" each time
-             */
-            missing = findMissing(fw, ind)
-        }
-
-        if (config.generateSqlDataWithDSE) {
-            //TODO DSE could be plugged in here
-        }
-
-        ind.repairInitializationActions(randomness)
-    }
-
-    private fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {
-
-        return fw.filter { e ->
-            //shouldn't have already an action adding such SQL data
-            ind.dbInitialization
-                    .filter { ! it.representExistingData }
-                    .none { a ->
-                a.table.name.equals(e.key, ignoreCase = true) && e.value.all { c ->
-                    // either the selected column is already in existing action
-                    (c != "*" && a.selectedColumns.any { x ->
-                        x.name.equals(c, ignoreCase = true)
-                    }) // or we want all, and existing action has all columns
-                            || (c == "*" && a.table.columns.map { it.name.toLowerCase() }
-                            .containsAll(a.selectedColumns.map { it.name.toLowerCase() }))
-                }
-            }
-        }
+        addInitializingActions(individual, mutatedGenes, sampler)
     }
 
 
-    override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
+
+    override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
         if (individual !is RestIndividual) {
             throw IllegalArgumentException("Invalid individual type")
         }
@@ -118,6 +40,9 @@ class RestStructureMutator : StructureMutator() {
             Or should that be better to handle with DSE?
          */
 
+        if (log.isTraceEnabled){
+            log.trace("Structure will be mutated, yes? {} and the type is {}", individual.canMutateStructure(), individual.sampleType)
+        }
 
         if (!individual.canMutateStructure()) {
             return // nothing to do
@@ -181,12 +106,16 @@ class RestStructureMutator : StructureMutator() {
             val chosen = randomness.choose(indices)
 
             //save mutated genes
-            val removedActions = ind.getResourceCalls()[chosen].actions
-            assert(removedActions.size == 1)
-            mutatedGenes?.removedGene?.addAll(removedActions.first().seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            val removedActions = ind.getResourceCalls()[chosen].seeActions(ActionFilter.NO_SQL)
+            Lazy.assert { removedActions.size == 1 }
 
-            //ind.seeActions().removeAt(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                removedActions.first(),
+                chosen,
+                true,
+                chosen
+            )
+
             ind.removeResourceCall(chosen)
 
         } else {
@@ -199,8 +128,12 @@ class RestStructureMutator : StructureMutator() {
             val post = sampler.createActionFor(postTemplate, ind.seeActions().last() as RestCallAction)
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(post.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(idx)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                post,
+                idx,
+                false,
+                idx
+            )
 
             /*
                 where it is inserted should not matter, as long as
@@ -215,14 +148,19 @@ class RestStructureMutator : StructureMutator() {
     private fun mutateForRandomType(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
         if (ind.seeActions().size == 1) {
-            val sampledAction = sampler.sampleRandomAction(0.05)
+            val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
 
+            val pos = ind.seeActions().size
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(ind.seeActions().size)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                sampledAction,
+                pos,
+                false,
+                pos
+            )
 
             //ind.seeActions().add(sampledAction)
-            ind.addResourceCall(RestResourceCalls(actions = mutableListOf(sampledAction)))
+            ind.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(sampledAction)))
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             return
@@ -235,10 +173,14 @@ class RestStructureMutator : StructureMutator() {
             val chosen = randomness.nextInt(ind.seeActions().size)
 
             //save mutated genes
-            val removedActions = ind.getResourceCalls()[chosen].actions
-            assert(removedActions.size == 1)
-            mutatedGenes?.removedGene?.addAll(removedActions.first().seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            val removedActions = ind.getResourceCalls()[chosen].seeActions(ActionFilter.NO_SQL)
+            Lazy.assert { removedActions.size == 1 }
+            mutatedGenes?.addRemovedOrAddedByAction(
+                removedActions.first(),
+                chosen,
+                true,
+                chosen
+            )
 
             //ind.seeActions().removeAt(chosen)
             ind.removeResourceCall(chosen)
@@ -247,20 +189,28 @@ class RestStructureMutator : StructureMutator() {
 
             //add one at random
             log.trace("Adding action to test")
-            val sampledAction = sampler.sampleRandomAction(0.05)
+            val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
             val chosen = randomness.nextInt(ind.seeActions().size)
             //ind.seeActions().add(chosen, sampledAction)
             ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction)))
 
             //save mutated genes
-            mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
-            mutatedGenes?.mutatedPosition?.add(chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(
+                sampledAction,
+                chosen,
+                false,
+                chosen
+            )
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             // BMR: Perhaps we could have a function for individual.addAction(action) which would cover both
             // adding the action and the associated objects and help encapsulate the individual more?
         }
 
+    }
+
+    override fun getSqlInsertBuilder(): SqlInsertBuilder? {
+        return sampler.sqlInsertBuilder
     }
 
 }

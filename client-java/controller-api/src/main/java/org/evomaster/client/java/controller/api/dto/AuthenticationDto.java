@@ -26,6 +26,25 @@ public class AuthenticationDto {
      */
     public CookieLoginDto cookieLogin;
 
+    /**
+     * If the login is based on tokens, retrieved via JSON messages,
+     * specify how to do it
+     */
+    public JsonTokenPostLoginDto jsonTokenPostLogin;
+
+    /**
+     * if the auth is processed based on RPC endpoints,
+     * specify what info are required to execute the endpoint
+     */
+    public JsonAuthRPCEndpointDto jsonAuthEndpoint;
+
+    /**
+     * if the auth is processed with handleLocalAuthenticationSetup
+     * specify what info is as input to setup auth with handleLocalAuthenticationSetup
+     */
+    public LocalAuthenticationDto localAuthSetup;
+
+
     public AuthenticationDto() {
     }
 

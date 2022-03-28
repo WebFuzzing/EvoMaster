@@ -4,6 +4,9 @@ import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.remote.SutProblemException
 import java.net.ConnectException
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Paths
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -13,23 +16,51 @@ import javax.ws.rs.core.Response
  */
 object OpenApiAccess {
 
-    fun getOpenAPI(openApiUrl: String): OpenAPI {
+    fun getOpenApi(schemaText: String): OpenAPI {
+        val parseResults = try {
+            OpenAPIParser().readContents(schemaText, null, null)
+        } catch (e: Exception) {
+            throw SutProblemException("Failed to parse OpenApi schema: $e")
+        }
 
+        return parseResults.openAPI
+                ?: throw SutProblemException("Failed to parse OpenApi schema: " + parseResults.messages.joinToString("\n"))
+    }
+
+    fun getOpenAPIFromURL(openApiUrl: String): OpenAPI {
+
+        //could be either JSON or YAML
+       val data = if(openApiUrl.startsWith("http", true)){
+           readFromRemoteServer(openApiUrl)
+       } else {
+           readFromDisk(openApiUrl)
+       }
+
+        return getOpenApi(data)
+    }
+
+    private fun readFromRemoteServer(openApiUrl: String) : String{
         val response = connectToServer(openApiUrl, 10)
 
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
-            throw SutProblemException("Cannot retrieve Swagger JSON data from $openApiUrl , status=${response.status}")
+            throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiUrl , status=${response.status}")
         }
 
-        val json = response.readEntity(String::class.java)
+        return response.readEntity(String::class.java)
+    }
 
-        val schema = try {
-            OpenAPIParser().readContents(json, null, null).openAPI
-        } catch (e: Exception) {
-            throw SutProblemException("Failed to parse OpenApi JSON data: $e")
+    private fun readFromDisk(openApiUrl: String) : String {
+        val fileScheme = "file:"
+        val path = if (openApiUrl.startsWith(fileScheme, true)) {
+            Paths.get(URI.create(openApiUrl))
+        } else {
+            Paths.get(openApiUrl)
+        }
+        if (!Files.exists(path)) {
+            throw SutProblemException("Cannot find OpenAPI schema at file location: $openApiUrl")
         }
 
-        return schema
+        return path.toFile().readText()
     }
 
     private fun connectToServer(openApiUrl: String, attempts: Int): Response {
@@ -49,11 +80,11 @@ object OpenApiAccess {
                     */
                     Thread.sleep(1_000)
                 } else {
-                    throw IllegalStateException("Failed to connect to $openApiUrl: ${e.message}")
+                    throw SutProblemException("Failed to connect to $openApiUrl: ${e.message}")
                 }
             }
         }
 
-        throw IllegalStateException("Failed to connect to $openApiUrl")
+        throw SutProblemException("Check if schema's URL is correct. Failed to connect to $openApiUrl")
     }
 }

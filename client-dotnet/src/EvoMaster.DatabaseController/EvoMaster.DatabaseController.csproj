@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+<Import Project="../../common.props" />
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>EvoMaster.DatabaseController</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EvoMaster.Client.Util\EvoMaster.Client.Util.csproj" />
+    <ProjectReference Include="..\EvoMaster.DatabaseController.Abstractions\EvoMaster.DatabaseController.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotNet.Testcontainers" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="2.1.2" />
+    <PackageReference Include="Npgsql" Version="5.0.0" />
+  </ItemGroup>
+
+  <Target Name="PublishNuGetLocally" AfterTargets="Build">
+    <Exec Command="dotnet pack $(ProjectPath) -c $(ConfigurationName)" />
+
+    <Exec Command="dotnet nuget delete --source ~/.nuget/packages $(PackageId) $(PackageVersion) --non-interactive" ContinueOnError="WarnAndContinue" Condition="$(OS.Contains('Unix'))" />
+    <Exec Command="dotnet nuget push --source ~/.nuget/packages $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" Condition="$(OS.Contains('Unix'))" />
+
+    <Exec Command="dotnet nuget delete --source $(UserProfile)\.nuget\packages $(PackageId) $(PackageVersion) --non-interactive" ContinueOnError="WarnAndContinue" Condition="$(OS.Contains('Windows'))" />
+    <Exec Command="dotnet nuget push --source $(UserProfile)\.nuget\packages $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" Condition="$(OS.Contains('Windows'))" />
+  </Target>
+  
+</Project>

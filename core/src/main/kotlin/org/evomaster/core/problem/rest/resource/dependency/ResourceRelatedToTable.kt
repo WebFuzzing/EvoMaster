@@ -3,8 +3,8 @@ package org.evomaster.core.problem.rest.resource.dependency
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.core.database.SQLKey
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
+import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.util.inference.model.MatchedInfo
 
 /**
  * related info between resource and tables
@@ -83,8 +83,9 @@ class ResourceRelatedToTable(val key: String) {
     }
 
     fun getConfirmedDirectTables() : Set<String>{
-        return derivedMap.keys.filter { t-> confirmedSet[t] != null && confirmedSet[t]!! }.toHashSet()
+        return derivedMap.keys.filter { t-> confirmedSet.any { it.key.equals(t, ignoreCase = true) && it.value } }.toHashSet()
     }
+
 
     fun findBestTableForParam(tables: Set<String>, simpleP2Table : SimpleParamRelatedToTable, onlyConfirmedColumn : Boolean = false) : Pair<Set<String>, Double>? {
         val map = simpleP2Table.derivedMap.filter { tables.any { t-> t.equals(it.key, ignoreCase = true) } }
@@ -121,7 +122,7 @@ class ResourceRelatedToTable(val key: String) {
         fmap.forEach { t, u ->
             val related = u.derivedMap.filter { m-> tables.any { t-> t.equals(m.key, ignoreCase = true) }}
             if (related.isNotEmpty()){
-                val best = related.map { it.value.similarity }.max()!!
+                val best = related.map { it.value.similarity }.maxOrNull()!!
                 result.put(t, Pair(related.filter { it.value.similarity == best }.keys, best))
             }
         }
@@ -231,7 +232,7 @@ abstract class ParamRelatedToTable (
 
     val confirmedColumn : MutableSet<String> = mutableSetOf()
 
-    open fun getRelatedColumn(table: String) : Set<String>?  = derivedMap[table].run { if (this == null) null else setOf(this.targetMatched)  }
+    open fun getRelatedColumn(table: String) : Set<String>?  = derivedMap.filterKeys { it.equals(table, ignoreCase = true) }.values.firstOrNull().run { if (this == null) null else setOf(this.targetMatched)  }
 }
 
 /**

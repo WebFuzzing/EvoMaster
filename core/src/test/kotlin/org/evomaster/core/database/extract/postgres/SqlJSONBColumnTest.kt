@@ -99,9 +99,10 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
         val jsonString = jsonDataValue.value
 
-        assertTrue(jsonString.contains("\"stringValue\": \"Hello World\""))
-        assertTrue(jsonString.contains("\"booleanValue\": false"))
-        assertTrue(jsonString.contains("\"integerValue\": 0"))
+        assertNotNull(jsonString)
+        assertTrue(jsonString!!.contains("\"stringValue\": \"Hello World\""))
+        assertTrue(jsonString!!.contains("\"booleanValue\": false"))
+        assertTrue(jsonString!!.contains("\"integerValue\": 0"))
 
     }
 
@@ -145,7 +146,8 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
         val jsonString = jsonDataValue.value
 
-        assertTrue(jsonString.contains("\"doubleValue\": %s".format(Math.PI)))
+        assertNotNull(jsonString)
+        assertTrue(jsonString!!.contains("\"doubleValue\": %s".format(Math.PI)))
 
     }
 
@@ -167,8 +169,8 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
         assertTrue(genes[1] is SqlJSONGene)
 
         val arrayGene = ArrayGene("arrayValue", template = IntegerGene("item", value = 0))
-        arrayGene.elements.add(IntegerGene("value1", 1))
-        arrayGene.elements.add(IntegerGene("value2", 2))
+        arrayGene.getAllElements().add(IntegerGene("value1", 1))
+        arrayGene.getAllElements().add(IntegerGene("value2", 2))
 
 
         val objectGene = ObjectGene("jsondata", fields = listOf(arrayGene))

@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.4.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -22,11 +22,10 @@
         <module>core</module>
         <module>core-driver-it</module>
         <module>core-it</module>
+        <module>core-graphql-it</module>
         <module>client-java</module>
         <module>e2e-tests</module>
-        <module>experiments</module>
         <module>report</module>
-        <module>resource-rest-experiments</module>
     </modules>
 
     <issueManagement>
@@ -42,6 +41,15 @@
 
 
     <profiles>
+        <profile>
+            <id>Configs for JDK >= 17</id>
+            <activation>
+                <jdk>17</jdk>
+            </activation>
+            <properties>
+                <addOpens>--add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
+            </properties>
+        </profile>
         <profile>
             <!--
                    This profile is needed when making a deployment to Maven Central.
@@ -92,30 +100,46 @@
     </licenses>
 
     <properties>
+        <addOpens></addOpens> <!-- overridden in profile -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <kotlin.version>1.3.72</kotlin.version>
+        <kotlin.version>1.5.30</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <junit.jupiter.version>5.6.0</junit.jupiter.version>
-        <junit.platform.version>1.6.0</junit.platform.version>
+        <junit.jupiter.version>5.7.2</junit.jupiter.version>
+        <junit.platform.version>1.7.2</junit.platform.version>
         <dropwizard.version>1.3.7</dropwizard.version>
         <swagger.version>1.6.1</swagger.version>
         <swagger.parser-v2.version>1.0.39</swagger.parser-v2.version>
-        <swagger.parser-v3.version>2.0.20</swagger.parser-v3.version>
-        <springboot.version>2.2.0.RELEASE</springboot.version>
-        <springfox.version>2.9.2</springfox.version>
-        <!--  upgrading this one gives issue... might have to update Spring as well -->
-        <springdoc.version>1.2.21</springdoc.version>
+        <swagger.parser-v3.version>2.0.27</swagger.parser-v3.version>
+        <springboot.version>2.5.4</springboot.version>
+        <springfox.version>3.0.0</springfox.version>
+        <springdoc.version>1.5.10</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
-        <jersey.version>2.29.1</jersey.version>
+        <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
         <jackson.version>2.11.0</jackson.version>
-        <asm.version>8.0.1</asm.version>
-        <testcontainers.version>1.14.3</testcontainers.version>
-        <antlr.version>4.7.2</antlr.version>
-        <nlp.version>3.9.2</nlp.version>
+        <asm.version>9.2</asm.version>
+        <testcontainers.version>1.16.0</testcontainers.version>
+        <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
+        <antlr.version>4.9.2</antlr.version>
+        <nlp.version>4.3.1</nlp.version>
         <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
         <jgrapht.version>0.8.3</jgrapht.version>
+        <version.graphql-spring>11.1.0</version.graphql-spring>
+        <mysql.connector.java.version>8.0.27</mysql.connector.java.version>
+        <mariadb.java.client.version>2.7.2</mariadb.java.client.version>
+        <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
+        <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
+        <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
+        <wiremock.version>2.32.0</wiremock.version>
+        <apache.http.client.version>4.5.13</apache.http.client.version>
+        <okhttp.client.version>4.9.3</okhttp.client.version>
+        <dns.cache.manipulator.version>1.7.1</dns.cache.manipulator.version>
+        <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
+        <micronaut.version>3.2.7</micronaut.version>
+        <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
+        <micronaut.test.version>3.0.5</micronaut.test.version>
+        <swagger.annotations.version>2.1.10</swagger.annotations.version>
     </properties>
 
 
@@ -153,11 +177,6 @@
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-client-java-controller-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.evomaster</groupId>
-                <artifactId>evomaster-client-database-spy</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -220,16 +239,12 @@
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <!--
-                    We ll need to check when new version comes with fix for:
-                    https://github.com/google/guice/issues/1133
-                -->
-                <version>4.2.3</version>
+                <version>5.0.1</version>
             </dependency>
             <dependency> <!-- This is needed as Guice has no LifeCycle management -->
                 <groupId>com.netflix.governator</groupId>
                 <artifactId>governator</artifactId>
-                <version>1.17.10</version>
+                <version>1.17.12</version>
                 <exclusions>
                     <!--It looks like it uses quite a few old versions -->
                     <exclusion>
@@ -254,6 +269,11 @@
                 <artifactId>asm-util</artifactId>
                 <version>${asm.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-commons</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
             <dependency> <!-- To attach instrumenting JavaAgent at runtime -->
                 <groupId>com.ea.agentloader</groupId>
                 <artifactId>ea-agent-loader</artifactId>
@@ -263,6 +283,30 @@
 
             <!-- Misc -->
             <dependency>
+                <!--
+                    We do not (and SHOULD NOT) use it directly... but as it brought in transitively
+                    by different libraries, we force a specific version here to avoid conflicts (which for
+                    example happened when updating Guice)
+                -->
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>30.1.1-jre</version>
+            </dependency>
+            <dependency>
+                <!--
+                    So dependencies bring this one here transitively... but old version of this one before
+                    3.11 do not play well with JDK 17+. So we force this version here
+                -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>1.9</version>
+            </dependency>
+            <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
                 <version>6.1.0.Final</version>
@@ -270,12 +314,12 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.8.6</version>
+                <version>2.8.8</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.7</version>
+                <version>2.11.0</version>
             </dependency>
             <dependency> <!-- Used to handle terminal/console inputs -->
                 <groupId>net.sf.jopt-simple</groupId>
@@ -450,6 +494,11 @@
                 <artifactId>spring-boot-starter-security</artifactId>
                 <version>${springboot.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-validation</artifactId>
+                <version>${springboot.version}</version>
+            </dependency>
 
 
             <!--  SpringFox: Swagger documentation for SpringBoot-->
@@ -480,7 +529,6 @@
                 <artifactId>springdoc-openapi-kotlin</artifactId>
                 <version>${springdoc.version}</version>
             </dependency>
-
 
             <!--
                 Swagger for JaxRS
@@ -524,32 +572,50 @@
             </dependency>
 
 
-
             <!-- databases -->
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>1.4.197</version>
-            </dependency>
-            <dependency> <!-- Used to intercept SQL commands -->
-                <groupId>p6spy</groupId>
-                <artifactId>p6spy</artifactId>
-                <version>3.9.0</version>
+                <version>1.4.200</version>
             </dependency>
             <dependency>
                 <groupId>com.github.jsqlparser</groupId>
                 <artifactId>jsqlparser</artifactId>
-                <version>2.0</version>
+                <version>4.2</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.1.4</version>
+                <version>42.3.1</version>
             </dependency>
             <dependency>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-core</artifactId>
-                <version>6.4.4</version>
+                <version>7.14.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mariadb.jdbc</groupId>
+                <artifactId>mariadb-java-client</artifactId>
+                <version>${mariadb.java.client.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>mssql-jdbc</artifactId>
+                <version>${mssql.jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql.connector.java.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${org.mybatis.spring.boot.version}</version>
             </dependency>
 
             <!--   XML  -->
@@ -563,6 +629,24 @@
                 <artifactId>jaxb-runtime</artifactId>
                 <version>2.3.1</version>
             </dependency>
+
+            <!--  GraphQL             -->
+            <dependency>
+                <groupId>com.graphql-java-kickstart</groupId>
+                <artifactId>graphql-spring-boot-starter</artifactId>
+                <version>${version.graphql-spring}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.graphql-java-kickstart</groupId>
+                <artifactId>graphiql-spring-boot-starter</artifactId>
+                <version>${version.graphql-spring}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.graphql-java-kickstart</groupId>
+                <artifactId>voyager-spring-boot-starter</artifactId>
+                <version>${version.graphql-spring}</version>
+            </dependency>
+
 
             <!-- test dependencies -->
             <dependency>
@@ -584,6 +668,12 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>io.rest-assured</groupId>
                 <artifactId>rest-assured</artifactId>
                 <version>4.3.0</version>
@@ -596,9 +686,17 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+            <!--  Mocking for Java. To use with great care (ie, only sporadically) -->
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>2.23.4</version>
+                <version>4.4.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+            <!--  Mocking for Kotlin. To use with great care (ie, only sporadically) -->
+                <groupId>io.mockk</groupId>
+                <artifactId>mockk</artifactId>
+                <version>1.12.3</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -608,6 +706,100 @@
                 <version>${testcontainers.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <!-- Used in SqlHandlerInDBTest class -->
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${jetbrains.annotations.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- RPC-->
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${thrift.libthrift.version}</version>
+            </dependency>
+
+            <!-- Wiremock -->
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-jre8</artifactId>
+                <version>${wiremock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${apache.http.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.client.version}</version>
+            </dependency>
+
+            <!-- https://jmaven.com/maven/com.alibaba/dns-cache-manipulator -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>dns-cache-manipulator</artifactId>
+                <version>${dns.cache.manipulator.version}</version>
+            </dependency>
+
+            <!-- Micronaut -->
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-bom</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-inject</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-validation</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut.test</groupId>
+                <artifactId>micronaut-test-junit5</artifactId>
+                <version>${micronaut.test.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-http-client</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-http-server-netty</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-jackson-databind</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-runtime</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-core</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${swagger.annotations.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -615,12 +807,41 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.0.0</version>
+                    <executions>
+                        <execution>
+                            <id>enforce-maven</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <requireMavenVersion>
+                                        <!--
+                                            Due to possible issues with CI not having latest version, good
+                                            to stay bit behind (but not too much)
+                                        -->
+                                        <version>3.6.3</version>
+                                    </requireMavenVersion>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
 
                 <!-- To run unit tests -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.0.0-M4</version>
+                    <!--Man: maven 3.6.3 and jdk1.8.0_261.
+                        with 3.0.0-M4, there exist an error
+                         "The forked VM terminated without properly saying goodbye. VM crash or System.exit called?"
+                        then fixed with 3.0.0-M5
+                    -->
+                    <version>3.0.0-M5</version>
                     <configuration>
                         <forkCount>1</forkCount>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
@@ -631,10 +852,15 @@
                             TODO might not needed when using workaround like in ByteBuddy
                             of creating an external process to do the Agent attachment
                             https://github.com/raphw/byte-buddy/issues/295
+
+                            Fucking JDK 17!!! And fuck you JEP 403!!!
+                            https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -Xms1024m -Xmx2048m -Djdk.attach.allowAttachSelf=true</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
-                        <useSystemClassLoader>false</useSystemClassLoader>
+                        <!--  Commented out, as no longer using CircleCI-->
+                        <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
+                        <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
 
@@ -647,7 +873,7 @@
                         <forkCount>1</forkCount>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
-                        <argLine>@{argLine} -Xms1024m -Xmx2048m -Djdk.attach.allowAttachSelf=true</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
                     <executions>
@@ -706,6 +932,7 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <encoding>${project.build.sourceEncoding}</encoding>
+
                     </configuration>
                     <executions>
                         <!-- Replacing default-compile as it is treated specially by maven -->
@@ -807,7 +1034,14 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.5</version>
+                    <version>0.8.7</version>
+                    <configuration>
+                        <excludes>
+                            <!--  Prevent SUTs in E2E to be part of coverage report -->
+                            <exclude>com/foo/**/*</exclude>
+                            <exclude>com/thrift/example/**/*</exclude>
+                        </excludes>
+                    </configuration>
                     <executions>
                         <execution>
                             <id>default-prepare-agent</id>
@@ -881,6 +1115,10 @@
 
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
             <!-- Executed JaCoCo in all the modules. Default binding is on "verify" -->
             <plugin>
                 <groupId>org.jacoco</groupId>

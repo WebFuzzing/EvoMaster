@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "strictNullChecks": false,
     "module": "commonjs",
     "esModuleInterop": true,
     "target": "es6",

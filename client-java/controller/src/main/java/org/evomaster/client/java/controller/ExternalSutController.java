@@ -5,9 +5,9 @@ import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
 import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InputProperties;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.client.java.databasespy.P6SpyFormatter;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.external.JarAgentLocator;
@@ -47,12 +47,23 @@ public abstract class ExternalSutController extends SutController {
      */
     private volatile StringBuffer errorBuffer;
 
+    /**
+     * Command used to run java, when starting the SUT.
+     * This might need to be overridden whea dealing with experiments
+     * using different versions of Java (eg, 8 vs 11)
+     */
+    private volatile String javaCommand = "java";
+
+    public int getWaitingSecondsForIncomingConnection() {
+        return 20_000;
+    }
+
     @Override
     public final void setupForGeneratedTest(){
         //TODO how to handle P6Spy here??? We don't want the spy.log files
     }
 
-    public void setInstrumentation(boolean instrumentation) {
+    public final void setInstrumentation(boolean instrumentation) {
         this.instrumentation = instrumentation;
     }
 
@@ -123,8 +134,15 @@ public abstract class ExternalSutController extends SutController {
 
     //-------------------------------------------------------------
 
+    public final void setJavaCommand(String command){
+        if(command==null || command.isEmpty()){
+            throw new IllegalArgumentException("Empty java command");
+        }
+        javaCommand = command;
+    }
+
     @Override
-    public String startSut() {
+    public final String startSut() {
 
         SimpleLogger.info("Going to start the SUT");
 
@@ -146,7 +164,7 @@ public abstract class ExternalSutController extends SutController {
 
 
         List<String> command = new ArrayList<>();
-        command.add("java");
+        command.add(javaCommand);
 
 
         if (instrumentation) {
@@ -156,10 +174,10 @@ public abstract class ExternalSutController extends SutController {
             int port = serverController.startServer();
             command.add("-D" + InputProperties.EXTERNAL_PORT_PROP + "=" + port);
 
-            String driver = getDatabaseDriverName();
-            if (driver != null && !driver.isEmpty()) {
-                command.add("-D" + InputProperties.SQL_DRIVER + "=" + driver);
-            }
+//            String driver = getDatabaseDriverName();
+//            if (driver != null && !driver.isEmpty()) {
+//                command.add("-D" + InputProperties.SQL_DRIVER + "=" + driver);
+//            }
 
             String jarPath = JarAgentLocator.getAgentJarPath();
             if (jarPath == null) {
@@ -213,9 +231,13 @@ public abstract class ExternalSutController extends SutController {
         startExternalProcessPrinter();
 
         if (instrumentation && serverController != null) {
-            boolean connected = serverController.waitForIncomingConnection();
+            boolean connected = serverController.waitForIncomingConnection(getWaitingSecondsForIncomingConnection());
             if (!connected) {
                 SimpleLogger.error("Could not establish connection to retrieve code metrics");
+                if(errorBuffer != null) {
+                    SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+                }
+                stopSut();
                 return null;
             }
         }
@@ -268,13 +290,13 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public boolean isSutRunning() {
+    public final boolean isSutRunning() {
         return process != null && process.isAlive();
     }
 
 
     @Override
-    public void stopSut() {
+    public final void stopSut() {
 
         SimpleLogger.info("Going to stop the SUT");
 
@@ -338,6 +360,31 @@ public abstract class ExternalSutController extends SutController {
         return getUnitsInfoDto(serverController.getUnitsInfoRecorder());
     }
 
+    @Override
+    public final void setKillSwitch(boolean b) {
+        checkInstrumentation();
+
+        serverController.setKillSwitch(b);
+        ExecutionTracer.setKillSwitch(b);// store info locally as well, to avoid needing to do call to fetch current value
+    }
+
+    @Override
+    public final void setExecutingInitSql(boolean executingInitSql) {
+        checkInstrumentation();
+        serverController.setExecutingInitSql(executingInitSql);
+        // sync executingInitSql on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
+
+    @Override
+    public final String getExecutableFullPath(){
+        validateJarPath();
+
+        //this might be relative
+        String path = getPathToExecutableJar();
+
+        return Paths.get(path).toAbsolutePath().toString();
+    }
 
     //-----------------------------------------
 
@@ -401,10 +448,6 @@ public abstract class ExternalSutController extends SutController {
 
                         String line = scanner.nextLine();
 
-                        if(line.startsWith(P6SpyFormatter.PREFIX)){
-                            StandardOutputTracker.handleSqlLine(this, line);
-                        }
-
                         if(!muted) {
                             SimpleLogger.info("SUT: " + line);
                         } else if(errorBuffer != null){
@@ -424,13 +467,17 @@ public abstract class ExternalSutController extends SutController {
                         this could happen if it was started with some misconfiguration, or
                         if it has been stopped
                      */
-                    if(process == null){
+                    if (process == null) {
                         SimpleLogger.warn("SUT was manually terminated ('process' reference is null)");
-                    } else if(! process.isAlive()){
-                        SimpleLogger.warn("SUT was terminated before initialization. Exit code: " + process.exitValue());
+                    } else if(!initialized) {
+                        if (!process.isAlive()) {
+                            SimpleLogger.warn("SUT was terminated before initialization. Exit code: " + process.exitValue());
+                        } else {
+                            SimpleLogger.warn("SUT is still alive, but its output was closed before" +
+                                    " producing the initialization message.");
+                        }
                     } else {
-                        SimpleLogger.warn("SUT is still alive, but its output was closed before" +
-                                " producing the initialization message.");
+                        SimpleLogger.info("Process output has been closed");
                     }
 
                     latch.countDown();

@@ -1,8 +1,12 @@
 package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -78,6 +82,126 @@ public interface SutHandler {
      * Execute the given data insertions into the database (if any)
      *
      * @param insertions DTOs for each insertion to execute
+     * @param previous an array of insertion results which were executed before this execution
+     * @return insertion execution results
      */
-    void execInsertionsIntoDatabase(List<InsertionDto> insertions);
+    InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous);
+
+
+    /**
+     * <p>
+     * return an instance of a client of an RPC service.
+     * </p>
+     *
+     * <p>
+     * This method must be blocking until the SUT is initialized.
+     * </p>
+     *
+     * <p>
+     * This method is only required when the problem is RPC for the moment,
+     * otherwise return null
+     * </p>
+     *
+     * might change string interfaceName to class interface
+     *
+     * @param interfaceName a full name of an interface
+     * @return a client which could send requests to the interface
+     */
+    default Object getRPCClient(String interfaceName){return null;}
+
+    /**
+     * <p>
+     * execute an RPC endpoint with evomaster driver
+     * </p>
+     *
+     *
+     * @param json contains info of an RPC endpoint
+     * @return value returned by this execution. it is nullable.
+     */
+    default Object executeRPCEndpoint(String json) throws Exception {return null;}
+
+    /**
+     * <p>
+     * execute an RPC endpoint with evomaster driver
+     * </p>
+     *
+     * TODO remove this later if we do not use test generation with driver
+     */
+    default void extractRPCSchema(){}
+
+
+    /**
+     * <p>
+     *     authentication setup might be handled locally.
+     *     then we provide this interface to define it.
+     * </p>
+     *
+     * @param authenticationInfo info for the authentication setup
+     * @return if the authentication is set up successfully
+     */
+    default boolean handleLocalAuthenticationSetup(String authenticationInfo){return true;}
+
+    /**
+     * <p>
+     * If the system under test (SUT) uses a SQL database, we need to have a
+     * configured DbSpecification to access/reset it.
+     * </p>
+     *
+     * <p>
+     * When accessing a {@code Connection} object to reset the state of
+     * the application, we suggest to save it to field (eg when starting the
+     * application), and set such field with {@link DbSpecification#connection}.
+     * This connection object will be used by EvoMaster to analyze the state of
+     * the database to create better test cases.
+     * </p>
+     *
+     * <p>
+     * To handle db in the context of testing, there might be a need to initialize
+     * data into database with a sql script. such info could be specified with
+     * {@link DbSpecification#dbType}
+     * </p>
+     *
+     * <p>
+     * With EvoMaster, we also support a smart DB cleaner by removing all data in tables
+     * which has been accessed after each test. In order to achieve this, we requires user
+     * to set a set of info such as database type with {@link DbSpecification#dbType},
+     * schema name with {@link DbSpecification#schemaNames} (TODO might remove later).
+     * In addition, we also provide an option (default is {@code true}) to configure
+     * if such cleaner is preferred with {@link DbSpecification#employSmartDbClean}.
+     * </p>
+     *
+     * @return {@code null} if the SUT does not use any SQL database
+     */
+
+    List<DbSpecification> getDbSpecifications();
+
+
+    /**
+     * <p>
+     * reset database if the smart db cleaning is employed
+     * </p>
+     */
+    default void resetDatabase(List<String> tablesToClean){
+        if (getDbSpecifications()!= null && !getDbSpecifications().isEmpty()){
+            getDbSpecifications().forEach(spec->{
+                if (spec==null || spec.connection == null || !spec.employSmartDbClean){
+                    return;
+                }
+                if (spec.schemaNames == null || spec.schemaNames.isEmpty())
+                    DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
+                else
+                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
+                if (spec.initSqlScript != null) {
+                    try {
+                        // init data only if the table exists in [tablesToClean]
+                        SqlScriptRunner.execScript(spec.connection, spec.initSqlScript, tablesToClean);
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
+                    }
+                }
+            });
+        }
+    }
+
+
 }

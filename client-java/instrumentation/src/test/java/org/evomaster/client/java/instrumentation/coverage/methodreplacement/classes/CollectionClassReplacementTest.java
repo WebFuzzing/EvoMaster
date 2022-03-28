@@ -32,7 +32,7 @@ public class CollectionClassReplacementTest {
         assertEquals(1, nonCoveredObjectives.size());
         String objectiveId = nonCoveredObjectives.iterator().next();
         double value = ExecutionTracer.getValue(objectiveId);
-        assertEquals(0, value);
+        assertEquals(DistanceHelper.H_NOT_NULL, value);
     }
 
     @Test
@@ -220,7 +220,7 @@ public class CollectionClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateTime1 = sdf.parse(date1 + " " + time1);
         Date dateTime2 = sdf.parse(date1 + " " + time2);
@@ -244,7 +244,7 @@ public class CollectionClassReplacementTest {
         assertEquals(1, nonCoveredObjectives.size());
         final String objectiveId = nonCoveredObjectives.iterator().next();
         final double heuristicValue0 = ExecutionTracer.getValue(objectiveId);
-        assertEquals(0, heuristicValue0);
+        assertEquals(DistanceHelper.H_NOT_NULL, heuristicValue0);
     }
 
     @Test

@@ -2,16 +2,12 @@ package org.evomaster.core.problem.rest.service
 
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.resource.ResourceStatus
-import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.service.IdMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -20,14 +16,13 @@ import org.slf4j.LoggerFactory
  */
 class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
-    @Inject
-    private lateinit var rc: RemoteController
 
-    @Inject
-    private lateinit var sampler : ResourceSampler
 
     @Inject
     private lateinit var dm: ResourceDepManageService
+
+    @Inject
+    private lateinit var rm: ResourceManageService
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestResourceFitness::class.java)
@@ -40,44 +35,49 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         rc.resetSUT()
 
-        //individual.enforceCoherence()
-
-        val cookies = getCookies(individual)
-
-        val fv = FitnessValue(individual.size().toDouble())
+        /*
+            there might some dbaction between rest actions.
+            This map is used to record the key mapping in SQL, e.g., PK, FK
+         */
+        val sqlIdMap = mutableMapOf<Long, Long>()
+        val executedDbActions = mutableListOf<DbAction>()
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
+        //whether there exist some SQL execution failure
+        var failureBefore = doDbCalls(individual.seeInitializingActions(), sqlIdMap, false, executedDbActions, actionResults)
+
+        val cookies = getCookies(individual)
+        val tokens = getTokens(individual)
+
+        val fv = FitnessValue(individual.size().toDouble())
+
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
-
-        val sqlIdMap = mutableMapOf<Long, Long>()
 
         //run the test, one action at a time
         var indexOfAction = 0
 
         for (call in individual.getResourceCalls()) {
 
-            doInitializingCalls(call.dbActions, sqlIdMap)
+            val result = doDbCalls(call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>, sqlIdMap, failureBefore, executedDbActions, actionResults)
+            failureBefore = failureBefore || result
 
             var terminated = false
 
-            for (a in call.actions){
+            for (a in call.seeActions(ActionFilter.NO_SQL)){
 
                 //TODO handling of inputVariables
-                rc.registerNewAction(ActionDto().apply { index = indexOfAction})
+                registerNewAction(a, indexOfAction)
 
                 var ok = false
 
                 if (a is RestCallAction) {
-                    ok = handleRestCall(a, actionResults, chainState, cookies)
-                    /*
-                    update creation of resources regarding response status
-                     */
-                    if (a.verb.run { this == HttpVerb.POST || this == HttpVerb.PUT} && call.status == ResourceStatus.CREATED && (actionResults[indexOfAction] as RestCallResult).getStatusCode().run { this != 201 || this != 200 }){
-                        call.getResourceNode().confirmFailureCreationByPost(call)
-                    }
-
+                    ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
+                    // update creation of resources regarding response status
+                    val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
+                    call.getResourceNode().confirmFailureCreationByPost(call, a, restActionResult)
+                    restActionResult.stopping = !ok
                 } else {
                     throw IllegalStateException("Cannot handle: ${a.javaClass}")
                 }
@@ -93,10 +93,15 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 break
         }
 
-        val dto = rc.getTestResults(targetsToEvaluate(targets, individual))
-        if (dto == null) {
-            log.warn("Cannot retrieve coverage")
-            return null
+        val allRestResults = actionResults.filterIsInstance<RestCallResult>()
+        val dto = restActionResultHandling(individual, targets, allRestResults, fv)?:return null
+
+        /*
+            TODO: Man shall we update the action cluster based on expanded action?
+         */
+        individual.seeActions().forEach {
+            val node = rm.getResourceNodeFromCluster(it.path.toString())
+            node.updateActionsWithAdditionalParams(it)
         }
 
         /*
@@ -105,63 +110,11 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
-        dto.targets.forEach { t ->
-
-            if (t.descriptiveId != null) {
-                idMapper.addMapping(t.id, t.descriptiveId)
-            }
-
-            fv.updateTarget(t.id, t.value, t.actionIndex)
-        }
-
-        handleExtra(dto, fv)
-
-        handleResponseTargets(fv, individual.seeActions().toMutableList(), actionResults, dto.additionalInfoList)
-
-        if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList, actionResults)
-        }
+        if (actionResults.size > individual.seeActions(ActionFilter.ALL).size)
+            log.warn("initialize invalid evaluated individual")
 
         return EvaluatedIndividual(
                 fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
 
-        /*
-            TODO when dealing with seeding, might want to extend EvaluatedIndividual
-            to keep track of AdditionalInfo
-         */
-    }
-
-    private fun doInitializingCalls(allDbActions : List<DbAction>, sqlIdMap : MutableMap<Long, Long>) {
-
-        if (allDbActions.isEmpty()) {
-            return
-        }
-
-        if (allDbActions.none { !it.representExistingData }) {
-            /*
-                We are going to do an initialization of database only if there
-                is data to add.
-                Note that current data structure also keeps info on already
-                existing data (which of course should not be re-inserted...)
-             */
-            return
-        }
-
-
-        val dto = DbActionTransformer.transform(allDbActions, sqlIdMap)
-
-
-        val map = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
-        if (map == null) {
-            log.warn("Failed in executing database command")
-        }else
-            sqlIdMap.putAll(map)
-    }
-
-    override fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-                .filterIsInstance<RestCallAction>()
-                .map { it.path }
-                .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
 }

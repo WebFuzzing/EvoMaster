@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.4.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-instrumentation</artifactId>
@@ -29,13 +29,25 @@
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-util</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-commons</artifactId>
+        </dependency>
 
+        <!--  handle sql command      -->
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -59,6 +71,7 @@
 
         <!--
             "Provided" dependencies.
+
             See ThirdPartyMethodReplacementClass for an explanation for why needed
             -->
         <dependency>
@@ -66,7 +79,14 @@
             <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
-
+        <!--
+            But at a certain point we went with full reflection, and scope "test",
+            at least for method replacements.
+            Unfortunately do not remember the main reason for it... but I do remember
+            some weird stuff with classes loaded when used inside methods before their
+            bytecode is executed (which would lead to crashes in the cases in which the
+            SUT did not provide such classes)
+        -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -75,6 +95,14 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <!--  Old version on purpose, to check a specific bug -->
+            <version>5.1.49</version>
             <scope>test</scope>
         </dependency>
 
@@ -127,6 +155,10 @@
                                 <relocation>
                                     <pattern>dk.brics.automaton</pattern>
                                     <shadedPattern>shaded.dk.brics.automaton</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.github.jsqlparser</pattern>
+                                    <shadedPattern>shaded.com.github.jsqlparser</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

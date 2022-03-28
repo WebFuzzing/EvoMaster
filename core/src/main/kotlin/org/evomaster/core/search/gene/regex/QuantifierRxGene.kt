@@ -1,13 +1,15 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -16,7 +18,7 @@ class QuantifierRxGene(
         val template: RxAtom,
         val min: Int = 1,
         val max: Int = 1
-) : RxTerm(name) {
+) : RxTerm(name, listOf(template)) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(QuantifierRxGene::class.java)
@@ -59,26 +61,30 @@ class QuantifierRxGene(
              */
             for(i in 0 until min){
                 val a = template.copy() as RxAtom
-                a.parent = this
+//                a.parent = this
                 atoms.add(a)
+                addChild(a)
             }
         }
     }
 
 
-    override fun copy(): Gene {
+    override fun getChildren(): List<RxAtom> = listOf(template).plus(atoms)
+
+    override fun copyContent(): Gene {
 
         val copy = QuantifierRxGene(
                 name,
-                template.copy() as RxAtom,
+                template.copyContent() as RxAtom,
                 min,
                 max
         )
         copy.atoms.clear()
         this.atoms.forEach {
-            val a = it.copy() as RxAtom
-            a.parent = copy
+            val a = it.copyContent() as RxAtom
+//            a.parent = copy
             copy.atoms.add(a)
+            copy.addChild(a)
         }
 
         return copy
@@ -100,13 +106,14 @@ class QuantifierRxGene(
         for (i in 0 until length) {
            addNewAtom(randomness, forceNewValue, allGenes)
         }
+        addChildren(atoms)
     }
 
     override fun isMutable(): Boolean {
         return min != limitedMax || template.isMutable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         val length = atoms.size
 
         return if( length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
@@ -120,7 +127,16 @@ class QuantifierRxGene(
     }
 
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        /*
+            atoms is dynamically modified, then we do not collect impacts for it now.
+            thus for the internal genes, adaptive gene selection for mutation is not applicable
+        */
+        val s = randomness.choose(internalGenes)
+        return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(null, s))
+    }
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         val length = atoms.size
 
         if (length < min || length > limitedMax)
@@ -150,14 +166,15 @@ class QuantifierRxGene(
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>){
         val base = template.copy() as RxAtom
-        base.parent = this
+//        base.parent = this
         if (base.isMutable()) {
             base.randomize(randomness, forceNewValue, allGenes)
         }
         atoms.add(base)
+        addChild(base)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         return atoms.map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
                 .joinToString("")
@@ -178,8 +195,9 @@ class QuantifierRxGene(
             this.atoms.clear()
             other.atoms.forEach{
                 val a = it.copy() as RxAtom
-                a.parent = this
+//                a.parent = this
                 this.atoms.add(a)
+                this.addChild(a)
             }
         }
     }
@@ -209,5 +227,34 @@ class QuantifierRxGene(
 
     override fun mutationWeight(): Double {
         return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0
+    }
+
+    override fun innerGene(): List<Gene> = atoms
+
+    /*
+        Note that value binding cannot be performed on the [atoms]
+     */
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is QuantifierRxGene){
+            var result = true
+            if(atoms.size == gene.atoms.size){
+                atoms.indices.forEach {
+                    val r = atoms[it].bindValueBasedOn(gene.atoms[it])
+                    if (!r)
+                        LoggingUtil.uniqueWarn(log, "value binding for QuantifierRxGene does not perform successfully at index $it")
+                    result =  r && result
+                }
+            }else{
+                this.atoms.clear()
+                gene.atoms.forEach{
+                    val a = it.copy() as RxAtom
+//                    a.parent = this
+                    this.atoms.add(a)
+                }
+            }
+            return result
+        }
+        LoggingUtil.uniqueWarn(log, "cannot bind the QuantifierRxGene with ${gene::class.java.simpleName}")
+        return false
     }
 }

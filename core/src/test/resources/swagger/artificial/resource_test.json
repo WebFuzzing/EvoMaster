@@ -1,0 +1,523 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Resource Test",
+    "description": "Title",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/v3"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Foo"
+    },
+    {
+      "name": "Bar"
+    },
+    {
+      "name": "Xyz"
+    }
+  ],
+  "paths": {
+    "/api/rfoo": {
+      "post": {
+        "tags": [
+          "Foo"
+        ],
+        "description": "Create a foo",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RFoo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/rfoo/{rfooId}": {
+      "put": {
+        "tags": [
+          "Foo"
+        ],
+        "description": "Update a foo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfooId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            },
+            "required": true,
+            "description": "ID of the foo to get"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RFoo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RFoo"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Foo"
+        ],
+        "description": "Partially update a foo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfooId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            },
+            "required": true,
+            "description": "ID of the foo to get"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RFoo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RFoo"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Foo"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfooId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            },
+            "required": true,
+            "description": "ID of the foo to get"
+          },
+          {
+            "in": "query",
+            "name": "doubleValue",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RFoo"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/rfoo/{rfooId}/rbar": {
+      "post": {
+        "tags": [
+          "Bar"
+        ],
+        "description": "Create a bar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfooId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            },
+            "required": true,
+            "description": "ID of the bar to get"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RBar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/rfoo/{rfooId}/rbar/{rbarId}": {
+      "get": {
+        "tags": [
+          "Bar"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rbarId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            },
+            "required": true,
+            "description": "ID of the bar to get"
+          },
+          {
+            "in": "path",
+            "name": "rfooId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            },
+            "required": true,
+            "description": "ID of the bar to get"
+          },
+          {
+            "in": "query",
+            "name": "fooId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RBar"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz": {
+      "post": {
+        "tags": [
+          "Xyz"
+        ],
+        "description": "Create a Xyz",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfooId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            }
+          },
+          {
+            "in": "path",
+            "name": "rbarId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RXyz"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}": {
+      "get": {
+        "tags": [
+          "Xyz"
+        ],
+        "description": "get a Xyz",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "rfooId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            }
+          },
+          {
+            "in": "path",
+            "name": "rbarId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            }
+          },
+          {
+            "in": "path",
+            "name": "rxyzId",
+            "schema": {
+              "type": "number",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RXyz"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "NotFound": {
+        "description": "The specified resource was not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InvalidRequest": {
+        "description": "Invaild request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "RFoo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "format": "int64"
+          },
+          "doubleValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "intValue": {
+            "type": "number",
+            "format": "int32"
+          },
+          "floatValue": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "RBar": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "format": "int64"
+          },
+          "fooId": {
+            "type": "number",
+            "format": "64"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "RXyz": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "format": "int64"
+          },
+          "fooId": {
+            "type": "number",
+            "format": "64"
+          },
+          "barId": {
+            "type": "number",
+            "format": "64"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fooId",
+          "barId"
+        ]
+      }
+    }
+  }
+}

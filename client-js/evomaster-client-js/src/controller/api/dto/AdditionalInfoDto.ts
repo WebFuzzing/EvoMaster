@@ -28,7 +28,11 @@ export default class AdditionalInfoDto {
      * The associated list is its possible specializations (which usually
      * will be at most 1).
      */
-     public stringSpecializations = new Map<string, StringSpecializationInfoDto[]>();
+     //public stringSpecializations = new Map<string, StringSpecializationInfoDto[]>();
+     /*
+        Note: JSON marshallers in JS/TS are pretty crappy, as they SILENTLY ignore string-key maps...
+      */
+    public stringSpecializations  = new Object();
 
     /**
      * Keep track of the last executed statement done in the SUT.

@@ -1,0 +1,33 @@
+openapi: 3.0.0
+host: localhost:8080
+paths:
+  /api/enum:
+    get:
+      parameters:
+        - in: query
+          name: x
+          schema:
+            type: string
+            enum: [foo, bar]
+        - in: query
+          name: y
+          schema:
+            type: integer
+            enum: [42, 1234567]
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnumDto'
+components:
+  schemas:
+    EnumDto:
+      type: Object
+      properties:
+        values:
+          type: array
+          items:
+            type: string
+            enum: [foo, bar]

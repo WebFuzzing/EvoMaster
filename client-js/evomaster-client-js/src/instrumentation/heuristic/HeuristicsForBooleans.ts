@@ -1,32 +1,39 @@
 import Truthness from "./Truthness";
 import TruthnessUtils from "./TruthnessUtils";
 import ExecutionTracer from "../staticstate/ExecutionTracer";
+import ObjectiveNaming from "../shared/ObjectiveNaming";
 
 
 export default class HeuristicsForBooleans {
 
-    private static readonly validOps = ["==", "===", "!=", "!==", "<", "<=", ">", ">="];
+    public static readonly FLAG_NO_EXCEPTION = 0.01;
+    public static readonly EXCEPTION = HeuristicsForBooleans.FLAG_NO_EXCEPTION / 2;
 
+    private static readonly validOps = ["==", "===", "!=", "!==", "<", "<=", ">", ">="];
     private static lastEvaluation: Truthness = null;
 
-    private static readonly FLAG_NO_EXCEPTION = 0.01;
-    private static readonly EXCEPTION = HeuristicsForBooleans.FLAG_NO_EXCEPTION / 2;
 
+    public static handleNot(value: any): any {
 
-    public static handleNot(value: any) : any{
-
-        if(HeuristicsForBooleans.lastEvaluation){
+        if (HeuristicsForBooleans.lastEvaluation) {
             HeuristicsForBooleans.lastEvaluation = HeuristicsForBooleans.lastEvaluation.invert();
         }
 
         return !value;
     }
 
-    public static getLastEvaluation() : Truthness{
+    /**
+     * This is mainly needed in MethodReplacement
+     */
+    public static updateLastEvaluation(t: Truthness) {
+        HeuristicsForBooleans.lastEvaluation = t;
+    }
+
+    public static getLastEvaluation(): Truthness {
         return HeuristicsForBooleans.lastEvaluation;
     }
 
-    public static clearLastEvaluation(){
+    public static clearLastEvaluation() {
         HeuristicsForBooleans.lastEvaluation = null;
     }
 
@@ -90,7 +97,7 @@ export default class HeuristicsForBooleans {
 
             h = new Truthness(
                 (xT.getOfTrue() / 2) + (yT.getOfTrue() / 2),
-                Math.max(xT.getOfFalse(), xE ? yT.getOfFalse()/2 : yT.getOfFalse())
+                Math.max(xT.getOfFalse(), xE ? yT.getOfFalse() / 2 : yT.getOfFalse())
             );
         } else {
 
@@ -199,7 +206,7 @@ export default class HeuristicsForBooleans {
             throw xE;
         }
 
-        if(leftIsFalse && yE){
+        if (leftIsFalse && yE) {
             throw yE;
         }
 
@@ -267,10 +274,12 @@ export default class HeuristicsForBooleans {
             if (isLeftNumber && isRightNumber) {
                 h = TruthnessUtils.getEqualityTruthnessNumber(left, right);
             } else if (isLeftString && isRightString) {
+                ExecutionTracer.handleTaintForStringEquals(left, right, false);
                 h = TruthnessUtils.getEqualityTruthnessString(left, right);
             } else {
                 const b = left === right;
-                h = new Truthness(b ? 1 : 0, b ? 0 : 1);
+                h = new Truthness(b ? 1 : HeuristicsForBooleans.FLAG_NO_EXCEPTION,
+                    b ? HeuristicsForBooleans.FLAG_NO_EXCEPTION : 1);
             }
         } else if (op === "!==") {
             h = HeuristicsForBooleans.compare(left, "===", right).invert();
@@ -281,7 +290,8 @@ export default class HeuristicsForBooleans {
                 h = HeuristicsForBooleans.compare("" + left, "===", "" + right);
             } else {
                 const b = left == right;
-                h = new Truthness(b ? 1 : 0, b ? 0 : 1);
+                h = new Truthness(b ? 1 : HeuristicsForBooleans.FLAG_NO_EXCEPTION,
+                    b ? HeuristicsForBooleans.FLAG_NO_EXCEPTION : 1);
             }
         } else if (op === "!=") {
             h = HeuristicsForBooleans.compare(left, "==", right).invert();
@@ -292,7 +302,8 @@ export default class HeuristicsForBooleans {
                 h = TruthnessUtils.getLessThanTruthnessString("" + left, "" + right);
             } else {
                 const b = left < right;
-                h = new Truthness(b ? 1 : 0, b ? 0 : 1);
+                h = new Truthness(b ? 1 : HeuristicsForBooleans.FLAG_NO_EXCEPTION,
+                    b ? HeuristicsForBooleans.FLAG_NO_EXCEPTION : 1);
             }
         } else if (op === ">=") {
             h = HeuristicsForBooleans.compare(left, "<", right).invert();
@@ -305,5 +316,32 @@ export default class HeuristicsForBooleans {
 
         return h;
     }
+
+
+
+
+    public static handleTernary(f: () => any, fileName: string, line: number, index: number) {
+        /*
+            Make sure that nested evaluations of && and || do not use unrelated previous computation.
+         */
+        HeuristicsForBooleans.lastEvaluation = null;
+
+        const id = ObjectiveNaming.statementObjectiveName(fileName, line, index);
+        let res;
+
+        try {
+            res = f();
+            ExecutionTracer.updateObjective(id, 1);
+        } catch (e) {
+            ExecutionTracer.updateObjective(id, 0.5);
+            throw e;
+        } finally {
+            HeuristicsForBooleans.lastEvaluation = null;
+        }
+        return res;
+
+    }
+
+
 
 }

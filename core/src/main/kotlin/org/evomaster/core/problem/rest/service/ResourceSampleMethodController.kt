@@ -43,17 +43,18 @@ class ResourceSampleMethodController {
     }
 
     private fun initApplicableStrategies(){
-        methods.getValue(S1iR).applicable = true
+        methods.getValue(S1iR).applicable = rm.getResourceCluster().values.any { it.hasIndependentAction() }
         rm.getResourceCluster().values.filter { r -> !r.isIndependent() }.let {
             methods.getValue(S1dR).applicable = it.isNotEmpty()
-            methods.getValue(S2dR).applicable = it.size > 1 && config.maxTestSize > 1
-            methods.getValue(SMdR).applicable = it.size > 2 && config.maxTestSize > 2
+            methods.getValue(S2dR).applicable = it.size > 1 && config.maxTestSize > 1 && (config.maxResourceSize == 0 || config.maxResourceSize > 1)
+            methods.getValue(SMdR).applicable = it.size > 2 && config.maxTestSize > 2 && (config.maxResourceSize == 0 || config.maxResourceSize > 2)
         }
 
-        /**
-         * if only S1iR is applicable, we recommend that maxTestSize is 1.
+        /*
+          if only S1iR is applicable, we recommend that maxTestSize is 1.
          */
-        if(methods.values.filter { it.applicable }.size == 1 ) config.maxTestSize = 1
+        if(methods.values.filter { it.applicable }.size == 1 && methods.getValue(S1iR).applicable)
+            config.maxTestSize = 1
     }
 
     private fun validateProbability() {
@@ -85,6 +86,13 @@ class ResourceSampleMethodController {
     }
 
     fun getSampleStrategy() : ResourceSamplingMethod{
+        /*
+            with dependency handling and sql handling, the resource might be become possibly dependent from independent
+            thus, the applicable of methods might be updated.
+         */
+        if (config.probOfApplySQLActionToCreateResources > 0 && methods.any { !it.value.applicable })
+            initApplicableStrategies()
+
         if(methods.filter { it.value.applicable }.size == 1) return getStrategyWithItsProbability()
         val selected =
             when(config.resourceSampleStrategy){

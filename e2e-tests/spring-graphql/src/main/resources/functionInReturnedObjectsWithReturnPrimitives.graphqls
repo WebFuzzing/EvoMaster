@@ -1,0 +1,6 @@
+type Query {
+    flowers: Flower
+}
+type Flower {
+    type(id:Int): String
+}

@@ -59,14 +59,23 @@ class SQLGenerator{
 
         private fun genCondition(col : Column, value : String) : String{
             return when(col.type){
+                ColumnDataType.BOOL,
                 ColumnDataType.BOOLEAN,
                 ColumnDataType.TINYINT,
                 ColumnDataType.INTEGER,
+                ColumnDataType.INT,
+                ColumnDataType.INT2,
+                ColumnDataType.INT4,
+                ColumnDataType.INT8,
                 ColumnDataType.BIGINT,
                 ColumnDataType.DOUBLE,
                 ColumnDataType.SMALLINT,
+                ColumnDataType.MEDIUMINT,
                 ColumnDataType.REAL,
-                ColumnDataType.DECIMAL-> equalCondition(col.name, value)
+                ColumnDataType.DECIMAL,
+                ColumnDataType.DEC,
+                ColumnDataType.NUMERIC
+                -> equalCondition(col.name, value)
                 ColumnDataType.CHAR,
                 ColumnDataType.VARCHAR -> equalCondition(col.name, "\'$value\'")
                 else -> {

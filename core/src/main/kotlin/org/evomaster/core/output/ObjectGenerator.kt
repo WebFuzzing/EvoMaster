@@ -14,19 +14,10 @@ class ObjectGenerator {
     private lateinit var swagger: OpenAPI
     private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
 
-    fun initialize() {
-        if (swagger != null) {
-            modelCluster.clear()
-            RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster)
-        }
-    }
-
     fun setSwagger(sw: OpenAPI){
         swagger = sw
-        if (swagger != null) {
-            modelCluster.clear()
-            RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster)
-        }
+        modelCluster.clear()
+        RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster)
     }
 
     fun getSwagger(): OpenAPI{
@@ -95,8 +86,18 @@ class ObjectGenerator {
         }
     }
 
+    /**
+     * [getNamedReference] returns the ObjectGene with the matching name from the model cluster.
+     * It is meant to be used in conjunction with [containsKey], to check if the key is present and define appropriate
+     * behaviour if it is not present.
+     * If [getNamedReference] is called with a string key that is not contained in the model cluster, the default
+     * behaviour is to return an empty ObjectGene with the name "NotFound".
+     */
     fun getNamedReference(name: String): ObjectGene{
-        return modelCluster.getValue(name)
+        return when{
+            containsKey(name) -> modelCluster.getValue(name)
+            else -> ObjectGene("NotFound", listOf())
+        }
     }
     fun containsKey(name: String): Boolean{
         return modelCluster.containsKey(name)

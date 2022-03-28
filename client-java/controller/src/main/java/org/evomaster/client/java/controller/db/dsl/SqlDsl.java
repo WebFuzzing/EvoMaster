@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -14,7 +15,15 @@ public class SqlDsl implements SequenceDsl, StatementDsl {
 
     private List<InsertionDto> list = new ArrayList<>();
 
+    private final List<InsertionDto> previousInsertionDtos = new ArrayList<>();
+
     private SqlDsl() {
+    }
+
+    private SqlDsl(List<InsertionDto>... previous) {
+        if (previous != null && previous.length > 0){
+            Arrays.stream(previous).forEach(previousInsertionDtos::addAll);
+        }
     }
 
     /**
@@ -23,6 +32,15 @@ public class SqlDsl implements SequenceDsl, StatementDsl {
     public static SequenceDsl sql() {
 
         return new SqlDsl();
+    }
+
+    /**
+     * @param previous a DSL object which is executed in the front of this
+     * @return a DSL object to create SQL operations
+     */
+    public static SequenceDsl sql(List<InsertionDto>... previous) {
+
+        return new SqlDsl(previous);
     }
 
     @Override
@@ -74,7 +92,8 @@ public class SqlDsl implements SequenceDsl, StatementDsl {
             throw new IllegalArgumentException("Unspecified variable");
         }
 
-        if (list.stream().noneMatch(t -> t.id != null && t.id.equals(insertionId))) {
+        if (list.stream().noneMatch(t -> t.id != null && t.id.equals(insertionId)) &&
+                previousInsertionDtos.stream().noneMatch(t -> t.id != null && t.id.equals(insertionId))) {
             throw new IllegalArgumentException("Non-existing previous insertion with id: " + insertionId);
         }
 

@@ -39,7 +39,8 @@ public class IntegerClassReplacement implements MethodReplacementClass {
 
         try {
             int res = Integer.parseInt(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                    new Truthness(1, DistanceHelper.H_NOT_NULL));
             return res;
         } catch (RuntimeException e) {
             double h = NumberParsingUtils.parseIntHeuristic(input);
@@ -62,11 +63,11 @@ public class IntegerClassReplacement implements MethodReplacementClass {
         } else {
             Integer anotherInteger = (Integer) anObject;
             if (caller.equals(anotherInteger)) {
-                t = new Truthness(1d, 0d);
+                t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
-                final double base = DistanceHelper.H_NOT_NULL;
+                double base = DistanceHelper.H_NOT_NULL;
                 double distance = DistanceHelper.getDistanceToEquality(caller, anotherInteger);
-                double h = base + ((1 - base) / (distance + 1));
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }

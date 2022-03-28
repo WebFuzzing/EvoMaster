@@ -38,7 +38,7 @@ public class SelectTransformer {
 
             List<SelectItem> fields = plainSelect.getSelectItems();
 
-            boolean allColumns = fields.stream().anyMatch(f -> f instanceof AllColumns);
+            boolean allColumns = fields.stream().anyMatch(f -> f instanceof AllColumns || f instanceof AllTableColumns);
 
             if(! allColumns) {
                 where.accept(new ExpressionVisitorAdapter() {

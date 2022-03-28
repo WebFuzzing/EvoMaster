@@ -8,7 +8,12 @@ import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildEvaluatedIndividual
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.output.service.RestTestCaseWriter
+import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.junit.jupiter.api.Assertions
@@ -39,9 +44,9 @@ class WriteJsonTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -54,7 +59,7 @@ class WriteJsonTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -87,9 +92,9 @@ class WriteJsonTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -102,7 +107,7 @@ class WriteJsonTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -133,9 +138,9 @@ class WriteJsonTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -148,7 +153,7 @@ class WriteJsonTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -179,9 +184,9 @@ class WriteJsonTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -194,7 +199,7 @@ class WriteJsonTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }

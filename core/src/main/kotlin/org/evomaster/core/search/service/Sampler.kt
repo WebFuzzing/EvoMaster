@@ -6,6 +6,8 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.tracer.TrackOperator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 abstract class Sampler<T> : TrackOperator where T : Individual {
@@ -18,6 +20,9 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
     @Inject
     protected lateinit var time : SearchTimeController
+
+    @Inject
+    protected lateinit var apc: AdaptiveParameterControl
 
     /**
      * Set of available actions that can be used to define a test case
@@ -33,12 +38,21 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
     fun numberOfDistinctActions() = actionCluster.size
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(Sampler::class.java)
+    }
+
+
     /**
      * Create a new individual. Usually each call to this method
      * will create a new, different individual, but there is no
      * hard guarantee
      */
     fun sample(): T {
+        if (log.isTraceEnabled){
+            log.trace("sampler will be applied")
+        }
+
         if (randomness.nextBoolean(config.probOfSmartSampling)) {
             return smartSample()
         } else {
@@ -81,4 +95,23 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      * this can be used to provide feedback to sampler regarding a fitness of the sampled individual (i.e., [evi]).
      */
     open fun feedback(evi : EvaluatedIndividual<T>){}
+
+
+    /**
+     * get max test size during sampling
+     */
+    fun getMaxTestSizeDuringSampler() : Int{
+        return when(config.maxTestSizeStrategy){
+            EMConfig.MaxTestSizeStrategy.SPECIFIED -> config.maxTestSize
+            EMConfig.MaxTestSizeStrategy.DPC_INCREASING -> apc.getExploratoryValue(config.dpcTargetTestSize, config.maxTestSize)
+            EMConfig.MaxTestSizeStrategy.DPC_DECREASING -> apc.getExploratoryValue(config.maxTestSize, config.dpcTargetTestSize)
+        }
+    }
+
+    /**
+     * extract tables with additional FK tables
+     */
+    open fun extractFkTables(tables: Set<String>): Set<String>{
+        throw IllegalStateException("FK tables have not been not handled yet")
+    }
 }

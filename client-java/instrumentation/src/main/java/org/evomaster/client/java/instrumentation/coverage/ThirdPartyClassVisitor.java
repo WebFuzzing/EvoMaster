@@ -1,9 +1,8 @@
 package org.evomaster.client.java.instrumentation.coverage;
 
+import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
-import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
-import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
@@ -32,6 +31,8 @@ public class ThirdPartyClassVisitor extends ClassVisitor {
 
         MethodVisitor mv = super.visitMethod(
                 methodAccess, name, descriptor, signature, exceptions);
+
+        mv = new JSRInlinerAdapter(mv, methodAccess, name, descriptor, signature, exceptions);
 
         if (Constants.isMethodSyntheticOrBridge(methodAccess)) {
             return mv;

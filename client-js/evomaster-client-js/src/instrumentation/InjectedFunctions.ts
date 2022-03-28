@@ -13,6 +13,7 @@
 import ExecutionTracer from "./staticstate/ExecutionTracer";
 import HeuristicsForBooleans from "./heuristic/HeuristicsForBooleans";
 import ObjectiveRecorder from "./staticstate/ObjectiveRecorder";
+import FunctionCallHandler from "./methodreplacement/FunctionCallHandler";
 
 export default class InjectedFunctions {
 
@@ -53,7 +54,6 @@ export default class InjectedFunctions {
         return HeuristicsForBooleans.evaluate(left,op,right,fileName,line,branchId);
     }
 
-
     public static or(left: () => any, right: () => any, isRightPure: boolean, fileName: string, line: number, branchId: number): any {
         return HeuristicsForBooleans.evaluateOr(left, right, isRightPure, fileName, line, branchId);
     }
@@ -66,4 +66,15 @@ export default class InjectedFunctions {
         return HeuristicsForBooleans.handleNot(value);
     }
 
+    public static callBase(f: () => any) : any {
+        return FunctionCallHandler.handleFunctionCallBase(f);
+    }
+
+    public static callTracked(fileName: string, line: number, branchId: number, obj: any, functionName: string, ...args: any[]) : any{
+        return FunctionCallHandler.handleFunctionCallTracked(fileName, line, branchId, obj, functionName, ...args);
+    }
+
+    public static ternary(f: () => any, fileName: string, line: number, index: number) : any{
+       return HeuristicsForBooleans.handleTernary(f, fileName, line, index)
+    }
 }

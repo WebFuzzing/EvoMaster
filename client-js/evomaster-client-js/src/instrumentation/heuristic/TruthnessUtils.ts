@@ -1,5 +1,6 @@
 import Truthness from "./Truthness";
 import DistanceHelper from "./DistanceHelper";
+import HeuristicsForBooleans from "./HeuristicsForBooleans";
 
 export default class TruthnessUtils {
 
@@ -7,14 +8,14 @@ export default class TruthnessUtils {
         const distance = DistanceHelper.getDistanceToEqualityNumber(a, b);
         const normalizedDistance = Truthness.normalizeValue(distance);
 
-        return new Truthness(1 - normalizedDistance, a !== b ? 1 : 0);
+        return new Truthness(1 - normalizedDistance, a !== b ? 1 : HeuristicsForBooleans.FLAG_NO_EXCEPTION);
     }
 
     public static getEqualityTruthnessString(a: string, b: string): Truthness {
         const distance = DistanceHelper.getLeftAlignmentDistance(a, b);
         const normalizedDistance = Truthness.normalizeValue(distance);
 
-        return new Truthness(1 - normalizedDistance, a !== b ? 1 : 0);
+        return new Truthness(1 - normalizedDistance, a !== b ? 1 : HeuristicsForBooleans.FLAG_NO_EXCEPTION);
     }
 
     public static getLessThanTruthnessNumber(a: number, b: number): Truthness {

@@ -8,18 +8,19 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.mutationweight.individual.IndividualMutationweightTest
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
 /**
- * created by manzh on 2020-06-02
+ * created by manzh on 2020-06-03
  */
 class MutationWeightControlTest {
 
@@ -33,7 +34,7 @@ class MutationWeightControlTest {
     fun init(){
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(BaseModule()))
+                .withModules(* arrayOf<Module>(BaseModule(emptyArray(), true)))
                 .build().createInjector()
         randomness = injector.getInstance(Randomness::class.java)
         config = injector.getInstance(EMConfig::class.java)
@@ -44,16 +45,42 @@ class MutationWeightControlTest {
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
         config.maxActionEvaluations = 10
+
     }
 
     @Test
-    fun testIndividual(){
+    fun testGeneSelectionForIndividualBeforeFS(){
         config.weightBasedMutationRate = true
         config.probOfArchiveMutation = 0.0 // disable adaptive mutation rate
         config.d = 0.0 //only based on weight
-        config.startingPerOfGenesToMutate = 0.01
+        config.startingPerOfGenesToMutate = 0.5
 
-        val individual = IndividualMutationweightTest.newRestIndividual()
+        val individual = GeneWeightTestSchema.newRestIndividual(numSQLAction = 0, numRestAction = 8)
+        val all = individual.seeGenes().filter { it.isMutable() }
+        assertEquals(8, all.size)
+
+        /*
+            with 8 genes, avg. of mutated gene = 8 * 0.5
+            it is likely to select more than 2 genes to mutate.
+         */
+        val selected = mutableListOf<Gene>()
+        selected.addAll(mwc.selectSubGene(
+                candidateGenesToMutate = all,
+                adaptiveWeight = false,
+                forceNotEmpty = true
+        ))
+
+        assert(selected.size >= 2)
+    }
+
+    @Test
+    fun testGeneSelectionForIndividualWhenFS(){
+        config.weightBasedMutationRate = true
+        config.probOfArchiveMutation = 0.0 // disable adaptive mutation rate
+        config.d = 0.0 //only based on weight
+        time.newActionEvaluation(5)
+
+        val individual = GeneWeightTestSchema.newRestIndividual()
         val all = individual.seeGenes().filter { it.isMutable() }
         val obj = individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }.find { it is ObjectGene }
         assertEquals(4, all.size)
@@ -75,34 +102,51 @@ class MutationWeightControlTest {
     }
 
     @Test
-    fun testObjectGene(){
-        config.d = 0.0
+    fun testGeneSelectionForObjectGeneWhenFS(){
+        time.newActionEvaluation(5)
 
-        val individual = IndividualMutationweightTest.newRestIndividual()
+        val individual = GeneWeightTestSchema.newRestIndividual("POST:/gw/efoo")
         val obj = individual.seeGenes(Individual.GeneFilter.NO_SQL).find { it is ObjectGene }
 
         assertNotNull(obj)
 
-        val mutated = obj!!.copy()
-        mutated.standardMutation(
-                randomness, apc = apc, mwc = mwc, allGenes = listOf(), internalGeneSelectionStrategy = SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
+        config.weightBasedMutationRate = true
+        config.d = 0.0
+        /*
+            7 fields, and their weights are 2, 2, 2, 2, 2, 2, 61
+            then, m of 7th field are not less than 61/73 when d = 0.0.
+            thus when executing 2 times, we assume that 7rd field is selected at least one time
+         */
+        val resultHW = selectField(obj as ObjectGene, 6, 2, SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT)
+        assert(resultHW)
+
+        config.weightBasedMutationRate = false
+
+        val einfoObj = (obj.fields.find { it.name == "einfo" } as? OptionalGene)?.gene as? ObjectGene
+        assertNotNull(einfoObj)
+        /*
+              30 fields for einfoObj, it is unlikely to select a specific field at the first attempt, eg, 5th field
+         */
+        val result = selectField(einfoObj!!, 5, 1, SubsetGeneSelectionStrategy.DEFAULT)
+        assertFalse(result)
+    }
+
+    private fun selectField(obj: ObjectGene, indexOfField : Int, times : Int, selectionStrategy: SubsetGeneSelectionStrategy) : Boolean{
+        val mutatedWH = obj.copy()
+        mutatedWH.standardMutation(
+                randomness, apc = apc, mwc = mwc, allGenes = listOf(), internalGeneSelectionStrategy = selectionStrategy
         )
 
         var result = false
-        /*
-            3 fields, and their weights are 2, 2, 5
-            then, m of 3rd field are not less than 5/9 when d = 1.0.
-            thus when executing 2 times, we assume that 3rd field is selected at least one time
-         */
-        (0..1).forEach { _ ->
-            val mf = (mutated as ObjectGene).fields.zip( (obj as ObjectGene).fields ){ t, o ->
+
+        (0..times).forEach { _ ->
+            val mf = (mutatedWH as ObjectGene).fields.zip( obj.fields ){ t, o ->
                 t.containsSameValueAs(o)
             }
-            result = result || !mf[2]
+            result = result || !mf[indexOfField]
         }
 
-        assert(result)
+        return result
     }
-
 
 }

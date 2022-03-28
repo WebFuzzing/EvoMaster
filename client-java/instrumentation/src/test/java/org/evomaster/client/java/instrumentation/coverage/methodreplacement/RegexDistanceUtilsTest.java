@@ -1,7 +1,10 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 /**
  * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
@@ -21,15 +24,85 @@ import java.util.regex.Pattern;
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
- */
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+ */import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Gordon Fraser
  *
  */
 public class RegexDistanceUtilsTest {
+
+    @BeforeEach
+    public void reset(){
+        ExecutionTracer.reset();
+    }
+
+
+    private void verifyYesNo(String regex, String yes, String no){
+
+        assertTrue(Pattern.compile(regex).matcher(yes).matches());
+        assertFalse(Pattern.compile(regex).matcher(no).matches());
+
+        assertEquals(0d, RegexDistanceUtils.getStandardDistance(yes, regex));
+        assertTrue(RegexDistanceUtils.getStandardDistance(no,regex) > 0);
+    }
+
+    @Test
+    public void testD(){
+
+        String regex = "\\d";
+        String yes =  "1";
+        String no = "foo";
+
+        verifyYesNo(regex, yes, no);
+    }
+
+
+    @Test
+    public void testTab(){
+
+        String yes = "\t";
+        String no = " ";
+
+        verifyYesNo("[\t]", yes, no);
+        verifyYesNo("\t", yes, no);
+    }
+
+    @Test
+    public void testS(){
+
+        verifyYesNo("\\s", " ", "s");
+        //FIXME
+        //verifyYesNo("\\s", "\t", "s");
+    }
+
+    @Test
+    public void testLanguageToolIssue02(){
+
+        String regex = ".*\\s$";
+        String target = "Abdel Nasser";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(target);
+        assertFalse(matcher.matches());
+
+        int distance = RegexDistanceUtils.getStandardDistance(target, regex);
+        assertTrue(distance > 0 );
+    }
+
+    @Test
+    public void testLanguageToolIssue(){
+
+        String regex = "(?iu).*\\p{L}";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher("foo");
+        assertTrue(matcher.matches());
+
+        //should not crash
+        RegexDistanceUtils.getStandardDistance("foo", regex);
+    }
+
     @Test
     public void testLongRegex() {
         final String example = "-@0.AA";

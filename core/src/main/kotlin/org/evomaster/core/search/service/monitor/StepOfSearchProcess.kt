@@ -56,21 +56,21 @@ open class StepOfSearchProcess<T> where T : Individual{
     val time : Long
 
 
-    constructor(_archive:Archive<*>,  _indexOfEvaluation : Int, _i : T, _eval: EvaluatedIndividual<*>, _time:Long, _isMutated : Boolean){
+    constructor(currentArchive:Archive<*>, indexOfEvaluation : Int, individual : T, evalIndividual: EvaluatedIndividual<*>, currentTime:Long, isMutated : Boolean){
 
-        this.isMutated = _isMutated
-        this.time = _time
-        this.evalIndividual = _eval as EvaluatedIndividual<T>
-        this.indexOfEvaluation = _indexOfEvaluation
+        this.isMutated = isMutated
+        this.time = currentTime
+        this.evalIndividual = evalIndividual as EvaluatedIndividual<T>
+        this.indexOfEvaluation = indexOfEvaluation
 
-        for(entries in _archive.getSnapshotOfBestIndividuals()){
+        for(entries in currentArchive.getSnapshotOfBestIndividuals()){
             populations.put(entries.key, mutableListOf())
             for(v in entries.value){
                 populations.getValue(entries.key).add((v as EvaluatedIndividual<T>))
             }
         }
-        _archive.getSnapshotOfSamplingCounter()
-                .forEach { t, u ->  run {
+        currentArchive.getSnapshotOfSamplingCounter()
+                .forEach { (t, u) ->  run {
                     samplingCounter.getOrDefault(t, u)
                     }
                 }

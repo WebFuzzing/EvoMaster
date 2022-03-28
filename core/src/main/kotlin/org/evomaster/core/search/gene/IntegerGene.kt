@@ -1,27 +1,49 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class IntegerGene(
-        name: String,
-        value: Int = 0,
-        /** Inclusive */
-        val min: Int = Int.MIN_VALUE,
-        /** Inclusive */
-        val max: Int = Int.MAX_VALUE,
-        val valueMutation :IntMutationUpdate = IntMutationUpdate(min, max)
-) : NumberGene<Int>(name, value) {
+    name: String,
+    value: Int = 0,
+    /**
+     * Inclusive
+     *
+     * For IntegerGene, min must be specified
+     * */
+    override val min: Int = Int.MIN_VALUE,
+    /**
+     * Inclusive
+     *
+     * For IntegerGene, max must be specified
+     * */
+    override val max: Int = Int.MAX_VALUE
+) : NumberGene<Int>(name, value, min, max) {
 
-    override fun copy(): Gene {
-        return IntegerGene(name, value, min, max, valueMutation.copy())
+    init {
+        if (min == max)
+            this.value = min
+        if (max < min)
+            throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+    }
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(IntegerGene::class.java)
+    }
+
+    override fun copyContent(): Gene {
+        return IntegerGene(name, value, min, max)
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -40,41 +62,37 @@ class IntegerGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        val z = 1000
-        val range = max.toLong() - min.toLong() + 1L
-
-        val a: Int
-        val b: Int
-
-        if (range > z && randomness.nextBoolean(0.95)) {
-            //if very large range, might want to sample small values around 0 most of the times
-            if (min <= 0 && max >= z) {
-                a = 0
-                b = z
-            } else if (randomness.nextBoolean()) {
-                a = min
-                b = min + z
-            } else {
-                a = max - z
-                b = max
-            }
-        } else {
-            a = min
-            b = max
-        }
-
-        value = if (forceNewValue) {
-            randomness.nextInt(a, b, value)
-        } else {
-            randomness.nextInt(a, b)
-        }
-
+        value = randomness.randomizeBoundedIntAndLong(value.toLong(), min.toLong(), max.toLong(), forceNewValue).toInt()
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        mwc: MutationWeightControl,
+        allGenes: List<Gene>,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+
+        if (enableAdaptiveGeneMutation) {
+            additionalGeneMutationInfo
+                ?: throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
+            if (additionalGeneMutationInfo.hasHistory()) {
+                try {
+                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
+                        additionalGeneMutationInfo,
+                        this,
+                        allGenes
+                    )
+                    return true
+                } catch (e: DifferentGeneInHistory) {
+                }
+            }
+        }
 
         //check maximum range. no point in having a delta greater than such range
-        val range: Long = max.toLong() - min.toLong()
+        val range = max.toLong() - min.toLong()
 
         //choose an i for 2^i modification
         val delta = getDelta(randomness, apc, range)
@@ -93,16 +111,56 @@ class IntegerGene(
             else -> res.toInt()
         }
 
-        //TODO MAN add archive-based mutation
         return true
     }
 
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
+    ): String {
         return value.toString()
     }
 
-    override fun reachOptimal(): Boolean {
-        return valueMutation.reached
+    override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        when (gene) {
+            is IntegerGene -> value = gene.value
+            is FloatGene -> value = gene.value.toInt()
+            is DoubleGene -> value = gene.value.toInt()
+            is LongGene -> value = gene.value.toInt()
+            is StringGene -> {
+                value = gene.value.toIntOrNull() ?: return false
+            }
+            is Base64StringGene -> {
+                value = gene.data.value.toIntOrNull() ?: return false
+            }
+            is ImmutableDataHolderGene -> {
+                value = gene.value.toIntOrNull() ?: return false
+            }
+            is SqlPrimaryKeyGene -> {
+                value = gene.uniqueId.toInt()
+            }
+            else -> {
+                LoggingUtil.uniqueWarn(log, "cannot bind Integer with ${gene::class.java.simpleName}")
+                return false
+            }
+        }
+        return true
     }
+
+    override fun compareTo(other: ComparableGene): Int {
+        if (other !is IntegerGene) {
+            throw ClassCastException("Expected IntegerGene but " + other::javaClass + " was found.")
+        }
+        return this.toInt().compareTo(other.toInt())
+    }
+
+    override fun isMutable(): Boolean {
+        return this.max > this.min
+    }
+
 }

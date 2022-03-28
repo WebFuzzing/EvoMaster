@@ -35,11 +35,13 @@ public class FloatClassReplacement implements MethodReplacementClass {
 
         try {
             float res = Float.parseFloat(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                    new Truthness(1, DistanceHelper.H_NOT_NULL));
             return res;
         } catch (NumberFormatException | NullPointerException e) {
             double h = NumberParsingUtils.getParsingHeuristicValueForFloat(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                    new Truthness(h, 1));
             throw e;
         }
     }
@@ -58,11 +60,11 @@ public class FloatClassReplacement implements MethodReplacementClass {
         } else {
             Float anotherFloat = (Float) anObject;
             if (caller.equals(anotherFloat)) {
-                t = new Truthness(1d, 0d);
+                t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
-                final double base = DistanceHelper.H_NOT_NULL;
+                double base = DistanceHelper.H_NOT_NULL;
                 double distance = DistanceHelper.getDistanceToEquality(caller, anotherFloat);
-                double h = base + ((1 - base) / (distance + 1));
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }

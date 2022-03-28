@@ -7,7 +7,6 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.system.measureTimeMillis
 
 
 abstract class FitnessFunction<T>  where T : Individual {
@@ -36,6 +35,9 @@ abstract class FitnessFunction<T>  where T : Individual {
     @Inject
     protected lateinit var config: EMConfig
 
+    @Inject
+    private lateinit var executionInfoReporter: ExecutionInfoReporter
+
     companion object{
         private val log : Logger = LoggerFactory.getLogger(FitnessFunction::class.java)
     }
@@ -47,11 +49,11 @@ abstract class FitnessFunction<T>  where T : Individual {
 
         val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
 
-        var ei = time.measureTimeMillis(
-                {time.reportExecutedIndividualTime(it, a)},
-                {doCalculateCoverage(individual, targets)}
-        )
-        processMonitor.eval = ei
+        if(time.averageOverheadMsBetweenTests.isRecordingTimer()){
+            time.averageOverheadMsBetweenTests.addElapsedTime()
+        }
+
+        var ei = calculateIndividualWithPostHandling(individual, targets, a)
 
         if(ei == null){
             /*
@@ -64,10 +66,8 @@ abstract class FitnessFunction<T>  where T : Individual {
             //let's wait a little, just in case...
             Thread.sleep(5_000)
 
-            ei = time.measureTimeMillis(
-                    {time.reportExecutedIndividualTime(it, a)},
-                    {doCalculateCoverage(individual, targets)}
-            )
+            ei = calculateIndividualWithPostHandling(individual, targets, a)
+
 
             if(ei == null){
                 //give up, but record it
@@ -76,12 +76,15 @@ abstract class FitnessFunction<T>  where T : Individual {
             }
         }
 
+        time.averageOverheadMsBetweenTests.doStartTimer()
+
+        processMonitor.eval = ei
+
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()
 
         return ei
     }
-
 
 
     /**
@@ -91,6 +94,19 @@ abstract class FitnessFunction<T>  where T : Individual {
      */
     protected abstract fun doCalculateCoverage(individual: T, targets: Set<Int>) : EvaluatedIndividual<T>?
 
+    private fun calculateIndividualWithPostHandling(individual: T, targets: Set<Int>, actionsSize: Int) : EvaluatedIndividual<T>?{
+
+        val ei = time.measureTimeMillis(
+                { t, ind ->
+                    time.reportExecutedIndividualTime(t, actionsSize)
+                    ind?.executionTimeMs = t
+                },
+                {doCalculateCoverage(individual, targets)}
+        )
+        // plugin execution info reporter here, to avoid the time spent by execution reporter
+        handleExecutionInfo(ei)
+        return ei
+    }
     /**
      * Try to reinitialize the SUT. This is done when there are issues
      * in calculating coverage
@@ -99,9 +115,14 @@ abstract class FitnessFunction<T>  where T : Individual {
 
     /**
      * decide what targets to evaluate during fitness evaluation
+     * @param targets indicates prioritized targets if there exists
      */
     open fun targetsToEvaluate(targets: Set<Int>, individual: T) : Set<Int>{
-        if (targets.isEmpty()) throw IllegalArgumentException("none of the targets to evaluate")
-        return targets
+        return targets.plus(archive.notCoveredTargets()).filter { !IdMapper.isLocal(it) }.toSet()
+    }
+
+    private fun handleExecutionInfo(ei: EvaluatedIndividual<T>?) {
+        ei?:return
+        executionInfoReporter.sqlExecutionInfo(ei.individual.seeActions(), ei.fitness.databaseExecutions)
     }
 }

@@ -2,15 +2,12 @@ package org.evomaster.core.problem.rest.service
 
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -29,60 +26,23 @@ class RestSampler : AbstractRestSampler(){
         }
     }
 
-
-    fun canInsertInto(tableName: String) : Boolean {
-        //TODO might need to refactor/remove once we deal with VIEWs
-
-        return sqlInsertBuilder?.isTable(tableName) ?: false
-    }
-
-    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
-
-        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
-                ?: throw IllegalStateException("No DB schema is available")
-
-        DbActionUtils.randomizeDbActionGenes(actions, randomness)
-
-        return actions
-    }
-
     override fun sampleAtRandom(): RestIndividual {
 
-        val actions = mutableListOf<RestAction>()
-        val n = randomness.nextInt(1, config.maxTestSize)
+        val actions = mutableListOf<RestCallAction>()
+        val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
 
         (0 until n).forEach {
-            actions.add(sampleRandomAction(0.05))
+            actions.add(sampleRandomAction(0.05) as RestCallAction)
         }
         return RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
     }
 
-    /**
-     * When genes are created, those are not necessarily initialized.
-     * The reason is that some genes might depend on other genes (eg., foreign keys in SQL).
-     * So, once all genes are created, we force their initialization, which will also randomize their values.
+
+    /*
+        FIXME: following call is likely unnecessary... originally under RestAction will could have different
+        action types like SQL, but in the end we used a different approach (ie pre-init steps).
+        So, likely can be removed, but need to check the refactoring RestResouce first
      */
-    private fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
-        action.seeGenes().forEach { it.randomize(randomness, false) }
-    }
-
-    /**
-     * Given the current schema definition, create a random action among the available ones.
-     * All the genes in such action will have their values initialized at random, but still within
-     * their given constraints (if any, e.g., a day number being between 1 and 12).
-     *
-     * @param noAuthP the probability of having an HTTP call without any authentication header.
-     */
-    fun sampleRandomAction(noAuthP: Double): RestAction {
-        val action = randomness.choose(actionCluster).copy() as RestAction
-        randomizeActionGenes(action)
-
-        if (action is RestCallAction) {
-            action.auth = getRandomAuth(noAuthP)
-        }
-
-        return action
-    }
 
     private fun sampleRandomCallAction(noAuthP: Double): RestCallAction {
         val action = randomness.choose(actionCluster.filter { a -> a.value is RestCallAction }).copy() as RestCallAction
@@ -102,7 +62,7 @@ class RestSampler : AbstractRestSampler(){
             return adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
         }
 
-        if (config.maxTestSize <= 1) {
+        if (getMaxTestSizeDuringSampler() <= 1) {
             /*
                 Here we would have sequences of endpoint calls that are
                 somehow linked to each other, eg a DELETE on a resource
@@ -113,7 +73,7 @@ class RestSampler : AbstractRestSampler(){
         }
 
 
-        val test = mutableListOf<RestAction>()
+        val test = mutableListOf<RestCallAction>()
 
         val action = sampleRandomCallAction(0.0)
 
@@ -138,7 +98,7 @@ class RestSampler : AbstractRestSampler(){
 
         if (!test.isEmpty()) {
             val objInd = RestIndividual(test, sampleType, mutableListOf()//, usedObjects.copy()
-                    ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+                    ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
 
             //usedObjects.clear()
             return objInd
@@ -147,7 +107,7 @@ class RestSampler : AbstractRestSampler(){
         return sampleAtRandom()
     }
 
-    private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPost(post: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{post.verb == HttpVerb.POST}
 
@@ -156,7 +116,7 @@ class RestSampler : AbstractRestSampler(){
         return SampleType.SMART
     }
 
-    private fun handleSmartDelete(delete: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartDelete(delete: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{delete.verb == HttpVerb.DELETE}
 
@@ -165,7 +125,7 @@ class RestSampler : AbstractRestSampler(){
         return SampleType.SMART
     }
 
-    private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{patch.verb == HttpVerb.PATCH}
 
@@ -174,7 +134,7 @@ class RestSampler : AbstractRestSampler(){
         return SampleType.SMART
     }
 
-    private fun handleSmartPut(put: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPut(put: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{put.verb == HttpVerb.PUT}
 
@@ -197,7 +157,7 @@ class RestSampler : AbstractRestSampler(){
     /**
      *    Only for PUT, DELETE, PATCH
      */
-    private fun createWriteOperationAfterAPost(write: RestCallAction, test: MutableList<RestAction>) {
+    private fun createWriteOperationAfterAPost(write: RestCallAction, test: MutableList<RestCallAction>) {
 
         Lazy.assert{write.verb == HttpVerb.PUT || write.verb == HttpVerb.DELETE || write.verb == HttpVerb.PATCH}
 
@@ -207,7 +167,7 @@ class RestSampler : AbstractRestSampler(){
         createResourcesFor(write, test)
 
         if (write.verb == HttpVerb.PATCH &&
-                config.maxTestSize >= test.size + 1 &&
+                getMaxTestSizeDuringSampler() >= test.size + 1 &&
                 randomness.nextBoolean()) {
             /*
                 As PATCH is not idempotent (in contrast to PUT), it can make sense to test
@@ -223,7 +183,7 @@ class RestSampler : AbstractRestSampler(){
         }
     }
 
-    private fun handleSmartGet(get: RestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartGet(get: RestCallAction, test: MutableList<RestCallAction>): SampleType {
 
         Lazy.assert{get.verb == HttpVerb.GET}
 
@@ -273,7 +233,7 @@ class RestSampler : AbstractRestSampler(){
             val lastPost = test[test.size - 2] as RestCallAction
             Lazy.assert{lastPost.verb == HttpVerb.POST}
 
-            val available = config.maxTestSize - test.size
+            val available = getMaxTestSizeDuringSampler() - test.size
 
             if (lastPost.path.isEquivalent(get.path) && available > 0) {
                 /*
@@ -306,10 +266,10 @@ class RestSampler : AbstractRestSampler(){
     }
 
 
-    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestAction>)
+    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestCallAction>)
             : Boolean {
 
-        if (test.size >= config.maxTestSize) {
+        if (test.size >= getMaxTestSizeDuringSampler()) {
             return false
         }
 
@@ -413,7 +373,7 @@ class RestSampler : AbstractRestSampler(){
             throw IllegalArgumentException("Cannot choose from an empty collection")
         }
 
-        val max = actions.asSequence().map { a -> a.path.levels() }.max()!!
+        val max = actions.asSequence().map { a -> a.path.levels() }.maxOrNull()!!
         val candidates = actions.filter { a -> a.path.levels() == max }
 
         return randomness.choose(candidates)
@@ -426,7 +386,7 @@ class RestSampler : AbstractRestSampler(){
     }
 
 
-    override fun initAdHocInitialIndividuals() {
+    override fun customizeAdHocInitialIndividuals() {
 
         adHocInitialIndividuals.clear()
 
@@ -439,18 +399,18 @@ class RestSampler : AbstractRestSampler(){
         }
     }
 
-    private fun createSingleCallOnEachEndpoint(auth: AuthenticationInfo) {
+    private fun createSingleCallOnEachEndpoint(auth: HttpWsAuthenticationInfo) {
         actionCluster.asSequence()
                 .filter { a -> a.value is RestCallAction }
                 .forEach { a ->
                     val copy = a.value.copy() as RestCallAction
                     copy.auth = auth
                     randomizeActionGenes(copy)
-                    randomizeActionGenes(copy, false)
-                    val ind = RestIndividual(mutableListOf(copy), SampleType.SMART, mutableListOf()//, usedObjects.copy()
-                            ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else TraceableElement.DEFAULT_INDEX)
+                    val ind = createIndividual(mutableListOf(copy))
                     adHocInitialIndividuals.add(ind)
                 }
     }
+
+
 
 }

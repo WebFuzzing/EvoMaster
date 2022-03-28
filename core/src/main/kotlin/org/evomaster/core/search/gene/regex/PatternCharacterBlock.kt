@@ -6,8 +6,8 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 /**
  * Immutable class
@@ -15,13 +15,15 @@ import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectio
 class PatternCharacterBlock(
         name: String,
         val stringBlock: String
-) : RxAtom(name) {
+) : RxAtom(name, listOf()) {
 
     override fun isMutable(): Boolean {
         return false
     }
 
-    override fun copy(): Gene {
+    override fun getChildren(): List<Gene> = listOf()
+
+    override fun copyContent(): Gene {
         return PatternCharacterBlock(name, stringBlock)
     }
 
@@ -29,11 +31,11 @@ class PatternCharacterBlock(
         throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return stringBlock
     }
 
@@ -53,5 +55,12 @@ class PatternCharacterBlock(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.stringBlock == other.stringBlock
+    }
+
+    override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing
+        return true
     }
 }

@@ -4,7 +4,6 @@ import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.service.ResourceSampler
-import org.evomaster.core.search.Action
 import javax.annotation.PostConstruct
 
 class SimpleResourceSampler : ResourceSampler() {
@@ -15,8 +14,10 @@ class SimpleResourceSampler : ResourceSampler() {
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skipAction, config.doesApplyNameMatching)
 
 
-        this.sqlInsertBuilder = sqlInsertBuilder
-        existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
+        if (sqlInsertBuilder != null){
+            this.sqlInsertBuilder = sqlInsertBuilder
+            existingSqlData = sqlInsertBuilder.extractExistingPKs()
+        }
 
         initAdHocInitialIndividuals()
         postInits()
@@ -24,8 +25,5 @@ class SimpleResourceSampler : ResourceSampler() {
 
     @PostConstruct
     override fun initialize(){
-
     }
-
-
 }

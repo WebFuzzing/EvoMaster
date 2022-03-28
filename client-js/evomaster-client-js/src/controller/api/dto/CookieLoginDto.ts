@@ -12,7 +12,7 @@ enum HttpVerb {
  *
  * Created by arcuri82 on 24-Oct-19.
  */
-class CookieLoginDto {
+export class CookieLoginDto {
 
     /**
      * The id of the user

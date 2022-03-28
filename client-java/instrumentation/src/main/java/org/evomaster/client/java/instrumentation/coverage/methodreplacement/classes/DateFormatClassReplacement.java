@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DateTimeParsingUtils;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
@@ -50,7 +51,8 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
 
         try {
             Date res = caller.parse(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                    new Truthness(1, DistanceHelper.H_NOT_NULL));
             return res;
         } catch (ParseException e) {
             final double h;
@@ -64,7 +66,8 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
                 default:
                     h = DateTimeParsingUtils.getHeuristicToDateTimePatternParsing(input, pattern);
             }
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                    new Truthness(h, 1));
             throw e;
         }
 
@@ -82,7 +85,6 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
             if (ExecutionTracer.isTaintInput(input)) {
                 ExecutionTracer.addStringSpecialization(input,
                         new StringSpecializationInfo(StringSpecialization.DATE_FORMAT_UNKNOWN_PATTERN, null));
-
             }
 
             if (idTemplate == null) {
@@ -91,11 +93,14 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
 
             try {
                 Date res = caller.parse(input);
-                ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+                ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                        new Truthness(1, DistanceHelper.H_NOT_NULL));
                 return res;
             } catch (ParseException e) {
                 // we do not have much guidance since we cannot access any pattern
-                ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(0, 1));
+                double h = input == null ? DistanceHelper.H_REACHED_BUT_NULL : DistanceHelper.H_NOT_NULL;
+                ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                        new Truthness(h, 1));
                 throw e;
             }
         }

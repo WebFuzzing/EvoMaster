@@ -21,17 +21,17 @@ import java.util.*;
  * 1) a SELECT can have many sub-SELECTs inside it, each one defining their own
  * independent aliases
  * 2) a SQL command might not have all the necessary info to infer the right table
- * for a column. In those (valid) cases of ambiguity, we must refer to the schema
+ * for a column. In those (valid) cases of ambiguity, we must refer to the schema.
+ *
+ * WARNING: we lowercase all names of tables and columns, as SQL is (should be?) case insensitive
  */
 public class SqlNameContext {
 
     /**
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
      * But, here, what we need is very simple (just checking for names).
-     * However, note that the "final" here does not give much protection, as the DTOs
-     * are mutable
      */
-    private final DbSchemaDto schema;
+    private  DbSchemaDto schema;
 
 
     /**
@@ -58,14 +58,32 @@ public class SqlNameContext {
         computeAliases();
     }
 
-    public SqlNameContext(Statement statement, DbSchemaDto schema) {
+    public void setSchema(DbSchemaDto schema) {
         this.schema = Objects.requireNonNull(schema);
-        this.statement = Objects.requireNonNull(statement);
-        computeAliases();
     }
 
+    /**
+     * Check if table contains a column with the given name.
+     * This is based on the DB schema.
+     *
+     * If no schema is defined, this method returns false.
+     */
+    public boolean hasColumn(String tableName, String columnName){
+        Objects.requireNonNull(tableName);
+        Objects.requireNonNull(columnName);
 
-    /*
+        if(schema == null){
+            return false;
+        }
+
+        return this.schema.tables.stream()
+                .filter(t -> t.name.equalsIgnoreCase(tableName))
+                .flatMap(t -> t.columns.stream())
+                .filter(c -> c.name.equalsIgnoreCase(columnName))
+                .count() > 0;
+    }
+
+  /*
         TODO
         code here is not supporting nested SELECTs, for the moment
      */
@@ -79,7 +97,7 @@ public class SqlNameContext {
         Table table = column.getTable();
 
         if (table != null) {
-            return tableAliases.getOrDefault(table.getName(), table.getName());
+            return tableAliases.getOrDefault(table.getName().toLowerCase(), table.getName().toLowerCase());
         }
 
         if(statement instanceof Select) {
@@ -95,11 +113,10 @@ public class SqlNameContext {
             }
         } else if(statement instanceof Delete){
             Delete delete = (Delete) statement;
-            return delete.getTable().getName();
+            return delete.getTable().getName().toLowerCase();
         } else if(statement instanceof Update){
             Update update = (Update) statement;
-            //TODO: can it really have more than 1???
-            return update.getTables().get(0).getName();
+            return update.getTable().getName().toLowerCase();
         }else {
             throw new IllegalArgumentException("Cannot handle table name for: " + statement);
         }
@@ -115,7 +132,7 @@ public class SqlNameContext {
         FromItemVisitorAdapter visitor = new FromItemVisitorAdapter(){
             @Override
             public void visit(Table table) {
-                names.add(table.getName());
+                names.add(table.getName().toLowerCase());
             }
         };
 
@@ -216,7 +233,7 @@ public class SqlNameContext {
         if (alias != null) {
             String aliasName = alias.getName();
             if (aliasName != null) {
-                String tableName = table.getName();
+                String tableName = table.getName().toLowerCase();
                 aliases.put(aliasName.trim().toLowerCase(), tableName.trim().toLowerCase());
             }
         }

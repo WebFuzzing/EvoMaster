@@ -70,9 +70,15 @@ class TraceableElementTest {
         config.maxActionEvaluations = 100
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.maxLengthOfTraces = 20
+        config.probOfArchiveMutation = 0.0
+        config.weightBasedMutationRate = false
+        config.testSuiteSplitType = EMConfig.TestSuiteSplitType.NONE
+        config.seed = 42
+        config.useTimeInFeedbackSampling = false
 
-        val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample())!!}
+        val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample())!!.also { archive.addIfNeeded(it) }}
         assert(inds10.all { it.trackOperator != null })
+
 
         val eval = mutator.mutateAndSave(10, inds10[1], archive)
         assertNotNull(eval.trackOperator)
@@ -102,7 +108,7 @@ class TraceableElementTest {
         assertFalse(eval3.tracking!!.history.contains(first))
         assertEquals(eval2.tracking, eval3.tracking)
 
-        assert(eval3.getLast<EvaluatedIndividual<OneMaxIndividual>>(5, -2..1).none { it.evaluatedResult == EvaluatedMutation.WORSE_THAN })
+        assert(eval3.getLast<EvaluatedIndividual<OneMaxIndividual>>(5, EvaluatedMutation.range()).none { it.evaluatedResult == null || it.evaluatedResult == EvaluatedMutation.WORSE_THAN })
     }
 
     // enable tracking individual and but disable evaluated individual
@@ -111,10 +117,12 @@ class TraceableElementTest {
         config.enableTrackEvaluatedIndividual = false
         config.enableTrackIndividual = true
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.probOfArchiveMutation = 0.0
+        config.weightBasedMutationRate = false
 
         tracker.postConstruct()
 
-        val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample())!! }
+        val inds10 = (0 until 10).map { ff.calculateCoverage(sampler.sample())!!.also { archive.addIfNeeded(it) } }
 
         assert(inds10.all { it.trackOperator != null && it.tracking == null})
 

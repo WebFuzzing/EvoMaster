@@ -1,14 +1,14 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
+import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.BlackBoxUtils
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -23,81 +23,93 @@ import java.time.ZonedDateTime
  */
 class TestSuiteWriter {
 
+    companion object {
+        const val jsImport = "EM"
+
+        /**
+         * variable name of Sut handler
+         */
+        const val controller = "controller"
+        private const val baseUrlOfSut = "baseUrlOfSut"
+        private const val expectationsMasterSwitch = "ems"
+        private const val fixtureClass = "ControllerFixture"
+        private const val fixture = "_fixture"
+
+        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
+    }
+
     @Inject
     private lateinit var config: EMConfig
 
     @Inject
     private lateinit var searchTimeController: SearchTimeController
 
-    private lateinit var swagger: OpenAPI
+    @Inject
+    private lateinit var testCaseWriter: TestCaseWriter
+
+    @Inject
     private lateinit var partialOracles: PartialOracles
-    private lateinit var objectGenerator: ObjectGenerator
 
-    private var active = mutableMapOf<String, Boolean>()
+    @Inject(optional = true)
+    private lateinit var sampler: Sampler<*>
 
-    companion object {
-        const val jsImport = "EM";
+    private var activePartialOracles = mutableMapOf<String, Boolean>()
 
-        private const val controller = "controller"
-        private const val baseUrlOfSut = "baseUrlOfSut"
-        private const val expectationsMasterSwitch = "ems"
-
-        private val testCaseWriter = TestCaseWriter()
-
-        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
-    }
-
-    fun setSwagger(sw: OpenAPI) {
-        swagger = sw
-    }
 
     fun writeTests(
-            solution: Solution<*>,
-            controllerName: String?
+        solution: Solution<*>,
+        controllerName: String?,
+        controllerInput: String?,
+        snapshotTimestamp: String = ""
     ) {
 
-        if(!::partialOracles.isInitialized) partialOracles = PartialOracles()
-
-        val name = TestSuiteFileName("${solution.testSuiteName}${solution.termination.suffix}")
-
-        val content = convertToCompilableTestCode(solution, name, controllerName)
+        val name = TestSuiteFileName(solution.getFileName())
+        val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName, controllerInput)
         saveToDisk(content, config, name)
     }
 
 
-    private fun convertToCompilableTestCode(
-            solution: Solution<*>,
-            testSuiteFileName: TestSuiteFileName,
-            controllerName: String?
-    )
-            : String {
+    fun convertToCompilableTestCode(
+        solution: Solution<*>,
+        testSuiteFileName: TestSuiteFileName,
+        timestamp: String = "",
+        controllerName: String?,
+        controllerInput: String?
+    ): String {
 
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
-        partialOracles.setFormat(config.outputFormat)
-        if (::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
-        testCaseWriter.setPartialOracles(partialOracles)
-        active = partialOracles.activeOracles(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>)
 
-        header(solution, testSuiteFileName, lines, controllerName)
+        activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
-        if (config.outputFormat.isJavaOrKotlin() || config.outputFormat.isPython()) {
+        header(solution, testSuiteFileName, lines, timestamp, controllerName)
+
+        if (! config.outputFormat.isJavaScript() || config.outputFormat.isPython()) {
             /*
-                In Java/Kotlin the tests are inside a class, but not in JS
+                In Java/Kotlin/C# the tests are inside a class, but not in JS
              */
             lines.indent()
         }
 
-        beforeAfterMethods(controllerName, lines)
+        classFields(lines, config.outputFormat)
+
+        beforeAfterMethods(solution, controllerName, controllerInput, lines, config.outputFormat, testSuiteFileName)
 
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
-            testSuiteOrganizer.sortTests(solution, config.customNaming)
+            // TODO skip to sort RPC for the moment
+            if (solution.individuals.any { it.individual is RPCIndividual }){
+                var counter = 0
+                solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
+            }else
+                testSuiteOrganizer.sortTests(solution, config.customNaming)
         } catch (ex: Exception) {
             var counter = 0
-            log.warn("A failure has occurred with the test sorting. Reverting to default settings. \n"
-                    + "Exception: ${ex.localizedMessage} \n"
-                    + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
+            log.warn(
+                "A failure has occurred with the test sorting. Reverting to default settings. \n"
+                        + "Exception: ${ex.localizedMessage} \n"
+                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+            )
             solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
         }
 
@@ -106,17 +118,22 @@ class TestSuiteWriter {
 
             // catch writing problems on an individual test case basis
             val testLines = try {
-                testCaseWriter.convertToCompilableTestCode(config, test, baseUrlOfSut)
+                if (config.outputFormat.isCsharp())
+                    testCaseWriter.convertToCompilableTestCode(test, "$fixture.$baseUrlOfSut")
+                else
+                    testCaseWriter.convertToCompilableTestCode(test, baseUrlOfSut)
             } catch (ex: Exception) {
-                log.warn("A failure has occurred in writing test ${test.name}. \n "
-                        + "Exception: ${ex.localizedMessage} \n"
-                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
+                log.warn(
+                    "A failure has occurred in writing test ${test.name}. \n "
+                            + "Exception: ${ex.localizedMessage} \n"
+                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+                )
                 Lines()
             }
             lines.add(testLines)
         }
 
-        if(config.outputFormat.isJavaOrKotlin()){
+        if (! config.outputFormat.isJavaScript()) {
             lines.deindent()
         }
 
@@ -125,10 +142,40 @@ class TestSuiteWriter {
         return lines.toString()
     }
 
+    private fun handleResetDatabaseInput(solution: Solution<*>): String{
+        if (!config.outputFormat.isJavaOrKotlin())
+            throw IllegalStateException("DO NOT SUPPORT resetDatabased for "+ config.outputFormat)
 
-    private fun saveToDisk(testFileContent: String,
-                           config: EMConfig,
-                           testSuiteFileName: TestSuiteFileName) {
+        val accessedTable = mutableSetOf<String>()
+        solution.individuals.forEach { e->
+            //TODO will need to be refactored when supporting Web Frontend
+            if (e.individual is ApiWsIndividual){
+               accessedTable.addAll(e.individual.getInsertTableNames())
+            }
+            e.fitness.databaseExecutions.values.forEach { de->
+                accessedTable.addAll(de.insertedData.map { it.key })
+                accessedTable.addAll(de.updatedData.map { it.key })
+                accessedTable.addAll(de.deletedData)
+            }
+        }
+        val all = sampler.extractFkTables(accessedTable)
+
+        if (all.isEmpty()) return "null"
+
+        val input = all.joinToString(",") { "\"$it\"" }
+        return when{
+            config.outputFormat.isJava() -> "Arrays.asList($input)"
+            config.outputFormat.isKotlin() -> "listOf($input)"
+            else -> throw IllegalStateException("DO NOT SUPPORT resetDatabased for "+ config.outputFormat)
+        }
+    }
+
+
+    private fun saveToDisk(
+        testFileContent: String,
+        config: EMConfig,
+        testSuiteFileName: TestSuiteFileName
+    ) {
 
         val path = Paths.get(config.outputFolder, testSuiteFileName.getAsPath(config.outputFormat))
 
@@ -137,6 +184,16 @@ class TestSuiteWriter {
         Files.createFile(path)
 
         path.toFile().appendText(testFileContent)
+    }
+
+    private fun removeFromDisk(
+        config: EMConfig,
+        testSuiteFileName: TestSuiteFileName
+    ) {
+
+        val path = Paths.get(config.outputFolder, testSuiteFileName.getAsPath(config.outputFormat))
+
+        Files.deleteIfExists(path)
     }
 
     private fun classDescriptionEmptyLine(lines: Lines) = when {
@@ -154,13 +211,27 @@ class TestSuiteWriter {
         }
     }
 
-    private fun classDescriptionComment(solution: Solution<*>, lines: Lines) {
+    private fun classDescriptionComment(solution: Solution<*>, lines: Lines, timestamp: String = "") {
         val format = config.outputFormat
         val comment = if (format.isPython()) "#" else " *"
         if (!format.isPython())
             lines.add("/**")
-        lines.add("$comment This file was automatically generated by EvoMaster on ${escapeDocs(ZonedDateTime.now().toString())}")
+        lines.add(
+            "$comment This file was automatically generated by EvoMaster on ${
+                escapeDocs(
+                    ZonedDateTime.now().toString()
+                )
+            }"
+        )
         classDescriptionEmptyLine(lines)
+
+        if (timestamp != "") {
+            lines.add(" ************************************ WARNING ************************************ ")
+            lines.add(" * This is an snapshot of the generated tests after $timestamp seconds elapsed. *")
+            lines.add(" * The execution of Evomaster has not finished. *")
+            lines.add(" ********************************************************************************* ")
+        }
+
         lines.add("$comment The generated test suite contains ${solution.individuals.size} tests")
         classDescriptionEmptyLine(lines)
         lines.add("$comment Covered targets: ${solution.overall.coveredTargets()}")
@@ -174,10 +245,47 @@ class TestSuiteWriter {
             lines.add(" */")
     }
 
-    private fun header(solution: Solution<*>,
-                       name: TestSuiteFileName,
-                       lines: Lines,
-                       controllerName: String?) {
+    /**
+     * This is needed for C#, in particular XUnit
+     */
+    private fun defineFixture(lines: Lines, controllerName: String?) {
+        lines.add("public class $fixtureClass : IDisposable")
+
+        lines.block {
+            lines.addEmpty(2)
+            lines.add("public ISutHandler $controller { get; private set; }")
+            lines.add("public string $baseUrlOfSut { get; private set; }")
+
+            lines.addEmpty()
+
+            lines.add("public $fixtureClass()")
+            lines.block {
+
+                lines.addEmpty(1)
+                addStatement("$controller = new $controllerName()", lines)
+                addStatement("$controller.SetupForGeneratedTest()", lines)
+                addStatement("$baseUrlOfSut = $controller.StartSut ()", lines)
+                addStatement("Assert.NotNull($baseUrlOfSut)", lines)
+
+            }
+
+            lines.addEmpty()
+
+            lines.add("public void Dispose()")
+            lines.block {
+                addStatement("$controller.StopSut ()", lines)
+            }
+        }
+        lines.addEmpty()
+    }
+
+    private fun header(
+        solution: Solution<*>,
+        name: TestSuiteFileName,
+        lines: Lines,
+        timestamp: String = "",
+        controllerName: String?
+    ) {
 
         val format = config.outputFormat
 
@@ -207,12 +315,16 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaOrKotlin()) {
-            addImport("io.restassured.RestAssured", lines)
-            addImport("io.restassured.RestAssured.given", lines, true)
-            addImport("io.restassured.response.ValidatableResponse", lines)
+            if (useRestAssured()){
+                addImport("io.restassured.RestAssured", lines)
+                addImport("io.restassured.RestAssured.given", lines, true)
+                addImport("io.restassured.response.ValidatableResponse", lines)
+            }
+
             addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
             addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
+            addImport("org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto", lines)
             addImport(InsertionDto::class.qualifiedName!!, lines)
             addImport("java.util.List", lines)
 
@@ -221,28 +333,46 @@ class TestSuiteWriter {
             if (config.enableBasicAssertions) {
                 addImport("org.hamcrest.Matchers.*", lines, true)
                 //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
-                addImport("io.restassured.config.JsonConfig", lines)
-                addImport("io.restassured.path.json.config.JsonPathConfig", lines)
-                addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                if (useRestAssured()){
+                    addImport("io.restassured.config.JsonConfig", lines)
+                    addImport("io.restassured.path.json.config.JsonPathConfig", lines)
+                    addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
+                }
+
                 addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
             }
 
+
             if (config.expectationsActive) {
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
-                addImport("io.restassured.path.json.JsonPath", lines)
+
+                if (useRestAssured())
+                    addImport("io.restassured.path.json.JsonPath", lines)
                 addImport("java.util.Arrays", lines)
             }
         }
 
         if (format.isJavaScript()) {
             lines.add("const superagent = require(\"superagent\");")
-            lines.add("const $jsImport = require(\"evomaster-client-js\");")
-            if(controllerName != null) {
+            lines.add("const $jsImport = require(\"evomaster-client-js\").EMTestUtils;")
+            if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
+        }
+
+        if (format.isCsharp()) {
+            addUsing("System", lines)
+            addUsing("System.Text", lines)
+            addUsing("System.Linq", lines)
+            addUsing("Xunit", lines)
+            addUsing("System.Net.Http", lines)
+            addUsing("System.Net.Http.Headers", lines)
+            addUsing("System.Threading.Tasks", lines)
+            addUsing("Newtonsoft.Json", lines)
+            addUsing("EvoMaster.Controller", lines)
         }
 
         if (format.isPython()) {
@@ -260,29 +390,51 @@ class TestSuiteWriter {
             else -> lines.addEmpty(4)
         }
 
-        classDescriptionComment(solution, lines)
+        classDescriptionComment(solution, lines, timestamp)
 
-        if (format.isJavaOrKotlin() || format.isPython()) {
+        if (format.isCsharp()) {
+
+            //TODO configured from EMConfig. possibly with termination rather in the fixture class name
+            lines.add("namespace EvoMasterTests${solution.termination.suffix}{")
+
+            lines.indent()
+
+            defineFixture(lines, controllerName)
+        }
+
+        if (format.isJavaOrKotlin() || format.isCsharp() || format.isPython()) {
             defineClass(name, lines)
             lines.addEmpty()
         }
     }
 
-    private fun staticVariables(controllerName: String?, lines: Lines) {
+    private fun classFields(lines: Lines, format: OutputFormat) {
+        if(format.isCsharp()){
+            lines.addEmpty()
+            addStatement("private $fixtureClass $fixture", lines)
+            lines.addEmpty()
+        }
+    }
+
+
+    private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines) {
+
+        val executable = if(controllerInput.isNullOrBlank()) ""
+            else "\"$controllerInput\"".replace("\\","\\\\")
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
-                lines.add("private static final SutHandler $controller = new $controllerName();")
+                lines.add("private static final SutHandler $controller = new $controllerName($executable);")
                 lines.add("private static String $baseUrlOfSut;")
             } else {
-                lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
+                lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
-                lines.add("private val $controller : SutHandler = $controllerName()")
+                lines.add("private val $controller : SutHandler = $controllerName($executable)")
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
-                lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\"")
+                lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
             }
         } else if (config.outputFormat.isJavaScript()) {
 
@@ -290,8 +442,10 @@ class TestSuiteWriter {
                 lines.add("const $controller = new $controllerName();")
                 lines.add("let $baseUrlOfSut;")
             } else {
-                lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
+                lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
+        } else if (config.outputFormat.isCsharp()) {
+            lines.add("private static readonly HttpClient Client = new HttpClient ();")
         } else if (config.outputFormat.isPython()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("$controller = $controllerName()")
@@ -300,22 +454,23 @@ class TestSuiteWriter {
             }
         }
 
-        if(config.expectationsActive) {
+        if (config.expectationsActive) {
             if (config.outputFormat.isJavaOrKotlin()) {
-                //TODO JS
-                if(active.any{it.value}) {
-                    lines.add("/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
-                            "individual test cases")
+                //TODO JS and C#
+                if (activePartialOracles.any { it.value }) {
+                    lines.add(
+                        "/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
+                                "individual test cases"
+                    )
                     lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
                     lines.add("*/")
-                    if(config.outputFormat.isJava()){
+                    if (config.outputFormat.isJava()) {
                         lines.add("private static boolean $expectationsMasterSwitch = false;")
-                    }
-                    else if(config.outputFormat.isKotlin()){
+                    } else if (config.outputFormat.isKotlin()) {
                         lines.add("private val $expectationsMasterSwitch = false")
                     }
                 }
-                partialOracles.variableDeclaration(lines, config.outputFormat, active)
+                partialOracles?.variableDeclaration(lines, config.outputFormat, activePartialOracles)
             }
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
@@ -323,6 +478,8 @@ class TestSuiteWriter {
     }
 
     private fun initClassMethod(lines: Lines) {
+
+        // Note: for C#, this is done in the Fixture class
 
         val format = config.outputFormat
 
@@ -350,6 +507,17 @@ class TestSuiteWriter {
                         addStatement("await $controller.setupForGeneratedTest()", lines)
                         addStatement("baseUrlOfSut = await $controller.startSut()", lines)
                     }
+                    config.outputFormat.isJavaOrKotlin() -> {
+                        addStatement("$controller.setupForGeneratedTest()", lines)
+                        addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                        /*
+                            now only support white-box
+                            TODO remove this later if we do not use test generation with driver
+                         */
+                        if (config.problemType == EMConfig.ProblemType.RPC){
+                            addStatement("$controller.extractRPCSchema()", lines)
+                        }
+                    }
                     config.outputFormat.isPython()-> {
                         addStatement("cls.$controller.setup_for_generated_test()", lines)
                         if (config.blackBox) {
@@ -357,10 +525,6 @@ class TestSuiteWriter {
                         } else {
                             addStatement("cls.test_client = cls.$controller.app().test_client()", lines)
                         }
-                    }
-                    else -> {
-                        addStatement("$controller.setupForGeneratedTest()", lines)
-                        addStatement("baseUrlOfSut = $controller.startSut()", lines)
                     }
                 }
 
@@ -374,20 +538,23 @@ class TestSuiteWriter {
                 }
             }
 
-            if (format.isJavaOrKotlin()) {
-                addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
-                addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
-                addStatement("RestAssured.urlEncodingEnabled = false", lines)
+            if (config.problemType != EMConfig.ProblemType.RPC){
+                if (format.isJavaOrKotlin()) {
+                    addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
+                    addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
+                    addStatement("RestAssured.urlEncodingEnabled = false", lines)
+                }
+
+                if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
+                    lines.add("RestAssured.config = RestAssured.config()")
+                    lines.indented {
+                        lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
+                        lines.add(".redirect(redirectConfig().followRedirects(false))")
+                    }
+                    appendSemicolon(lines)
+                }
             }
 
-            if (config.enableBasicAssertions && format.isJavaOrKotlin()) {
-                lines.add("RestAssured.config = RestAssured.config()")
-                lines.indented {
-                    lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
-                    lines.add(".redirect(redirectConfig().followRedirects(false))")
-                }
-                appendSemicolon(lines)
-            }
         }
 
         if (format.isJavaScript()) {
@@ -420,11 +587,19 @@ class TestSuiteWriter {
             }
         }
 
-        lines.block(format=format) {
-            when {
-                format.isJavaScript() -> addStatement("await $controller.stopSut()", lines)
-                format.isPython() -> addStatement("cls.$controller.stop_sut()", lines)
-                else -> addStatement("$controller.stopSut()", lines)
+        if (!format.isCsharp()) {
+            lines.block(format=format) {
+                when {
+                    format.isJavaScript() -> {
+                        addStatement("await $controller.stopSut()", lines)
+                    }
+                    format.isPython() -> {
+                        addStatement("cls.$controller.stop_sut()", lines)
+                    }
+                    else -> {
+                        addStatement("$controller.stopSut()", lines)
+                    }
+                }
             }
         }
 
@@ -433,7 +608,7 @@ class TestSuiteWriter {
         }
     }
 
-    private fun initTestMethod(lines: Lines) {
+    private fun initTestMethod(solution: Solution<*>, lines: Lines, name: TestSuiteFileName) {
 
         if (config.blackBox) {
             return
@@ -450,35 +625,59 @@ class TestSuiteWriter {
             format.isKotlin() -> {
                 lines.add("fun initTest()")
             }
-            format.isJavaScript() -> lines.add("beforeEach(async () => ");
+            format.isJavaScript() -> lines.add("beforeEach(async () => ")
+            //for C# we are actually setting up the constructor for the test class
+            format.isCsharp() -> lines.add("public ${name.getClassName()} ($fixtureClass fixture)")
             format.isPython() -> lines.add("def setUp(self):")
         }
 
+
         lines.block(format=format) {
-            when {
-                format.isJavaScript() -> addStatement("await $controller.resetStateOfSUT()", lines)
-                format.isPython() -> addStatement("self.$controller.reset_state_of_sut()", lines)
-                else -> addStatement("$controller.resetStateOfSUT()", lines)
+
+            if (format.isJavaScript()) {
+                //TODO add resetDatabase
+                addStatement("await $controller.resetStateOfSUT()", lines)
+            } else if (format.isJavaOrKotlin()) {
+                if (config.employSmartDbClean == true){
+                    addStatement("$controller.resetDatabase(${handleResetDatabaseInput(solution)})", lines)
+                }
+                addStatement("$controller.resetStateOfSUT()", lines)
+            } else if (format.isCsharp()) {
+                addStatement("$fixture = fixture", lines)
+                //TODO add resetDatabase
+                addStatement("$fixture.controller.ResetStateOfSut()", lines)
+            } else if (format.isPython()) {
+                addStatement("self.$controller.reset_state_of_sut()", lines)
             }
         }
+
 
         if (format.isJavaScript()) {
             lines.append(");")
         }
     }
 
-    private fun beforeAfterMethods(controllerName: String?, lines: Lines) {
+    private fun beforeAfterMethods(
+        solution: Solution<*>,
+        controllerName: String?,
+        controllerInput: String?,
+        lines: Lines,
+        format: OutputFormat,
+        testSuiteFileName: TestSuiteFileName
+    ) {
 
         lines.addEmpty()
 
         val staticInit = {
-            staticVariables(controllerName, lines)
-            lines.addEmpty(2)
+            staticVariables(controllerName, controllerInput, lines)
 
-            initClassMethod(lines)
-            lines.addEmpty(2)
+            if (!format.isCsharp()) {
+                lines.addEmpty(2)
+                initClassMethod(lines)
+                lines.addEmpty(2)
 
-            tearDownMethod(lines)
+                tearDownMethod(lines)
+            }
         }
 
         if (config.outputFormat.isKotlin()) {
@@ -489,13 +688,21 @@ class TestSuiteWriter {
         }
         lines.addEmpty(2)
 
-        initTestMethod(lines)
+        initTestMethod(solution, lines, testSuiteFileName)
         lines.addEmpty(2)
     }
 
 
     private fun footer(lines: Lines) {
-        if (config.outputFormat.isJavaOrKotlin()) {
+        if (config.outputFormat.isJavaOrKotlin() || config.outputFormat.isCsharp()) {
+            //due to opening of class
+            lines.addEmpty(2)
+            lines.add("}")
+        }
+
+        if (config.outputFormat.isCsharp()) {
+            //due to opening of namespace
+            lines.deindent()
             lines.addEmpty(2)
             lines.add("}")
         }
@@ -510,9 +717,11 @@ class TestSuiteWriter {
         when {
             format.isJava() -> lines.append("public ")
             format.isKotlin() -> lines.append("internal ")
+            format.isCsharp() -> lines.append("public ")
         }
 
         when {
+            format.isCsharp() -> lines.append("class ${name.getClassName()} : IClassFixture<$fixtureClass> {")
             format.isPython() -> lines.append("class ${name.getClassName()}(unittest.TestCase):")
             else -> lines.append("class ${name.getClassName()} {")
         }
@@ -526,24 +735,34 @@ class TestSuiteWriter {
         addStatement("import $s $klass", lines)
     }
 
+    private fun addUsing(library: String, lines: Lines, static: Boolean = false) {
+
+        val s = if (static) "static" else ""
+
+        addStatement("using $s $library", lines)
+    }
+
     private fun addStatement(statement: String, lines: Lines) {
         lines.add(statement)
         appendSemicolon(lines)
     }
 
     private fun appendSemicolon(lines: Lines) {
-        if (config.outputFormat.let { it.isJava() || it.isJavaScript() }) {
+        if (config.outputFormat.let { it.isJava() || it.isJavaScript() || it.isCsharp() }) {
             lines.append(";")
         }
     }
 
-    fun setPartialOracles(oracles: PartialOracles){
-        partialOracles = oracles
-    }
-    fun getPartialOracles(): PartialOracles{
+
+
+    /**
+     *  FIXME replace with direct injection
+     */
+    @Deprecated("replace with direct injection")
+    fun getPartialOracles(): PartialOracles {
         return partialOracles
     }
-    fun setObjectGenerator(generator: ObjectGenerator){
-        objectGenerator = generator
-    }
+
+
+    private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
 }

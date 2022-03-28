@@ -7,6 +7,8 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildEvaluatedIndividual
+import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlXMLGene
 import org.evomaster.core.search.gene.StringGene
@@ -34,9 +36,9 @@ class WriteXMLTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -49,7 +51,7 @@ class WriteXMLTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -81,9 +83,9 @@ class WriteXMLTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -96,7 +98,7 @@ class WriteXMLTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -126,9 +128,9 @@ class WriteXMLTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -141,7 +143,7 @@ class WriteXMLTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }

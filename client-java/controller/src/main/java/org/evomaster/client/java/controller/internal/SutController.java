@@ -1,18 +1,33 @@
 package org.evomaster.client.java.controller.internal;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.evomaster.client.java.controller.EmbeddedSutController;
+import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
+import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
+import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
+import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.controller.problem.RPCProblem;
+import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
@@ -26,18 +41,23 @@ import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
  * that is responsible to start/stop/restart the tested application,
  * ie the system under test (SUT)
  */
-public abstract class SutController implements SutHandler {
+public abstract class SutController implements SutHandler, CustomizationHandler {
 
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
@@ -55,6 +75,43 @@ public abstract class SutController implements SutHandler {
      * For each action in a test, keep track of the extra heuristics, if any
      */
     private final List<ExtraHeuristicsDto> extras = new CopyOnWriteArrayList<>();
+
+    /**
+     * track all tables accessed in a test
+     */
+    private final List<String> accessedTables = new CopyOnWriteArrayList<>();
+
+
+    /**
+     * a map of table to fk target tables
+     */
+    private final Map<String, List<String>> fkMap = new ConcurrentHashMap<>();
+
+
+    /**
+     * a map of table to a set of commands which are to insert data into the db
+     */
+    private final Map<String, List<String>> tableInitSqlMap = new ConcurrentHashMap<>();
+
+    /**
+     * a map of interface schemas for RPC service under test
+     * - key is full name of the interface
+     * - value is extracted interface schema
+     */
+    private final Map<String, InterfaceSchema> rpcInterfaceSchema = new LinkedHashMap <>();
+
+    /**
+     * a map of local auth setup schemas for RPC service under test
+     * - key is the index of the auth info which is specified in the driver
+     * - value is extracted local auth setup schema
+     */
+    private final Map<Integer, LocalAuthSetupSchema> localAuthSetupSchemaMap = new LinkedHashMap <>();
+
+    /**
+     * handle parsing RPCActionDto based on json string.
+     * Note that it is only used for RPC
+     */
+    private ObjectMapper objectMapper;
 
     private int actionIndex = -1;
 
@@ -140,26 +197,30 @@ public abstract class SutController implements SutHandler {
     }
 
     @Override
-    public void execInsertionsIntoDatabase(List<InsertionDto> insertions) {
+    public InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous) {
 
-        Connection connection = getConnection();
+        Connection connection = getConnectionIfExist();
         if (connection == null) {
             throw new IllegalStateException("No connection to database");
         }
 
         try {
-            SqlScriptRunner.execInsert(connection, insertions);
+            return SqlScriptRunner.execInsert(connection, insertions, previous);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
+    public int getActionIndex(){
+        return actionIndex;
+    }
 
     /**
      * Calculate heuristics based on intercepted SQL commands
      *
      * @param sql command as a string
      */
+    @Deprecated
     public final void handleSql(String sql) {
         Objects.requireNonNull(sql);
 
@@ -178,7 +239,27 @@ public abstract class SutController implements SutHandler {
      * the SUT is started.
      */
     public final void initSqlHandler() {
-        sqlHandler.setConnection(getConnection());
+        sqlHandler.setConnection(getConnectionIfExist());
+        sqlHandler.setSchema(getSqlDatabaseSchema());
+    }
+
+
+    /**
+     * TODO further handle multiple connections
+     * @return sql connection if there exists
+     */
+    public final Connection getConnectionIfExist(){
+        return (getDbSpecifications() == null
+                || getDbSpecifications().isEmpty())? null: getDbSpecifications().get(0).connection;
+    }
+
+    /**
+     *
+     * @return whether to employ smart db clean
+     */
+    public final boolean doEmploySmartDbClean(){
+        return getDbSpecifications() != null
+                && !getDbSpecifications().isEmpty() && getDbSpecifications().get(0).employSmartDbClean;
     }
 
     public final void resetExtraHeuristics() {
@@ -198,6 +279,25 @@ public abstract class SutController implements SutHandler {
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
+        if(sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
+            /*
+                TODO refactor, once we move SQL analysis into Core
+             */
+            List<AdditionalInfo> list = getAdditionalInfoList();
+            if(!list.isEmpty()) {
+                AdditionalInfo last = list.get(list.size() - 1);
+                last.getSqlInfoData().stream().forEach(it -> {
+//                    String sql = it.getCommand();
+                    try {
+                        sqlHandler.handle(it);
+                    } catch (Exception e){
+                        SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
+                        assert false; //we should try to handle all cases in our tests
+                    }
+                });
+            }
+        }
+
         if(sqlHandler.isCalculateHeuristics()) {
             sqlHandler.getDistances().stream()
                     .map(p ->
@@ -212,11 +312,130 @@ public abstract class SutController implements SutHandler {
         if (sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
             ExecutionDto executionDto = sqlHandler.getExecutionDto();
             dto.databaseExecutionDto = executionDto;
+            // set accessed table
+            if (executionDto != null){
+                accessedTables.addAll(executionDto.deletedData);
+                accessedTables.addAll(executionDto.insertedData.keySet());
+//                accessedTables.addAll(executionDto.queriedData.keySet());
+                accessedTables.addAll(executionDto.insertedData.keySet());
+                accessedTables.addAll(executionDto.updatedData.keySet());
+            }
         }
 
         return dto;
     }
 
+    /**
+     * perform smart db clean by cleaning the data in accessed table
+     */
+    public final void cleanAccessedTables(){
+        if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) return;
+        if (getDbSpecifications().size() > 1)
+            throw new RuntimeException("Error: DO NOT SUPPORT MULTIPLE SQL CONNECTION YET");
+
+        DbSpecification emDbClean = getDbSpecifications().get(0);
+        if (getConnectionIfExist() == null || !emDbClean.employSmartDbClean) return;
+
+        try {
+            setExecutingInitSql(true);
+
+            // clean accessed tables
+            Set<String> tableDataToInit = null;
+            if (!accessedTables.isEmpty()){
+                List<String> tablesToClean = new ArrayList<>();
+                getTableToClean(accessedTables, tablesToClean);
+                if (!tablesToClean.isEmpty()){
+                    if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
+                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
+                    }else
+                        DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
+                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
+                }
+            }
+
+            // init db script
+            boolean initAll = initSqlScriptAndGetInsertMap(getConnectionIfExist(), emDbClean);
+            if (!initAll && tableDataToInit!= null &&!tableDataToInit.isEmpty()){
+                tableDataToInit.forEach(a->{
+                    tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
+                        tableInitSqlMap.get(t).forEach(c->{
+                            try {
+                                SqlScriptRunner.execCommand(getConnectionIfExist(), c);
+                            } catch (SQLException e) {
+                                throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
+                            }
+                        });
+                    });
+                });
+            }
+        }catch (SQLException e) {
+            throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
+        }finally {
+            setExecutingInitSql(false);
+        }
+    }
+
+    /**
+     * collect info about what table are manipulated by evo in order to generate data directly into it
+     * @param tables a list of name of tables
+     */
+    public void addTableToInserted(List<String> tables){
+        accessedTables.addAll(tables);
+    }
+
+    private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
+        for (String t: accessedTables){
+            if (!findInCollectionIgnoreCase(t, tablesToClean).isPresent()){
+                if (findInMapIgnoreCase(t, fkMap).isPresent()){
+                    tablesToClean.add(t);
+                    List<String> fk = fkMap.entrySet().stream().filter(e->
+                            findInCollectionIgnoreCase(t, e.getValue()).isPresent()
+                                    && !findInCollectionIgnoreCase(e.getKey(), tablesToClean).isPresent()).map(Map.Entry::getKey).collect(Collectors.toList());
+                    if (!fk.isEmpty())
+                        getTableToClean(fk, tablesToClean);
+                }else {
+                    SimpleLogger.uniqueWarn("Cannot find the table "+t+" in ["+String.join(",", fkMap.keySet())+"]");
+                }
+
+            }
+        }
+    }
+
+
+    private Optional<String> findInCollectionIgnoreCase(String name, Collection<String> list){
+        return list.stream().filter(i-> i.equalsIgnoreCase(name)).findFirst();
+    }
+
+    private Optional<? extends Map.Entry<String, ?>> findInMapIgnoreCase(String name, Map<String, ?> list){
+        return list.entrySet().stream().filter(x-> x.getKey().equalsIgnoreCase(name)).findFirst();
+    }
+
+    /**
+     *
+     * @param dbSpecification contains info of the db connection
+     * @return whether the init script is executed
+     */
+    private boolean initSqlScriptAndGetInsertMap(Connection connection, DbSpecification dbSpecification) throws SQLException {
+        if (dbSpecification.initSqlOnResourcePath == null
+                && dbSpecification.initSqlScript == null) return false;
+        if (tableInitSqlMap.isEmpty()){
+            List<String> all = new ArrayList<>();
+            if (dbSpecification.initSqlOnResourcePath != null){
+               all.addAll(SqlScriptRunnerCached.extractSqlScriptFromResourceFile(dbSpecification.initSqlOnResourcePath));
+            }
+            if (dbSpecification.initSqlScript != null){
+                all.addAll(SqlScriptRunner.extractSql(dbSpecification.initSqlScript));
+            }
+            if (!all.isEmpty()){
+                // collect insert sql commands map, key is table name, and value is a list sql insert commands
+                tableInitSqlMap.putAll(SqlScriptRunner.extractSqlTableMap(all));
+                // execute all commands
+                SqlScriptRunner.runCommands(connection, all);
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Extra information about the SQL Database Schema, if any is present.
@@ -224,25 +443,95 @@ public abstract class SutController implements SutHandler {
      * So the database must be up and running.
      *
      * @return a DTO with the schema information
-     * @see SutController#getConnection
+     * @see SutHandler#getDbSpecifications
      */
     public final DbSchemaDto getSqlDatabaseSchema() {
         if (schemaDto != null) {
             return schemaDto;
         }
 
-        if (getConnection() == null) {
+        if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) {
             return null;
         }
 
         try {
-            schemaDto = SchemaExtractor.extract(getConnection());
+            schemaDto = SchemaExtractor.extract(getConnectionIfExist());
+            Objects.requireNonNull(schemaDto);
+            schemaDto.employSmartDbClean = doEmploySmartDbClean();
         } catch (Exception e) {
             SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage());
             return null;
         }
 
+        if (fkMap.isEmpty()){
+            schemaDto.tables.forEach(t->{
+                fkMap.putIfAbsent(t.name, new ArrayList<>());
+                if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
+                    t.foreignKeys.forEach(f->{
+                        fkMap.get(t.name).add(f.targetTable.toUpperCase());
+                    });
+                }
+            });
+        }
+
         return schemaDto;
+    }
+
+    /**
+     *
+     * @return a map from the name of interface to extracted interface
+     */
+    public final Map<String, InterfaceSchema> getRPCSchema(){
+        return rpcInterfaceSchema;
+    }
+
+    /**
+     *
+     * @return a map of auth local method
+     */
+    public Map<Integer, LocalAuthSetupSchema> getLocalAuthSetupSchemaMap() {
+        return localAuthSetupSchemaMap;
+    }
+
+    /**
+     * extract endpoints info of the RPC interface by reflection based on the specified service interface name
+     */
+    @Override
+    public final void extractRPCSchema(){
+
+        if (objectMapper == null)
+            objectMapper = new ObjectMapper();
+
+        if (!rpcInterfaceSchema.isEmpty())
+            return;
+
+        if (!(getProblemInfo() instanceof RPCProblem)){
+            SimpleLogger.error("Problem ("+getProblemInfo().getClass().getSimpleName()+") is not RPC but request RPC schema.");
+            return;
+        }
+        try {
+            RPCEndpointsBuilder.validateCustomizedValueInRequests(getCustomizedValueInRequests());
+            RPCEndpointsBuilder.validateCustomizedNotNullAnnotationForRPCDto(specifyCustomizedNotNullAnnotation());
+            RPCProblem rpcp = (RPCProblem) getProblemInfo();
+            for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
+                InterfaceSchema schema = RPCEndpointsBuilder.build(interfaceName, rpcp.getType(), rpcp.getClient(interfaceName),
+                        rpcp.skipEndpointsByName!=null? rpcp.skipEndpointsByName.get(interfaceName):null,
+                        rpcp.skipEndpointsByAnnotation!=null?rpcp.skipEndpointsByAnnotation.get(interfaceName):null,
+                        rpcp.involveEndpointsByName!=null? rpcp.involveEndpointsByName.get(interfaceName):null,
+                        rpcp.involveEndpointsByAnnotation!=null? rpcp.involveEndpointsByAnnotation.get(interfaceName):null,
+                        getInfoForAuthentication(),
+                        getCustomizedValueInRequests(),
+                        specifyCustomizedNotNullAnnotation());
+                rpcInterfaceSchema.put(interfaceName, schema);
+            }
+            localAuthSetupSchemaMap.clear();
+            Map<Integer, LocalAuthSetupSchema> local = RPCEndpointsBuilder.buildLocalAuthSetup(getInfoForAuthentication());
+            if (local!=null && !local.isEmpty())
+                localAuthSetupSchemaMap.putAll(local);
+        }catch (Exception e){
+            SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
+            //TODO throw exception
+        }
     }
 
 
@@ -252,23 +541,26 @@ public abstract class SutController implements SutHandler {
      *
      * @return false if the verification failed
      */
+    @Deprecated
     public final boolean verifySqlConnection(){
 
-        Connection connection = getConnection();
-        if(connection == null
-                //check does not make sense for External
-                || !(this instanceof EmbeddedSutController)){
-            return true;
-        }
+        return true;
 
-        /*
-            bit hacky/brittle, but seems there is no easy way to check if a connection is
-            using P6Spy.
-            However, the name of driver's package would appear when doing a toString on it
-         */
-        String info = connection.toString();
-
-        return info.contains("p6spy");
+//        Connection connection = getConnection();
+//        if(connection == null
+//                //check does not make sense for External
+//                || !(this instanceof EmbeddedSutController)){
+//            return true;
+//        }
+//
+//        /*
+//            bit hacky/brittle, but seems there is no easy way to check if a connection is
+//            using P6Spy.
+//            However, the name of driver's package would appear when doing a toString on it
+//         */
+//        String info = connection.toString();
+//
+//        return info.contains("p6spy");
     }
 
 
@@ -286,6 +578,9 @@ public abstract class SutController implements SutHandler {
         actionIndex = -1;
         resetExtraHeuristics();
         extras.clear();
+
+        //clean all accessed table in a test
+        accessedTables.clear();
 
         newTestSpecificHandler();
     }
@@ -309,6 +604,154 @@ public abstract class SutController implements SutHandler {
         newActionSpecificHandler(dto);
     }
 
+    public final void executeHandleLocalAuthenticationSetup(RPCActionDto dto, ActionResponseDto responseDto){
+
+        LocalAuthSetupSchema endpointSchema = new LocalAuthSetupSchema();
+        endpointSchema.setValue(dto);
+        handleLocalAuthenticationSetup(endpointSchema.getAuthenticationInfo());
+
+        if (dto.responseVariable != null && dto.doGenerateTestScript){
+            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable);
+        }
+    }
+
+    /**
+     * execute a RPC request based on the specified dto
+     * @param dto is the action DTO to be executed
+     */
+    public final void executeAction(RPCActionDto dto, ActionResponseDto responseDto) {
+        EndpointSchema endpointSchema = getEndpointSchema(dto);
+        if (dto.responseVariable != null && dto.doGenerateTestScript){
+            try{
+                responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable);
+            }catch (Exception e){
+                SimpleLogger.warn("Fail to generate test script"+e.getMessage());
+            }
+            if (responseDto.testScript ==null)
+                SimpleLogger.warn("Null test script for action "+dto.actionName);
+        }
+
+        Object response;
+        try {
+            response = executeRPCEndpoint(dto, false);
+        } catch (Exception e) {
+            throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
+        }
+
+        //handle exception
+        if (response instanceof Exception){
+            try{
+                RPCExceptionHandler.handle(response, responseDto, endpointSchema, getRPCType(dto));
+                return;
+            } catch (Exception e){
+                SimpleLogger.error("ERROR: fail to handle exception instance to dto "+ e.getMessage());
+                //throw new RuntimeException("ERROR: fail to handle exception instance to dto "+ e.getMessage());
+            }
+        }
+
+        if (endpointSchema.getResponse() != null){
+            if (response != null){
+                try{
+                    // successful execution
+                    NamedTypedValue resSchema = endpointSchema.getResponse().copyStructureWithProperties();
+                    resSchema.setValueBasedOnInstance(response);
+                    responseDto.rpcResponse = resSchema.getDto();
+                    if (dto.doGenerateAssertions && dto.responseVariable != null)
+                        responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
+                    else
+                        responseDto.jsonResponse = objectMapper.writeValueAsString(response);
+                } catch (Exception e){
+                    SimpleLogger.error("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
+                    //throw new RuntimeException("ERROR: fail to set successful response instance value to dto "+ e.getMessage());
+                }
+
+                try {
+                    responseDto.customizedCallResultCode = categorizeBasedOnResponse(response);
+                } catch (Exception e){
+                    SimpleLogger.error("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
+                    //throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
+                }
+            }
+        }
+    }
+
+    private Object executeRPCEndpoint(RPCActionDto dto, boolean throwTargetException) throws Exception {
+        Object client = ((RPCProblem)getProblemInfo()).getClient(dto.interfaceId);
+        EndpointSchema endpointSchema = getEndpointSchema(dto);
+        return executeRPCEndpointCatchTargetException(client, endpointSchema, throwTargetException);
+    }
+
+    private Object executeRPCEndpointCatchTargetException(Object client, EndpointSchema endpoint, boolean throwTargetException) throws Exception {
+
+        Object res;
+        try {
+            res = executeRPCEndpoint(client, endpoint);
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException("EM RPC REQUEST EXECUTION ERROR: fail to process a RPC request with "+ e.getMessage());
+        } catch (InvocationTargetException e) {
+            if (throwTargetException)
+                throw (Exception) e.getTargetException();
+            else
+                res = e.getTargetException();
+        } catch (Exception e){
+            SimpleLogger.error("ERROR: other exception exists "+ e.getMessage());
+            if (throwTargetException) throw e;
+            else res = e;
+        }
+        return res;
+    }
+
+    @Override
+    public Object executeRPCEndpoint(String json) throws Exception{
+        try {
+            RPCActionDto dto = objectMapper.readValue(json, RPCActionDto.class);
+            return executeRPCEndpoint(dto, true);
+        } catch (JsonProcessingException e) {
+            SimpleLogger.error("Failed to extract the json: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * execute a RPC request with specified client
+     * @param client is the client to execute the endpoint
+     * @param endpoint is the endpoint to be executed
+     */
+    private final Object executeRPCEndpoint(Object client, EndpointSchema endpoint) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
+        if (endpoint.getRequestParams().isEmpty()){
+            Method method = client.getClass().getDeclaredMethod(endpoint.getName());
+            return method.invoke(client);
+        }
+
+        Object[] params = new Object[endpoint.getRequestParams().size()];
+        Class<?>[] types = new Class<?>[endpoint.getRequestParams().size()];
+
+
+        try{
+            for (int i = 0; i < params.length; i++){
+                NamedTypedValue param = endpoint.getRequestParams().get(i);
+                params[i] = param.newInstance();
+                types[i] = param.getType().getClazz();
+            }
+        } catch (Exception e){
+            throw new RuntimeException("ERROR: fail to instance value of input parameters based on dto/schema, msg error:"+e.getMessage());
+        }
+
+        Method method = client.getClass().getDeclaredMethod(endpoint.getName(), types);
+
+        return method.invoke(client, params);
+    }
+
+    private EndpointSchema getEndpointSchema(RPCActionDto dto){
+        InterfaceSchema interfaceSchema = rpcInterfaceSchema.get(dto.interfaceId);
+        EndpointSchema endpointSchema = interfaceSchema.getOneEndpoint(dto).copyStructure();
+        endpointSchema.setValue(dto);
+        return endpointSchema;
+    }
+
+    private RPCType getRPCType(RPCActionDto dto){
+        return rpcInterfaceSchema.get(dto.interfaceId).getRpcType();
+    }
 
     public abstract void newTestSpecificHandler();
 
@@ -411,7 +854,10 @@ public abstract class SutController implements SutHandler {
      *
      * @return {@code null} if the SUT does not use any SQL database
      */
-    public abstract Connection getConnection();
+    @Deprecated
+    public Connection getConnection(){
+        throw new IllegalStateException("This deprecated method should never be called");
+    }
 
     /**
      * If the system under test (SUT) uses a SQL database, we need to specify
@@ -419,8 +865,12 @@ public abstract class SutController implements SutHandler {
      * This is needed for when we intercept SQL commands with P6Spy
      *
      * @return {@code null} if the SUT does not use any SQL database
+     * @deprecated this method is no longer needed
      */
-    public abstract String getDatabaseDriverName();
+    @Deprecated
+    public String getDatabaseDriverName(){
+        throw new IllegalStateException("This deprecated method should never be called");
+    }
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 
@@ -459,6 +909,12 @@ public abstract class SutController implements SutHandler {
 
     public abstract UnitsInfoDto getUnitsInfoDto();
 
+    public abstract void setKillSwitch(boolean b);
+
+    public abstract void setExecutingInitSql(boolean executingInitSql);
+
+    public abstract String getExecutableFullPath();
+
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
 
         if(recorder == null){
@@ -473,6 +929,35 @@ public abstract class SutController implements SutHandler {
         dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
         dto.unitNames = recorder.getUnitNames();
         dto.parsedDtos = recorder.getParsedDtos();
+        dto.numberOfInstrumentedNumberComparisons = recorder.getNumberOfInstrumentedNumberComparisons();
         return dto;
     }
+
+    @Override
+    public Object getRPCClient(String interfaceName) {
+        if (!(getProblemInfo() instanceof RPCProblem))
+            throw new RuntimeException("ERROR: the problem should be RPC but it is "+ getProblemInfo().getClass().getSimpleName());
+
+        Object client = ((RPCProblem) getProblemInfo()).getClient(interfaceName);
+        if (client == null)
+            throw new RuntimeException("ERROR: cannot find any client with the name :"+ interfaceName);
+
+        return client;
+    }
+
+    @Override
+    public CustomizedCallResultCode categorizeBasedOnResponse(Object response) {
+        return null;
+    }
+
+    @Override
+    public List<CustomizedRequestValueDto> getCustomizedValueInRequests() {
+        return null;
+    }
+
+    @Override
+    public List<CustomizedNotNullAnnotationForRPCDto> specifyCustomizedNotNullAnnotation() {
+        return null;
+    }
+
 }

@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
+import javax.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 
@@ -29,14 +30,7 @@ public abstract class EmbeddedSutController extends SutController {
 
     @Override
     public final void setupForGeneratedTest(){
-        /*
-            We need to configure P6Spy for example, otherwise by default it will
-            generate an annoying spy.log file
-         */
-        String driverName = getDatabaseDriverName();
-        if(driverName != null) {
-            InstrumentingAgent.initP6Spy(driverName);
-        }
+        //In the past, we configured P6Spy here
     }
 
     @Override
@@ -72,5 +66,20 @@ public abstract class EmbeddedSutController extends SutController {
     @Override
     public final UnitsInfoDto getUnitsInfoDto(){
          return getUnitsInfoDto(UnitsInfoRecorder.getInstance());
+    }
+
+    @Override
+    public final void setKillSwitch(boolean b) {
+        ExecutionTracer.setKillSwitch(b);
+    }
+
+    @Override
+    public final void setExecutingInitSql(boolean executingInitSql) {
+        ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
+
+    @Override
+    public final String getExecutableFullPath(){
+        return null; //not needed for embedded
     }
 }

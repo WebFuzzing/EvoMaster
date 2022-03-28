@@ -3,10 +3,10 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.service.RestSampler
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
@@ -23,6 +23,11 @@ class Statistics : SearchListener {
 
         private const val DESCRIPTION_TARGET = "description"
         private const val TEST_INDEX = "indexOfTests"
+
+        const val TEST_TIMEOUTS = "testTimeouts"
+        const val DISTINCT_ACTIONS = "distinctActions"
+        const val COVERED_2XX = "covered2xx"
+        const val GQL_NO_ERRORS = "gqlNoErrors"
     }
 
     @Inject
@@ -44,7 +49,7 @@ class Statistics : SearchListener {
     private var remoteController: RemoteController? = null
 
     @Inject
-    private lateinit var writer: TestSuiteWriter
+    private lateinit var oracles: PartialOracles
 
     /**
      * How often test executions did timeout
@@ -57,7 +62,7 @@ class Statistics : SearchListener {
     private var coverageFailures = 0
 
 
-    private class Pair(val header: String, val element: String)
+   class Pair(val header: String, val element: String)
 
 
     /**
@@ -162,9 +167,13 @@ class Statistics : SearchListener {
         snapshotThreshold += config.snapshotInterval
     }
 
-    private fun getData(solution: Solution<*>): List<Pair> {
+    fun getData(solution: Solution<*>): List<Pair> {
 
-        val unitsInfo = remoteController?.getSutInfo()?.unitsInfoDto
+        val unitsInfo = if(!config.blackBox || config.bbExperiments) {
+            remoteController?.getSutInfo()?.unitsInfoDto
+        } else {
+            null
+        }
 
         val list: MutableList<Pair> = mutableListOf()
 
@@ -177,17 +186,45 @@ class Statistics : SearchListener {
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
-            add(Pair("endpoints", "" + numberOfEndpoints()))
-            add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
+            add(Pair(DISTINCT_ACTIONS, "" + distinctActions()))
+            add(Pair("endpoints", "" + distinctActions()))
+            add(Pair(COVERED_2XX, "" + covered2xxEndpoints(solution)))
+            add(Pair(GQL_NO_ERRORS, "" + solution.overall.gqlNoErrors(idMapper).size))
+            add(Pair("gqlErrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
+            add(Pair("gqlErrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
+            // Statistics on faults found
+            // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))
+            //distinct500Faults - counts the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
+            //executed line
+            add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size ))
+            // failedOracleExpectations - the number of calls in the individual that fail one active partial oracle.
+            // However, 5xx are not counted here.
+            add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
+            /**
+             * this is the total of all potential faults, eg distinct500Faults + failedOracleExpectations + any other
+             * for RPC, this comprises internal errors, exceptions (declared and unexpected) and customized service errors
+             */
+            //potential oracle we are going to introduce.
+            //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
-            add(Pair("FailedOracleExpectations", "" + failedOracle(solution)))
+
+            // RPC
+            add(Pair("rpcUnexpectedException", "" + solution.overall.rpcUnexpectedException(idMapper).size))
+            add(Pair("rpcDeclaredException", "" + solution.overall.rpcDeclaredException(idMapper).size))
+            add(Pair("rpcException", "" + solution.overall.rpcException(idMapper).size))
+            add(Pair("rpcInternalError", "" + solution.overall.rpcInternalError(idMapper).size))
+            add(Pair("rpcHandled", "" + solution.overall.rpcHandled(idMapper).size))
+            add(Pair("rpcHandledAndSuccess", "" + solution.overall.rpcHandledAndSuccess(idMapper).size))
+            add(Pair("rpcHandledButError", "" + solution.overall.rpcHandledButError(idMapper).size))
+            add(Pair("rpcSpecifiedServiceError", "" + solution.overall.rpcServiceError(idMapper).size))
 
             add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
             add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
             add(Pair("numberOfReplacedMethodsInSut", "" + (unitsInfo?.numberOfReplacedMethodsInSut ?: 0)))
             add(Pair("numberOfReplacedMethodsInThirdParty", "" + (unitsInfo?.numberOfReplacedMethodsInThirdParty ?: 0)))
             add(Pair("numberOfTrackedMethods", "" + (unitsInfo?.numberOfTrackedMethods ?: 0)))
+            add(Pair("numberOfInstrumentedNumberComparisons", "" + (unitsInfo?.numberOfInstrumentedNumberComparisons ?: 0)))
             add(Pair("numberOfUnits", "" + (unitsInfo?.unitNames?.size ?: 0)))
 
             add(Pair("coveredLines", "" + solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)))
@@ -195,13 +232,11 @@ class Statistics : SearchListener {
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
-            add(Pair("maxReturnCodes", "" + codes.max()))
+            add(Pair("maxReturnCodes", "" + codes.maxOrNull()))
 
-            add(Pair("testTimeouts", "$timeouts"))
+            add(Pair(TEST_TIMEOUTS, "$timeouts"))
             add(Pair("coverageFailures", "$coverageFailures"))
-
-            add(Pair("ClusteringTime", "${solution.clusteringTime}"))
-
+            add(Pair("clusteringTime", "${solution.clusteringTime}"))
             add(Pair("id", config.statisticsColumnId))
         }
         addConfig(list)
@@ -209,8 +244,8 @@ class Statistics : SearchListener {
         return list
     }
 
-    private fun numberOfEndpoints() : Int {
-        if(sampler == null || sampler !is RestSampler){
+    private fun distinctActions() : Int {
+        if(sampler == null){
             return 0
         }
         return sampler!!.numberOfDistinctActions()
@@ -231,7 +266,7 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is RestCallResult && it.result.hasErrorCode()
+                    it.result is HttpWsCallResult && (it.result as HttpWsCallResult).hasErrorCode()
                 }
                 .map { it.action.getName() }
                 .distinct()
@@ -240,14 +275,15 @@ class Statistics : SearchListener {
 
     private fun failedOracle(solution: Solution<*>): Int {
 
-        val oracles = writer.getPartialOracles()
         //count the distinct number of API paths for which we have a failed oracle
+        // NOTE: calls with an error code (5xx) are excluded from this count.
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is RestCallResult
+                    it.result is HttpWsCallResult
                             && it.action is RestCallAction
-                            && oracles.activeOracles(it.action, it.result).any { or -> or.value }
+                            && !(it.result as HttpWsCallResult).hasErrorCode()
+                            && oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
                 }
                 .map { it.action.getName() }
                 .distinct()
@@ -260,7 +296,7 @@ class Statistics : SearchListener {
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
                 .filter {
-                    it.result is RestCallResult && it.result.getStatusCode()?.let { c -> c in 200..299 } ?: false
+                    it.result is HttpWsCallResult && (it.result as HttpWsCallResult).getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
                 .map { it.action.getName() }
                 .distinct()
@@ -271,14 +307,14 @@ class Statistics : SearchListener {
 
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
-                .filter { it.result is RestCallResult }
+                .filter { it.result is HttpWsCallResult }
                 .map { it.action.getName() }
                 .distinct() //distinct names of actions, ie VERB:PATH
                 .map { name ->
                     solution.individuals
                             .flatMap { it.evaluatedActions() }
                             .filter { it.action.getName() == name }
-                            .map { (it.result as RestCallResult).getStatusCode() }
+                            .map { (it.result as HttpWsCallResult).getStatusCode() }
                             .distinct()
                             .count()
                 }

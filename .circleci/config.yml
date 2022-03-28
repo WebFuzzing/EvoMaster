@@ -1,4 +1,9 @@
-version: 2 # use CircleCI 2.0
+# NOTE:
+# updating CircleCI is giving way too many issues (eg Maven and Docker)... so we just disable it, as we run stuff
+# on GitHub actions anyway.
+# Keeping this file in case one day we want to re-enable it
+#
+version: 2
 
 # To enable TestContainers
 executorType: machine
@@ -11,7 +16,7 @@ jobs: # a collection of steps
     working_directory: ~/evomaster-build
 
     docker: # run the steps with Docker
-      - image: circleci/openjdk:11
+      - image: cimg/openjdk:11.0.11
 
     steps: # a collection of executable commands
 
@@ -72,3 +77,9 @@ jobs: # a collection of steps
       # Save coverage
       - store_artifacts:
           path: report/target/site/jacoco-aggregate
+
+      # Upload to CodeCov
+      # Moved to GitHub Actions, as in CircleCI few tests are disabled as flacky
+#      - run:
+#          name: Upload coverage to CodeCov
+#          command: curl -s https://codecov.io/bash | bash

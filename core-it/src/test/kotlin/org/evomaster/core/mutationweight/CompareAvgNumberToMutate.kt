@@ -9,7 +9,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.mutationweight.individual.IndividualMutationweightTest
+import org.evomaster.core.search.mutationweight.GeneWeightTestSchema
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -46,11 +46,11 @@ class CompareAvgNumberToMutate {
     fun run(){
         time.newActionEvaluation(5)
 
-        val ind_sql3_rest2 = IndividualMutationweightTest.newRestIndividual(name = "GET:/foo/{key}", numSQLAction = 1)
+        val ind_sql3_rest2 = GeneWeightTestSchema.newRestIndividual(name = "GET:/gw/foo/{key}", numSQLAction = 1)
 
-        val ind_sql15_rest2 = IndividualMutationweightTest.newRestIndividual(name = "GET:/foo/{key}", numSQLAction = 5)
+        val ind_sql15_rest2 = GeneWeightTestSchema.newRestIndividual(name = "GET:/gw/foo/{key}", numSQLAction = 5)
 
-        val ind_sql15_rest12 = IndividualMutationweightTest.newRestIndividual(name = "GET:/foo/{key}", numSQLAction = 5, numRestAction = 6)
+        val ind_sql15_rest12 = GeneWeightTestSchema.newRestIndividual(name = "GET:/gw/foo/{key}", numSQLAction = 5, numRestAction = 6)
 
         val candidates = listOf(ind_sql3_rest2, ind_sql15_rest2, ind_sql15_rest12)
 

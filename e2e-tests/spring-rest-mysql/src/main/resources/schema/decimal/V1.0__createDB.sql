@@ -1,0 +1,3 @@
+create table DECTABLE (
+  num DECIMAL(4,2) UNSIGNED NOT NULL
+);

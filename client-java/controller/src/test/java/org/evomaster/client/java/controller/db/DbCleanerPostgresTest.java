@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.db;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,8 +15,9 @@ import java.util.List;
  */
 public class DbCleanerPostgresTest extends DbCleanerTestBase{
 
+    private static final String POSTGRES_VERSION = "14";
 
-    private static final GenericContainer postgres = new GenericContainer("postgres:9")
+    private static final GenericContainer postgres = new GenericContainer("postgres:" + POSTGRES_VERSION)
             .withExposedPorts(5432)
             .withEnv("POSTGRES_HOST_AUTH_METHOD","trust");
 
@@ -55,9 +57,12 @@ public class DbCleanerPostgresTest extends DbCleanerTestBase{
     }
 
     @Override
-    protected void clearDatabase(List<String> tablesToSkip) {
-        DbCleaner.clearDatabase_Postgres(connection, "public", tablesToSkip);
+    protected void clearDatabase(List<String> tablesToSkip, List<String> tableToClean) {
+        DbCleaner.clearDatabase_Postgres(connection, "public", tablesToSkip, tableToClean);
     }
 
-
+    @Override
+    protected DatabaseType getDbType() {
+        return DatabaseType.POSTGRES;
+    }
 }

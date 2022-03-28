@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.openapi.v3.gson
 
-import com.foo.rest.examples.spring.openapi.v3.base.BaseController
 import com.foo.rest.examples.spring.openapi.v3.gson.GsonController
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -20,7 +19,6 @@ class GsonEMTest : SpringTestBase() {
             initClass(GsonController())
         }
     }
-
 
     @Test
     fun testRunEM() {

@@ -66,11 +66,11 @@ public class ServerController {
         }
     }
 
-    public synchronized boolean waitForIncomingConnection() {
+    public synchronized boolean waitForIncomingConnection(int seconds) {
 
         try {
             socket = server.accept();
-            socket.setSoTimeout(20_000);
+            socket.setSoTimeout(seconds);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 
@@ -196,6 +196,14 @@ public class ServerController {
 
     public boolean setAction(Action action) {
         return sendWithDataAndExpectACK(Command.ACTION_INDEX, action);
+    }
+
+    public boolean setKillSwitch(boolean b){
+        return sendWithDataAndExpectACK(Command.KILL_SWITCH, b);
+    }
+
+    public boolean setExecutingInitSql(boolean executingInitSql) {
+        return sendWithDataAndExpectACK(Command.EXECUTING_INIT_SQL, executingInitSql);
     }
 
     public synchronized List<TargetInfo> getTargetsInfo(Collection<Integer> ids) {

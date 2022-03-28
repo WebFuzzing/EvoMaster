@@ -1,46 +1,70 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
-import java.math.BigDecimal
-import java.math.RoundingMode
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 
 
 class FloatGene(name: String,
-                value: Float = 0.0f
-) : NumberGene<Float>(name, value) {
+                value: Float = 0.0f,
+                /** Inclusive */
+                min : Float? = null,
+                /** Inclusive */
+                max : Float? = null,
+                /**
+                 * specified precision
+                 */
+                precision: Int? = null
+) : FloatingPointNumber<Float>(name, value, min, max, precision) {
 
-    override fun copy() = FloatGene(name, value)
+    companion object{
+        private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
+    }
+
+    override fun copyContent() = FloatGene(name, value, min, max, precision)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        //need for forceNewValue?
-        value = randomness.nextFloat()
+        var rand = randomness.nextFloat()
+        if (isRangeSpecified() && ((rand < (min ?: Float.MIN_VALUE)) || (rand > (max ?: Float.MAX_VALUE)))){
+            rand = randomness.nextDouble((min?:Float.MIN_VALUE).toDouble(), (max?:Float.MAX_VALUE).toDouble()).toFloat()
+        }
+        value = getFormattedValue(rand)
+
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
-        //TODO min/max for Float
-        val k = when (randomness.choose(listOf(0, 1, 2))) {
-            //for small changes
-            0 -> value + randomness.nextGaussian()
-            //for large jumps
-            1 -> value + (GeneUtils.getDelta(randomness, apc) * randomness.nextGaussian())
-            //to reduce precision, ie chop off digits after the "."
-            2 -> BigDecimal(value.toDouble()).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
-            else -> throw IllegalStateException("Regression bug")
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+        if (enableAdaptiveGeneMutation){
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
+            if (additionalGeneMutationInfo.hasHistory()){
+                try {
+                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
+                            additionalGeneMutationInfo,
+                            this,
+                            allGenes
+                    )
+                    return true
+                }catch (e: DifferentGeneInHistory){}
+            }
         }
 
-        value = k.toFloat()
+
+        value = mutateFloatingPointNumber(randomness, apc)
 
         return true
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
-        return value.toString()
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+        return getFormattedValue().toString()
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -56,5 +80,49 @@ class FloatGene(name: String,
         }
         return this.value == other.value
     }
+    override fun innerGene(): List<Gene> = listOf()
+
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        when(gene){
+            is FloatGene -> value = gene.value
+            is DoubleGene -> value = gene.value.toFloat()
+            is IntegerGene -> value = gene.value.toFloat()
+            is LongGene -> value = gene.value.toFloat()
+            is StringGene -> {
+                value = gene.value.toFloatOrNull() ?: return false
+            }
+            is Base64StringGene ->{
+                value = gene.data.value.toFloatOrNull() ?: return false
+            }
+            is ImmutableDataHolderGene -> {
+                value = gene.value.toFloatOrNull() ?: return false
+            }
+            is SqlPrimaryKeyGene ->{
+                value = gene.uniqueId.toFloat()
+            }
+            else -> {
+                LoggingUtil.uniqueWarn(log, "Do not support to bind float gene with the type: ${gene::class.java.simpleName}")
+                return false
+            }
+        }
+        return true
+    }
+
+    override fun getMinimum(): Float {
+        return min?:Float.MIN_VALUE
+    }
+
+    override fun getMaximum(): Float {
+        return max?: Float.MAX_VALUE
+    }
+
+    override fun compareTo(other: ComparableGene): Int {
+        if (other !is FloatGene) {
+            throw ClassCastException("Cannot compare FloatGene to ${other::javaClass} instance")
+        }
+        return this.toFloat().compareTo(other.toFloat())
+    }
+
 
 }

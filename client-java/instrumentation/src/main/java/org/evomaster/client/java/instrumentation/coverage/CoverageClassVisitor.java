@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.commons.JSRInlinerAdapter;
 
 /**
  * Add instrumentations to keep track of which statements/lines
@@ -33,6 +34,8 @@ public class CoverageClassVisitor extends ClassVisitor {
         MethodVisitor mv = super.visitMethod(
                 methodAccess, name, descriptor, signature, exceptions);
 
+        mv = new JSRInlinerAdapter(mv, methodAccess, name, descriptor, signature, exceptions);
+
         /*
             Methods added by the compiler (eg synthetics and bridges) are
             not interesting, so we can just skip them. More info:
@@ -52,6 +55,17 @@ public class CoverageClassVisitor extends ClassVisitor {
             as only the first test executed would cover them
          */
         if (name.equals(Constants.CLASS_INIT_METHOD)) {
+            return mv;
+        }
+
+        if(bytecodeClassName.contains("$InterceptedDefinition") ||
+                bytecodeClassName.contains("$Introspection")){
+            /*
+                In general, we should avoid dealing with classes generated on the fly by frameworks like
+                Hibernate or Micronaut. But not simple to identify. These classes here are particularly
+                troublesome, especially for patio-api. it does not impact performance of EM, but mess up
+                experiments.
+             */
             return mv;
         }
 

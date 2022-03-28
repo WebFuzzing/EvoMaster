@@ -89,4 +89,17 @@ public class DoubleClassReplacementTest {
         double parsedDouble = DoubleClassReplacement.valueOf(inputString, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
         assertEquals(0.0, parsedDouble);
     }
+
+    @Test
+    public void testParseSuccessDoubleDot() {
+        String inputString = "0..0";
+
+        assertThrows(NumberFormatException.class, () -> {
+            Double.parseDouble(inputString);
+        });
+
+        assertThrows(NumberFormatException.class, () -> {
+            DoubleClassReplacement.parseDouble(inputString, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        });
+    }
 }

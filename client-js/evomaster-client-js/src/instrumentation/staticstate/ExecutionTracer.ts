@@ -4,12 +4,16 @@
  */
 import TargetInfo from "../TargetInfo";
 import Action from "../Action";
-import ObjectiveNaming from "../ObjectiveNaming";
+import ObjectiveNaming from "../shared/ObjectiveNaming";
 import AdditionalInfo from "../AdditionalInfo";
 import ObjectiveRecorder from "./ObjectiveRecorder";
 import Truthness from "../heuristic/Truthness";
 import HeuristicsForBooleans from "../heuristic/HeuristicsForBooleans";
 import {ReplacementType} from "../methodreplacement/ReplacementType";
+import {TaintType} from "../shared/TaintType";
+import {TaintInputName} from "../shared/TaintInputName";
+import {StringSpecializationInfo} from "../shared/StringSpecializationInfo";
+import {StringSpecialization} from "../shared/StringSpecialization";
 
 export default class ExecutionTracer {
 
@@ -66,28 +70,75 @@ export default class ExecutionTracer {
      * the test itself (eg, the test at action can register a list of values to check
      * for)
      */
-    // public static boolean isTaintInput(String input){
-    //     return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
-    // }
+    static isTaintInput(input: string): boolean {
+        return TaintInputName.isTaintInput(input) || ExecutionTracer.inputVariables.has(input);
+    }
+
+    static handleTaintForStringEquals(left: string, right: string, ignoreCase: boolean) {
+
+        /*
+            Note: cannot use !left, as that would be true empty strings ""... isn't JS wonderful???
+         */
+        if (left == null || right == null || left == undefined || right == undefined) {
+            //nothing to do?
+            return;
+        }
+
+        const taintedLeft = ExecutionTracer.isTaintInput(left);
+        const taintedRight = ExecutionTracer.isTaintInput(right);
+
+        if (taintedLeft && taintedRight) {
+            if (ignoreCase ? left.toLowerCase() === right.toLowerCase() : left === right) {
+                //tainted, but compared to itself. so shouldn't matter
+                return;
+            }
+
+            /*
+                We consider binding only for base versions of taint, ie we ignore
+                the special strings provided by the Core, as it would lead to nasty
+                side-effects
+             */
+            if (!TaintInputName.isTaintInput(left) || !TaintInputName.isTaintInput(right)) {
+                return;
+            }
+
+            //TODO could have EQUAL_IGNORE_CASE
+            const id = left + "___" + right;
+            ExecutionTracer.addStringSpecialization(left, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
+            ExecutionTracer.addStringSpecialization(right, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
+            return;
+        }
+
+        const type = ignoreCase ? StringSpecialization.CONSTANT_IGNORE_CASE
+            : StringSpecialization.CONSTANT;
+
+        if (taintedLeft || taintedRight) {
+            if (taintedLeft) {
+                ExecutionTracer.addStringSpecialization(left, new StringSpecializationInfo(type, right));
+            } else {
+                ExecutionTracer.addStringSpecialization(right, new StringSpecializationInfo(type, left));
+            }
+        }
+    }
 
 
-    // public static TaintType getTaintType(String input){
-    //
-    //     if(input == null){
-    //         return TaintType.NONE;
-    //     }
-    //
-    //     if(isTaintInput(input)){
-    //         return TaintType.FULL_MATCH;
-    //     }
-    //
-    //     if(TaintInputName.includesTaintInput(input)
-    //         || inputVariables.stream().anyMatch(v -> input.contains(v))){
-    //         return TaintType.PARTIAL_MATCH;
-    //     }
-    //
-    //     return TaintType.NONE;
-    // }
+    static getTaintType(input: string): TaintType {
+
+        if (input == null) {
+            return TaintType.NONE;
+        }
+
+        if (ExecutionTracer.isTaintInput(input)) {
+            return TaintType.FULL_MATCH;
+        }
+
+        if (TaintInputName.includesTaintInput(input)
+            || Array.from(ExecutionTracer.inputVariables).some(v => input.includes(v))) {
+            return TaintType.PARTIAL_MATCH;
+        }
+
+        return TaintType.NONE;
+    }
 
 
     static exposeAdditionalInfoList(): Array<AdditionalInfo> {
@@ -102,9 +153,9 @@ export default class ExecutionTracer {
     //     additionalInfoList.get(actionIndex).addHeader(header);
     // }
     //
-    // public static void addStringSpecialization(String taintInputName, StringSpecializationInfo info){
-    //     additionalInfoList.get(actionIndex).addSpecialization(taintInputName, info);
-    // }
+    static  addStringSpecialization(taintInputName: string, info: StringSpecializationInfo){
+        ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex].addSpecialization(taintInputName, info);
+    }
 
 
     public static markLastExecutedStatement(lastLine: string) {
@@ -185,7 +236,17 @@ export default class ExecutionTracer {
         return ExecutionTracer.objectiveCoverage.get(id).value;
     }
 
-    private static updateObjective(id: string, value: number) {
+    /**
+     * @param id specifies the target id
+     * @return whether the target is reached
+     *
+     * note that it is only useful for testing
+     */
+    public static isTargetReached(id: string): boolean {
+        return ExecutionTracer.objectiveCoverage.has(id);
+    }
+
+    public static updateObjective(id: string, value: number) {
         if (value < 0 || value > 1) {
             throw new Error("Invalid value " + value + " out of range [0,1]");
         }

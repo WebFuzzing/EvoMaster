@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.google.inject.AbstractModule
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
@@ -23,22 +24,37 @@ class TestSuiteWriterTest{
      */
     private val baseTargetFolder = "target/TestSuiteWriterTest"
 
+    private class ReducedModule : AbstractModule(){
+        override fun configure() {
+            //point here is to avoid connections to SUT...
+            bind(TestCaseWriter::class.java)
+                    .to(RestTestCaseWriter::class.java)
+                    .asEagerSingleton()
+
+            bind(PartialOracles::class.java)
+                    .asEagerSingleton()
+        }
+    }
+
+
     @Test
     fun testEmptySuite(){
 
         val injector = LifecycleInjector.builder()
-                .withModules(BaseModule())
+                .withModules(BaseModule(), ReducedModule())
                 .build().createInjector()
 
         val config = injector.getInstance(EMConfig::class.java)
         config.createTests = true
         config.outputFormat = OutputFormat.KOTLIN_JUNIT_5
         config.outputFolder = "$baseTargetFolder/empty_suite"
-        config.testSuiteFileName = "Foo_testEmptySuite"
+        config.outputFilePrefix = "Foo_testEmptySuite"
+        config.outputFileSuffix = ""
 
         val solution = Solution<RestIndividual>(
                 mutableListOf(),
-                config.testSuiteFileName,
+                config.outputFilePrefix,
+                config.outputFileSuffix,
                 Termination.NONE
         )
 
@@ -50,7 +66,7 @@ class TestSuiteWriterTest{
         //this is what used by Maven and IntelliJ
         val testClassFolder = File("target/test-classes")
         val expectedCompiledFile = testClassFolder.toPath()
-                .resolve("${config.testSuiteFileName}.class")
+                .resolve("${config.outputFilePrefix}.class")
                 .toFile()
         expectedCompiledFile.delete()
         assertFalse(expectedCompiledFile.exists())
@@ -58,12 +74,9 @@ class TestSuiteWriterTest{
 
         val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-        //val sampler = injector.getInstance(RestSampler::class.java)
-        //val swagger = sampler.getSwagger()
-        //writer.setSwagger(swagger)
 
         //write the test suite
-        writer.writeTests(solution, FakeController::class.qualifiedName!!)
+        writer.writeTests(solution, FakeController::class.qualifiedName!!, null)
 
         //the .kt file should exist, but .class not yet
         assertFalse(expectedCompiledFile.exists())
@@ -81,7 +94,7 @@ class TestSuiteWriterTest{
             as compiled directly into a folder of the classpath, current
             classloader should be able to load it
          */
-        val testSuiteClass = this.javaClass.classLoader.loadClass(config.testSuiteFileName)
+        val testSuiteClass = this.javaClass.classLoader.loadClass(config.outputFilePrefix)
 
         val methods = testSuiteClass.declaredMethods
         assertTrue(methods.any { it.name == "initClass" })

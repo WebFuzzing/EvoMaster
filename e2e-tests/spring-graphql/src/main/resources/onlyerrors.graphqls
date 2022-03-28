@@ -1,0 +1,6 @@
+# A GraphQL API to throw an exception
+type Query {
+    # throw an exception anyway
+    error(x: String!): Boolean
+}
+

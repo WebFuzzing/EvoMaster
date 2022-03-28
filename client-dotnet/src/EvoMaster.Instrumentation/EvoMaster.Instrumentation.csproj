@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="../../common.props" />
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <IsPackable>true</IsPackable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>EvoMaster.Instrumentation</PackageId>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\EvoMaster.Client.Util\EvoMaster.Client.Util.csproj" />
+      <ProjectReference Include="..\EvoMaster.Instrumentation_Shared\EvoMaster.Instrumentation_Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Mono.Cecil" Version="0.11.3" />
+      <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    </ItemGroup>
+    
+    <Target Name="PublishNuGetLocally" AfterTargets="Build">
+        <Exec Command="dotnet pack $(ProjectPath) -c $(ConfigurationName)" />
+
+        <Exec Command="dotnet nuget delete --source ~/.nuget/packages $(PackageId) $(PackageVersion) --non-interactive" ContinueOnError="WarnAndContinue" Condition="$(OS.Contains('Unix'))" />
+        <Exec Command="dotnet nuget push --source ~/.nuget/packages $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" Condition="$(OS.Contains('Unix'))" />
+
+        <Exec Command="dotnet nuget delete --source $(UserProfile)\.nuget\packages $(PackageId) $(PackageVersion) --non-interactive" ContinueOnError="WarnAndContinue" Condition="$(OS.Contains('Windows'))" />
+        <Exec Command="dotnet nuget push --source $(UserProfile)\.nuget\packages $(ProjectDir)bin\$(ConfigurationName)\$(PackageId).$(PackageVersion).nupkg" Condition="$(OS.Contains('Windows'))" />
+    </Target>
+    
+</Project>

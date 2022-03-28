@@ -1,8 +1,15 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.database.DbActionGeneBuilder
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
+import org.evomaster.core.problem.graphql.GqlConst
+import org.evomaster.core.problem.graphql.GraphQLAction
+import org.evomaster.core.problem.graphql.GraphQLActionBuilder
+import org.evomaster.core.problem.graphql.PetClinicCheckMain
+import org.evomaster.core.problem.graphql.param.GQReturnParam
+import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.util.*
 
@@ -102,4 +109,247 @@ internal class GeneUtilsTest {
     }
 
 
+    @Test
+    fun testBooleanSelectionSimple() {
+
+        val obj = ObjectGene("foo", listOf(StringGene("a", "hello"), IntegerGene("b", 42)))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        //without randomization, should be both on by default
+        assertEquals("{a,b}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionSkip() {
+
+        val obj = ObjectGene("foo", listOf(OptionalGene("a", StringGene("a", "hello")), IntegerGene("b", 42)))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+
+        val a = selection.fields.find { it.name == "a" } as BooleanGene
+        a.value = false
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{b}", rep)
+    }
+
+
+    @Test
+    fun testBooleanSectionTwoNestedObjects() {
+
+        val obj = ObjectGene("Obj1", listOf(ObjectGene("Obj2", listOf(StringGene("a", "hello")))))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{Obj2{a}}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionThreeNestedObjects() {
+
+        val obj = ObjectGene("Obj1", listOf(ObjectGene("Obj2", listOf(ObjectGene("Obj3", listOf(StringGene("a", "hello")))))))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{Obj2{Obj3{a}}}", rep)
+    }
+
+
+    @Test
+    fun testBooleanSectionArray() {
+
+        val array = ArrayGene("Array", ObjectGene("Obj1", listOf(StringGene("a", "hello"))))
+
+        val selection = GeneUtils.getBooleanSelection(array)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{a}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionString() {
+
+        val string = StringGene("a", "hello")
+        val obj = ObjectGene("obj", listOf(string))
+
+        val selection = GeneUtils.getBooleanSelection(obj)
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{a}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionInteger() {
+
+        val objInteger = ObjectGene("foo", listOf(IntegerGene("a", 1)))
+
+        val selection = GeneUtils.getBooleanSelection(objInteger)
+
+        val a = selection.fields.find { it.name == "a" } as BooleanGene
+
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{a}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionOptionalObject() {
+
+        val objOpt = ObjectGene("foo", listOf(OptionalGene("Opti", StringGene("Opti", "hello"))))
+        val selection = GeneUtils.getBooleanSelection(objOpt)
+
+        val a = selection.fields.find { it.name == "Opti" } as BooleanGene
+        //todo extra check
+        a.value = true
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{Opti}", rep)
+    }
+
+    @Test
+    fun testBooleanSectionBoolean() {
+
+        val objBoolean = ObjectGene("foo", listOf(BooleanGene("a")))
+
+        val selection = GeneUtils.getBooleanSelection(objBoolean)
+
+        val a = selection.fields.find { it.name == "a" } as BooleanGene
+
+
+        val rep = selection.getValueAsPrintableString(mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{a}", rep)
+    }
+
+    @Test
+    fun testRepaireBooleanSectionFF() {
+
+        val objBoolean = ObjectGene("foo", listOf(BooleanGene("a", false), (BooleanGene("b", false))))
+
+        GeneUtils.repairBooleanSelection(objBoolean)
+
+        assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
+    }
+
+    @Test
+    fun testRepairInPetclinic() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
+        val pettypes = actionCluster.get("pettypes") as GraphQLAction
+        assertTrue(pettypes.parameters[0] is GQReturnParam)
+        assertTrue(pettypes.parameters[0].gene is ObjectGene)
+        val objPetType = pettypes.parameters[0].gene as ObjectGene
+        assertEquals(2, objPetType.fields.size)
+
+         assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "id" })
+         assertTrue(objPetType.fields.any { it is BooleanGene && it.name == "name" })
+
+
+        (objPetType.fields[0] as BooleanGene).value = false
+         (objPetType.fields[1] as BooleanGene).value = false
+        assertFalse(objPetType.fields.any{ it is BooleanGene && it.value})
+        GeneUtils.repairBooleanSelection(objPetType)
+        assertTrue(objPetType.fields.any{ it is BooleanGene && it.value})
+
+    }
+
+
+    @Test
+    fun testInterfaceSelectionName(){
+
+        val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
+        val b = OptionalGene("B",ObjectGene("B", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+
+        val unionObj = ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b))
+
+        val res = unionObj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{...onA{a1}...onB{b1,b2}}", res)//with out the name foo
+    }
+
+    @Test
+    fun testNestedInterfaceSelectionName(){
+
+        val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
+        val b = OptionalGene("B",ObjectGene("B", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+
+        val optionalUnionObj = OptionalGene("foo ${GqlConst.INTERFACE_TAG}",ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b)))
+
+        val obj = ObjectGene("obj", listOf(optionalUnionObj))
+
+
+        val res = obj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{foo{...onA{a1}...onB{b1,b2}}}", res)//with the name foo
+    }
+
+
+    @Test
+    fun testCopyFields() {
+
+        val obj = ObjectGene("Obj1",  listOf(StringGene("a", "hello"),StringGene("b", "hihi")))
+
+        val objBase = ObjectGene("Obj1", listOf(StringGene("a", "hello")))
+
+        val diff = obj.copyFields(objBase)
+
+        assertEquals(1, diff.fields.size )
+    }
+
+    @Test
+    fun testInterfaceSelection(){
+
+        val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
+        val b = OptionalGene("B ${GqlConst.INTERFACE_BASE_TAG}",ObjectGene("B ${GqlConst.INTERFACE_BASE_TAG}", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+
+        val unionObj = ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b))
+
+        val res = unionObj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{...onA{a1}b1,b2}", res)//without the name foo and without "...on" for the object B
+    }
+
+    @Test
+    fun testNestedInterfaceSelection(){
+
+        val a = OptionalGene("A",ObjectGene("A", listOf(BooleanGene("a1"))))
+        val b = OptionalGene("B ${GqlConst.INTERFACE_BASE_TAG}",ObjectGene("B${GqlConst.INTERFACE_BASE_TAG}", listOf(BooleanGene("b1"), BooleanGene("b2"))))
+
+        val optionalUnionObj = OptionalGene("foo ${GqlConst.INTERFACE_TAG}",ObjectGene("foo ${GqlConst.INTERFACE_TAG}", listOf(a,b)))
+
+        val obj = ObjectGene("obj", listOf(optionalUnionObj))
+
+
+        val res = obj.getValueAsPrintableString(listOf(), mode = GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE)
+                .replace(" ", "") // remove empty space to make assertion less brittle
+
+        assertEquals("{foo{...onA{a1}b1,b2}}", res)//with the name foo and without "...on" for the object B
+    }
 }

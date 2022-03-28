@@ -1,27 +1,27 @@
 package org.evomaster.client.java.controller.internal.db;
 
 import io.restassured.http.ContentType;
-import org.evomaster.client.java.controller.db.DataRow;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
-import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
-import org.evomaster.client.java.controller.db.QueryResult;
+import org.evomaster.client.java.controller.InstrumentedSutStarter;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.api.ControllerConstants.*;
+import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
+import static org.evomaster.client.java.controller.api.ControllerConstants.TEST_RESULTS;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
+public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
 
     @Test
-    public void testHeuristic() throws Exception {
+    public default void testHeuristic() throws Exception {
 
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (10)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (10)", true);
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
@@ -40,8 +40,8 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
             startNewTest(url);
 
-            SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 12");
-            SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 10");
+            SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 12", true);
+            SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 10", true);
 
             given().accept(ContentType.JSON)
                     .get(url + TEST_RESULTS)
@@ -54,7 +54,7 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
             startNewActionInSameTest(url, 1);
 
-            SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 13");
+            SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 13", true);
 
             given().accept(ContentType.JSON)
                     .get(url + TEST_RESULTS)
@@ -72,10 +72,10 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testMultiline() throws Exception {
+    public default void testMultiline() throws Exception {
 
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)");
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", true);
 
         int y = 42;
         String select = "select f.x \n from Foo f \n where f.y=" + y;
@@ -89,13 +89,13 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
             startNewTest(url);
 
-            SqlScriptRunner.execCommand(getConnection(), select);
+            SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double a = getFirstAndStartNew(url);
             assertTrue(a > 0d);
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, " + y + ")");
-            SqlScriptRunner.execCommand(getConnection(), select);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, " + y + ")", true);
+            SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double b = getFirstAndStartNew(url);
             assertTrue(b < a);
@@ -107,10 +107,10 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testVarNotInSelect() throws Exception {
+    public default void testVarNotInSelect() throws Exception {
 
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)");
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", true);
 
         int y = 42;
         String select = "select f.x from Foo f where f.y=" + y;
@@ -124,13 +124,13 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
             startNewTest(url);
 
-            SqlScriptRunner.execCommand(getConnection(), select);
+            SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double a = getFirstAndStartNew(url);
             assertTrue(a > 0d);
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, " + y + ")");
-            SqlScriptRunner.execCommand(getConnection(), select);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, " + y + ")", true);
+            SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double b = getFirstAndStartNew(url);
             assertTrue(b < a);
@@ -142,14 +142,14 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testInnerJoin() throws Exception {
+    public default void testInnerJoin() throws Exception {
 
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, value INT)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, value INT)", true);
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, value INT, bar_id INT, " +
-                "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )");
+                "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
 
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (0, 0)");
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (0, 0, 0)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (0, 0)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (0, 0, 0)", true);
 
         int x = 10;
         int y = 20;
@@ -165,27 +165,27 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
             startNewTest(url);
 
-            SqlScriptRunner.execCommand(getConnection(), select);
+            SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double a = getFirstAndStartNew(url);
             assertTrue(a > 0d);
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (1, " + x + ", 0)");
-            SqlScriptRunner.execCommand(getConnection(), select);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (1, " + x + ", 0)", true);
+            SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double b = getFirstAndStartNew(url);
             assertTrue(b < a);
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (1, " + y + ")");
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (2, 0, 1)");
-            SqlScriptRunner.execCommand(getConnection(), select);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (1, " + y + ")", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (2, 0, 1)", true);
+            SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double c = getFirstAndStartNew(url);
             assertTrue(c < b);
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (2, " + y + ")");
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (3, " + x + ", 2)");
-            SqlScriptRunner.execCommand(getConnection(), select);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (2, " + y + ")", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (3, " + x + ", 2)", true);
+            SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double d = getFirstAndStartNew(url);
             assertTrue(d < c);
@@ -197,7 +197,7 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
 
-    private Double getFirstAndStartNew(String url) {
+    default Double getFirstAndStartNew(String url) {
 
         double value = Double.parseDouble(given().accept(ContentType.JSON)
                 .get(url + TEST_RESULTS)

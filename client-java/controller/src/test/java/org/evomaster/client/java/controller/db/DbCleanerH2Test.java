@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.db;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +41,12 @@ public class DbCleanerH2Test  extends DbCleanerTestBase{
     }
 
     @Override
-    protected void clearDatabase(List<String> tablesToSkip) {
-        DbCleaner.clearDatabase_H2(connection, "PUBLIC", tablesToSkip);
+    protected void clearDatabase(List<String> tablesToSkip, List<String> tableToClean) {
+        DbCleaner.clearDatabase_H2(connection, "PUBLIC", tablesToSkip, tableToClean);
+    }
+
+    @Override
+    protected DatabaseType getDbType() {
+        return DatabaseType.H2;
     }
 }

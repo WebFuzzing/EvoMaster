@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.4.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-project-report</artifactId>
@@ -33,11 +33,6 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-client-database-spy</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-instrumentation</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -58,6 +53,11 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-core-graphql-it</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-core-it</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -68,18 +68,19 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-e2e-tests-spring-examples</artifactId>
+            <artifactId>evomaster-e2e-tests-spring-rest-openapi-v2</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-e2e-tests-spring-rest-postgres</artifactId>
             <version>${project.version}</version>
-        </dependency>  <dependency>
-        <groupId>org.evomaster</groupId>
-        <artifactId>evomaster-e2e-tests-spring-rest-openapi-v3</artifactId>
-        <version>${project.version}</version>
-    </dependency>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-e2e-tests-spring-rest-openapi-v3</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-e2e-tests-utils</artifactId>

@@ -1,17 +1,17 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.*;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses.*;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ReplacementList {
 
     public static List<MethodReplacementClass> getList() {
         return Arrays.asList(
+                new AbstractEndpointClassReplacement(),
                 new BooleanClassReplacement(),
                 new ByteClassReplacement(),
                 new CharacterClassReplacement(),
@@ -21,6 +21,7 @@ public class ReplacementList {
                 new DoubleClassReplacement(),
                 new FloatClassReplacement(),
                 new GsonClassReplacement(),
+                new Http11ProcessorReplacementClass(),
                 new HttpServletRequestClassReplacement(),
                 new IntegerClassReplacement(),
                 new LocalDateClassReplacement(),
@@ -29,8 +30,12 @@ public class ReplacementList {
                 new LongClassReplacement(),
                 new MapClassReplacement(),
                 new MatcherClassReplacement(),
+                new MethodClassReplacement(),
+                new ObjectClassReplacement(),
                 new ObjectsClassReplacement(),
                 new PatternClassReplacement(),
+                new PreparedStatementClassReplacement(),
+                new StatementClassReplacement(),
                 new StringClassReplacement(),
                 new ShortClassReplacement(),
                 new ServletRequestClassReplacement(),
@@ -44,7 +49,7 @@ public class ReplacementList {
         final String targetClassName = ClassName.get(target).getFullNameWithDots();
 
         return getList().stream()
-                .filter(t -> t.isAvailable())
+                //.filter(t -> t.isAvailable()) // bad idea to load 3rd classes at this point...
                 .filter(t -> {
                     /*
                         TODO: this is tricky, due to how "super" calls are
@@ -59,9 +64,18 @@ public class ReplacementList {
 
 //                            boolean jdk = targetClassName.startsWith("java.");
                             //TODO based on actual packages used in the list
-                            boolean jdk = targetClassName.startsWith("java.lang.") ||
-                                    targetClassName.startsWith("java.util.") ||
-                                    targetClassName.startsWith("java.time.");
+                            Set<String> prefixes = new HashSet<>();
+                            prefixes.add("java.lang.");
+                            prefixes.add("java.util.");
+                            prefixes.add("java.time.");
+
+                            //we don't just use java.sql. as that seems to give issue (see previous comments)
+                            prefixes.add("java.sql.Statement");
+                            prefixes.add("java.sql.CallableStatement");
+                            prefixes.add("java.sql.PreparedStatement");
+
+                            boolean jdk = prefixes.stream().anyMatch(k -> targetClassName.startsWith(k)) &&
+                                        prefixes.stream().anyMatch(k -> t.getTargetClassName().startsWith(k));
 
                             if (jdk) {
                                 Class<?> klass;

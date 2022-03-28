@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.rest.resource
 
+import org.evomaster.core.problem.util.RestResourceTemplateHandler
+
 /**
  * this contains a template info for [RestResourceCalls], and the info includes
  * @property template what template is, e.g., POST-GET
@@ -15,4 +17,8 @@ class CallsTemplate (
         var size : Int = 1,
         var times : Int = 0,
         var sizeAssured : Boolean= !template.contains("POST")
-)
+){
+        fun isSingleAction() = !RestResourceTemplateHandler.isNotSingleAction(template)
+
+        override fun toString() = template
+}

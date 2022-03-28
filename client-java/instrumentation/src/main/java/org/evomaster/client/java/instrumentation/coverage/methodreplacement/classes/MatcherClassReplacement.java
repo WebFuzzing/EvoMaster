@@ -99,7 +99,13 @@ public class MatcherClassReplacement implements MethodReplacementClass {
          */
 
 
-        String anyPositionRegexMatch = String.format("(.*)(%s)(.*)", regex);
+        /*
+            Bit tricky... (.*) before/after the regex would not work, as by default . does
+            not match line terminators. enabling DOTALL flag is risky, as the original could
+            use flags.
+            \s\S is just a way to covering everything
+         */
+        String anyPositionRegexMatch = String.format("([\\s\\S]*)(%s)([\\s\\S]*)", regex);
         TaintType taintType = ExecutionTracer.getTaintType(substring);
         if (taintType.isTainted()) {
             /*
@@ -121,7 +127,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
 
 
     /**
-     * Since a MatTestabilityExcInstrumentedTestcher instance has no way of
+     * Since a Matcher instance has no way of
      * accessing the original text for the matching,
      * we need to access the private fields
      *
@@ -130,7 +136,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
      */
     private static String getText(Matcher match) {
         try {
-            return (String) textField.get(match);
+            return ((CharSequence) textField.get(match)).toString();
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }

@@ -30,6 +30,7 @@ class MutatorWithOneMaxTest {
 
         manager = injector.getInstance(LifecycleManager::class.java)
         config = injector.getInstance(EMConfig::class.java)
+        config.useTimeInFeedbackSampling = false // non-deterministic
     }
 
     private fun reportFP(path : String, improve : Boolean) : Double{

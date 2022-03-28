@@ -22,7 +22,10 @@ export default abstract class SutController implements SutHandler {
 
     public abstract async stopSut(): Promise<void>;
 
-    public abstract setupForGeneratedTest(): Promise<void>;
+    public setupForGeneratedTest(): Promise<void> {
+        //nothing to do, at least for now???
+        return Promise.resolve(undefined);
+    }
 
     // ------- other abstract methods -------
 

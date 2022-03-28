@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.util.inference.model
+package org.evomaster.core.problem.util.inference.model
 
 /**
  * [isElementOfParam] means the gene of Param is one type of ObjectGene, MapGene, ListGene

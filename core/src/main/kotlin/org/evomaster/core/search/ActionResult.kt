@@ -6,6 +6,10 @@ open class ActionResult constructor(
          * of the following actions*/
         var stopping: Boolean = false) {
 
+    companion object{
+        const val ERROR_MESSAGE = "ERROR_MESSAGE"
+    }
+
     private val results : MutableMap<String, String> = mutableMapOf()
 
     protected constructor(other: ActionResult) : this(other.stopping){
@@ -26,4 +30,13 @@ open class ActionResult constructor(
     }
 
     fun isEmpty() = results.isEmpty()
+
+
+    fun setErrorMessage(msg: String) = addResultValue(ERROR_MESSAGE, msg)
+    fun getErrorMessage(): String? = getResultValue(ERROR_MESSAGE)
+
+    /**
+     * @return whether this action result type matches the [action]
+     */
+    open fun matchedType(action: Action) = true
 }

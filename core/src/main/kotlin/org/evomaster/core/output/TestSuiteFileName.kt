@@ -31,10 +31,14 @@ class TestSuiteFileName(
 
     fun getAsPath(format: OutputFormat) : String{
 
-        return name.replace('.', '/') + when{
+        //TODO what about C#? is it a behavior we want there as well
+        val base = if(format.isJavaOrKotlin()) name.replace('.', '/') else name
+
+        return base + when{
             format.isJava() -> ".java"
             format.isKotlin() -> ".kt"
             format.isJavaScript() -> ".js"
+            format.isCsharp() -> ".cs"
             format.isPython() -> ".py"
             else -> ".txt"
         }

@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -144,9 +145,11 @@ class DateTimeGeneTest {
         )
         gene1.copyValueFrom(gene0)
 
-        assertEquals(DateTimeGene.DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT,
+        assertEquals(
+            DateTimeGene.DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT,
                 gene0.dateTimeGeneFormat)
-        assertEquals(DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME,
+        assertEquals(
+            DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME,
                 gene1.dateTimeGeneFormat)
     }
 }

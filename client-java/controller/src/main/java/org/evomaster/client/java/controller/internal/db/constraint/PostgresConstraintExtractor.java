@@ -6,6 +6,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -27,9 +28,9 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
 
     private static final String CONTYPE = "contype";
 
-    private static final String CONSRC = "consrc";
-    public static final String CONKEY = "conkey";
+    private static final String CONSTRAINT_EXPRESSION = "constaint_expression";
 
+    private static final String CONKEY = "conkey";
 
     /**
      * Logs that a constraint could not be handled by the extractor.
@@ -73,7 +74,11 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
         for (TableDto tableDto : schemaDto.tables) {
             try (Statement statement = connectionToPostgres.createStatement()) {
                 String tableName = tableDto.name;
-                String query = String.format("SELECT con.*\n" +
+
+
+                String query = String.format("SELECT pg_get_expr(con.conbin, con.conrelid) as " + CONSTRAINT_EXPRESSION + ", " +
+                        "            con." + CONKEY + ", \n" +
+                        "            con." + CONTYPE + " \n" +
                         "       FROM pg_catalog.pg_constraint con\n" +
                         "            INNER JOIN pg_catalog.pg_class rel\n" +
                         "                       ON rel.oid = con.conrelid\n" +
@@ -84,8 +89,8 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
 
                 try (ResultSet columns = statement.executeQuery(query)) {
                     while (columns.next()) {
-                        String checkConstraint = columns.getString(CONSRC);
-                        Array array = columns.getArray(CONKEY);
+                        String checkConstraint = columns.getString(CONSTRAINT_EXPRESSION);
+                        Array constraintKeyArray = columns.getArray(CONKEY);
                         String constraintType = columns.getString(CONTYPE);
 
                         DbTableConstraint constraint;
@@ -95,7 +100,13 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
                                 constraints.add(constraint);
                                 break;
                             case CONSTRAINT_TYPE_UNIQUE:
-                                Integer[] uniqueColumnIds = (Integer[]) array.getArray();
+                                /**
+                                 * column pg_constraint.conkey is an array of int2 elements (i.e. smallint type)
+                                 */
+                                Short[] shortArray = (Short[]) constraintKeyArray.getArray();
+                                Integer[] uniqueColumnIds = Arrays.stream(shortArray)
+                                            .map(Short::intValue)
+                                            .toArray(Integer[]::new);
                                 constraint = getDbTableUniqueConstraint(connectionToPostgres, tableSchema, tableName, uniqueColumnIds);
                                 constraints.add(constraint);
                                 break;

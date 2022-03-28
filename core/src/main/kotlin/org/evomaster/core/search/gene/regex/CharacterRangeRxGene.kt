@@ -1,19 +1,28 @@
 package org.evomaster.core.search.gene.regex
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.LoggerFactory
+import kotlin.math.max
+import kotlin.math.min
 
 
 class CharacterRangeRxGene(
         val negated: Boolean,
-        val ranges: List<Pair<Char,Char>>
-) : RxAtom("."){
+        ranges: List<Pair<Char,Char>>
+) : RxAtom(".", listOf()){
+
+    companion object{
+        private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
+    }
 
     init {
         //TODO this will need to be supported
@@ -24,17 +33,28 @@ class CharacterRangeRxGene(
         if(ranges.isEmpty()){
             throw IllegalArgumentException("No defined ranges")
         }
+
+        ranges.forEach {
+            if(it.first.code > it.second.code){
+                LoggingUtil.uniqueWarn(log, "Issue with Regex range, where '${it.first}' is greater than '${it.second}'")
+            }
+        }
     }
 
     var value : Char = ranges[0].first
 
+    /**
+     * As inputs might be unsorted, we make sure first <= second
+     */
+    val ranges = ranges.map { Pair(min(it.first.code,it.second.code).toChar(), max(it.first.code, it.second.code).toChar()) }
 
+    override fun getChildren(): List<Gene> = listOf()
 
     override fun isMutable(): Boolean {
         return ranges.size > 1 || ranges[0].let { it.first != it.second }
     }
 
-    override fun copy(): Gene {
+    override fun copyContent(): Gene {
         val copy = CharacterRangeRxGene(negated, ranges)
         copy.value = this.value
         return copy
@@ -51,7 +71,7 @@ class CharacterRangeRxGene(
         value = randomness.nextChar(range.first, range.second)
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
 
         var t = 0
         for(i in 0 until ranges.size){
@@ -84,7 +104,7 @@ class CharacterRangeRxGene(
         return true
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         /*
             TODO should \ be handled specially?
             In any case, would have same handling as AnyCharacterRxGene
@@ -106,5 +126,15 @@ class CharacterRangeRxGene(
         return this.value == other.value
     }
 
+    override fun innerGene(): List<Gene> = listOf()
 
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if(gene is CharacterRangeRxGene){
+            value = gene.value
+            return true
+        }
+        LoggingUtil.uniqueWarn(log,"cannot bind CharacterClassEscapeRxGene with ${gene::class.java.simpleName}")
+
+        return false
+    }
 }
