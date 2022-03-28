@@ -600,6 +600,7 @@ public class RPCEndpointsBuilder {
             name.setAccessible(true);
             return (String) name.invoke(object);
         } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            SimpleLogger.warn("Driver Error: fail to extract name for enum constant", e);
             return object.toString();
         }
     }

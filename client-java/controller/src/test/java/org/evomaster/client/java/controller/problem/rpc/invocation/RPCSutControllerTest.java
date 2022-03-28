@@ -346,8 +346,8 @@ public class RPCSutControllerTest {
         assertEquals(" com.thrift.example.artificial.StringChildDto arg0 = null;", responseDto.testScript.get(2));
         assertEquals(" {", responseDto.testScript.get(3));
         assertEquals("  arg0 = new com.thrift.example.artificial.StringChildDto();", responseDto.testScript.get(4));
-        assertEquals("  arg0.setCode(((java.lang.String)(\"ppcode\")));", responseDto.testScript.get(5));
-        assertEquals("  arg0.setMessage(((java.lang.String)(\"pmsg\")));", responseDto.testScript.get(6));
+        assertEquals("  arg0.setCode(\"ppcode\");", responseDto.testScript.get(5));
+        assertEquals("  arg0.setMessage(\"pmsg\");", responseDto.testScript.get(6));
         assertEquals(" }", responseDto.testScript.get(7));
         assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handledInheritedGenericStringDto(arg0);", responseDto.testScript.get(8));
         assertEquals("}", responseDto.testScript.get(9));
@@ -402,8 +402,8 @@ public class RPCSutControllerTest {
         assertEquals(" com.thrift.example.artificial.IntChildDto arg0 = null;", responseDto.testScript.get(2));
         assertEquals(" {", responseDto.testScript.get(3));
         assertEquals("  arg0 = new com.thrift.example.artificial.IntChildDto();", responseDto.testScript.get(4));
-        assertEquals("  arg0.setCode(((java.lang.Integer)(1)));", responseDto.testScript.get(5));
-        assertEquals("  arg0.setMessage(((java.lang.Integer)(2)));", responseDto.testScript.get(6));
+        assertEquals("  arg0.setCode(1);", responseDto.testScript.get(5));
+        assertEquals("  arg0.setMessage(2);", responseDto.testScript.get(6));
         assertEquals(" }", responseDto.testScript.get(7));
         assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handledInheritedGenericIntDto(arg0);", responseDto.testScript.get(8));
         assertEquals("}", responseDto.testScript.get(9));
