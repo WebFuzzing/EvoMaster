@@ -23,7 +23,7 @@ export default class AppController  extends SutController {
 
     public getProblemInfo(): ProblemInfo {
         const dto = new RestProblemDto();
-        dto.swaggerJsonUrl = "http://localhost:" + this.port + "/swagger.json";
+        dto.openApiUrl = "http://localhost:" + this.port + "/swagger.json";
 
         return dto;
     }

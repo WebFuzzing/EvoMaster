@@ -2,6 +2,9 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import org.evomaster.core.output.service.RestTestCaseWriter
+import org.evomaster.core.output.service.TestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.Archive
@@ -67,5 +70,11 @@ class ResourceRestModule : AbstractModule(){
         bind(ResourceDepManageService::class.java)
                 .asEagerSingleton()
 
+        bind(TestCaseWriter::class.java)
+                .to(RestTestCaseWriter::class.java)
+                .asEagerSingleton()
+
+        bind(TestSuiteWriter::class.java)
+                .asEagerSingleton()
     }
 }

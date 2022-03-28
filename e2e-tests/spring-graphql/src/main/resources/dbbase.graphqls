@@ -1,0 +1,17 @@
+type Query {
+    # get all exisiting DbBase entities
+    all: [DbBase]!
+    # get all exisiting DbBase entities with the specified name
+    dbBaseByName(name: String!): [DbBase]!
+}
+type Mutation{
+    # create a DbBase
+    addDbBase(name: String): DbBase
+}
+
+type DbBase{
+    # the unique id of the DbBase
+    id: ID!
+    # the name of the DbBase (nullable)
+    name: String
+}

@@ -3,12 +3,15 @@ package org.evomaster.core
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
-import com.google.inject.multibindings.OptionalBinder
+import org.evomaster.core.output.service.NoTestCaseWriter
+import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TrackService
 
@@ -20,14 +23,11 @@ import org.evomaster.core.search.tracer.TrackService
  * default beans/services which are used regardless of the kind
  * of testing we do.
  */
-class BaseModule(val args: Array<String>) : AbstractModule() {
+class BaseModule(val args: Array<String>, val noTests: Boolean = false) : AbstractModule() {
 
     constructor() : this(emptyArray())
 
     override fun configure() {
-
-        bind(TestSuiteWriter::class.java)
-                .asEagerSingleton()
 
         bind(SearchTimeController::class.java)
                 .asEagerSingleton()
@@ -60,11 +60,27 @@ class BaseModule(val args: Array<String>) : AbstractModule() {
         bind(ArchiveMutationTrackService::class.java)
                 .asEagerSingleton()
 
-        bind(ArchiveMutator::class.java)
+        bind(ArchiveImpactSelector::class.java)
+                .asEagerSingleton()
+
+        bind(ArchiveGeneMutator::class.java)
                 .asEagerSingleton()
 
         bind(MutationWeightControl::class.java)
                 .asEagerSingleton()
+
+        bind(PartialOracles::class.java)
+                .asEagerSingleton()
+
+        bind(ExecutionInfoReporter::class.java)
+                .asEagerSingleton()
+
+        //no longer needed if TestSuiteWriter is moved out?
+//        if(noTests){
+//            bind(TestCaseWriter::class.java)
+//                    .to(NoTestCaseWriter::class.java)
+//                    .asEagerSingleton()
+//        }
     }
 
     @Provides @Singleton

@@ -1,0 +1,18 @@
+type Query{
+    # get all exisiting DbDirectInt with the specified values of x and y
+    get(x: Int!, y: Int!): [DbDirectInt]!
+}
+
+type Mutation{
+    # add a DbDirectInt with x = 42 and y = 77
+    addDbDirectInt: DbDirectInt
+}
+
+type DbDirectInt{
+    # the unique id of the DbDirectInt
+    id: ID!
+    # the value of x
+    x: Int!
+    # the value of y
+    y: Int!
+}

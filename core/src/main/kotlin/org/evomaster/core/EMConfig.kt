@@ -5,8 +5,10 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
+import org.slf4j.LoggerFactory
 import java.net.MalformedURLException
 import java.net.URL
 import java.nio.file.Files
@@ -31,6 +33,10 @@ class EMConfig {
      */
 
     companion object {
+
+        private val log = LoggerFactory.getLogger(EMConfig::class.java)
+
+        private const val headerRegex = "(.+:.+)|(^$)"
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -68,7 +74,7 @@ class EMConfig {
 
             val defaultInstance = EMConfig()
 
-            var parser = OptionParser()
+            val parser = OptionParser()
 
             parser.accepts("help", "Print this help documentation")
                     .forHelp()
@@ -103,7 +109,8 @@ class EMConfig {
         class ConfigDescription(
                 val text: String,
                 val constraints: String,
-                val enumValues: String,
+                val enumExperimentalValues: String,
+                val enumValidValues: String,
                 val experimental: Boolean
         ) {
             override fun toString(): String {
@@ -111,9 +118,15 @@ class EMConfig {
                 if (constraints.isNotBlank()) {
                     description += " [Constraints: $constraints]."
                 }
-                if (enumValues.isNotBlank()) {
-                    description += " [Values: $enumValues]."
+                if (enumValidValues.isNotBlank()) {
+                    description += " [Values: $enumValidValues]."
                 }
+                if (enumExperimentalValues.isNotBlank()) {
+                    description += " [Experimental Values: $enumExperimentalValues]."
+                }
+
+
+
 
                 if (experimental) {
                     /*
@@ -167,22 +180,22 @@ class EMConfig {
                 }
             }
 
-            var enumValues = ""
-
+            var experimentalValues =""
+            var validValues = ""
             val returnType = m.returnType.javaType as Class<*>
 
             if (returnType.isEnum) {
                 val elements = returnType.getDeclaredMethod("values")
                         .invoke(null) as Array<*>
-
-                enumValues = elements.joinToString(", ")
+                val experimentElements= elements.filter{ it is WithExperimentalOptions && it.isExperimental()}
+                val validElements= elements.filter{ it !is WithExperimentalOptions || !it.isExperimental()}
+                experimentalValues = experimentElements.joinToString(", ")
+                validValues = validElements.joinToString(", ")
             }
-
-            var description = "$text$constraints$enumValues"
 
             val experimental = (m.annotations.find { it is Experimental } as? Experimental)
 
-            val cd = ConfigDescription(text, constraints, enumValues, experimental != null)
+            val cd = ConfigDescription(text, constraints, experimentalValues ,validValues, experimental != null)
 
             return cd
         }
@@ -212,15 +225,67 @@ class EMConfig {
         }
 
         checkMultiFieldConstraints()
+
+        handleDeprecated()
     }
 
-    private fun checkMultiFieldConstraints() {
+
+    private fun handleDeprecated(){
+        /*
+            TODO If this happens often, then should use annotations.
+            eg, could handle specially in Markdown all the deprecated fields
+         */
+        if(testSuiteFileName.isNotBlank()){
+            LoggingUtil.uniqueUserWarn("Using deprecated option 'testSuiteFileName'")
+            outputFilePrefix = testSuiteFileName
+            outputFileSuffix = ""
+            testSuiteFileName = ""
+        }
+    }
+
+    fun checkMultiFieldConstraints() {
         /*
             Each option field might have specific constraints, setup with @annotations.
             However, there can be multi-field constraints as well.
             Those are defined here.
             They can be check only once all fields have been updated
          */
+
+        if (blackBox && !bbExperiments) {
+
+            if(problemType == ProblemType.DEFAULT){
+                LoggingUtil.uniqueUserWarn("You are doing Black-Box testing, but you did not specify the" +
+                        " 'problemType'. The system will default to RESTful API testing.")
+                problemType = ProblemType.REST
+            }
+
+            if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
+                throw IllegalArgumentException("In black-box mode for REST APIs, you must set the bbSwaggerUrl option")
+            }
+            if(problemType == ProblemType.GRAPHQL && bbTargetUrl.isNullOrBlank()){
+                throw IllegalArgumentException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
+            }
+            if (outputFormat == OutputFormat.DEFAULT) {
+                /*
+                    TODO in the future, once we support POSTMAN outputs, we should default it here
+                 */
+                throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
+            }
+        }
+
+        if (!blackBox && bbExperiments) {
+            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
+        }
+
+        if(!blackBox && ratePerMinute > 0){
+            throw IllegalArgumentException("ratePerMinute is used only for black-box testing")
+        }
+
+        if(blackBox && ratePerMinute <=0){
+            LoggingUtil.uniqueUserWarn("You have not setup 'ratePerMinute'. If you are doing testing of" +
+                    " a remote service which you do not own, you might want to put a rate-limiter to prevent" +
+                    " EvoMaster from bombarding such service with HTTP requests.")
+        }
 
         when (stoppingCriterion) {
             StoppingCriterion.TIME -> if (maxActionEvaluations != defaultMaxActionEvaluations) {
@@ -246,53 +311,38 @@ class EMConfig {
             throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
 
-        //resource related parameters
-        if ((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
-                && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
-            throw IllegalArgumentException("Parameters (${
-            arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics", "exportDependencies")
-                    .filterIndexed { index, _ ->
-                        (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
-                                (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
-                                (index == 2 && doesApplyNameMatching) ||
-                                (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
-                                (index == 4 && exportDependencies)
-                    }.joinToString(" and ")
-            }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
-        }
+        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && probOfArchiveMutation > 0 && !weightBasedMutationRate)
+            throw IllegalArgumentException("When applying adaptive gene selection, weight-based mutation rate should be enabled")
 
-        /*
-            resource-mio and sql configuration
-            TODO if required
-         */
-        if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
-            throw IllegalArgumentException(" resource-mio does not support SQL strategies for the moment")
-        }
+        if (probOfArchiveMutation > 0 && !enableTrackEvaluatedIndividual)
+            throw IllegalArgumentException("Archive-based solution is only applicable when enable of tracking of EvaluatedIndividual.")
 
-        //archive-based mutation
-        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
-            throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
-        }
+        if (doCollectImpact && !enableTrackEvaluatedIndividual)
+            throw IllegalArgumentException("Impact collection should be applied together with tracking EvaluatedIndividual")
 
         if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
         }
 
-        if (blackBox && !bbExperiments) {
-            if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
-                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
-            }
-            if (outputFormat == OutputFormat.DEFAULT) {
-                throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
-            }
+        if ((outputFilePrefix.contains("-") || outputFileSuffix.contains("-"))
+                    && outputFormat.isJavaOrKotlin()) { //TODO also for C#?
+             throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
         }
 
-        if (!blackBox && bbExperiments) {
-            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
+        if (seedTestCases && seedTestCasesPath.isNullOrBlank()) {
+            throw IllegalArgumentException("When using the seedTestCases option, you must specify the file path of the test cases with the seedTestCasesPath option")
         }
 
-        if (testSuiteFileName.contains("-") && outputFormat.isJavaOrKotlin()) {
-            throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
+        // Clustering constraints: the executive summary is not really meaningful without the clustering
+        if(executiveSummary && testSuiteSplitType != TestSuiteSplitType.CLUSTER){
+            executiveSummary = false
+            LoggingUtil.uniqueUserWarn("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING). " +
+                    "The option has been deactivated for this run, to prevent a crash.")
+            //throw IllegalArgumentException("The option to turn on Executive Summary is only meaningful when clustering is turned on (--testSuiteSplitType CLUSTERING).")
+        }
+
+        if (enablePureRPCTestGeneration && outputFormat != OutputFormat.DEFAULT && !outputFormat.isJava()){
+            throw IllegalArgumentException("when generating pure RPC tests, outputFormat only supports JAVA now")
         }
     }
 
@@ -578,13 +628,28 @@ class EMConfig {
 
 
     @Important(2.0)
-    @Cfg("The name of generated file with the test cases, without file type extension." +
+    @Cfg("The name prefix of generated file(s) with the test cases, without file type extension." +
             " In JVM languages, if the name contains '.', folders will be created to represent" +
             " the given package structure." +
             " Also, in JVM languages, should not use '-' in the file name, as not valid symbol" +
-            " for class identifiers.")
+            " for class identifiers." +
+            " This prefix be combined with the outputFileSuffix to combined the final name." +
+            " As EvoMaster can split the generated tests among different files, each will get a label," +
+            " and the names will be in the form prefix+label+suffix.")
     @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
-    var testSuiteFileName = "EvoMasterTest"
+    var outputFilePrefix = "EvoMaster"
+
+    @Important(2.0)
+    @Cfg("The name suffix for the generated file(s), to be added before the file type extension." +
+            " As EvoMaster can split the generated tests among different files, each will get a label," +
+            " and the names will be in the form prefix+label+suffix.")
+    @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
+    var outputFileSuffix = "Test"
+
+
+    @Deprecated("Should use outputFilePrefix and outputFileSuffix")
+    @Cfg("DEPRECATED. Rather use _outputFilePrefix_ and _outputFileSuffix_")
+    var testSuiteFileName = ""
 
     @Important(2.0)
     @Cfg("Specify in which format the tests should be outputted." +
@@ -598,14 +663,45 @@ class EMConfig {
 
     @Important(3.2)
     @Url
-    @Cfg("When in black-box mode for REST APIs, specify where the Swagger schema can be downloaded from")
+    @Cfg("When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from." +
+            " If the schema is on the local machine, you can use a URL starting with 'file://'")
     var bbSwaggerUrl: String = ""
 
     @Important(3.5)
     @Url
-    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached. " +
-            "If this is missing, the URL will be inferred from Swagger.")
+    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached, e.g.," +
+            " http://localhost:8080 ." +
+            " In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema." +
+            " In GraphQL, this must point to the entry point of the API, e.g.," +
+            " http://localhost:8080/graphql .")
     var bbTargetUrl: String = ""
+
+
+    @Important(3.7)
+    @Cfg("Rate limiter, of how many actions to do per minute. For example, when making HTTP calls towards" +
+            " an external service, might want to limit the number of calls to avoid bombarding such service" +
+            " (which could end up becoming equivalent to a DoS attack)." +
+            " A value of zero or negative means that no limiter is applied." +
+            " This is needed only for black-box testing of remote services.")
+    var ratePerMinute = 0
+
+    @Important(4.0)
+    @Regex(headerRegex)
+    @Cfg("In black-box testing, we still need to deal with authentication of the HTTP requests." +
+            " With this parameter it is possible to specify a HTTP header that is going to be added to most requests." +
+            " This should be provided in the form _name:value_. If more than 1 header is needed, use as well the" +
+            " other options _header1_ and _header2_.")
+    var header0 = ""
+
+    @Important(4.1)
+    @Regex(headerRegex)
+    @Cfg("See documentation of _header0_.")
+    var header1 = ""
+
+    @Important(4.2)
+    @Regex(headerRegex)
+    @Cfg("See documentation of _header0_.")
+    var header2 = ""
 
 
     //-------- other options -------------
@@ -622,36 +718,49 @@ class EMConfig {
     @Cfg("The algorithm used to generate test cases")
     var algorithm = Algorithm.MIO
 
-
-    enum class ProblemType {
-        REST,
-        @Experimental
-        WEB
+    /**
+    * Workaround for issues with annotations that can not be applied on ENUM values,
+    * like @Experimental
+    * */
+    interface WithExperimentalOptions{
+        fun isExperimental() : Boolean
     }
 
-    @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API")
-    var problemType = ProblemType.REST
+    enum class ProblemType(private val experimental: Boolean) : WithExperimentalOptions {
+        DEFAULT(experimental = false),
+        REST(experimental = false),
+        GRAPHQL(experimental = true),
+        RPC(experimental = true),
+        WEB(experimental = true);
+        override fun isExperimental() = experimental
+    }
+
+    @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API." +
+            " If left to DEFAULT, the type will be inferred from the EM Driver." +
+            " However, in case of ambiguities (e.g., the driver specifies more than one type)," +
+            " then this field must be set with a specific type." +
+            " This is also the case for Black-Box testing where there is no EM Driver." +
+            " In this latter case, the system defaults to handle REST APIs.")
+    var problemType = ProblemType.DEFAULT
 
 
     @Cfg("Specify if test classes should be created as output of the tool. " +
             "Usually, you would put it to 'false' only when debugging EvoMaster itself")
     var createTests = true
 
-
     enum class TestSuiteSplitType {
         NONE,
         CLUSTER,
-        SUMMARY_ONLY,
         CODE
     }
 
-    @Experimental
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
-    var testSuiteSplitType = TestSuiteSplitType.NONE
+    var testSuiteSplitType = TestSuiteSplitType.CLUSTER
 
-    @Experimental
-    @Cfg("Generate an executive summary, containing an example of each category of potential fault found")
-    var executiveSummary = false
+    @Cfg("Generate an executive summary, containing an example of each category of potential fault found." +
+                    "NOTE: This option is only meaningful when used in conjuction with clustering. " +
+                    "This is achieved by turning the option --testSuiteSplitType to CLUSTER")
+    var executiveSummary = true
 
     @Experimental
     @Cfg("The Distance Metric Last Line may use several values for epsilon." +
@@ -764,6 +873,13 @@ class EMConfig {
     @FilePath
     var extraHeuristicsFile = "extra_heuristics.csv"
 
+    @Experimental
+    @Cfg("Enable to print snapshots of the generated tests during the search in an interval defined in snapshotsInterval.")
+    var enableWriteSnapshotTests = false
+
+    @Experimental
+    @Cfg("The size (in seconds) of the interval that the snapshots will be printed, if enabled.")
+    var writeSnapshotTestsIntervalInSeconds = 3600 // ie, 1 hour
 
     enum class SecondaryObjectiveStrategy {
         AVG_DISTANCE,
@@ -785,6 +901,21 @@ class EMConfig {
     @Probability
     var structureMutationProbability = 0.5
 
+    @Experimental
+    @Cfg("Probability of applying a mutation that can change the structure of test's initialization if it has")
+    @Probability
+    var initStructureMutationProbability = 0.0
+
+    @Experimental
+    @Cfg("Specify a maximum number of handling (remove/add) init actions at once, e.g., add 3 init actions at most")
+    @Min(0.0)
+    var maxSizeOfMutatingInitAction = 0
+
+    // Man: need to check it with Andrea about whether we consider it as a generic option
+    @Experimental
+    @Cfg("Specify a probability of applying a smart structure mutator for initialization of the individual")
+    @Probability
+    var probOfSmartInitStructureMutator = 0.0
 
     enum class GeneMutationStrategy {
         ONE_OVER_N,
@@ -802,6 +933,16 @@ class EMConfig {
 
     @Cfg("Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement")
     var feedbackDirectedSampling = FeedbackDirectedSampling.LAST
+
+    //Warning: this is off in the tests, as it is a source of non-determinism
+    @Cfg("Whether to use timestamp info on the execution time of the tests for sampling (e.g., to reward the quickest ones)")
+    var useTimeInFeedbackSampling = true
+
+
+    @Experimental
+    @Cfg("When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often)")
+    var useWeightedSampling = false
+
 
     @Cfg("Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO)")
     @Min(1.0)
@@ -821,7 +962,7 @@ class EMConfig {
 
     @Cfg("When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random")
     @Probability
-    var probOfSmartSampling = 0.5
+    var probOfSmartSampling = 0.95
 
     @Cfg("Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test")
     @Min(1.0)
@@ -859,26 +1000,45 @@ class EMConfig {
     var enableProcessMonitor = false
 
     @Experimental
+    @Cfg("Specify a format to save the process data")
+    var processFormat = ProcessDataFormat.JSON_ALL
+
+    enum class ProcessDataFormat{
+        /**
+         * save evaluated individuals and Archive with a json format
+         */
+        JSON_ALL,
+
+        /**
+         * only save the evaluated individual with the specified test format
+         */
+        TEST_IND,
+
+        /**
+         * save covered targets with the specified target format and tests with the specified test format
+         */
+        TARGET_TEST_IND
+    }
+
+    @Experimental
     @Cfg("Specify a folder to save results when a search monitor is enabled")
     @Folder
     var processFiles = "process_data"
 
     @Experimental
-    @Cfg("Specify how often to save results when a search monitor is enabled ")
-    var processInterval = 100
-
-    @Experimental
-    @Cfg("Enable EvoMaster to generate, use, and attach complete objects to REST calls, rather than just the needed fields/values")
-    var enableCompleteObjects = false
+    @Cfg("Specify how often to save results when a search monitor is enabled, and 0.0 presents to record all evaluated individual")
+    @Max(50.0)
+    @Min(0.0)
+    var processInterval = 0.0
 
     @Experimental
     @Cfg("Whether to enable tracking the history of modifications of the individuals during the search")
     var enableTrackIndividual = false
 
-    @Experimental
+
     @Cfg("Whether to enable tracking the history of modifications of the individuals with its fitness values (i.e., evaluated individual) during the search. " +
             "Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual")
-    var enableTrackEvaluatedIndividual = false
+    var enableTrackEvaluatedIndividual = true
 
     @Experimental
     @Cfg("Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. " +
@@ -895,10 +1055,9 @@ class EMConfig {
     @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
     var e_u1f984 = false
 
-    @Experimental
     @Cfg("Enable Expectation Generation. If enabled, expectations will be generated. " +
             "A variable called expectationsMasterSwitch is added to the test suite, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail.")
-    var expectationsActive = false
+    var expectationsActive = true
 
     @Cfg("Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. " +
             "NOTE: this should not cause any tests to fail.")
@@ -941,17 +1100,15 @@ class EMConfig {
         ConArchive(true)
     }
 
-    @Experimental
     @Cfg("Specify whether to enable resource-based strategy to sample an individual during search. " +
             "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
-    var resourceSampleStrategy = ResourceSamplingStrategy.NONE
+    var resourceSampleStrategy = ResourceSamplingStrategy.ConArchive
 
-    @Experimental
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
             "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
     @Probability
-    var probOfEnablingResourceDependencyHeuristics = 0.0
+    var probOfEnablingResourceDependencyHeuristics = 0.95
 
     @Experimental
     @Cfg("Specify whether to export derived dependencies among resources")
@@ -962,10 +1119,106 @@ class EMConfig {
     @FilePath
     var dependencyFile = "dependencies.csv"
 
-    @Experimental
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
-    var probOfApplySQLActionToCreateResources = 0.0
+    var probOfApplySQLActionToCreateResources = 0.5
+
+    @Experimental
+    @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
+    @Min(0.0)
+    var maxSizeOfHandlingResource = 0
+
+    @Experimental
+    @Cfg("Specify a strategy to determinate a number of resources to be manipulated throughout the search.")
+    var employResourceSizeHandlingStrategy = SqlInitResourceStrategy.NONE
+
+    enum class SqlInitResourceStrategy{
+        NONE,
+
+        /**
+         * determinate a number of resource to be manipulated at random between 1 and [maxSizeOfHandlingResource]
+         */
+        RANDOM,
+        /**
+         * adaptively decrease a number of resources to be manipulated from [maxSizeOfHandlingResource] to 1
+         */
+        DPC
+    }
+
+    enum class StructureMutationProbStrategy{
+        /**
+         * apply the specified probability
+         */
+        SPECIFIED,
+
+        /**
+         * deactivated structure mutator when focused search starts
+         */
+        SPECIFIED_FS,
+
+        /**
+         * gradually update the structure mutator probability from [structureMutationProbability] to [structureMutationProFS] before focused search
+         */
+        DPC_TO_SPECIFIED_BEFORE_FS,
+
+        /**
+         * gradually update the structure mutator probability from [structureMutationProbability] to [structureMutationProFS] after focused search
+         */
+        DPC_TO_SPECIFIED_AFTER_FS,
+
+        /**
+         * apply a probability which is adaptive to the impact
+         */
+        ADAPTIVE_WITH_IMPACT
+    }
+
+    @Experimental
+    @Cfg("Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources")
+    @Min(0.0)
+    var maxResourceSize = 0
+
+    @Experimental
+    @Cfg("Specify a strategy to handle a probability of applying structure mutator during the focused search")
+    var structureMutationProbStrategy = StructureMutationProbStrategy.SPECIFIED
+
+    @Experimental
+    @Cfg("Specify a probability of applying structure mutator during the focused search")
+    @Probability
+    var structureMutationProFS = 0.0
+
+    enum class MaxTestSizeStrategy{
+        /**
+         * apply the specified max size of a test
+         */
+        SPECIFIED,
+
+        /**
+         * gradually increasing a size of test until focused search
+         */
+        DPC_INCREASING,
+
+        /**
+         * gradually decreasing a size of test until focused search
+         */
+        DPC_DECREASING
+    }
+
+    @Experimental
+    @Cfg("Specify a strategy to handle a max size of a test")
+    var maxTestSizeStrategy = MaxTestSizeStrategy.SPECIFIED
+
+    @Experimental
+    @Cfg("Specify whether to decide the resource-based structure mutator and resource to be mutated adaptively based on impacts during focused search." +
+            "Note that it only works when resource-based solution is enabled for solving REST problem")
+    var enableAdaptiveResourceStructureMutation = false
+
+    @Experimental
+    @Cfg("Specify a probability of applying length handling")
+    var probOfHandlingLength = 0.0
+
+    @Experimental
+    @Cfg("Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabeld")
+    var dpcTargetTestSize = 1
 
     @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
@@ -978,9 +1231,13 @@ class EMConfig {
     @Probability(false)
     var probOfSelectFromDatabase = 0.1
 
+    @Cfg("Whether to apply text/name analysis to derive relationships between name entities, e.g., a resource identifier with a name of table")
+    var doesApplyNameMatching = true
+
     @Experimental
-    @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
-    var doesApplyNameMatching = false
+    @Cfg("Whether to employ NLP parser to process text. " +
+            "Note that to enable this parser, it is required to build the EvoMaster with the resource profile, i.e., mvn clean install -Presourceexp -DskipTests")
+    var enableNLPParser = false
 
     @Experimental
     @Cfg("Whether to save mutated gene info, which is typically used for debugging mutation")
@@ -1023,6 +1280,15 @@ class EMConfig {
     }
 
     @Experimental
+    @Cfg("Whether to record targets when the number is more than 100")
+    var recordExceededTargets = false
+
+    @Experimental
+    @Cfg("Specify a path to save all not covered targets when the number is more than 100")
+    @FilePath
+    var exceedTargetsFile = "exceedTargets.txt"
+
+    @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
     @Probability(false)
     var S1iR: Double = 0.25
@@ -1042,59 +1308,124 @@ class EMConfig {
     @Probability(false)
     var SMdR: Double = 0.25
 
-    @Experimental
     @Cfg("Whether to enable a weight-based mutation rate")
-    var weightBasedMutationRate = false
+    var weightBasedMutationRate = true
 
-    @Experimental
     @Cfg("Whether to specialize sql gene selection to mutation")
-    var specializeSQLGeneSelection = false
-
-    @Experimental
-    @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")
-    @PercentageAsProbability(false)
-    var maxMutationRate = 0.9
+    var specializeSQLGeneSelection = true
 
     @Experimental
     @Cfg("Specify a starting percentage of genes of an individual to mutate")
     @PercentageAsProbability(false)
     var startingPerOfGenesToMutate = 0.5
 
-    @Experimental
-    @Cfg("Specify a starting percentage of genes of an individual to mutate")
+    @Cfg("When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. " +
+            "For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, " +
+            "and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate.")
     @PercentageAsProbability(false)
-    var d = 0.5
+    var d = 0.8
 
-    @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
     @Probability
-    var probOfArchiveMutation = 0.0
+    var probOfArchiveMutation = 0.5
 
     @Experimental
-    @Cfg("Specify a percentage (before starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
-    @PercentageAsProbability(false)
-    var startPerOfCandidateGenesToMutate = 0.9
+    @Cfg("Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. ")
+    var doCollectImpact = false
 
     @Experimental
-    @Cfg("Specify a percentage (after starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
-    @PercentageAsProbability(false)
-    var endPerOfCandidateGenesToMutate = 0.1
+    @Cfg("During mutation, whether to abstract genes for repeated SQL actions")
+    var abstractInitializationGeneToMutate = false
+
+    @Cfg("Specify a strategy to calculate a weight of a gene based on impacts")
+    var geneWeightBasedOnImpactsBy = GeneWeightBasedOnImpact.RATIO
+
+    enum class GeneWeightBasedOnImpact{
+        /**
+         * using rank of counter
+         */
+        SORT_COUNTER,
+        /**
+         * using rank of ratio
+         */
+        SORT_RATIO,
+        /**
+         * using counter
+         */
+        COUNTER,
+        /**
+         * using ratio, ie, counter/total manipulated times
+         */
+        RATIO
+    }
+
+    @Cfg("Specify a strategy to select genes for mutation adaptively")
+    var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.APPROACH_IMPACT
+
+    @Cfg("Specify whether to enable weight-based mutation selection for selecting genes to mutate for a gene")
+    var enableWeightBasedMutationRateSelectionForGene = true
 
     @Experimental
-    @Cfg("Specify whether to decide a top percent of genes to mutate adaptively")
-    var adaptivePerOfCandidateGenesToMutate = false
+    @Cfg("Whether to save archive info after each of mutation, which is typically useful for debugging mutation and archive")
+    var saveArchiveAfterMutation = false
 
     @Experimental
-    @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
-    var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
+    @Cfg("Specify a path to save archive after each mutation during search, only useful for debugging")
+    @FilePath
+    var archiveAfterMutationFile = "archive.csv"
 
     @Experimental
+    @Cfg("Whether to save impact info after each of mutation, which is typically useful debugging impact driven solutions and mutation")
+    var saveImpactAfterMutation = false
+
+    @Experimental
+    @Cfg("Specify a path to save collected impact info after each mutation during search, only useful for debugging")
+    @FilePath
+    var impactAfterMutationFile = "impactSnapshot.csv"
+
     @Cfg("Whether to enable archive-based gene mutation")
-    var archiveGeneMutation = ArchiveGeneMutation.NONE
+    var archiveGeneMutation = ArchiveGeneMutation.SPECIFIED_WITH_SPECIFIC_TARGETS
 
-    enum class ArchiveGeneMutation {
+    @Cfg("Specify a maximum length of history when applying archive-based gene mutation")
+    var maxlengthOfHistoryForAGM = 10
+
+    /**
+     * archive-based gene value mutation
+     */
+    enum class ArchiveGeneMutation (val withTargets : Int = 0, val withDirection: Boolean = false){
+        /**
+         * do not apply archive-based gene mutation
+         */
         NONE,
+        /**
+         * mutate with history but not related to any target
+         */
         SPECIFIED,
+        /**
+         * mutate individual with history based on targets
+         * but not specific to actions
+         */
+        SPECIFIED_WITH_TARGETS(1, false),
+        /**
+         * mutate individual with history based on targets
+         * and the targets are linked to the action level
+         */
+        SPECIFIED_WITH_SPECIFIC_TARGETS(2, false),
+        /**
+         * mutate individual with history and directions based on targets
+         * but not specific to actions
+         */
+        SPECIFIED_WITH_TARGETS_DIRECTION(1, true),
+        /**
+         * mutate individual with history and directions based on targets
+         * and the targets are linked to the action level
+         */
+        SPECIFIED_WITH_SPECIFIC_TARGETS_DIRECTION(2, true),
+
+        /**
+         * mutate individual with history with consideration of dependency among genes
+         * (not done yet)
+         */
         ADAPTIVE
     }
 
@@ -1103,13 +1434,9 @@ class EMConfig {
     var exportImpacts = false
 
     @Experimental
-    @Cfg("Specify a file that saves derived genes")
+    @Cfg("Specify a path to save derived genes")
     @FilePath
     var impactFile = "impact.csv"
-
-    @Experimental
-    @Cfg("Specify whether to disable structure mutation during focus search")
-    var disableStructureMutationDuringFocusSearch = false
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
     @Probability
@@ -1154,6 +1481,99 @@ class EMConfig {
     @Cfg("Only for debugging. Concentrate search on only one single REST endpoint")
     var endpointFocus : String? = null
 
+    @Experimental
+    @Cfg("Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process")
+    var seedTestCases = false
+
+    enum class SeedTestCasesFormat {
+        POSTMAN
+    }
+
+    @Experimental
+    @Cfg("Format of the test cases seeded to EvoMaster")
+    var seedTestCasesFormat = SeedTestCasesFormat.POSTMAN
+
+    @Experimental
+    @FilePath
+    @Cfg("File path where the seeded test cases are located")
+    var seedTestCasesPath : String = "postman.postman_collection.json"
+
+    @Cfg("Try to enforce the stopping of SUT business-level code." +
+            " This is needed when TCP connections timeouts, to avoid thread executions" +
+            " from previous HTTP calls affecting the current one")
+    var killSwitch = true
+
+    @Cfg("Number of milliseconds we are going to wait to get a response on a TCP connection, e.g., " +
+            "when making HTTP calls to a Web API")
+    var tcpTimeoutMs = 30_000
+
+    @Cfg("Whether to skip failed SQL commands in the generated test files")
+    var skipFailureSQLInTestFile = true
+
+    val defaultTreeDepth = 11
+
+    @Experimental
+    @Cfg("Maximum tree depth in mutations/queries to be evaluated;" +
+            "this is to avoid issues when dealing with huge graphs in GraphQL")
+    @Min(1.0)
+    var treeDepth = defaultTreeDepth
+
+
+    @Experimental
+    @Cfg("Specify a maximum number of existing data in the database to sample when SQL handling is enabled. " +
+            "Note that a negative number means all existing data would be sampled")
+    var maximumExistingDataToSampleInDb = -1
+
+    @Experimental
+    @Cfg("Whether to output executed sql info")
+    var outputExecutedSQL = OutputExecutedSQL.NONE
+
+    enum class OutputExecutedSQL{
+        /**
+         * do not output executed sql info
+         */
+        NONE,
+        /**
+         * output all executed sql info at the end
+         */
+        ALL_AT_END,
+
+        /**
+         * output executed info once they were executed per test
+         */
+        ONCE_EXECUTED
+    }
+
+    @Experimental
+    @Cfg("Specify a path to save all executed sql commands to a file (default is 'sql.txt')")
+    var saveExecutedSQLToFile : String = "sql.txt"
+
+    @Experimental
+    @Cfg("Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null")
+    var enableRPCExtraResponseTargets = false
+
+    @Experimental
+    @Cfg("Whether to enable customized responses indicating business logic")
+    var enableRPCCustomizedResponseTargets = false
+
+    @Experimental
+    @Cfg("Whether to generate RPC endpoint invocation which is independent from EM driver.")
+    var enablePureRPCTestGeneration = false
+
+    @Experimental
+    @Cfg("Whether to generate RPC Assertions based on response instance")
+    var enableRPCAssertionWithInstance = false
+
+    @Experimental
+    @Cfg("Specify a maximum number of data in a collection to be asserted in the generated tests." +
+            " Note that zero means that only the size of the collection will be asserted." +
+            " A negative value means all data in the collection will be asserted (i.e., no limit).")
+    var maxAssertionForDataInCollection = 3
+
+    @Experimental
+    @Cfg("Specify whether to employ smart database clean to clear data in the database if the SUT has." +
+            "`null` represents to employ the setting specified on the EM driver side")
+    var employSmartDbClean : Boolean? = null
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -1180,5 +1600,32 @@ class EMConfig {
     }
 
     fun trackingEnabled() = enableTrackEvaluatedIndividual || enableTrackIndividual
+
+    /**
+     * impact info can be collected when archive-based solution is enabled or doCollectImpact
+     */
+    fun isEnabledImpactCollection() = algorithm == Algorithm.MIO && doCollectImpact || isEnabledArchiveGeneSelection()
+
+    /**
+     * @return whether archive-based gene selection is enabled
+     */
+    fun isEnabledArchiveGeneSelection() = algorithm == Algorithm.MIO && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+
+    /**
+     * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
+     */
+    fun isEnabledArchiveGeneMutation() = algorithm == Algorithm.MIO && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+
+    fun isEnabledArchiveSolution() = isEnabledArchiveGeneMutation() || isEnabledArchiveGeneSelection()
+
+    /**
+     * @return whether enable resource-dependency based method
+     */
+    fun isEnabledResourceDependency() = probOfSmartSampling > 0.0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+
+    /**
+     * @return whether to generate SQL between rest actions
+     */
+    fun isEnabledSQLInBetween() = isEnabledResourceDependency() && heuristicsForSQL && probOfApplySQLActionToCreateResources > 0.0
 
 }

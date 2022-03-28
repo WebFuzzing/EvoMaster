@@ -34,7 +34,14 @@ data class Column(
 
         val likePatterns: List<String>? = null,
 
-        val databaseType: DatabaseType
+        val databaseType: DatabaseType,
+
+        val isUnsigned : Boolean = false,
+
+        /**
+         * a negative number means that the precision is unspecified or inapplicable
+         */
+        val precision: Int = -1
 
         // public boolean identity;
 

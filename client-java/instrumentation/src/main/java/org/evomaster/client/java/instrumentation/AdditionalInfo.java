@@ -1,13 +1,12 @@
 package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -23,7 +22,7 @@ public class AdditionalInfo implements Serializable {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    private Set<String> queryParameters = new CopyOnWriteArraySet<>();
+    private final Set<String> queryParameters = new CopyOnWriteArraySet<>();
 
 
     /**
@@ -33,12 +32,12 @@ public class AdditionalInfo implements Serializable {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    private Set<String> headers = new CopyOnWriteArraySet<>();
+    private final Set<String> headers = new CopyOnWriteArraySet<>();
 
     /**
      * Map from taint input name to string specializations for it
      */
-    private Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
+    private final Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
 
     private static class StatementDescription implements Serializable{
         public final String line;
@@ -57,8 +56,14 @@ public class AdditionalInfo implements Serializable {
      *
      * We need to use a stack to handle method call invocations, as we can know when a statement
      * starts, but not so easily when it ends.
+     * For example:
+     * foo(bar(), x.npe)
+     * here, if x is null, we would end up wrongly marking the last line in bar() as last-statement,
+     * whereas it should be the one for foo()
+     *
+     * Furthermore, we need a stack per execution thread, based on their name.
      */
-    private Deque<StatementDescription> lastExecutedStatementStack = new ArrayDeque<>();
+    private final Map<String, Deque<StatementDescription>> lastExecutedStatementStacks = new ConcurrentHashMap<>();
 
     /**
      * In case we pop all elements from stack, keep track of last one separately.
@@ -79,8 +84,19 @@ public class AdditionalInfo implements Serializable {
      * Reasons: does not change (DTO classes are static), and quite expensive
      * to send at each action evaluation
      */
-    private Set<String> parsedDtoNames = new CopyOnWriteArraySet<>();
+    private final Set<String> parsedDtoNames = new CopyOnWriteArraySet<>();
 
+    private String lastExecutingThread = null;
+
+    private final Set<SqlInfo> sqlInfoData = new CopyOnWriteArraySet<>();
+
+    public Set<SqlInfo> getSqlInfoData(){
+        return Collections.unmodifiableSet(sqlInfoData);
+    }
+
+    public void addSqlInfo(SqlInfo info){
+        sqlInfoData.add(info);
+    }
 
     public Set<String> getParsedDtoNamesView(){
         return Collections.unmodifiableSet(parsedDtoNames);
@@ -136,35 +152,79 @@ public class AdditionalInfo implements Serializable {
 
     public String getLastExecutedStatement() {
 
-        if(lastExecutedStatementStack.isEmpty()){
+//        if(lastExecutedStatementStacks.values().stream().allMatch(s -> s.isEmpty())){
+        /*
+            TODO: not super-sure about this... we could have several threads in theory, but hard to
+            really say if the last one executing a statement of the SUT is always the one we are really
+            interested into... would need to check if there are cases in which this is not the case
+         */
+
+        Deque<StatementDescription> stack = null;
+        if(lastExecutingThread != null){
+            stack = lastExecutedStatementStacks.get(lastExecutingThread);
+        }
+
+        if(lastExecutingThread == null || stack == null || stack.isEmpty()){
             if(noExceptionStatement == null){
                 return null;
             }
             return noExceptionStatement.line;
         }
 
-        StatementDescription current = lastExecutedStatementStack.peek();
+        StatementDescription current = stack.peek();
+        if(current == null){
+            //could happen due to multi-threading
+            return null;
+        }
         return current.line;
     }
 
     public void pushLastExecutedStatement(String lastLine, String lastMethod) {
 
+        String key = getThreadIdentifier();
+        lastExecutingThread = key;
+        lastExecutedStatementStacks.putIfAbsent(key, new ArrayDeque<>());
+        Deque<StatementDescription> stack = lastExecutedStatementStacks.get(key);
+
         noExceptionStatement = null;
 
         StatementDescription statement = new StatementDescription(lastLine, lastMethod);
-        StatementDescription current = lastExecutedStatementStack.peek();
+        StatementDescription current = stack.peek();
 
         //if some method, then replace top of stack
         if(current != null && lastMethod.equals(current.method)){
-            lastExecutedStatementStack.pop();
+            stack.pop();
         }
 
-        lastExecutedStatementStack.push(statement);
+        stack.push(statement);
+    }
+
+    private String getThreadIdentifier() {
+        return "" + Thread.currentThread().getId();
     }
 
     public void popLastExecutedStatement(){
-        StatementDescription statementDescription = lastExecutedStatementStack.pop();
-        if(lastExecutedStatementStack.isEmpty()){
+
+        String key = getThreadIdentifier();
+        Deque<StatementDescription> stack = lastExecutedStatementStacks.get(key);
+
+        if(stack == null || stack.isEmpty()){
+            //throw new IllegalStateException("[ERROR] EvoMaster: invalid stack pop on thread " + key);
+            SimpleLogger.warn("EvoMaster instrumentation was left in an inconsistent state." +
+                    " This could happen if you have threads executing business logic in your instrumented" +
+                    " classes after an action is completed (e.g., an HTTP call)." +
+                    " This is not a problem, as long as this warning appears only seldom in the logs.");
+            /*
+                This problem should not really happen in SpringBoot applications, but for example
+                it does happen in LanguageTool, as it handles the HTTP connections manually in
+                the business logic
+             */
+            return;
+        }
+
+        StatementDescription statementDescription = stack.pop();
+
+        if(stack.isEmpty()){
             noExceptionStatement = statementDescription;
         }
     }

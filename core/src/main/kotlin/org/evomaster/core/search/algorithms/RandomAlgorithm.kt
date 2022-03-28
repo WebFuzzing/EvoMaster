@@ -13,19 +13,17 @@ class RandomAlgorithm <T> : SearchAlgorithm<T>() where T : Individual {
     }
 
 
-    override fun search(): Solution<T> {
+    override fun setupBeforeSearch() {
+        // Nothing needs to be done before starting the search
+    }
 
-        time.startSearch()
+    override fun searchOnce() {
 
-
-        while(time.shouldContinueSearch()){
 
             val individual = sampler.sampleAtRandom()
 
             ff.calculateCoverage(individual)?.run { archive.addIfNeeded(this) }
-        }
 
-        return archive.extractSolution()
     }
 
 }

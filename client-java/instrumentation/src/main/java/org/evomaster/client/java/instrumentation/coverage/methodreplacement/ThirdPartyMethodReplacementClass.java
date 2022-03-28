@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Third-party libraries might or might not be on the classpath.
@@ -37,17 +38,20 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
     protected ThirdPartyMethodReplacementClass(){
 
-        if(! isAvailable()){
-            //nothing to initialize
-            return;
-        }
+//        if(! isAvailable()){
+//            //nothing to initialize
+//            return;
+//        }
+        //initMethods();
+    }
 
-        /*
-            Use reflection to load all methods that were replaced.
-            This is essential to simplify the writing of the replacement, as those
-            must still call the original, but only via reflection (as original third-party
-            library must not included in EvoMaster)
-         */
+    private  void initMethods() {
+    /*
+        Use reflection to load all methods that were replaced.
+        This is essential to simplify the writing of the replacement, as those
+        must still call the original, but only via reflection (as original third-party
+        library must not included in EvoMaster)
+     */
         Class<? extends ThirdPartyMethodReplacementClass> subclass = this.getClass();
 
         for (Method m : subclass.getDeclaredMethods()) {
@@ -74,9 +78,15 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
             Method targetMethod;
             try {
-                targetMethod = targetClass.getMethod(m.getName(), reducedInputs);
+                //this will not return private methods
+                targetMethod = getTargetClass().getMethod(m.getName(), reducedInputs);
             } catch (NoSuchMethodException e) {
-                throw new RuntimeException("BUG in EvoMaster: " + e);
+                try {
+                    //this would return private methods, but not public in superclasses
+                    targetMethod = targetClass.getDeclaredMethod(m.getName(), reducedInputs);
+                } catch (NoSuchMethodException noSuchMethodException) {
+                    throw new RuntimeException("BUG in EvoMaster: " + e);
+                }
             }
 
             String id = r.id();
@@ -98,15 +108,38 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
      * @param id    of a replacement method
      * @return  original method that was replaced
      */
-    public static Method getOriginal(ThirdPartyMethodReplacementClass singleton, String id){
+    public static Method getOriginal(ThirdPartyMethodReplacementClass singleton, String id, Object obj){
         if(id == null || id.isEmpty()){
             throw new IllegalArgumentException("Invalid empty id");
+        }
+
+        Objects.requireNonNull(obj);
+
+        if(singleton.getTargetClass()==null){
+            /*
+                    This is tricky. We did a method replacement, but the class is not accessible at runtime
+                    from the class loader of the instrumentation... so we try it from the caller
+             */
+            singleton.retryLoadingClass(obj.getClass().getClassLoader());
+        }
+
+        if(singleton.methods.isEmpty()){
+            singleton.initMethods();
         }
         Method original = singleton.methods.get(id);
         if(original == null){
             throw new IllegalArgumentException("No method exists with id: " + id);
         }
         return original;
+    }
+
+    private void retryLoadingClass(ClassLoader classLoader) {
+        try {
+            targetClass = classLoader.loadClass(getTargetClassName());
+            triedToLoad = true;
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("ISSUE IN EVOMASTER: classloader problems when dealing with: " + getTargetClassName());
+        }
     }
 
     @Override

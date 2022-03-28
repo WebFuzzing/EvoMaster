@@ -1,6 +1,5 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.WebRequestClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +34,7 @@ class ReplacementListTest {
                     continue;
                 }
 
-                assertTrue(Modifier.isStatic(m.getModifiers()), "Replacement methods must be static");
+                assertTrue(Modifier.isStatic(m.getModifiers()), "Issue with " + mrc.getClass() + ": Replacement methods must be static");
 
                 if (r.type() == ReplacementType.BOOLEAN) {
                     assertSame(m.getReturnType(), Boolean.TYPE,
@@ -81,7 +80,11 @@ class ReplacementListTest {
                 try {
                     targetMethod = targetClass.getMethod(m.getName(), reducedInputs);
                 } catch (NoSuchMethodException e) {
-                    fail("No target method '"+m.getName()+" in class "+targetClass.getName()+" with the right input parameters");
+                    try {
+                        targetMethod = targetClass.getDeclaredMethod(m.getName(), reducedInputs);
+                    } catch (NoSuchMethodException noSuchMethodException) {
+                        fail("No target method '"+m.getName()+" in class "+targetClass.getName()+" with the right input parameters");
+                    }
                 }
 
                 assertEquals(r.replacingStatic(), Modifier.isStatic(targetMethod.getModifiers()));

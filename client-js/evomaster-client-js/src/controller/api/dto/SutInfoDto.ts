@@ -1,6 +1,7 @@
 import AuthenticationDto from "./AuthenticationDto";
 import RestProblemDto from "./problem/RestProblemDto";
 import UnitsInfoDto from "./UnitsInfoDto";
+import GraphQLProblemDto from "./problem/GraphQLProblemDto";
 
 /*
     Note: this enum must be kept in sync with what declared in
@@ -22,6 +23,12 @@ export class SutInfoDto {
      * on how to interact with it
      */
     public restProblem: RestProblemDto;
+
+    /**
+     * If the SUT is a GraphQL API, here there will be the info
+     * on how to interact with it
+     */
+    public graphQLProblem: GraphQLProblemDto;
 
     /**
      * Whether the SUT is running or not

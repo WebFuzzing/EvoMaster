@@ -1,3 +1,3 @@
 
+export const enum ReplacementType {BOOLEAN = "BOOLEAN", EXCEPTION = "EXCEPTION"}
 
-export const enum ReplacementType {BOOLEAN ="BOOLEAN", EXCEPTION = "EXCEPTION"}

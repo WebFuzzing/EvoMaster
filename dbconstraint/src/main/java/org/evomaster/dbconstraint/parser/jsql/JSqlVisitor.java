@@ -1,74 +1,11 @@
 package org.evomaster.dbconstraint.parser.jsql;
 
-import net.sf.jsqlparser.expression.AllComparisonExpression;
-import net.sf.jsqlparser.expression.AnalyticExpression;
-import net.sf.jsqlparser.expression.AnyComparisonExpression;
-import net.sf.jsqlparser.expression.CaseExpression;
-import net.sf.jsqlparser.expression.CastExpression;
-import net.sf.jsqlparser.expression.CollateExpression;
-import net.sf.jsqlparser.expression.DateTimeLiteralExpression;
-import net.sf.jsqlparser.expression.DateValue;
-import net.sf.jsqlparser.expression.DoubleValue;
-import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.ExpressionVisitor;
-import net.sf.jsqlparser.expression.ExtractExpression;
-import net.sf.jsqlparser.expression.Function;
-import net.sf.jsqlparser.expression.HexValue;
-import net.sf.jsqlparser.expression.IntervalExpression;
-import net.sf.jsqlparser.expression.JdbcNamedParameter;
-import net.sf.jsqlparser.expression.JdbcParameter;
-import net.sf.jsqlparser.expression.JsonExpression;
-import net.sf.jsqlparser.expression.KeepExpression;
-import net.sf.jsqlparser.expression.LongValue;
-import net.sf.jsqlparser.expression.MySQLGroupConcat;
-import net.sf.jsqlparser.expression.NextValExpression;
-import net.sf.jsqlparser.expression.NotExpression;
-import net.sf.jsqlparser.expression.NullValue;
-import net.sf.jsqlparser.expression.NumericBind;
-import net.sf.jsqlparser.expression.OracleHierarchicalExpression;
-import net.sf.jsqlparser.expression.OracleHint;
-import net.sf.jsqlparser.expression.Parenthesis;
-import net.sf.jsqlparser.expression.RowConstructor;
-import net.sf.jsqlparser.expression.SignedExpression;
-import net.sf.jsqlparser.expression.StringValue;
-import net.sf.jsqlparser.expression.TimeKeyExpression;
-import net.sf.jsqlparser.expression.TimeValue;
-import net.sf.jsqlparser.expression.TimestampValue;
-import net.sf.jsqlparser.expression.UserVariable;
-import net.sf.jsqlparser.expression.ValueListExpression;
-import net.sf.jsqlparser.expression.WhenClause;
-import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
-import net.sf.jsqlparser.expression.operators.arithmetic.BitwiseAnd;
-import net.sf.jsqlparser.expression.operators.arithmetic.BitwiseLeftShift;
-import net.sf.jsqlparser.expression.operators.arithmetic.BitwiseOr;
-import net.sf.jsqlparser.expression.operators.arithmetic.BitwiseRightShift;
-import net.sf.jsqlparser.expression.operators.arithmetic.BitwiseXor;
-import net.sf.jsqlparser.expression.operators.arithmetic.Concat;
-import net.sf.jsqlparser.expression.operators.arithmetic.Division;
-import net.sf.jsqlparser.expression.operators.arithmetic.Modulo;
-import net.sf.jsqlparser.expression.operators.arithmetic.Multiplication;
-import net.sf.jsqlparser.expression.operators.arithmetic.Subtraction;
+import net.sf.jsqlparser.expression.*;
+import net.sf.jsqlparser.expression.operators.arithmetic.*;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
-import net.sf.jsqlparser.expression.operators.relational.Between;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.expression.operators.relational.ExistsExpression;
-import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
-import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
-import net.sf.jsqlparser.expression.operators.relational.GreaterThanEquals;
-import net.sf.jsqlparser.expression.operators.relational.InExpression;
-import net.sf.jsqlparser.expression.operators.relational.IsNullExpression;
-import net.sf.jsqlparser.expression.operators.relational.ItemsListVisitor;
-import net.sf.jsqlparser.expression.operators.relational.JsonOperator;
-import net.sf.jsqlparser.expression.operators.relational.LikeExpression;
-import net.sf.jsqlparser.expression.operators.relational.Matches;
-import net.sf.jsqlparser.expression.operators.relational.MinorThan;
-import net.sf.jsqlparser.expression.operators.relational.MinorThanEquals;
-import net.sf.jsqlparser.expression.operators.relational.MultiExpressionList;
-import net.sf.jsqlparser.expression.operators.relational.NamedExpressionList;
-import net.sf.jsqlparser.expression.operators.relational.NotEqualsTo;
-import net.sf.jsqlparser.expression.operators.relational.RegExpMatchOperator;
-import net.sf.jsqlparser.expression.operators.relational.RegExpMySQLOperator;
+import net.sf.jsqlparser.expression.operators.conditional.XorExpression;
+import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import org.evomaster.dbconstraint.ast.*;
@@ -204,6 +141,11 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
     }
 
     @Override
+    public void visit(IntegerDivision division) {
+
+    }
+
+    @Override
     public void visit(Multiplication multiplication) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
@@ -231,6 +173,11 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
         orExpression.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
         stack.push(new SqlOrCondition(left, right));
+    }
+
+    @Override
+    public void visit(XorExpression orExpression) {
+
     }
 
     @Override
@@ -277,6 +224,11 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
     }
 
     @Override
+    public void visit(FullTextSearch fullTextSearch) {
+
+    }
+
+    @Override
     public void visit(IsNullExpression isNullExpression) {
         isNullExpression.getLeftExpression().accept(this);
         SqlColumn columnName = (SqlColumn) stack.pop();
@@ -285,6 +237,11 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
         } else {
             stack.push(new SqlIsNullCondition(columnName));
         }
+    }
+
+    @Override
+    public void visit(IsBooleanExpression isBooleanExpression) {
+
     }
 
     @Override
@@ -321,9 +278,34 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
+    private static String QUOTE_CHAR = "\"";
+
+    private static boolean hasSurroundingQuotes(String str) {
+        return str.length()>1 && str.startsWith(QUOTE_CHAR) && str.endsWith(QUOTE_CHAR);
+    }
+
+    private static String removeSurroundingQuotes(String str) {
+        return str.substring(1,str.length()-1);
+    }
+
     @Override
     public void visit(Column column) {
         String columnName = column.getColumnName();
+
+        /**
+         * The SQL:1999 standard specifies that double quote (")
+         * (QUOTATION MARK) is used to delimit identifiers.
+         * Oracle, PostgreSQL, MySQL, MSSQL and SQlite all
+         * support " as the identifier delimiter.
+         * e.g.
+         * 'foo' is an SQL string
+         * "foo" is an SQL identifier (column/table/etc)
+         *
+         * https://stackoverflow.com/questions/2901453/sql-standard-to-escape-column-names
+         */
+        if (hasSurroundingQuotes(columnName)) {
+            columnName = removeSurroundingQuotes(columnName);
+        }
         if (column.getTable() != null) {
             String tableName = column.getTable().getName();
             stack.push(new SqlColumn(tableName, columnName));
@@ -384,12 +366,7 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
-    @Override
-    public void visit(AllComparisonExpression allComparisonExpression) {
 
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
 
     @Override
     public void visit(AnyComparisonExpression anyComparisonExpression) {
@@ -578,6 +555,11 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
     }
 
     @Override
+    public void visit(RowGetExpression rowGetExpression) {
+
+    }
+
+    @Override
     public void visit(OracleHint oracleHint) {
 
         // TODO This translation should be implemented
@@ -615,6 +597,56 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
     public void visit(CollateExpression collateExpression) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public void visit(SimilarToExpression aThis) {
+
+    }
+
+    @Override
+    public void visit(ArrayExpression aThis) {
+
+    }
+
+    @Override
+    public void visit(ArrayConstructor aThis) {
+
+    }
+
+    @Override
+    public void visit(VariableAssignment aThis) {
+
+    }
+
+    @Override
+    public void visit(XMLSerializeExpr aThis) {
+
+    }
+
+    @Override
+    public void visit(TimezoneExpression aThis) {
+
+    }
+
+    @Override
+    public void visit(JsonAggregateFunction aThis) {
+
+    }
+
+    @Override
+    public void visit(JsonFunction aThis) {
+
+    }
+
+    @Override
+    public void visit(ConnectByRootOperator aThis) {
+
+    }
+
+    @Override
+    public void visit(OracleNamedFunctionParameter aThis) {
+
     }
 
     /**

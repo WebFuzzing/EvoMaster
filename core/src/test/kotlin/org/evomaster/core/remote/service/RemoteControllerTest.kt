@@ -5,13 +5,13 @@ import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.internal.EMController
+import org.evomaster.client.java.controller.internal.db.DbSpecification
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.sql.Connection
 
 /**
  * Created by arcuri82 on 18-Oct-19.
@@ -49,7 +49,7 @@ class RemoteControllerTest {
             return null
         }
 
-        override fun getConnection(): Connection? {
+        override fun getDbSpecifications(): MutableList<DbSpecification>? {
             return null
         }
 
@@ -92,7 +92,7 @@ class RemoteControllerTest {
 
         val info = remote.getSutInfo()
         assertNotNull(info)
-        assertEquals(FAKE_SWAGGER, info!!.restProblem.swaggerJsonUrl)
+        assertEquals(FAKE_SWAGGER, info!!.restProblem.openApiUrl)
     }
 
     @Test

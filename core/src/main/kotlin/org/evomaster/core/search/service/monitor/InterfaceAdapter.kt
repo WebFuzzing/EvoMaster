@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.monitor
 
 import com.google.gson.*
 import org.evomaster.core.problem.rest.RestCallAction
@@ -69,13 +69,13 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
         if(jsonElement is Gene){
             // FIXME MAN : the solution should be not hardcode as "gene" attribute.
             // For some reasons, some genes are generic type, but some of them are not, such as SQL.
-            var dprops = jsonElement::class.declaredMemberProperties.filter {  it.name.equals("gene") }
+            val dprops = jsonElement::class.declaredMemberProperties.filter {  it.name.equals("gene") }
 
             if(dprops.size == 1){
                 val prop = dprops[0]
                 if(prop.visibility== KVisibility.PUBLIC){
-                    var obj = prop.getter.call(jsonElement)
-                    var geneJsonObject = JsonObject()
+                    val obj = prop.getter.call(jsonElement)
+                    val geneJsonObject = JsonObject()
                     geneJsonObject.addProperty(CLASSNAME, obj!!.javaClass.name)
                     geneJsonObject.add(DATA, jsonSerializationContext.serialize(obj))
                     data.asJsonObject.add("gene", geneJsonObject)
@@ -98,7 +98,7 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
 
     private fun <T> createEntity(clazz: Class<*> , constructor: Constructor<T>, vararg args: Any) : T {
         if (args.size > 1){
-            val seq = manipulateSeqOfArgs(getPropertyies(clazz), constructor.parameters)
+            val seq = manipulateSeqOfArgs(getProperties(clazz), constructor.parameters)
             return constructor.newInstance(*Array(seq.size){
                 i -> args[seq[i]]
             })
@@ -118,7 +118,7 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
         }
     }
 
-    private fun getPropertyies(klass: Class<*>) : MutableList<KProperty1<out Any, Any?>> {
+    private fun getProperties(klass: Class<*>) : MutableList<KProperty1<out Any, Any?>> {
         val props = mutableListOf<KProperty1<out Any, Any?>>()
         klass.kotlin.allSuperclasses.toMutableList().forEach {
             t-> run{
@@ -130,11 +130,11 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
     }
 
     private fun deserializeGenProperty( data:JsonObject, clazz: Class<*>,jsonDeserializationContext: JsonDeserializationContext) : Any {
-        val props = getPropertyies(clazz)
+        val props = getProperties(clazz)
         val elements = Array<Any>(props.size){
             i-> run{
             if(props[i].name.equals("gene")){
-                var genJsonObject = data.get(props[i].name).asJsonObject
+                val genJsonObject = data.get(props[i].name).asJsonObject
                 val genClazzName = (genJsonObject.get(CLASSNAME) as JsonPrimitive).asString
                 val genClazz = getObjectClass(genClazzName)
                 if(containGenProperty(genClazz))
@@ -148,14 +148,14 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
             }
             }
         }
-        var con = clazz.constructors.filter { c -> c.parameters!!.size == props.size || c.parameterCount == props.size }
+        val con = clazz.constructors.filter { c -> c.parameters!!.size == props.size || c.parameterCount == props.size }
 
         //FIXME MAN: c.parameters > props.size cannot be handled if it exists
         return createEntity(clazz, if(con.isEmpty()) clazz.constructors.first() else con.first(), *elements)
     }
 
     private fun containGenProperty(clazz: Class<*>) : Boolean{
-        return getPropertyies(clazz).filter { it.name.equals("gene") }.size == 1
+        return getProperties(clazz).filter { it.name.equals("gene") }.size == 1
     }
 
 }

@@ -7,12 +7,13 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.rest.resource.PathRToken
 import org.evomaster.core.problem.rest.resource.RToken
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
@@ -27,8 +28,8 @@ object ParserUtil {
     private const val REGEX_NOUN = "([{pos:/NN|NNS|NNP/}])"
     private const val REGEX_VERB = "([{pos:/VB|VBD|VBG|VBN|VBP|VBZ/}])"
 
-    private val PATTERN_NOUN = TokenSequencePattern.compile(REGEX_NOUN)
-    private val PATTERN_VERB = TokenSequencePattern.compile(REGEX_VERB)
+    private var pattern_noun : TokenSequencePattern? =null
+    private var pattern_verb : TokenSequencePattern? =null
 
     /**
      * configure stanford parser
@@ -44,6 +45,18 @@ object ParserUtil {
             })
         }
         return PIPELINE!!
+    }
+
+    private fun getNoun() : TokenSequencePattern{
+        if(pattern_noun == null)
+            pattern_noun = TokenSequencePattern.compile(REGEX_NOUN);
+        return pattern_noun!!
+    }
+
+    private fun getVerb() : TokenSequencePattern{
+        if(pattern_verb == null)
+            pattern_verb = TokenSequencePattern.compile(REGEX_VERB)
+        return pattern_verb!!
     }
 
     private fun formatKey(source : String) : String = source.toLowerCase()
@@ -259,8 +272,8 @@ object ParserUtil {
         if(text.isNotBlank()){
             val tokens = getNlpTokens(text)
 
-            val resultNouns = getMatched(PATTERN_NOUN, tokens)
-            val resultVerbs = getMatched(PATTERN_VERB, tokens)
+            val resultNouns = getMatched(getNoun(), tokens)
+            val resultVerbs = getMatched(getVerb(), tokens)
 
             return tokens.filter { resultNouns.plus(resultVerbs).contains(it.originalText()) }
         }

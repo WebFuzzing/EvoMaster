@@ -64,4 +64,9 @@ public class ExecutionDto {
      * The total Number of SQL commands (e.g., SELECT and UPDATE) executed
      */
     public int numberOfSqlCommands = 0;
+
+    /**
+     * log of a list of sql commands that were executed
+     */
+    public List<SqlExecutionLogDto> sqlExecutionLogDtoList = new ArrayList<>();
 }

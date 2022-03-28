@@ -14,12 +14,12 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         return EMConfig.Algorithm.MIO
     }
 
+    override fun setupBeforeSearch() {
+        // Nothing needs to be done before starting the search
+    }
 
-    override fun search(): Solution<T> {
+    override fun searchOnce() {
 
-        time.startSearch()
-
-        while(time.shouldContinueSearch()){
 
             val randomP = apc.getProbRandomSampling()
 
@@ -36,11 +36,12 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 }
 
                 ff.calculateCoverage(ind)?.run {
+
                     archive.addIfNeeded(this)
                     sampler.feedback(this)
                 }
 
-                continue
+                return
             }
 
             val ei = archive.sampleIndividual()
@@ -48,8 +49,7 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             val nMutations = apc.getNumberOfMutations()
 
             getMutatator().mutateAndSave(nMutations, ei, archive)
-        }
 
-        return archive.extractSolution()
+
     }
 }

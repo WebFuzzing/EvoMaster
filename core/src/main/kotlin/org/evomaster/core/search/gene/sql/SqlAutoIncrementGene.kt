@@ -3,15 +3,14 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 
-class SqlAutoIncrementGene(name: String) : Gene(name) {
+class SqlAutoIncrementGene(name: String) : Gene(name, mutableListOf()) {
 
-    override fun copy(): Gene {
+    override fun getChildren(): MutableList<Gene> = mutableListOf()
+
+    override fun copyContent(): Gene {
         return SqlAutoIncrementGene(name)
     }
 
@@ -20,12 +19,14 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
     }
 
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         throw IllegalStateException("AutoIncrement fields should never be printed")
     }
 
     /**
      * TODO Shouldn't this method throw an IllegalStateException ?
+     *
+     * Man: need to check with Andrea, copyValueFrom of [ImmutableDataHolderGene] throw an exception
      */
     override fun copyValueFrom(other: Gene) {
         if (other !is SqlAutoIncrementGene) {
@@ -50,9 +51,12 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
 
     override fun isPrintable() = false
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        throw IllegalStateException("AutoIncrement fields are not part of the search")
-    }
-
     override fun mutationWeight(): Double = 0.0
+
+    override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing, cannot bind with others
+        return true
+    }
 }

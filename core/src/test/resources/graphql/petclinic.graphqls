@@ -1,0 +1,255 @@
+scalar Date
+
+# The Query type provides all entry points to the PetClinic GraphQL schema
+type Query {
+    # Return all known PetTypes
+    pettypes: [PetType!]!
+
+    # Return all known veterinaries
+    vets: [Vet!]!
+
+    # Return all known Pet Owners with optional filter or orders
+    owners(filter: OwnerFilter, orders: [OwnerOrder!]): [Owner!]!
+
+    # Return the Owner with the specified id
+    owner(id: Int!): Owner!
+
+    # Return the Pet with the specified id
+    pet(id: Int!): Pet!
+
+    # Return a List of all pets that have been registered in the PetClinic
+    pets: [Pet!]!
+
+    specialties: [Specialty!]!
+}
+
+# The type (species) of a Pet
+type PetType {
+    id: Int!
+    name: String!
+}
+
+# Specialty of a Vetenarian
+type Specialty  {
+    id: Int!
+    name: String!
+}
+
+# The input for owners query by a filter
+input OwnerFilter {
+    firstName: String
+    lastName: String
+    address: String
+    city: String
+    telephone: String
+}
+
+# The input for types of query orders
+enum OrderType {
+    ASC
+    DESC
+}
+
+# The input for types of query orders
+enum OrderField {
+    id
+    firstName
+    lastName
+    address
+    city
+    telephone
+}
+
+# The input for owners query by order
+input OwnerOrder {
+    field: OrderField
+    order: OrderType
+}
+
+# Interface that describes a Person, i.e. a Vet or an Owner
+interface Person {
+    id: Int!
+    firstName: String!
+    lastName: String!
+}
+
+# A Vetenerian
+type Vet implements Person {
+    id: Int!
+
+    # The Vetenarian's first name
+    firstName: String!
+
+    # The Vetenarian's last name
+    lastName: String!
+
+    # What is this Vet specialized in?
+    specialties: [Specialty!]!
+}
+
+type VisitConnection {
+    # total number of visits this VisitConnection represents
+    totalCount: Int!
+
+    # the actual visits (might be an empty list)
+    visits: [Visit!]!
+}
+
+# A pet that might or might not have been seen in this petclinic for
+# one or more visits
+type Pet {
+    id: Int!
+    name: String!
+    birthDate: Date!
+    type: PetType!
+    owner: Owner!
+
+    # All visits to our PetClinic of this Pet
+    visits: VisitConnection!
+}
+
+# A Visit of a Pet in our PetClinic
+type Visit {
+    id: Int!
+    # What did the Vet do during the Visit?
+    description: String!
+
+    pet: Pet!
+
+    # When did this Visit happen?
+    date: Date!
+}
+
+# An Owner is someone who owns a Pet
+type Owner implements Person {
+    id: Int!
+    firstName: String!
+    lastName: String!
+    address: String!
+    city: String!
+    telephone: String!
+
+    # A list of Pets this Owner owns
+    pets: [Pet!]!
+}
+
+
+# All the Mutations you can use to modify the PetClinics data
+#
+# For motivation of how the Mutation look see:
+# https://dev-blog.apollodata.com/designing-graphql-mutations-e09de826ed97
+
+type Mutation {
+
+    # Add a new Owner
+    addOwner(input: AddOwnerInput!): AddOwnerPayload!
+
+    # Change an existing owner
+    updateOwner(input: UpdateOwnerInput!): UpdateOwnerPayload!
+
+    # Add a new Pet
+    addPet(input: AddPetInput!): AddPetPayload!
+    updatePet(input: UpdatePetInput!): UpdatePetPayload!
+
+    # Add a Visit
+    addVisit(input: AddVisitInput!): AddVisitPayload!
+
+    # Add a Specialty
+    addSpecialty(input: AddSpecialtyInput!): AddSpecialtyPayload!
+
+    # Update (rename) a Specialty
+    updateSpecialty(input: UpdateSpecialtyInput!): UpdateSpecialtyPayload!
+    removeSpecialty(input: RemoveSpecialtyInput!): RemoveSpecialtyPayload!
+}
+
+# The Input for AddPet mutation
+input AddPetInput {
+    ownerId: Int!
+    name: String!
+    birthDate: Date!
+    typeId: Int!
+}
+
+type AddPetPayload {
+    pet: Pet!
+}
+
+input UpdatePetInput {
+    petId: Int!
+    name: String
+    birthDate: Date
+    typeId: Int
+}
+
+type UpdatePetPayload {
+    pet: Pet!
+}
+
+input AddOwnerInput {
+    firstName: String
+    lastName: String
+    address: String
+    city: String
+    telephone: String
+}
+
+type AddOwnerPayload {
+    owner: Owner!
+}
+
+input UpdateOwnerInput {
+    ownerId: Int!
+    firstName: String
+    lastName: String
+    address: String
+    city: String
+    telephone: String
+}
+
+type UpdateOwnerPayload {
+    owner: Owner!
+}
+
+input AddVisitInput {
+    petId: Int!
+    description: String!
+    date: Date!
+}
+type AddVisitPayload {
+    visit: Visit!
+}
+
+# The input value for the addSpecialty Mutation
+input AddSpecialtyInput {
+    name: String!
+}
+
+# Return Value of the addSpecialty Mutation
+type AddSpecialtyPayload {
+
+    # The new Specialty including the assigned Id
+    specialty: Specialty!
+}
+
+# The input value for the updateSpecialty Mutation
+# Takes the id of the specialty that should be updated and it's new Name
+input UpdateSpecialtyInput {
+    # The id of the specialty that should be updated
+    specialtyId: Int!
+
+    # The new name of the Specialty
+    name: String!
+}
+
+# Return value of the UpdateSpecialty Mutation
+type UpdateSpecialtyPayload {
+    # The updated Specialty
+    specialty: Specialty!
+}
+
+input RemoveSpecialtyInput {
+    specialtyId: Int!
+}
+type RemoveSpecialtyPayload {
+    specialties: [Specialty!]!
+}

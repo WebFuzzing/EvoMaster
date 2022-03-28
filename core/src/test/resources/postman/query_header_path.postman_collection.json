@@ -1,0 +1,371 @@
+{
+	"info": {
+		"_postman_id": "c564e36a-01b1-4431-b0ff-c8e2ee3292f5",
+		"name": "query_header_path",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_query_header_path",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "optStringHeaderParam",
+						"value": "string3"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue?optStringQueryParam=string1&reqStringQueryParam=string2&optStringEnumQueryParam=val2&optIntQueryParam=10&optIntEnumQueryParam=3&optBase64QueryParam=ZXhhbXBsZQ%3D%3D&optBoolQueryParam=true&optDateQueryParam=2020-12-14&optTimeQueryParam=13%3A45%3A08&optDateTimeQueryParam=2020-12-14+13%3A45%3A08&optDoubleQueryParam=12.143425253&optFloatQueryParam=1.9&optLongQueryParam=3147483647&optArrayQueryParam=1%2C2%2C3%2C4%2C5%2C6",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"pathParamValue"
+					],
+					"query": [
+						{
+							"key": "optStringQueryParam",
+							"value": "string1"
+						},
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						},
+						{
+							"key": "optStringEnumQueryParam",
+							"value": "val2"
+						},
+						{
+							"key": "optIntQueryParam",
+							"value": "10"
+						},
+						{
+							"key": "optIntEnumQueryParam",
+							"value": "3"
+						},
+						{
+							"key": "optBase64QueryParam",
+							"value": "ZXhhbXBsZQ%3D%3D"
+						},
+						{
+							"key": "optBoolQueryParam",
+							"value": "true"
+						},
+						{
+							"key": "optDateQueryParam",
+							"value": "2020-12-14"
+						},
+						{
+							"key": "optTimeQueryParam",
+							"value": "13%3A45%3A08"
+						},
+						{
+							"key": "optDateTimeQueryParam",
+							"value": "2020-12-14+13%3A45%3A08"
+						},
+						{
+							"key": "optDoubleQueryParam",
+							"value": "12.143425253"
+						},
+						{
+							"key": "optFloatQueryParam",
+							"value": "1.9"
+						},
+						{
+							"key": "optLongQueryParam",
+							"value": "3147483647"
+						},
+						{
+							"key": "optArrayQueryParam",
+							"value": "1%2C2%2C3%2C4%2C5%2C6"
+						}
+					]
+				},
+				"description": "Endpoint containing all parameter types"
+			},
+			"response": [
+				{
+					"name": "Get response",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "optStringHeaderParam",
+								"value": "<string>"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/queryHeaderPath/:reqPathParam?optStringQueryParam=<string>&reqStringQueryParam=<string>&optStringEnumQueryParam=<string>&optIntQueryParam=<integer>&optIntEnumQueryParam=<integer>&optBase64QueryParam=<byte>&optBoolQueryParam=<boolean>&optDateQueryParam=<date>&optTimeQueryParam=<time>&optDateTimeQueryParam=<dateTime>&optDoubleQueryParam=<double>&optFloatQueryParam=<float>&optLongQueryParam=<long>&optArrayQueryParam=<integer>&optArrayQueryParam=<integer>",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"queryHeaderPath",
+								":reqPathParam"
+							],
+							"query": [
+								{
+									"key": "optStringQueryParam",
+									"value": "<string>"
+								},
+								{
+									"key": "reqStringQueryParam",
+									"value": "<string>"
+								},
+								{
+									"key": "optStringEnumQueryParam",
+									"value": "<string>"
+								},
+								{
+									"key": "optIntQueryParam",
+									"value": "<integer>"
+								},
+								{
+									"key": "optIntEnumQueryParam",
+									"value": "<integer>"
+								},
+								{
+									"key": "optBase64QueryParam",
+									"value": "<byte>"
+								},
+								{
+									"key": "optBoolQueryParam",
+									"value": "<boolean>"
+								},
+								{
+									"key": "optDateQueryParam",
+									"value": "<date>"
+								},
+								{
+									"key": "optTimeQueryParam",
+									"value": "<time>"
+								},
+								{
+									"key": "optDateTimeQueryParam",
+									"value": "<dateTime>"
+								},
+								{
+									"key": "optDoubleQueryParam",
+									"value": "<double>"
+								},
+								{
+									"key": "optFloatQueryParam",
+									"value": "<float>"
+								},
+								{
+									"key": "optLongQueryParam",
+									"value": "<long>"
+								},
+								{
+									"key": "optArrayQueryParam",
+									"value": "<integer>"
+								},
+								{
+									"key": "optArrayQueryParam",
+									"value": "<integer>"
+								}
+							],
+							"variable": [
+								{
+									"key": "reqPathParam"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						}
+					],
+					"cookie": [],
+					"body": "{}"
+				}
+			]
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_no_params",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"pathParamValue"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing all parameter types"
+			},
+			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_no_json_object",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"pathParamValue"
+					]
+				},
+				"description": "Endpoint containing a JSON body"
+			},
+			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_pathWhiteSpace",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/path param value?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"path param value"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing white space in path"
+			},
+			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_pathEqualSymbol",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/prop1=val1?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"prop1=val1"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing equal symbol in path"
+			},
+			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_pathCurlyBraces",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/{prop1=val1}?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"{prop1=val1}"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing curly braces in path"
+			},
+			"response": []
+		},
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_pathEncAndNonEncChars",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/%7Bprop1=val1,%20val2 and val3+val4;prop2=val4%3Bprop3=val5}?reqStringQueryParam=string2",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"%7Bprop1=val1,%20val2 and val3+val4;prop2=val4%3Bprop3=val5}"
+					],
+					"query": [
+						{
+							"key": "reqStringQueryParam",
+							"value": "string2",
+							"description": "(Required) "
+						}
+					]
+				},
+				"description": "Endpoint containing encoded and non encoded chars in path"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

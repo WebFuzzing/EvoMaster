@@ -33,14 +33,15 @@ gpg --gen-key
 
 You can list the generated key with:
 ```
-gpg --list-secret
+gpg --list-keys
 ```
 
 Upload the public key with:
 ```
-gpg --keyserver hkp://hkps.pool.sks-keyservers.net:80 --send-keys  ???
+gpg --keyserver https://keys.openpgp.org --send-keys  ???
 ```
-
+where `???` needs to be replaced with the id of the generated public key.
+You can also read more details [here](https://central.sonatype.org/pages/working-with-pgp-signatures.html).
 
 ## Maven Central Release
 
@@ -62,6 +63,12 @@ mvn versions:set -DnewVersion=x.y.z
 ```
 
 where `x.y.z` should be substituted with the actual version number, e.g., `0.4.0`.
+However, there are other files besides the pom ones that need to be updated, like for example `makeExecutable.sh`.
+So, the update of versions should be done with the `version.py` script. E.g.,
+```
+py version.py x.y.z
+```
+
 
 From project root  folder, execute:
 ```
@@ -74,6 +81,40 @@ If everything went well, you should be able to see the deployed files at
 [https://oss.sonatype.org/](https://oss.sonatype.org/). 
 However, it might take some hours before those are in sync with Maven Central,
 which you can check at [https://search.maven.org/](https://search.maven.org/).
+
+
+## NPM Release
+
+After the version number has been updated with `version.py` script, need to make a release on NPM as well.
+From folder:
+
+`client-js/evomaster-client-js`
+
+run the following commands:
+```
+npm run build
+npm login
+npm publish
+```
+
+Note that login will ask for username/password.
+The release is linked to NPM's user `arcuri82`.
+Password is ???.
+
+## NuGet Release
+
+After the version number has been updated with `version.py` script, need to make a release on NuGet as well for the .NET libraries.
+
+First, build .NET libraries with:
+
+`dotnet build`
+
+Then, execute:
+
+`./client-dotnet/publish.sh ???` 
+
+It takes as input the API-KEY linked to the namespace `EvoMaster.*`.
+Note: API-KEYs only last 1 year, and then a new one needs to be created.
 
 
 ## GitHub Release
@@ -94,13 +135,18 @@ It needs to be tagged, with `v` prefix, e.g., `v0.4.0`.
 On GitHub, upload the `core/target/evomaster.jar` executable as part of the release 
 (there should be an option for _attaching binaries_).
 
+Update: now we are building `.msi`/`.deb`/`.dmg` files as well, as part of GitHub Action CI. Download those from the release commit, and upload them here in the release page. 
 
 ## SNAPSHOT Update
 
 Once `EvoMaster` is released on both Maven Central and GitHub, you need to prepare
 the next snapshot version, which will have the same version with `z+1` and suffix
 `-SNAPSHOT`, e.g, given `0.4.0`, the following snapshot version would 
-be `0.4.1-SNAPSHOT`.
+be `0.4.1-SNAPSHOT`:
+```
+py version.py 0.4.1-SNAPSHOT
+```
+
 
 
 ## EMB Release
@@ -135,6 +181,19 @@ However, before doing this, it can be good to test the non-SNAPSHOT version of _
 The reasoning is to force the downloading of all the dependencies from Maven Central,
 to check if anything is missing.
 And this is why it was important to build the non-SNAPSHOT with `package` instead of `install`. 
+
+Note: the change to the version number for new release needs to be done (and pushed) on the `develop` branch. Then, `master` has to pull from `develop`, and push it.
+Once the release (from `master` branch) is done on GitHub, switch back to `develop`, and push the new SNAPSHOT update.
+In other words, `master` branch should always point to last commit of latest release, and no SNAPSHOT. 
+
+## Example Update
+
+Every time we make a new release, we should also update the examples in [https://github.com/EMResearch/rest-api-example](https://github.com/EMResearch/rest-api-example).
+This means:
+* increase the dependency version of EM in the pom file
+* remove/fix any deprecated function in the implemented driver
+* regenerate all the tests, using one of built executables (e.g., `evomaster.exe` on Windows)
+
 
 
 

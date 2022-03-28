@@ -1,0 +1,81 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "component parser test v3",
+    "description": "Title",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https"
+    }
+  ],
+  "paths": {
+    "/components": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Component"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Component": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "info": {
+            "$ref": "#/components/schemas/Info"
+          }
+        }
+      },
+      "Info": {
+        "type": "object",
+        "properties": {
+          "field1": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "field2": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "at": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AT"
+            }
+          }
+        }
+      },
+      "AT": {
+        "type": "object",
+        "properties": {
+          "atfield": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

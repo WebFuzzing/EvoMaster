@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -62,7 +63,7 @@ public class DateClassReplacementTest {
                 .iterator().next();
         double h0 = ExecutionTracer.getValue(targetId);
 
-        assertEquals(0, h0);
+        assertEquals(DistanceHelper.H_NOT_NULL, h0);
         assertTrue(equalsValue);
     }
 
@@ -92,7 +93,7 @@ public class DateClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateTime1 = sdf.parse(date1 + " " + time1);
         Date dateTime2 = sdf.parse(date1 + " " + time2);
@@ -118,7 +119,7 @@ public class DateClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateObject1 = sdf.parse(date1 + " " + time1);
         Date dateObject2 = sdf.parse(date1 + " " + time2);
@@ -153,7 +154,7 @@ public class DateClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateObject1 = sdf.parse(date1 + " " + time1);
         Date dateObject2 = sdf.parse(date1 + " " + time2);
@@ -196,7 +197,7 @@ public class DateClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateObject1 = sdf.parse(date1 + " " + time1);
         Date dateObject2 = sdf.parse(date1 + " " + time2);
@@ -220,7 +221,7 @@ public class DateClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateObject1 = sdf.parse(date1 + " " + time1);
         Date dateObject2 = sdf.parse(date1 + " " + time2);
@@ -242,7 +243,7 @@ public class DateClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateTime = sdf.parse(date1 + " " + time1);
 
@@ -260,7 +261,7 @@ public class DateClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateTime = sdf.parse(date1 + " " + time1);
 
@@ -279,7 +280,7 @@ public class DateClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
 
         Date dateTime = sdf.parse(date1 + " " + time1);
 

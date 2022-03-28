@@ -7,6 +7,9 @@ package org.evomaster.client.java.controller.api;
 
     WARNING: if you change any method name/signature, need to make sure that
     the code generation is updated as well
+
+    Note: this code needs to be kept in sync among the different programming
+    languages, eg, Java, JavaScript and C#.
  */
 
 import java.net.URI;

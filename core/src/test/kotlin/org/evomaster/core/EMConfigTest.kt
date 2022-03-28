@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.lang.IllegalArgumentException
 
 internal class EMConfigTest{
 
@@ -115,7 +114,7 @@ internal class EMConfigTest{
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["probOfRandomSampling", "startPerOfCandidateGenesToMutate", "focusedSearchActivationTime"])
+    @ValueSource(strings = ["probOfRandomSampling", "focusedSearchActivationTime", "startingPerOfGenesToMutate", "d"])
     fun testProbability(name: String){
 
         val parser = EMConfig.getOptionParser()
@@ -242,10 +241,10 @@ internal class EMConfigTest{
     fun testFileNameWrong(value : String){
 
         val parser = EMConfig.getOptionParser()
-        parser.recognizedOptions()["testSuiteFileName"] ?: throw Exception("Cannot find option")
+        parser.recognizedOptions()["outputFilePrefix"] ?: throw Exception("Cannot find option")
 
         val config = EMConfig()
-        val options = parser.parse("--testSuiteFileName", value)
+        val options = parser.parse("--outputFilePrefix", value)
 
         assertThrows(Exception::class.java) {config.updateProperties(options)}
     }
@@ -255,14 +254,14 @@ internal class EMConfigTest{
     fun testFileNameOK(value : String){
 
         val parser = EMConfig.getOptionParser()
-        parser.recognizedOptions()["testSuiteFileName"] ?: throw Exception("Cannot find option")
+        parser.recognizedOptions()["outputFilePrefix"] ?: throw Exception("Cannot find option")
 
         val config = EMConfig()
-        val options = parser.parse("--testSuiteFileName", value)
+        val options = parser.parse("--outputFilePrefix", value)
 
         config.updateProperties(options)
 
-        assertEquals(value, config.testSuiteFileName)
+        assertEquals(value, config.outputFilePrefix)
     }
 
 
@@ -272,18 +271,20 @@ internal class EMConfigTest{
         val name = "a-a"
 
         val parser = EMConfig.getOptionParser()
-        parser.recognizedOptions()["testSuiteFileName"] ?: throw Exception("Cannot find option")
+        parser.recognizedOptions()["outputFilePrefix"] ?: throw Exception("Cannot find option")
 
         val config = EMConfig()
-        val options = parser.parse("--testSuiteFileName", name)
+        val options = parser.parse("--outputFilePrefix", name)
 
         config.outputFormat = OutputFormat.JAVA_JUNIT_4
         assertThrows(Exception::class.java) {config.updateProperties(options)}
 
-        //TODO update when ll support JavaScript
-//        config.outputFormat = TODO JS
-//        config.updateProperties(options)
-//        assertEquals(name, config.testSuiteFileName)
+        //in JavaScript, it is allowed (and common?) to have '-' in file names
+        config.outputFormat = OutputFormat.JS_JEST
+        config.updateProperties(options)
+        assertEquals(name, config.outputFilePrefix)
+
+        //TODO check C#
     }
 
 

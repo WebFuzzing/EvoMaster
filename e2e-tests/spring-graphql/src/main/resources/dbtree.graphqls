@@ -1,0 +1,11 @@
+type Query {
+    # get all exisiting DbTree entities with the specified parent name
+    dbTreeByParentId(id: ID!): String!
+}
+
+type DbTree{
+    # the unique id of the DbTree
+    id: ID!
+    # the parent of another DbTree
+    parent: DbTree
+}

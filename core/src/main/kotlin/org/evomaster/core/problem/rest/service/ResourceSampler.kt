@@ -4,11 +4,13 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -16,7 +18,7 @@ import org.slf4j.LoggerFactory
  * resource-based sampler
  * the sampler handles resource-based rest individual
  */
-abstract class ResourceSampler : AbstractRestSampler() {
+open class ResourceSampler : AbstractRestSampler() {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(ResourceSampler::class.java)
@@ -32,23 +34,24 @@ abstract class ResourceSampler : AbstractRestSampler() {
     private lateinit var dm : ResourceDepManageService
 
     override fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && (configuration.shouldGenerateSqlData() || config.probOfApplySQLActionToCreateResources > 0.0 )) {
+        //when ResourceDependency is enabled, SQL info is required to identify dependency
+        if (infoDto.sqlSchemaDto != null && (configuration.shouldGenerateSqlData() || config.isEnabledResourceDependency())) {
 
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
             existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
         }
     }
 
-    override fun initAdHocInitialIndividuals() {
+    override fun customizeAdHocInitialIndividuals() {
 
         rm.initResourceNodes(actionCluster, sqlInsertBuilder)
 
         adHocInitialIndividuals.clear()
 
-        rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals)
+        rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals, getMaxTestSizeDuringSampler())
 
         authentications.forEach { auth ->
-            rm.createAdHocIndividuals(auth, adHocInitialIndividuals)
+            rm.createAdHocIndividuals(auth, adHocInitialIndividuals, getMaxTestSizeDuringSampler())
         }
     }
 
@@ -57,29 +60,31 @@ abstract class ResourceSampler : AbstractRestSampler() {
     }
 
     override fun sampleAtRandom() : RestIndividual {
-        return sampleAtRandom(randomness.nextInt(1, config.maxTestSize))
+        return sampleAtRandom(randomness.nextInt(1, getMaxTestSizeDuringSampler()))
     }
 
     private fun sampleAtRandom(size : Int): RestIndividual {
-        assert(size <= config.maxTestSize)
+        assert(size <= getMaxTestSizeDuringSampler())
         val restCalls = mutableListOf<RestResourceCalls>()
-        val n = randomness.nextInt(1, config.maxTestSize)
+        val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
 
         var left = n
         while(left > 0){
-            var call = sampleRandomResourceAction(0.05, left)
-            left -= call.actions.size
+            val call = sampleRandomResourceAction(0.05, left)
+            left -= call.seeActionSize(ActionFilter.NO_SQL)
             restCalls.add(call)
         }
-        return RestIndividual(
+
+        val ind = RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
+        return ind
     }
 
 
     private fun sampleRandomResourceAction(noAuthP: Double, left: Int) : RestResourceCalls{
         val r = randomness.choose(rm.getResourceCluster().filter { it.value.isAnyAction() })
         val rc = if (randomness.nextBoolean()) r.sampleOneAction(null, randomness) else r.randomRestResourceCalls(randomness,left)
-        rc.actions.forEach {
+        rc.seeActions(ActionFilter.NO_SQL).forEach {
             if(it is RestCallAction){
                 it.auth = getRandomAuth(noAuthP)
             }
@@ -119,13 +124,13 @@ abstract class ResourceSampler : AbstractRestSampler() {
         //auth management
         if(authentications.isNotEmpty()){
             val auth = getRandomAuth(0.0)
-            restCalls.flatMap { it.actions }.forEach {
+            restCalls.flatMap { it.seeActions(ActionFilter.NO_SQL) }.forEach {
                 if(it is RestCallAction)
                     it.auth = auth
             }
         }else{
             val auth = NoAuth()
-            restCalls.flatMap { it.actions }.forEach {
+            restCalls.flatMap { it.seeActions(ActionFilter.NO_SQL) }.forEach {
                 if(it is RestCallAction)
                     it.auth = auth
             }
@@ -134,7 +139,10 @@ abstract class ResourceSampler : AbstractRestSampler() {
         if (restCalls.isNotEmpty()) {
             val individual =  RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency),
                     trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
-            individual.repairDBActions(sqlInsertBuilder)
+            if (withDependency)
+                dm.sampleResourceWithRelatedDbActions(individual, rm.getMaxNumOfResourceSizeHandling())
+
+            individual.cleanBrokenBindingReference()
             return individual
         }
         return null
@@ -142,18 +150,17 @@ abstract class ResourceSampler : AbstractRestSampler() {
 
     private fun sampleIndependentAction(resourceCalls: MutableList<RestResourceCalls>){
         val key = randomness.choose(rm.getResourceCluster().filter { it.value.hasIndependentAction() }.keys)//selectAResource(randomness)
-        rm.sampleCall(key, false, resourceCalls, config.maxTestSize)
+        rm.sampleCall(key, false, resourceCalls, getMaxTestSizeDuringSampler())
     }
 
     private fun sampleOneResource(resourceCalls: MutableList<RestResourceCalls>){
         val key = selectAIndResourceHasNonInd(randomness)
-        rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
-
+        rm.sampleCall(key, true, resourceCalls, getMaxTestSizeDuringSampler())
     }
 
     private fun sampleComResource(resourceCalls: MutableList<RestResourceCalls>, withDependency : Boolean){
         if(withDependency){
-            dm.sampleRelatedResources(resourceCalls, 2, config.maxTestSize)
+            dm.sampleRelatedResources(resourceCalls, 2, getMaxTestSizeDuringSampler())
         }else{
             sampleRandomComResource(resourceCalls)
         }
@@ -161,8 +168,8 @@ abstract class ResourceSampler : AbstractRestSampler() {
 
     private fun sampleManyResources(resourceCalls: MutableList<RestResourceCalls>, withDependency: Boolean){
         if(withDependency){
-            val num = randomness.nextInt(3, config.maxTestSize)
-            dm.sampleRelatedResources(resourceCalls, num, config.maxTestSize)
+            val num = randomness.nextInt(3, getMaxTestSizeDuringSampler())
+            dm.sampleRelatedResources(resourceCalls, num, getMaxTestSizeDuringSampler())
         }else{
             sampleManyResources(resourceCalls)
         }
@@ -181,26 +188,48 @@ abstract class ResourceSampler : AbstractRestSampler() {
         val candidates = rm.getResourceCluster().filter { !it.value.isIndependent() }.keys
         assert(candidates.size > 1)
         val keys = randomness.choose(candidates, 2)
-        var size = config.maxTestSize
+        var size = getMaxTestSizeDuringSampler()
         keys.forEach {
             rm.sampleCall(it, true, resourceCalls, size)
-            size -= resourceCalls.last().actions.size
+            size -= resourceCalls.last().seeActionSize(ActionFilter.NO_SQL)
         }
     }
 
     private fun sampleManyResources(resourceCalls: MutableList<RestResourceCalls>){
         val executed = mutableListOf<String>()
         val depCand = rm.getResourceCluster().filter { r -> !r.value.isIndependent() }
-        var resourceSize = randomness.nextInt(3, 5)
+        var resourceSize = randomness.nextInt(3, if(config.maxResourceSize > 0) config.maxResourceSize else 5)
         if(resourceSize > depCand.size) resourceSize = depCand.size + 1
 
-        var size = config.maxTestSize
+        var size = getMaxTestSizeDuringSampler()
         val candR = rm.getResourceCluster().filter { r -> r.value.isAnyAction() }
         while(size > 1 && executed.size < resourceSize){
-            val key = if(executed.size < resourceSize-1 && size > 2) randomness.choose(depCand.keys.filter { !executed.contains(it) }) else randomness.choose(candR.keys.filter { !executed.contains(it) })
+            val key = if(executed.size < resourceSize-1 && size > 2)
+                randomness.choose(depCand.keys.filter { !executed.contains(it) })
+            else if (candR.keys.any { !executed.contains(it) })
+                randomness.choose(candR.keys.filter { !executed.contains(it) })
+            else
+                randomness.choose(candR.keys)
+
             rm.sampleCall(key, true, resourceCalls, size)
-            size -= resourceCalls.last().actions.size
+            size -= resourceCalls.last().seeActionSize(ActionFilter.NO_SQL)
             executed.add(key)
         }
+    }
+
+    override fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+        val resourceCalls = restCalls.map {
+            val node = rm.getResourceNodeFromCluster(it.path.toString())
+            RestResourceCalls(
+                    template = node.getTemplate(it.verb.toString()),
+                    node = node,
+                    actions = mutableListOf(it)
+            )
+        }.toMutableList()
+        return RestIndividual(
+                resourceCalls=resourceCalls,
+                sampleType = SampleType.SMART_RESOURCE,
+                trackOperator = if (config.trackingEnabled()) this else null,
+                index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
     }
 }

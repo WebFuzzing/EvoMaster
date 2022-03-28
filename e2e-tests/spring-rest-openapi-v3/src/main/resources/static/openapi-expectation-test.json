@@ -1,0 +1,309 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "version": "1.0",
+    "title": "API"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/api/expectations/",
+      "description": "Expectation Test"
+    }
+  ],
+  "paths": {
+    "/basicResponsesString/{s}": {
+      "get": {
+        "tags":[
+          "expectations-test"
+        ],
+        "summary": "get-string",
+        "operationId": "getString",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*" : {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/basicResponsesNumeric/{s}": {
+      "get": {
+        "tags":[
+          "expectations-test"
+        ],
+        "summary": "get-numeric",
+        "operationId": "getNumeric",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/basicInput/{s}": {
+      "get": {
+        "tags":[
+          "expectations-test"
+        ],
+        "summary": "get-input",
+        "operationId": "getInput",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/responseObj/{s}": {
+      "get": {
+        "tags":[
+          "expectations-test"
+        ],
+        "summary": "get-obj",
+        "operationId": "getObject",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*" : {
+                "schema": {
+                  "$ref": "#/components/schemas/ExampleObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "default": {
+            "description": "Default Response"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/responseUnsupObj/{s}": {
+      "get": {
+        "tags":[
+          "expectations-test"
+        ],
+        "summary": "get-obj",
+        "operationId": "getObject",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*" : {
+                "schema": {
+                  "$ref": "#/components/schemas/OtherExampleObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/responseMultipleObjs/{s}": {
+      "get": {
+        "tags":[
+          "expectations-test"
+        ],
+        "summary": "get-objs",
+        "operationId": "getMultipleObjects",
+        "parameters": [
+          {
+            "name": "s",
+            "in": "path",
+            "description": "value",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*" : {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExampleObject"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ExampleObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "name"]
+      },
+      "OtherExampleObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "namn": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          }
+        }
+      }
+
+    }
+  }
+}

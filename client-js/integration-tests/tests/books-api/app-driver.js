@@ -14,12 +14,12 @@ class AppController  extends em.SutController {
     }
 
     getPreferredOutputFormat() {
-        return em.dto.OutputFormat.JAVA_JUNIT_4; // TODO JavaScript
+        return em.dto.OutputFormat.JS_JEST;
     }
 
     getProblemInfo() {
         const dto = new em.dto.RestProblemDto();
-        dto.swaggerJsonUrl = "http://localhost:" + this.port + "/swagger.json";
+        dto.openApiUrl = "http://localhost:" + this.port + "/swagger.json";
 
         return dto;
     }

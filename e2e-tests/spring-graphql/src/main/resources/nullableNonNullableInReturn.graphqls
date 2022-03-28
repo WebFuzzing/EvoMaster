@@ -1,0 +1,13 @@
+type Query {
+
+    flower: Flower
+}
+
+#A flower of the API
+type Flower{
+    #The id of the flower
+    id: Int!,
+    #The name of the flower
+    name: String!
+}
+

@@ -35,7 +35,8 @@ public class ShortClassReplacement implements MethodReplacementClass {
 
         try {
             short res = Short.parseShort(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1d, 0d));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                    new Truthness(1d, DistanceHelper.H_NOT_NULL));
             return res;
         } catch (RuntimeException e) {
             double h = NumberParsingUtils.parseShortHeuristic(input);
@@ -58,11 +59,11 @@ public class ShortClassReplacement implements MethodReplacementClass {
         } else {
             Short anotherShort = (Short) anObject;
             if (caller.equals(anotherShort)) {
-                t = new Truthness(1d, 0d);
+                t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
-                final double base = DistanceHelper.H_NOT_NULL;
+                double base = DistanceHelper.H_NOT_NULL;
                 double distance = DistanceHelper.getDistanceToEquality(caller, anotherShort);
-                double h = base + ((1 - base) / (distance + 1));
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }

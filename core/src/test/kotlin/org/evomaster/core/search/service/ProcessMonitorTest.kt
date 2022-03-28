@@ -44,6 +44,9 @@ class ProcessMonitorTest{
 
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.processFormat = EMConfig.ProcessDataFormat.JSON_ALL
+
     }
 
 
@@ -52,7 +55,6 @@ class ProcessMonitorTest{
 
         config.enableProcessMonitor = false
         config.showProgress = true
-        config.processInterval = config.maxActionEvaluations
 
         processMonitor.postConstruct()
         assertFalse(Files.exists(Paths.get(config.processFiles)))
@@ -76,11 +78,10 @@ class ProcessMonitorTest{
         config.processFiles = "target/process_data"
         config.enableProcessMonitor = true
         config.showProgress = true
-        config.processInterval = config.maxActionEvaluations
 
         processMonitor.postConstruct()
         assertFalse(Files.exists(Paths.get(config.processFiles)))
-        assertFalse(Files.exists(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER)))
+        assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
         val a = OneMaxIndividual(2)
         a.setValue(0, 1.0)
@@ -90,12 +91,11 @@ class ProcessMonitorTest{
         processMonitor.newActionEvaluated()
 
         val added = archive.addIfNeeded(eval)
-        processMonitor.record(added, true, eval)
 
         assert(Files.exists(Paths.get(config.processFiles)))
-        assert(Files.exists(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER)))
-        assertEquals(1, Files.list(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER)).count())
-        assert(Files.exists(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER + File.separator + processMonitor.getStepFileName(1) )))
+        assert(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
+        assertEquals(1, Files.list(Paths.get(processMonitor.getStepDirAsPath())).count())
+        assert(Files.exists(Paths.get(processMonitor.getStepAsPath(1))))
 
     }
 
@@ -105,11 +105,10 @@ class ProcessMonitorTest{
         config.processFiles = "target/process_data_1s"
         config.enableProcessMonitor = true
         config.showProgress = true
-        config.processInterval = config.maxActionEvaluations
 
         processMonitor.postConstruct()
         assertFalse(Files.exists(Paths.get(config.processFiles)))
-        assertFalse(Files.exists(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER)))
+        assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
         val individual = OneMaxIndividual(2)
         individual.setValue(0, 1.0)
@@ -119,10 +118,9 @@ class ProcessMonitorTest{
         processMonitor.newActionEvaluated()
 
         val added = archive.addIfNeeded(eval)
-        processMonitor.record(added, true, eval)
 
-        assert(Files.exists(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER + File.separator + processMonitor.getStepFileName(1) )))
-        val data = String(Files.readAllBytes(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER + File.separator + processMonitor.getStepFileName(1) )))
+        assert(Files.exists(Paths.get(processMonitor.getStepAsPath(1) )))
+        val data = String(Files.readAllBytes(Paths.get(processMonitor.getStepAsPath(1) )))
 
         val turnsType = object : TypeToken<StepOfSearchProcess<OneMaxIndividual>>() {}.type
         GsonBuilder().create().fromJson<StepOfSearchProcess<OneMaxIndividual>>(data, turnsType).apply {
@@ -133,7 +131,7 @@ class ProcessMonitorTest{
             assertEquals(1, indexOfEvaluation)
             assertEquals(individual.seeGenes().size, evalIndividual.individual.seeGenes().size)
             assertEquals(evalIndividual.fitness.coveredTargets(), evalIndividual.fitness.coveredTargets())
-            evalIndividual.fitness.getViewOfData().forEach { t, u ->
+            evalIndividual.fitness.getViewOfData().forEach { (t, u) ->
                 assertEquals(evalIndividual.fitness.getHeuristic(t) , u.distance)
             }
         }
@@ -145,11 +143,10 @@ class ProcessMonitorTest{
 
         config.enableProcessMonitor = true
         config.showProgress = true
-        config.processInterval = config.maxActionEvaluations
 
         processMonitor.postConstruct()
         assertFalse(Files.exists(Paths.get(config.processFiles)))
-        assertFalse(Files.exists(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER)))
+        assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
         val a = OneMaxIndividual(2)
         a.setValue(0, 1.0)
@@ -159,7 +156,6 @@ class ProcessMonitorTest{
 
         val addedA = archive.addIfNeeded(evalA)
         assert(addedA)
-        processMonitor.record(addedA, true, evalA)
 
 
         assertEquals(1, archive.getSnapshotOfBestIndividuals().size)
@@ -170,13 +166,12 @@ class ProcessMonitorTest{
         processMonitor.newActionEvaluated()
 
         val addedB = archive.addIfNeeded(evalB)
-        processMonitor.record(addedB, true, evalB)
 
         processMonitor.saveOverall()
 
-        assertEquals(2, Files.list(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER)).count())
-        assert(Files.exists(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER + File.separator + processMonitor.getStepFileName(1) )))
-        val dataA = String(Files.readAllBytes(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER + File.separator + processMonitor.getStepFileName(1) )))
+        assertEquals(2, Files.list(Paths.get(processMonitor.getStepDirAsPath())).count())
+        assert(Files.exists(Paths.get(processMonitor.getStepAsPath(1) )))
+        val dataA = String(Files.readAllBytes(Paths.get(processMonitor.getStepAsPath(1) )))
 
         val turnsType = object : TypeToken<StepOfSearchProcess<OneMaxIndividual>>() {}.type
         val gson = GsonBuilder().create()
@@ -186,8 +181,8 @@ class ProcessMonitorTest{
                     assertEquals(0, samplingCounter.size)
                 }
 
-        assert(Files.exists(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER + File.separator + processMonitor.getStepFileName(2) )))
-        val dataB = String(Files.readAllBytes(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER + File.separator + processMonitor.getStepFileName(2) )))
+        assert(Files.exists(Paths.get(processMonitor.getStepAsPath(2))))
+        val dataB = String(Files.readAllBytes(Paths.get(processMonitor.getStepAsPath(2) )))
         gson.fromJson<StepOfSearchProcess<OneMaxIndividual>>(dataB, turnsType)
                 .apply {
                     assertEquals(1, populations.size)

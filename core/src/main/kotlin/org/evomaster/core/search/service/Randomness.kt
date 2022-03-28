@@ -2,6 +2,8 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -19,13 +21,34 @@ class Randomness {
 
     private val random = Random()
 
+    init {
+        /*
+            this is needed just for EM tests. during EM execution, it is taken
+            from the seed in EMConfig
+         */
+        updateSeed(42)
+    }
+
     @PostConstruct
     private fun initialize() {
         updateSeed(configuration.seed)
     }
 
-    private val wordChars = "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
-            .map { it.toInt() }.sorted()
+    private val digitSet = "0123456789"
+    private val asciiLetterSet = "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+    private val norwegianLetterSet = "æøåÆØÅ"
+
+    private val wordSet = "_$digitSet$asciiLetterSet"
+    private val spaceSet = " \t\r\n"
+    private val punctuationSet = "!@#$%^&*()[]{}<>:;|"
+
+    private val allSet = "$wordSet$spaceSet$norwegianLetterSet$punctuationSet"
+
+    private val nonWordSet = allSet.replace(wordSet,"")
+    private val nonDigitSet = allSet.replace(digitSet, "")
+    private val nonSpaceSet = allSet.replace(spaceSet, "")
+
+    private val wordChars = wordSet.map { it.toInt() }.sorted()
 
     /**
      * A negative value means the current CPU time clock is used instead
@@ -62,6 +85,31 @@ class Randomness {
     fun nextDouble(): Double {
         val k = random.nextDouble()
         log.trace("nextDouble(): {}", k)
+        return k
+    }
+
+    fun nextDouble(min: Double, max: Double, exclude: Double): Double{
+        if (min == max && max == exclude) {
+            throw IllegalArgumentException("Nothing to select, as min/max/exclude are all equal")
+        }
+
+        var k = nextDouble(min, max)
+        while (k == exclude) {
+            k = nextDouble(min, max)
+        }
+        log.trace("nextDouble(min, max, exclude): {}", k)
+        return k
+    }
+
+    fun nextDouble(min: Double, max: Double): Double{
+        if (min == max) return min
+        if (min > max) {
+            throw IllegalArgumentException("Min $min is bigger than max $max")
+        }
+
+        val k = min + random.nextDouble() * NumberCalculationUtil.calculateIncrement(min, max)
+
+        log.trace("nextDouble(min {}, max {}): {}", min, max, k)
         return k
     }
 
@@ -110,7 +158,7 @@ class Randomness {
         }
 
         val k = (min.toLong() + random.nextDouble() * (max.toLong() - min + 1)).toInt()
-        log.trace("nextInt(min,max): {}", k)
+        log.trace("nextInt(min {}, max {}): {}", min, max, k)
         return k
     }
 
@@ -118,6 +166,39 @@ class Randomness {
     fun nextLong(): Long {
         val k = random.nextLong()
         log.trace("nextLong(): {}", k)
+        return k
+    }
+
+
+
+
+
+    fun nextLong(min: Long, max: Long): Long {
+
+        if (min == max) {
+            return min
+        }
+        if (min > max) {
+            throw IllegalArgumentException("Min $min is bigger than max $max")
+        }
+
+        val k = min + (random.nextDouble() * calculateIncrement(min, max, minIncrement = 1L)).toLong()
+
+        log.trace("nextLong(min {}, max {}): {}", min, max, k)
+        return k
+    }
+
+    fun nextLong(min: Long, max: Long, exclude: Long): Long {
+
+        if (min == max && max == exclude) {
+            throw IllegalArgumentException("Nothing to select, as min/max/exclude are all equal")
+        }
+
+        var k = nextLong(min, max)
+        while (k == exclude) {
+            k = nextLong(min, max)
+        }
+        log.trace("nextLong(min, max, exclude): {}", k)
         return k
     }
 
@@ -135,24 +216,86 @@ class Randomness {
         return k
     }
 
+    fun randomizeBoundedIntAndLong(value: Long, min: Long, max: Long, forceNewValue: Boolean) : Long{
+        val z = 1000L
+        val range = calculateIncrement(min, max, 1L)
+
+        val a: Long
+        val b: Long
+
+        if (range > z && nextBoolean(0.95)) {
+            //if very large range, might want to sample small values around 0 most of the times
+            if (min <= 0 && max >= z) {
+                a = 0
+                b = z
+            } else if (nextBoolean()) {
+                a = min
+                b = min + z
+            } else {
+                a = max - z
+                b = max
+            }
+        } else {
+            a = min
+            b = max
+        }
+
+        return if (forceNewValue) {
+            nextLong(a, b, value)
+        } else {
+            nextLong(a, b)
+        }
+    }
 
     fun nextLetter(): Char {
 
-        val characters = "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+        val characters = asciiLetterSet
 
         val k = characters[random.nextInt(characters.length)]
         log.trace("nextLetter(): {}", k)
         return k
     }
 
+    fun nextFromStringSet(set: String) : Char{
+        return set[random.nextInt(set.length)]
+    }
+
     fun nextWordChar(): Char {
-
-        val characters = "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
-
-        val k = characters[random.nextInt(characters.length)]
+        val k = nextFromStringSet(wordSet)
         log.trace("nextWordChar(): {}", k)
         return k
     }
+
+    fun nextNonWordChar() : Char{
+        val k = nextFromStringSet(nonWordSet)
+        log.trace("nextNonWordChar(): {}", k)
+        return k
+    }
+
+    fun nextDigitChar(): Char {
+        val k = nextFromStringSet(digitSet)
+        log.trace("nextDigitChar(): {}", k)
+        return k
+    }
+
+    fun nextNonDigitChar(): Char {
+        val k = nextFromStringSet(nonDigitSet)
+        log.trace("nextNonDigitChar(): {}", k)
+        return k
+    }
+
+    fun nextSpaceChar(): Char {
+        val k = nextFromStringSet(spaceSet)
+        log.trace("nextSpaceChar(): {}", k)
+        return k
+    }
+
+    fun nextNonSpaceChar(): Char {
+        val k = nextFromStringSet(nonSpaceSet)
+        log.trace("nextNonSpaceChar(): {}", k)
+        return k
+    }
+
 
     fun wordCharPool() = wordChars
 

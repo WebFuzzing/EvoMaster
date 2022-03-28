@@ -13,6 +13,8 @@ import WrappedResponseDto from "./api/dto/WrappedResponseDto";
 import SutController from "./SutController";
 import AdditionalInfoDto from "./api/dto/AdditionalInfoDto";
 import TargetInfoDto from "./api/dto/TargetInfoDto";
+import GraphQLProblemDto from "./api/dto/problem/GraphQLProblemDto";
+import StringSpecializationInfoDto from "./api/dto/StringSpecializationInfoDto";
 
 export default class EMController {
 
@@ -96,6 +98,8 @@ export default class EMController {
                 return;
             } else if (info instanceof RestProblemDto) {
                 dto.restProblem = info;
+            } else if(info instanceof GraphQLProblemDto) {
+                dto.graphQLProblem = info;
             } else {
                 res.status(500);
                 res.json(WrappedResponseDto.withError("Unrecognized problem type: " + (typeof info)));
@@ -245,21 +249,20 @@ export default class EMController {
                     info.headers = Array.from(a.getHeadersView());
                     info.lastExecutedStatement = a.getLastExecutedStatement();
 
-                    // info.stringSpecializations = new HashMap<>();
-                    // for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
-                    // a.getStringSpecializationsView().entrySet()){
-                    //
-                    //     assert ! entry.getValue().isEmpty();
-                    //
-                    //     List<StringSpecializationInfoDto> list = entry.getValue().stream()
-                    //         .map(it -> new StringSpecializationInfoDto(
-                    //             it.getStringSpecialization().toString(),
-                    //             it.getValue(),
-                    //             it.getType().toString()))
-                    //         .collect(Collectors.toList());
-                    //
-                    //     info.stringSpecializations.put(entry.getKey(), list);
-                    // }
+                    info.stringSpecializations = new Object();
+                    for(let [key, value] of a.getStringSpecializationsView().entries()){
+
+                        const list = Array.from(value).map(v => {
+                            const dto = new StringSpecializationInfoDto();
+                            dto.value = v.getValue();
+                            dto.type = v.getType().toString();
+                            dto.stringSpecialization = v.getStringSpecialization().toString();
+                            return dto;
+                        });
+
+                        // @ts-ignore
+                        info.stringSpecializations[key] = list;
+                    }
 
                     dto.additionalInfoList.push(info);
                 });

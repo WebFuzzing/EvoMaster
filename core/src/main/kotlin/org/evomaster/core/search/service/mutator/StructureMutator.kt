@@ -2,9 +2,10 @@ package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.tracer.TrackOperator
@@ -26,11 +27,33 @@ abstract class StructureMutator : TrackOperator {
     @Inject
     protected lateinit var time: SearchTimeController
 
+    @Inject
+    protected lateinit var apc: AdaptiveParameterControl
+
     /**
      * For example, add new actions, or remove old ones
+     *
+     * @param individual is the candidate to be mutated
+     * @param evaluatedIndividual contains additional info about the candidate [individual]
+     * @param mutatedGenes is used to specify what genes are mutated with this mutation
+     * @param targets indicates what targets to be optimized with this mutation
      */
-    abstract fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?)
+    abstract fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>)
 
+
+    /**
+     *
+     * @param individual is the candidate individual whose initialization would be  mutated
+     * @param evaluatedIndividual contains additional info about the candidate [individual]
+     * @param mutatedGenes is used to specify what genes are mutated with this mutation
+     * @param targets indicates what targets to be optimized with this mutation
+     */
+    abstract fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>)
+
+    fun getMaxSizeOfMutatingInitAction(): Int{
+        Lazy.assert { config.maxSizeOfMutatingInitAction > 0 }
+        return apc.getExploratoryValue(config.maxSizeOfMutatingInitAction, 1)
+    }
 
     /**
      * Before the main "actions" (e.g, HTTP calls for web services and
@@ -42,5 +65,19 @@ abstract class StructureMutator : TrackOperator {
      * might change.
      */
     abstract fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?)
+
+
+    fun canApplyStructureMutator(individual: Individual) : Boolean = canApplyInitStructureMutator() || canApplyActionStructureMutator(individual)
+
+    /**
+     * @return whether the init structure mutator is applicable.
+     * For instance, regarding rest, the mutator is not applicable if there is no db.
+     */
+    open fun canApplyInitStructureMutator() : Boolean = false
+
+    /**
+     * @return whether the action structure mutator is applicable.
+     */
+    open fun canApplyActionStructureMutator(individual: Individual) : Boolean = individual.canMutateStructure()
 
 }

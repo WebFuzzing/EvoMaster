@@ -1,11 +1,9 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
-import org.evomaster.client.java.instrumentation.Action;
-import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.shared.*;
-import org.evomaster.client.java.instrumentation.TargetInfo;
+import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,8 +12,23 @@ import java.util.stream.Collectors;
 /**
  * Methods of this class will be injected in the SUT to
  * keep track of what the tests do execute/cover.
+ * <p>
+ * A problem here is that we can have threads left executing SUT instrumented classes after a HTTP call is finished,
+ * which can lead to an inconsistent state.
+ * So, we added thread synchronization.
+ * But issue of possible performance overhead, as this is done on every single instruction... :(
+ * Furthermore, this issue does not really seem to happen in Spring... as the sending of HTTP responses is not handled
+ * in the instrumented classes, but rather in the framework itself.
+ * <p>
+ * TODO sync only when necessary... however, currently the overhead seems minimal (but proper tests would be
+ * needed to confirm it)
  */
 public class ExecutionTracer {
+
+    /**
+     * indicate whether now it is to execute sql initialized by evomaster
+     */
+    private static boolean executingInitSql = false;
 
     /*
         Careful if you change the signature of any of the
@@ -24,7 +37,6 @@ public class ExecutionTracer {
         Fortunately, unit tests should quickly find such
         type of issues.
      */
-
 
 
     /**
@@ -53,28 +65,77 @@ public class ExecutionTracer {
      */
     private static final List<AdditionalInfo> additionalInfoList = new ArrayList<>();
 
+    /**
+     * Keep track of expensive operations. Might want to skip doing them if too many.
+     * This should be re-set for each action
+     */
+    private static  int expensiveOperation = 0;
+
+    private static final Object lock = new Object();
+
+
+    /**
+     * One problem is that, once a test case is evaluated, some background tests might still be running.
+     * We want to kill them to avoid issue (eg, when evaluating new tests while previous threads
+     * are still running).
+     */
+    private static volatile boolean killSwitch = false;
+
     static {
         reset();
     }
 
 
     public static void reset() {
-        objectiveCoverage.clear();
-        actionIndex = 0;
-        additionalInfoList.clear();
-        additionalInfoList.add(new AdditionalInfo());
-        inputVariables = new HashSet<>();
+        synchronized (lock) {
+            objectiveCoverage.clear();
+            actionIndex = 0;
+            additionalInfoList.clear();
+            additionalInfoList.add(new AdditionalInfo());
+            inputVariables = new HashSet<>();
+            killSwitch = false;
+            expensiveOperation = 0;
+        }
     }
 
-    public static void setAction(Action action){
-        if(action.getIndex() != actionIndex) {
-            actionIndex = action.getIndex();
-            additionalInfoList.add(new AdditionalInfo());
-        }
+    public static boolean isKillSwitch() {
+        return killSwitch;
+    }
 
-        if(action.getInputVariables() != null && !action.getInputVariables().isEmpty()){
-            inputVariables = action.getInputVariables();
+    public static void setKillSwitch(boolean killSwitch) {
+        ExecutionTracer.killSwitch = killSwitch;
+    }
+
+    public static boolean isExecutingInitSql() {
+        return executingInitSql;
+    }
+
+    public static void setExecutingInitSql(boolean executingInitSql) {
+        ExecutionTracer.executingInitSql = executingInitSql;
+    }
+
+    public static void setAction(Action action) {
+        synchronized (lock) {
+            setKillSwitch(false);
+            expensiveOperation = 0;
+
+            if (action.getIndex() != actionIndex) {
+                actionIndex = action.getIndex();
+                additionalInfoList.add(new AdditionalInfo());
+            }
+
+            if (action.getInputVariables() != null && !action.getInputVariables().isEmpty()) {
+                inputVariables = action.getInputVariables();
+            }
         }
+    }
+
+    public static void increaseExpensiveOperationCount(){
+        expensiveOperation++;
+    }
+
+    public static boolean isTooManyExpensiveOperations(){
+        return expensiveOperation >= 50;
     }
 
     /**
@@ -84,13 +145,13 @@ public class ExecutionTracer {
      * the test itself (eg, the test at action can register a list of values to check
      * for)
      */
-    public static boolean isTaintInput(String input){
+    public static boolean isTaintInput(String input) {
         return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
     }
 
-    public static void handleTaintForStringEquals(String left, String right, boolean ignoreCase){
+    public static void handleTaintForStringEquals(String left, String right, boolean ignoreCase) {
 
-        if(left == null || right == null){
+        if (left == null || right == null) {
             //nothing to do?
             return;
         }
@@ -98,8 +159,8 @@ public class ExecutionTracer {
         boolean taintedLeft = isTaintInput(left);
         boolean taintedRight = isTaintInput(right);
 
-        if(taintedLeft && taintedRight){
-            if(ignoreCase ? left.equalsIgnoreCase(right) : left.equals(right)){
+        if (taintedLeft && taintedRight) {
+            if (ignoreCase ? left.equalsIgnoreCase(right) : left.equals(right)) {
                 //tainted, but compared to itself. so shouldn't matter
                 return;
             }
@@ -109,7 +170,7 @@ public class ExecutionTracer {
                 the special strings provided by the Core, as it would lead to nasty
                 side-effects
              */
-            if(! TaintInputName.isTaintInput(left) || !TaintInputName.isTaintInput(right)){
+            if (!TaintInputName.isTaintInput(left) || !TaintInputName.isTaintInput(right)) {
                 return;
             }
 
@@ -132,18 +193,18 @@ public class ExecutionTracer {
         }
     }
 
-    public static TaintType getTaintType(String input){
+    public static TaintType getTaintType(String input) {
 
-        if(input == null){
+        if (input == null) {
             return TaintType.NONE;
         }
 
-        if(isTaintInput(input)){
+        if (isTaintInput(input)) {
             return TaintType.FULL_MATCH;
         }
 
-        if(TaintInputName.includesTaintInput(input)
-                || inputVariables.stream().anyMatch(v -> input.contains(v))){
+        if (TaintInputName.includesTaintInput(input)
+                || inputVariables.stream().anyMatch(v -> input.contains(v))) {
             return TaintType.PARTIAL_MATCH;
         }
 
@@ -154,35 +215,47 @@ public class ExecutionTracer {
         return additionalInfoList;
     }
 
-    public static void markRawAccessOfHttpBodyPayload(){
-        additionalInfoList.get(actionIndex).setRawAccessOfHttpBodyPayload(true);
+
+    private static AdditionalInfo getCurrentAdditionalInfo() {
+        synchronized (lock) {
+            return additionalInfoList.get(actionIndex);
+        }
     }
 
-    public static void addParsedDtoName(String name){
-        additionalInfoList.get(actionIndex).addParsedDtoName(name);
+    public static void markRawAccessOfHttpBodyPayload() {
+        getCurrentAdditionalInfo().setRawAccessOfHttpBodyPayload(true);
     }
 
-    public static void addQueryParameter(String param){
-        additionalInfoList.get(actionIndex).addQueryParameter(param);
+    public static void addParsedDtoName(String name) {
+        getCurrentAdditionalInfo().addParsedDtoName(name);
     }
 
-    public static void addHeader(String header){
-        additionalInfoList.get(actionIndex).addHeader(header);
+    public static void addQueryParameter(String param) {
+        getCurrentAdditionalInfo().addQueryParameter(param);
     }
 
-    public static void addStringSpecialization(String taintInputName, StringSpecializationInfo info){
-        additionalInfoList.get(actionIndex).addSpecialization(taintInputName, info);
+    public static void addHeader(String header) {
+        getCurrentAdditionalInfo().addHeader(header);
     }
 
-    public static void markLastExecutedStatement(String lastLine, String lastMethod){
-        additionalInfoList.get(actionIndex).pushLastExecutedStatement(lastLine, lastMethod);
+    public static void addStringSpecialization(String taintInputName, StringSpecializationInfo info) {
+        getCurrentAdditionalInfo().addSpecialization(taintInputName, info);
+    }
+
+    public static void addSqlInfo(SqlInfo info){
+        if (!executingInitSql)
+            getCurrentAdditionalInfo().addSqlInfo(info);
+    }
+
+    public static void markLastExecutedStatement(String lastLine, String lastMethod) {
+        getCurrentAdditionalInfo().pushLastExecutedStatement(lastLine, lastMethod);
     }
 
     public static final String COMPLETED_LAST_EXECUTED_STATEMENT_NAME = "completedLastExecutedStatement";
     public static final String COMPLETED_LAST_EXECUTED_STATEMENT_DESCRIPTOR = "()V";
 
-    public static void completedLastExecutedStatement(){
-        additionalInfoList.get(actionIndex).popLastExecutedStatement();
+    public static void completedLastExecutedStatement() {
+        getCurrentAdditionalInfo().popLastExecutedStatement();
     }
 
     public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
@@ -244,26 +317,34 @@ public class ExecutionTracer {
             In the same execution, a target could be reached several times,
             so we should keep track of the best value found so far
          */
-        if (objectiveCoverage.containsKey(id)) {
-            double previous = objectiveCoverage.get(id).value;
-            if(value > previous){
+        synchronized (lock) {
+            if (objectiveCoverage.containsKey(id)) {
+                double previous = objectiveCoverage.get(id).value;
+                if (value > previous) {
+                    objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));
+                }
+            } else {
                 objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));
             }
-        } else {
-            objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));
         }
 
         ObjectiveRecorder.update(id, value);
     }
 
-    public static void executedNumericComparison(String idTemplate, double lt, double eq, double gt){
+    public static void executedNumericComparison(String idTemplate, double lt, double eq, double gt) {
 
         updateObjective(ObjectiveNaming.numericComparisonObjectiveName(idTemplate, -1), lt);
         updateObjective(ObjectiveNaming.numericComparisonObjectiveName(idTemplate, 0), eq);
         updateObjective(ObjectiveNaming.numericComparisonObjectiveName(idTemplate, +1), gt);
     }
 
-    public static void executedReplacedMethod(String idTemplate, ReplacementType type, Truthness t){
+    public static void executedReplacedMethod(String idTemplate, ReplacementType type, Truthness t) {
+
+        /*
+            Considering the fact that the method has been executed, and so reached, cannot happen
+            that any of the heuristic values is 0
+         */
+        assert t.getOfTrue() != 0 && t.getOfFalse() !=0;
 
         String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
         String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);
@@ -280,6 +361,35 @@ public class ExecutionTracer {
      * Report on the fact that a given line has been executed.
      */
     public static void executedLine(String className, String methodName, String descriptor, int line) {
+
+        /*
+            This is done to prevent the SUT keep on executing code after a test case is evaluated
+         */
+        if (isKillSwitch()) {
+
+            /*
+                This is tricky... not only if we are in the middle of a class initializer (e.g., a
+                static block, or static fields initialization), but also if any ancestor calls are
+                a class initializer (in bytecode these are marked as <clinit>).
+                For example, assume class X has a static intiliazer "static{ Foo f == new Foo()},
+                then, if the kill switch is on while we are executing "Foo()", we must not kill the
+                execution, otherwise the class initializer of X would fail, and X would not be usable
+                anymore inside the whole SUT.
+                To check those cases, we look at the stack trace of the method calls.
+             */
+            boolean initClass = Arrays.stream(Thread.currentThread().getStackTrace())
+                    .anyMatch(e -> e.getMethodName().equals("<clinit>"));
+
+            /*
+                must NOT stop the initialization of a class, otherwise the SUT will be left in an
+                inconsistent state in the following calls
+             */
+
+            if (!initClass) {
+                throw new KillSwitchException();
+            }
+        }
+
         //for targets to cover
         String lineId = ObjectiveNaming.lineObjectiveName(className, line);
         String classId = ObjectiveNaming.classObjectiveName(className);
@@ -296,17 +406,17 @@ public class ExecutionTracer {
     public static final String EXECUTING_METHOD_DESCRIPTOR = "(Ljava/lang/String;IIZ)V";
 
     /**
-     *  Report on whether method calls have been successfully completed.
-     *  Failures can happen due to thrown exceptions.
+     * Report on whether method calls have been successfully completed.
+     * Failures can happen due to thrown exceptions.
      *
      * @param className
      * @param line
-     * @param index    as there can be many method calls on same line, need to differentiate them
+     * @param index     as there can be many method calls on same line, need to differentiate them
      * @param completed whether the method call was successfully completed.
      */
-    public static void executingMethod(String className, int line, int index, boolean completed){
+    public static void executingMethod(String className, int line, int index, boolean completed) {
         String id = ObjectiveNaming.successCallObjectiveName(className, line, index);
-        if(completed) {
+        if (completed) {
             updateObjective(id, 1d);
         } else {
             updateObjective(id, 0.5);

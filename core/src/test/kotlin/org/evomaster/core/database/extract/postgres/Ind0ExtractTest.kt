@@ -3,7 +3,7 @@ package org.evomaster.core.database.extract.postgres
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
@@ -25,7 +25,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.toLowerCase())
+        assertEquals("public", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
         assertTrue(schema.tables.any { it.name == "x" })
         assertTrue(schema.tables.any { it.name == "y" })
@@ -40,13 +40,13 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
         assertEquals(1, schema.tables.first { it.name == "y" }.tableCheckExpressions.size)
 
         // constraints on X table
-        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(status = ANY (ARRAY['A'::text, 'B'::text]))") });
-        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("((status = 'B'::text) = (p_at IS NOT NULL))") });
-        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("((f_id ~~ 'hi'::text) OR (f_id ~~ '%foo%'::text) OR (f_id ~~ '%foo%x%'::text) OR (f_id ~~ '%bar%'::text) OR (f_id ~~ '%bar%y%'::text) OR (f_id ~~ '%hello%'::text))") });
-        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(w_id ~ similar_escape('/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?'::text, NULL::text))") });
+        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(status = ANY (ARRAY['A'::text, 'B'::text]))") })
+        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("((status = 'B'::text) = (p_at IS NOT NULL))") })
+        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("((f_id ~~ 'hi'::text) OR (f_id ~~ '%foo%'::text) OR (f_id ~~ '%foo%x%'::text) OR (f_id ~~ '%bar%'::text) OR (f_id ~~ '%bar%y%'::text) OR (f_id ~~ '%hello%'::text))") })
+        assertTrue(schema.tables.first { it.name == "x" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(w_id ~ similar_to_escape('/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?'::text))") })
 
         // constraints on Y table
-        assertTrue(schema.tables.first { it.name == "y" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(status = ANY (ARRAY['A'::text, 'B'::text, 'C'::text, 'D'::text, 'E'::text]))") });
+        assertTrue(schema.tables.first { it.name == "y" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(status = ANY (ARRAY['A'::text, 'B'::text, 'C'::text, 'D'::text, 'E'::text]))") })
 
 
         //TODO check the 3 views

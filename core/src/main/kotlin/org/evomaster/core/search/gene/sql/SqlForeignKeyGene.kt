@@ -1,13 +1,14 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 /**
  * A gene specifically designed to handle Foreign Keys in SQL databases.
@@ -35,7 +36,7 @@ class SqlForeignKeyGene(
          */
         var uniqueIdOfPrimaryKey: Long = -1
 
-) : SqlWrapperGene(sourceColumn) {
+) : SqlWrapperGene(sourceColumn, listOf()) {
 
     init {
         if (uniqueId < 0) {
@@ -48,7 +49,9 @@ class SqlForeignKeyGene(
     }
 
 
-    override fun copy() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
+    override fun getChildren(): List<Gene> = listOf()
+
+    override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
@@ -56,7 +59,8 @@ class SqlForeignKeyGene(
         val pks = allGenes.asSequence()
                 .flatMap { it.flatView().asSequence() }
                 .takeWhile { it !is SqlForeignKeyGene || it.uniqueId != uniqueId }
-                .filterIsInstance(SqlPrimaryKeyGene::class.java)
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .filter { it.uniqueId != uniqueId } // avoid self-references
                 .filter { it.tableName == targetTable }
                 .map { it.uniqueId }
                 .toSet()
@@ -106,12 +110,12 @@ class SqlForeignKeyGene(
 
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         randomize(randomness, true, allGenes)
         return true
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         if (!isBound()) {
             if (!nullable) {
@@ -190,4 +194,10 @@ class SqlForeignKeyGene(
     fun hasValidUniqueIdOfPrimaryKey() = uniqueIdOfPrimaryKey >= 0 ||
             (nullable && uniqueIdOfPrimaryKey == -1L)
 
+    override fun innerGene(): List<Gene> = listOf()
+
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        // do nothing
+        return true
+    }
 }

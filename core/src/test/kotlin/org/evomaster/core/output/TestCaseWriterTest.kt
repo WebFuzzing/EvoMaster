@@ -4,21 +4,26 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionGeneBuilder
+import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResourceEvaluatedIndividual
+import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlUUIDGene
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import javax.ws.rs.core.MediaType
 
 class TestCaseWriterTest {
     //TODO: BMR- changed the tests to not use expectationsActive. This may require updating.
@@ -34,9 +39,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -68,9 +73,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -83,7 +88,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -99,14 +104,14 @@ class TestCaseWriterTest {
 
         val sampleType = SampleType.RANDOM
 
-        val restActions = emptyList<RestAction>().toMutableList()
+        val restActions = emptyList<RestCallAction>().toMutableList()
 
 
         val individual = RestIndividual(restActions, sampleType, dbInitialization)
 
         val fitnessVal = FitnessValue(0.0)
 
-        val results = emptyList<ActionResult>().toMutableList()
+        val results = dbInitialization.map { DbActionResult().also { it.setInsertExecutionResult(true) } }
 
         val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
         return Triple(format, baseUrlOfSut, ei)
@@ -135,9 +140,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -154,7 +159,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -184,9 +189,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -200,7 +205,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -230,9 +235,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -246,7 +251,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -278,9 +283,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -294,7 +299,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -333,9 +338,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -353,7 +358,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -384,9 +389,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -399,7 +404,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -436,9 +441,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -458,7 +463,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -489,9 +494,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -504,7 +509,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -539,9 +544,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -562,7 +567,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -600,9 +605,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -620,7 +625,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -663,9 +668,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -683,7 +688,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -711,9 +716,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -726,7 +731,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -756,9 +761,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -771,7 +776,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -801,9 +806,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -816,7 +821,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -847,9 +852,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -862,7 +867,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -891,9 +896,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -906,7 +911,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -935,9 +940,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -950,7 +955,7 @@ class TestCaseWriterTest {
             deindent()
             add(".dtos();")
             deindent()
-            add("controller.execInsertionsIntoDatabase(insertions);")
+            add("InsertionResultsDto insertionsresult = controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
         }
@@ -980,10 +985,9 @@ class TestCaseWriterTest {
 
         val test = TestCase(test = ei, name = "test")
 
-        val writer = TestCaseWriter()
-        writer.setPartialOracles(partialOracles)
+        val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -998,7 +1002,6 @@ class TestCaseWriterTest {
             add(".get(baseUrlOfSut + \"\");")
             deindent()
             deindent()
-            add("")
             deindent()
             add("} catch(Exception e){")
             add("}")
@@ -1034,5 +1037,393 @@ class TestCaseWriterTest {
 
      */
 
+
+    @Test
+    fun testDbInBetween() {
+        val fooId = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
+        val foo = Table("Foo", setOf(fooId), setOf())
+
+        val fkId = Column("fkId", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
+        val bar = Table("Bar", setOf(fooId, fkId), setOf())
+
+        val pkGeneUniqueId = 12345L
+
+        val integerGene = IntegerGene(fooId.name, 42, 0, 10)
+        val pkFoo = SqlPrimaryKeyGene(fooId.name, "Foo", integerGene, pkGeneUniqueId)
+        val pkBar = SqlPrimaryKeyGene(fooId.name, "Bar", integerGene, 10)
+        val fooInsertionId = 1001L
+        val fooInsertion = DbAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
+        val barInsertionId = 1002L
+        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val barInsertion = DbAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
+
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf(fooInsertion) to mutableListOf(fooAction)),
+                (mutableListOf(barInsertion) to mutableListOf(barAction))
+            )
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+        config.expectationsActive = false
+        config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
+        config.probOfApplySQLActionToCreateResources=0.1
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+@Test
+public void test() throws Exception {
+    List<InsertionDto> insertions0 = sql().insertInto("Foo", 1001L)
+            .d("Id", "42")
+        .dtos();
+    InsertionResultsDto insertions0result = controller.execInsertionsIntoDatabase(insertions0);
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/foo");
+    } catch(Exception e){
+    }
+    List<InsertionDto> insertions1 = sql(insertions0).insertInto("Bar", 1002L)
+            .d("Id", "42")
+            .d("fkId", "42")
+        .dtos();
+    InsertionResultsDto insertions1result = controller.execInsertionsIntoDatabase(insertions1, insertions0result);
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/bar");
+    } catch(Exception e){
+    }
+}
+
+""".trimIndent()
+
+        assertEquals(expectedLines, lines.toString())
+    }
+
+
+    @Test
+    fun testDbInBetweenSkipFailure() {
+        val fooId = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
+        val foo = Table("Foo", setOf(fooId), setOf())
+
+        val fkId = Column("fkId", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
+        val bar = Table("Bar", setOf(fooId, fkId), setOf())
+
+        val pkGeneUniqueId = 12345L
+
+        val integerGene = IntegerGene(fooId.name, 42, 0, 10)
+        val pkFoo = SqlPrimaryKeyGene(fooId.name, "Foo", integerGene, pkGeneUniqueId)
+        val pkBar = SqlPrimaryKeyGene(fooId.name, "Bar", integerGene, 10)
+        val fooInsertionId = 1001L
+        val fooInsertion = DbAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
+        val barInsertionId = 1002L
+        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val barInsertion = DbAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
+
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf(fooInsertion) to mutableListOf(fooAction)),
+                (mutableListOf(barInsertion) to mutableListOf(barAction))
+            )
+        )
+
+        val fooInsertionResult = ei.seeResults(listOf(fooInsertion))
+        assertEquals(1, fooInsertionResult.size)
+        assertTrue(fooInsertionResult[0] is DbActionResult)
+        (fooInsertionResult[0] as DbActionResult).setInsertExecutionResult(false)
+
+        val config = EMConfig()
+        config.outputFormat = format
+        config.expectationsActive = false
+        config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
+        config.probOfApplySQLActionToCreateResources=0.1
+        config.skipFailureSQLInTestFile = true
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+@Test
+public void test() throws Exception {
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/foo");
+    } catch(Exception e){
+    }
+    List<InsertionDto> insertions1 = sql().insertInto("Bar", 1002L)
+            .d("Id", "42")
+            .d("fkId", "42")
+        .dtos();
+    InsertionResultsDto insertions1result = controller.execInsertionsIntoDatabase(insertions1);
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/bar");
+    } catch(Exception e){
+    }
+}
+
+""".trimIndent()
+
+        assertEquals(expectedLines, lines.toString())
+    }
+
+    @Test
+    fun testDbInBetweenWithEmptyDb() {
+
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<DbAction>() to mutableListOf(fooAction)),
+                (mutableListOf<DbAction>() to mutableListOf(barAction))
+            )
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+        config.expectationsActive = false
+        config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
+        config.probOfApplySQLActionToCreateResources=0.1
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+@Test
+public void test() throws Exception {
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/foo");
+    } catch(Exception e){
+    }
+    
+    try{
+        given().accept("*/*")
+                .get(baseUrlOfSut + "/bar");
+    } catch(Exception e){
+    }
+}
+
+""".trimIndent()
+
+        assertEquals(expectedLines, lines.toString())
+    }
+
+
+    @Test
+    fun testTestWithObjectAssertion(){
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val fooResult = RestCallResult()
+
+        fooResult.setStatusCode(200)
+        fooResult.setBody("""
+           [
+                {},
+                {
+                    "id":"foo",
+                    "properties":[
+                        {},
+                        {
+                          "name":"mapProperty1",
+                          "type":"string",
+                          "value":"one"
+                        },
+                        {
+                          "name":"mapProperty2",
+                          "type":"string",
+                          "value":"two"
+                        }],
+                    "empty":{}
+                }
+           ]
+        """.trimIndent())
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<DbAction>() to mutableListOf(fooAction))
+            ),
+            results = mutableListOf(fooResult),
+            format = OutputFormat.JS_JEST
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+            test("test", async () => {
+                
+                const res_0 = await superagent
+                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .ok(res => res.status);
+                
+                expect(res_0.status).toBe(200);
+                expect(res_0.header["content-type"].startsWith("application/json")).toBe(true);
+                expect(res_0.body.length).toBe(2);
+                expect(Object.keys(res_0.body[0]).length).toBe(0);
+                expect(res_0.body[1].properties.length).toBe(3);
+                expect(Object.keys(res_0.body[1].properties[0]).length).toBe(0);
+                expect(res_0.body[1].properties[1].name).toBe("mapProperty1");
+                expect(res_0.body[1].properties[1].type).toBe("string");
+                expect(res_0.body[1].properties[1].value).toBe("one");
+                expect(res_0.body[1].properties[2].name).toBe("mapProperty2");
+                expect(res_0.body[1].properties[2].type).toBe("string");
+                expect(res_0.body[1].properties[2].value).toBe("two");
+                expect(Object.keys(res_0.body[1].empty).length).toBe(0);
+            });
+
+""".trimIndent()
+
+        assertEquals(expectedLines, lines.toString())
+    }
+
+
+    @Test
+    fun testTestWithObjectLengthAssertion(){
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val fooResult = RestCallResult()
+
+        fooResult.setStatusCode(200)
+        fooResult.setBody("""
+           {
+                "p1":{},
+                "p2":{
+                    "id":"foo",
+                    "properties":[
+                        {},
+                        {
+                          "name":"mapProperty1",
+                          "type":"string",
+                          "value":"one"
+                        },
+                        {
+                          "name":"mapProperty2",
+                          "type":"string",
+                          "value":"two"
+                        }],
+                    "empty":{}
+                }
+           }
+        """.trimIndent())
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<DbAction>() to mutableListOf(fooAction))
+            ),
+            results = mutableListOf(fooResult),
+            format = OutputFormat.JS_JEST
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+            test("test", async () => {
+                
+                const res_0 = await superagent
+                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .ok(res => res.status);
+                
+                expect(res_0.status).toBe(200);
+                expect(res_0.header["content-type"].startsWith("application/json")).toBe(true);
+                expect(Object.keys(res_0.body.p1).length).toBe(0);
+                expect(res_0.body.p2.properties.length).toBe(3);
+                expect(Object.keys(res_0.body.p2.properties[0]).length).toBe(0);
+                expect(res_0.body.p2.properties[1].name).toBe("mapProperty1");
+                expect(res_0.body.p2.properties[1].type).toBe("string");
+                expect(res_0.body.p2.properties[1].value).toBe("one");
+                expect(res_0.body.p2.properties[2].name).toBe("mapProperty2");
+                expect(res_0.body.p2.properties[2].type).toBe("string");
+                expect(res_0.body.p2.properties[2].value).toBe("two");
+                expect(Object.keys(res_0.body.p2.empty).length).toBe(0);
+            });
+            
+""".trimIndent()
+        assertEquals(expectedLines, lines.toString())
+    }
+
+
+    @Test
+    fun testApplyAssertionEscapes(){
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val fooResult = RestCallResult()
+
+        val email = "foo@foo.foo"
+        fooResult.setStatusCode(200)
+        fooResult.setBody("""
+           {
+                "email":$email
+           }
+        """.trimIndent())
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<DbAction>() to mutableListOf(fooAction))
+            ),
+            results = mutableListOf(fooResult),
+            format = OutputFormat.JS_JEST
+        )
+
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+            test("test", async () => {
+                
+                const res_0 = await superagent
+                        .get(baseUrlOfSut + "/foo").set('Accept', "*/*")
+                        .ok(res => res.status);
+                
+                expect(res_0.status).toBe(200);
+                expect(res_0.header["content-type"].startsWith("application/json")).toBe(true);
+                expect(res_0.body.email).toBe("$email");
+            });
+            
+""".trimIndent()
+        assertEquals(expectedLines, lines.toString())
+    }
 
 }

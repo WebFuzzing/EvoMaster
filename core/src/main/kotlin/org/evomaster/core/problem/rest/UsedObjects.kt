@@ -88,13 +88,13 @@ class UsedObjects {
     fun exists(action: RestCallAction): Boolean{
         return mapping.keys.map { it.first }.contains(action.id)
     }
-    fun allExist(actions: MutableList<RestAction>): Boolean {
+    fun allExist(actions: MutableList<RestCallAction>): Boolean {
         val restActions = actions.filter{ it::class == RestCallAction::class}
-        return mapping.keys.map { it.first }.containsAll(restActions.map { (it as RestCallAction).id })
+        return mapping.keys.map { it.first }.containsAll(restActions.map { it.id })
     }
 
-    fun notCoveredActions(actions: MutableList<RestAction>): MutableList<RestCallAction> {
-        val restActions = actions.filter{ it::class == RestCallAction::class}.map { (it as RestCallAction) }.toMutableList()
+    fun notCoveredActions(actions: MutableList<RestCallAction>): MutableList<RestCallAction> {
+        val restActions = actions.filter{ it::class == RestCallAction::class}.map { it }.toMutableList()
         return restActions.filterNot { exists(it) }.toMutableList()
     }
 

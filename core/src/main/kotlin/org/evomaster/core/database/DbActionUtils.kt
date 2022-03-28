@@ -6,9 +6,13 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.evomaster.core.database.schema.Table
 
 object DbActionUtils {
 
+    private val log: Logger = LoggerFactory.getLogger(DbActionUtils::class.java)
 
     fun verifyForeignKeys(actions: List<DbAction>): Boolean {
 
@@ -29,6 +33,10 @@ object DbActionUtils {
                     return false
             }
 
+            /*
+                note: a row could have FK to itself... weird, but possible.
+                but not sure if we should allow it
+             */
             val previous = actions.subList(0, i)
 
             fks.filter { it.isBound() }
@@ -54,12 +62,15 @@ object DbActionUtils {
             references to each other (eg Foreign Keys)
          */
 
-        val all = actions.flatMap { it.seeGenes() }
-        all.asSequence()
-                .filter { it.isMutable() }
-                .forEach {
-                    it.randomize(randomness, false, all)
-                }
+//        val all = actions.flatMap { it.seeGenes() }
+//        all.asSequence()
+//                .filter { it.isMutable() }
+//                .forEach {
+//                    it.randomize(randomness, false, all)
+//                }
+        actions.forEach {
+            it.randomize(randomness, false, actions)
+        }
 
         Lazy.assert { verifyForeignKeys(actions) }
     }
@@ -86,6 +97,10 @@ object DbActionUtils {
                                   maxNumberOfAttemptsToRepairAnAction: Int = DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS
     ): Boolean {
 
+        if (log.isTraceEnabled){
+            log.trace("before repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
+        }
+
         if (maxNumberOfAttemptsToRepairAnAction < 0) {
             throw IllegalArgumentException("Maximum umber of attempts to fix an action should be non negative but it is: $maxNumberOfAttemptsToRepairAnAction")
         }
@@ -100,7 +115,9 @@ object DbActionUtils {
         while (geneToRepair != null && attemptCounter < maxNumberOfAttemptsToRepairAnAction) {
 
             val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeGenes() }
-            geneToRepair.randomize(randomness, true, previousGenes)
+            //Please check this. there throw java.lang.IllegalStateException: Not supposed to modify an immutable gene
+            if (geneToRepair.isMutable())
+                geneToRepair.randomize(randomness, true, previousGenes)
 
             if (actionIndexToRepair == previousActionIndexToRepair) {
                 //
@@ -118,7 +135,13 @@ object DbActionUtils {
             actionIndexToRepair = geneToRepairAndActionIndex.second
         }
 
+
         if (geneToRepair == null) {
+
+            if (log.isTraceEnabled){
+                log.trace("nothing is changed, and after repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
+            }
+
             return true
         } else {
             Lazy.assert { actionIndexToRepair >= 0 && actionIndexToRepair < actions.size }
@@ -126,6 +149,11 @@ object DbActionUtils {
             val truncatedListOfActions = actions.subList(0, actionIndexToRepair).toMutableList()
             actions.clear()
             actions.addAll(truncatedListOfActions)
+
+            if (log.isTraceEnabled){
+                log.trace("genes are repaired ,and after repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
+            }
+
             return false
         }
     }
@@ -349,29 +377,111 @@ object DbActionUtils {
     }
 
     /**
+     * repair fk of [dbAction] based on primary keys of [previous] dbactions
+     * @return whether fk is fixed
+     */
+    fun repairFk(dbAction: DbAction, previous: MutableList<DbAction>) : Pair<Boolean, List<DbAction>?>{
+        val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+        val referDbActions = mutableListOf<DbAction>()
+
+        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().forEach {fk->
+
+            val needToFix = pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey && p.tableName == fk.targetTable }
+            if (needToFix){
+                val found = pks.find { fk.targetTable == it.tableName }
+                if (found != null){
+                    fk.uniqueIdOfPrimaryKey = found.uniqueId
+                    referDbActions.add(previous.find { it.seeGenes().contains(found) }!!)
+                }else
+                    return Pair(false, null)
+            }
+        }
+
+        return Pair(true, referDbActions)
+    }
+
+
+    /**
+     * @return sorted tables based on its fk
+     * @param table to be sorted
+     * @param reversed specifies how to sort the tables
+     *
+     * for instance, table A contains foreign key to table B
+     * with inputs setOf(A, B), the return list would be
+     *      1) [reversed] is false, listOf(A, B)
+     *      2) [reversed] is true, listOf(B, A)
+     */
+    fun sortTable(table : List<Table>, reversed: Boolean = false) : List<Table>{
+
+        val sorted = table.sortedWith(
+            Comparator { o1, o2 ->
+                when {
+                    o1.foreignKeys.any { t-> t.targetTable.equals(o2.name,ignoreCase = true) } -> -1
+                    o2.foreignKeys.any { t-> t.targetTable.equals(o1.name,ignoreCase = true) } -> 1
+                    else -> 0
+                }
+            }
+        )
+        return if (reversed) sorted.reversed() else sorted
+    }
+
+    /**
      * In resource-based individual, SQL actions might be distributed to different set of REST actions regarding resources.
      * In this context, a FK of an insertion may refer to a PK that are in front of this insertion and belongs to other resource (referred resource).
      * During mutation, if the referred resource is modified (e.g., removed), the FK will be broken.
      */
-    fun repairFK(dbAction: DbAction, previous : MutableList<DbAction>, createdDbActions : MutableList<DbAction>,sqlInsertBuilder: SqlInsertBuilder?) : MutableList<SqlPrimaryKeyGene>{
+    fun repairFK(dbAction: DbAction, previous : MutableList<DbAction>, createdDbActions : MutableList<DbAction>,sqlInsertBuilder: SqlInsertBuilder?, randomness: Randomness) : MutableList<SqlPrimaryKeyGene>{
         val repaired = mutableListOf<SqlPrimaryKeyGene>()
         if(dbAction.table.foreignKeys.isEmpty())
             return repaired
 
         val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
-        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().forEach { fk->
-            var  found = pks.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
+        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().filter { fk-> pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey } }.forEach { fk->
+            var found = pks.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
             if (found == null){
-                val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())
-                found = created?.flatMap { it.seeGenes() }?.filterIsInstance<SqlPrimaryKeyGene>()?.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
-                        ?:throw IllegalStateException("fail to create insert db action")
+                val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())?.toMutableList()
+                created?:throw IllegalStateException("fail to create insert db action for table (${fk.targetTable})")
+                if (log.isTraceEnabled){
+                    log.trace("insertion which is created at repairFK is {}",
+                        created.joinToString(",") { it.getResolvedName() })
+                }
+                randomizeDbActionGenes(created, randomness)
+                found = created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
+                    ?:throw IllegalStateException("fail to create target table (${fk.targetTable}) for ${fk.name}")
+
+                repairFkForInsertions(created)
                 createdDbActions.addAll(created)
                 previous.addAll(created)
+                repaired.addAll(created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>())
             }
             fk.uniqueIdOfPrimaryKey = found.uniqueId
             repaired.add(found)
         }
-        return repaired
 
+        return repaired
     }
+
+    fun repairFkForInsertions(dbActions: List<DbAction>){
+        dbActions.forEachIndexed { index, dbAction ->
+            val fks = dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>()
+            if (fks.any { !it.nullable && !it.isBound() } && index == 0)
+                throw IllegalStateException("invalid insertion, there exists invalid fk at $index")
+            val pks = dbActions.subList(0, index).flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+            fks.filter { !it.nullable && !it.isBound() || pks.none { p->p.uniqueId == it.uniqueIdOfPrimaryKey }}.forEach {fk->
+                val found = pks.find { pk -> pk.tableName.equals(fk.targetTable, ignoreCase = true) }
+                    ?: throw IllegalStateException("fail to target table ${fk.targetTable} for the fk ${fk.name}")
+                fk.uniqueIdOfPrimaryKey = found.uniqueId
+            }
+        }
+        if (!verifyForeignKeys(dbActions))
+            throw IllegalStateException("FK repair fails")
+    }
+
+    /**
+     * @return a list of dbactions from [dbActions] whose related table is [tableName]
+     */
+    fun findDbActionsByTableName(dbActions: List<DbAction>, tableName : String) : List<DbAction>{
+        return dbActions.filter { it.table.name.equals(tableName, ignoreCase = true) }
+    }
+
 }

@@ -1,0 +1,57 @@
+{
+  "openapi" : "2.0",
+  "info" : {
+    "description" : "Simple num test",
+    "version" : "1.0",
+    "title" : "NumAPI"
+  },
+  "host" : "localhost:8080",
+  "basePath": "/api/num/exp",
+  "tags" : [
+    {
+      "name": "expectations-num-test",
+      "description" : "Expectation num example"
+    }
+  ],
+  "paths": {
+    "/basicNum/{s}" : {
+      "get" : {
+        "tags" : [
+          "expectation-num-test"
+        ],
+        "summary" : "num-test",
+        "operationId" : "numBehaviour",
+        "produces" : [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name" : "s",
+            "in" : "path",
+            "description" : "value",
+            "required" : true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description" : "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  }
+}

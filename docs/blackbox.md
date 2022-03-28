@@ -20,7 +20,7 @@ Such website provides an API itself to query info on existing APIs.
 Such small API (only 2 endpoints) can be easily tested by running the following on a command-line: 
 
 ```
-java -jar core/target/evomaster.jar  --blackBox true --bbSwaggerUrl https://api.apis.guru/v2/specs/apis.guru/2.0.1/swagger.json  --outputFormat JAVA_JUNIT_4 --maxTime 30s
+java -jar core/target/evomaster.jar  --blackBox true --bbSwaggerUrl https://api.apis.guru/v2/openapi.yaml  --outputFormat JAVA_JUNIT_4 --maxTime 30s --ratePerMinute 60
 ```
 
 The command is doing the following:
@@ -30,12 +30,12 @@ The command is doing the following:
   or [built from source](build.md).
 * `--blackBox true`: by default, _EvoMaster_ does white-box testing. Here, we specify that
   we do black-box testing instead.
-* `--bbSwaggerUrl ...`: URL of where the Swagger schema is. If it the API is running on a different
-  host, then such different host would need to be specified with `--bbTargetUrl`.   
+* `--bbSwaggerUrl ...`: URL of where the OpenAPI/Swagger schema is. The location of the API will be inferred from this schema (e.g., from `host` and `servers` tags). If such info is missing, then the API is assumed to be on same host as the schema. If needed, the API host location can be changed with the optional `--bbTargetUrl` (which overrides what specified in the schema).   
 * `--outputFormat JAVA_JUNIT_4`: must specify how the tests will be generated, e.g., in Java
   using JUnit 4 in this case. Note: the language of the generated tests is not necessarily related
   to the language in which the tested application is implemented. 
 * `--maxTime 30s`: for how long to run the search, i.e., just 30 seconds in this very simple example.
+* `--ratePerMinute 60`: avoid doing a DoS attack by bombarding the remote service with too many HTTP calls in quick rapid succession. Limit to max 1 per second (i.e., 60 per minute) in this example.
 
 This command will create the following test suite, in which 2 `GET` calls are executed:
 
@@ -84,6 +84,10 @@ public class EvoMasterTest {
 }
 ```
 
+
+## AUTH
+
+Since version `1.3.0`, it is possible to specify custom HTTP headers (e.g., to pass auth tokens), using the options from `--header0` to `--header2` (in case more than one HTTP header is needed). 
 
 ## WARNING
 

@@ -1,4 +1,4 @@
-import ObjectiveNaming from "../ObjectiveNaming";
+import ObjectiveNaming from "../shared/ObjectiveNaming";
 import UnitsInfoRecorder from "./UnitsInfoRecorder";
 
 export default class ObjectiveRecorder {

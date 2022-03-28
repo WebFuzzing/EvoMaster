@@ -1,0 +1,37 @@
+{
+	"info": {
+		"_postman_id": "c564e36a-01b1-4431-b0ff-c8e2ee3292f5",
+		"name": "query_header_path",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "/queryHeaderPath/{reqPathParam}_no_json_object",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/queryHeaderPath/pathParamValue",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"queryHeaderPath",
+						"pathParamValue"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"arrProp\": [1,2,3.7,\"hello\",3,7,8],\n  \"objProp\": {\n    \"objEnumStrProp\": \"val4\",\n    \"objBoolProp\": false,\n    \"objArrProp\": [\n      {},\n      {\n        \"prop1\": \"val1\"\n      }\n    ]\n  },\n  \"intProp\": 10000\n}"
+				},
+				"description": "Endpoint containing a JSON body"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

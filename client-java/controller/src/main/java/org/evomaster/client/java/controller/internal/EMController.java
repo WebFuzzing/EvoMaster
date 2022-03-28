@@ -4,15 +4,25 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
+import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.problem.GraphQlProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.RestProblem;
+import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
+import org.glassfish.jersey.internal.util.Producer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
@@ -35,14 +45,25 @@ import java.util.stream.Collectors;
 @Produces(Formats.JSON_V1)
 public class EMController {
 
+    /**
+     * WARNING: make sure to call this inside a noKillSwitch
+     */
     private final SutController sutController;
+
+    /**
+     * Keep track of the ID of last executed SQL command.
+     * This is done to avoid repeating the same command (even if in a POST,
+     * it could happen due to bugs in Jersey)
+     */
+    private volatile Integer lastSqlCommandId = null;
+
     private String baseUrlOfSUT;
 
     /**
      * Keep track of all host:port clients connect so far.
      * This is the mainly done for debugging, to check that we are using
      * a single TCP connection, instead of creating new ones at each request.
-     *
+     * <p>
      * However, we want to check it only during testing
      */
     private static final Set<String> connectedClientsSoFar = new CopyOnWriteArraySet<>();
@@ -55,7 +76,7 @@ public class EMController {
         this.sutController = Objects.requireNonNull(sutController);
     }
 
-    private boolean trackRequestSource(HttpServletRequest request){
+    private boolean trackRequestSource(HttpServletRequest request) {
         String source = request.getRemoteAddr() + ":" + request.getRemotePort();
         connectedClientsSoFar.add(source);
         return true;
@@ -73,15 +94,58 @@ public class EMController {
     /**
      * Only used debugging/testing
      */
-    public static void resetConnectedClientsSoFar(){
+    public static void resetConnectedClientsSoFar() {
         connectedClientsSoFar.clear();
+    }
+
+    private static String removePrefix(String s, String prefix)
+    {
+        if (s != null && prefix != null && s.startsWith(prefix)) {
+            return s.substring(prefix.length());
+        }
+        return s;
     }
 
     @Path("/")
     @GET
     @Produces(MediaType.TEXT_HTML)
-    public Response getWarning(){
+    public Response getWarning() {
         return Response.status(400).entity(htmlWarning).build();
+    }
+
+
+    /**
+     * This is tricky, and mainly an issue when dealing with embedded driver, where the kill-switch
+     * could impact when calling Driver methods using the SUT (eg, ctx.isRunning()).
+     */
+    private <T> T noKillSwitch(Producer<T> lambda) {
+        boolean previous = ExecutionTracer.isKillSwitch();
+        ExecutionTracer.setKillSwitch(false);
+        T t = lambda.call();
+        ExecutionTracer.setKillSwitch(previous);
+        return t;
+    }
+
+    private void noKillSwitch(Runnable lambda) {
+        boolean previous = ExecutionTracer.isKillSwitch();
+        ExecutionTracer.setKillSwitch(false);
+        lambda.run();
+        ExecutionTracer.setKillSwitch(previous);
+    }
+
+    private void noKillSwitchForceCheck(Runnable lambda) {
+        /*
+            Note: bit tricky for External. the calls on ExecutionTracer would have
+            no impact, only those on sutController. it is needed for when driver communicates
+            with SUT as part of driver operations, eg reset/seed state via an API call, which is
+            done for example in Proxyprint. But for all other cases, it can be just an unnecessary
+            overhead.
+         */
+
+        boolean previous = ExecutionTracer.isKillSwitch();
+        sutController.setKillSwitch(false);
+        lambda.run();
+        sutController.setKillSwitch(previous);
     }
 
     @Path(ControllerConstants.INFO_SUT_PATH)
@@ -89,15 +153,15 @@ public class EMController {
     public Response getSutInfo(@Context HttpServletRequest httpServletRequest) {
 
         String connectionHeader = httpServletRequest.getHeader("Connection");
-        if( connectionHeader == null
-                || !connectionHeader.equalsIgnoreCase("keep-alive")){
+        if (connectionHeader == null
+                || !connectionHeader.equalsIgnoreCase("keep-alive")) {
             return Response.status(400).entity(WrappedResponseDto
                     .withError("Requests should always contain a 'Connection: keep-alive'")).build();
         }
 
         assert trackRequestSource(httpServletRequest);
 
-        if(! sutController.verifySqlConnection()){
+        if (!noKillSwitch(() -> sutController.verifySqlConnection())) {
             String msg = "SQL drivers are misconfigured. You must use a 'p6spy' wrapper when you " +
                     "run the SUT. For example, a database connection URL like 'jdbc:h2:mem:testdb' " +
                     "should be changed into 'jdbc:p6spy:h2:mem:testdb'. " +
@@ -107,23 +171,58 @@ public class EMController {
         }
 
         SutInfoDto dto = new SutInfoDto();
-        dto.isSutRunning = sutController.isSutRunning();
-        dto.baseUrlOfSUT = baseUrlOfSUT;
-        dto.infoForAuthentication = sutController.getInfoForAuthentication();
-        dto.sqlSchemaDto = sutController.getSqlDatabaseSchema();
-        dto.defaultOutputFormat = sutController.getPreferredOutputFormat();
+        ProblemInfo info;
 
-        ProblemInfo info = sutController.getProblemInfo();
+        try {
+            dto.isSutRunning = noKillSwitch(() -> sutController.isSutRunning());
+            dto.baseUrlOfSUT = baseUrlOfSUT;
+            dto.infoForAuthentication = noKillSwitch(() -> sutController.getInfoForAuthentication());
+            dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
+            dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
+            info = noKillSwitch(() -> sutController.getProblemInfo());
+        } catch (RuntimeException e) {
+            String msg = e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        }
+
         if (info == null) {
             String msg = "Undefined problem type in the EM Controller";
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
-
         } else if (info instanceof RestProblem) {
             RestProblem rp = (RestProblem) info;
             dto.restProblem = new RestProblemDto();
-            dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();
+            dto.restProblem.openApiUrl = rp.getOpenApiUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
+            dto.restProblem.openApiSchema = rp.getOpenApiSchema();
+
+        } else if (info instanceof GraphQlProblem) {
+            GraphQlProblem p = (GraphQlProblem) info;
+            dto.graphQLProblem = new GraphQLProblemDto();
+            dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
+        } else if(info instanceof RPCProblem){
+            dto.rpcProblem = new RPCProblemDto();
+            // extract RPCSchema
+            sutController.extractRPCSchema();
+            Map<String, InterfaceSchema> rpcSchemas = sutController.getRPCSchema();
+            if (rpcSchemas == null || rpcSchemas.isEmpty()){
+                return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();
+            }
+            List<RPCInterfaceSchemaDto> schemas = new ArrayList<>();
+            for (InterfaceSchema s: rpcSchemas.values()){
+                schemas.add(s.getDto());
+            }
+            dto.rpcProblem.schemas = schemas;
+            Map<Integer, LocalAuthSetupSchema> localMap = sutController.getLocalAuthSetupSchemaMap();
+            if (localMap!= null && !localMap.isEmpty()){
+                dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
+                dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
+                for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
+                    dto.rpcProblem.localAuthEndpointReferences.add(e.getKey());
+                    dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
+                }
+            }
 
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
@@ -131,12 +230,13 @@ public class EMController {
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
 
-        dto.unitsInfoDto = sutController.getUnitsInfoDto();
-        if(dto.unitsInfoDto == null){
+        dto.unitsInfoDto = noKillSwitch(() -> sutController.getUnitsInfoDto());
+        if (dto.unitsInfoDto == null) {
             String msg = "Failed to extract units info";
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
+
 
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
@@ -148,8 +248,9 @@ public class EMController {
         assert trackRequestSource(httpServletRequest);
 
         ControllerInfoDto dto = new ControllerInfoDto();
-        dto.fullName = sutController.getClass().getName();
-        dto.isInstrumentationOn = sutController.isInstrumentationActivated();
+        dto.fullName = noKillSwitch(() -> sutController.getClass().getName());
+        dto.isInstrumentationOn = noKillSwitch(() -> sutController.isInstrumentationActivated());
+        dto.executableFullPath = noKillSwitch(() -> sutController.getExecutableFullPath());
 
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
@@ -160,7 +261,9 @@ public class EMController {
 
         assert trackRequestSource(httpServletRequest);
 
-        sutController.newSearch();
+        lastSqlCommandId = null;
+
+        noKillSwitch(() -> sutController.newSearch());
 
         return Response.status(201).entity(WrappedResponseDto.withNoData()).build();
     }
@@ -173,6 +276,19 @@ public class EMController {
 
         assert trackRequestSource(httpServletRequest);
 
+        /*
+            If start/stop the SUT, we want to disable the killSwitch.
+            The reason is it might be on from previous run, and, in such case,
+            until we run a first test it would crash the SUT... eg when retrieving
+            OpenAPI/GraphQL schema.
+
+            TODO: likely all the noKillSwitch calls here are redundant
+         */
+        ExecutionTracer.setKillSwitch(false);
+        if (sutController.isSutRunning()) {
+            sutController.setKillSwitch(false);
+        }
+
         try {
             if (dto.run == null) {
                 String msg = "Invalid JSON: 'run' field is required";
@@ -183,7 +299,7 @@ public class EMController {
             boolean sqlHeuristics = dto.calculateSqlHeuristics != null && dto.calculateSqlHeuristics;
             boolean sqlExecution = dto.extractSqlExecutionInfo != null && dto.extractSqlExecutionInfo;
 
-            sutController.enableComputeSqlHeuristicsOrExtractExecution(sqlHeuristics, sqlExecution);
+            noKillSwitch(() -> sutController.enableComputeSqlHeuristicsOrExtractExecution(sqlHeuristics, sqlExecution));
 
             boolean doReset = dto.resetState != null && dto.resetState;
 
@@ -197,8 +313,8 @@ public class EMController {
                     }
 
                     //if on, we want to shut down the server
-                    if (sutController.isSutRunning()) {
-                        sutController.stopSut();
+                    if (noKillSwitch(() -> sutController.isSutRunning())) {
+                        noKillSwitch(() -> sutController.stopSut());
                         baseUrlOfSUT = null;
                     }
 
@@ -206,15 +322,15 @@ public class EMController {
                     /*
                         If SUT is not up and running, let's start it
                      */
-                    if (!sutController.isSutRunning()) {
-                        baseUrlOfSUT = sutController.startSut();
+                    if (!noKillSwitch(() -> sutController.isSutRunning())) {
+                        baseUrlOfSUT = noKillSwitch(() -> sutController.startSut());
                         if (baseUrlOfSUT == null) {
                             //there has been an internal failure in starting the SUT
                             String msg = "Internal failure: cannot start SUT based on given configuration";
                             SimpleLogger.warn(msg);
                             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                         }
-                        sutController.initSqlHandler();
+                        noKillSwitch(() -> sutController.initSqlHandler());
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
@@ -226,7 +342,9 @@ public class EMController {
                         want to do it
                      */
                     if (dto.resetState != null && dto.resetState) {
-                        try{
+                        try {
+                            // clean db with accessed tables
+                            noKillSwitchForceCheck(() -> sutController.cleanAccessedTables());
                             /*
                                 This should not fail... but, as it is user code, it might fail...
                                 When it does, it is a major issue, as it can leave the system in
@@ -238,9 +356,9 @@ public class EMController {
                                 is started but then not committed). Ideally, in the reset of DBs we should
                                 force all lock releases, and possibly point any left lock as a potential bug
                              */
-                            sutController.resetStateOfSUT();
+                            noKillSwitchForceCheck(() -> sutController.resetStateOfSUT());
                         } finally {
-                            sutController.newTest();
+                            noKillSwitch(() -> sutController.newTest());
                         }
                     }
 
@@ -274,6 +392,8 @@ public class EMController {
             @QueryParam("ids")
             @DefaultValue("")
                     String idList,
+            @QueryParam("killSwitch") @DefaultValue("false")
+                    boolean killSwitch,
             @Context HttpServletRequest httpServletRequest) {
 
         assert trackRequestSource(httpServletRequest);
@@ -294,7 +414,7 @@ public class EMController {
                 return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
 
-            List<TargetInfo> targetInfos = sutController.getTargetInfos(ids);
+            List<TargetInfo> targetInfos = noKillSwitch(() -> sutController.getTargetInfos(ids));
             if (targetInfos == null) {
                 String msg = "Failed to collect target information for " + ids.size() + " ids";
                 SimpleLogger.error(msg);
@@ -314,10 +434,15 @@ public class EMController {
             /*
                 Note: it is important that extra is computed before AdditionalInfo,
                 as heuristics on SQL might add new entries to String specializations
-             */
-            dto.extraHeuristics = sutController.getExtraHeuristics();
 
-            List<AdditionalInfo> additionalInfos = sutController.getAdditionalInfoList();
+                FIXME actually the String specialization would work only on Embedded, and
+                not on External :(
+                But, as anyway we are going to refactor it in Core at a later point, no need
+                to waste time for a tmp workaround
+             */
+            dto.extraHeuristics = noKillSwitch(() -> sutController.getExtraHeuristics());
+
+            List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
             if (additionalInfos != null) {
                 additionalInfos.forEach(a -> {
                     AdditionalInfoDto info = new AdditionalInfoDto();
@@ -327,11 +452,11 @@ public class EMController {
                     info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
                     info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
 
-                    info.stringSpecializations = new HashMap<>();
-                    for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
-                            a.getStringSpecializationsView().entrySet()){
+                    info.stringSpecializations = new LinkedHashMap<>();
+                    for (Map.Entry<String, Set<StringSpecializationInfo>> entry :
+                            a.getStringSpecializationsView().entrySet()) {
 
-                        assert ! entry.getValue().isEmpty();
+                        assert !entry.getValue().isEmpty();
 
                         List<StringSpecializationInfoDto> list = entry.getValue().stream()
                                 .map(it -> new StringSpecializationInfoDto(
@@ -351,7 +476,9 @@ public class EMController {
                 return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
             }
 
-
+            if (killSwitch) {
+                sutController.setKillSwitch(true);
+            }
 
             return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
 
@@ -373,10 +500,57 @@ public class EMController {
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
+        // executingInitSql should be false when reaching here
+        assert (!ExecutionTracer.isExecutingInitSql());
+        /*
+            Note: as PUT is idempotent, it can be repeated...
+            so need to handle such possibility here
+         */
+        Integer index = dto.index;
+        Integer current = sutController.getActionIndex();
+        if (index == current) {
+            SimpleLogger.warn("Repeated PUT on newAction for same index " + index);
+        } else {
 
-        assert trackRequestSource(httpServletRequest);
+            assert trackRequestSource(httpServletRequest);
 
-        sutController.newAction(dto);
+            //this MUST not be inside a noKillSwitch, as it sets to false
+            sutController.newAction(dto);
+
+            if (dto.rpcCall != null){
+                ActionResponseDto authResponseDto = null;
+                if (dto.rpcCall.authSetup != null){
+                    // execute auth setup
+                    authResponseDto = new ActionResponseDto();
+                    try{
+                        if (LocalAuthSetupSchema.isLocalAuthSetup(dto.rpcCall.authSetup)){
+                            sutController.executeHandleLocalAuthenticationSetup(dto.rpcCall.authSetup, authResponseDto);
+                        }else
+                            sutController.executeAction(dto.rpcCall.authSetup, authResponseDto);
+                    }catch (Exception e){
+                        String msg = "Fail to execute auth setup and thrown exception: " + e.getMessage();
+                        SimpleLogger.error(msg, e);
+                    }
+                }
+
+                ActionResponseDto responseDto = new ActionResponseDto();
+                responseDto.index = index;
+                try{
+                    sutController.executeAction(dto.rpcCall, responseDto);
+                    if (authResponseDto!= null && authResponseDto.testScript!=null && !authResponseDto.testScript.isEmpty()){
+                        responseDto.testScript.addAll(0, authResponseDto.testScript);
+                    }
+                    return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
+                }catch (Exception e){
+                    // TODO handle exception on responseDto later
+                    String msg = "Thrown exception: " + e.getMessage();
+                    SimpleLogger.error(msg, e);
+                    responseDto.error500Msg = msg;
+                    return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
+                }
+
+            }
+        }
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }
@@ -387,10 +561,41 @@ public class EMController {
     @POST
     public Response executeDatabaseCommand(DatabaseCommandDto dto, @Context HttpServletRequest httpServletRequest) {
 
+        Integer id = dto.idCounter;
+        if (id != null) {
+            if (lastSqlCommandId != null && id <= lastSqlCommandId) {
+                SimpleLogger.warn("SQL command with id " + id + " has not arrived in order. Last received id : " + lastSqlCommandId);
+
+                /*
+                    if it had insertions, we silently skip doing it twice.
+                    but a problem here is that we would lose any info on the auto-generated keys :(
+                 */
+                if (dto.insertions != null && !dto.insertions.isEmpty()) {
+                    return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+                }
+            }
+            lastSqlCommandId = id;
+        }
+
         assert trackRequestSource(httpServletRequest);
 
         try {
-            Connection connection = sutController.getConnection();
+
+            /*
+                ignore to collect sql created by evomaster for initialization
+                note that
+                    even if SqlScriptRunner.execCommand is not instrumented,
+                    it can refer to a proxy, and the proxy itself is likely
+                    going to be instrumented (as not in org.evomaster)
+             */
+            sutController.setExecutingInitSql(true);
+
+            // collect info about tables to insert
+            noKillSwitch(()-> sutController.addTableToInserted(dto.insertions.stream().map(x-> x.targetTable).collect(Collectors.toList())));
+
+            SimpleLogger.debug("Received database command");
+
+            Connection connection = noKillSwitch(() -> sutController.getConnectionIfExist());
             if (connection == null) {
                 String msg = "No active database connection";
                 SimpleLogger.warn(msg);
@@ -418,13 +623,15 @@ public class EMController {
             }
 
             QueryResult queryResult = null;
-            Map<Long, Long> idMapping = null;
+            InsertionResultsDto insertionResultsDto = null;
+
 
             try {
                 if (dto.command != null) {
                     queryResult = SqlScriptRunner.execCommand(connection, dto.command);
                 } else {
-                    idMapping = SqlScriptRunner.execInsert(connection, dto.insertions);
+                    insertionResultsDto = SqlScriptRunner.execInsert(connection, dto.insertions);
+
                 }
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();
@@ -434,8 +641,8 @@ public class EMController {
 
             if (queryResult != null) {
                 return Response.status(200).entity(WrappedResponseDto.withData(queryResult.toDto())).build();
-            } else if (idMapping != null) {
-                return Response.status(200).entity(WrappedResponseDto.withData(idMapping)).build();
+            } else if (insertionResultsDto != null) {
+                return Response.status(200).entity(WrappedResponseDto.withData(insertionResultsDto)).build();
             } else {
                 return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
             }
@@ -450,6 +657,8 @@ public class EMController {
             String msg = "Thrown exception: " + e.getMessage();
             SimpleLogger.error(msg, e);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitSql(false);
         }
     }
 }

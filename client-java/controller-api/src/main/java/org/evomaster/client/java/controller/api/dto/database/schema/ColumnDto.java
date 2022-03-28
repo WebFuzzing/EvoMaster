@@ -20,4 +20,13 @@ public class ColumnDto {
 
     public boolean foreignKeyToAutoIncrement = false;
 
+    public boolean isUnsigned = false;
+
+    public boolean isEnumeratedType = false;
+    /**
+     * precision of number
+     * a negative number means that the precision is unspecified or inapplicable
+     */
+    public int precision = -1;
+
 }

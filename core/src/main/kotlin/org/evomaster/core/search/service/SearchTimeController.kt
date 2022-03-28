@@ -2,7 +2,11 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.utils.IncrementalAverage
+import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.math.ceil
 
 /**
  * Class used to keep track of passing of time during the search.
@@ -13,6 +17,10 @@ class SearchTimeController {
 
     @Inject
     private lateinit var configuration: EMConfig
+
+    companion object{
+        private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
+    }
 
 
     var evaluatedIndividuals = 0
@@ -30,11 +38,60 @@ class SearchTimeController {
     var lastActionImprovement = -1
         private set
 
+    var lastActionTimestamp = 0L
+        private set
+
+    /**
+     * The SUT should avoid sending HTTP requests with "Connection: close", as it puts strains on the OS,
+     * possibly running out of available ports when running experiments
+     */
+    var connectionCloseRequest = 0
+        private set
+
+    var actionWhenLastConnectionCloseRequest = -1
+        private set
+
     private var startTime = 0L
 
+    /**
+     * Keeping track of the latest N test executions.
+     * Time expressed in ms (Long).
+     * Also keeping track of number of actions (Int)
+     */
     private val executedIndividualTime : Queue<Pair<Long,Int>> = ArrayDeque(100)
 
     private val listeners = mutableListOf<SearchListener>()
+
+    val averageTestTimeMs = IncrementalAverage()
+
+    val averageOverheadMsBetweenTests = IncrementalAverage()
+
+
+    /**
+     * Make sure we do not make too many requests in a short amount of time, to avoid
+     * possible DoS attacks.
+     */
+    fun waitForRateLimiter(){
+        if(configuration.ratePerMinute <=0){
+            //nothing to do
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        val passed = now - lastActionTimestamp
+
+        val delta = ceil((60.0 * 1000.0) / configuration.ratePerMinute).toLong()
+
+        if(passed >= delta){
+            //already slow enough, nothing to do
+            lastActionTimestamp = now
+            return
+        }
+
+        val toWait = delta - passed
+        Thread.sleep(toWait)
+        lastActionTimestamp = System.currentTimeMillis()
+    }
 
     fun startSearch(){
         searchStarted = true
@@ -45,23 +102,46 @@ class SearchTimeController {
         listeners.add(listener)
     }
 
+    fun reportConnectionCloseRequest(httpStatus: Int){
+
+        connectionCloseRequest++
+        //evaluatedActions is updated at the end of test case
+        //assert(evaluatedActions > actionWhenLastConnectionCloseRequest)
+
+        val total = "$connectionCloseRequest/$evaluatedActions"
+        val sinceLast =  if(actionWhenLastConnectionCloseRequest < 1){
+            "0/0"
+        } else {
+            "1/${evaluatedActions-actionWhenLastConnectionCloseRequest}"
+        }
+
+        actionWhenLastConnectionCloseRequest = evaluatedActions
+
+        LoggingUtil.uniqueWarn(log, "The SUT sent a 'Connection: close' HTTP header. This should be avoided, if possible")
+        log.debug("SUT requested a 'Connection: close' in a HTTP response. Ratio: total=$total , since-last=$sinceLast, HTTP=$httpStatus")
+    }
+
     fun reportExecutedIndividualTime(ms: Long, nActions: Int){
 
+        //this is for last 100 tests, displayed live during the search in the console
         executedIndividualTime.add(Pair(ms, nActions))
         if(executedIndividualTime.size > 100){
             executedIndividualTime.poll()
         }
+
+        // for all tests evaluated so far
+        averageTestTimeMs.addValue(ms)
     }
 
     /**
      * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
      */
-    inline fun <T> measureTimeMillis(loggingFunction: (Long) -> Unit,
+    inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
                                     function: () -> T): T {
 
         val startTime = System.currentTimeMillis()
         val result: T = function.invoke()
-        loggingFunction.invoke(System.currentTimeMillis() - startTime)
+        loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
 
         return result
     }

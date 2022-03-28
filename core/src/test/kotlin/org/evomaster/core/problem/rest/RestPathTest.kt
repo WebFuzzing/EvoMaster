@@ -236,4 +236,116 @@ internal class RestPathTest{
 
         assertEquals("/x%20+%20y?a=k+%2B+w", uri)
     }
+
+    @Test
+    fun testMatchResolvedPath(){
+        val path = RestPath("/x/{y}/z")
+
+        val resolvedPath = "/x/example/z"
+
+        assertTrue(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testMatchResolvedPathCompound(){
+        val path = RestPath("/x/{y}-{anotherParam}/z")
+
+        val resolvedPath = "/x/example-2/z"
+
+        assertTrue(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testMatchResolvedPathSemiCompound(){
+        val path = RestPath("/x/y-{anotherParam}/z")
+
+        val resolvedPath = "/x/y-2/z"
+
+        assertTrue(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testNotMatchResolvedPath(){
+        val path = RestPath("/x/y")
+
+        val resolvedPath = "/x/y/z"
+
+        assertFalse(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testNotMatchResolvedPathWithParam(){
+        val path = RestPath("/x/y/{param}")
+
+        val resolvedPath = "/x/error/param"
+
+        assertFalse(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testNotMatchResolvedPathCompound(){
+        val path = RestPath("/x/{y}-{anotherParam}/z")
+
+        val resolvedPath = "/x/example/z"
+
+        assertFalse(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testNotMatchResolvedPathSemiCompound(){
+        val path = RestPath("/x/y-{anotherParam}/z")
+
+        val resolvedPath = "/x/example/z"
+
+        assertFalse(path.matches(resolvedPath))
+    }
+
+    @Test
+    fun testGetKeyValuesWrongPath() {
+        val path = RestPath("/x/{y}/{z}")
+
+        val resolvedPath = "/x/example/example2/example3"
+
+        assertNull(path.getKeyValues(resolvedPath))
+    }
+
+    @Test
+    fun testGetKeyValues() {
+        val path = RestPath("/x/{y}/{z}")
+
+        val resolvedPath = "/x/example/z"
+
+        val keyValues = path.getKeyValues(resolvedPath)
+
+        assertEquals(2, keyValues?.size)
+        assertEquals("example", keyValues?.get("y"))
+        assertEquals("z", keyValues?.get("z"))
+    }
+
+    @Test
+    fun testGetKeyValuesPathCompound(){
+        val path = RestPath("/x/{y}-{anotherParam}/z")
+
+        val resolvedPath = "/x/example-2/z"
+
+        val keyValues = path.getKeyValues(resolvedPath)
+
+        assertEquals(2, keyValues?.size)
+        assertEquals("example", keyValues?.get("y"))
+        assertEquals("2", keyValues?.get("anotherParam"))
+    }
+
+    @Test
+    fun testGetKeyValuesPathSemiCompound(){
+        val path = RestPath("/{firsParam}/y-{anotherParam}/{thirdParam}/z")
+
+        val resolvedPath = "/x/y-2/z/z"
+
+        val keyValues = path.getKeyValues(resolvedPath)
+
+        assertEquals(3, keyValues?.size)
+        assertEquals("x", keyValues?.get("firsParam"))
+        assertEquals("2", keyValues?.get("anotherParam"))
+        assertEquals("z", keyValues?.get("thirdParam"))
+    }
 }

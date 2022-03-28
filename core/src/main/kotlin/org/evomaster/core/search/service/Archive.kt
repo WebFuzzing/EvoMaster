@@ -1,21 +1,31 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
 import org.evomaster.core.Lazy
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Termination
-import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Solution
+import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.search.*
+import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
+import org.slf4j.LoggerFactory
+
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 
 
 class Archive<T> where T : Individual {
+
+    companion object{
+        private val log = LoggerFactory.getLogger(Archive::class.java)
+    }
 
     @Inject
     private lateinit var randomness: Randomness
@@ -37,6 +47,7 @@ class Archive<T> where T : Individual {
 
     @Inject
     private lateinit var tracker : ArchiveMutationTrackService
+
     /**
      * Key -> id of the target
      *
@@ -67,19 +78,19 @@ class Archive<T> where T : Individual {
 
 
     /**
-     * Key -> id of the target
-     *
-     * Value -> latest evaluated individual there was an improvement for this target.
-     */
-    //private val latestImprovement = mutableMapOf<Int, Int>()
-
-    /**
      * Id of last target used for sampling
      */
     private var lastChosen: Int? = null
 
 
     fun extractSolution(): Solution<T> {
+        val uniques = getUniquePopulation()
+
+        return Solution(uniques.toMutableList(), config.outputFilePrefix, config.outputFileSuffix, Termination.NONE)
+    }
+
+
+    private fun getUniquePopulation(): MutableSet<EvaluatedIndividual<T>> {
 
         /*
             Note: no equals() is defined, so Set is based
@@ -98,7 +109,7 @@ class Archive<T> where T : Individual {
             }
         }
 
-        return Solution(uniques.toMutableList(), config.testSuiteFileName, Termination.NONE)
+        return uniques
     }
 
 
@@ -134,27 +145,41 @@ class Archive<T> where T : Individual {
 
         sortAndShrinkIfNeeded(candidates, chosenTarget)
 
-        val notTimedout = candidates.filter {
-            !it.results.any { res -> res is RestCallResult && res.getTimedout() }
+        val notTimedOut = candidates.filter {
+            !it.seeResults().any { res -> res is HttpWsCallResult && res.getTimedout() }
         }
 
         /*
             If possible avoid sampling tests that did timeout
          */
-        val chosen = if (!notTimedout.isEmpty()) {
-            randomness.choose(notTimedout)
+        val chosen = if (!notTimedOut.isEmpty()) {
+            randomness.choose(notTimedOut)
         } else {
             randomness.choose(candidates)
         }
 
-        return chosen.copy(tracker.getCopyFilterForEvalInd(chosen))
+        val copy = chosen.copy(tracker.getCopyFilterForEvalInd(chosen))
+        copy.individual.populationOrigin = idMapper.getDescriptiveId(chosenTarget)
+
+        return copy
     }
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
 
         return when (config.feedbackDirectedSampling) {
-            LAST -> toChooseFrom.minBy {
-                samplingCounter.getOrDefault(it, 0)
+            LAST -> toChooseFrom.minByOrNull {
+                val counter = samplingCounter.getOrDefault(it, 0)
+                val p = populations[it]!!
+                val time = p[p.lastIndex].executionTimeMs //time of best individual
+                if(!config.useTimeInFeedbackSampling || time == Long.MAX_VALUE){
+                     counter.toLong()
+                } else {
+                    /*
+                    WARNING: this does introduce some form of non-determinism,
+                    as timestamps can vary.
+                 */
+                    (counter * time)
+                }
             }!!
             FOCUSED_QUICKEST ->
                 handleFocusedQuickest(toChooseFrom)
@@ -190,9 +215,9 @@ class Archive<T> where T : Individual {
                     previous != null &&
                             samplingCounter[it]!! < previous * 2
                 }
-                .minBy { lastImprovement[it]!! }
+                .minByOrNull { lastImprovement[it]!! }
 
-        return index ?: toChooseFrom.minBy {
+        return index ?: toChooseFrom.minByOrNull {
             samplingCounter.getOrDefault(it, 0)
         }!!
     }
@@ -203,7 +228,24 @@ class Archive<T> where T : Individual {
     private fun incrementCounter(target: Int) {
         samplingCounter.putIfAbsent(target, 0)
         val counter = samplingCounter[target]!!
-        samplingCounter.put(target, counter + 1)
+
+        val delta = getWeightToAdd(target)
+        samplingCounter[target] = counter + delta
+    }
+
+    private fun getWeightToAdd(target: Int) : Int {
+        if(! config.useWeightedSampling){
+            return 1
+        }
+
+        val id = idMapper.getDescriptiveId(target)
+        if(id.startsWith(ObjectiveNaming.BRANCH)
+                || id.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
+                || id.startsWith(ObjectiveNaming.NUMERIC_COMPARISON)){
+            return 1
+        }
+
+        return 10
     }
 
     private fun reportImprovement(target: Int) {
@@ -211,8 +253,6 @@ class Archive<T> where T : Individual {
         val counter = samplingCounter.getOrDefault(target, 0)
         lastImprovement.put(target, counter)
         samplingCounter.put(target, 0)
-
-        //latestImprovement[target] = time.evaluatedIndividuals
     }
 
     /**
@@ -231,7 +271,7 @@ class Archive<T> where T : Individual {
     fun reachedTargetHeuristics(): List<String> {
 
         return populations.entries
-                .map { e -> "key ${e.key} -> best heuristics=${e.value.map { it.fitness.computeFitnessScore() }.max()}" }
+                .map { e -> "key ${e.key} -> best heuristics=${e.value.map { it.fitness.computeFitnessScore() }.maxOrNull()}" }
                 .sorted()
     }
 
@@ -278,12 +318,22 @@ class Archive<T> where T : Individual {
                 .any { populations[it]?.isEmpty() ?: true }
     }
 
+    fun identifyNewTargets(ei: EvaluatedIndividual<T>, targetInfo: MutableMap<Int, EvaluatedMutation>) {
+
+        ei.fitness.getViewOfData()
+                .filter { it.value.distance > 0.0 && populations[it.key]?.isEmpty() ?: true}
+                .forEach { t->
+                    targetInfo[t.key] = EvaluatedMutation.NEWLY_IDENTIFIED
+                }
+    }
+
     /**
      * @return true if the new individual was added to the archive
      */
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
 
         val copy = ei.copy(tracker.getCopyFilterForEvalInd(ei))
+
         var added = false
         var anyBetter = false
 
@@ -367,6 +417,7 @@ class Archive<T> where T : Individual {
             val curr = current[0]
             Lazy.assert {
                 curr.fitness.size == curr.individual.size().toDouble()
+                        &&
                 copy.fitness.size == copy.individual.size().toDouble()
             }
 
@@ -403,12 +454,21 @@ class Archive<T> where T : Individual {
             if (better || equivalent) {
                 /*
                     replace worst element, if copy is not worse than it (but not necessarily better).
+                    However this is base on heuristics values and size, but NOT execution time
+
+                    TODO would it makes sense to do something like subsumes() where
+                    execution time is taken into account?
                  */
                 current[0] = copy
                 added = true
             }
         }
         processMonitor.record(added, anyBetter, ei)
+
+        /*
+            TODO should log them to a file
+        */
+        //LoggingUtil.getInfoLogger().info("$added $anyBetter ${ei.individual.populationOrigin}")
 
         ei.hasImprovement = anyBetter
         return added
@@ -431,7 +491,8 @@ class Archive<T> where T : Individual {
         list.sortWith(compareBy<EvaluatedIndividual<T>>
         { it.fitness.getHeuristic(target) }
                 .thenComparator { a, b -> a.fitness.compareExtraToMinimize(target, b.fitness, config.secondaryObjectiveStrategy) }
-                .thenBy { -it.individual.size() })
+                .thenBy { -it.individual.size() }
+                .thenBy{ if(config.useTimeInFeedbackSampling) -it.executionTimeMs else 0L})
 
         val limit = dpc.getArchiveTargetLimit()
         while (list.size > limit) {
@@ -449,6 +510,13 @@ class Archive<T> where T : Individual {
         }
 
         return current[0].fitness.doesCover(target)
+    }
+
+    /**
+     * useful for debugging
+     */
+    fun getReachedTargetHeuristics(target: Int) : Double?{
+        return populations[target]?.map { v-> v.fitness.getHeuristic(target) }?.maxOrNull()
     }
 
     /**
@@ -476,6 +544,42 @@ class Archive<T> where T : Individual {
                 .map { t->
                     Pair(idMapper.getDescriptiveId(t), solution.individuals.mapIndexed { index, f-> if (f.fitness.doesCover(t)) index else -1 }.filter { it != -1 })
                 }.toList()
+    }
+
+    /**
+     * @return an existing ImpactsOfIndividual which includes same action with [other]
+     */
+    fun findImpactInfo(other: Individual) : ImpactsOfIndividual?{
+        return populations.values.find {
+            it.any { i-> i.individual.sameActions(other) }
+        }?.run {
+            if (this.isEmpty())
+                null
+            else
+                find{i -> i.individual.sameActions(other)}!!.impactInfo?.clone()
+        }
+    }
+
+
+    fun saveSnapshot(){
+        if (!config.saveArchiveAfterMutation) return
+
+        val index = time.evaluatedIndividuals
+        val archiveContent = notCoveredTargets().filter { it >= 0 }.map { "$index,${it to getReachedTargetHeuristics(it)},${idMapper.getDescriptiveId(it)}" }
+
+        val apath = Paths.get(config.archiveAfterMutationFile)
+        if (apath.parent != null) Files.createDirectories(apath.parent)
+        if (Files.notExists(apath)) Files.createFile(apath)
+
+        if (archiveContent.isNotEmpty()) Files.write(apath, archiveContent, StandardOpenOption.APPEND)
+    }
+
+    /**
+     * @return whether there exists any invalid evaluated individual in the population
+     * note that it is useful for debugging
+     */
+    fun anyInvalidEvaluatedIndividual(): Boolean{
+        return populations.values.any { e-> e.any { !it.isValid() } }
     }
 
 //    fun chooseLatestImprovedTargets(size : Int) : Set<Int>{

@@ -45,9 +45,11 @@ import java.io.InputStream;
 public class ComputeClassWriter extends ClassWriter {
 
 	private ClassLoader l = getClass().getClassLoader();
-	
-    public ComputeClassWriter(final int flags) {
+    private final ClassLoader targetCl;
+
+    public ComputeClassWriter(final int flags, final ClassLoader targetCl) {
         super(flags);
+        this.targetCl = targetCl;
     }
     
     @Override
@@ -191,12 +193,15 @@ public class ComputeClassWriter extends ClassWriter {
      */
     private ClassReader typeInfo(final String type) throws IOException, NullPointerException {
         InputStream is = l.getResourceAsStream(type + ".class");
+        if(is == null){
+            is = targetCl.getResourceAsStream(type + ".class");
+        }
+        if(is == null) {
+            throw new NullPointerException("Class not found " + type);
+        }
         try {
-        	if(is == null)
-        		throw new NullPointerException("Class not found "+type);
             return new ClassReader(is);
         } finally {
-        	if(is != null)
         		is.close();
         }
     }

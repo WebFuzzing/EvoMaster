@@ -53,8 +53,8 @@ class ScoutApiSqlExtractTest : ExtractTestBaseH2() {
         assertEquals(true, schema.tables.filter { it.name == "SYSTEM_MESSAGE" }.first().columns.filter { it.name == "key".toUpperCase() }.first().unique)
 
         assertEquals(2, schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions.size)
-        assertEquals("(AGE_MAX <= 100)", schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions[0].sqlCheckExpression)
-        assertEquals("(AGE_MIN <= 100)", schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions[1].sqlCheckExpression)
+        assertEquals("(\"AGE_MAX\" <= 100)", schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals("(\"AGE_MIN\" <= 100)", schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions[1].sqlCheckExpression)
 
 
     }

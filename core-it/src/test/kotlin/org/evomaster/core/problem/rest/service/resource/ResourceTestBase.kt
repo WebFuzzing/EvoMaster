@@ -4,6 +4,7 @@ import com.google.inject.Module
 import com.netflix.governator.lifecycle.LifecycleManager
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
@@ -11,6 +12,8 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DatabaseExecutor
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
 import org.evomaster.core.problem.rest.RestCallAction
@@ -21,9 +24,8 @@ import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rest.service.resource.model.ResourceBasedTestInterface
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceModule
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceSampler
-import org.evomaster.core.problem.rest.util.ParamUtil
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -78,7 +80,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
     private class DirectDatabaseExecutor : DatabaseExecutor {
 
-        override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long, Long>? {
+        override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
             return null
         }
 
@@ -97,8 +99,12 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
         config.probOfEnablingResourceDependencyHeuristics = probOfDep
 
-        val schemaDto = SchemaExtractor.extract(connection)
-        val sqlBuilder = SqlInsertBuilder(schemaDto, getDatabaseExecutor())
+        var sqlBuilder : SqlInsertBuilder? = null
+        if (doesInvolveDatabase){
+            val schemaDto = SchemaExtractor.extract(connection)
+            sqlBuilder = SqlInsertBuilder(schemaDto, getDatabaseExecutor())
+        }
+
 
         sampler.initialize(getSwaggerLocation(), skip, sqlBuilder)
 
@@ -112,7 +118,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         rm.getResourceCluster().getValue(resource)
             .apply {
                 assertEquals(expectedSizeOfTemplates, getTemplates().size)
-                assert(expectedTemplates.all { getTemplates().containsKey(it) })
+                assertTrue(expectedTemplates.all { getTemplates().containsKey(it) })
                 assertEquals(expectedIsIndependent, isIndependent())
             }
     }
@@ -129,7 +135,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     fun testInitialedApplicableMethods(expectedSizeOfMethods : Int, expectedMethods : List<ResourceSamplingMethod> = listOf()){
         ssc.getApplicableMethods().apply {
             assertEquals(expectedSizeOfMethods, size)
-            assert(expectedMethods.all { this.contains(it) })
+            assertTrue(expectedMethods.all { this.contains(it) })
         }
     }
 
@@ -139,15 +145,15 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
             when(method){
                 ResourceSamplingMethod.S1iR->{
                     assertEquals(1, this!!.getResourceCalls().size)
-                    assert(getResourceCalls().first().template!!.independent){
+                    assertTrue(getResourceCalls().first().template!!.independent){
                         "the template of the first call with $method should be independent, but ${getResourceCalls().first().template!!.template}"
                     }
                 }
                 ResourceSamplingMethod.S1dR->{
                     assertEquals(1, this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
-                        assert(!template!!.independent || dbActions.isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${dbActions.size} dbActions"
+                        assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
 
@@ -155,17 +161,17 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                 ResourceSamplingMethod.S2dR->{
                     assertEquals(2, this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
-                        assert(!template!!.independent || dbActions.isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${dbActions.size} dbActions"
+                        assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
 
                 }
                 ResourceSamplingMethod.SMdR->{
-                    assert(2 <= this!!.getResourceCalls().size)
+                    assertTrue(2 <= this!!.getResourceCalls().size)
                     getResourceCalls().first().apply {
-                        assert(!template!!.independent || dbActions.isNotEmpty()){
-                            "the first call with $method should not be independent, but ${template!!.template} with ${dbActions.size} dbActions"
+                        assertTrue(!template!!.independent || seeActions(ActionFilter.ONLY_SQL).isNotEmpty()){
+                            "the first call with $method should not be independent, but ${template!!.template} with ${seeActionSize(ActionFilter.ONLY_SQL)} dbActions"
                         }
                     }
                 }
@@ -174,13 +180,13 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     }
 
     fun testResourceRelatedToTable(resource: String, expectedRelatedTable : List<String>){
-        assert(rm.getTableInfo().isNotEmpty())
+        assertTrue(rm.getTableInfo().isNotEmpty())
 
         rm.getResourceCluster().getValue(resource).getDerivedTables().apply {
-            assert(isNotEmpty()){
+            assertTrue(isNotEmpty()){
                 "derived tables of resource $resource should not be empty"
             }
-            assert(expectedRelatedTable.all { this.any { a->a.equals(it, ignoreCase = true) } }){
+            assertTrue(expectedRelatedTable.all { this.any { a->a.equals(it, ignoreCase = true) } }){
                 "expected related tables are ${expectedRelatedTable.joinToString(",")}; but actual related tables are ${this.joinToString(",")}."
             }
         }
@@ -193,12 +199,12 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
             colName : String
     ) : Boolean{
 
-        if(resourceCalls.dbActions.isEmpty()) return false
-        if(!resourceCalls.dbActions.any { it.table.name.equals(tableName, ignoreCase = true) }) return false
+        if(resourceCalls.seeActions(ActionFilter.ONLY_SQL).isEmpty()) return false
+        if(!(resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>).any { it.table.name.equals(tableName, ignoreCase = true) }) return false
 
-        val dbGene = resourceCalls.dbActions.find { it.table.name.equals(tableName, ignoreCase = true) }!!.seeGenes().find { it.name.equals(colName, ignoreCase = true) }?: return false
+        val dbGene = (resourceCalls.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>).find { it.table.name.equals(tableName, ignoreCase = true) }!!.seeGenes().find { it.name.equals(colName, ignoreCase = true) }?: return false
 
-        return resourceCalls.actions.filterIsInstance<RestCallAction>().flatMap { it.parameters.filter { it.name == paramName } }.all { p->
+        return resourceCalls.seeActions(ActionFilter.ONLY_SQL).filterIsInstance<RestCallAction>().flatMap { it.parameters.filter { it.name == paramName } }.all { p->
             ParamUtil.compareGenesWithValue(ParamUtil.getValueGene(dbGene!!), ParamUtil.getValueGene(p.gene))
         }
     }
@@ -208,23 +214,23 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
      * @param tables key is table name and value is a set of column
      */
     fun testBindingGenesBetweenRestActionAndDbAction(resource: String, paramName: String, tables : Map<String, Set<String>>){
-        assert(rm.getTableInfo().isNotEmpty())
+        assertTrue(rm.getTableInfo().isNotEmpty())
 
         val resourceNode = rm.getResourceCluster().getValue(resource)
 
-        assert(resourceNode.resourceToTable.derivedMap.isNotEmpty())
+        assertTrue(resourceNode.resourceToTable.derivedMap.isNotEmpty())
 
-        assert(resourceNode.resourceToTable.derivedMap.any { tables.any { t-> it.key.equals(t.key, ignoreCase = true) } })
+        assertTrue(resourceNode.resourceToTable.derivedMap.any { tables.any { t-> it.key.equals(t.key, ignoreCase = true) } })
 
         val resourceCalls = mutableListOf<RestResourceCalls>()
         rm.sampleCall(resourceNode.getName(), true, resourceCalls, config.maxTestSize, true)
 
         assertEquals(1, resourceCalls.size)
-        assert(resourceCalls.first().dbActions.isNotEmpty())
+        assertTrue(resourceCalls.first().seeActions(ActionFilter.ONLY_SQL).isNotEmpty())
 
         val first = resourceCalls.first()
 
-        assert(tables.any {
+        assertTrue(tables.any {
             it.value.any { c->
                 testBindingGenesBetweenRestActionAndDbAction(paramName, first, it.key, c)
             }
@@ -238,12 +244,12 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     ) {
         val resourceNode = rm.getResourceCluster().getValue(resource)
 
-        val call = resourceNode.genCalls(template, randomness, config.maxTestSize, true, true)
+        val call = resourceNode.createRestResourceCallBasedOnTemplate(template, randomness, config.maxTestSize)
 
         call.apply {
-            val paramsRequiredToBind = actions.filterIsInstance<RestCallAction>()
+            val paramsRequiredToBind = seeActions(ActionFilter.NO_SQL).filterIsInstance<RestCallAction>()
                     .flatMap { it.parameters.filter { it.name == paramName }}
-            assert(paramsRequiredToBind.size > 1)
+            assertTrue(paramsRequiredToBind.size > 1)
             val base = ParamUtil.getValueGene(paramsRequiredToBind.first().gene)
             (1 until paramsRequiredToBind.size).forEach { g->
                 ParamUtil.compareGenesWithValue(base, ParamUtil.getValueGene(paramsRequiredToBind[g].gene))
@@ -253,16 +259,16 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
     fun testDependencyAmongResources(resource: String,  expectedRelatedResources: List<String>){
 
-        assert(rm.getTableInfo().isNotEmpty())
-        assert(dm.isDependencyNotEmpty())
+        assertTrue(rm.getTableInfo().isNotEmpty())
+        assertTrue(dm.isDependencyNotEmpty())
 
         val resourceNode = rm.getResourceCluster().getValue(resource)
 
-        assert(resourceNode.resourceToTable.derivedMap.isNotEmpty())
+        assertTrue(resourceNode.resourceToTable.derivedMap.isNotEmpty())
 
         dm.getRelatedResource(resource).apply {
-            assert(isNotEmpty())
-            assert(expectedRelatedResources.all { contains(it)}){
+            assertTrue(isNotEmpty())
+            assertTrue(expectedRelatedResources.all { contains(it)}){
                 "expected resources (${expectedRelatedResources.filter { !contains(it) }.joinToString(",")}) are not included."
             }
         }
@@ -278,7 +284,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
                 assertEquals(2, size)
                 val first = first()
                 val second = last()
-                assert(dm.getRelatedResource(first.getResourceNodeKey()).contains(second.getResourceNodeKey()))
+                assertTrue(dm.getRelatedResource(first.getResourceNodeKey()).contains(second.getResourceNodeKey()))
             }
         }
     }
@@ -304,51 +310,50 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     override fun testResourceStructureMutator() {
         val individual = sampler.sampleWithMethodAndDependencyOption(ResourceSamplingMethod.S1dR, false)
         assertNotNull(individual)
-        assert(individual!!.getResourceCalls().size == 1)
+        assertEquals(1, individual!!.getResourceCalls().size)
         val addSpec = MutatedGeneSpecification()
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.ADD, addSpec)
-        assert(addSpec.mutatedPosition.size == 1)
-        assert(addSpec.addedGenes.isNotEmpty() || individual.getResourceCalls()[addSpec.mutatedPosition.first()].actions.flatMap { it.seeGenes() }.isEmpty())
-        assert(individual.getResourceCalls().size == 2)
+        val evaluatedIndividual = EvaluatedIndividual(FitnessValue(0.0), individual, generateIndividualResults(individual))
+        structureMutator.mutateRestResourceCalls(individual,  RestResourceStructureMutator.MutationType.ADD, addSpec)
+        assertEquals(1, addSpec.mutatedGenes.distinctBy { it.resourcePosition }.size)
+        assertTrue(addSpec.getAdded(true).isNotEmpty())
+        assertEquals(2, individual.getResourceCalls().size)
 
         val first = individual.getResourceCalls()[0].getResourceNode()
         val second = individual.getResourceCalls()[1].getResourceNode()
         val swapSpec = MutatedGeneSpecification()
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.SWAP, swapSpec)
-        assert(swapSpec.addedGenes.isEmpty())
-        assert(swapSpec.removedGene.isEmpty())
-        assert(swapSpec.mutatedPosition.size == 2)
+        structureMutator.mutateRestResourceCalls(individual,  RestResourceStructureMutator.MutationType.SWAP, swapSpec)
+        assertTrue(swapSpec.getSwap().isNotEmpty())
 
-        assert(individual.getResourceCalls()[1].getResourceNode().getName() == first.getName())
-        assert(individual.getResourceCalls()[0].getResourceNode().getName() == second.getName())
+        assertEquals(individual.getResourceCalls()[1].getResourceNode().getName(),first.getName())
+        assertEquals(individual.getResourceCalls()[0].getResourceNode().getName(),second.getName())
 
         val previousIndividual = individual.copy() as RestIndividual
         val delSpec = MutatedGeneSpecification()
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.DELETE, delSpec)
-        assert(delSpec.mutatedPosition.size == 1)
-        assert(delSpec.removedGene.isNotEmpty() || previousIndividual.getResourceCalls()[delSpec.mutatedPosition.first()].actions.flatMap { it.seeGenes() }.isEmpty())
-        assert(individual.getResourceCalls().size == 1)
+        structureMutator.mutateRestResourceCalls(individual,  RestResourceStructureMutator.MutationType.DELETE, delSpec)
+        assertEquals(1, delSpec.getRemoved(true).distinctBy { it.resourcePosition }.size )
+        assertTrue(delSpec.getRemoved(true).isNotEmpty())
+        assertEquals(1, individual.getResourceCalls().size)
 
         val current = individual.getResourceCalls()[0].getResourceNode()
         val replaceSpec = MutatedGeneSpecification()
         structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.REPLACE, replaceSpec)
         val replaced = individual.getResourceCalls()[0]
-        assert(replaceSpec.removedGene.isNotEmpty() || current.actions.flatMap { it.seeGenes() }.isEmpty())
-        assert(replaceSpec.addedGenes.isNotEmpty() || replaced.actions.flatMap { it.seeGenes() }.isEmpty())
-        assert(replaceSpec.mutatedPosition.size == 1)
-        assert(current.getName() != replaced.getResourceNode().getName())
+        assertTrue(replaceSpec.getRemoved(true).isNotEmpty())
+        assertTrue(replaceSpec.getAdded(true).isNotEmpty())
+        assertEquals(1, replaceSpec.mutatedGenes.distinctBy { it.resourcePosition }.size)
+        assertTrue(current.getName() != replaced.getResourceNode().getName())
 
         if (replaced.getResourceNode().numOfTemplates() > 1){
             val modifySpec = MutatedGeneSpecification()
-            structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.MODIFY, modifySpec)
+            structureMutator.mutateRestResourceCalls(individual,  RestResourceStructureMutator.MutationType.MODIFY, modifySpec)
             val modified = individual.getResourceCalls()[0]
-            assert(modifySpec.removedGene.isNotEmpty() || replaced.actions.flatMap { it.seeGenes() }.isEmpty())
-            assert(modifySpec.addedGenes.isNotEmpty() || modified.actions.flatMap { it.seeGenes() }.isEmpty())
-            assert(modifySpec.mutatedPosition.size == 1)
-            assert(modified.getResourceNode().getName() == replaced.getResourceNode().getName())
+            assertTrue(modifySpec.getRemoved(true).isNotEmpty())
+            assertTrue(modifySpec.getAdded(true).isNotEmpty())
+            assertEquals(1, modifySpec.mutatedGenes.distinctBy { it.resourcePosition }.size)
+            assertEquals(modified.getResourceNode().getName(), replaced.getResourceNode().getName())
             assertNotNull(modified.template)
             assertNotNull(replaced.template)
-            assert(modified.template.toString() != replaced.template.toString())
+            assertTrue(modified.template.toString() != replaced.template.toString())
         }
     }
 
@@ -359,18 +364,18 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
     fun testResourceStructureMutatorWithDependencyWithSpecified(resource: String, expectedRelated : String?){
         val callA = rm.getResourceNodeFromCluster(resource).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            createRestResourceCallBasedOnTemplate(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
         val ind = RestIndividual(mutableListOf(callA), SampleType.SMART_RESOURCE)
 
         TestUtils.handleFlaky {
             structureMutator.mutateRestResourceCalls(ind, RestResourceStructureMutator.MutationType.ADD)
             if (expectedRelated != null){
-                assert(ind.getResourceCalls().any {
+                assertTrue(ind.getResourceCalls().any {
                     c-> c.getResourceNode().getName() == expectedRelated
                 })
             }else{
-                assert(ind.getResourceCalls().any {
+                assertTrue(ind.getResourceCalls().any {
                     c -> dm.getRelatedResource(resource).contains(c.getResourceNode().getName())
                 })
             }
@@ -385,24 +390,24 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
      * check whether the relationship (i.e., [resourceA] depends on [resourceC]) is detected
      */
     fun simulateDerivationOfDependencyRegardingFitness(resourceA: String, resourceB:String, resourceC:String) {
-        assert(!dm.getRelatedResource(resourceC).contains(resourceA))
+        assertTrue(!dm.getRelatedResource(resourceC).contains(resourceA))
         val callA = rm.getResourceNodeFromCluster(resourceA).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            createRestResourceCallBasedOnTemplate(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
 
-        val targetsOfA = callA.actions.mapIndexed { index, _ -> index + 1}
+        val targetsOfA = callA.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> index + 1}
 
         val callB = rm.getResourceNodeFromCluster(resourceB).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            createRestResourceCallBasedOnTemplate(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
 
-        val targetsOfB = callB.actions.mapIndexed { index, _ -> targetsOfA.last() + 1 + index }
+        val targetsOfB = callB.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> targetsOfA.last() + 1 + index }
 
         val callC = rm.getResourceNodeFromCluster(resourceC).run {
-            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+            createRestResourceCallBasedOnTemplate(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
 
-        val targetsOfC = callC.actions.mapIndexed { index, _ -> targetsOfB.last() + 1 + index  }
+        val targetsOfC = callC.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> targetsOfB.last() + 1 + index  }
 
         val ind1With2Resources = RestIndividual(mutableListOf(callB, callA), SampleType.SMART_RESOURCE)
 
@@ -410,18 +415,23 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         targetsOfB.plus(targetsOfA).forEachIndexed { index, i ->
             fake1fitnessValue.updateTarget(i, 0.2, index)
         }
-        val fakeEvalInd1 = EvaluatedIndividual(fake1fitnessValue, ind1With2Resources, mutableListOf())
+        val fakeEvalInd1 = EvaluatedIndividual(fake1fitnessValue, ind1With2Resources, generateIndividualResults(ind1With2Resources))
 
         val ind2With2Resources = RestIndividual(mutableListOf(callC, callA), SampleType.SMART_RESOURCE)
         val fake2fitnessValue = FitnessValue(ind2With2Resources!!.seeActions().size.toDouble())
         targetsOfC.plus(targetsOfA).forEachIndexed { index, i ->
             fake2fitnessValue.updateTarget(i, 0.3, index)
         }
-        val fakeEvalInd2 = EvaluatedIndividual(fake2fitnessValue, ind2With2Resources, mutableListOf())
+        val fakeEvalInd2 = EvaluatedIndividual(fake2fitnessValue, ind2With2Resources, generateIndividualResults(ind2With2Resources))
 
         dm.detectDependencyAfterStructureMutation(fakeEvalInd1, fakeEvalInd2, EvaluatedMutation.BETTER_THAN)
-        assert(dm.getRelatedResource(resourceA).contains(resourceC))
+        assertTrue(dm.getRelatedResource(resourceA).contains(resourceC))
     }
 
+
+    private fun generateIndividualResults(individual: Individual) : List<ActionResult> = individual.seeActions(ActionFilter.ALL).map {
+        if (it is DbAction) DbActionResult().also { it.setInsertExecutionResult(true) }
+        else ActionResult()
+    }
 }
 

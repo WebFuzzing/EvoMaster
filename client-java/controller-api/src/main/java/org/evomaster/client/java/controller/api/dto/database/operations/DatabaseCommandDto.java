@@ -6,6 +6,16 @@ import java.util.List;
 public class DatabaseCommandDto {
 
     /**
+     * Optional numeric id. If present, the driver will keep track of the last received, and expect
+     * these id to be in ascending order. If they are not, the commands will be discarded.
+     *
+     * This was introduced to avoid side-effects of POST commands being repeated.
+     * In "theory", it should never happen, as POST is not idempotent. But libraries like
+     * Jersey have such major bug.
+     */
+    public Integer idCounter;
+
+    /**
      * A generic SQL command.
      * Must be null if "insertions" field != null
      */

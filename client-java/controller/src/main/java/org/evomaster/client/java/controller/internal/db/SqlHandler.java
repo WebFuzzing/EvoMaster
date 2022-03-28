@@ -7,8 +7,11 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.instrumentation.SqlInfo;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -24,6 +27,10 @@ import static org.evomaster.client.java.controller.internal.db.ParserUtils.*;
  * Class used to act upon SQL commands executed by the SUT
  */
 public class SqlHandler {
+
+    private final static Set<String> booleanConstantNames = Collections.unmodifiableSet(
+            new LinkedHashSet<>(Arrays.asList("t","true","f","false","yes","y","no","n","on","off","unknown"))
+    );
 
     /**
      * Computing heuristics on SQL is expensive, as we need to run
@@ -43,6 +50,7 @@ public class SqlHandler {
     private final Map<String, Set<String>> insertedData;
     private final Map<String, Set<String>> failedWhere;
     private final List<String> deletedData;
+    private final List<SqlExecutionLogDto> executedInfo;
 
     private int numberOfSqlCommands;
 
@@ -52,6 +60,12 @@ public class SqlHandler {
 
     private volatile boolean extractSqlExecution;
 
+    /**
+     * WARNING: in general we shouldn't use mutable DTO as internal data structures.
+     * But, here, what we need is very simple (just checking for names).
+     */
+    private volatile DbSchemaDto schema;
+
     public SqlHandler() {
         buffer = new CopyOnWriteArrayList<>();
         distances = new ArrayList<>();
@@ -60,6 +74,7 @@ public class SqlHandler {
         insertedData = new ConcurrentHashMap<>();
         failedWhere = new ConcurrentHashMap<>();
         deletedData = new CopyOnWriteArrayList<>();
+        executedInfo = new CopyOnWriteArrayList<>();
 
         calculateHeuristics = true;
         numberOfSqlCommands = 0;
@@ -73,6 +88,8 @@ public class SqlHandler {
         insertedData.clear();
         failedWhere.clear();
         deletedData.clear();
+        executedInfo.clear();
+
         numberOfSqlCommands = 0;
     }
 
@@ -80,10 +97,30 @@ public class SqlHandler {
         this.connection = connection;
     }
 
+    public void setSchema(DbSchemaDto schema) {
+        this.schema = schema;
+    }
+
+    /**
+     * handle executed sql info
+     * @param sql to be handled
+     */
+    public void handle(SqlInfo sql) {
+        executedInfo.add(new SqlExecutionLogDto(sql.getCommand(), sql.getExecutionTime()));
+        handle(sql.getCommand());
+    }
+
     public void handle(String sql) {
         Objects.requireNonNull(sql);
 
         if(!calculateHeuristics && !extractSqlExecution){
+            return;
+        }
+
+        numberOfSqlCommands++;
+
+        if(! ParserUtils.canParseSqlStatement(sql)){
+            SimpleLogger.warn("Cannot handle SQL statement: " + sql);
             return;
         }
 
@@ -99,7 +136,6 @@ public class SqlHandler {
             mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
         }
 
-        numberOfSqlCommands++;
     }
 
     public ExecutionDto getExecutionDto() {
@@ -115,10 +151,15 @@ public class SqlHandler {
         executionDto.updatedData.putAll(updatedData);
         executionDto.deletedData.addAll(deletedData);
         executionDto.numberOfSqlCommands = this.numberOfSqlCommands;
-
+        executionDto.sqlExecutionLogDtoList.addAll(executedInfo);
         return executionDto;
     }
 
+    /**
+     * compute (SELECT, DELETE and UPDATE) sql distance for sql commands which exists in [buffer]
+     *      Note that we skip `SELECT 1` (typically for testing sql connection) since its distance is 0
+     * @return a list of heuristics for sql commands
+     */
     public List<PairCommandDistance> getDistances() {
 
         if (connection == null || !calculateHeuristics) {
@@ -128,18 +169,19 @@ public class SqlHandler {
 
         buffer.stream()
                 .forEach(sql -> {
-                    /*
-                        Note: even if the Connection we got to analyze
-                        the DB is using P6Spy, that would not be a problem,
-                        as output SQL would not end up on the buffer instance
-                        we are iterating on (copy on write), and we clear
-                        the buffer after this loop.
-                     */
-                    if (isSelect(sql) || isDelete(sql) || isUpdate(sql)) {
-                        double dist = computeDistance(sql);
+                    if (!isSelectOne(sql) && (isSelect(sql) || isDelete(sql) || isUpdate(sql))) {
+                        double dist;
+                        try {
+                             dist = computeDistance(sql);
+                        }catch (Exception e){
+                            SimpleLogger.error("FAILED TO COMPUTE HEURISTICS FOR SQL: " + sql);
+                            //assert false; //TODO put back once we update JSqlParser
+                            return;
+                        }
                         distances.add(new PairCommandDistance(sql, dist));
                     }
                 });
+
         //side effects on buffer is not important, as it is just a cache
         buffer.clear();
 
@@ -237,7 +279,7 @@ public class SqlHandler {
      *  Check the fields involved in the WHERE clause (if any).
      *  Return a map from table name to column names of the involved fields.
      */
-    private static Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
+    public Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
 
         /*
            TODO
@@ -247,21 +289,52 @@ public class SqlHandler {
 
         Map<String, Set<String>> data = new HashMap<>();
 
-        SqlNameContext context = new SqlNameContext(statement);
-
+        // move getWhere before SqlNameContext, otherwise null where would cause exception in new SqlNameContext
         Expression where = ParserUtils.getWhere(statement);
         if (where == null) {
             return data;
         }
 
+        SqlNameContext context = new SqlNameContext(statement);
+        if(schema != null) {
+            context.setSchema(schema);
+        }
+
         ExpressionVisitor visitor = new ExpressionVisitorAdapter() {
             @Override
             public void visit(Column column) {
-                String cn = column.getColumnName();
+
                 String tn = context.getTableName(column);
 
                 if(tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){
                     // TODO handle it properly when ll have support for sub-selects
+                    return;
+                }
+
+                String cn = column.getColumnName().toLowerCase();
+
+                if(! context.hasColumn(tn, cn)) {
+
+                    /*
+                        This is an issue with the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
+                        we use this workaround.
+
+                        The problem is that some SQL databases do not have support for boolean types, so parser can
+                        interpret constants like TRUE as column names.
+                        And all databases have differences on how booleans are treated, eg.
+                        - H2: TRUE, FALSE, and UNKNOWN (NULL).
+                          http://www.h2database.com/html/datatypes.html#boolean_type
+                        - Postgres:  true, yes, on, 1, false, no, off, 0 (as well as abbreviations like t and f)
+                          https://www.postgresql.org/docs/9.5/datatype-boolean.html
+
+                     */
+
+                    if (booleanConstantNames.contains(cn)) {
+                        //case in which a boolean constant is wrongly treated as a column name.
+                        //TODO not sure what we can really do here without modifying the parser
+                    } else {
+                        SimpleLogger.warn("Cannot find column '" + cn +"' in table '" + tn +"'");
+                    }
                     return;
                 }
 

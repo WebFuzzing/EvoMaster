@@ -4,6 +4,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.math.min
 
 /**
@@ -28,6 +31,8 @@ class FitnessValue(
         const val MAX_VALUE = 1.0
 
         fun isMaxValue(value: Double) = value == MAX_VALUE
+
+        private val log: Logger = LoggerFactory.getLogger(FitnessValue::class.java)
     }
 
     /**
@@ -56,13 +61,18 @@ class FitnessValue(
      *
      * Value -> info on how the SQL database was accessed
      */
-    private val databaseExecutions: MutableMap<Int, DatabaseExecution> = mutableMapOf()
+    val databaseExecutions: MutableMap<Int, DatabaseExecution> = mutableMapOf()
 
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
      * to false), in particular the tables and columns in them involved
      */
     private val aggregatedFailedWhere: MutableMap<String, Set<String>> = mutableMapOf()
+
+    /**
+    * How long it took to evaluate this fitness value.
+    */
+    var executionTimeMs : Long = Long.MAX_VALUE
 
 
     fun copy(): FitnessValue {
@@ -71,6 +81,7 @@ class FitnessValue(
         copy.extraToMinimize.putAll(this.extraToMinimize)
         copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
         copy.aggregateDatabaseData()
+        copy.executionTimeMs = executionTimeMs
         return copy
     }
 
@@ -139,10 +150,113 @@ class FitnessValue(
         updateTarget(id, MAX_VALUE)
     }
 
+    fun gqlErrors(idMapper: IdMapper, withLine : Boolean): List<String>{
+        // GQLErrors would be >0 when it is initialed, so we count it when it is covered.
+        return targets.filter { it.value.distance == MAX_VALUE }.keys
+                .filter { idMapper.isGQLErrors(it, withLine) }
+                .map { idMapper.getDescriptiveId(it) }
+    }
+
+    fun gqlNoErrors(idMapper: IdMapper): List<String>{
+        // GQLNoErrors would be >0 when it is initialed, so we count it when it is covered.
+        return targets.filter { it.value.distance == MAX_VALUE }.keys
+                .filter { idMapper.isGQLNoErrors(it) }
+                .map { idMapper.getDescriptiveId(it) }
+    }
+
     fun potentialFoundFaults(idMapper: IdMapper) : List<String>{
         return targets.keys
                 .filter { idMapper.isFault(it)}
                 .map { idMapper.getDescriptiveId(it) }
+    }
+
+    fun potential500Faults(idMapper: IdMapper): List<String>{
+        return targets.keys
+                .filter{ idMapper.isFault500(it)}
+                .map{idMapper.getDescriptiveId(it)}
+    }
+
+    fun potentialPartialOracleFaults(idMapper: IdMapper): List<String>{
+        return targets.keys
+                .filter{idMapper.isFaultExpectation(it)}
+                .map{idMapper.getDescriptiveId(it)}
+    }
+
+    // RPC
+    /**
+     * a list targets related to RPC internal error
+     */
+    fun rpcInternalError(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCInternalError(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets related to unexpected exception in RPC
+     */
+    fun rpcUnexpectedException(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isUnexpectedException(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets related to declared exception in RPC
+     */
+    fun rpcDeclaredException(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCDeclaredException(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets related to exception in RPC
+     */
+    fun rpcException(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCException(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets representing handled RPC endpoint invocation
+     */
+    fun rpcHandled(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCHandled(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets representing successful RPC endpoint invocation
+     *  eg, such category could be specified by the user with driver
+     */
+    fun rpcHandledAndSuccess(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCHandledAndSuccess(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets representing handled RPC endpoint invocation,
+     * but it might reflect an error
+     *  eg, such category could be specified by the user with driver
+     */
+    fun rpcHandledButError(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCHandledButError(it)}
+            .map { idMapper.getDescriptiveId(it) }
+    }
+
+    /**
+     * a list targets related to service error
+     * eg, such category could be specified by the user with driver
+     */
+    fun rpcServiceError(idMapper: IdMapper) : List<String>{
+        return targets.keys
+            .filter { idMapper.isRPCServiceError(it)}
+            .map { idMapper.getDescriptiveId(it) }
     }
 
     /**
@@ -183,6 +297,8 @@ class FitnessValue(
      * Recall: during the search, we might not calculate all targets, eg once they
      * are covered.
      *
+     * This keeps into account both test size and its execution time
+     *
      * @param other, the one we compare to
      * @param targetSubset, only calculate subsumption on these testing targets
      */
@@ -191,7 +307,8 @@ class FitnessValue(
             targetSubset: Set<Int>,
             strategy: EMConfig.SecondaryObjectiveStrategy,
             bloatControlForSecondaryObjective: Boolean,
-            minimumSize: Int)
+            minimumSize: Int,
+            useTimestamps: Boolean)
             : Boolean {
 
         var atLeastOneBetter = false
@@ -201,13 +318,41 @@ class FitnessValue(
             val v = this.targets[k]?.distance ?: 0.0
             val z = other.targets[k]?.distance ?: 0.0
             if (v < z) {
+                //  if it is worse on any target, then it cannot be subsuming
+                if (log.isTraceEnabled){
+                    log.trace("for target {}, subsume is false with v ({}) < z ({})", k, v, z)
+                }
                 return false
             }
 
             atLeastOneBetter = atLeastOneBetter || betterThan(k, other, strategy, bloatControlForSecondaryObjective, minimumSize)
         }
 
-        return atLeastOneBetter
+        if(atLeastOneBetter){
+            if (log.isTraceEnabled){
+                log.trace("subsume is true with atLeastOneBetter")
+            }
+            return true
+        }
+
+        if(useTimestamps && other.executionTimeMs != Long.MAX_VALUE &&
+                executionTimeMs < other.executionTimeMs * 2){
+            /*
+                time is very, very tricky to handle... as its evaluation
+                is not fully deterministic, ie, can have noise.
+                so, if for any reason two fitnesses are equivalent under all
+                other heuristics, then we say one subsumes the other if twice
+                as fast to compute
+             */
+            if (log.isTraceEnabled){
+                log.trace("subsume is true with useTimestamps, and current is {}, other is {}", executionTimeMs, other.executionTimeMs)
+            }
+            return true
+        }
+        if (log.isTraceEnabled){
+            log.trace("subsume is false at the end")
+        }
+        return false
     }
 
     fun subsumes(
@@ -216,7 +361,12 @@ class FitnessValue(
             config : EMConfig)
             : Boolean {
 
-        return subsumes(other, targetSubset, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective, config.minimumSizeControl)
+        return subsumes(other,
+                targetSubset,
+                config.secondaryObjectiveStrategy,
+                config.bloatControlForSecondaryObjective,
+                config.minimumSizeControl,
+                config.useTimeInFeedbackSampling)
     }
 
     /**
@@ -225,7 +375,12 @@ class FitnessValue(
     fun betterThan(target: Int, other: FitnessValue, strategy: EMConfig.SecondaryObjectiveStrategy, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
         val z = other.getHeuristic(target)
         val v = getHeuristic(target)
-        if (v < z) return false
+        if (v < z) {
+            if (log.isTraceEnabled){
+                log.trace("for target {}, betterThan is false with v ({}) < z ({})", target, v, z)
+            }
+            return false
+        }
 
         val extra = compareExtraToMinimize(target, other, strategy)
 
@@ -241,16 +396,43 @@ class FitnessValue(
         if (z != v) return false
 
         val extra = compareExtraToMinimize(target, other, strategy)
-        return extra == 0 && this.size == other.size
+
+        //WARN: cannot really do this unless we update betterThan as well.
+        //      But unclear if really make sense when considering specific targets
+        //Time is very tricky... so we consider equivalent as long as not more than twice time difference
+//        val timeRatio = if(this.executionTimeMs == Long.MAX_VALUE ||
+//                other.executionTimeMs == Long.MAX_VALUE ||
+//                (this.executionTimeMs == 0L && other.executionTimeMs==0L)) {
+//            0.0
+//        }else {
+//                abs(this.executionTimeMs - other.executionTimeMs) /
+//                        min(this.executionTimeMs.toDouble(), other.executionTimeMs.toDouble())
+//        }
+
+        return extra == 0
+                && this.size == other.size
+//                && timeRatio < 1.0
     }
 
     private fun betterThan(target: Int, heuristics: Double, size: Double, extra: Int, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
+
+        if (log.isTraceEnabled){
+            log.trace("for target{}, checking betterThan with extras and extra is {}", target, extra)
+        }
+
         val v = getHeuristic(target)
-        if (v < heuristics) return false
+        if (v < heuristics) {
 
-        return if(bloatControlForSecondaryObjective
+            if (log.isTraceEnabled){
+                log.trace("for target{}, betterThan with extras is false with v ({}) < heuristics ({})", target, v, heuristics)
+            }
+            return false
 
-                && min(this.size, size) >= minimumSize){
+        }
+
+        return (if(bloatControlForSecondaryObjective
+
+            && min(this.size, size) >= minimumSize){
             v > heuristics ||
                     (v == heuristics && this.size <  size) ||
                     (v == heuristics &&  this.size ==  size && extra > 0)
@@ -258,6 +440,10 @@ class FitnessValue(
             v > heuristics ||
                     (v == heuristics && extra > 0) ||
                     (v == heuristics && extra == 0 && this.size <  size)
+        }).also {
+            if (log.isTraceEnabled){
+                log.trace("for target{}, betterThan with extras is {} ", target, it)
+            }
         }
     }
 
@@ -265,56 +451,26 @@ class FitnessValue(
 
 
     /**
-     * Check if current does differ from [other] regarding [targetSubset].
-     *
-     * Recall: during the search, we might not calculate all targets, eg once they
-     * are covered.
-     *
      * @param other, the one we compare to
      * @param targetSubset, only calculate subsumption on these testing targets
+     * @param targetInfo, comparison results for each of [targetSubset]. It will be updated
+     *                  as side-effect of this function
+     * @param config, includes setting for comparison
      */
-    fun isDifferent(
+    fun computeDifference(
             other: FitnessValue,
             targetSubset: Set<Int>,
-            improved : MutableSet<Int>,
-            different : MutableSet<Int>,
-            strategy: EMConfig.SecondaryObjectiveStrategy,
-            bloatControlForSecondaryObjective: Boolean) : Boolean {
+            targetInfo: MutableMap<Int, EvaluatedMutation>,
+            config: EMConfig)  {
 
-        var atLeastOneDifferent = false
         for (k in targetSubset) {
-
-            val v = this.targets[k]?.distance ?: 0.0
-            val z = other.targets[k]?.distance ?: 0.0
-            if (v == 0.0 && v == z)
-                continue
-
-            if (v != z) {
-                different.add(k)
-                atLeastOneDifferent = true
-                if (v > z) improved.add(k)
-                continue
+            val value = when {
+                betterThan(target = k, other = other, strategy = config.secondaryObjectiveStrategy,bloatControlForSecondaryObjective = config.bloatControlForSecondaryObjective, minimumSize = config.minimumSizeControl) -> EvaluatedMutation.WORSE_THAN
+                equivalent(k, other, strategy = config.secondaryObjectiveStrategy) -> EvaluatedMutation.EQUAL_WITH
+                else -> EvaluatedMutation.BETTER_THAN
             }
-
-            val extra = compareExtraToMinimize(k, other, strategy)
-
-            if (this.size != other.size || extra != 0) {
-                different.add(k)
-                atLeastOneDifferent = true
-
-                if(bloatControlForSecondaryObjective){
-                    if (this.size < other.size || (this.size == other.size && extra > 0)) {
-                        improved.add(k)
-                    }
-                } else {
-                    if (extra > 0 ||
-                            (extra == 0 && this.size < other.size)) {
-                        improved.add(k)
-                    }
-                }
-            }
+            targetInfo.merge(k, value){ old, new -> if (old.value > new.value) old else new }
         }
-        return atLeastOneDifferent
     }
 
     fun averageExtraDistancesToMinimize(actionIndex: Int): Double{
@@ -360,8 +516,16 @@ class FitnessValue(
         val thisAction = targets[target]?.actionIndex
         val otherAction = other.targets[target]?.actionIndex
 
+        /*
+            [non-determinism-source] Man: a SQL command might be invoked multiple times, see [makeHttpCall] in RemoteController
+            this might cause non-determinism results for [thisN] and [otherN]
+        */
         val thisN = databaseExecutions[thisAction]?.numberOfSqlCommands ?: 0
         val otherN = other.databaseExecutions[otherAction]?.numberOfSqlCommands ?: 0
+
+        if (log.isTraceEnabled){
+            log.trace("compareAverageSameNActions with thisN {} and otherN {}", thisN, otherN)
+        }
 
         return when {
             thisN > otherN -> 1
@@ -377,6 +541,15 @@ class FitnessValue(
 
         val thisDistances = this.extraToMinimize[thisAction]
         val otherDistances = other.extraToMinimize[otherAction]
+
+
+        if (log.isTraceEnabled){
+            log.trace("compareAverage with thisAction {} and otherAction {}", thisAction, otherAction)
+        }
+
+        if (log.isTraceEnabled){
+            log.trace("compareAverage with thisDistances {} and otherDistances {}", thisDistances, otherDistances)
+        }
 
         if(isEmptyList(thisDistances) && isEmptyList(otherDistances)){
             return 0
@@ -446,5 +619,12 @@ class FitnessValue(
             thisLength < otherLength -> 1
             else -> 0
         }
+    }
+
+    /**
+     * @return targets that are reached/covered by an action at [actionIndex]
+     */
+    fun getTargetsByAction(actionIndex : Int) : Set<Int> {
+        return targets.filterValues { it.actionIndex == actionIndex }.keys
     }
 }

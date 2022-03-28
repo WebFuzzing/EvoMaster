@@ -68,12 +68,6 @@ public class InstrumentingAgent {
             AgentController.start(Integer.parseInt(port));
         }
 
-        String sqlDriver = System.getProperty(InputProperties.SQL_DRIVER);
-        if (sqlDriver != null) {
-            SimpleLogger.info("Initializing P6SPY with base driver " + sqlDriver);
-            initP6Spy(sqlDriver);
-        }
-
         String outputFile = System.getProperty(InputProperties.OUTPUT_FILE);
         if(outputFile != null){
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -114,26 +108,6 @@ public class InstrumentingAgent {
         instrumentator = new Instrumentator(packagePrefixesToCover);
     }
 
-    public static void initP6Spy(String driver) {
-        Objects.requireNonNull(driver);
-
-        //see http://p6spy.readthedocs.io/en/latest/configandusage.html
-        System.setProperty("p6spy.config.driverlist", driver);
-        System.setProperty("p6spy.config.filter", "true");
-        System.setProperty("p6spy.config.include", "select,insert,update,delete");
-        System.setProperty("p6spy.config.autoflush", "true");
-        System.setProperty("p6spy.config.appender", "com.p6spy.engine.spy.appender.StdoutLogger");
-        System.setProperty("p6spy.config.jmx", "false");
-
-        /*
-            Note: this is a reference to a class in another module, although
-            this module does NOT (and should not) reference it.
-            Long story... see documentation on how P6Spy is used in EM.
-         */
-        System.setProperty("p6spy.config.logMessageFormat", "org.evomaster.client.java.databasespy.P6SpyFormatter");
-    }
-
-
     private static class TransformerForTests implements ClassFileTransformer {
 
         private final static Method m;
@@ -170,7 +144,11 @@ public class InstrumentingAgent {
 
             ClassReader reader = new ClassReader(classfileBuffer);
 
-            return instrumentator.transformBytes(loader, cn, reader);
+            byte[] instrumented = instrumentator.transformBytes(loader, cn, reader);
+            if(instrumented == null){
+                return classfileBuffer;
+            }
+            return instrumented;
         }
     }
 }

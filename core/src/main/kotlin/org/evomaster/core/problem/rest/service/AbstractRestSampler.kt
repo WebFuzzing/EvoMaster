@@ -4,25 +4,20 @@ import com.google.inject.Inject
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.rest.OpenApiAccess
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.auth.AuthenticationHeader
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.auth.CookieLogin
-import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.httpws.service.HttpWsSampler
+import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.seeding.Parser
+import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 
 
-abstract class AbstractRestSampler : Sampler<RestIndividual>() {
+abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestSampler::class.java)
     }
@@ -33,20 +28,13 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
     @Inject
     protected lateinit var configuration: EMConfig
 
-    protected val authentications: MutableList<AuthenticationInfo> = mutableListOf()
+    @Inject
+    protected lateinit var partialOracles: PartialOracles
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
-    protected var sqlInsertBuilder: SqlInsertBuilder? = null
-
-    var existingSqlData : List<DbAction> = listOf()
+    lateinit var swagger: OpenAPI
         protected set
-
-    //private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
-
-    //private val usedObjects: UsedObjects = UsedObjects()
-
-    private lateinit var swagger: OpenAPI
 
     @PostConstruct
     open fun initialize() {
@@ -68,10 +56,20 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
         val infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        val swaggerURL = infoDto.restProblem?.swaggerJsonUrl
-                ?: throw IllegalStateException("Missing information about the Swagger URL")
+        val problem = infoDto.restProblem
+                ?: throw java.lang.IllegalStateException("Missing problem definition object")
 
-        swagger = OpenApiAccess.getOpenAPI(swaggerURL)
+        val openApiURL = problem.openApiUrl
+        val openApiSchema = problem.openApiSchema
+
+        if(!openApiURL.isNullOrBlank()) {
+            swagger = OpenApiAccess.getOpenAPIFromURL(openApiURL)
+        } else if(! openApiSchema.isNullOrBlank()){
+            swagger = OpenApiAccess.getOpenApi(openApiSchema)
+        } else {
+            throw SutProblemException("No info on the OpenAPI schema was provided")
+        }
+
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
@@ -87,22 +85,38 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
 
         postInits()
 
-        if(configuration.outputFormat == OutputFormat.DEFAULT){
-            try {
-                val format = OutputFormat.valueOf(infoDto.defaultOutputFormat?.toString()!!)
-                configuration.outputFormat = format
-            } catch (e : Exception){
-                throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
-            }
-        }
+        updateConfigBasedOnSutInfoDto(infoDto)
+
+        /*
+            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
+         */
+        partialOracles.setupForRest(swagger)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
-    abstract fun initSqlInfo(infoDto: SutInfoDto)
+    /**
+     * create AdHocInitialIndividuals
+     */
+    fun initAdHocInitialIndividuals(){
+        customizeAdHocInitialIndividuals()
 
-    abstract fun initAdHocInitialIndividuals()
+        // if test case seeding is enabled, add those test cases too
+        if (config.seedTestCases) {
+            val parser = getParser()
+            val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
+            adHocInitialIndividuals.addAll(seededTestCases.map { createIndividual(it) })
+        }
+    }
 
+    /**
+     * customize AdHocInitialIndividuals
+     */
+    abstract fun customizeAdHocInitialIndividuals()
+
+    /**
+     * post action after InitialIndividuals are crated
+     */
     open fun postInits(){
         //do nothing
     }
@@ -138,7 +152,7 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
 
     private fun initForBlackBox() {
 
-        swagger = OpenApiAccess.getOpenAPI(configuration.bbSwaggerUrl)
+        swagger = OpenApiAccess.getOpenAPIFromURL(configuration.bbSwaggerUrl)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
@@ -146,58 +160,16 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
         actionCluster.clear()
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf())
 
-        //modelCluster.clear()
-        // RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
-
         initAdHocInitialIndividuals()
 
-        log.debug("Done initializing {}", RestSampler::class.simpleName)
-    }
+        addAuthFromConfig()
 
+        /*
+            TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(
+         */
+        partialOracles.setupForRest(swagger)
 
-    private fun setupAuthentication(infoDto: SutInfoDto) {
-
-        val info = infoDto.infoForAuthentication ?: return
-
-        info.forEach { i ->
-            if (i.name == null || i.name.isBlank()) {
-                log.warn("Missing name in authentication info")
-                return@forEach
-            }
-
-            val headers: MutableList<AuthenticationHeader> = mutableListOf()
-
-            i.headers.forEach loop@{ h ->
-                val name = h.name?.trim()
-                val value = h.value?.trim()
-                if (name == null || value == null) {
-                    log.warn("Invalid header in ${i.name}")
-                    return@loop
-                }
-
-                headers.add(AuthenticationHeader(name, value))
-            }
-
-            val cookieLogin = if(i.cookieLogin != null){
-                CookieLogin.fromDto(i.cookieLogin)
-            } else {
-                null
-            }
-
-            val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin)
-
-            authentications.add(auth)
-        }
-    }
-
-    fun getRandomAuth(noAuthP: Double): AuthenticationInfo {
-        if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
-            return NoAuth()
-        } else {
-            //if there is auth, should have high probability of using one,
-            //as without auth we would do little.
-            return randomness.choose(authentications)
-        }
+        log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
 
     fun getOpenAPI(): OpenAPI{
@@ -206,5 +178,31 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
 
     override fun hasSpecialInit(): Boolean {
         return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
+    }
+
+    /**
+     * @return size of adHocInitialIndividuals
+     */
+    fun getSizeOfAdHocInitialIndividuals() = adHocInitialIndividuals.size
+
+    /**
+     * @return a list of adHocInitialIndividuals which have not been executed yet
+     *
+     * it is only used for debugging
+     */
+    fun getNotExecutedAdHocInitialIndividuals() = adHocInitialIndividuals.toList()
+
+    /**
+     * @return a created individual with specified actions, i.e., [restCalls]
+     */
+    open fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+        return RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
+                ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
+    }
+
+    private fun getParser(): Parser {
+        return when(config.seedTestCasesFormat) {
+            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
+        }
     }
 }

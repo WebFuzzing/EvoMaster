@@ -1,19 +1,27 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 /**
  * A building block representing one part of an Individual.
  * The terms "gene" comes from the evolutionary algorithm literature
  */
-abstract class Gene(var name: String) {
+abstract class Gene(var name: String, children: List<out StructuralElement>) : StructuralElement(children){
+
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
+    }
 
     init{
         if(name.isBlank()){
@@ -22,33 +30,18 @@ abstract class Gene(var name: String) {
     }
 
     /**
-     *  A gene could be inside a gene, in a tree-like structure.
-     *  So for each gene, but the root, we keep track of its parent.
-     *
-     *  When a gene X is created with a child Y, then X is responsible
-     *  to mark itself as parent of Y
+     * Make a copy of this gene.
      */
-    var parent : Gene? = null
-
-    /**
-     * Follow the parent's path until the root of gene tree,
-     * which could be this same gene
-     */
-    fun getRoot() : Gene{
-        var curr = this
-        while(curr.parent != null){
-            curr = curr.parent!!
-        }
-        return curr
+    final override fun copy() : Gene{
+        val copy = super.copy()
+        if (copy !is Gene)
+            throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
+        return copy
     }
 
-    /**
-     * Make a copy of this gene.
-     *
-     * Note: the [parent] of this gene will be [null], but all children
-     * will have the correct parent
-     */
-    abstract fun copy() : Gene
+    override fun copyContent(): Gene {
+        throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
+    }
 
     /**
      * weight for mutation
@@ -109,23 +102,32 @@ abstract class Gene(var name: String) {
             allGenes: List<Gene> = listOf(),
             internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
             enableAdaptiveGeneMutation: Boolean = false,
-            additionalGeneMutationInfo: AdditionalGeneSelectionInfo? = null
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
     ){
+        //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
         val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
             val mutated = mutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             if (!mutated) throw IllegalStateException("leaf mutation is not implemented")
         }else{
             val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
-            if (selected.isEmpty())
-                throw IllegalStateException("none is selected to mutate")
 
             selected.forEach{
+                var mutateCounter = 0
                 do {
                     it.first.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
-                }while (!mutationCheck())
+                    mutateCounter +=1
+                }while (!mutationCheck() && mutateCounter <=3)
+                if (!mutationCheck()){
+                    if (log.isTraceEnabled)
+                        log.trace("invoke GeneUtils.repairGenes")
+                    GeneUtils.repairGenes(listOf(this))
+                }
             }
         }
+
+        //sync binding gene after value mutation
+        syncBindingGenesBasedOnThis()
     }
 
     /**
@@ -143,7 +145,7 @@ abstract class Gene(var name: String) {
     /**
      * @return whether to apply a subset selection for internal genes to mutate
      */
-    open fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?)
+    open fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?)
             = listOf<Gene>()
 
     /**
@@ -156,25 +158,38 @@ abstract class Gene(var name: String) {
                           allGenes: List<Gene> = listOf(),
                           selectionStrategy: SubsetGeneSelectionStrategy,
                           enableAdaptiveGeneMutation: Boolean,
-                          additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        return when(selectionStrategy){
-            SubsetGeneSelectionStrategy.DEFAULT -> listOf(Pair(randomness.choose(internalGenes), null))
-            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to null }
+                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        return  when(selectionStrategy){
+            SubsetGeneSelectionStrategy.DEFAULT -> {
+                val s = randomness.choose(internalGenes)
+                listOf( s to additionalGeneMutationInfo?.copyFoInnerGene( null,s))
+            }
+            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT ->
+                mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo?.copyFoInnerGene(null, it) }
             SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
                 additionalGeneMutationInfo?: throw IllegalArgumentException("additionalGeneSelectionInfo should not be null")
-                adaptiveSelectSubset(internalGenes, mwc, additionalGeneMutationInfo)
+                if (additionalGeneMutationInfo.impact == null)
+                    mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo.copyFoInnerGene(null, it) }
+                else
+                    adaptiveSelectSubset(randomness, internalGenes, mwc, additionalGeneMutationInfo)
             }
+        }.also {
+            if (it.isEmpty())
+                throw IllegalStateException("with $selectionStrategy strategy and ${internalGenes.size} candidates, none is selected to mutate")
+            if (it.any { a -> a.second?.impact?.validate(a.first) == false})
+                throw IllegalStateException("mismatched impact for gene ${it.filter { a -> a.second?.impact?.validate(a.first) == false}.map { "${it.first}:${it.second}" }.joinToString(",")}")
         }
     }
 
-    open fun adaptiveSelectSubset(internalGenes: List<Gene>,
+    open fun adaptiveSelectSubset(randomness: Randomness,
+                                  internalGenes: List<Gene>,
                                   mwc: MutationWeightControl,
-                                  additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> = listOf()
+                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        throw IllegalStateException("adaptive gene selection is unavailable for the gene")
+    }
 
     /**
      * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty
-     *
-     * TODO Man if Specialization of String is handled properly, params might be simplified
      */
     open fun mutate(randomness: Randomness,
                     apc: AdaptiveParameterControl,
@@ -182,7 +197,7 @@ abstract class Gene(var name: String) {
                     allGenes: List<Gene> = listOf(),
                     selectionStrategy: SubsetGeneSelectionStrategy,
                     enableAdaptiveGeneMutation: Boolean,
-                    additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) = false
+                    additionalGeneMutationInfo: AdditionalGeneMutationInfo?) = false
 
     /**
      * Return the value as a printable string.
@@ -203,7 +218,18 @@ abstract class Gene(var name: String) {
     abstract fun getValueAsPrintableString(
             previousGenes: List<Gene> = listOf(),
             mode: GeneUtils.EscapeMode? = null,
-            targetFormat: OutputFormat? = null
+            targetFormat: OutputFormat? = null,
+            /**
+             * Generic boolean, used for extra info, if needed.
+             *
+             * This was introduced mainly to deal with the printing of objects in GraphQL.
+             * Specify if the name of object should be printed or not, or just directly the
+             * object {} definition, ie,
+             * foo {...}
+             * vs
+             * {...}
+             */
+            extraCheck: Boolean = false
     ) : String
 
 
@@ -236,17 +262,171 @@ abstract class Gene(var name: String) {
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
-    /**
-     * indicates if it is likely that the gene reaches its optimal value, i.e., all possible values have been evaluated during search in the context of its individual.
-     * For instance, an enum has four items. If all values evaluated used during search, its 'Optimal' may be identified. But there may exist dependency among the genes
-     * in an individual, 'Optimal' can be reset.
-     */
-    open fun reachOptimal() = false
 
     /**
-     * based on evaluated results, update a preferred boundary for the gene
+     * @return internal genes
      */
-    open fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator){
+    abstract fun innerGene() : List<Gene>
+
+    /**
+     * evaluate whether [this] and [gene] belong to one evolution during search
+     */
+    open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
+
+
+    //========================= handing binding genes ===================================
+
+    private val bindingGenes: MutableSet<Gene> = mutableSetOf()
+
+    /**
+     * rebuild the binding relationship of [this] gene based on [copiedGene] which exists in [copiedIndividual]
+     */
+    fun rebuildBindingWithTemplate(newIndividual: Individual, copiedIndividual: Individual, copiedGene: Gene){
+        if (bindingGenes.isNotEmpty())
+            throw IllegalArgumentException("gene ($name) has been rebuilt")
+
+        val list = copiedGene.bindingGenes.map { g->
+            newIndividual.findGene(copiedIndividual, g)
+                ?:throw IllegalArgumentException("cannot find the gene (${g.name}) in the copiedIndividual")
+        }
+
+        bindingGenes.addAll(list)
+    }
+
+    /**
+     * sync [bindingGenes] based on [this]
+     */
+    fun syncBindingGenesBasedOnThis(all : MutableSet<Gene> = mutableSetOf()){
+        if (bindingGenes.isEmpty()) return
+        all.add(this)
+        bindingGenes.filterNot { all.contains(it) }.forEach { b->
+            all.add(b)
+            if(!b.bindValueBasedOn(this))
+                LoggingUtil.uniqueWarn(log, "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})")
+            b.syncBindingGenesBasedOnThis(all)
+        }
+
+        innerGene().filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
+    }
+
+    /**
+     * get all binding genes of [this]
+     */
+    private fun getBindingGenes(all : MutableSet<Gene>){
+        if (bindingGenes.isEmpty()) return
+        all.add(this)
+        bindingGenes.filterNot { all.contains(it) }.forEach { b->
+            all.add(b)
+            b.getBindingGenes(all)
+        }
+        innerGene().filterNot { all.contains(it) }.forEach { it.getBindingGenes(all) }
+    }
+
+    /**
+     * remove [this] from its binding genes
+     */
+    fun removeThisFromItsBindingGenes(){
+        val all = mutableSetOf<Gene>()
+        getBindingGenes(all)
+        all.forEach { b->
+            b.removeBindingGene(this)
+        }
+    }
+
+    /**
+     * @return whether [this] gene is bound with any other gene
+     */
+    fun isBoundGene() = bindingGenes.isNotEmpty()
+
+    /**
+     * repair the broken binding reference e.g., the binding gene is removed from the current individual
+     */
+    fun cleanBrokenReference(all : List<Gene>) : Boolean{
+        return bindingGenes.removeIf { !all.contains(it) }
+    }
+
+    /**
+     * remove genes which has been removed from the root
+     */
+    fun cleanRemovedGenes(removed: List<Gene>): Boolean{
+        return bindingGenes.removeIf{removed.contains(it)}
+    }
+
+    /**
+     * @return whether [this] gene has same binding gene as [genes]
+     *
+     * it is useful for debugging/unit tests
+     */
+    fun isSameBinding(genes: Set<Gene>) = (genes.size == bindingGenes.size) && genes.containsAll(bindingGenes)
+
+    /**
+     * add [gene] as the binding gene
+     */
+    fun addBindingGene(gene: Gene) {
+        bindingGenes.add(gene)
+    }
+
+    /**
+     * remove [gene] as the binding gene
+     */
+    private fun removeBindingGene(gene: Gene): Boolean {
+        return bindingGenes.remove(gene)
+    }
+
+    /**
+     * @return whether the bindingGene is subset of the [set]
+     */
+    fun bindingGeneIsSubsetOf(set: List<Gene>) = set.containsAll(bindingGenes)
+
+    /**
+     * reset binding based on [genes]
+     */
+    fun resetBinding(genes: Set<Gene>) {
+        bindingGenes.clear()
+        bindingGenes.addAll(genes)
+    }
+
+    /**
+     * @return whether [this] is bound with [gene]
+     */
+    fun isBoundWith(gene: Gene) = bindingGenes.contains(gene)
+
+
+    /**
+     * bind value of [this] gene based on [gene]
+     * @return whether the binding performs successfully
+     */
+    abstract fun bindValueBasedOn(gene: Gene) : Boolean
+
+
+    override fun postCopy(template: StructuralElement) {
+        //rebuild the binding genes
+        val root = getRoot()
+        val postBinding = (template as Gene).bindingGenes.map {b->
+            val found = root.find(b)
+            found as? Gene?:throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
+        }
+        bindingGenes.clear()
+        bindingGenes.addAll(postBinding)
+
+        super.postCopy(template)
+    }
+
+    /**
+     * there might be a need to repair gene based on some constraints, e.g., DateGene and TimeGene
+     */
+    open fun repair(){
         //do nothing
     }
+
+    /**
+     * @return whether the gene is valid
+     *  based on any specialized rule for different types of genes if there exist
+     *
+     * Note that the method is only used for debugging and testing purposes.
+     *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
+     *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
+     */
+    open fun isValid() = true
 }
+

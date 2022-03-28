@@ -21,7 +21,6 @@ object ConfigToMarkdown {
     fun toMarkdown(): String {
 
         val buffer = StringBuilder()
-
         addHeader(buffer)
 
         addOptions(buffer)
@@ -83,7 +82,6 @@ object ConfigToMarkdown {
         val important = all.filter { it.annotations.any { a -> a is EMConfig.Important } }
         val experimental = all.filter { it.annotations.any { a -> a is EMConfig.Experimental } }
         val internal = all.filter { it.annotations.none { a -> a is EMConfig.Experimental || a is EMConfig.Important } }
-
         assert(all.size == important.size + experimental.size + internal.size)
 
         addImportant(buffer, important)
@@ -177,11 +175,23 @@ object ConfigToMarkdown {
             buffer.append(".")
         }
         if(description.constraints.isNotBlank()){
-            buffer.append(" *Constraints*: `${description.constraints}`.")
+            /*
+                see https://stackoverflow.com/questions/17319940/how-to-escape-a-pipe-char-in-a-code-statement-in-a-markdown-table
+                GitHub supports it, but current IDEA Viewer does not
+             */
+            buffer.append(" *Constraints*: `${description.constraints.replace("|","\\|")}`.")
         }
-        if(description.enumValues.isNotBlank()){
-            buffer.append(" *Valid values*: `${description.enumValues}`.")
+
+        if (description.enumValidValues.isNotBlank()) {
+            buffer.append(" *Valid values*: `${description.enumValidValues}`.")
+          }
+
+        if (description.enumExperimentalValues.isNotBlank()) {
+            buffer.append(" *Experimental values*: `${description.enumExperimentalValues}`.")
         }
+
+
+
         buffer.append(" *Default value*: `$default`.")
 
 //        buffer.append("</td></tr>")

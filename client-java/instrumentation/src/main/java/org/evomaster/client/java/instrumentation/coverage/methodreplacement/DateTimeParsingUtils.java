@@ -18,6 +18,13 @@ import static org.evomaster.client.java.instrumentation.coverage.methodreplaceme
  */
 public class DateTimeParsingUtils {
 
+    /**
+     * Heuristic value for successfully parsed input
+     */
+    private static final double H_PARSED_OK = 1d;
+
+
+
     private static final String ISO_LOCAL_TIME_PATTERN = "HH:MM:SS";
 
     private static final String ISO_LOCAL_DATE_PATTERN = "YYYY-MM-DD";
@@ -112,9 +119,11 @@ public class DateTimeParsingUtils {
             distance += (MAX_CHAR_DISTANCE * (ISO_LOCAL_TIME_LENGTH - input.length()));
         }
 
+        if(distance < 0){
+            distance = Long.MAX_VALUE; // overflow
+        }
         //recall h in [0,1] where the highest the distance the closer to 0
-
-        final double h = base + ((1d - base) / (distance + 1));
+        double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
         return h;
     }
 
@@ -196,8 +205,12 @@ public class DateTimeParsingUtils {
             distance += (MAX_CHAR_DISTANCE * (ISO_LOCAL_DATE_TIME_LENGTH - input.length()));
         }
 
+        if(distance < 0){
+            distance = Long.MAX_VALUE; // overflow
+        }
+
         //recall h in [0,1] where the highest the distance the closer to 0
-        final double h = base + ((1d - base) / (distance + 1));
+        double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
         return h;
     }
 
@@ -247,15 +260,7 @@ public class DateTimeParsingUtils {
         }
     }
 
-    /**
-     * Heuristic value for successfully parsed input
-     */
-    private static final double H_PARSED_OK = 1d;
 
-    /**
-     * Heuristic value for successfully parsed input
-     */
-    private static final double H_NOT_SUPPORTED = 0d;
 
 
     /**
@@ -307,8 +312,13 @@ public class DateTimeParsingUtils {
             distance += (MAX_CHAR_DISTANCE * (ISO_LOCAL_DATE_LENGTH - input.length()));
         }
 
+        if(distance < 0){
+            distance = Long.MAX_VALUE; // overflow
+        }
+
         //recall h in [0,1] where the highest the distance the closer to 0
-        return base + ((1d - base) / (distance + 1));
+        double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
+        return h;
     }
 
     /**
@@ -398,8 +408,12 @@ public class DateTimeParsingUtils {
             distance += (MAX_CHAR_DISTANCE * (requiredLength - input.length()));
         }
 
+        if(distance < 0){
+            distance = Long.MAX_VALUE; // overflow
+        }
+
         //recall h in [0,1] where the highest the distance the closer to 0
-        final double h = base + ((1d - base) / (distance + 1));
+        double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
         return h;
     }
 
@@ -413,12 +427,12 @@ public class DateTimeParsingUtils {
                 due to the simplification later on (i.e. only some valid dates are considered,
                 but not all), still must make sure to get a 1 if no exception is thrown
              */
-            new SimpleDateFormat(dateFormatPattern).parse(input.toString());
+            new SimpleDateFormat(dateFormatPattern).parse(input);
             return H_PARSED_OK;
         } catch (ParseException e) {
             // TODO translate dateFormatPattern to Java regular expression
             // TODO use distance to Java Regular Expression as an approximate gradient to satisfy the pattern
-            return H_NOT_SUPPORTED;
+            return DistanceHelper.H_NOT_NULL;
         }
     }
 }

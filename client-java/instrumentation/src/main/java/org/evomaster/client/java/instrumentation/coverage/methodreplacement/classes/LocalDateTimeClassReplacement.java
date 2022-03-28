@@ -28,8 +28,8 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
         Objects.requireNonNull(caller);
         Objects.requireNonNull(when);
 
-        final long a = getMillis(caller);
-        final long b = getMillis(when);
+        long a = getMillis(caller);
+        long b = getMillis(when);
 
         /**
          * We use the same gradient that HeuristicsForJumps.getForValueComparison()
@@ -65,7 +65,8 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
 
         try {
             LocalDateTime res = LocalDateTime.parse(text);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION,
+                    new Truthness(1, DistanceHelper.H_NOT_NULL));
             return res;
         } catch (DateTimeParseException | NullPointerException ex) {
             double h = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing(text);
@@ -89,11 +90,11 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
         } else {
             LocalDateTime anotherLocalDateTime = (LocalDateTime) anObject;
             if (caller.equals(anotherLocalDateTime)) {
-                t = new Truthness(1d, 0d);
+                t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
                 double base = DistanceHelper.H_NOT_NULL;
                 double distance = DistanceHelper.getDistanceToEquality(caller, anotherLocalDateTime);
-                double h = base + (1 - base) / (1 + distance);
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }
@@ -112,7 +113,7 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
             return caller.isBefore(other);
         }
 
-        final Truthness t;
+        Truthness t;
         if (other == null) {
             t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
@@ -130,7 +131,7 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
         if (idTemplate == null) {
             return caller.isAfter(other);
         }
-        final Truthness t;
+        Truthness t;
         if (other == null) {
             t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
@@ -153,11 +154,11 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
             t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
             if (caller.isEqual(other)) {
-                t = new Truthness(1d, 0d);
+                t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
             } else {
                 double base = DistanceHelper.H_NOT_NULL;
                 double distance = DistanceHelper.getDistanceToEquality(caller, other);
-                double h = base + (1 - base) / (1 + distance);
+                double h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, distance);
                 t = new Truthness(h, 1d);
             }
         }

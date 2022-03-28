@@ -99,19 +99,15 @@ public static void main(String[] args){
 At this point, once this driver is started (e.g., by right-clicking on it in
 an IDE to run it as a Java process),
 then you can use `evomaster.jar` to finally generate test cases.
+Note that it is also possible to run the driver from command-line, like any other Java program with a `main` function.
+However, in such case, you will need to package an uber jar file (e.g., using plugins like `maven-shade-plugin` and `maven-assembly-plugin`).  
+
 
 __WARNING__: Java 9 broke backward compatibility. 
-One painful change was that self-attachment of Java-Agents (needed for bytecode instrumentation)
-is now forbidden by default.
-When for example starting the driver with a JDK 9+ (e.g., JDK __11__), you need to add the VM option
-`-Djdk.attach.allowAttachSelf=true`, otherwise the process will crash.   
-For example, in IntelliJ IDEA:
+And each new JDK version seems breaking more stuff :-(.
+To deal with recent versions of the JDK, see [here for details](./jdks.md).
 
-![](img/intellij_jdk11_jvm_options.png)
 
-Note: there is a hacky workaround for this "_feature_" 
-(i.e., as done in [ByteBuddy](https://github.com/raphw/byte-buddy/issues/295)),
-but it is not implemented yet. 
 
 
 
@@ -146,23 +142,15 @@ This will be useful when needing to override the methods `isSutRunning()` and `s
 as you can just implement them with  `ctx.isRunning()` and `ctx.stop()`.
 
 
-When starting the SUT, there are at least two configurations that you want to change:
+When starting the SUT, there is one important configuration that you want to change: the binding port, as you want to use 0 for ephemeral ports (to avoid port conflicts).
 
-* the binding port, as you want to use 0 for ephemeral ports (to avoid port conflicts).
-* if the SUT is using a SQL database, you MUST wrap the SQL driver with _P6Spy_. 
-  This is as simple as adding `:p6spy` in the connecting datasource URL and change the `driver-class-name`.
-  This is needed by _EvoMaster_ to be able to intercept and analyse all the interactions with the database.
+Note: since version _1.3.0_, there is no longer the need to configure `P6Spy`.
   
 For a SUT like `features-service`, this can be done with:
 
 ```
 ctx = SpringApplication.run(Application.class, new String[]{
-                "--server.port=0",
-                "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;",
-                "--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),
-                "--spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-                "--spring.datasource.username=sa",
-                "--spring.datasource.password"
+                "--server.port=0"                
       });
 ```      
 
@@ -179,6 +167,16 @@ protected int getSutPort() {
 Finally, the `startSut()` method must return the URL of where the SUT is listening on.
 When running tests locally, this is as simple as returning `"http://localhost:" + getSutPort()`.
 
+
+Note that you need to make sure you can run your application programmatically, regardless of EvoMaster. A simple way is to check if the following works:
+
+```
+public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+}
+```
+
+The issue could arise when using `spring-boot-maven-plugin` to start the application, and there are some classpath problems in your application.
 
 ## SQL Databases
 
@@ -219,7 +217,7 @@ the option `--spring.cache.type=NONE`.
 Whenever possible, it would be best to use an embedded database such as _H2_.
 However, if you need to rely on a specific database such as _Postgres_, we recommend starting
 it with _Docker_.  
-In Java, this can be done with libraries such as [TestContainers](https://github.com/testcontainers/testcontainers-java/).
+In Java, this can be done with libraries such as [TestContainers](https://github.com/testcontainers/testcontainers-java/) (which you will need to import in Maven/Gradle).
 In your driver, you can then have code like:
 
 ```
@@ -236,7 +234,7 @@ Then, the URL to connect to the database can be something like:
 ```
 String host = postgres.getContainerIpAddress();
 int port = postgres.getMappedPort(5432);
-String url = "jdbc:p6spy:postgresql://"+host+":"+port+"/postgres
+String url = "jdbc:postgresql://"+host+":"+port+"/postgres"
 ```
 
 You can then tell Spring to use such URL with the parameter `--spring.datasource.url`.
@@ -245,7 +243,38 @@ Note: the `withTmpFs` configuration is very important, and it is database depend
 A database running in _Docker_ will still write on your hard-drive, which is an unnecessary,
 time-consuming overhead. 
 The idea then is to mount the folder, in which the database writes, directly in RAM.   
- 
+
+For an example, you can look at the E2E tests in EvoMaster, like the class [com.foo.spring.rest.postgres.SpringRestPostgresController](https://github.com/EMResearch/EvoMaster/blob/master/e2e-tests/spring-rest-postgres/src/test/kotlin/com/foo/spring/rest/postgres/SpringRestPostgresController.kt). 
+
+
+## MongoDB Database
+
+Although at the current moment _EvoMaster_ does not analyze how MongoDB databases are accessed at runtime, it is important still to reset their state (to avoid dependencies among generated tests).
+Compared to SQL databases, MongoDB is easier to reset.
+Can use directly the APIs of MongoDB.
+For example, given a reference to `com.mongodb.MongoClient`, you can have:
+```
+public void resetStateOfSUT() {
+    mongoClient.getDatabase("foo").drop();
+}        
+```
+
+As for any external service, we reccomend to start them with Docker.
+For example:
+
+```
+private static final GenericContainer mongodb =  
+         new GenericContainer("mongo:3.2")
+                .withExposedPorts(27017);
+```
+
+In Spring, the connection URL can then be set with:
+```
+--spring.data.mongodb.uri=mongodb://"+mongodb.getContainerIpAddress()+":"+mongodb.getMappedPort(27017)+"/foo"
+```
+
+
+
 
 ## Code Coverage  
  

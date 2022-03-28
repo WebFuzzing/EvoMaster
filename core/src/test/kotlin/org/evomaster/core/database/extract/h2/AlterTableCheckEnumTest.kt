@@ -29,7 +29,7 @@ class AlterTableCheckEnumTest : ExtractTestBaseH2() {
         assertTrue(schema.tables.first { it.name == "X" }.columns.any { it.name == "STATUS" });
 
         assertEquals(1, schema.tables.first { it.name == "X" }.tableCheckExpressions.size)
-        assertEquals("(STATUS IN('A', 'B'))", schema.tables.first { it.name == "X" }.tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals("(\"STATUS\" IN('A', 'B'))", schema.tables.first { it.name == "X" }.tableCheckExpressions[0].sqlCheckExpression)
 
     }
 }

@@ -1,0 +1,18 @@
+type Query {
+    # get all exisiting ExistingDataY entities
+    getY: [ExistingDataY]!
+}
+
+type ExistingDataY{
+    # the unique id of the ExistingDataY
+    id: ID!
+    # the related ExistingDataX
+    x: ExistingDataX!
+}
+
+type ExistingDataX{
+    # the unique id of the ExistingDataX
+    id: ID!
+    # the name of the ExistingDataX
+    name: String!
+}

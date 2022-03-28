@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.resource.dependency
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.search.service.Randomness
 
 /**
  * to present a chain of actions to create a resource with its dependent resource(s)
@@ -33,6 +34,14 @@ abstract class CreationChain(
 class PostCreationChain(val actions: MutableList<RestCallAction>, private var failToCreate : Boolean = false) : CreationChain(){
     fun confirmFailure(){
         failToCreate = true
+    }
+
+    fun createPostChain(randomness: Randomness) : List<RestCallAction>{
+        return actions.map {
+            val a = (it.copy() as RestCallAction)
+            a.randomize(randomness, false)
+            a
+        }
     }
 }
 

@@ -23,7 +23,24 @@ public class DistanceHelper {
     public static final int MAX_CHAR_DISTANCE = 65_536;
 
 
+    /**
+     * Increase the distance by the given delta. It makes sure to handle possible
+     * numeric overflows. In this latter case the max value is returned, ie, we
+     * guarantee that the returned value is not lower than the given input distance.
+     *
+     * @param distance
+     * @param delta
+     * @return
+     */
     public static double increasedDistance(double distance, double delta){
+
+        if(delta < 0){
+            throw new IllegalArgumentException("Invalid negative delta: " + delta);
+        }
+        if(delta == 0){
+            throw new IllegalArgumentException("Meaningless 0 delta");
+        }
+
         if(Double.isInfinite(distance) || distance == Double.MAX_VALUE){
             return distance;
         }
@@ -35,6 +52,27 @@ public class DistanceHelper {
         return distance + delta;
     }
 
+    /**
+     * Return a h=[0,1] heuristics from a scaled distance, taking into account a starting base
+     * @param base
+     * @param distance
+     * @return
+     */
+    public static double heuristicFromScaledDistanceWithBase(double base, double distance){
+
+        if(base < 0 || base >= 1){
+            throw new IllegalArgumentException("Invalid base: " + base);
+        }
+        if(distance < 0){
+            throw new IllegalArgumentException("Negative distance: " + distance);
+        }
+
+        if(Double.isInfinite(distance) || distance == Double.MAX_VALUE){
+            return base;
+        }
+
+       return base + ((1 - base) / (distance + 1));
+    }
 
     public static int distanceToDigit(char c) {
         return distanceToRange(c, '0', '9');
@@ -68,7 +106,10 @@ public class DistanceHelper {
             dist += Math.abs(a.charAt(i) - b.charAt(i));
         }
 
-        assert dist >= 0;
+        if(dist < 0){
+            dist = Long.MAX_VALUE; // overflow
+        }
+
         return dist;
     }
 

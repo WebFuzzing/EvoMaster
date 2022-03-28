@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
@@ -12,6 +13,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
+import org.evomaster.core.search.ActionResult
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -49,13 +51,19 @@ class RemoteController() : DatabaseExecutor {
 
     private var client: Client = ClientBuilder.newClient()
 
-    constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean) : this() {
+    constructor(config: EMConfig) : this(){
+        this.config = config
+        initialize()
+    }
+
+    constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean, config: EMConfig = EMConfig()) : this() {
         if (computeSqlHeuristics && !extractSqlExecutionInfo)
             throw IllegalArgumentException("'extractSqlExecutionInfo' should be enabled when 'computeSqlHeuristics' is enabled")
         this.host = host
         this.port = port
         this.computeSqlHeuristics = computeSqlHeuristics
         this.extractSqlExecutionInfo = computeSqlHeuristics || extractSqlExecutionInfo
+        this.config = config
     }
 
     constructor(host: String, port: Int, computeSqlHeuristics: Boolean) : this(host, port, computeSqlHeuristics, computeSqlHeuristics)
@@ -95,6 +103,9 @@ class RemoteController() : DatabaseExecutor {
 
                     TcpUtils.handleEphemeralPortIssue()
 
+                    /*
+                        [non-determinism-source] Man: this might lead to non-determinism
+                     */
                     lambda.invoke()
                 }
                 TcpUtils.isRefusedConnection(e) -> {
@@ -112,6 +123,10 @@ class RemoteController() : DatabaseExecutor {
                     log.warn("EvoMaster Driver TCP connection is having issues: '${e.cause!!.message}'." +
                             " Let's wait a bit and try again.")
                     Thread.sleep(5_000)
+
+                    /*
+                        [non-determinism-source] Man: this might lead to non-determinism
+                     */
                     lambda.invoke()
                 }
                 else -> throw e
@@ -137,7 +152,8 @@ class RemoteController() : DatabaseExecutor {
 
     private fun checkResponse(response: Response, dto: WrappedResponseDto<*>?, msg: String) : Boolean{
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
-            log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
+            LoggingUtil.uniqueWarn(log, "$msg. HTTP status ${response.status}. Error: '${dto?.error}")
+//            log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
             return false
         }
 
@@ -270,7 +286,7 @@ class RemoteController() : DatabaseExecutor {
         return readAndCheckResponse(response, "Failed to inform SUT of new search")
     }
 
-    fun getTestResults(ids: Set<Int> = setOf()): TestResultsDto? {
+    fun getTestResults(ids: Set<Int> = setOf(), ignoreKillSwitch: Boolean = false): TestResultsDto? {
 
         val queryParam = ids.joinToString(",")
 
@@ -278,6 +294,7 @@ class RemoteController() : DatabaseExecutor {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
+                    .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
@@ -289,6 +306,29 @@ class RemoteController() : DatabaseExecutor {
         }
 
         return getData(dto)
+    }
+
+
+    /**
+     * execute [actionDto] through [ControllerConstants.NEW_ACTION] endpoints of EMController,
+     * @return execution response
+     */
+    fun executeNewRPCActionAndGetResponse(actionDto: ActionDto) : ActionResponseDto?{
+
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.NEW_ACTION)
+                    .request()
+                    .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<ActionResponseDto>>() {})
+
+        if (!checkResponse(response, dto, "Failed to execute RPC call")) {
+            return null
+        }
+
+        return dto?.data
     }
 
     fun registerNewAction(actionDto: ActionDto) : Boolean{
@@ -305,6 +345,8 @@ class RemoteController() : DatabaseExecutor {
 
     override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
 
+        log.trace("Going to execute database command. Command:{} , Insertion.size={}",dto.command,dto.insertions?.size ?: 0)
+
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.DATABASE_COMMAND)
@@ -312,7 +354,11 @@ class RemoteController() : DatabaseExecutor {
                     .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
         }
 
+        /*
+           [non-determinism-source] Man: this might lead to non-determinism
+        */
         if (!wasSuccess(response)) {
+
             LoggingUtil.uniqueWarn(log, "Failed to execute database command. HTTP status: {}.", response.status)
 
             if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){
@@ -350,11 +396,11 @@ class RemoteController() : DatabaseExecutor {
         return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
     }
 
-    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long, Long>? {
-        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<Map<Long, Long>>>() {})
+    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): InsertionResultsDto? {
+        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<InsertionResultsDto>>() {})
     }
 
-    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T? {
+    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
             getWebTarget()

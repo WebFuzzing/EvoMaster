@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.OptionalGene
@@ -8,6 +8,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URLEncoder
+import java.util.regex.Pattern
 
 /**
  * Represent a path template for a REST endpoint.
@@ -292,7 +293,72 @@ class RestPath(path: String) {
         return elements.flatMap { it.tokens.filter { t -> !t.isParameter }.map { t -> t.name } }
     }
 
+    /**
+     * return extracted tokens which are parameter in the path
+     */
+    fun getParameterTokens(): List<String> {
+        return elements.flatMap { it.tokens.filter { t -> t.isParameter }.map { t -> t.name } }
+    }
+
     fun getElements() :List<Map<String, Boolean>>{
         return elements.map { it.tokens.map { t->Pair(t.name, t.isParameter) }.toMap() }
+    }
+
+    /**
+     * Checks whether a resolved path matches the RestPath. The type of the path
+     * parameters are not considered for the matching.
+     * For example:
+     *
+     * /foo/bar/5
+     *
+     * matches the path
+     *
+     * /foo/bar/{id}
+     */
+    fun matches(resolvedPath: String): Boolean {
+        if (resolvedPath.matches(Regex(getRegexToMatch())))
+            return true
+        return false
+    }
+
+    /**
+     * Return a map containing the parameters' names and values, according to the
+     * resolvedPath provided. Return null if the resolvedPath is invalid
+     */
+    fun getKeyValues(resolvedPath: String): Map<String, String>? {
+        val keyValues = mutableMapOf<String, String>()
+        val keys = getParameterTokens()
+        val regexToMatch = getRegexToMatch()
+
+        if (resolvedPath.matches(Regex(regexToMatch))) {
+            val matcher = Pattern
+                    .compile(regexToMatch)
+                    .matcher(resolvedPath)
+
+            if (matcher.find()) {
+                for (i in 1..matcher.groupCount())
+                    keyValues[keys[i-1]] = matcher.group(i)
+            }
+
+            return keyValues
+        }
+
+        return null
+    }
+
+    private fun getRegexToMatch(): String {
+        val elementsToMatch = mutableListOf<String>()
+
+        elements.forEach { e ->
+            elementsToMatch.add("/")
+            e.tokens.forEach { t ->
+                if (t.isParameter)
+                    elementsToMatch.add("([^/]*)")
+                else
+                    elementsToMatch.add(t.name)
+            }
+        }
+
+        return "^" + elementsToMatch.joinToString("") + "$"
     }
 }

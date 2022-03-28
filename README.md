@@ -5,33 +5,39 @@
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
-[![Build Status](https://travis-ci.org/EMResearch/EvoMaster.svg?branch=master)](https://travis-ci.org/EMResearch/EvoMaster)
-[![CircleCI](https://circleci.com/gh/EMResearch/EvoMaster.svg?style=svg)](https://circleci.com/gh/EMResearch/EvoMaster)
+![CI](https://github.com/EMResearch/EvoMaster/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
-<!---
-Needs auth :(
-[[JaCoCo]](https://circleci.com/api/v1.1/project/github/arcuri82/evomaster/latest/artifacts/0/home/circleci/evomaster-build/report/target/site/jacoco-aggregate/index.html)
--->
+[![DOI](https://zenodo.org/badge/92385933.svg)](https://zenodo.org/badge/latestdoi/92385933)
 
 
 
 ### Summary 
 
-_EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is a tool 
-that automatically *generates* system-level test cases.
-Internally, it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm) 
+_EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is the first (2016) open-source AI-driven tool 
+that automatically *generates* system-level test cases
+for web/enterprise applications.
+This is related to [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing).
+Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites that can be used for _regression testing_.
+
+_EvoMaster_ is an AI driven tool.
+In particular, internally it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm) 
 and [Dynamic Program Analysis](https://en.wikipedia.org/wiki/Dynamic_program_analysis)  to be 
 able to generate effective test cases.
 The approach is to *evolve* test cases from an initial population of 
 random ones, trying to maximize measures like code coverage and fault detection.
+_EvoMaster_ uses several kinds of AI heuristics to improve performance even further, 
+building on decades of research in the field of [Search-Based Software Testing](https://en.wikipedia.org/wiki/Search-based_software_engineering).
 
 
 __Key features__:
 
 * At the moment, _EvoMaster_ targets RESTful APIs compiled to 
-  JVM __8__ and __11__ bytecode. Might work on other JVM versions, but we provide __NO__ support for it.
+  JVM (e.g., Java and Kotlin). We support JDK __8__ and the major LTS versions after that (currently JDK __17__). Might work on other JVM versions, but we provide __NO__ support for it.
 
-* The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
+* We provide installers for the main operating systems: Windows (`.msi`), 
+  OSX (`.dmg`) and Linux (`.deb`). We also provide an uber-fat JAR file.
+
+* The REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
   format (either _v2_ or _v3_).
 
 * The tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin.
@@ -50,14 +56,13 @@ __Key features__:
 * SQL handling: _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
   such information to generate higher code coverage test cases. Furthermore, it can generate data directly
   into the databases, and have such initialization automatically added in the generated tests. 
-  At the moment, _EvoMaster_ supports _H2_ and _Postgres_ databases.  
+  At the moment, _EvoMaster_ supports _Postgres_, _MySQL_ and _H2_  databases.  
 
 * _Blackbox_ testing mode: can run on any API (regardless of its programming language), 
   as long as an OpenAPI schema is provided. However, results will be worse than whitebox testing (e.g., due
   to lack of bytecode analysis).
 
 * _Authentication_: we support auth based on authentication headers and cookies. 
-   However, at the moment we do not support OAuth.
 
 __Known limitations__:
 
@@ -98,25 +103,30 @@ case studies in [EMB](https://github.com/EMResearch/EMB).
 * This [13-minute video](https://youtu.be/ORxZoYw7LnM)
   shows how to write a white-box driver for EvoMaster, for the
   [rest-api-example](https://github.com/EMResearch/rest-api-example). 
+
+* How to [Download and Install EvoMaster on Windows 10](https://youtu.be/uh_XzGxws9o), using its _.msi_ installer. 
  
+<!---
 ### Hiring
 
 Each year we usually have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
-
+--->
 
 
 
 ### Documentation
 
 * [Example of generated tests](docs/example.md)
-* [Download EvoMaster](docs/download.md)
+* [Download and Install EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
 * [Console options](docs/options.md)
 * [OpenApi/Swagger Schema](docs/openapi.md)
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
     * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
+    * [Dealing with JDKs above version 8](docs/jdks.md)
+* [Console output](docs/console_output.md)  
 * [Library dependencies for the generated tests](docs/library_dependencies.md)
 * [How to contribute](docs/contribute.md)
     * [Technical notes for developers contributing to EvoMaster](docs/for_developers.md)
@@ -125,6 +135,7 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 * More Info
     * [Academic papers related to EvoMaster](docs/publications.md)
     * [Slides of presentations/seminars](docs/presentations.md)
+    * [Replicating studies](docs/replicating_studies.md)
 
 
 
@@ -139,6 +150,12 @@ as part of the *ERC Consolidator* project
 <i>Using Evolutionary Algorithms to Understand and Secure Web/Enterprise Systems</i>.
 *  2018-2021: a 7.8 million Norwegian Kroner grant  by the Research Council of Norway (RCN), 
 as part of the Frinatek project <i>Evolutionary Enterprise Testing</i>.  
+
+
+<img src="https://github.com/EMResearch/EvoMaster/blob/master/docs/img/LOGO_ERC-FLAG_EU_.jpg?raw=true" width="200" >
+
+
+This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No 864972).
 
 
 ### License
