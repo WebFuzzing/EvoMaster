@@ -63,7 +63,7 @@ experiments/target/
 
 /client-js/integration-tests/build/
 /core-it/target/
-/coveredTargets_1.txt
+/coveredTargets.txt
 /core-driver-it/target/
 /core-it/src/test/kotlin/exp/
 
