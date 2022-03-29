@@ -34,7 +34,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             Object instance = clazz.newInstance();
             for (NamedTypedValue v: getValue()){
                 if (v.accessibleSchema == null || v.accessibleSchema.isAccessible){
-                    Field f = clazz.getDeclaredField(v.getName());
+                    Field f = clazz.getField(v.getName());
                     f.setAccessible(true);
                     Object vins = v.newInstance();
                     if (vins != null)
@@ -125,7 +125,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             NamedTypedValue copy = f.copyStructureWithProperties();
             try {
                 if (f.accessibleSchema == null || f.accessibleSchema.isAccessible){
-                    Field fi = clazz.getDeclaredField(f.getName());
+                    Field fi = clazz.getField(f.getName());
                     fi.setAccessible(true);
                     Object fiv = fi.get(instance);
                     copy.setValueBasedOnInstance(fiv);
