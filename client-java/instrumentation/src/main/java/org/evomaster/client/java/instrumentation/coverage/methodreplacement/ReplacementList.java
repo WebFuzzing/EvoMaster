@@ -39,7 +39,8 @@ public class ReplacementList {
                 new StringClassReplacement(),
                 new ShortClassReplacement(),
                 new ServletRequestClassReplacement(),
-                new WebRequestClassReplacement()
+                new WebRequestClassReplacement(),
+                new URLClassReplacement()
         );
     }
 
@@ -68,6 +69,8 @@ public class ReplacementList {
                             prefixes.add("java.lang.");
                             prefixes.add("java.util.");
                             prefixes.add("java.time.");
+
+                            prefixes.add("java.net.");
 
                             //we don't just use java.sql. as that seems to give issue (see previous comments)
                             prefixes.add("java.sql.Statement");

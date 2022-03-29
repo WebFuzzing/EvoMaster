@@ -35,7 +35,7 @@ public class HttpRequestRest {
         StringsResponseDto stringsResponseDto = new StringsResponseDto();
 
         try {
-            URL url = new URL("http://foo.bar:8080/api/echo/foo");
+            URL url = new URL("https://foo.bar/api/echo/foo");
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
