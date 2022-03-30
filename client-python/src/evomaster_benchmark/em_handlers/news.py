@@ -18,8 +18,9 @@ class EMHandler(FlaskHandler):
         return super().get_url()
 
     def reset_state_of_sut(self):
-        # TODO: clean database
-        pass
+        with self.server.app.app_context():
+            from evomaster_benchmark.news.model import db
+            db.drop_all()
 
     def setup_for_generated_test(self):
         pass

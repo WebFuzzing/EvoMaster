@@ -132,13 +132,14 @@ abstract class TestCaseWriter {
             addActionLines(call, lines, res, baseUrlOfSut)
 
             if (shouldFailIfException(res)) {
-                if (!format.isJavaScript()) {
+                if (!format.isJavaScript() && !format.isPython()) {
                     /*
                         TODO need a way to do it for JS, see
                         https://github.com/facebook/jest/issues/2129
                         what about expect(false).toBe(true)?
                      */
                     lines.add("fail(\"Expected exception\");")
+                    // TODO: Python
                 }
             }
         }
@@ -153,10 +154,18 @@ abstract class TestCaseWriter {
 
         res.getErrorMessage()?.let {
             lines.indented {
-                lines.add("//${it.replace('\n', ' ').replace('\r',' ')}")
+                val comment = if (format.isPython()) "#" else "//"
+                lines.add("${comment}${it.replace('\n', ' ').replace('\r',' ')}")
             }
         }
-        lines.add("}")
+
+        if (format.isPython()) {
+            lines.indented {
+                lines.add("pass")
+            }
+        } else {
+            lines.add("}")
+        }
     }
 
 
@@ -167,12 +176,12 @@ abstract class TestCaseWriter {
 
     protected fun clusterComment(lines: Lines, test: TestCase) {
         if (test.test.clusterAssignments.size > 0) {
-            lines.add("/**")
-            lines.add("* [${test.name}] is a part of 1 or more clusters, as defined by the selected clustering options. ")
+            lines.startCommentBlock(config.outputFormat)
+            lines.add("[${test.name}] is a part of 1 or more clusters, as defined by the selected clustering options. ")
             for (c in test.test.clusterAssignments) {
-                lines.add("* $c")
+                lines.add(c)
             }
-            lines.add("*/")
+            lines.endCommentBlock()
         }
     }
 

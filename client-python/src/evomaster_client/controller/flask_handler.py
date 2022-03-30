@@ -5,6 +5,8 @@ from gevent.pywsgi import WSGIServer
 
 from evomaster_client.controller.sut_handler import SutHandler
 from evomaster_client.instrumentation.import_hook import install_import_hook
+from evomaster_client.instrumentation.ast_transformer import NO_INSTRUMENTATION
+
 
 HOST = '127.0.0.1'
 PORT = 5000
@@ -31,7 +33,7 @@ class FlaskHandlerError(Exception):
 
 
 class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
-    def __init__(self, instrumentation_level: int = None):
+    def __init__(self, instrumentation_level: int = NO_INSTRUMENTATION):
         self.server = None  # SUT is not running
         self.instrumentation_level = instrumentation_level
 
@@ -97,6 +99,6 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_problem_info(self):
         return {
-            'swaggerJsonUrl': self.get_url() + '/swagger.json',
+            'openApiUrl': self.get_url() + '/swagger.json',
             'endpointsToSkip': []
         }

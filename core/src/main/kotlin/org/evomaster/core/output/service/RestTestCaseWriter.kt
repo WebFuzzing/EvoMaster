@@ -9,6 +9,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.GeneUtils
 import org.slf4j.LoggerFactory
@@ -76,9 +77,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                             format.isKotlin() -> lines.add("var $name : String? = \"\"")
                             format.isJavaScript() -> lines.add("let $name = \"\";")
                             format.isCsharp() -> lines.add("var $name = \"\";")
+                            format.isPython() -> {} // no need to declare variables
                                 // should never happen
                             else -> throw IllegalStateException("Unsupported format $format")
-                            // Python: no need to declare variables
                         }
                     }
         }
@@ -193,7 +194,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         if (format.isPython()) {
             lines.append(",")
             lines.indented {
-                lines.add("headers=headers, data=body")
+                val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
+                if (bodyParam == null) {
+                    lines.add("headers=headers")
+                } else {
+                    lines.add("headers=headers, data=body")
+                }
             }
         }
 

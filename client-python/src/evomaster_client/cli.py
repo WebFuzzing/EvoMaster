@@ -4,7 +4,6 @@ import click
 
 from evomaster_client.instrumentation.import_hook import install_import_hook
 from evomaster_client.instrumentation.ast_transformer import FULL_INSTRUMENTATION
-from evomaster_client.controller.flask_handler import FlaskHandler
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 

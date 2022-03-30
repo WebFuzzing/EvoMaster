@@ -12,4 +12,6 @@ cd client-js/evomaster-client-js
 npm install
 npm run build
 
-
+# Build Python Driver
+cd client-python
+pip install -r requirements-dev.txt

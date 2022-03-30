@@ -14,6 +14,8 @@ class Lines {
     var indentation = 0
         private set
 
+    private var commentBlock: OutputFormat? = null
+
     //TODO what about C#???
     fun shouldUseSemicolon(format: OutputFormat) = format.isJava() || format.isJavaScript()
 
@@ -59,7 +61,8 @@ class Lines {
             throw IllegalArgumentException("Added strings for lines shouldn't end with '\\n'")
         }
         val spaces = 4
-        buffer.add(padding(spaces * indentation) + line)
+        val commentToken = if (commentBlock != null) (if (commentBlock!!.isPython()) "# " else "* ") else ""
+        buffer.add(padding(spaces * indentation) + commentToken + line)
     }
 
     fun replaceInCurrent(regex: Regex, replacement: String){
@@ -100,6 +103,20 @@ class Lines {
 
     fun append(token: String) {
         buffer[buffer.lastIndex] = buffer.last() + token
+    }
+
+    fun startCommentBlock(format: OutputFormat) {
+        commentBlock = format
+        if (!format.isPython()) {
+            add("/**")
+        }
+    }
+
+    fun endCommentBlock() {
+        if (!commentBlock!!.isPython()) {
+            add("*/")
+        }
+        commentBlock = null
     }
 
     override fun toString(): String {

@@ -129,6 +129,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
          */
         return config.outputFormat == OutputFormat.JS_JEST
                 || config.outputFormat == OutputFormat.CSHARP_XUNIT
+                || config.outputFormat == OutputFormat.PYTHON_UNITTEST
     }
 
     protected fun handleHeaders(call: HttpWsAction, lines: Lines) {
@@ -209,8 +210,11 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             format.isJavaScript() -> {
                 lines.add("expect($responseVariableName.status).toBe($code);")
             }
-            format.isCsharp() ->{
+            format.isCsharp() -> {
                 lines.add("Assert.Equal($code, (int) $responseVariableName.StatusCode);")
+            }
+            format.isPython() -> {
+                lines.add("assert $responseVariableName.status_code == $code")
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "No status assertion supported for format $format")
@@ -291,7 +295,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             }
         }
 
-        if (format.isJavaOrKotlin() || format.isPython()) {
+        if (format.isJavaOrKotlin()) {
             handleResponseDirectlyInTheCall(call, res, lines)
         }
         handleLastLine(call, res, lines, responseVariableName)
@@ -567,10 +571,8 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
         }
     }
 
-    private fun handlePythonResponseContents(lines: Lines, res: RestCallResult, resVarName: String) {
+    private fun handlePythonResponseContents(lines: Lines, res: HttpWsCallResult, resVarName: String) {
         val bodyString = res.getBody()
-        val code = res.getStatusCode()
-        lines.add("assert $resVarName.status_code == $code")
         if (bodyString.isNullOrBlank()) {
             lines.add("assert not($resVarName.get_data(as_text=True))")
         } else {
