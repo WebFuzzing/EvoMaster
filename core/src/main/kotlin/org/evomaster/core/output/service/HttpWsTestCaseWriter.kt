@@ -73,18 +73,12 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isJavaScript() -> lines.append("await superagent")
             format.isCsharp() -> lines.append("await Client")
-            format.isPython() -> {
-                if (config.blackBox) {
-                    lines.append("$resVarName = requests \\")
-                } else {
-                    lines.append("$resVarName = self.test_client \\")
-                }
-            }
+            format.isPython() -> lines.append("$resVarName = requests \\")
         }
 
         if (!format.isJavaScript() && !format.isCsharp() && !format.isPython()) {
             // in JS, the Accept must be after the verb
-            // in C#, must be before the call
+            // in C# and Python, must be before the call
             lines.append(getAcceptHeader(call, res))
         }
     }
@@ -579,11 +573,7 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
             val type = res.getBodyType()!!
             val escapedText = GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
             if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("json")) {
-                if (config.blackBox) {
-                    lines.add("assert $resVarName.json() == json.loads(\"$escapedText\")")
-                } else {
-                    lines.add("assert $resVarName.json == json.loads(\"$escapedText\")")
-                }
+                lines.add("assert $resVarName.json() == json.loads(\"$escapedText\")")
             } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
                 lines.add("assert \"$escapedText\" in $resVarName.text")
             }

@@ -86,7 +86,7 @@ class TestSuiteWriter {
 
         if (! config.outputFormat.isJavaScript() || config.outputFormat.isPython()) {
             /*
-                In Java/Kotlin/C# the tests are inside a class, but not in JS
+                In Java/Kotlin/C#/Python the tests are inside a class, but not in JS
              */
             lines.indent()
         }
@@ -515,11 +515,7 @@ class TestSuiteWriter {
                     }
                     config.outputFormat.isPython()-> {
                         addStatement("cls.$controller.setup_for_generated_test()", lines)
-                        if (config.blackBox) {
-                            addStatement("cls.baseUrlOfSut = cls.$controller.start_sut()", lines)
-                        } else {
-                            addStatement("cls.test_client = cls.$controller.app().test_client()", lines)
-                        }
+                        addStatement("cls.baseUrlOfSut = cls.$controller.start_sut()", lines)
                     }
                 }
 

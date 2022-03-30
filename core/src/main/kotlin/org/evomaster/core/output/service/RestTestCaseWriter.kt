@@ -167,8 +167,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
             when {
                 format.isKotlin() -> lines.append("\"\${$baseUrlOfSut}")
-                format.isPython() && config.blackBox -> lines.append("self.$baseUrlOfSut + \"")
-                format.isPython() && !config.blackBox -> lines.append("\"")
+                format.isPython() -> lines.append("self.$baseUrlOfSut + \"")
                 else -> lines.append("$baseUrlOfSut + \"")
             }
 
@@ -287,7 +286,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         lines.add("Assert.True(IsValidURIorEmpty($location));")
                     }
                     format.isPython() -> {
-                        lines.add("self.assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}))")
+                        // TODO: Python
+                        // lines.add("assert is_valid_uri_or_empty(${locationVar(call.path.lastElement())})")
                     }
                 }
             } else {
