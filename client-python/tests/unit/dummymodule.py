@@ -29,19 +29,24 @@ def dummy_compare(x, y):
         print("or")
     print('end')
 
+
 def dummy_print(x):
     print(x)
+
 
 def dummy_boolean():
     return False
 
+
 def dummy_empty(x):
     pass
+
 
 def dummy_truthness(x):
     if x > 10 and not(x < 12):
         return True
     return False
+
 
 def dummy_call(x):
     return dummy_boolean()
