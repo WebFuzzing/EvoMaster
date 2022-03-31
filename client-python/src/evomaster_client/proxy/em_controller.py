@@ -1,4 +1,4 @@
-"""Controller used to redirect all calls to a diferent URL and trace eacg call arguments and responses."""
+"""Controller used to redirect all calls to a diferent URL and trace each call arguments and responses."""
 
 import os
 import json

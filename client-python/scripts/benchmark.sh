@@ -4,6 +4,12 @@
 
 EVOMASTER_TIME="30m"
 
+if pgrep -f "python -m evomaster_client" > /dev/null
+then
+    echo "An evomaster_client instance is already running"
+    exit
+fi
+
 for SEED in {1..5}
 do
     for APP in 'ncs' 'scs' 'news'
@@ -45,7 +51,7 @@ do
             # Generate coverage reports
             cd src
             python -m pytest --cov-report html:$COVERAGE_DIR/cov_html --cov-report xml:$COVERAGE_DIR/cov.xml --cov-report annotate:$COVERAGE_DIR/cov_annotate \
-                            --cov=evomaster_benchmark/$APP "$TESTS_DIR/EvoMasterTest.py"
+                            --cov=evomaster_benchmark/$APP $TESTS_DIR/*
             cd -
         done
     done

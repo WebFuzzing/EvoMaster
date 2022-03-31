@@ -69,6 +69,7 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
             return
         self.server = ServerThread(self.instrumented_app())
         self.server.start()
+        return self.get_url()
 
     def stop_sut(self):
         if not self.is_sut_running():

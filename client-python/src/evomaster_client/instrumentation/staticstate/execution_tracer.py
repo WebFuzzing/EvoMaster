@@ -1,7 +1,7 @@
 from typing import Sequence, Set, Mapping
 
-from evomaster_client.instrumentation import objective_naming
-from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
+from evomaster_client.instrumentation.shared import objective_naming
+from evomaster_client.instrumentation.staticstate.objective_recorder import ObjectiveRecorder
 from evomaster_client.instrumentation.util import Singleton
 from evomaster_client.instrumentation.heuristic.truthness import Truthness
 

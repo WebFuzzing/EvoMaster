@@ -1,7 +1,7 @@
 from numbers import Number
 from typing import Any, Callable
 
-from evomaster_client.instrumentation.execution_tracer import ExecutionTracer
+from evomaster_client.instrumentation.staticstate.execution_tracer import ExecutionTracer
 from evomaster_client.instrumentation.heuristic.truthness import Truthness, eq_truthness_number, eq_truthness_str, \
                                                                  lt_truthness_number, lt_truthness_str
 

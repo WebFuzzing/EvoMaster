@@ -1,6 +1,6 @@
 from typing import Any
 
-from evomaster_client.instrumentation.execution_tracer import ExecutionTracer
+from evomaster_client.instrumentation.staticstate.execution_tracer import ExecutionTracer
 from evomaster_client.instrumentation.heuristic import heuristics
 
 

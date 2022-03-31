@@ -2,9 +2,9 @@ import ast
 from ast import UnaryOp, BoolOp, Compare, Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn, And, Or, Not
 from typing import Any
 
-from evomaster_client.instrumentation.objective_naming import (file_objective_name, line_objective_name,
+from evomaster_client.instrumentation.shared.objective_naming import (file_objective_name, line_objective_name,
                                                                statement_objective_name, branch_objective_name)
-from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
+from evomaster_client.instrumentation.staticstate.objective_recorder import ObjectiveRecorder
 from evomaster_client.instrumentation.heuristic.heuristics import VALID_OPS
 
 NO_INSTRUMENTATION = 0

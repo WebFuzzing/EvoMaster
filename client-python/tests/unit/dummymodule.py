@@ -1,4 +1,4 @@
-"""Module docstring."""
+"""Dummy module used to test the import hook instrumentation."""
 
 
 def dummy_compare(x, y):

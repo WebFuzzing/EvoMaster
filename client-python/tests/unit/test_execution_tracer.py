@@ -1,4 +1,4 @@
-from evomaster_client.instrumentation.execution_tracer import ExecutionTracer
+from evomaster_client.instrumentation.staticstate.execution_tracer import ExecutionTracer
 
 
 def test_execution_tracer_singleton():

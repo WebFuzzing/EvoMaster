@@ -1,8 +1,8 @@
 from typing import Set
 import abc
 
-from evomaster_client.instrumentation.execution_tracer import ExecutionTracer, Action, TargetInfo
-from evomaster_client.instrumentation.objective_recorder import ObjectiveRecorder
+from evomaster_client.instrumentation.staticstate.execution_tracer import ExecutionTracer, Action, TargetInfo
+from evomaster_client.instrumentation.staticstate.objective_recorder import ObjectiveRecorder
 
 
 class SutHandler(metaclass=abc.ABCMeta):
