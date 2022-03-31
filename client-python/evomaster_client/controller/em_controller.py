@@ -42,7 +42,7 @@ def controller(sut_handler: SutHandler) -> Blueprint:
                 print("Resetting SUT state")
                 abort(400, {'error': 'Invalid JSON: cannot reset state and stop service at same time'})
             sut_handler.stop_sut()
-        return jsonify({})
+        return jsonify({}), 204
 
     @controllerapi.route('/testResults', methods=['GET'])
     def testResults():
