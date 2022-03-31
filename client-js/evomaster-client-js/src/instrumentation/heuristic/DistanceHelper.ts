@@ -61,11 +61,11 @@ export default class DistanceHelper {
 
         let d : number;
 
-        if (left == "number" && right == "number")
+        if (ltype == "number" && rtype == "number")
             d = this.getDistanceToEqualityNumber(left, right);
-        else if (left == "string" && right == "string")
+        else if (ltype == "string" && rtype == "string")
             d = this.getLeftAlignmentDistance(left, right);
-        else if ((left == "string" && right == "number") || right == "string" && left == "number"){
+        else if ((ltype == "string" && rtype == "number") || ltype == "string" && rtype == "number"){
             d = this.getLeftAlignmentDistance(left, right);
         } else
             d = Number.MAX_VALUE;

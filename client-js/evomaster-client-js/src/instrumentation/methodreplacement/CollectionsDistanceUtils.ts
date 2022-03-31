@@ -27,7 +27,7 @@ export default class CollectionsDistanceUtils {
 
             let counter = 0;
 
-            for (let value in c){
+            for (let value of c){
                 if (counter == limit)
                     break;
                 counter++;
