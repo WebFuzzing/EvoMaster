@@ -3,7 +3,7 @@ from ast import UnaryOp, BoolOp, Compare, Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot
 from typing import Any
 
 from evomaster_client.instrumentation.shared.objective_naming import (file_objective_name, line_objective_name,
-                                                               statement_objective_name, branch_objective_name)
+                                                                      statement_objective_name, branch_objective_name)
 from evomaster_client.instrumentation.staticstate.objective_recorder import ObjectiveRecorder
 from evomaster_client.instrumentation.heuristic.heuristics import VALID_OPS
 
@@ -168,6 +168,8 @@ class AstTransformer(ast.NodeTransformer):
             return "in"
         elif isinstance(operator, NotIn):
             return "not in"
+        else:
+            raise ValueError('invalid operator')
 
     @staticmethod
     def is_pure(value):

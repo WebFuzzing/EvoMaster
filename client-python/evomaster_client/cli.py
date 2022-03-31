@@ -41,7 +41,7 @@ def run_instrumented(package_prefix, flask_module, flask_app):
 def run_em_handler(handler_module, handler_class, instrumentation_level):
     from evomaster_client.controller.em_app import run_em
     cls = getattr(import_module(handler_module), handler_class)
-    run_em({}, sut_handler=cls(instrumentation_level))
+    run_em(sut_handler=cls(instrumentation_level))
 
 
 if __name__ == '__main__':

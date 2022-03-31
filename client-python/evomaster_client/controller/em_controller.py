@@ -6,9 +6,9 @@ from evomaster_client.controller.sut_handler import SutHandler
 
 
 def controller(sut_handler: SutHandler) -> Blueprint:
-    controller = Blueprint('controller', __name__, url_prefix='/controller/api')
+    controllerapi = Blueprint('controller', __name__, url_prefix='/controller/api')
 
-    @controller.route('/infoSUT', methods=['GET'])
+    @controllerapi.route('/infoSUT', methods=['GET'])
     def infoSUT():
         sut_info = {
             'isSutRunning': sut_handler.is_sut_running(),
@@ -20,7 +20,7 @@ def controller(sut_handler: SutHandler) -> Blueprint:
         }
         return jsonify({'data': sut_info})
 
-    @controller.route('/runSUT', methods=['PUT'])
+    @controllerapi.route('/runSUT', methods=['PUT'])
     def runSUT():
         args = request.json
         if not args:
@@ -44,7 +44,7 @@ def controller(sut_handler: SutHandler) -> Blueprint:
             sut_handler.stop_sut()
         return jsonify({})
 
-    @controller.route('/testResults', methods=['GET'])
+    @controllerapi.route('/testResults', methods=['GET'])
     def testResults():
         ids = set(int(_id) for _id in filter(None, request.args.get('ids', '').split(',')))
         target_infos = sut_handler.get_target_infos(ids)
@@ -60,7 +60,7 @@ def controller(sut_handler: SutHandler) -> Blueprint:
         }
         return jsonify({'data': test_results})
 
-    @controller.route('/controllerInfo', methods=['GET'])
+    @controllerapi.route('/controllerInfo', methods=['GET'])
     def controllerInfo():
         controller_info = {
             'fullName': sut_handler.__class__.__module__ + '.' + sut_handler.__class__.__name__,
@@ -68,20 +68,20 @@ def controller(sut_handler: SutHandler) -> Blueprint:
         }
         return jsonify({'data': controller_info})
 
-    @controller.route('/newSearch', methods=['POST'])
+    @controllerapi.route('/newSearch', methods=['POST'])
     def newSearch():
         sut_handler.new_search()
         return jsonify({})
 
-    @controller.route('/newAction', methods=['PUT'])
+    @controllerapi.route('/newAction', methods=['PUT'])
     def newAction():
         if any(arg not in request.json for arg in ['index', 'inputVariables']):
             abort(400)
         sut_handler.new_action(request.json)
         return jsonify({})
 
-    @controller.route('/databaseCommand', methods=['POST'])
+    @controllerapi.route('/databaseCommand', methods=['POST'])
     def databaseCommand():
         raise NotImplementedError()
 
-    return controller
+    return controllerapi

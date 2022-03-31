@@ -128,7 +128,8 @@ def evaluate_and(left: Callable, right: Callable, right_pure: bool, module: str,
             truthness_y = Truthness(FLAG_EXCEPTION, FLAG_EXCEPTION)
             exception_y = e
         truthness = Truthness(truthness_x.ofTrue / 2 + truthness_y.ofTrue / 2,
-                              max(truthness_x.ofFalse, (truthness_y.ofFalse / 2 if exception_x is not None else truthness_y.ofFalse)))
+                              max(truthness_x.ofFalse,
+                                  (truthness_y.ofFalse / 2 if exception_x is not None else truthness_y.ofFalse)))
     else:
         truthness = Truthness(truthness_x.ofTrue / 2, truthness_x.ofFalse)
 
@@ -174,7 +175,8 @@ def evaluate_or(left: Callable, right: Callable, right_pure: bool, module: str, 
         except Exception as e:
             truthness_y = Truthness(FLAG_EXCEPTION, FLAG_EXCEPTION)
             exception_y = e
-        truthness = Truthness(max(truthness_x.ofTrue, (truthness_y.ofTrue / 2 if exception_x is not None else truthness_y.ofTrue)),
+        truthness = Truthness(max(truthness_x.ofTrue,
+                                  (truthness_y.ofTrue / 2 if exception_x is not None else truthness_y.ofTrue)),
                               truthness_x.ofFalse / 2 + truthness_y.ofFalse / 2)
     else:
         truthness = Truthness(truthness_x.ofTrue, truthness_x.ofFalse / 2)

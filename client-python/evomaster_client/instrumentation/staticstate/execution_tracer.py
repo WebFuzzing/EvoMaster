@@ -88,7 +88,7 @@ class ExecutionTracer(Singleton):
         self.additional_info_list[self.action_index].pop_last_executed_statement()
 
     def get_number_of_objectives(self, prefix: str = '') -> int:
-        return len([k for k in self.objective_coverage.keys() if k.startsWith(prefix)])
+        return len([k for k in self.objective_coverage.keys() if k.startswith(prefix)])
 
     def get_number_of_non_covered_objectives(self, prefix: str = '') -> int:
         return len(self.get_non_covered_objectives(prefix))

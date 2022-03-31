@@ -2,7 +2,7 @@ from typing import List, Set, Mapping
 
 from evomaster_client.instrumentation.util import Singleton
 from evomaster_client.instrumentation.shared.objective_naming import (FILE, LINE, STATEMENT, BRANCH,
-                                                               get_file_id_from_objective_name)
+                                                                      get_file_id_from_objective_name)
 
 
 class ObjectiveRecorder(Singleton):

@@ -115,7 +115,8 @@ class ImportHookContextManager:
             pass  # already removed
 
 
-def install_import_hook(package_prefixes: List[str], instrumentation_level: int = FULL_INSTRUMENTATION) -> ImportHookContextManager:
+def install_import_hook(package_prefixes: List[str], instrumentation_level: int = FULL_INSTRUMENTATION) \
+                        -> ImportHookContextManager:
     """Install the InstrumentationFinder in the meta path.
     Args:
         module_to_instrument: The module that shall be instrumented.
