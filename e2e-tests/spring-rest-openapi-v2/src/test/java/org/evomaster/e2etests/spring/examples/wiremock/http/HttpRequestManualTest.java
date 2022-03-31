@@ -40,6 +40,15 @@ public class HttpRequestManualTest extends SpringTestBase {
                                 .withBody("{\"message\": \"{{request.path.[2]}}\"}")
                                 .withTransformers("response-template")));
 
+        wireMockServer.stubFor(get(urlMatching("/api/echo/([a-z]*)\\?x=([0-9]*)&y=([a-z]*)"))
+                .atPriority(1)
+                .willReturn(
+                        aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withStatus(200)
+                                .withBody("{\"message\": \"{{request.path.[2]}}\"}")
+                                .withTransformers("response-template")));
+
         // to prevent from the 404 when no matching stub below stub is added
         wireMockServer.stubFor(get(urlMatching("/.*"))
                 .atPriority(2)
@@ -61,6 +70,15 @@ public class HttpRequestManualTest extends SpringTestBase {
     public void testURLConnection() {
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/external/url")
+                .then()
+                .statusCode(200)
+                .body("valid", is(true));
+    }
+
+    @Test
+    public void testURLConnectionWithQuery() {
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/wiremock/external/url/withQuery")
                 .then()
                 .statusCode(200)
                 .body("valid", is(true));
