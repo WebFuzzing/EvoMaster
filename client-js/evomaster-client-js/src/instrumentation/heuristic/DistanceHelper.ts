@@ -65,8 +65,10 @@ export default class DistanceHelper {
             d = this.getDistanceToEqualityNumber(left, right);
         else if (ltype == "string" && rtype == "string")
             d = this.getLeftAlignmentDistance(left, right);
-        else if ((ltype == "string" && rtype == "number") || ltype == "string" && rtype == "number"){
-            d = this.getLeftAlignmentDistance(left, right);
+        else if (ltype == "string" && rtype == "number"){
+            d = this.getLeftAlignmentDistance(left, right.toString());
+        } else if (rtype == "string" && ltype == "number"){
+            d = this.getLeftAlignmentDistance(left.toString(), right);
         } else
             d = Number.MAX_VALUE;
         return d;

@@ -994,3 +994,70 @@ test("await in the inputs params", ()=>{
 });
 
 
+test("test array includes replacement", ()=>{
+    const code = dedent`
+        function foo(searchString){
+            const x = ["foo", 1, 2, 3];
+            return x.includes(searchString);
+        }
+    `
+    const instrumented = runPlugin(code).code;
+
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        function foo(searchString) {
+          __EM__.enteringStatement("test.ts", 2, 1);
+        
+          const x = ["foo", 1, 2, 3];
+        
+          __EM__.completedStatement("test.ts", 2, 1);
+        
+          __EM__.enteringStatement("test.ts", 3, 2);
+        
+          return __EM__.completingStatement(__EM__.callTracked("test.ts", 3, 0, x, "includes", searchString), "test.ts", 3, 2);
+        }
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+})
+
+test("test squareBrackets", ()=>{
+
+    const code  = dedent`
+        let x = {"foo": "foo", "bar": "bar"};
+        let y = x["foo"];
+    `;
+
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        let x = {
+          "foo": "foo",
+          "bar": "bar"
+        };
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        let y = __EM__.squareBrackets("test.ts", 2, 0, x, "foo");
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+    `);
+});
+
+
