@@ -7,7 +7,7 @@ import {
     ReturnStatement,
     Statement,
     UnaryExpression,
-    ConditionalExpression, Expression, isAwaitExpression
+    ConditionalExpression, Expression, isAwaitExpression, MemberExpression
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
@@ -401,6 +401,31 @@ export default function evomasterPlugin(
         statementCounter++;
     }
 
+    function replaceMemberExpression(path: NodePath){
+        const member = path.node as MemberExpression
+
+        /*
+            TODO: need better, more explicit way to skip traversing
+            new nodes we are adding
+        */
+        if(! member.loc ||
+            // @ts-ignore
+            member.evomaster
+        ){
+            return;
+        }
+
+        const l = member.loc.start.line;
+        const obj = member.object
+        const pro = member.property
+        const replaced = t.callExpression(t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.squareBrackets.name)),
+            [t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter), obj, pro]);
+        // @ts-ignore
+        member.evomaster = true;
+
+        path.replaceWith(replaced);
+    }
+
     function replaceCallExpression(path: NodePath){
 
         //if(! t.isExpr) //TODO there is no available check for call expressions???
@@ -609,6 +634,11 @@ export default function evomasterPlugin(
             CallExpression:{
                 enter(path: NodePath){
                     replaceCallExpression(path);
+                }
+            },
+            MemberExpression:{
+                enter(path: NodePath){
+                    replaceMemberExpression(path);
                 }
             }
         }
