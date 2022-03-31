@@ -46,7 +46,7 @@ def evaluate(left, op, right, module, line, branch):
     return res
 
 
-def compare(left, op, right):
+def compare(left, op, right) -> Truthness:
     if op not in VALID_OPS:
         raise ValueError(f"Invalid op: {op}")
 
@@ -99,6 +99,7 @@ def handle_not(value: Any) -> Any:
 def evaluate_and(left: Callable, right: Callable, right_pure: bool, module: str, line: int, branch: int):
     global LAST_EVALUATION
     clear_last_evaluation()
+    x = None
     try:
         exception_x = None
         x = left()
@@ -145,6 +146,7 @@ def evaluate_and(left: Callable, right: Callable, right_pure: bool, module: str,
 def evaluate_or(left: Callable, right: Callable, right_pure: bool, module: str, line: int, branch: int):
     global LAST_EVALUATION
     clear_last_evaluation()
+    x = None
     try:
         exception_x = None
         x = left()

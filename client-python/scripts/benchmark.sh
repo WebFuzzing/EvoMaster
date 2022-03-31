@@ -21,9 +21,7 @@ do
             GENERATED_DIR="$DIR/generated/$APP/$LEVEL"
             mkdir -p $GENERATED_DIR
 
-            cd src
             nohup python -m evomaster_client.cli run-em-handler -m "evomaster_benchmark.em_handlers.$APP" -c 'EMHandler' -i $LEVEL > "$GENERATED_DIR/tmp.log" 2>&1 &
-            cd -
 
             echo $! > save_pid.txt
             PID="$(cat save_pid.txt)"
@@ -49,10 +47,8 @@ do
             mv "$GENERATED_DIR/tmp.log"  "$LOGS_DIR/emhandler.log"
 
             # Generate coverage reports
-            cd src
             python -m pytest --cov-report html:$COVERAGE_DIR/cov_html --cov-report xml:$COVERAGE_DIR/cov.xml --cov-report annotate:$COVERAGE_DIR/cov_annotate \
                             --cov=evomaster_benchmark/$APP $TESTS_DIR/*
-            cd -
         done
     done
 done
