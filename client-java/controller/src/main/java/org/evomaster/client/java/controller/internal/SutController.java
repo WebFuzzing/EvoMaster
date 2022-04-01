@@ -536,10 +536,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public List<List<RPCActionDto>> handleSeededTests(){
+
+        if (seedRPCTests() == null || seedRPCTests().isEmpty()) return null;
+
         if (rpcInterfaceSchema.isEmpty())
             throw new IllegalStateException("empty RPC interface: The RPC interface schemas are not extracted yet");
-
-        if (seedRPCTests().isEmpty()) return null;
 
         List<List<RPCActionDto>> results = new ArrayList<>();
 
