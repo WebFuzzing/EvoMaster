@@ -92,7 +92,8 @@ object TokenWriter {
             val path = k.extractTokenField.substring(1).replace("/",".")
 
             if (format.isJavaScript()){
-                lines.add(".then(res => {${tokenName(k)} += res.body.$path;})")
+                lines.add(".then(res => {${tokenName(k)} += res.body.$path;},")
+                lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")});")}
             }else
                 lines.add(".then().extract().response().path(\"$path\")")
 
