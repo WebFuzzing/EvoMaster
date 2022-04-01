@@ -566,6 +566,7 @@ class GraphQLActionBuilderTest {
         assertTrue(unionObjBouquet.fields[0] is OptionalGene)
         assertTrue((unionObjBouquet.fields[0] as OptionalGene).gene is ObjectGene)
         val objFlower = (unionObjBouquet.fields[0] as OptionalGene).gene as ObjectGene
+        assertTrue(objFlower.name=="Flower")
         assertTrue(objFlower.fields.any { it is BooleanGene && it.name == "id" })
         assertTrue(objFlower.fields.any { it is BooleanGene && it.name == "color" })
         /**/

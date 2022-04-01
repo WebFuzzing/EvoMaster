@@ -1,67 +1,75 @@
 package org.evomaster.core.problem.graphql.builder
 
-import org.evomaster.core.problem.graphql.schema.__TypeKind
-
 /**
- * Intermediate data structure to parse and organize the object graphQl-schema types.
- *
+ * Intermediate data structure to parse and organize the object graphQl-schema types
  * WARN: this class MUST be kept immutable
  * */
 data class Table(
         /**
-         * Specify the name of the table type.
-         * For example, Query in petclinic.graphqls
+         * Specify the name of the type.
+         * For example, in petclinic.graphqls:
+         * typeName: Query
          */
         val typeName: String,
+
         /**
-         * Specify the name of the field in the table.
-         * for example pettypes (inside Query) in petclinic.graphqls.
-         * Ie. the name of field in a node.
-         *
-         * This must always be present.
+         * Specify the name of the field. I.e. the name of field in a node
+         * For example: pettypes (inside Query) in petclinic.graphqls.
          */
         val fieldName: String,
+
         /**
-         * Describing the kind of the tableField, eg: LIST
+         * Describing the kind of the field name
+         * For example: pettypes is a LIST
          */
-        val kindOfTableField: __TypeKind = __TypeKind.NULL, // TODO check this NULL
+        val KindOfFieldName: String = "null",
+
         /**
-         * Describing if the kind of the table field is nullable
+         * Describing if the kind of the field name is nullable
+         * isKindOfFieldNameOptional: false
          */
-        val isKindOfTableFieldOptional: Boolean = false,
+        val isKindOfFieldNameOptional: Boolean = false,
+
         /**
-         * Describing the type of the table field.
-         * For example, the name of the object representing this type.
+         * Describing the type of the field
+         * For example: PetType,
          */
-        val tableFieldType: String = "",
+        val fieldType: String,
+
         /**
-         * Describing the kind of the tableFieldType, eg: SCALAR, OBJECT,INPUT_OBJECT, ENUM
+         * Describing the kind of the Field Type, eg: SCALAR, OBJECT,INPUT_OBJECT, ENUM
+         * For example: PetType is an OBJECT
          */
-        val kindOfTableFieldType: __TypeKind,
+        val kindOfFieldType: String,
+
         /**
          * Describing if the kind of the table field type is nullable
+         * For example: the OBJECT: PetType is not optional
          */
-        val isKindOfTableFieldTypeOptional: Boolean = false,
-        /**
-         * Describing if the table field has arguments
-         */
-        val tableFieldWithArgs: Boolean = false,
+        val isKindOfFieldTypeOptional: Boolean = false,
 
-        /*
+        /**
+         * Describing if the field name has arguments
+         */
+        val isFieldNameWithArgs: Boolean = false,
+
+        /**
          * Containing the enum values
          */
-        val enumValues: List<String> = listOf(),
-        /*
+        val enumValues: List<String>,
+
+        /**
          * Containing the union possible types
          */
-        val unionTypes: List<String> = listOf(),
-        /*
+        val unionTypes: List<String>,
+
+        /**
          * Containing the interface possible types
           */
-        val interfaceTypes: List<String> = listOf()
+        val interfaceTypes: List<String>
 
 ){
 
-        val uniqueId = if(typeName == null)  fieldName else "$typeName.$fieldName"
+        val uniqueId = "$typeName.$fieldName"
 
 }
