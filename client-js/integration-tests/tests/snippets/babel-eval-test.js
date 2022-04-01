@@ -531,6 +531,32 @@ test("test array includes", async () => {
 
 });
 
+test("test array includes with null found", async () => {
+
+    expect(ET.getNumberOfObjectives(ON.METHOD_REPLACEMENT)).toBe(0);
+    let f;
+    const code = dedent`
+        f = function foo(searchString){
+            const x = ["foo", 1, 2, 3, null];
+            return x.includes(searchString);
+        }
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = f(null);
+    expect(k).toBe(true);
+    expect(ET.getNumberOfObjectives(ON.METHOD_REPLACEMENT)).toBe(2);
+    expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_true")).toBe(1);
+    expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_false") < 1).toBe(true);
+
+    k = f("bar");
+    expect(k).toBe(false);
+    expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_false")).toBe(1);
+
+});
+
 test("test squareBrackets", async () => {
     expect(ET.getNumberOfObjectives(ON.METHOD_REPLACEMENT)).toBe(0);
     let f;
@@ -545,6 +571,30 @@ test("test squareBrackets", async () => {
     eval(instrumented);
 
     let k = f("foo");
+    expect(k).toBe("foo");
+    expect(ET.getNumberOfObjectives(ON.METHOD_REPLACEMENT)).toBe(2);
+    expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_true")).toBe(1);
+    expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_false") < 1).toBe(true);
+
+    k = f("foo2");
+    expect(k).toBe(undefined);
+    expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_false")).toBe(1);
+})
+
+test("test squareBrackets with null found", async () => {
+    expect(ET.getNumberOfObjectives(ON.METHOD_REPLACEMENT)).toBe(0);
+    let f;
+    const code = dedent`
+        f = function foo(property){
+            const x = {null: "foo", "bar": "bar"};
+            return x[property];
+        }
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = f(null);
     expect(k).toBe("foo");
     expect(ET.getNumberOfObjectives(ON.METHOD_REPLACEMENT)).toBe(2);
     expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_true")).toBe(1);

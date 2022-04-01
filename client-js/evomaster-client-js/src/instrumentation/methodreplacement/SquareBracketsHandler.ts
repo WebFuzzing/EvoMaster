@@ -11,6 +11,15 @@ import CollectionsDistanceUtils from "./CollectionsDistanceUtils";
 
 export default class SquareBracketsHandler{
 
+
+    /**
+     * handle tt for squareBrackets, such as x["foo"]
+     * @param fileName
+     * @param line
+     * @param branchId
+     * @param object
+     * @param property
+     */
     public static squareBracketInMemberExpression(fileName: string, line: number, branchId: number, object: Object, property: any): any {
 
 
@@ -19,12 +28,11 @@ export default class SquareBracketsHandler{
         const idTemplate = ObjectiveNaming.methodReplacementObjectiveNameTemplate(fileName, line, branchId);
 
 
-        if (object == null || object == undefined
-            || property == null || property == undefined
-            || !(((typeof  property) == "number") || ((typeof property) == "string"))){
+        if (object == null || object == undefined ||
+            // handle taint analysis for null, undefined, number and string
+            (property && ((typeof  property) != "number") && ((typeof property) != "string"))){
             /*
                 note that null or undefined is allowed, x = {null:"foo", undefined:"bar"}
-                however, there might not need to provide the heuristic.
 
                 for other types of the property,
                     do not compute distance for them yet, eg, object,
