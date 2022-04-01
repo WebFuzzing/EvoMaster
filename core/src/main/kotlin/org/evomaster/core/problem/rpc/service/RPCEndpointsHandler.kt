@@ -16,6 +16,7 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
+import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
@@ -97,6 +98,18 @@ class RPCEndpointsHandler {
         return actionSchemaCluster[actionId]?: throw IllegalStateException("could not find the $actionId")
     }
 
+    /**
+     * create RPC individual based on seeded tests
+     */
+    fun handledSeededTests(tests: List<List<RPCActionDto>>): List<RPCIndividual>{
+        return tests.map {td->
+            RPCIndividual(actions = td.map { d->
+                val name = actionName(d.interfaceId, d.actionName)
+                processEndpoint(name, d, true)
+            }.toMutableList())
+        }
+    }
+
     private fun setAuthInfo(infoDto: SutInfoDto){
         infoDto.infoForAuthentication?:return
 
@@ -105,6 +118,7 @@ class RPCEndpointsHandler {
                 log.warn("auth info at $index is not handled by RPC auth")
         }
     }
+
 
     private fun handleRPCAuthDto(index: Int, auth: AuthenticationDto) : Boolean{
         if (auth.jsonAuthEndpoint == null && auth.localAuthSetup == null)
