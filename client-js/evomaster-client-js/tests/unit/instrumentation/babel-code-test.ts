@@ -1032,18 +1032,21 @@ test("test squareBrackets", ()=>{
 
     const code  = dedent`
         let x = {"foo": "foo", "bar": "bar", 1: 1};
-        let y = x["foo"];
-        y = x[1];
+        y = x[1] && x["foo"];
         y = x.foo;
+        let z = 1;
+        y = x[z];
+        x.foo = "new foo";
     `;
 
     const instrumented = runPlugin(code).code;
+    console.log(instrumented);
     expect(instrumented).toEqual(dedent`
         //File instrumented with EvoMaster
     
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
         
-        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Line_test.ts_00004", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2", "Statement_test.ts_00004_3"]);
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Line_test.ts_00004", "Line_test.ts_00005", "Line_test.ts_00006", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2", "Statement_test.ts_00004_3", "Statement_test.ts_00005_4", "Statement_test.ts_00006_5"]);
         
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -1057,22 +1060,36 @@ test("test squareBrackets", ()=>{
         
         __EM__.enteringStatement("test.ts", 2, 1);
         
-        let y = __EM__.squareBrackets("test.ts", 2, 0, x, "foo");
+        y = __EM__.and(() => __EM__.squareBrackets("test.ts", 2, 1, x, 1), () => __EM__.squareBrackets("test.ts", 2, 2, x, "foo"), false, "test.ts", 2, 0);
         
         __EM__.completedStatement("test.ts", 2, 1);
         
         __EM__.enteringStatement("test.ts", 3, 2);
         
-        y = __EM__.squareBrackets("test.ts", 3, 1, x, 1);
+        y = __EM__.squareBrackets("test.ts", 3, 3, x, "foo");
         
         __EM__.completedStatement("test.ts", 3, 2);
         
         __EM__.enteringStatement("test.ts", 4, 3);
         
-        y = x.foo;
+        let z = 1;
         
         __EM__.completedStatement("test.ts", 4, 3);
+        
+        __EM__.enteringStatement("test.ts", 5, 4);
+        
+        y = __EM__.squareBrackets("test.ts", 5, 4, x, z);
+        
+        __EM__.completedStatement("test.ts", 5, 4);
+        
+        __EM__.enteringStatement("test.ts", 6, 5);
+        
+        x.foo = "new foo";
+        
+        __EM__.completedStatement("test.ts", 6, 5);
     `);
 });
+
+
 
 

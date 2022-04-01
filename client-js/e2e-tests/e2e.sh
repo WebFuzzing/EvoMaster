@@ -41,6 +41,12 @@ if [ $? -ne 0 ] ; then
    exit 1
 fi
 
+$WB  /client-js/integration-tests/build/src/taint-squareBrackets   em-main.js   app-driver.js  1 OK_FOUND
+if [ $? -ne 0 ] ; then
+   echo "ERROR: Test failed for taint-squareBrackets"
+   exit 1
+fi
+
 
 ### Black-Box Testing ###
 # Note that here we will run the original, NON-instrumented version of the SUT, i.e, under /src
