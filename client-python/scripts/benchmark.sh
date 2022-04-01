@@ -17,11 +17,10 @@ do
         for LEVEL in 0 1 2
         do
             # Prepare workdirs
-            DIR=$(pwd)
-            GENERATED_DIR="$DIR/generated/$APP/$LEVEL"
+            GENERATED_DIR="generated/$APP/$LEVEL"
             mkdir -p $GENERATED_DIR
 
-            nohup python -m evomaster_client.cli run-em-handler -m "evomaster_benchmark.em_handlers.$APP" -c 'EMHandler' -i $LEVEL > "$GENERATED_DIR/tmp.log" 2>&1 &
+            nohup python -m evomaster_client.cli run-em-handler -m "evomaster_benchmark.em_handlers.$APP" -c 'EMHandler' -i $LEVEL -l 'DEBUG' > "$GENERATED_DIR/tmp.log" 2>&1 &
 
             echo $! > save_pid.txt
             PID="$(cat save_pid.txt)"
@@ -48,7 +47,7 @@ do
 
             # Generate coverage reports
             python -m pytest --cov-report html:$COVERAGE_DIR/cov_html --cov-report xml:$COVERAGE_DIR/cov.xml --cov-report annotate:$COVERAGE_DIR/cov_annotate \
-                            --cov=evomaster_benchmark/$APP $TESTS_DIR/*
+                             --cov=evomaster_benchmark/$APP $TESTS_DIR/*
         done
     done
 done
