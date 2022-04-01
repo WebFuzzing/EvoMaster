@@ -21,6 +21,7 @@ class EMHandler(FlaskHandler):
         with self.server.app.app_context():
             from evomaster_benchmark.news.model import db
             db.drop_all()
+            db.create_all()
 
     def setup_for_generated_test(self):
         pass

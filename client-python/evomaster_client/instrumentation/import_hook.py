@@ -85,12 +85,8 @@ class InstrumentationLoader(SourceFileLoader):
     def source_to_code(self, data, path, *, _optimize=-1):
         source = decode_source(data)
         tree = ast.parse(source, filename=path)
-        # tree = _call_with_frames_removed(compile, source, path, 'exec', ast.PyCF_ONLY_AST,
-        #                                  dont_inherit=True, optimize=_optimize)
         tree = AstTransformer(self.name, self.instrumentation_level).visit(tree)
         ast.fix_missing_locations(tree)
-        # return _call_with_frames_removed(compile, tree, path, 'exec',
-        #                                  dont_inherit=True, optimize=_optimize)
         logging.debug(path)
         logging.debug(astor.to_source(tree))
         return compile(tree, path, 'exec')

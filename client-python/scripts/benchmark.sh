@@ -2,7 +2,7 @@
 #!/bin/sh
 # set -euf -o pipefail
 
-EVOMASTER_TIME="30m"
+EVOMASTER_TIME="10m"
 
 if pgrep -f "python -m evomaster_client" > /dev/null
 then
@@ -10,11 +10,14 @@ then
     exit
 fi
 
+find . | grep -E "(__pycache__|pytest_cache|\.pyc|\.pyo$)" | xargs rm -rf  # delete cached python bytecode
+export PYTHONDONTWRITEBYTECODE=1  # avoid caching python bytecode
+
 for SEED in {1..5}
 do
-    for APP in 'ncs' 'scs' 'news'
+    for APP in 'ncs' 'scs'
     do
-        for LEVEL in 0 1 2
+        for LEVEL in 0 1 2 3
         do
             # Prepare workdirs
             GENERATED_DIR="generated/$APP/$LEVEL"
