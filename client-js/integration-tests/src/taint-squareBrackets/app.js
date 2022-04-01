@@ -10,13 +10,25 @@ const cities = {
     ["Notodden"] : 12359
 }
 
+const countries = ["Norway", "China"]
+
 app.get("/populationByCity", (req, res) => {
     if(req.query["value"] && cities[req.query["value"]]){
         res.status(200);
-        res.json("OK_FOUND")
+        res.json("OK_FOUND_squareBrackets")
     } else {
         res.status(400);
-        res.json("FAILED")
+        res.json("FAILED_squareBrackets")
+    }
+});
+
+app.get("/findCountry", (req, res) => {
+    if(req.query["value"] && countries.includes(req.query["value"])){
+        res.status(200);
+        res.json("OK_FOUND_array")
+    } else {
+        res.status(400);
+        res.json("FAILED_array")
     }
 });
 
@@ -28,10 +40,34 @@ app.get("/swagger.json", (req, res) => {
         servers: [{url: "http://localhost:8080"}],
         info: {
             version: "1.0.0",
-            title: "taint-string"
+            title: "taint-squareBrackets"
         },
         paths: {
             "/populationByCity": {
+                get: {
+                    response: {
+                        "200": "OK",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "string"
+                                }
+                            }
+                        }
+                    },
+                    parameters: [
+                        {
+                            name: "value",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            }
+                        }
+                    ]
+                }
+            },
+            "/findCountry": {
                 get: {
                     response: {
                         "200": "OK",
