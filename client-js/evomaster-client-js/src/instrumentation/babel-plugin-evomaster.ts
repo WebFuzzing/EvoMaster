@@ -7,7 +7,7 @@ import {
     ReturnStatement,
     Statement,
     UnaryExpression,
-    ConditionalExpression, Expression, isAwaitExpression, MemberExpression
+    ConditionalExpression, Expression, isAwaitExpression, MemberExpression, isAssignmentExpression, AssignmentExpression
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
@@ -414,16 +414,25 @@ export default function evomasterPlugin(
         ){
             return;
         }
+
+        // skip to replace it if it is left of assignmentExpression yet
+        if (path.parent && t.isAssignmentExpression(path.parent)){
+            if ((path.parent as AssignmentExpression).left == path.node)
+                return;
+        }
+
+
         const pro = member.property
-        // we only handle cases whereby a type of the property is number or string
-        if(pro.type != "NumericLiteral" && pro.type != "StringLiteral")
-            return;
+        // we need to handle identifier as well
+        // if(pro.type != "NumericLiteral" && pro.type != "StringLiteral")
+        //     return;
 
         const l = member.loc.start.line;
         const obj = member.object
 
         const replaced = t.callExpression(t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.squareBrackets.name)),
-            [t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter), obj, pro]);
+            [t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter), obj,
+                !member.computed ? t.stringLiteral(pro.name) : pro]);
         // method replace boolean with true and false are created
         branchCounter++;
 
