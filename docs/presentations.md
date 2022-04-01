@@ -1,5 +1,9 @@
 # Seminars/Presentations
 
+* 2022: *Automated Test Case Generation With AI*.
+  Presentation given at NovaCare.
+  [[PDF](slides/2022_novacare.pdf)]
+
 * 2021: *AI-based Automated Test Case Generation
   for REST APIs with EvoMaster*.
   Presentation given at Norsk Helsenett.
