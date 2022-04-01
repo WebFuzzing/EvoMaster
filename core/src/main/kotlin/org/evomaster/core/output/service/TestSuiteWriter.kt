@@ -375,11 +375,13 @@ class TestSuiteWriter {
         }
 
         if (format.isPython()) {
-            lines.add("import unittest")
             lines.add("import json")
             lines.add("import requests")
+            lines.add("import unittest")
+            lines.add("from evomaster_client.em_test_utils import *")
             if(controllerName != null) {
                 val moduleName = controllerName.substring(0, controllerName.lastIndexOf("."));
+                lines.addEmpty()
                 lines.add("import $moduleName")
             }
         }

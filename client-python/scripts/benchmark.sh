@@ -13,9 +13,9 @@ fi
 find . | grep -E "(__pycache__|pytest_cache|\.pyc|\.pyo$)" | xargs rm -rf  # delete cached python bytecode
 export PYTHONDONTWRITEBYTECODE=1  # avoid caching python bytecode
 
-for SEED in {1..5}
+for NSEED in {1..5}
 do
-    for APP in 'ncs' 'scs'
+    for APP in 'ncs' 'scs' 'news'
     do
         for LEVEL in 0 1 2 3
         do
@@ -38,7 +38,7 @@ do
             mkdir -p $LOGS_DIR
             mkdir -p $COVERAGE_DIR
 
-            echo "Running EvoMaster handler for $APP (level $LEVEL) in $PID..."
+            echo "Running EvoMaster handler for $APP (level: $LEVEL, seed number: $NSEED) in $PID..."
             java -jar ../core/target/evomaster.jar --maxTime $EVOMASTER_TIME --writeStatistics false --outputFolder $TESTS_DIR --outputFormat PYTHON_UNITTEST
 
             echo "Shutting down EvoMaster handler for $APP (level $LEVEL) in $PID..."

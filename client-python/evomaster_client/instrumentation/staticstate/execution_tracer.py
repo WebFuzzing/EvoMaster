@@ -1,4 +1,3 @@
-import logging
 from typing import Sequence, Set, Mapping
 
 from evomaster_client.instrumentation.shared import objective_naming

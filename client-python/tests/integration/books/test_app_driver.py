@@ -136,7 +136,7 @@ def test_create_book(sut_url):
     assert 200 == response.status_code
     assert n+1 == len(response.json())
 
-    response = requests.get(location)
+    response = requests.get(sut_url + location)
     assert 200 == response.status_code
     assert 'foo' == response.json()['title']
 
@@ -163,16 +163,16 @@ def test_update_book(sut_url):
     assert 201 == response.status_code
     location = response.headers['location']
 
-    response = requests.get(location)
+    response = requests.get(sut_url + location)
     book = response.json()
 
     book_id = book['book_id']
-    response = requests.put(location, json={
+    response = requests.put(sut_url + location, json={
         'book_id': book_id, 'title': 'modified', 'author': 'bar', 'year': 2018
     })
     assert 204 == response.status_code
 
-    response = requests.get(location)
+    response = requests.get(sut_url + location)
     assert 200 == response.status_code
     book = response.json()
     assert 'modified' == book['title']

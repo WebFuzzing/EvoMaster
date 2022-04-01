@@ -141,7 +141,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     private fun shouldCheckExpectations() =
     //for now Expectations are only supported on the JVM
-            //TODO C# (and maybe JS as well???)
+            //TODO C# (and maybe JS/Python as well???)
             config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
 
@@ -161,7 +161,11 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 lines.append("${TestSuiteWriter.jsImport}.")
             }
 
-            lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+            if (format.isPython()) {
+                lines.append("resolve_location(${locationVar(call.locationId!!)}, self.$baseUrlOfSut + str(\"${call.resolvedPath()}\"))")
+            } else {
+                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+            }
 
         } else {
 
@@ -286,8 +290,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         lines.add("Assert.True(IsValidURIorEmpty($location));")
                     }
                     format.isPython() -> {
-                        // TODO: Python
-                        // lines.add("assert is_valid_uri_or_empty(${locationVar(call.path.lastElement())})")
+                        lines.add("$location = $resVarName.headers['location']")
+                        val validCheck = "is_valid_uri_or_empty($location)"
+                        lines.add("assert $validCheck")
                     }
                 }
             } else {
@@ -303,7 +308,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 }
 
                 //TODO JS and C#
-                val extract = "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                val extract = when {
+                    format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
+                    else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                }
 
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + $extract")
                 lines.appendSemicolon(format)

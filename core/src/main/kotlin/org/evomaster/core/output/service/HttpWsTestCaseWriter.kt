@@ -568,11 +568,12 @@ abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
     private fun handlePythonResponseContents(lines: Lines, res: HttpWsCallResult, resVarName: String) {
         val bodyString = res.getBody()
         if (bodyString.isNullOrBlank()) {
-            lines.add("assert not($resVarName.get_data(as_text=True))")
+            lines.add("assert not $resVarName.text")
         } else {
             val type = res.getBodyType()!!
             val escapedText = GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
             if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("json")) {
+                // TODO: handle assertions for Python properly
                 lines.add("assert $resVarName.json() == json.loads(\"$escapedText\")")
             } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
                 lines.add("assert \"$escapedText\" in $resVarName.text")

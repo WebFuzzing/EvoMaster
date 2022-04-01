@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, abort
 from flask_restx import Resource, Api, fields
 from flask_marshmallow import Marshmallow  # new
-from datetime import datetime
+# from datetime import datetime
 
 from evomaster_benchmark.news.country import countries
 from evomaster_benchmark.news.model import db, News
@@ -22,7 +22,7 @@ news_model_create = ns.model('NewsCreateFields', {
 
 news_model = ns.clone('News', news_model_create, {
     'id': fields.Integer(),
-    'creationTime': fields.DateTime(),
+    # 'creationTime': fields.DateTime(), TODO: skip assertions on timestamp fields
 })
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///news.db'
@@ -74,7 +74,7 @@ class NewsListResource(Resource):
     @ns.marshal_with(news_model)
     def post(self):
         news_json = request.get_json()
-        news_json['creationTime'] = str(datetime.now())
+        # news_json['creationTime'] = str(datetime.now())
         news = news_schema.load(news_json)
         news.save_to_db()
         return news
