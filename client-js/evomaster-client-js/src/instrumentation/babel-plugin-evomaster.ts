@@ -429,6 +429,7 @@ export default function evomasterPlugin(
             (t.isAssignmentExpression(path.parent) && ((path.parent as AssignmentExpression).left == path.node)) ||
             // skip for assignmentpattern https://babeljs.io/docs/en/babel-types#assignmentpattern
             (t.isAssignmentPattern(path.parent) && ((path.parent as AssignmentPattern).left == path.node))) ||
+            // https://babeljs.io/docs/en/babel-types#arraypattern https://babeljs.io/docs/en/babel-types#lval
             (t.isArrayPattern(path.parent))
         )
             return;
@@ -668,7 +669,7 @@ export default function evomasterPlugin(
             /*
                 https://babeljs.io/docs/en/babel-types#memberexpression
                 just a reminder here:
-                https://babeljs.io/docs/en/babel-types#memberexpression
+                https://babeljs.io/docs/en/babel-types#optionalmemberexpression
                 there also exists optionalMemberExpression, x?.a
                 but since x?["a"] is not allowed, there might be not need to handle it.
              */
