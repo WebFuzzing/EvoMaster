@@ -1094,5 +1094,48 @@ test("test squareBrackets", ()=>{
     `);
 });
 
+test("test squareBrackets for arrayPattern and assignmentPattern", ()=>{
+
+    const code  = dedent`
+        let user = {};
+        [user.name, user.surname] = "John Smith".split(' ');
+        let users = [user.name];
+        user.f = function foo(bar = user.name) {};
+    `;
+
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Line_test.ts_00004", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2", "Statement_test.ts_00004_3"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        let user = {};
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        [user.name, user.surname] = __EM__.callTracked("test.ts", 2, 0, "John Smith", "split", ' ');
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.enteringStatement("test.ts", 3, 2);
+        
+        let users = [__EM__.squareBrackets("test.ts", 3, 1, user, "name")];
+        
+        __EM__.completedStatement("test.ts", 3, 2);
+        
+        __EM__.enteringStatement("test.ts", 4, 3);
+        
+        user.f = function foo(bar = __EM__.squareBrackets("test.ts", 4, 2, user, "name")) {};
+        
+        __EM__.completedStatement("test.ts", 4, 3);
+    `);
+});
+
 
 

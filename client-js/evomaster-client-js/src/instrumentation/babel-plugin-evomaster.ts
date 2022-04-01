@@ -1,13 +1,21 @@
 import {NodePath, Visitor} from "@babel/traverse";
 import * as BabelTypes from "@babel/types";
 import {
-    BinaryExpression, CallExpression,
+    BinaryExpression,
+    CallExpression,
     IfStatement,
-    LogicalExpression, Program,
+    LogicalExpression,
+    Program,
     ReturnStatement,
     Statement,
     UnaryExpression,
-    ConditionalExpression, Expression, isAwaitExpression, MemberExpression, isAssignmentExpression, AssignmentExpression
+    ConditionalExpression,
+    Expression,
+    isAwaitExpression,
+    MemberExpression,
+    isAssignmentExpression,
+    AssignmentExpression,
+    AssignmentPattern
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
@@ -415,15 +423,16 @@ export default function evomasterPlugin(
             return;
         }
 
-        // skip to replace it if it is with updateExpression, such as ++, --
-        if (path.parent && t.isUpdateExpression(path.parent))
+        // skip to replace it if it is under updateExpression, such as ++, --
+        if (path.parent && (t.isUpdateExpression(path.parent) ||
+            // skip to replace it if it is left of assignmentExpression
+            (t.isAssignmentExpression(path.parent) && ((path.parent as AssignmentExpression).left == path.node)) ||
+            // skip for assignmentpattern https://babeljs.io/docs/en/babel-types#assignmentpattern
+            (t.isAssignmentPattern(path.parent) && ((path.parent as AssignmentPattern).left == path.node))) ||
+            (t.isArrayPattern(path.parent))
+        )
             return;
 
-        // skip to replace it if it is left of assignmentExpression yet
-        if (path.parent && t.isAssignmentExpression(path.parent)){
-            if ((path.parent as AssignmentExpression).left == path.node)
-                return;
-        }
 
 
         const pro = member.property
@@ -656,6 +665,13 @@ export default function evomasterPlugin(
                     replaceCallExpression(path);
                 }
             },
+            /*
+                https://babeljs.io/docs/en/babel-types#memberexpression
+                just a reminder here:
+                https://babeljs.io/docs/en/babel-types#memberexpression
+                there also exists optionalMemberExpression, x?.a
+                but since x?["a"] is not allowed, there might be not need to handle it.
+             */
             MemberExpression:{
                 enter(path: NodePath){
                     replaceMemberExpression(path);
