@@ -7,6 +7,11 @@ import org.evomaster.e2etests.spring.rpc.examples.SpringRPCTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ThriftExceptionRPCEMTest extends SpringRPCTestBase {
@@ -24,6 +29,7 @@ public class ThriftExceptionRPCEMTest extends SpringRPCTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ThriftExceptionRPCEM",
                 "org.foo.ThriftExceptionRPCEM",
+                Arrays.asList("_exceptions","_others"),
                 5000,
                 (args) -> {
 
@@ -35,5 +41,11 @@ public class ThriftExceptionRPCEMTest extends SpringRPCTestBase {
                     assertResponseContainCustomizedException(solution, "com.foo.rpc.examples.spring.thriftexception.ErrorResponse","error response: empty");
                     assertResponseContainException(solution, "APP_INTERNAL_ERROR");
                 });
+
+        // two files for exception and others
+        Path exceptionPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_exceptions.kt");
+        assertTrue(Files.exists(exceptionPath));
+        Path otherPath = Paths.get("target/em-tests/ThriftExceptionRPCEM/org/foo/ThriftExceptionRPCEM_others.kt");
+        assertTrue(Files.exists(otherPath));
     }
 }
