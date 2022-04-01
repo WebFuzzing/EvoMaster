@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.EnumGeneImpact
@@ -43,7 +42,12 @@ class EnumGene<T : Comparable<T>>(
     init {
 
         if (data.isEmpty()) {
-            throw IllegalArgumentException("Empty list of values")
+            /*
+                in industrial case study, the Enum could have empty values,
+                then provide warn info instead of throwing exception
+             */
+            //throw IllegalArgumentException("Empty list of values")
+            log.warn("Enum Gene (name: $name) has empty list of values")
         }
 
         val list = data
