@@ -1,3 +1,4 @@
+import logging
 from typing import Sequence, Set, Mapping
 
 from evomaster_client.instrumentation.shared import objective_naming
@@ -129,7 +130,6 @@ class ExecutionTracer(Singleton):
         clear_last_evaluation()
 
     def update_branch(self, file_name: str, line: int, branch: int, truthness: Truthness) -> None:
-        print(f"Branch: {file_name}:line:{line}:branch:{branch}:truthness:{truthness}")
         then_branch = objective_naming.branch_objective_name(file_name, line, branch, then_branch=True)
         else_branch = objective_naming.branch_objective_name(file_name, line, branch, then_branch=False)
         self.update_objective(then_branch, truthness.ofFalse)

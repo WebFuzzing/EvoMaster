@@ -1,3 +1,4 @@
+import logging
 from importlib import import_module
 
 import click
@@ -23,10 +24,9 @@ def evomaster():
               help='flask app defined in flask-module')
 @click.option('--instrumentation-level', '-i', required=True, default=FULL_INSTRUMENTATION, type=int,
               help='0: only coverage, 1: branch distance for CMP ops, 2: branch distance for BOOL ops')
-def run_instrumented(package_prefix, flask_module, flask_app, instrumentation_level):
-    print(f'package_prefix={package_prefix}')
-    print(f'flask_module={flask_module}')
-    print(f'flask_app={flask_app}')
+@click.option('--log', '-l', default='INFO', type=str, help='log level: DEBUG,INFO,WARN,ERROR')
+def run_instrumented(package_prefix, flask_module, flask_app, instrumentation_level, log):
+    set_log_level(log)
     with install_import_hook(package_prefix, instrumentation_level):
         module = import_module(flask_module)
         app = module.__getattribute__(flask_app)
@@ -40,10 +40,19 @@ def run_instrumented(package_prefix, flask_module, flask_app, instrumentation_le
               help='overriden embedded handler module')
 @click.option('--instrumentation-level', '-i', required=True, default=FULL_INSTRUMENTATION, type=int,
               help='0: only coverage, 1: branch distance for CMP ops, 2: branch distance for BOOL ops')
-def run_em_handler(handler_module, handler_class, instrumentation_level):
+@click.option('--log', '-l', default='INFO', type=str, help='log level: DEBUG,INFO,WARN,ERROR')
+def run_em_handler(handler_module, handler_class, instrumentation_level, log):
+    set_log_level(log)
     from evomaster_client.controller.em_app import run_em
     cls = getattr(import_module(handler_module), handler_class)
     run_em(sut_handler=cls(instrumentation_level))
+
+
+def set_log_level(loglevel: str):
+    numeric_level = getattr(logging, loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % loglevel)
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=numeric_level)
 
 
 if __name__ == '__main__':

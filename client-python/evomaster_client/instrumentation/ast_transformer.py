@@ -1,4 +1,5 @@
 import ast
+import logging
 from ast import UnaryOp, BoolOp, Compare, Eq, NotEq, Lt, LtE, Gt, GtE, Is, IsNot, In, NotIn, And, Or, Not
 from typing import Any
 
@@ -34,13 +35,13 @@ class AstTransformer(ast.NodeTransformer):
         # For nodes that were part of a collection of statements (that applies to all statement nodes),
         # the visitor may also return a list of nodes rather than just a single node.
         node = self.generic_visit(node)  # visit child nodes
-        print("Visited node of type: ", node.__class__.__name__, " - line no:", node.lineno)
+        logging.debug("Visited node of type: " + node.__class__.__name__ + " - line no:" + str(node.lineno))
 
         if self.instrumentation_level < INSTRUMENTATION_LEVEL_COVERAGE:
             return node
 
         if hasattr(node, 'body'):
-            print("isBlockStatement. no point in instrumenting it. Recall, we still instrument its content anyway.")
+            logging.debug("isBlockStatement. no point in instrumenting it. Recall, we still instrument its content anyway.")
             return node
 
         self.statement_counter += 1

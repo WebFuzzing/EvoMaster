@@ -1,4 +1,5 @@
 from typing import Any
+import logging
 
 from evomaster_client.instrumentation.staticstate.execution_tracer import ExecutionTracer
 from evomaster_client.instrumentation.heuristic import heuristics
@@ -6,13 +7,13 @@ from evomaster_client.instrumentation.heuristic import heuristics
 
 def entering_statement(module: str, line: int, statement: int):
     ExecutionTracer().entering_statement(module, line, statement)
-    print(f"entering statement: {module}-{line}-{statement}")
+    logging.info(f"entering statement: {module}-{line}-{statement}")
     return
 
 
 def completed_statement(module: str, line: int, statement: int):
     ExecutionTracer().completed_statement(module, line, statement)
-    print(f"completed statement: {module}-{line}-{statement}")
+    logging.info(f"completed statement: {module}-{line}-{statement}")
     return
 
 

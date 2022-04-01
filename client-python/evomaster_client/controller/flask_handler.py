@@ -1,4 +1,5 @@
 import abc
+import logging
 import threading
 from importlib import import_module
 from gevent.pywsgi import WSGIServer
@@ -38,7 +39,7 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
         self.instrumentation_level = instrumentation_level
 
     def app(self):
-        print('Importing Flask application')
+        logging.info('Importing Flask application')
         module = import_module(self.flask_module())
         app = module.__getattribute__(self.flask_app())
         return app
@@ -68,7 +69,7 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
 
     def start_sut(self):
         if self.is_sut_running():
-            print('Server is already running')
+            logging.info('Server is already running')
             return self.get_url()
         self.server = ServerThread(self.instrumented_app())
         self.server.start()
@@ -76,7 +77,7 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
 
     def stop_sut(self):
         if not self.is_sut_running():
-            print('Server is already stopped')
+            logging.info('Server is already stopped')
             return
         self.server.shutdown()
         self.server = None

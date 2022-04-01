@@ -3,6 +3,7 @@ Provides classes for runtime instrumentation.
 """
 import ast
 import sys
+import logging
 from importlib.machinery import SourceFileLoader
 from importlib.abc import MetaPathFinder
 from importlib.util import decode_source
@@ -90,8 +91,8 @@ class InstrumentationLoader(SourceFileLoader):
         ast.fix_missing_locations(tree)
         # return _call_with_frames_removed(compile, tree, path, 'exec',
         #                                  dont_inherit=True, optimize=_optimize)
-        print(path)
-        print(astor.to_source(tree))
+        logging.debug(path)
+        logging.debug(astor.to_source(tree))
         return compile(tree, path, 'exec')
 
 
