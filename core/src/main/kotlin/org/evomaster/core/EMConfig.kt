@@ -657,6 +657,12 @@ class EMConfig {
             " But a different value must be chosen if doing Black-Box testing.")
     var outputFormat = OutputFormat.DEFAULT
 
+    @Important(2.1)
+    @Cfg("Enforce timeout (in seconds) in the generated tests." +
+            " This feature might not be supported in all frameworks." +
+            " If 0 or negative, the timeout is not applied.")
+    var testTimeout = 60
+
     @Important(3.0)
     @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
     var blackBox = false
@@ -703,6 +709,11 @@ class EMConfig {
     @Cfg("See documentation of _header0_.")
     var header2 = ""
 
+    @Important(5.0)
+    @FilePath
+    @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
+            " the generated tests")
+    var jsControllerPath = "./app-driver.js"
 
     //-------- other options -------------
 
@@ -1457,10 +1468,7 @@ class EMConfig {
     var coveredTargetSortedBy = SortCoveredTargetBy.NAME
 
 
-    @FilePath
-    @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
-            " the generated tests")
-    var jsControllerPath = "./app-driver.js"
+
 
     enum class SortCoveredTargetBy {
         /**

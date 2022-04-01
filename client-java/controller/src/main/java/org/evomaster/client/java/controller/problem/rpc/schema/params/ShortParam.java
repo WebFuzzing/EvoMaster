@@ -69,4 +69,9 @@ public class ShortParam extends PrimitiveOrWrapperParam<Short> {
             return responseVarName+".shortValue()";
         return responseVarName;
     }
+
+    @Override
+    public String getCastType() {
+        return short.class.getName();
+    }
 }

@@ -72,4 +72,9 @@ public class ByteParam extends PrimitiveOrWrapperParam<Byte> {
             return responseVarName+".byteValue()";
         return responseVarName;
     }
+
+    @Override
+    public String getCastType() {
+        return byte.class.getName();
+    }
 }

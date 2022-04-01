@@ -64,4 +64,65 @@ public class PrivateFieldInRequestDto {
     public void setPribool(boolean pribool) {
         this.pribool = pribool;
     }
+
+    public Byte getPriBByte() {
+        return priBByte;
+    }
+
+    public void setPriBByte(Byte priBByte) {
+        this.priBByte = priBByte;
+    }
+
+    private Byte priBByte;
+
+
+    private byte pribyte;
+
+    public byte getPribyte() {
+        return pribyte;
+    }
+
+    public void setPribyte(byte pribyte) {
+        this.pribyte = pribyte;
+    }
+
+    private Character priCharacter;
+
+    private char priChar;
+
+    public Character getPriCharacter() {
+        return priCharacter;
+    }
+
+    public void setPriCharacter(Character priCharacter) {
+        this.priCharacter = priCharacter;
+    }
+
+    public char getPriChar() {
+        return priChar;
+    }
+
+    public void setPriChar(char priChar) {
+        this.priChar = priChar;
+    }
+
+    private short priShort;
+
+    public short getPriShort() {
+        return priShort;
+    }
+
+    public void setPriShort(short priShort) {
+        this.priShort = priShort;
+    }
+
+    private Short priSShort;
+
+    public Short getPriSShort() {
+        return priSShort;
+    }
+
+    public void setPriSShort(Short priSShort) {
+        this.priSShort = priSShort;
+    }
 }

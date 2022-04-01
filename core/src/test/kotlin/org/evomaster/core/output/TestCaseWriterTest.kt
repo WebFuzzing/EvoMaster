@@ -27,15 +27,22 @@ import javax.ws.rs.core.MediaType
 
 class TestCaseWriterTest {
     //TODO: BMR- changed the tests to not use expectationsActive. This may require updating.
+
+    private fun getConfig(format: OutputFormat): EMConfig {
+        val config = EMConfig()
+        config.outputFormat = format
+        config.expectationsActive = false
+        config.testTimeout = -1
+        return config
+    }
+
     @Test
     fun testEmptyDbInitialization() {
 
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(emptyList<DbAction>().toMutableList())
 
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -67,9 +74,7 @@ class TestCaseWriterTest {
         val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -95,6 +100,8 @@ class TestCaseWriterTest {
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
+
+
 
 
     private fun buildEvaluatedIndividual(dbInitialization: MutableList<DbAction>): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
@@ -134,9 +141,7 @@ class TestCaseWriterTest {
 
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -183,9 +188,7 @@ class TestCaseWriterTest {
         val insertIntoTableAction = DbAction(aTable, setOf(column0, column1), id, mutableListOf(gene0, gene1))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -229,9 +232,7 @@ class TestCaseWriterTest {
         val insertIntoTableAction = DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(integerGene, stringGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -277,9 +278,7 @@ class TestCaseWriterTest {
         val insertIntoTableAction = DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(primaryKeyGene, stringGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -332,9 +331,7 @@ class TestCaseWriterTest {
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -383,9 +380,7 @@ class TestCaseWriterTest {
         val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -435,9 +430,7 @@ class TestCaseWriterTest {
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -488,9 +481,7 @@ class TestCaseWriterTest {
         val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -538,9 +529,7 @@ class TestCaseWriterTest {
         val insertIntoTableAction2 = DbAction(aTable, setOf(aColumn), 2L, mutableListOf(gene2))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1, insertIntoTableAction2))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -599,9 +588,7 @@ class TestCaseWriterTest {
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -662,9 +649,7 @@ class TestCaseWriterTest {
         val insert2 = DbAction(table2, setOf(table2_Id), insertId2, listOf(pkGene2))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert0, insert1, insert2))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -710,9 +695,7 @@ class TestCaseWriterTest {
         val insert = DbAction(table, setOf(idColumn, dateColumn), 0L, listOf(pkGene0, dateGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -755,9 +738,7 @@ class TestCaseWriterTest {
         val insert = DbAction(table, setOf(idColumn, uuidColumn), 0L, listOf(pkGene0, uuidGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -800,9 +781,7 @@ class TestCaseWriterTest {
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -846,9 +825,7 @@ class TestCaseWriterTest {
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -890,9 +867,7 @@ class TestCaseWriterTest {
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -934,9 +909,7 @@ class TestCaseWriterTest {
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -978,9 +951,7 @@ class TestCaseWriterTest {
         result.setTimedout(timedout = true)
         val results = listOf(result)
         val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
-        val config = EMConfig()
-        val partialOracles = PartialOracles()
-        config.outputFormat = format
+        val config = getConfig(format)
         config.expectationsActive = true
 
         val test = TestCase(test = ei, name = "test")
@@ -1068,8 +1039,7 @@ class TestCaseWriterTest {
             )
         )
 
-        val config = EMConfig()
-        config.outputFormat = format
+        val config = getConfig(format)
         config.expectationsActive = false
         config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
         config.probOfApplySQLActionToCreateResources=0.1
@@ -1146,9 +1116,7 @@ public void test() throws Exception {
         assertTrue(fooInsertionResult[0] is DbActionResult)
         (fooInsertionResult[0] as DbActionResult).setInsertExecutionResult(false)
 
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
         config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
         config.probOfApplySQLActionToCreateResources=0.1
         config.skipFailureSQLInTestFile = true
@@ -1199,9 +1167,7 @@ public void test() throws Exception {
             )
         )
 
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
         config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
         config.probOfApplySQLActionToCreateResources=0.1
 
@@ -1271,8 +1237,7 @@ public void test() throws Exception {
             format = OutputFormat.JS_JEST
         )
 
-        val config = EMConfig()
-        config.outputFormat = format
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -1345,8 +1310,7 @@ public void test() throws Exception {
             format = OutputFormat.JS_JEST
         )
 
-        val config = EMConfig()
-        config.outputFormat = format
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -1402,8 +1366,7 @@ public void test() throws Exception {
             format = OutputFormat.JS_JEST
         )
 
-        val config = EMConfig()
-        config.outputFormat = format
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 

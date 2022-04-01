@@ -50,7 +50,15 @@ abstract class TestCaseWriter {
         }
 
         if (format.isJUnit()) {
-            lines.add("@Test")
+            if(config.testTimeout <= 0){
+                lines.add("@Test")
+            } else {
+                if (format.isJUnit4()) {
+                    lines.add("@Test(timeout = ${config.testTimeout * 1000})")
+                } else if (format.isJUnit5()) {
+                    lines.add("@Test @Timeout(${config.testTimeout})")
+                }
+            }
         }
 
         //TODO: check xUnit instead
