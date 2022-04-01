@@ -64,4 +64,6 @@ public interface RPCInterfaceExample {
     NestedGenericDto<String> handleNestedGenericString(NestedGenericDto<String> dto);
 
     void handleException(String type) throws Exception;
+
+    String handleEnumWithConstructor(ObjectEnum arg1);
 }

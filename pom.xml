@@ -132,6 +132,8 @@
         <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
         <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
         <wiremock.version>2.32.0</wiremock.version>
+        <apache.http.client.version>4.5.13</apache.http.client.version>
+        <okhttp.client.version>4.9.3</okhttp.client.version>
         <dns.cache.manipulator.version>1.7.1</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
         <micronaut.version>3.2.7</micronaut.version>
@@ -725,6 +727,16 @@
                 <artifactId>wiremock-jre8</artifactId>
                 <version>${wiremock.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${apache.http.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.client.version}</version>
             </dependency>
 
             <!-- https://jmaven.com/maven/com.alibaba/dns-cache-manipulator -->

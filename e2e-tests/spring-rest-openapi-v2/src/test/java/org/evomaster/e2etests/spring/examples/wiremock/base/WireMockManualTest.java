@@ -1,13 +1,13 @@
-package org.evomaster.e2etests.spring.examples.wiremock;
+package org.evomaster.e2etests.spring.examples.wiremock.base;
 
 import com.alibaba.dcm.DnsCacheManipulator;
-import com.foo.rest.examples.spring.wiremock.WireMockController;
+import com.foo.rest.examples.spring.wiremock.base.WireMockController;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import io.restassured.http.ContentType;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -54,8 +54,8 @@ public class WireMockManualTest extends SpringTestBase {
         SpringTestBase.initClass(wireMockController);
     }
 
-    @AfterEach
-    public void shutdownServer() {
+    @AfterAll
+    public static void shutdownServer() {
         wireMockServer.stop();
         DnsCacheManipulator.clearDnsCache();
     }
