@@ -1031,8 +1031,10 @@ test("test array includes replacement", ()=>{
 test("test squareBrackets", ()=>{
 
     const code  = dedent`
-        let x = {"foo": "foo", "bar": "bar"};
+        let x = {"foo": "foo", "bar": "bar", 1: 1};
         let y = x["foo"];
+        y = x[1];
+        y = x.foo;
     `;
 
     const instrumented = runPlugin(code).code;
@@ -1041,13 +1043,14 @@ test("test squareBrackets", ()=>{
     
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
         
-        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1"]);
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Line_test.ts_00004", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2", "Statement_test.ts_00004_3"]);
         
         __EM__.enteringStatement("test.ts", 1, 0);
         
         let x = {
           "foo": "foo",
-          "bar": "bar"
+          "bar": "bar",
+          1: 1
         };
         
         __EM__.completedStatement("test.ts", 1, 0);
@@ -1057,6 +1060,18 @@ test("test squareBrackets", ()=>{
         let y = __EM__.squareBrackets("test.ts", 2, 0, x, "foo");
         
         __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.enteringStatement("test.ts", 3, 2);
+        
+        y = __EM__.squareBrackets("test.ts", 3, 1, x, 1);
+        
+        __EM__.completedStatement("test.ts", 3, 2);
+        
+        __EM__.enteringStatement("test.ts", 4, 3);
+        
+        y = x.foo;
+        
+        __EM__.completedStatement("test.ts", 4, 3);
     `);
 });
 
