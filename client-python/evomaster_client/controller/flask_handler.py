@@ -44,7 +44,10 @@ class FlaskHandler(SutHandler, metaclass=abc.ABCMeta):
         return app
 
     def instrumented_app(self):
-        with install_import_hook(self.package_prefixes_to_cover(), self.instrumentation_level):
+        if self.instrumentation_level > 0:
+            with install_import_hook(self.package_prefixes_to_cover(), self.instrumentation_level):
+                return self.app()
+        else:
             return self.app()
 
     @abc.abstractmethod

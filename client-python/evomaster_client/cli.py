@@ -21,11 +21,13 @@ def evomaster():
               help='module name where the flask application is defined')
 @click.option('--flask-app', '-a', default='app',
               help='flask app defined in flask-module')
-def run_instrumented(package_prefix, flask_module, flask_app):
+@click.option('--instrumentation-level', '-i', required=True, default=FULL_INSTRUMENTATION, type=int,
+              help='0: only coverage, 1: branch distance for CMP ops, 2: branch distance for BOOL ops')
+def run_instrumented(package_prefix, flask_module, flask_app, instrumentation_level):
     print(f'package_prefix={package_prefix}')
     print(f'flask_module={flask_module}')
     print(f'flask_app={flask_app}')
-    with install_import_hook(package_prefix):
+    with install_import_hook(package_prefix, instrumentation_level):
         module = import_module(flask_module)
         app = module.__getattribute__(flask_app)
         app.run()
