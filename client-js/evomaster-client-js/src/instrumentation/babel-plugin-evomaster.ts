@@ -415,6 +415,10 @@ export default function evomasterPlugin(
             return;
         }
 
+        // skip to replace it if it is with updateExpression, such as ++, --
+        if (path.parent && t.isUpdateExpression(path.parent))
+            return;
+
         // skip to replace it if it is left of assignmentExpression yet
         if (path.parent && t.isAssignmentExpression(path.parent)){
             if ((path.parent as AssignmentExpression).left == path.node)

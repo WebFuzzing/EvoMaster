@@ -26,7 +26,7 @@ export default class ArrayClassReplacement extends MethodReplacementClass{
         }
 
         if (ArrayClassReplacement.isNumberOrString(searchElement) && ExecutionTracer.isTaintInput(searchElement)){
-            for (let e in caller){
+            for (let e of caller){
                 if (ArrayClassReplacement.isNumberOrString(e)){
                     ExecutionTracer.addStringSpecialization(searchElement,
                         new StringSpecializationInfo(StringSpecialization.CONSTANT, e))
