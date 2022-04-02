@@ -224,7 +224,7 @@ public class EMController {
                 }
             }
             // handled seeded tests
-            dto.rpcProblem.seededTestDtos = sutController.handleSeededTests();
+            dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
 
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();

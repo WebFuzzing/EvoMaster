@@ -21,7 +21,7 @@ import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
-import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
@@ -545,7 +545,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         List<List<RPCActionDto>> results = new ArrayList<>();
 
         for (SeededRPCTestDto dto: seedRPCTests()){
-            if (dto.rpcFunctions != null && dto.rpcFunctions.isEmpty()){
+            if (dto.rpcFunctions != null && !dto.rpcFunctions.isEmpty()){
                 List<RPCActionDto> test = new ArrayList<>();
                 for (SeededRPCActionDto actionDto : dto.rpcFunctions){
                     InterfaceSchema schema = rpcInterfaceSchema.get(actionDto.interfaceName);
@@ -557,8 +557,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                 // TODO need to check if generic type could be handled with jackson
                                 NamedTypedValue p = copy.getRequestParams().get(i);
                                 try {
-                                    Object value = objectMapper.readValue(actionDto.inputParams.get(i), p.getType().getClazz());
-                                    p.setValueBasedOnInstance(value);
+                                    String stringValue = actionDto.inputParams.get(i);
+                                    if (p instanceof PrimitiveOrWrapperParam){
+                                        ((PrimitiveOrWrapperParam<?>) p).setValueBasedOnStringValue(stringValue);
+                                    } else if (p instanceof StringParam){
+                                        ((StringParam) p).setValue(stringValue);
+                                    } else if (p instanceof ByteBufferParam){
+                                        ((ByteBufferParam) p).setValue(stringValue.getBytes());
+                                    } else {
+                                        Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
+                                        p.setValueBasedOnInstance(value);
+                                    }
                                 } catch (JsonProcessingException e) {
                                     throw new IllegalStateException(
                                             String.format("Seeded Test Error: cannot parse the seeded test %s at the parameter %d with error msg: %s", actionDto, i, e.getMessage()));
@@ -572,6 +581,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         throw new IllegalStateException("Seeded Test Error: cannot find the interface "+ actionDto.interfaceName);
                     }
                 }
+                results.add(test);
             } else {
                 SimpleLogger.warn("Seeded Test: empty RPC function calls for the test "+ dto.testName);
             }
