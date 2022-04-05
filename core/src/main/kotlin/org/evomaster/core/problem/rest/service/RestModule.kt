@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.mutator.StandardMutator
@@ -51,5 +52,7 @@ class RestModule : AbstractModule(){
                 .to(RestTestCaseWriter::class.java)
                 .asEagerSingleton()
 
+        bind(TestSuiteWriter::class.java)
+                .asEagerSingleton()
     }
 }

@@ -206,4 +206,21 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
         return dto;
     }
+
+    @Override
+    public void handleException(String type) throws Exception {
+        if (type == null)
+            throw new NullPointerException("null");
+        if (type.equals("state"))
+            throw new IllegalStateException(type);
+        if (type.equals("argument"))
+            throw new IllegalArgumentException(type);
+        throw new RuntimeException(type);
+    }
+
+    @Override
+    public String handleEnumWithConstructor(ObjectEnum arg1) {
+        if (arg1 == null || arg1.enumWithConstructor == null) return null;
+        return arg1.enumWithConstructor.getDesc();
+    }
 }

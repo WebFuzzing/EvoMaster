@@ -128,12 +128,17 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
         String code;
-        if (accessibleSchema == null || accessibleSchema.isAccessible)
+        if (!getType().isWrapper && getValue() == null){
+            // ignore instance of primitive types if the value is not assigned
+            return Collections.emptyList();
+        }
+
+        if (accessibleSchema == null || accessibleSchema.isAccessible){
             code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
-        else{
+        } else{
             if (accessibleSchema.setterMethodName == null)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString());
         }
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
     }
@@ -172,5 +177,13 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
             ((PrimitiveOrWrapperParam)copy).setMin(min);
             ((PrimitiveOrWrapperParam)copy).setMax(max);
         }
+    }
+
+    /**
+     *
+     * @return a cast type for this param, null means that there is no need to cast the value to a type
+     */
+    public String getCastType() {
+        return null;
     }
 }

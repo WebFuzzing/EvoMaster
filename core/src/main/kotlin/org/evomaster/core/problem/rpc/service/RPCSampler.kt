@@ -59,7 +59,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
 
         initSqlInfo(infoDto)
 
-        initAdHocInitialIndividuals()
+        initAdHocInitialIndividuals(infoDto)
 
         updateConfigBasedOnSutInfoDto(infoDto)
         log.debug("Done initializing {}", RPCSampler::class.simpleName)
@@ -107,14 +107,13 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
      */
 
     //  init a sequence of individual
-    private fun initAdHocInitialIndividuals(){
+    private fun initAdHocInitialIndividuals(infoDto: SutInfoDto){
         // create one action per individual with/without auth
         adHocInitialIndividuals.clear()
         createSingleCallIndividualOnEachAction()
 
-        if (config.seedTestCases){
-            // TODO handle seeded individual
-            throw IllegalStateException("Seeding test cases is not support for RPC yet.")
+        if (config.seedTestCases && infoDto.rpcProblem?.seededTestDtos?.isNotEmpty() == true){
+            adHocInitialIndividuals.addAll(rpcHandler.handledSeededTests(infoDto.rpcProblem.seededTestDtos))
         }
     }
 

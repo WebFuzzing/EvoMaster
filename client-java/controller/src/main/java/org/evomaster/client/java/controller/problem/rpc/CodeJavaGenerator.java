@@ -231,6 +231,7 @@ public class CodeJavaGenerator {
      * @return a java code which casts obj to a type
      */
     public static String castToType(String typeName, String objCode){
+        if (typeName == null) return objCode;
         return String.format("((%s)(%s))", handleNestedSymbolInTypeName(typeName), objCode);
     }
 

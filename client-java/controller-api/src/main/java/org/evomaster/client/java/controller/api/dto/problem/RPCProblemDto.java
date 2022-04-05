@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.api.dto.problem;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
 
 import java.util.List;
 
@@ -27,5 +28,10 @@ public class RPCProblemDto {
      * the reference is identified based on the index where to be specified in the driver
      */
     public List<Integer> localAuthEndpointReferences;
+
+    /**
+     * a list of seeded RPC tests
+     */
+    public List<List<RPCActionDto>> seededTestDtos;
 
 }

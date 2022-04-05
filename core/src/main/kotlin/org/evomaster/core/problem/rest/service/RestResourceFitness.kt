@@ -19,9 +19,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
 
     @Inject
-    private lateinit var sampler : ResourceSampler
-
-    @Inject
     private lateinit var dm: ResourceDepManageService
 
     @Inject
@@ -119,14 +116,5 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         return EvaluatedIndividual(
                 fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
 
-    }
-
-
-
-    override fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-                .filterIsInstance<RestCallAction>()
-                .map { it.path }
-                .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
 }

@@ -2,7 +2,7 @@
 
 
 # Build Core and JVM Driver
-mvn clean package -DskipTests
+mvn clean install -DskipTests
 
 # Build .Net Driver
 dotnet build

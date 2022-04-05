@@ -332,15 +332,15 @@ test("function call chain", () => {
     const res = runPlugin(code);
     expect(res.code).toEqual(dedent`
         //File instrumented with EvoMaster
-
+    
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
-
+        
         __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
-
+        
         __EM__.enteringStatement("test.ts", 1, 0);
-
-        __EM__.callBase(() => __EM__.callTracked("test.ts", 1, 0, __EM__.callTracked("test.ts", 1, 1, a.b.c, "foo"), "bar", x)(y, z));
-
+        
+        __EM__.callBase(() => __EM__.callTracked("test.ts", 1, 0, __EM__.callTracked("test.ts", 1, 1, __EM__.squareBrackets("test.ts", 1, 2, __EM__.squareBrackets("test.ts", 1, 3, a, "b"), "c"), "foo"), "bar", x)(y, z));
+        
         __EM__.completedStatement("test.ts", 1, 0);
     `);
 
@@ -499,13 +499,12 @@ test("purity analysis member function", () => {
     `;
 
     const res = runPlugin(code);
-
     expect(res.code).toEqual(dedent`
         //File instrumented with EvoMaster
-        
+    
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
         
-        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "Branch_at_test.ts_at_line_00002_position_1_falseBranch", "Branch_at_test.ts_at_line_00002_position_1_trueBranch", "Branch_at_test.ts_at_line_00003_position_2_falseBranch", "Branch_at_test.ts_at_line_00003_position_2_trueBranch", "Branch_at_test.ts_at_line_00003_position_3_falseBranch", "Branch_at_test.ts_at_line_00003_position_3_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2"]);
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "Branch_at_test.ts_at_line_00002_position_1_falseBranch", "Branch_at_test.ts_at_line_00002_position_1_trueBranch", "Branch_at_test.ts_at_line_00003_position_3_falseBranch", "Branch_at_test.ts_at_line_00003_position_3_trueBranch", "Branch_at_test.ts_at_line_00003_position_4_falseBranch", "Branch_at_test.ts_at_line_00003_position_4_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2"]);
         
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -515,13 +514,13 @@ test("purity analysis member function", () => {
         
         __EM__.enteringStatement("test.ts", 2, 1);
         
-        const y1 = __EM__.and(() => __EM__.cmp(42, "<", 0, "test.ts", 2, 1), () => x.y, false, "test.ts", 2, 0);
+        const y1 = __EM__.and(() => __EM__.cmp(42, "<", 0, "test.ts", 2, 1), () => __EM__.squareBrackets("test.ts", 2, 2, x, "y"), false, "test.ts", 2, 0);
         
         __EM__.completedStatement("test.ts", 2, 1);
         
         __EM__.enteringStatement("test.ts", 3, 2);
         
-        const y2 = __EM__.or(() => __EM__.cmp(42, ">", 0, "test.ts", 3, 3), () => x.y, false, "test.ts", 3, 2);
+        const y2 = __EM__.or(() => __EM__.cmp(42, ">", 0, "test.ts", 3, 4), () => __EM__.squareBrackets("test.ts", 3, 5, x, "y"), false, "test.ts", 3, 3);
         
         __EM__.completedStatement("test.ts", 3, 2);
     `);
@@ -534,23 +533,22 @@ test("purity analysis this and member function", () => {
     `;
 
     const res = runPlugin(code);
-
     expect(res.code).toEqual(dedent`
         //File instrumented with EvoMaster
-        
+    
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
         
-        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "Branch_at_test.ts_at_line_00001_position_1_falseBranch", "Branch_at_test.ts_at_line_00001_position_1_trueBranch", "Branch_at_test.ts_at_line_00002_position_2_falseBranch", "Branch_at_test.ts_at_line_00002_position_2_trueBranch", "Branch_at_test.ts_at_line_00002_position_3_falseBranch", "Branch_at_test.ts_at_line_00002_position_3_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1"]);
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "Branch_at_test.ts_at_line_00001_position_1_falseBranch", "Branch_at_test.ts_at_line_00001_position_1_trueBranch", "Branch_at_test.ts_at_line_00002_position_3_falseBranch", "Branch_at_test.ts_at_line_00002_position_3_trueBranch", "Branch_at_test.ts_at_line_00002_position_4_falseBranch", "Branch_at_test.ts_at_line_00002_position_4_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1"]);
         
         __EM__.enteringStatement("test.ts", 1, 0);
         
-        const y1 = __EM__.and(() => __EM__.cmp(42, "<", 0, "test.ts", 1, 1), () => this.x, true, "test.ts", 1, 0);
+        const y1 = __EM__.and(() => __EM__.cmp(42, "<", 0, "test.ts", 1, 1), () => __EM__.squareBrackets("test.ts", 1, 2, this, "x"), true, "test.ts", 1, 0);
         
         __EM__.completedStatement("test.ts", 1, 0);
         
         __EM__.enteringStatement("test.ts", 2, 1);
         
-        const y2 = __EM__.or(() => __EM__.cmp(42, ">", 0, "test.ts", 2, 3), () => this.x, true, "test.ts", 2, 2);
+        const y2 = __EM__.or(() => __EM__.cmp(42, ">", 0, "test.ts", 2, 4), () => __EM__.squareBrackets("test.ts", 2, 5, this, "x"), true, "test.ts", 2, 3);
         
         __EM__.completedStatement("test.ts", 2, 1);
     `);
@@ -992,5 +990,152 @@ test("await in the inputs params", ()=>{
     `);
 
 });
+
+
+test("test array includes replacement", ()=>{
+    const code = dedent`
+        function foo(searchString){
+            const x = ["foo", 1, 2, 3];
+            return x.includes(searchString);
+        }
+    `
+    const instrumented = runPlugin(code).code;
+
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        function foo(searchString) {
+          __EM__.enteringStatement("test.ts", 2, 1);
+        
+          const x = ["foo", 1, 2, 3];
+        
+          __EM__.completedStatement("test.ts", 2, 1);
+        
+          __EM__.enteringStatement("test.ts", 3, 2);
+        
+          return __EM__.completingStatement(__EM__.callTracked("test.ts", 3, 0, x, "includes", searchString), "test.ts", 3, 2);
+        }
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+})
+
+test("test squareBrackets", ()=>{
+
+    const code  = dedent`
+        let x = {"foo": "foo", "bar": "bar", 1: 1};
+        y = x[1] && x["foo"];
+        y = x.foo;
+        let z = 1;
+        y = x[z];
+        x.foo = "new foo";
+        x["1"]++;
+    `;
+
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00002_position_0_falseBranch", "Branch_at_test.ts_at_line_00002_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Line_test.ts_00004", "Line_test.ts_00005", "Line_test.ts_00006", "Line_test.ts_00007", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2", "Statement_test.ts_00004_3", "Statement_test.ts_00005_4", "Statement_test.ts_00006_5", "Statement_test.ts_00007_6"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        let x = {
+          "foo": "foo",
+          "bar": "bar",
+          1: 1
+        };
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        y = __EM__.and(() => __EM__.squareBrackets("test.ts", 2, 1, x, 1), () => __EM__.squareBrackets("test.ts", 2, 2, x, "foo"), false, "test.ts", 2, 0);
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.enteringStatement("test.ts", 3, 2);
+        
+        y = __EM__.squareBrackets("test.ts", 3, 3, x, "foo");
+        
+        __EM__.completedStatement("test.ts", 3, 2);
+        
+        __EM__.enteringStatement("test.ts", 4, 3);
+        
+        let z = 1;
+        
+        __EM__.completedStatement("test.ts", 4, 3);
+        
+        __EM__.enteringStatement("test.ts", 5, 4);
+        
+        y = __EM__.squareBrackets("test.ts", 5, 4, x, z);
+        
+        __EM__.completedStatement("test.ts", 5, 4);
+        
+        __EM__.enteringStatement("test.ts", 6, 5);
+        
+        x.foo = "new foo";
+        
+        __EM__.completedStatement("test.ts", 6, 5);
+        
+        __EM__.enteringStatement("test.ts", 7, 6);
+        
+        x["1"]++;
+        
+        __EM__.completedStatement("test.ts", 7, 6);
+    `);
+});
+
+test("test squareBrackets for arrayPattern and assignmentPattern", ()=>{
+
+    const code  = dedent`
+        let user = {};
+        [user.name, user.surname] = "John Smith".split(' ');
+        let users = [user.name];
+        user.f = function foo(bar = user.name) {};
+    `;
+
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Line_test.ts_00004", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2", "Statement_test.ts_00004_3"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        let user = {};
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        [user.name, user.surname] = __EM__.callTracked("test.ts", 2, 0, "John Smith", "split", ' ');
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.enteringStatement("test.ts", 3, 2);
+        
+        let users = [__EM__.squareBrackets("test.ts", 3, 1, user, "name")];
+        
+        __EM__.completedStatement("test.ts", 3, 2);
+        
+        __EM__.enteringStatement("test.ts", 4, 3);
+        
+        user.f = function foo(bar = __EM__.squareBrackets("test.ts", 4, 2, user, "name")) {};
+        
+        __EM__.completedStatement("test.ts", 4, 3);
+    `);
+});
+
 
 

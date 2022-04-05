@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.GraphQLTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.Archive
@@ -52,6 +53,9 @@ class GraphQLModule : AbstractModule() {
 
         bind(TestCaseWriter::class.java)
                 .to(GraphQLTestCaseWriter::class.java)
+                .asEagerSingleton()
+
+        bind(TestSuiteWriter::class.java)
                 .asEagerSingleton()
     }
 }

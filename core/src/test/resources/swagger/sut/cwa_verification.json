@@ -1,0 +1,396 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "cwa-verification-server",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "version": "1.2.0-SNAPSHOT"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/version/v1/tan": {
+      "post": {
+        "tags": [
+          "external-tan-controller"
+        ],
+        "summary": "Generates a Tan",
+        "description": "Generates a TAN on input of Registration Token. With the TAN one can submit his Diagnosis keys",
+        "operationId": "generateTan",
+        "parameters": [
+          {
+            "name": "cwa-fake",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationToken"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Registration Token is valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeferredResultResponseEntityTan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registration Token does not exist"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/version/v1/testresult": {
+      "post": {
+        "tags": [
+          "external-test-state-controller"
+        ],
+        "summary": "COVID-19 test result for given RegistrationToken",
+        "description": "Gets the result of COVID-19 Test. If the RegistrationToken belongs to a TeleTan the result is always positive",
+        "operationId": "getTestState",
+        "parameters": [
+          {
+            "name": "cwa-fake",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationToken"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Testresult retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeferredResultResponseEntityTestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/version/v1/registrationToken": {
+      "post": {
+        "tags": [
+          "external-token-controller"
+        ],
+        "summary": "Get registration Token",
+        "description": "Get a registration token by providing a SHA-256 hasehd GUID or a teleTAN",
+        "operationId": "generateRegistrationToken",
+        "parameters": [
+          {
+            "name": "cwa-fake",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "registration token generated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeferredResultResponseEntityRegistrationToken"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "GUID/TeleTAN already exists."
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/version/v1/tan/teletan": {
+      "post": {
+        "tags": [
+          "internal-tan-controller"
+        ],
+        "summary": "Request generation of a teleTAN",
+        "description": "A teleTAN is a human readable TAN with 7 characters which is supposed to be issued via call line",
+        "operationId": "createTeleTan",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AuthorizationToken"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "TeleTan created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeleTan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/version/v1/tan/verify": {
+      "post": {
+        "tags": [
+          "internal-tan-controller"
+        ],
+        "summary": "Verify provided Tan",
+        "description": "The provided Tan is verified to be formerly issued by the verification server",
+        "operationId": "verifyTan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Tan"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tan is valid an formerly issued by the verification server",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Tan could not be verified",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RegistrationToken": {
+        "required": [
+          "registrationToken"
+        ],
+        "type": "object",
+        "properties": {
+          "registrationToken": {
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$",
+            "type": "string"
+          },
+          "responsePadding": {
+            "type": "string"
+          }
+        },
+        "description": "The registration token model."
+      },
+      "DeferredResultHandler": {
+        "type": "object"
+      },
+      "DeferredResultResponseEntityTan": {
+        "type": "object",
+        "properties": {
+          "resultHandler": {
+            "$ref": "#/components/schemas/DeferredResultHandler"
+          },
+          "result": {
+            "type": "object"
+          },
+          "resultInternal": {
+            "type": "boolean",
+            "writeOnly": true
+          },
+          "setOrExpired": {
+            "type": "boolean"
+          },
+          "errorResult": {
+            "type": "boolean",
+            "writeOnly": true
+          }
+        }
+      },
+      "DeferredResultResponseEntityTestResult": {
+        "type": "object",
+        "properties": {
+          "resultHandler": {
+            "$ref": "#/components/schemas/DeferredResultHandler"
+          },
+          "result": {
+            "type": "object"
+          },
+          "resultInternal": {
+            "type": "boolean",
+            "writeOnly": true
+          },
+          "setOrExpired": {
+            "type": "boolean"
+          },
+          "errorResult": {
+            "type": "boolean",
+            "writeOnly": true
+          }
+        }
+      },
+      "RegistrationTokenRequest": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "keyDob": {
+            "type": "string",
+            "required": false,
+            "description": "Only used in conjunction with keyType == GUID. The hashed GUID consists of concat('x', substring(sha256_hex(concat(test-id-uuid, DateOfBirth.format(DDMMYYYY))), 1) - e.g. concat('x', substring(sha256_hex('7bb41672-7de4-44c3-b751-4258e59f3e2508051992')), 1)) --> x3712193bd35d40f03ee497ea7e4ea8278d8fcc8a2287843bb0ab36939d222b4"
+          },
+          "keyType": {
+            "type": "string",
+            "enum": [
+              "GUID",
+              "TELETAN"
+            ]
+          }
+        },
+        "description": "The registration token request model."
+      },
+      "DeferredResultResponseEntityRegistrationToken": {
+        "type": "object",
+        "properties": {
+          "resultHandler": {
+            "$ref": "#/components/schemas/DeferredResultHandler"
+          },
+          "result": {
+            "type": "object"
+          },
+          "resultInternal": {
+            "type": "boolean",
+            "writeOnly": true
+          },
+          "setOrExpired": {
+            "type": "boolean"
+          },
+          "errorResult": {
+            "type": "boolean",
+            "writeOnly": true
+          }
+        }
+      },
+      "AuthorizationToken": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "description": "The bearer jwt token header model."
+      },
+      "TeleTan": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "description": "The teleTAN model."
+      },
+      "Tan": {
+        "required": [
+          "tan"
+        ],
+        "type": "object",
+        "properties": {
+          "tan": {
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}$",
+            "type": "string"
+          },
+          "responsePadding": {
+            "type": "string"
+          }
+        },
+        "description": "The transaction number model."
+      }
+    }
+  }
+}

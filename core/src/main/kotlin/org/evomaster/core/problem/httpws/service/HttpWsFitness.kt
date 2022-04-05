@@ -103,7 +103,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
         var baseUrl = if (!config.blackBox || config.bbExperiments) {
             infoDto.baseUrlOfSUT
         } else {
-            BlackBoxUtils.restUrl(config)
+            BlackBoxUtils.targetUrl(config, sampler)
         }
 
         try{

@@ -143,7 +143,7 @@ public class StringParam extends NamedTypedValue<StringType, String> {
         else{
             if (accessibleSchema.setterMethodName == null)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, null, variableName, getValueAsJavaString());
         }
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
     }

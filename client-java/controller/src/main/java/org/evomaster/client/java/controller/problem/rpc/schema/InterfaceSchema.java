@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.problem.rpc.schema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
@@ -171,6 +172,24 @@ public final class InterfaceSchema{
             throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified dto");
 
         throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified dto");
+    }
+
+
+    /**
+     * find an endpoint in this interface with seeded schema
+     * @param dto the seeded rpc action dto
+     * @return an endpoint schema
+     */
+    public EndpointSchema getOneEndpointWithSeededDto(SeededRPCActionDto dto){
+        List<EndpointSchema> list = endpoints.stream().filter(s-> s.sameEndpoint(dto)).collect(Collectors.toList());
+
+        if (list.size() == 1)
+            return list.get(0);
+
+        if (list.size() > 1)
+            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified seeded test dto");
+
+        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified seeded test dto");
     }
 
     public String getName() {

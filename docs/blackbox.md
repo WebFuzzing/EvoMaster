@@ -30,8 +30,7 @@ The command is doing the following:
   or [built from source](build.md).
 * `--blackBox true`: by default, _EvoMaster_ does white-box testing. Here, we specify that
   we do black-box testing instead.
-* `--bbSwaggerUrl ...`: URL of where the Swagger schema is. If the API is running on a different
-  host, then such different host would need to be specified with `--bbTargetUrl`.   
+* `--bbSwaggerUrl ...`: URL of where the OpenAPI/Swagger schema is. The location of the API will be inferred from this schema (e.g., from `host` and `servers` tags). If such info is missing, then the API is assumed to be on same host as the schema. If needed, the API host location can be changed with the optional `--bbTargetUrl` (which overrides what specified in the schema).   
 * `--outputFormat JAVA_JUNIT_4`: must specify how the tests will be generated, e.g., in Java
   using JUnit 4 in this case. Note: the language of the generated tests is not necessarily related
   to the language in which the tested application is implemented. 

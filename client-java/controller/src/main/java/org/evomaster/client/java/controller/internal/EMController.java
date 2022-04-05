@@ -223,6 +223,8 @@ public class EMController {
                     dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
                 }
             }
+            // handled seeded tests
+            dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
 
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();

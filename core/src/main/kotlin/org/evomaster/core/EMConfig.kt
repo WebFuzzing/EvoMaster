@@ -263,7 +263,7 @@ class EMConfig {
                 throw IllegalArgumentException("In black-box mode for REST APIs, you must set the bbSwaggerUrl option")
             }
             if(problemType == ProblemType.GRAPHQL && bbTargetUrl.isNullOrBlank()){
-                throw java.lang.IllegalArgumentException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
+                throw IllegalArgumentException("In black-box mode for GraphQL APIs, you must set the bbTargetUrl option")
             }
             if (outputFormat == OutputFormat.DEFAULT) {
                 /*
@@ -657,20 +657,29 @@ class EMConfig {
             " But a different value must be chosen if doing Black-Box testing.")
     var outputFormat = OutputFormat.DEFAULT
 
+    @Important(2.1)
+    @Cfg("Enforce timeout (in seconds) in the generated tests." +
+            " This feature might not be supported in all frameworks." +
+            " If 0 or negative, the timeout is not applied.")
+    var testTimeout = 60
+
     @Important(3.0)
     @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
     var blackBox = false
 
     @Important(3.2)
     @Url
-    @Cfg("When in black-box mode for REST APIs, specify where the Swagger schema can be downloaded from")
+    @Cfg("When in black-box mode for REST APIs, specify the URL of where the OpenAPI/Swagger schema can be downloaded from." +
+            " If the schema is on the local machine, you can use a URL starting with 'file://'")
     var bbSwaggerUrl: String = ""
 
     @Important(3.5)
     @Url
-    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached." +
+    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached, e.g.," +
+            " http://localhost:8080 ." +
             " In REST, if this is missing, the URL will be inferred from OpenAPI/Swagger schema." +
-            " In GraphQL, this will point to the entry point of the API.")
+            " In GraphQL, this must point to the entry point of the API, e.g.," +
+            " http://localhost:8080/graphql .")
     var bbTargetUrl: String = ""
 
 
@@ -700,6 +709,11 @@ class EMConfig {
     @Cfg("See documentation of _header0_.")
     var header2 = ""
 
+    @Important(5.0)
+    @FilePath
+    @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
+            " the generated tests")
+    var jsControllerPath = "./app-driver.js"
 
     //-------- other options -------------
 
@@ -1454,10 +1468,7 @@ class EMConfig {
     var coveredTargetSortedBy = SortCoveredTargetBy.NAME
 
 
-    @FilePath
-    @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
-            " the generated tests")
-    var jsControllerPath = "./app-driver.js"
+
 
     enum class SortCoveredTargetBy {
         /**

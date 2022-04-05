@@ -8,6 +8,8 @@ import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rpc.RPCCallResult
+import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.*
 
 
@@ -15,6 +17,23 @@ import org.evomaster.core.search.*
  * Created by arcuri82 on 11-Nov-19.
  */
 object TestSuiteSplitter {
+
+    /**
+     * simple split based on whether it exists exception based on RPC results
+     */
+    fun splitRPCByException(solution: Solution<RPCIndividual>): SplitResult{
+
+        val group = solution.individuals.groupBy { i-> i.seeResults().any { r-> r is RPCCallResult && r.isExceptionThrown() } }
+        return SplitResult().apply {
+            this.splitOutcome = group.map { g->
+                Solution(individuals = g.value.toMutableList(),
+                    testSuiteNamePrefix = solution.testSuiteNamePrefix,
+                    testSuiteNameSuffix = solution.testSuiteNameSuffix,
+                    termination = if (g.key) Termination.EXCEPTION else Termination.OTHER)
+            }
+        }
+    }
+
     fun split(solution: Solution<*>,
               config: EMConfig) : SplitResult { //List<Solution<*>>{
         return split(solution as Solution<RestIndividual>, config, PartialOracles())

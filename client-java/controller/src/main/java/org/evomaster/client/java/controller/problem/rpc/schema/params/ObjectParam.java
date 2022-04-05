@@ -34,7 +34,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             Object instance = clazz.newInstance();
             for (NamedTypedValue v: getValue()){
                 if (v.accessibleSchema == null || v.accessibleSchema.isAccessible){
-                    Field f = clazz.getDeclaredField(v.getName());
+                    Field f = clazz.getField(v.getName());
                     f.setAccessible(true);
                     Object vins = v.newInstance();
                     if (vins != null)
@@ -125,7 +125,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             NamedTypedValue copy = f.copyStructureWithProperties();
             try {
                 if (f.accessibleSchema == null || f.accessibleSchema.isAccessible){
-                    Field fi = clazz.getDeclaredField(f.getName());
+                    Field fi = clazz.getField(f.getName());
                     fi.setAccessible(true);
                     Object fiv = fi.get(instance);
                     copy.setValueBasedOnInstance(fiv);
@@ -167,13 +167,13 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             }else{
                 String fName = varName;
                 boolean fdeclar = false;
-                if (f instanceof ObjectParam || f instanceof CollectionParam || f instanceof DateParam){
+                if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam){
                      fName = varName+"_"+f.getName();
                      fdeclar = true;
                 }
                 codes.addAll(f.newInstanceWithJava(fdeclar, true, fName, indent+1));
 
-                if (f instanceof ObjectParam || f instanceof CollectionParam || f instanceof DateParam){
+                if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam){
                     CodeJavaGenerator.addCode(codes, CodeJavaGenerator.methodInvocation(varName, f.accessibleSchema.setterMethodName, fName)+CodeJavaGenerator.appendLast(),indent+1);
                 }
             }

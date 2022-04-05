@@ -3,6 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
@@ -48,7 +49,7 @@ class Statistics : SearchListener {
     private var remoteController: RemoteController? = null
 
     @Inject
-    private lateinit var writer: TestSuiteWriter
+    private lateinit var oracles: PartialOracles
 
     /**
      * How often test executions did timeout
@@ -274,7 +275,6 @@ class Statistics : SearchListener {
 
     private fun failedOracle(solution: Solution<*>): Int {
 
-        val oracles = writer.getPartialOracles()
         //count the distinct number of API paths for which we have a failed oracle
         // NOTE: calls with an error code (5xx) are excluded from this count.
         return solution.individuals
