@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.openapi.v3.taintkotlinequal
 
-import com.ea.agentloader.AgentLoader
 import com.foo.rest.examples.spring.openapi.v3.taintkotlinequal.TaintKotlinEqualController
 import org.evomaster.client.java.controller.InstrumentedSutStarter
 import org.evomaster.client.java.instrumentation.InstrumentingAgent
