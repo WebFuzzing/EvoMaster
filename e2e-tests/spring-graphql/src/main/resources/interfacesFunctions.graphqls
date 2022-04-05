@@ -1,0 +1,25 @@
+
+type Query {
+    stores: [Store!]!
+
+}
+
+
+interface  Store{
+     id: Int!
+    name(x:Int): String!
+
+}
+
+type FlowerStore implements Store{
+    id: Int!
+    name(x:Int): String!
+
+}
+
+type PotStore implements Store{
+    id: Int!
+    name(x:Int): String!
+    address: String!
+}
+

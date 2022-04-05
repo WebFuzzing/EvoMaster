@@ -1,8 +1,11 @@
 package org.evomaster.client.java.controller.db;
 
+import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.insert.Insert;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.internal.db.ParserUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.StatementClassReplacement;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -350,11 +353,60 @@ public class SqlScriptRunner {
      * @throws SQLException if the execution of the command fails
      */
     public static void execScript(Connection conn, String script) throws SQLException {
-        String[] commands = script.split(";");
+        List<String> commands = extractSql(script);
         for (String command : commands){
-            if (!command.replaceAll("\n","").isEmpty())
-                execCommand(conn, command+";");
+            execCommand(conn, command+";");
         }
+    }
+
+    /**
+     *
+     * @param conn a connection to db
+     * @param script represents a sql script
+     * @param tablesToInsert represents insertions are executed only on the tables in this list.
+     *                       insertions for other tables will be skipped.
+     *                       if it is null or empty, nothing will be inserted.
+     * @throws SQLException if the execution of the command fails
+     */
+    public static void execScript(Connection conn, String script, List<String> tablesToInsert) throws SQLException {
+        if (tablesToInsert == null || tablesToInsert.isEmpty()) return;
+        List<String> commands = extractSql(script);
+        for (String command : commands){
+            if(shouldExecuteInsert(command, tablesToInsert)){
+                execCommand(conn, command+";");
+            }
+        }
+    }
+
+    /**
+     *
+     * @param script is a SQL script
+     * @return a list of SQL commands based on the script
+     */
+    public static List<String> extractSql(String script){
+        String[] commands = script.split(";");
+        return Arrays.stream(commands).filter(
+                s-> !s.replaceAll("\r\n","") // on Windows
+                        .replaceAll("\n","") // on Unix
+                        .isEmpty()).map(s-> s+";").collect(Collectors.toList());
+    }
+
+    /**
+     * extract a map from table name to a list of SQL INSERT commands for initializing data into the table
+     * @param commands a list of SQL commands to be extracted
+     * @return the map from table name (key) to a list of SQL INSERT commands (values) on the table
+     */
+    public static  Map<String, List<String>> extractSqlTableMap(List<String> commands){
+        Map<String, List<String>> tableSqlMap = new HashMap<>();
+        for (String command: commands){
+            if (ParserUtils.isInsert(command)){
+                Insert stmt = (Insert) ParserUtils.asStatement(command);
+                Table table = stmt.getTable();
+                tableSqlMap.putIfAbsent(table.getName(), new ArrayList<>());
+                tableSqlMap.get(table.getName()).add(command+";");
+            }
+        }
+        return tableSqlMap;
     }
 
     public static QueryResult execCommand(Connection conn, String command) throws SQLException {
@@ -389,6 +441,14 @@ public class SqlScriptRunner {
         statement.close();
 
         return queryResult;
+    }
+
+    private static boolean shouldExecuteInsert(String command, List<String> tablesToInsert){
+        if (!ParserUtils.isInsert(command)) return true;
+        if (tablesToInsert == null || tablesToInsert.isEmpty()) return false;
+        Insert stmt = (Insert) ParserUtils.asStatement(command);
+        Table table = stmt.getTable();
+        return table!= null && tablesToInsert.stream().anyMatch(t-> t.equalsIgnoreCase(table.getName()));
     }
 
 }

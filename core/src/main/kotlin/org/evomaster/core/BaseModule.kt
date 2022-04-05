@@ -29,9 +29,6 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
 
     override fun configure() {
 
-        bind(TestSuiteWriter::class.java)
-                .asEagerSingleton()
-
         bind(SearchTimeController::class.java)
                 .asEagerSingleton()
 
@@ -78,11 +75,12 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
         bind(ExecutionInfoReporter::class.java)
                 .asEagerSingleton()
 
-        if(noTests){
-            bind(TestCaseWriter::class.java)
-                    .to(NoTestCaseWriter::class.java)
-                    .asEagerSingleton()
-        }
+        //no longer needed if TestSuiteWriter is moved out?
+//        if(noTests){
+//            bind(TestCaseWriter::class.java)
+//                    .to(NoTestCaseWriter::class.java)
+//                    .asEagerSingleton()
+//        }
     }
 
     @Provides @Singleton

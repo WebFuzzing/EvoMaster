@@ -2,13 +2,16 @@ package com.foo.rpc.examples.spring.db;
 
 import com.foo.rpc.examples.spring.SpringController;
 import kotlin.random.Random;
-import org.evomaster.client.java.controller.db.DbCleaner;
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.hibernate.dialect.H2Dialect;
 import org.springframework.boot.SpringApplication;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class SpringWithDbController extends SpringController {
 
@@ -20,7 +23,7 @@ public abstract class SpringWithDbController extends SpringController {
         System.setProperty("h2.objectCache", "false");
     }
 
-    protected Connection connection;
+    protected Connection sqlConnection;
 
     protected SpringWithDbController(Class<?> applicationClass) {
         super(applicationClass);
@@ -41,9 +44,9 @@ public abstract class SpringWithDbController extends SpringController {
         });
 
 
-        if (connection != null) {
+        if (sqlConnection != null) {
             try {
-                connection.close();
+                sqlConnection.close();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -51,7 +54,7 @@ public abstract class SpringWithDbController extends SpringController {
         JdbcTemplate jdbc = ctx.getBean(JdbcTemplate.class);
 
         try {
-            connection = jdbc.getDataSource().getConnection();
+            sqlConnection = jdbc.getDataSource().getConnection();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -61,20 +64,23 @@ public abstract class SpringWithDbController extends SpringController {
 
     @Override
     public void resetStateOfSUT() {
-        if(connection != null) {
-            DbCleaner.clearDatabase_H2(connection);
-        }
+//        if(connection != null) {
+//            DbCleaner.clearDatabase_H2(connection);
+//        }
     }
 
     @Override
     public void stopSut() {
         super.stopSut();
-        connection = null;
+//        connection = null;
     }
 
     @Override
-    public Connection getConnection() {
-        return connection;
+    public List<DbSpecification> getDbSpecifications() {
+        return Arrays.asList(new DbSpecification(){{
+            dbType = DatabaseType.H2;
+            connection = sqlConnection;
+        }});
     }
 
 }

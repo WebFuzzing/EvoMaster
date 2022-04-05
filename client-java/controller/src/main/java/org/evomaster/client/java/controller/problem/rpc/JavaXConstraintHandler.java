@@ -20,20 +20,26 @@ public class JavaXConstraintHandler {
      */
     public static void handleParam(NamedTypedValue namedTypedValue, Annotation annotation){
         Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("NotNull")){
-            namedTypedValue.setNullable(false);
+
+        JavaXConstraintSupportType supportType = JavaXConstraintSupportType.getSupportType(cons.getSimpleName());
+        if (supportType == null){
+            SimpleLogger.error("ERROR: Not handle constraints with a specified annotation:"+ cons.getName());
             return;
         }
 
         boolean solved = false;
-        if (namedTypedValue instanceof PrimitiveOrWrapperParam){
-            solved = handlePrimitiveOrWrapperParam((PrimitiveOrWrapperParam) namedTypedValue, annotation);
-        } else if (namedTypedValue instanceof StringParam){
-            solved = handleStringParam((StringParam) namedTypedValue, annotation);
-        } else if (namedTypedValue instanceof CollectionParam){
-            solved = handleCollection((CollectionParam) namedTypedValue, annotation);
-        }  else if (namedTypedValue instanceof MapParam){
-            solved = handleMapParam((MapParam) namedTypedValue, annotation);
+        switch (supportType){
+            case NOT_NULL: solved = handleNotNull(namedTypedValue); break;
+            case NOT_EMPTY: solved = handleNotEmpty(namedTypedValue); break;
+            case NOT_BLANK: solved = handleNotBlank(namedTypedValue); break;
+            case SIZE: solved = handleSize(namedTypedValue, annotation); break;
+            case PATTERN: solved = handlePattern(namedTypedValue, annotation); break;
+            case DECIMAL_MAX:
+            case MAX: solved = handleMax(namedTypedValue, annotation, supportType); break;
+            case DECIMAL_MIN:
+            case MIN: solved = handleMin(namedTypedValue, annotation, supportType); break;
+            default:
+                SimpleLogger.error("ERROR: Not handle "+ supportType.annotation);
         }
 
         if (!solved){
@@ -42,137 +48,194 @@ public class JavaXConstraintHandler {
         }
     }
 
-    private static boolean handlePrimitiveOrWrapperParam(PrimitiveOrWrapperParam param, Annotation annotation){
-        Long max = handleMax(annotation);
-        if (max != null){
-            param.setMax(max);
-            return true;
-        }
-        Long min = handleMin(annotation);
-        if (min != null){
-            param.setMin(min);
-            return true;
-        }
-        return false;
+
+    private static boolean handleNotNull(NamedTypedValue namedTypedValue){
+        namedTypedValue.setNullable(false);
+        return true;
     }
 
-    private static boolean handleCollection(CollectionParam param, Annotation annotation){
-        if (handleNotEmpty(annotation)){
-            param.setMinSize(1);
-            return true;
+    private static boolean handleNotEmpty(NamedTypedValue namedTypedValue){
+
+        namedTypedValue.setNullable(false);
+
+        //https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/NotEmpty.html
+
+        if (namedTypedValue instanceof  CollectionParam){
+            ((CollectionParam) namedTypedValue).setMinSize(1);
+        } else if (namedTypedValue instanceof MapParam){
+            ((MapParam) namedTypedValue).setMinSize(1);
+        } else if(namedTypedValue instanceof StringParam) {
+            ((StringParam) namedTypedValue).setMinSize(1);
+        }else {
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotEmpty");
+            return false;
         }
 
-        Integer[] size = handleSize(annotation);
-        if (size != null){
-            //TODO if set size, should the value still be nullable?
-            param.setMinSize(size[0]);
-            param.setMaxSize(size[1]);
-            return true;
-        }
-        return false;
-
+        return true;
     }
 
-    private static boolean handleMapParam(MapParam param, Annotation annotation){
-        if (handleNotEmpty(annotation)){
-            param.setMinSize(1);
-            return true;
+    private static boolean handleNotBlank(NamedTypedValue namedTypedValue){
+        namedTypedValue.setNullable(false);
+
+        /*
+            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/NotBlank.html
+            NotBlank is applied to CharSequence
+         */
+        if (namedTypedValue instanceof StringParam){
+            ((StringParam)namedTypedValue).setMinSize(1);
+        } else {
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotBlank");
+            return false;
         }
-
-        Integer[] size = handleSize(annotation);
-        if (size != null){
-            param.setMinSize(size[0]);
-            param.setMaxSize(size[1]);
-            return true;
-        }
-
-        return false;
-
+        return true;
     }
 
-    private static boolean handleStringParam(StringParam param, Annotation annotation) {
-        if (handleNotBlank(annotation)){
-            param.setMinSize(1);
-            return true;
+    private static boolean handleSize(NamedTypedValue namedTypedValue, Annotation annotation){
+         /*
+            based on https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Size.html
+            null elements are considered valid.
+         */
+        Integer[] size = new Integer[2];
+
+        try {
+            size[0] = (Integer) annotation.annotationType().getDeclaredMethod("min").invoke(annotation);
+            size[1] = (Integer) annotation.annotationType().getDeclaredMethod("max").invoke(annotation);
+        } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
+            throw new RuntimeException("ERROR: fail to process Size "+e.getMessage());
         }
 
-        Integer[] size = handleSize(annotation);
-        if (size != null){
-            param.setMinSize(size[0]);
-            param.setMaxSize(size[1]);
-            return true;
+        if (size[0] == null){
+            SimpleLogger.error("ERROR: Size min is null");
+            return false;
         }
 
-        Long max = handleMax(annotation);
-        if (max != null){
-            param.setMax(max);
-            return true;
-        }
-        Long min = handleMin(annotation);
-        if (min != null){
-            param.setMin(min);
-            return true;
+        if (size[1] == null){
+            SimpleLogger.error("ERROR: Size max is null");
+            return false;
         }
 
-        return false;
+        if (namedTypedValue instanceof  CollectionParam){
+            ((CollectionParam) namedTypedValue).setMinSize(size[0]);
+            ((CollectionParam) namedTypedValue).setMaxSize(size[1]);
+        } else if (namedTypedValue instanceof MapParam){
+
+            ((MapParam) namedTypedValue).setMinSize(size[0]);
+            ((MapParam) namedTypedValue).setMaxSize(size[1]);
+        } else if(namedTypedValue instanceof StringParam) {
+            ((StringParam)namedTypedValue).setMinSize(size[0]);
+            ((StringParam)namedTypedValue).setMaxSize(size[1]);
+        } else {
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
+            return false;
+        }
+
+        return true;
     }
 
-    private static boolean handleNotBlank(Annotation annotation)  {
-        Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("NotBlank")){
-            return true;
+    private static boolean handlePattern(NamedTypedValue namedTypedValue, Annotation annotation)  {
+        /*
+            based on https://docs.oracle.com/javaee/7/api/javax/validation/constraints/Pattern.html
+            null elements are considered valid.
+         */
+
+        String pattern = null;
+        try {
+            pattern = (String) annotation.annotationType().getDeclaredMethod("regexp").invoke(annotation);
+        } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
+            throw new RuntimeException("ERROR: fail to process regexp "+e.getMessage());
         }
-        return false;
+
+        if (pattern == null){
+            SimpleLogger.error("ERROR: Pattern regexp is null");
+            return false;
+        }
+
+        if (namedTypedValue instanceof StringParam){
+            ((StringParam)namedTypedValue).setPattern(pattern);
+        }  else {
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
+            return false;
+        }
+        return true;
     }
 
-    private static boolean handleNotEmpty(Annotation annotation)  {
-        Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("NotEmpty")){
-            return true;
+    private static boolean handleMax(NamedTypedValue namedTypedValue, Annotation annotation, JavaXConstraintSupportType supportType){
+
+         /*
+            based on
+            https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Max.html
+            https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/DecimalMax.html
+            null elements are considered valid.
+         */
+        Long max = null;
+        Boolean inclusive = true;
+        try {
+            // TODO might change long to BigDecimal
+            if (supportType == JavaXConstraintSupportType.DECIMAL_MAX){
+                String maxStr =  (String) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+                max = Long.valueOf(maxStr);
+                inclusive = (Boolean) annotation.annotationType().getDeclaredMethod("inclusive").invoke(annotation);
+            }else
+                max = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+
+        } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
+            throw new RuntimeException("ERROR: fail to process max "+e.getMessage());
         }
-        return false;
+
+        if (max == null){
+            SimpleLogger.error("ERROR: Max value is null");
+            return false;
+        }
+
+        if (inclusive != null && !inclusive)
+            max = max - 1;
+
+        if (namedTypedValue instanceof PrimitiveOrWrapperParam){
+            ((PrimitiveOrWrapperParam)namedTypedValue).setMax(max);
+        } else if (namedTypedValue instanceof StringParam){
+            ((StringParam)namedTypedValue).setMax(max);
+        } else {
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Max");
+            return false;
+        }
+
+        return true;
     }
 
-    private static Integer[] handleSize(Annotation annotation)  {
-        Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("Size")){
-            Integer[] size = new Integer[2];
+    private static boolean handleMin(NamedTypedValue namedTypedValue, Annotation annotation, JavaXConstraintSupportType supportType){
 
-            try {
-                size[0] = (Integer) annotation.annotationType().getDeclaredMethod("min").invoke(annotation);
-                size[1] = (Integer) annotation.annotationType().getDeclaredMethod("max").invoke(annotation);
-                return size;
-            } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
-                throw new RuntimeException("ERROR: fail to process size");
-            }
+        Long min = null;
+        Boolean inclusive = true;
+        try {
+            // TODO might change long to BigDecimal
+            if (supportType == JavaXConstraintSupportType.DECIMAL_MIN){
+                String minStr = (String) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+                min = Long.valueOf(minStr);
+                inclusive = (Boolean) annotation.annotationType().getDeclaredMethod("inclusive").invoke(annotation);
+            }else
+                min = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
 
+        } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
+            throw new RuntimeException("ERROR: fail to process min "+e.getMessage());
         }
-        return null;
-    }
 
-    private static Long handleMax(Annotation annotation)  {
-        Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("Max")){
-            try {
-                return (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
-            } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
-                throw new RuntimeException("ERROR: fail to process max");
-            }
+        if (min == null){
+            SimpleLogger.error("ERROR: Min value is null");
+            return false;
         }
-        return null;
-    }
 
-    private static Long handleMin(Annotation annotation)  {
-        Class<?> cons = annotation.annotationType();
-        if (cons.getSimpleName().equals("Min")){
-            try {
-                return (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
-            } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
-                throw new RuntimeException("ERROR: fail to process min");
-            }
+        if (inclusive != null && !inclusive)
+            min = min + 1;
+
+        if (namedTypedValue instanceof PrimitiveOrWrapperParam){
+            ((PrimitiveOrWrapperParam)namedTypedValue).setMin(min);
+        } else if (namedTypedValue instanceof StringParam){
+            ((StringParam)namedTypedValue).setMin(min);
+        } else {
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Min");
+            return false;
         }
-        return null;
+
+        return true;
     }
-
-
 }

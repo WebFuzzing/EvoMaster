@@ -1,9 +1,7 @@
 package com.thrift.example.artificial;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -75,6 +73,7 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         response.f2 = 42;
         response.f3 = 0.42;
         response.f4 = new double[]{0.0, 0.5, 1.0};
+        response.systemTime = System.nanoTime();
         return response;
     }
 
@@ -131,5 +130,97 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         if (authorized)
             return "local";
         return null;
+    }
+
+    @Override
+    public void throwRuntimeException() {
+        throw new RuntimeException("runtime exception");
+    }
+
+    @Override
+    public void throwUndeclaredThrowableException() {
+        throw new UndeclaredThrowableException(new IllegalStateException("undeclared"));
+    }
+
+    private final String child_mark = "child";
+
+    @Override
+    public StringChildDto handledInheritedGenericStringDto(StringChildDto dto) {
+        dto.setCode(dto.getCode()!= null? child_mark+dto.getCode(): child_mark);
+        dto.setMessage(dto.getMessage()!=null? child_mark+ dto.getMessage(): child_mark);
+        return dto;
+    }
+
+    @Override
+    public IntChildDto handledInheritedGenericIntDto(IntChildDto dto) {
+        dto.setCode(dto.getCode()!= null? 1+dto.getCode(): 0);
+        dto.setMessage(dto.getMessage()!=null? 1+ dto.getMessage(): 0);
+        return dto;
+    }
+
+    @Override
+    public ListChildDto handledInheritedGenericListDto(ListChildDto dto) {
+        dto.setCode(dto.getCode()!= null? dto.getCode().stream().map(x-> x+1).collect(Collectors.toList()): Arrays.asList(0));
+        dto.setMessage(dto.getMessage()!=null? dto.getCode().stream().map(x-> x+1).collect(Collectors.toList()): Arrays.asList(0));
+        return dto;
+    }
+
+    @Override
+    public GenericDto<Integer, String> handleGenericIntString(GenericDto<Integer, String> dto) {
+        dto.data1 = dto.data1 == null? 0 : dto.data1+1;
+        dto.data2 = dto.data2 == null? "generic" : "generic"+dto.data2;
+        return dto;
+    }
+
+    @Override
+    public GenericDto<StringChildDto, String> handleGenericObjectString(GenericDto<StringChildDto, String> dto) {
+        if (dto.data1 == null)
+            dto.data1 = new StringChildDto(){{
+                setMessage(child_mark);
+                setCode(child_mark);
+            }};
+        else{
+         dto.data1 = handledInheritedGenericStringDto(dto.data1);
+        }
+        dto.data2 =  dto.data2 == null? "generic" : "generic"+dto.data2;
+        return dto;
+    }
+
+    @Override
+    public NestedGenericDto<String> handleNestedGenericString(NestedGenericDto<String> dto) {
+        if (dto.intData == null){
+            dto.intData = new GenericDto<String, Integer>(){{
+                data1 = child_mark;
+                data2 = 0;
+            }};
+        }
+        if (dto.stringData == null){
+            dto.stringData = new GenericDto<String, String>(){{
+                data1 = child_mark;
+                data2 = child_mark;
+            }};
+        }
+        if (dto.list == null){
+            dto.list = Arrays.asList(child_mark, child_mark);
+        }
+
+        return dto;
+    }
+
+    @Override
+    public void handleException(String type) throws Exception {
+        if (type == null)
+            throw new NullPointerException("null");
+        if (type.equals("state"))
+            throw new IllegalStateException(type);
+        if (type.equals("argument"))
+            throw new IllegalArgumentException(type);
+        throw new RuntimeException(type);
+    }
+
+    @Override
+    public String handleEnumWithConstructor(ObjectEnum arg1) {
+        if (arg1 == null || arg1.enumWithConstructor == null) return null;
+        return arg1.enumWithConstructor.getDesc();
     }
 }

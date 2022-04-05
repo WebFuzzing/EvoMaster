@@ -3,9 +3,10 @@ package org.evomaster.core.problem.graphql
 import com.google.gson.Gson
 import org.evomaster.core.problem.graphql.schema.SchemaObj
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
 
 class GraphQLUtilsTest {
@@ -312,6 +313,10 @@ class GraphQLUtilsTest {
     }
 
 
+    /*
+        Make sure EM does not crash on any of these schemas.
+        Stats file gets generated under "target"
+     */
     @Test
     fun getStatsFromSchemas() {
 
@@ -321,7 +326,7 @@ class GraphQLUtilsTest {
         jsonFiles["PetsClinic"] = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic.json").readText()
         jsonFiles["AniList"] = GraphQLUtilsTest::class.java.getResource("/graphql/AniList.json").readText()
         jsonFiles["Bitquery"] = GraphQLUtilsTest::class.java.getResource("/graphql/Bitquery.json").readText()
-        // jsonFiles["GitLab"] = GraphQLUtilsTest::class.java.getResource("/graphql/GitLab.json").readText()//Todo not working
+        // jsonFiles["GitLab"] = GraphQLUtilsTest::class.java.getResource("/graphql/GitLab.json").readText()//TODO not working
         jsonFiles["DigitransitHSL"] = GraphQLUtilsTest::class.java.getResource("/graphql/DigitransitHSL.json").readText()
         jsonFiles["TravelgateX"] = GraphQLUtilsTest::class.java.getResource("/graphql/TravelgateX.json").readText()
         jsonFiles["Universe"] = GraphQLUtilsTest::class.java.getResource("/graphql/Universe.json").readText()
@@ -399,7 +404,6 @@ class GraphQLUtilsTest {
                         buffer.append("The number of unions: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.UNION_TAG, queryGraph)}").append(System.getProperty("line.separator"))
                         buffer.append("The number of interfaces: ${GraphQLUtils.getNumberOfUnionOrInterface(GqlConst.INTERFACE_TAG, queryGraph)}").append(System.getProperty("line.separator"))
                         buffer.append("The maximum path of the minimum among all entry points: ${GraphQLUtils.maxPathAmongAllEntryPointsForAllNodes(GraphQLUtils.minPathAmongAllEntryPointsForEachNode(GraphQLUtils.getShortestPathFromEachEntryPointToEachNode(queryGraph)))}").append(System.getProperty("line.separator"))
-
                     }
                 }
             }
@@ -426,7 +430,12 @@ class GraphQLUtilsTest {
             }
 
         }
-        File("src/test/resources/graphql/stats").bufferedWriter().use { out -> out.append(buffer) }
+        val folder = Paths.get("target/graphql")
+        Files.createDirectories(folder)
+        val stats = Paths.get(folder.toString(), "stats.txt")
+        Files.deleteIfExists(stats)
+        Files.createFile(stats)
 
+        stats.toFile().bufferedWriter().use { out -> out.append(buffer) }
     }
 }

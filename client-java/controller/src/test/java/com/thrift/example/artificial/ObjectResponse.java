@@ -19,4 +19,6 @@ public class ObjectResponse {
     public double[] f4;
 
     public List<String>[] f5;
+
+    public long systemTime;
 }

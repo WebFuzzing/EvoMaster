@@ -105,6 +105,7 @@ class DbActionGeneBuilder {
                  */
                 ColumnDataType.TINYTEXT,
                 ColumnDataType.TEXT,
+                ColumnDataType.LONGTEXT,
                 ColumnDataType.VARCHAR,
                 ColumnDataType.CLOB,
                 ColumnDataType.MEDIUMTEXT,
@@ -294,8 +295,13 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toLong() })
         } else {
+            /*
+                TODO might need to use ULong to handle unsigned long
+                https://dev.mysql.com/doc/refman/8.0/en/integer-types.html
 
-            LongGene(column.name)
+             */
+            val min : Long? = if (column.isUnsigned) 0 else null
+            LongGene(column.name, min = min)
         }
     }
 

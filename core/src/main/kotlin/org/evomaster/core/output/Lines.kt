@@ -1,8 +1,10 @@
 package org.evomaster.core.output
 
+import java.nio.Buffer
+
 
 /**
- * Class used to created an indented version of a list of strings, each
+ * Class used to create an indented version of a list of strings, each
  * one representing a line
  */
 class Lines {
@@ -12,9 +14,12 @@ class Lines {
     var indentation = 0
         private set
 
+    //TODO what about C#???
+    fun shouldUseSemicolon(format: OutputFormat) = format.isJava() || format.isJavaScript()
+
     fun appendSemicolon(format: OutputFormat) {
-        //TODO what about C#???
-        if (format.isJava() || format.isJavaScript()) {
+
+        if (shouldUseSemicolon(format)) {
             append(";")
         }
     }
@@ -53,6 +58,32 @@ class Lines {
         }
         val spaces = 4
         buffer.add(padding(spaces * indentation) + line)
+    }
+
+    fun replaceInCurrent(regex: Regex, replacement: String){
+        if(buffer.isEmpty()){
+            return
+        }
+
+        buffer[buffer.lastIndex] = buffer.last().replace(regex, replacement)
+    }
+
+    /**
+     * Is the current line just a comment // without any statement?
+     */
+    fun isCurrentACommentLine() : Boolean{
+        if(buffer.isEmpty()){
+            return false
+        }
+        return buffer.last().matches(Regex("^\\s*//.*$"))
+    }
+
+    fun currentContains(s: String) : Boolean{
+        if(buffer.isEmpty()){
+            return false
+        }
+
+        return buffer.last().contains(s)
     }
 
     /**

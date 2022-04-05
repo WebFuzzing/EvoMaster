@@ -10,40 +10,60 @@ import java.util.Map;
  */
 public interface RPCInterfaceExample {
 
-    public String simplePrimitive(int argInt, float argfloat, long arglong, double argdouble, char argchar, byte argbyte, boolean argboolean, short argshort);
+    String simplePrimitive(int argInt, float argfloat, long arglong, double argdouble, char argchar, byte argbyte, boolean argboolean, short argshort);
 
-    public String simpleWrapPrimitive(Integer argInt, Float argfloat, Long arglong, Double argdouble, Character argchar, Byte argbyte, Boolean argboolean, Short argshort);
+    String simpleWrapPrimitive(Integer argInt, Float argfloat, Long arglong, Double argdouble, Character argchar, Byte argbyte, Boolean argboolean, Short argshort);
 
-    public GenericResponse array(List<String>[] args0);
+    GenericResponse array(List<String>[] args0);
 
-    public GenericResponse arrayboolean(boolean[] args0);
+    GenericResponse arrayboolean(boolean[] args0);
 
-    public GenericResponse list(List<String> args0);
+    GenericResponse list(List<String> args0);
 
-    public GenericResponse map(Map<String, String> args0);
+    GenericResponse map(Map<String, String> args0);
 
-    public GenericResponse listAndMap(List<Map<String, String>> args0);
+    GenericResponse listAndMap(List<Map<String, String>> args0);
 
-    public ObjectResponse objResponse();
+    ObjectResponse objResponse();
 
-    public CycleAObj objCycleA();
+    CycleAObj objCycleA();
 
-    public CycleBObj objCycleB();
+    CycleBObj objCycleB();
 
-    public String dateToString(Date date);
+    String dateToString(Date date);
 
-    public String constraintInputs(ConstrainedRequest arg0, @NotNull String arg1);
+    String constraintInputs(ConstrainedRequest arg0, @NotNull String arg1);
 
 
-    public String handleCustomizedRequestA(CustomizedRequestA request);
+    String handleCustomizedRequestA(CustomizedRequestA request);
 
-    public String handleCustomizedRequestB(CustomizedRequestB request);
+    String handleCustomizedRequestB(CustomizedRequestB request);
 
-    public void login(AuthLoginDto dto);
+    void login(AuthLoginDto dto);
 
-    public PrivateFieldInResponseDto accessFieldDtoCheck(PrivateFieldInRequestDto dto);
+    PrivateFieldInResponseDto accessFieldDtoCheck(PrivateFieldInRequestDto dto);
 
-    public ByteResponse byteResponse(byte arg1, Byte arg2);
+    ByteResponse byteResponse(byte arg1, Byte arg2);
 
-    public String authorizedEndpoint();
+    String authorizedEndpoint();
+
+    void throwRuntimeException();
+
+    void throwUndeclaredThrowableException();
+
+    StringChildDto handledInheritedGenericStringDto(StringChildDto dto);
+
+    IntChildDto handledInheritedGenericIntDto(IntChildDto dto);
+
+    ListChildDto handledInheritedGenericListDto(ListChildDto dto);
+
+    GenericDto<Integer, String> handleGenericIntString(GenericDto<Integer, String> dto);
+
+    GenericDto<StringChildDto, String> handleGenericObjectString(GenericDto<StringChildDto, String> dto);
+
+    NestedGenericDto<String> handleNestedGenericString(NestedGenericDto<String> dto);
+
+    void handleException(String type) throws Exception;
+
+    String handleEnumWithConstructor(ObjectEnum arg1);
 }

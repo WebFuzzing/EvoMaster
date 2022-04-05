@@ -69,7 +69,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         //initAdHocInitialIndividuals()
         //postInits()
 
-        updateConfigForTestOutput(infoDto)
+        updateConfigBasedOnSutInfoDto(infoDto)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }

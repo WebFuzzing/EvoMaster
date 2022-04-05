@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class GQLCycleEMTest : SpringTestBase() {
@@ -16,6 +17,7 @@ class GQLCycleEMTest : SpringTestBase() {
             initClass(CycleController())
         }
     }
+
 
 
     @Test

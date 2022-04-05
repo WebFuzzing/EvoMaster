@@ -67,11 +67,11 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
         if (getValue() == null) return codes;
         CodeJavaGenerator.addCode(codes, "{", indent);
         String varValue = variableName+"_byteArray";
-        String byteArray = "\""+ new String(getValue().array(), StandardCharsets.UTF_8) + "\".getBytes(StandardCharsets.UTF_8)";
+        String byteArray = "\""+ new String(getValue().array(), StandardCharsets.UTF_8) + "\".getBytes("+StandardCharsets.class.getName()+".UTF_8)";
         CodeJavaGenerator.addCode(codes,
                 CodeJavaGenerator.oneLineInstance(true, true, "byte[]", varValue, byteArray), indent + 1);
         CodeJavaGenerator.addCode(codes,
-                CodeJavaGenerator.oneLineInstance(false, true, String.class.getName(), variableName, "ByteBuffer.allocate("+varValue+".length)"), indent + 1);
+                CodeJavaGenerator.oneLineInstance(false, true, String.class.getName(), variableName, ByteBuffer.class.getName()+".allocate("+varValue+".length)"), indent + 1);
         CodeJavaGenerator.addCode(codes, variableName+".put("+varValue+");", indent+1);
         CodeJavaGenerator.addCode(codes, "}", indent);
 

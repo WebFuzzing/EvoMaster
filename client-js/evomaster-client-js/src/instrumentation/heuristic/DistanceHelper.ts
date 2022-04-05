@@ -53,4 +53,43 @@ export default class DistanceHelper {
         return dist;
     }
 
+    public static getDistance(left: any, right: any) : number{
+        // TODO check null?
+
+        const ltype = typeof left;
+        const rtype = typeof right;
+
+        let d : number;
+
+        if (ltype == "number" && rtype == "number")
+            d = this.getDistanceToEqualityNumber(left, right);
+        else if (ltype == "string" && rtype == "string")
+            d = this.getLeftAlignmentDistance(left, right);
+        else if (ltype == "string" && rtype == "number"){
+            d = this.getLeftAlignmentDistance(left, right.toString());
+        } else if (rtype == "string" && ltype == "number"){
+            d = this.getLeftAlignmentDistance(left.toString(), right);
+        } else
+            d = Number.MAX_VALUE;
+        return d;
+    }
+
+
+    /**
+     * Return a h=[0,1] heuristics from a scaled distance, taking into account a starting base
+     * @param base
+     * @param distance
+     * @return
+     */
+    public static heuristicFromScaledDistanceWithBase(base: number, distance: number): number{
+
+        if (base < 0 || base >=1)
+            throw Error("Invalid base: " + base);
+        if (distance < 0)
+            throw Error("Negative distance: " + distance)
+        if (!isFinite(distance) || distance == Number.MAX_VALUE)
+            return base;
+
+        return base + ((1-base)/(distance + 1));
+    }
 }

@@ -103,7 +103,7 @@ public abstract class RestTestBase  extends WsTestBase{
         for (int i : index) {
             String statusCode = results.get(i).getResultValue(
                     RestCallResult.STATUS_CODE);
-            if (statusCode.equals("" + expectedStatusCode)) {
+            if (statusCode!=null && statusCode.equals("" + expectedStatusCode)) {
                 return true;
             }
         }

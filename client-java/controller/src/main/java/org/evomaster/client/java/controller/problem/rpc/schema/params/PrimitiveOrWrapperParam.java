@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 
@@ -53,6 +54,48 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         throw new RuntimeException("PrimitiveOrWrapperParam: unhandled type "+ clazz.getName());
     }
 
+    /**
+     * setter might not use exact same type for primitive type
+     * @param type
+     * @return
+     */
+    public static Type getPrimitiveOrWrapper(Type type){
+        if (Integer.class.equals(type)) {
+            return int.class;
+        } else if (int.class.equals(type)) {
+            return Integer.class;
+        } else if (Boolean.class.equals(type)) {
+            return boolean.class;
+        } else if (boolean.class.equals(type)) {
+            return Boolean.class;
+        } else if (Double.class.equals(type)) {
+            return double.class;
+        } else if (double.class.equals(type)) {
+            return Double.class;
+        } else if (Float.class.equals(type)) {
+            return float.class;
+        } else if (float.class.equals(type)) {
+            return Float.class;
+        } else if (Long.class.equals(type)) {
+            return long.class;
+        } else if (long.class.equals(type)) {
+            return Long.class;
+        } else if (Character.class.equals(type)) {
+            return char.class;
+        } else if (char.class.equals(type)) {
+            return Character.class;
+        } else if (Byte.class.equals(type)) {
+            return byte.class;
+        } else if (byte.class.equals(type)) {
+            return Byte.class;
+        } else if (Short.class.equals(type)) {
+            return short.class;
+        } else if (short.class.equals(type)) {
+            return Short.class;
+        }
+        return type;
+    }
+
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
@@ -85,12 +128,17 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
         String code;
-        if (accessibleSchema == null || accessibleSchema.isAccessible)
+        if (!getType().isWrapper && getValue() == null){
+            // ignore instance of primitive types if the value is not assigned
+            return Collections.emptyList();
+        }
+
+        if (accessibleSchema == null || accessibleSchema.isAccessible){
             code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
-        else{
+        } else{
             if (accessibleSchema.setterMethodName == null)
                 throw new IllegalStateException("Error: private field, but there is no setter method");
-            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getType().getFullTypeName(), variableName, getValueAsJavaString());
+            code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString());
         }
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
     }
@@ -122,4 +170,20 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
      */
     abstract public String getPrimitiveValue(String responseVarName);
 
+    @Override
+    public void copyProperties(NamedTypedValue copy) {
+        super.copyProperties(copy);
+        if (copy instanceof PrimitiveOrWrapperParam){
+            ((PrimitiveOrWrapperParam)copy).setMin(min);
+            ((PrimitiveOrWrapperParam)copy).setMax(max);
+        }
+    }
+
+    /**
+     *
+     * @return a cast type for this param, null means that there is no need to cast the value to a type
+     */
+    public String getCastType() {
+        return null;
+    }
 }

@@ -3,6 +3,8 @@ package org.evomaster.e2etests.spring.examples.adaptivehypermutation;
 
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import java.util.List;
@@ -370,5 +372,10 @@ public class ManualRestTest extends AHypermuationTestBase{
                 .then()
                 .assertThat()
                 .statusCode(400);
+    }
+
+    @AfterEach
+    public void reset(){
+        controller.resetDatabase(null);
     }
 }

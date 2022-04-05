@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
@@ -145,14 +146,27 @@ public class EndpointSchema {
     }
 
     /**
+     * find an endpoint schema based on seeded tests
+     * @param dto a seeded test dto
+     * @return an endpoint schema
+     */
+    public boolean sameEndpoint(SeededRPCActionDto dto){
+        return dto.functionName.equals(name)
+                // only check input parameters
+                // && (getResponse() == null || getResponse().sameParam(dto.responseParam))
+                && ((getRequestParams() == null && dto.inputParams == null) || getRequestParams().size() == dto.inputParams.size())
+                && IntStream.range(0, getRequestParams().size()).allMatch(i-> getRequestParams().get(i).getType().getFullTypeName().equals(dto.inputParamTypes.get(i)));
+    }
+
+    /**
      *
      * @return a copy of this endpoint which contains its structure but not values
      */
     public EndpointSchema copyStructure(){
         return new EndpointSchema(
                 name, interfaceName, clientTypeName,
-                requestParams == null? null: requestParams.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
-                response == null? null: response.copyStructure(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructure).collect(Collectors.toList()),
+                requestParams == null? null: requestParams.stream().map(NamedTypedValue::copyStructureWithProperties).collect(Collectors.toList()),
+                response == null? null: response.copyStructureWithProperties(), exceptions == null? null: exceptions.stream().map(NamedTypedValue::copyStructureWithProperties).collect(Collectors.toList()),
                 authRequired, requiredAuthCandidates, relatedCustomizedCandidates);
     }
 
@@ -178,7 +192,7 @@ public class EndpointSchema {
     public List<String> newInvocationWithJava(String responseVarName, String controllerVarName){
         List<String> javaCode = new ArrayList<>();
         if (response != null){
-            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getFullTypeName(), responseVarName, null));
+            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getFullTypeNameWithGenericType(), responseVarName, null));
         }
         javaCode.add("{");
         int indent = 1;

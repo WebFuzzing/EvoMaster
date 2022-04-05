@@ -17,6 +17,14 @@ import org.junit.jupiter.api.Test
 
 class WriteXMLTest {
 
+    private fun getConfig(format: OutputFormat): EMConfig {
+        val config = EMConfig()
+        config.outputFormat = format
+        config.expectationsActive = false
+        config.testTimeout = -1
+        return config
+    }
+
     @Test
     fun testEmptyXML() {
         val xmlColumn = Column("xmlColumn", ColumnDataType.XML, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
@@ -30,9 +38,7 @@ class WriteXMLTest {
         val insert = DbAction(table, setOf(xmlColumn), 0L, listOf(sqlXMLGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -59,6 +65,8 @@ class WriteXMLTest {
         Assertions.assertEquals(expectedLines.toString(), lines.toString())
     }
 
+
+
     @Test
     fun testChildrenXML() {
         val xmlColumn = Column("xmlColumn", ColumnDataType.XML, 10, primaryKey = false, autoIncrement = false,
@@ -77,9 +85,7 @@ class WriteXMLTest {
         val insert = DbAction(table, setOf(xmlColumn), 0L, listOf(sqlXMLGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -122,9 +128,7 @@ class WriteXMLTest {
         val insert = DbAction(table, setOf(xmlColumn), 0L, listOf(sqlXMLGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 

@@ -2,13 +2,10 @@ package org.evomaster.core.problem.rest
 
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.parser.OpenAPIV3Parser
-import org.apache.commons.io.FileUtils
 import org.evomaster.core.remote.SutProblemException
 import java.net.ConnectException
 import java.net.URI
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
@@ -19,13 +16,15 @@ import javax.ws.rs.core.Response
  */
 object OpenApiAccess {
 
-    fun getOpenApi(schemaText: String) : OpenAPI {
-        val schema = try {
-            OpenAPIParser().readContents(schemaText, null, null).openAPI
+    fun getOpenApi(schemaText: String): OpenAPI {
+        val parseResults = try {
+            OpenAPIParser().readContents(schemaText, null, null)
         } catch (e: Exception) {
             throw SutProblemException("Failed to parse OpenApi schema: $e")
         }
-        return schema
+
+        return parseResults.openAPI
+                ?: throw SutProblemException("Failed to parse OpenApi schema: " + parseResults.messages.joinToString("\n"))
     }
 
     fun getOpenAPIFromURL(openApiUrl: String): OpenAPI {

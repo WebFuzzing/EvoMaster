@@ -33,7 +33,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
-    protected lateinit var swagger: OpenAPI
+    lateinit var swagger: OpenAPI
+        protected set
 
     @PostConstruct
     open fun initialize() {
@@ -84,7 +85,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         postInits()
 
-        updateConfigForTestOutput(infoDto)
+        updateConfigBasedOnSutInfoDto(infoDto)
 
         /*
             TODO this would had been better handled with optional injection, but Guice seems pretty buggy :(

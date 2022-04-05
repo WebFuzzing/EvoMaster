@@ -10,6 +10,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.min
 
 
 /**
@@ -35,12 +36,12 @@ class MapGene<K, V>(
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
             throw IllegalArgumentException(
-                "minSize (${minSize}) is greater than maxSize ($maxSize)")
+                "MapGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)")
         }
 
         if (maxSize != null && elements.size > maxSize!!) {
             throw IllegalArgumentException(
-                    "More elements (${elements.size}) than allowed ($maxSize)")
+                "MapGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
     }
 
@@ -89,7 +90,7 @@ class MapGene<K, V>(
 
         elements.clear()
         log.trace("Randomizing MapGene")
-        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeOrDefault())
+        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         (0 until n).forEach {
             val gene = addRandomElement(randomness, false)
             // if the key of gene exists, the value would be replaced with the latest one
@@ -101,6 +102,8 @@ class MapGene<K, V>(
     override fun isMutable(): Boolean {
         //it wouldn't make much sense to have 0, but let's just be safe here
         return getMaxSizeOrDefault() > 0
+                // it is not mutable if the size could not be changed and none of the element is mutable
+                && (!(getMinSizeOrDefault() == getMaxSizeOrDefault() && elements.size == getMinSizeOrDefault() && elements.none { it.isMutable() }))
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -108,12 +111,14 @@ class MapGene<K, V>(
             throw IllegalStateException("Cannot mutate a immutable array")
         }
         val mutable = elements.filter { it.isMutable() }
-        if ( mutable.isEmpty() || mutable.size > getMaxSizeOrDefault()){
-            return listOf()
-        }
+
+        // if min == max, the size is not mutable
+        if(getMinSizeOrDefault() == getMaxSizeOrDefault() && elements.size == getMinSizeOrDefault())
+            return mutable
+        // if mutable is empty, modify size
+        if (mutable.isEmpty()) return listOf()
 
         val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
-
         return if (randomness.nextBoolean(p)) listOf() else mutable
     }
 
@@ -131,10 +136,9 @@ class MapGene<K, V>(
      */
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if(elements.size == getMinSizeOrDefault() || (elements.size < getMaxSizeOrDefault() && randomness.nextBoolean())){
+        if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
             val gene = addRandomElement(randomness, false)
-            elements.add(gene)
-            addChild(gene)
+            addElement(gene)
         } else {
             log.trace("Removing gene in mutation")
             val removed = elements.removeAt(randomness.nextInt(elements.size))
@@ -226,8 +230,7 @@ class MapGene<K, V>(
      * we replace the existing one with [element]
      */
     fun addElement(element: PairGene<K, V>){
-        if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, cannot add more elements for the gene $name")
+        checkConstraintsForAdd()
 
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
@@ -242,8 +245,7 @@ class MapGene<K, V>(
      */
     fun addElement(element: Gene) : Boolean{
         element as? PairGene<K, V> ?:return false
-        if (maxSize!= null && elements.size == maxSize)
-            throw IllegalStateException("maxSize is ${maxSize}, cannot add more elements for the gene $name")
+        checkConstraintsForAdd()
 
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
@@ -302,7 +304,22 @@ class MapGene<K, V>(
         return elements.isEmpty()
     }
 
-    fun getMaxSizeOrDefault() = maxSize?: ArrayGene.MAX_SIZE
+    override fun getSpecifiedMaxSize() = maxSize
 
-    fun getMinSizeOrDefault() = minSize?: 0
+    override fun getSpecifiedMinSize() = minSize
+
+    override fun getGeneName() = name
+
+    override fun getSizeOfElements(filterMutable: Boolean): Int {
+        if (!filterMutable) return elements.size
+        return elements.count { it.isMutable() }
+    }
+
+    override fun getMaxSizeOrDefault() = maxSize?: getDefaultMaxSize()
+
+    override fun getMinSizeOrDefault() = minSize?: 0
+
+
+    override fun getDefaultMaxSize() = (if (getMinSizeOrDefault() >= MAX_SIZE) (getMinSizeOrDefault() + MAX_SIZE) else MAX_SIZE)
+
 }

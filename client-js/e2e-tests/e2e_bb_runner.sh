@@ -66,7 +66,7 @@ PID=$!
 
 
 if [ "$TYPE" == "REST" ]; then
-  PROBLEM=" --problemType REST --bbSwaggerUrl http://localhost:$PORT/swagger.json "
+  PROBLEM=" --problemType REST --bbSwaggerUrl http://localhost:$PORT/swagger.json --bbTargetUrl http://localhost:$PORT"
 elif [ "$TYPE" == "GRAPHQL" ]; then
   PROBLEM=" --problemType GRAPHQL --bbTargetUrl http://localhost:$PORT/graphql "
 else

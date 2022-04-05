@@ -52,4 +52,13 @@ public abstract class CollectionParam<V> extends NamedTypedValue<CollectionType,
             dto.minSize = Long.valueOf(minSize);
         return dto;
     }
+
+    @Override
+    public void copyProperties(NamedTypedValue copy) {
+        super.copyProperties(copy);
+        if (copy instanceof CollectionParam){
+            ((CollectionParam)copy).setMinSize(minSize);
+            ((CollectionParam)copy).setMaxSize(maxSize);
+        }
+    }
 }

@@ -8,7 +8,6 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
-import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.db.QueryResult;
@@ -224,6 +223,8 @@ public class EMController {
                     dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
                 }
             }
+            // handled seeded tests
+            dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
 
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
@@ -344,6 +345,8 @@ public class EMController {
                      */
                     if (dto.resetState != null && dto.resetState) {
                         try {
+                            // clean db with accessed tables
+                            noKillSwitchForceCheck(() -> sutController.cleanAccessedTables());
                             /*
                                 This should not fail... but, as it is user code, it might fail...
                                 When it does, it is a major issue, as it can leave the system in
@@ -544,7 +547,8 @@ public class EMController {
                     // TODO handle exception on responseDto later
                     String msg = "Thrown exception: " + e.getMessage();
                     SimpleLogger.error(msg, e);
-                    return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+                    responseDto.error500Msg = msg;
+                    return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
                 }
 
             }
@@ -588,9 +592,12 @@ public class EMController {
              */
             sutController.setExecutingInitSql(true);
 
+            // collect info about tables to insert
+            noKillSwitch(()-> sutController.addTableToInserted(dto.insertions.stream().map(x-> x.targetTable).collect(Collectors.toList())));
+
             SimpleLogger.debug("Received database command");
 
-            Connection connection = noKillSwitch(() -> sutController.getConnection());
+            Connection connection = noKillSwitch(() -> sutController.getConnectionIfExist());
             if (connection == null) {
                 String msg = "No active database connection";
                 SimpleLogger.warn(msg);

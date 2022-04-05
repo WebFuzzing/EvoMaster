@@ -36,13 +36,23 @@ abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
         action.randomize(randomness, false)
     }
 
-    protected fun updateConfigForTestOutput(infoDto: SutInfoDto) {
+    protected fun updateConfigBasedOnSutInfoDto(infoDto: SutInfoDto) {
         if (config.outputFormat == OutputFormat.DEFAULT) {
             try {
                 val format = OutputFormat.valueOf(infoDto.defaultOutputFormat?.toString()!!)
                 config.outputFormat = format
             } catch (e: Exception) {
                 throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
+            }
+        }
+
+        // only check this configuration if DB exists
+        if (infoDto.sqlSchemaDto != null){
+            val employSDB = infoDto.sqlSchemaDto?.employSmartDbClean == true
+            if (config.employSmartDbClean == null){
+                config.employSmartDbClean = employSDB
+            } else if (config.employSmartDbClean != employSDB){
+                throw SutProblemException("Mismatched EmploySmartDbClean configuration between EvoMaster(${config.employSmartDbClean}) and EM Driver ($employSDB)")
             }
         }
     }
@@ -70,5 +80,11 @@ abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
     }
 
     abstract fun initSqlInfo(infoDto: SutInfoDto)
+
+    override fun extractFkTables(tables: Set<String>): Set<String> {
+        if(sqlInsertBuilder == null || tables.isEmpty()) return tables
+
+        return sqlInsertBuilder!!.extractFkTable(tables)
+    }
 
 }

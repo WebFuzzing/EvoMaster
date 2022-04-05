@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>1.3.1-SNAPSHOT</version>
+        <version>1.4.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests</artifactId>
@@ -15,12 +15,14 @@
     <modules>
         <module>e2e-tests-utils</module>
         <module>dropwizard-examples</module>
+        <module>micronaut-latest</module>
         <module>spring-rest-postgres</module>
         <module>spring-rest-openapi-v2</module>
         <module>spring-rest-openapi-v3</module>
         <module>spring-graphql</module>
         <module>spring-rest-mysql</module>
         <module>spring-rpc</module>
+        <module>wiremock</module>
     </modules>
 
 

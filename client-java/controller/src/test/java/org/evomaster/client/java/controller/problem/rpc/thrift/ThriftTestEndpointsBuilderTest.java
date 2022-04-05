@@ -282,8 +282,8 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals(6, javaCode.size());
         assertEquals("java.nio.ByteBuffer arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
-        assertEquals(" byte[] arg0_byteArray = \"foo\".getBytes(StandardCharsets.UTF_8);", javaCode.get(2));
-        assertEquals(" arg0 = ByteBuffer.allocate(arg0_byteArray.length);", javaCode.get(3));
+        assertEquals(" byte[] arg0_byteArray = \"foo\".getBytes(java.nio.charset.StandardCharsets.UTF_8);", javaCode.get(2));
+        assertEquals(" arg0 = java.nio.ByteBuffer.allocate(arg0_byteArray.length);", javaCode.get(3));
         assertEquals(" arg0.put(arg0_byteArray);", javaCode.get(4));
         assertEquals("}", javaCode.get(5));
 
@@ -360,6 +360,28 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("assertEquals(42, res1.byte_thing);", assertionJavaCode.get(1));
         assertEquals("assertEquals(42, res1.i32_thing);", assertionJavaCode.get(2));
         assertEquals("assertEquals(42L, res1.i64_thing);", assertionJavaCode.get(3));
+
+        // thrift inits the default value for primitive types
+        Xtruct empty = new Xtruct();
+        request.setValueBasedOnInstance(empty);
+
+        javaCode = request.newInstanceWithJava(0);
+        assertEquals(8, javaCode.size());
+        assertEquals("com.thrift.example.real.thrift.test.Xtruct arg0 = null;", javaCode.get(0));
+        assertEquals("{", javaCode.get(1));
+        assertEquals(" arg0 = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(2));
+        assertEquals(" arg0.byte_thing = 0;", javaCode.get(4));
+        assertEquals(" arg0.i32_thing = 0;", javaCode.get(5));
+        assertEquals(" arg0.i64_thing = 0L;", javaCode.get(6));
+        assertEquals("}", javaCode.get(7));
+
+
+        assertionJavaCode = request.newAssertionWithJava(0, "res1", -1);
+        assertEquals(4, assertionJavaCode.size());
+        assertEquals("assertNull(res1.string_thing);", assertionJavaCode.get(0));
+        assertEquals("assertEquals(0, res1.byte_thing);", assertionJavaCode.get(1));
+        assertEquals("assertEquals(0, res1.i32_thing);", assertionJavaCode.get(2));
+        assertEquals("assertEquals(0L, res1.i64_thing);", assertionJavaCode.get(3));
     }
 
     @Test

@@ -16,6 +16,10 @@ import org.evomaster.core.search.tracer.TrackService
 class OneMaxModule : AbstractModule() {
 
     override fun configure() {
+        bind(object : TypeLiteral<Sampler<*>>() {})
+            .to(OneMaxSampler::class.java)
+            .asEagerSingleton()
+
         bind(object : TypeLiteral<Sampler<OneMaxIndividual>>() {})
                 .to(OneMaxSampler::class.java)
                 .asEagerSingleton()
