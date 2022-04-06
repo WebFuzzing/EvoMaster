@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.example.methodreplacement;
 
 import com.foo.somedifferentpackage.examples.methodreplacement.TestabilityExcImp;
+import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
@@ -27,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TestabilityExcInstrumentedTest {
 
     protected TestabilityExc getInstance() throws Exception {
+
+        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL,EXT_0");
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 

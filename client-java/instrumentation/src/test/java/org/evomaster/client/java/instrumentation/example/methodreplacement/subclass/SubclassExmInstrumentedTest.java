@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.example.methodreplacement.subclass;
 
 import com.foo.somedifferentpackage.examples.methodreplacement.subclass.SubclassExmImp;
+import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -18,6 +19,8 @@ public class SubclassExmInstrumentedTest {
 
 
     protected SubclassExm getInstance() throws Exception {
+
+        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL,EXT_0");
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
