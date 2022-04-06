@@ -11,6 +11,11 @@ public class ReplacementList {
 
     private static List<MethodReplacementClass> listCache;
 
+    /**
+     * Return all the available method replacement classes.
+     * Every time a new replacement class is implemented, it needs to
+     * be manually added to this list.
+     */
     public static List<MethodReplacementClass> getList() {
 
         if(listCache == null) {

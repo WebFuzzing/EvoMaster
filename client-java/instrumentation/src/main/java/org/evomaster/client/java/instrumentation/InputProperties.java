@@ -16,4 +16,11 @@ public class InputProperties {
      * Option to write to disk the obtained coverage once the SUT ends
      */
     public static final String OUTPUT_FILE = "evomaster.javaagent.outputfile";
+
+
+    /**
+     * Which categories to apply for the method replacements.
+     * This is a comma "," separated list of category names.
+     */
+    public static final String REPLACEMENT_CATEGORIES = "evomaster.javaagent.replacement_categories";
 }

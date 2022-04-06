@@ -18,6 +18,7 @@ import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -245,7 +246,11 @@ public class EMController {
 
     @Path(ControllerConstants.CONTROLLER_INFO)
     @GET
-    public Response getControllerInfoDto(@Context HttpServletRequest httpServletRequest) {
+    public Response getControllerInfoDto(@Context HttpServletRequest httpServletRequest,
+                                         @QueryParam(ControllerConstants.METHOD_REPLACEMENT_CATEGORIES) String methodReplacementCategories) {
+
+        //as the controller methods here might load classes, we need to handle this immediately
+        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, methodReplacementCategories);
 
         assert trackRequestSource(httpServletRequest);
 
@@ -275,6 +280,14 @@ public class EMController {
     @PUT
     @Consumes(Formats.JSON_V1)
     public Response runSut(SutRunDto dto, @Context HttpServletRequest httpServletRequest) {
+
+        if(dto != null){
+            /*
+                As this has impact on instrumentation, must be done ASAP
+             */
+            String categories = dto.methodReplacementCategories;
+            System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, categories);
+        }
 
         assert trackRequestSource(httpServletRequest);
 

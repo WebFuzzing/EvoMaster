@@ -1082,6 +1082,29 @@ class EMConfig {
     @Cfg("Apply non-integer numeric comparison heuristics to smooth the search landscape")
     var useNonIntegerReplacement = true
 
+    @Cfg("Execute instrumentation for method replace with category BASE." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_BASE = true
+
+    @Cfg("Execute instrumentation for method replace with category SQL." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_SQL = true
+
+    @Cfg("Execute instrumentation for method replace with category EXT_0." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_EXT_0 = true
+
+
+    @Cfg("Execute instrumentation for method replace with category NET." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_NET = false
+
+
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
 
@@ -1638,4 +1661,15 @@ class EMConfig {
      */
     fun isEnabledSQLInBetween() = isEnabledResourceDependency() && heuristicsForSQL && probOfApplySQLActionToCreateResources > 0.0
 
+    /**
+     * Return a "," comma separated list of categories of Method Replacements that should be applied
+     */
+    fun methodReplacementCategories() : String {
+        val categories = mutableListOf<String>()
+        if(instrumentMR_BASE) categories.add("BASE")
+        if(instrumentMR_SQL) categories.add("SQL")
+        if(instrumentMR_EXT_0) categories.add("EXT_0")
+        if(instrumentMR_NET) categories.add("NET")
+        return categories.joinToString(",")
+    }
 }
