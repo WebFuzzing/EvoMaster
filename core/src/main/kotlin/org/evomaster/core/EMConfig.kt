@@ -1074,7 +1074,9 @@ class EMConfig {
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = true
 
-    @Cfg("Apply method replacement heuristics to smooth the search landscape")
+    @Cfg("Apply method replacement heuristics to smooth the search landscape." +
+            " Note that the method replacement instrumentations would still be applied, it is just that their testing targets" +
+            " will be ignored in the fitness function if this option is set to false.")
     var useMethodReplacement = true
 
     @Cfg("Apply non-integer numeric comparison heuristics to smooth the search landscape")
