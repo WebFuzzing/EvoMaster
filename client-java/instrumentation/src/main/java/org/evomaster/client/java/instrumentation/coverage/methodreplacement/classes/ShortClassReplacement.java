@@ -42,7 +42,7 @@ public class ShortClassReplacement implements MethodReplacementClass {
         }
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean equals(Short caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -69,7 +69,7 @@ public class ShortClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
-    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
     public static short valueOf(String input, String idTemplate) {
         return parseShort(input, idTemplate);
     }
