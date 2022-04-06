@@ -206,7 +206,7 @@ public class EMController {
                 dto.rpcProblem = new RPCProblemDto();
                 // extract RPCSchema
                 noKillSwitch(() -> sutController.extractRPCSchema());
-                Map<String, InterfaceSchema> rpcSchemas = sutController.getRPCSchema();
+                Map<String, InterfaceSchema> rpcSchemas = noKillSwitch(() ->sutController.getRPCSchema());
                 if (rpcSchemas == null || rpcSchemas.isEmpty()){
                     return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();
                 }
@@ -215,7 +215,7 @@ public class EMController {
                     schemas.add(s.getDto());
                 }
                 dto.rpcProblem.schemas = schemas;
-                Map<Integer, LocalAuthSetupSchema> localMap = sutController.getLocalAuthSetupSchemaMap();
+                Map<Integer, LocalAuthSetupSchema> localMap = noKillSwitch(() ->sutController.getLocalAuthSetupSchemaMap());
                 if (localMap!= null && !localMap.isEmpty()){
                     dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
                     dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
