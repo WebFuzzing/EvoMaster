@@ -1,9 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.PatternMatchingHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -17,7 +14,7 @@ public class PatternClassReplacement implements MethodReplacementClass {
         return Pattern.class;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
+    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true, category = ReplacementCategory.BASE)
     public static boolean matches(String regex, CharSequence input, String idTemplate) {
 
         if (regex == null || input == null) {

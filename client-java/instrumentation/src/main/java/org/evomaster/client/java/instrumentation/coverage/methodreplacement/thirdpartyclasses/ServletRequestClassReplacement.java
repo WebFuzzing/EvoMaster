@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
@@ -20,7 +21,11 @@ public class ServletRequestClassReplacement extends ThirdPartyMethodReplacementC
         return "javax.servlet.ServletRequest";
     }
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getInputStream", usageFilter = UsageFilter.ONLY_SUT)
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "getInputStream",
+            usageFilter = UsageFilter.ONLY_SUT,
+            category = ReplacementCategory.BASE)
     public static ServletInputStream getInputStream(Object caller) throws IOException {
 
         if(caller == null){

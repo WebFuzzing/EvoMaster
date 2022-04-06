@@ -1,9 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DateTimeParsingUtils;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -35,7 +32,7 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
         return LocalDate.class;
     }
 
-    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
     public static LocalDate parse(CharSequence input, String idTemplate) {
 
         if (input != null && ExecutionTracer.isTaintInput(input.toString())) {
@@ -60,7 +57,7 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
     }
 
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean equals(LocalDate caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -86,7 +83,7 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean isBefore(LocalDate caller, ChronoLocalDate when, String idTemplate) {
         Objects.requireNonNull(caller);
         return LocalDateTimeClassReplacement.isBefore(
@@ -96,7 +93,7 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
 
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean isAfter(LocalDate caller, ChronoLocalDate when, String idTemplate) {
         Objects.requireNonNull(caller);
         return LocalDateTimeClassReplacement.isAfter(
@@ -105,7 +102,7 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
                 idTemplate);
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean isEqual(LocalDate caller, ChronoLocalDate other, String idTemplate) {
         Objects.requireNonNull(caller);
         return LocalDateTimeClassReplacement.isEqual(

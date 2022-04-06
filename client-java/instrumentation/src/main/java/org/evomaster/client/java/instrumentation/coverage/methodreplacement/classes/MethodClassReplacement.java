@@ -1,9 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementList;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementUtils;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 import java.lang.reflect.InvocationTargetException;
@@ -24,7 +21,7 @@ public class MethodClassReplacement implements MethodReplacementClass {
         return Method.class;
     }
 
-    @Replacement(type = ReplacementType.TRACKER)
+    @Replacement(type = ReplacementType.TRACKER, category = ReplacementCategory.EXT_0)
     public static Object invoke(Method caller, Object obj, Object... args) throws InvocationTargetException, IllegalAccessException {
 
         /*

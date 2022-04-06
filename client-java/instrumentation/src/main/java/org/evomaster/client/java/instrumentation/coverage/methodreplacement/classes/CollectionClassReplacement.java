@@ -25,7 +25,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
      * @param idTemplate
      * @return
      */
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean contains(Collection c, Object o, String idTemplate) {
         Objects.requireNonNull(c);
 
@@ -71,7 +71,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
      * @param idTemplate
      * @return
      */
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean isEmpty(Collection caller, String idTemplate) {
         Objects.requireNonNull(caller);
 

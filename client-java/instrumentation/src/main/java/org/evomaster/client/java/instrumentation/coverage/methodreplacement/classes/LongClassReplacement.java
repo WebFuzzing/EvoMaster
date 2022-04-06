@@ -4,6 +4,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -22,7 +23,7 @@ public class LongClassReplacement implements MethodReplacementClass {
     }
 
 
-    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
     public static long parseLong(String input, String idTemplate) {
 
         if (ExecutionTracer.isTaintInput(input)) {
@@ -46,7 +47,7 @@ public class LongClassReplacement implements MethodReplacementClass {
         }
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean equals(Long caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -73,7 +74,7 @@ public class LongClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
-    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
     public static long valueOf(String input, String idTemplate) {
         return parseLong(input, idTemplate);
     }

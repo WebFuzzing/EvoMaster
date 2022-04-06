@@ -4,6 +4,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -18,7 +19,7 @@ public class CharacterClassReplacement implements MethodReplacementClass {
     }
 
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean equals(Character caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 

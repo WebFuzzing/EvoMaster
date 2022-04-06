@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
@@ -15,7 +16,8 @@ public class AbstractEndpointClassReplacement extends ThirdPartyMethodReplacemen
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "getMaxKeepAliveRequests",
-            usageFilter = UsageFilter.ANY)
+            usageFilter = UsageFilter.ANY,
+             category = ReplacementCategory.BASE)
     public static int getMaxKeepAliveRequests(Object caller) {
         /*
             This is a problem, if Driver is not configuring this... as

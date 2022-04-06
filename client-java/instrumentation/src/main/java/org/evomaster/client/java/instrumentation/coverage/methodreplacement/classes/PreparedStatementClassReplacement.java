@@ -8,6 +8,7 @@ import net.sf.jsqlparser.util.deparser.SelectDeParser;
 import net.sf.jsqlparser.util.deparser.StatementDeParser;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -212,19 +213,19 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
                 className.equals("com.dianping.zebra.single.jdbc.SinglePreparedStatement");
     }
 
-    @Replacement(type = ReplacementType.TRACKER, isPure = false)
+    @Replacement(type = ReplacementType.TRACKER, isPure = false, category = ReplacementCategory.SQL)
     public static ResultSet executeQuery(PreparedStatement stmt) throws SQLException {
         String sql = handlePreparedStatement(stmt);
         return executeSql(()-> stmt.executeQuery(), sql);
     }
 
-    @Replacement(type = ReplacementType.TRACKER, isPure = false)
+    @Replacement(type = ReplacementType.TRACKER, isPure = false, category = ReplacementCategory.SQL)
     public static int executeUpdate(PreparedStatement stmt) throws SQLException {
         String sql = handlePreparedStatement(stmt);
         return executeSql(()-> stmt.executeUpdate(), sql);
     }
 
-    @Replacement(type = ReplacementType.TRACKER, isPure = false)
+    @Replacement(type = ReplacementType.TRACKER, isPure = false, category = ReplacementCategory.SQL)
     public static boolean execute(PreparedStatement stmt) throws SQLException {
         String sql = handlePreparedStatement(stmt);
         return executeSql(()-> stmt.execute(), sql);

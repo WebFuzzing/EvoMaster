@@ -19,7 +19,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         return String.class;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean equals(String caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -54,7 +54,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         return result;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean equalsIgnoreCase(String caller, String anotherString, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -93,7 +93,7 @@ public class StringClassReplacement implements MethodReplacementClass {
     }
 
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean startsWith(String caller, String prefix, int toffset, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -135,14 +135,14 @@ public class StringClassReplacement implements MethodReplacementClass {
         return result;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean startsWith(String caller, String prefix, String idTemplate) {
         Objects.requireNonNull(caller);
 
         return startsWith(caller, prefix, 0, idTemplate);
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean endsWith(String caller, String suffix, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -150,7 +150,7 @@ public class StringClassReplacement implements MethodReplacementClass {
     }
 
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean isEmpty(String caller, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -166,7 +166,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         return caller.isEmpty();
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean contentEquals(String caller, CharSequence cs, String idTemplate) {
         if (cs == null) {
             return caller.contentEquals(cs);
@@ -176,13 +176,13 @@ public class StringClassReplacement implements MethodReplacementClass {
     }
 
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean contentEquals(String caller, StringBuffer sb, String idTemplate) {
         return equals(caller, sb.toString(), idTemplate);
     }
 
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean contains(String caller, CharSequence s, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -219,7 +219,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         return result;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean matches(String caller, String regex, String idTemplate) {
         Objects.requireNonNull(caller);
         if (regex == null) {

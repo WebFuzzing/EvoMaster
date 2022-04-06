@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
@@ -15,7 +16,8 @@ public class Http11ProcessorReplacementClass extends ThirdPartyMethodReplacement
     @Replacement(replacingStatic = true,
             type = ReplacementType.TRACKER,
             id = "statusDropsConnection",
-            usageFilter = UsageFilter.ANY)
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.BASE)
     public static boolean statusDropsConnection(int code){
         /*
          *  Never drop a TCP connection to EvoMaster during the search,
