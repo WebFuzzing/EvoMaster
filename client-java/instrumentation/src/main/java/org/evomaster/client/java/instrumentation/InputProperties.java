@@ -11,10 +11,6 @@ public class InputProperties {
      */
     public static final String EXTERNAL_PORT_PROP = "evomaster.javaagent.external.port";
 
-    /**
-     * Set up P6Spy for the given SQL driver
-     */
-    public static final String SQL_DRIVER = "evomaster.javaagent.sql.driver";
 
     /**
      * Option to write to disk the obtained coverage once the SUT ends
