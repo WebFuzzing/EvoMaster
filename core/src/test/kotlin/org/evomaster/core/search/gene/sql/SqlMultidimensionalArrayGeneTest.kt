@@ -2,8 +2,8 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.assertThrows
 
 class SqlMultidimensionalArrayGeneTest {
@@ -11,9 +11,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testZeroDimensions() {
         val gene = SqlMultidimensionalArrayGene(
-            "array",
-            template = IntegerGene("element"),
-            numberOfDimensions = 0
+                "array",
+                template = IntegerGene("element"),
+                numberOfDimensions = 0
         )
         assertEquals(0, gene.numberOfDimensions)
     }
@@ -23,9 +23,9 @@ class SqlMultidimensionalArrayGeneTest {
     fun testInvalidNumberOfDimensions() {
         assertThrows<IllegalArgumentException> {
             SqlMultidimensionalArrayGene(
-                "array",
-                template = IntegerGene("element"),
-                numberOfDimensions = -2
+                    "array",
+                    template = IntegerGene("element"),
+                    numberOfDimensions = -2
             )
         }
     }
@@ -33,9 +33,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testInvalidDimensionSize() {
         val gene = SqlMultidimensionalArrayGene(
-            "array",
-            template = IntegerGene("element"),
-            numberOfDimensions = 1
+                "array",
+                template = IntegerGene("element"),
+                numberOfDimensions = 1
         )
         assertEquals(0, gene.getDimensionSize(0))
 
@@ -47,9 +47,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testOneDimensionalArray() {
         val gene = SqlMultidimensionalArrayGene(
-            "array",
-            template = IntegerGene("element"),
-            numberOfDimensions = 1
+                "array",
+                template = IntegerGene("element"),
+                numberOfDimensions = 1
         )
 
         assertEquals(1, gene.numberOfDimensions)
@@ -59,9 +59,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testOneDimensionalArrayGetElement() {
         val gene = SqlMultidimensionalArrayGene(
-            "array",
-            template = IntegerGene("element"),
-            numberOfDimensions = 1
+                "array",
+                template = IntegerGene("element"),
+                numberOfDimensions = 1
         )
 
         assertEquals(1, gene.numberOfDimensions)
@@ -89,9 +89,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testIncorrectGetElementListOfIndexes() {
         val gene = SqlMultidimensionalArrayGene(
-            "matrix",
-            template = IntegerGene("element"),
-            numberOfDimensions = 2
+                "matrix",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
         )
 
         assertThrows<IllegalArgumentException> {
@@ -112,9 +112,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testTwoDimensionalArrayGetElement() {
         val gene = SqlMultidimensionalArrayGene(
-            "matrix",
-            template = IntegerGene("element"),
-            numberOfDimensions = 2
+                "matrix",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
         )
 
         assertEquals(2, gene.numberOfDimensions)
@@ -140,9 +140,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testTwoDimensionalArray() {
         val gene = SqlMultidimensionalArrayGene(
-            "matrix",
-            template = IntegerGene("element"),
-            numberOfDimensions = 2
+                "matrix",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
         )
 
         assertEquals(2, gene.numberOfDimensions)
@@ -160,9 +160,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testThreeDimensionalArray() {
         val gene = SqlMultidimensionalArrayGene(
-            "matrix",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "matrix",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
 
         assertEquals(0, gene.getDimensionSize(0))
@@ -181,14 +181,14 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testContainsSameValueAsWithEmptyArrays() {
         val emptyArray0 = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         val emptyArray1 = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
 
         assertEquals(true, emptyArray0.containsSameValueAs(emptyArray1))
@@ -198,16 +198,16 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testContainsSameValueAsWithNonEmptyArrays() {
         val nonEmptyArray0 = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         nonEmptyArray0.replaceElements(listOf(5, 3, 7))
 
         val nonEmptyArray1 = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         nonEmptyArray1.replaceElements(listOf(5, 3, 7))
 
@@ -217,16 +217,16 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testNotContainsSameValue() {
         val nonEmptyArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         nonEmptyArray.replaceElements(listOf(5, 3, 7))
 
         val emptyArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
 
         assertEquals(false, emptyArray.containsSameValueAs(nonEmptyArray))
@@ -235,17 +235,17 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testContainsSameValueAsWithDifferentElement() {
         val nonEmptyArray0 = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         nonEmptyArray0.replaceElements(listOf(5, 3, 7))
         (nonEmptyArray0.getElement(listOf(0, 0, 0)) as IntegerGene).value = 1
 
         val nonEmptyArray1 = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         nonEmptyArray1.replaceElements(listOf(5, 3, 7))
 
@@ -255,9 +255,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testValues() {
         val nonEmptyArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         nonEmptyArray.replaceElements(listOf(5, 3, 7))
         (nonEmptyArray.getElement(listOf(0, 0, 0)) as IntegerGene).value = 1
@@ -272,18 +272,18 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testCopyValuesFrom() {
         val nonEmptyArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         nonEmptyArray.replaceElements(listOf(5, 3, 7))
         (nonEmptyArray.getElement(listOf(0, 0, 0)) as IntegerGene).value = 1
         (nonEmptyArray.getElement(listOf(1, 1, 1)) as IntegerGene).value = 2
 
         val copiedArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
 
         copiedArray.copyValueFrom(nonEmptyArray)
@@ -297,18 +297,18 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testCopyValuesFromWithDifferentDimensions() {
         val nonEmptyArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         nonEmptyArray.replaceElements(listOf(5, 3, 7))
         (nonEmptyArray.getElement(listOf(0, 0, 0)) as IntegerGene).value = 1
         (nonEmptyArray.getElement(listOf(1, 1, 1)) as IntegerGene).value = 2
 
         val copiedArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 1
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 1
         )
 
         assertThrows<IllegalArgumentException> {
@@ -320,16 +320,16 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testBindValuesBasedOn() {
         val sourceArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         sourceArray.replaceElements(listOf(5, 3, 7))
 
         val targetArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
 
         assertEquals(true, targetArray.bindValueBasedOn(sourceArray))
@@ -342,14 +342,14 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testFailedBindValuesBasedOn() {
         val sourceArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         val targetArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 5
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 5
         )
 
         assertEquals(false, targetArray.bindValueBasedOn(sourceArray))
@@ -358,14 +358,14 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testFailedBindValuesBasedOnDifferentTemplates() {
         val sourceArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
         )
         val targetArray = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = StringGene("element"),
-            numberOfDimensions = 3
+                "multidimensionaArray",
+                template = StringGene("element"),
+                numberOfDimensions = 3
         )
         assertEquals(false, targetArray.bindValueBasedOn(sourceArray))
     }
@@ -373,9 +373,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testGetPrintableValueOfArray() {
         val arrayGene = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 1
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 1
         )
         assertEquals("\"{}\"", arrayGene.getValueAsPrintableString())
 
@@ -391,18 +391,18 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testGetPrintableValueOfSquareMatrix() {
         val arrayGene = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 2
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
         )
         assertEquals("\"{}\"", arrayGene.getValueAsPrintableString())
 
-        arrayGene.replaceElements(dimensionSizes = listOf(2,2))
-        (arrayGene.getElement(listOf(0,0)) as IntegerGene).value = 1
-        (arrayGene.getElement(listOf(0,1)) as IntegerGene).value = 2
+        arrayGene.replaceElements(dimensionSizes = listOf(2, 2))
+        (arrayGene.getElement(listOf(0, 0)) as IntegerGene).value = 1
+        (arrayGene.getElement(listOf(0, 1)) as IntegerGene).value = 2
 
-        (arrayGene.getElement(listOf(1,0)) as IntegerGene).value = 3
-        (arrayGene.getElement(listOf(1,1)) as IntegerGene).value = 4
+        (arrayGene.getElement(listOf(1, 0)) as IntegerGene).value = 3
+        (arrayGene.getElement(listOf(1, 1)) as IntegerGene).value = 4
 
         assertEquals("\"{{1,2},{3,4}}\"", arrayGene.getValueAsPrintableString())
 
@@ -411,23 +411,23 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testGetPrintableValueOfNonSquareMatrix() {
         val arrayGene = SqlMultidimensionalArrayGene(
-            "multidimensionaArray",
-            template = IntegerGene("element"),
-            numberOfDimensions = 2
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
         )
         assertEquals("\"{}\"", arrayGene.getValueAsPrintableString())
 
-        arrayGene.replaceElements(dimensionSizes = listOf(1,3))
-        (arrayGene.getElement(listOf(0,0)) as IntegerGene).value = 1
-        (arrayGene.getElement(listOf(0,1)) as IntegerGene).value = 2
-        (arrayGene.getElement(listOf(0,2)) as IntegerGene).value = 3
+        arrayGene.replaceElements(dimensionSizes = listOf(1, 3))
+        (arrayGene.getElement(listOf(0, 0)) as IntegerGene).value = 1
+        (arrayGene.getElement(listOf(0, 1)) as IntegerGene).value = 2
+        (arrayGene.getElement(listOf(0, 2)) as IntegerGene).value = 3
 
         assertEquals("\"{{1,2,3}}\"", arrayGene.getValueAsPrintableString())
 
-        arrayGene.replaceElements(dimensionSizes = listOf(3,1))
-        (arrayGene.getElement(listOf(0,0)) as IntegerGene).value = 1
-        (arrayGene.getElement(listOf(1,0)) as IntegerGene).value = 2
-        (arrayGene.getElement(listOf(2,0)) as IntegerGene).value = 3
+        arrayGene.replaceElements(dimensionSizes = listOf(3, 1))
+        (arrayGene.getElement(listOf(0, 0)) as IntegerGene).value = 1
+        (arrayGene.getElement(listOf(1, 0)) as IntegerGene).value = 2
+        (arrayGene.getElement(listOf(2, 0)) as IntegerGene).value = 3
 
         assertEquals("\"{{1},{2},{3}}\"", arrayGene.getValueAsPrintableString())
 
@@ -436,9 +436,9 @@ class SqlMultidimensionalArrayGeneTest {
     @Test
     fun testGetPrintableValueOfStringGenes() {
         val arrayGene = SqlMultidimensionalArrayGene(
-            "stringArray",
-            template = StringGene("element"),
-            numberOfDimensions = 1
+                "stringArray",
+                template = StringGene("element"),
+                numberOfDimensions = 1
         )
         assertEquals("\"{}\"", arrayGene.getValueAsPrintableString())
 
@@ -449,6 +449,25 @@ class SqlMultidimensionalArrayGeneTest {
 
 
         assertEquals("\"{\"Hello\",\"World\"}\"", arrayGene.getValueAsPrintableString())
+
+    }
+
+    @Test
+    fun testMutationWeight() {
+        val arrayGene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
+        )
+        arrayGene.replaceElements(dimensionSizes = listOf(2, 1))
+        (arrayGene.getElement(listOf(0, 0)) as IntegerGene).value = 1
+        (arrayGene.getElement(listOf(1, 0)) as IntegerGene).value = 2
+
+        val w0 = (arrayGene.getElement(listOf(0, 0)) as IntegerGene).mutationWeight()
+        val w1 = (arrayGene.getElement(listOf(0, 0)) as IntegerGene).mutationWeight()
+
+        val DELTA = 1e-15
+        assertEquals(1.0 + w0 + w1, arrayGene.mutationWeight(), DELTA)
 
     }
 
