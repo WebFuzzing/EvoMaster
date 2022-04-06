@@ -250,7 +250,9 @@ public class EMController {
                                          @QueryParam(ControllerConstants.METHOD_REPLACEMENT_CATEGORIES) String methodReplacementCategories) {
 
         //as the controller methods here might load classes, we need to handle this immediately
-        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, methodReplacementCategories);
+        if(methodReplacementCategories != null && !methodReplacementCategories.isEmpty()) {
+            System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, methodReplacementCategories);
+        }
 
         assert trackRequestSource(httpServletRequest);
 
@@ -285,8 +287,9 @@ public class EMController {
             /*
                 As this has impact on instrumentation, must be done ASAP
              */
-            String categories = dto.methodReplacementCategories;
-            System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, categories);
+            if(dto.methodReplacementCategories != null && !dto.methodReplacementCategories.isEmpty()) {
+                System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, dto.methodReplacementCategories);
+            }
         }
 
         assert trackRequestSource(httpServletRequest);
