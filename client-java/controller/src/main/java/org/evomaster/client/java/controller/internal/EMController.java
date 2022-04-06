@@ -202,30 +202,35 @@ public class EMController {
             dto.graphQLProblem = new GraphQLProblemDto();
             dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
         } else if(info instanceof RPCProblem){
-            dto.rpcProblem = new RPCProblemDto();
-            // extract RPCSchema
-            sutController.extractRPCSchema();
-            Map<String, InterfaceSchema> rpcSchemas = sutController.getRPCSchema();
-            if (rpcSchemas == null || rpcSchemas.isEmpty()){
-                return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();
-            }
-            List<RPCInterfaceSchemaDto> schemas = new ArrayList<>();
-            for (InterfaceSchema s: rpcSchemas.values()){
-                schemas.add(s.getDto());
-            }
-            dto.rpcProblem.schemas = schemas;
-            Map<Integer, LocalAuthSetupSchema> localMap = sutController.getLocalAuthSetupSchemaMap();
-            if (localMap!= null && !localMap.isEmpty()){
-                dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
-                dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
-                for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
-                    dto.rpcProblem.localAuthEndpointReferences.add(e.getKey());
-                    dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
+            try {
+                dto.rpcProblem = new RPCProblemDto();
+                // extract RPCSchema
+                noKillSwitch(() -> sutController.extractRPCSchema());
+                Map<String, InterfaceSchema> rpcSchemas = sutController.getRPCSchema();
+                if (rpcSchemas == null || rpcSchemas.isEmpty()){
+                    return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();
                 }
+                List<RPCInterfaceSchemaDto> schemas = new ArrayList<>();
+                for (InterfaceSchema s: rpcSchemas.values()){
+                    schemas.add(s.getDto());
+                }
+                dto.rpcProblem.schemas = schemas;
+                Map<Integer, LocalAuthSetupSchema> localMap = sutController.getLocalAuthSetupSchemaMap();
+                if (localMap!= null && !localMap.isEmpty()){
+                    dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
+                    dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
+                    for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
+                        dto.rpcProblem.localAuthEndpointReferences.add(e.getKey());
+                        dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
+                    }
+                }
+                // handled seeded tests
+                dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
+            }catch (RuntimeException e){
+                String msg = e.getMessage();
+                SimpleLogger.error(msg, e);
+                return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
             }
-            // handled seeded tests
-            dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
-
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);
