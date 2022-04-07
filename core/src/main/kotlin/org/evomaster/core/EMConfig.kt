@@ -5,6 +5,7 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
@@ -1074,11 +1075,36 @@ class EMConfig {
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = true
 
-    @Cfg("Apply method replacement heuristics to smooth the search landscape")
+    @Cfg("Apply method replacement heuristics to smooth the search landscape." +
+            " Note that the method replacement instrumentations would still be applied, it is just that their testing targets" +
+            " will be ignored in the fitness function if this option is set to false.")
     var useMethodReplacement = true
 
     @Cfg("Apply non-integer numeric comparison heuristics to smooth the search landscape")
     var useNonIntegerReplacement = true
+
+    @Cfg("Execute instrumentation for method replace with category BASE." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_BASE = true
+
+    @Cfg("Execute instrumentation for method replace with category SQL." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_SQL = true
+
+    @Cfg("Execute instrumentation for method replace with category EXT_0." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    var instrumentMR_EXT_0 = true
+
+
+    @Cfg("Execute instrumentation for method replace with category NET." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_NET = false
+
 
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
@@ -1636,4 +1662,15 @@ class EMConfig {
      */
     fun isEnabledSQLInBetween() = isEnabledResourceDependency() && heuristicsForSQL && probOfApplySQLActionToCreateResources > 0.0
 
+    /**
+     * Return a "," comma separated list of categories of Method Replacements that should be applied
+     */
+    fun methodReplacementCategories() : String {
+        val categories = mutableListOf<String>()
+        if(instrumentMR_BASE) categories.add(ReplacementCategory.BASE.toString())
+        if(instrumentMR_SQL) categories.add(ReplacementCategory.SQL.toString())
+        if(instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
+        if(instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
+        return categories.joinToString(",")
+    }
 }

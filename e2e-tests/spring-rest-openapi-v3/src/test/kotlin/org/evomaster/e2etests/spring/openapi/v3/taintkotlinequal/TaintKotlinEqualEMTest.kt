@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.openapi.v3.taintkotlinequal
 
 import com.foo.rest.examples.spring.openapi.v3.taintkotlinequal.TaintKotlinEqualController
 import org.evomaster.client.java.controller.InstrumentedSutStarter
+import org.evomaster.client.java.instrumentation.InputProperties
 import org.evomaster.client.java.instrumentation.InstrumentingAgent
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -15,12 +16,6 @@ class TaintKotlinEqualEMTest : SpringTestBase(){
         @BeforeAll
         @JvmStatic
         fun init() {
-            /*
-                needed because kotlin.jvm.internal.Intrinsics gets loaded in
-                TaintKotlinEqualController before agent is initialized
-             */
-            InstrumentedSutStarter.loadAgent()
-            InstrumentingAgent.changePackagesToInstrument("com.foo.")
             initClass(TaintKotlinEqualController())
         }
     }

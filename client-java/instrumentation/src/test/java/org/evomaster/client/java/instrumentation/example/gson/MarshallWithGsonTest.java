@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.example.gson;
 
 import com.foo.somedifferentpackage.examples.gson.MarshallWithGsonImp;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -16,6 +17,8 @@ public class MarshallWithGsonTest {
 
 
     protected MarshallWithGson getInstance() throws Exception {
+
+        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL");
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 

@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.objectweb.asm.Type;
 
@@ -33,7 +34,28 @@ public class ReplacementUtils {
     }
 
     public static Optional<Method> chooseMethodFromCandidateReplacement(
-            boolean isInSUT, String name, String desc, List<MethodReplacementClass> candidateClasses, boolean requirePure) {
+            /**
+             * Whether the replacement is applied on SUT code (eg instead of third-party libraries)
+             */
+            boolean isInSUT,
+            /**
+             * The name of the method
+             */
+            String name,
+            /**
+             * The bytecode descriptor of the inputs/output.
+             * Recall the can be several methods in class with the same name.
+             */
+            String desc,
+            /**
+             *  Possible classes that might contain replacement for this target method
+             */
+            List<MethodReplacementClass> candidateClasses,
+            /**
+             * Force selection of only pure function replacements (if any available)
+             */
+            boolean requirePure
+    ) {
         Optional<Method> r = candidateClasses.stream()
                 .filter(i -> {
                     /*
@@ -62,6 +84,11 @@ public class ReplacementUtils {
                         return false;
                     }
                     if(requirePure && !br.isPure()){
+                        return false;
+                    }
+                    String ctg = br.category().toString();
+                    String categories = System.getProperty(InputProperties.REPLACEMENT_CATEGORIES);
+                    if(categories == null || ! categories.contains(ctg)){
                         return false;
                     }
 

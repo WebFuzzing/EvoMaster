@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -25,7 +26,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
      * @param idTemplate
      * @return
      */
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean contains(Collection c, Object o, String idTemplate) {
         Objects.requireNonNull(c);
 
@@ -71,7 +72,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
      * @param idTemplate
      * @return
      */
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean isEmpty(Collection caller, String idTemplate) {
         Objects.requireNonNull(caller);
 

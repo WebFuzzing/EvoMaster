@@ -1,10 +1,8 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -20,12 +18,12 @@ public class IntegerClassReplacement implements MethodReplacementClass {
         return Integer.class;
     }
 
-    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
     public static int valueOf(String input, String idTemplate) {
         return parseInt(input,idTemplate);
     }
 
-    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
     public static int parseInt(String input, String idTemplate) {
 
         if (ExecutionTracer.isTaintInput(input)) {
@@ -49,7 +47,7 @@ public class IntegerClassReplacement implements MethodReplacementClass {
         }
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean equals(Integer caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 

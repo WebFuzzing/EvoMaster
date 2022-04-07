@@ -530,8 +530,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             if (local!=null && !local.isEmpty())
                 localAuthSetupSchemaMap.putAll(local);
         }catch (Exception e){
-            SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
-            //TODO throw exception
+//            SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
+            throw new RuntimeException("Failed to extract the RPC Schema: " + e.getMessage());
         }
     }
 
