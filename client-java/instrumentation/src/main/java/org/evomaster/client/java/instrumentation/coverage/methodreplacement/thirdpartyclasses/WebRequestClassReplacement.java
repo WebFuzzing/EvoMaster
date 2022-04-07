@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
@@ -19,7 +20,11 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getParameter", usageFilter = UsageFilter.ONLY_SUT)
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "getParameter",
+            usageFilter = UsageFilter.ONLY_SUT,
+            category = ReplacementCategory.BASE)
     public static String getParameter(Object caller, String param){
 
         if(caller == null){
@@ -39,7 +44,12 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
         }
     }
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getParameterValues", usageFilter = UsageFilter.ONLY_SUT)
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "getParameterValues",
+            usageFilter = UsageFilter.ONLY_SUT,
+            category = ReplacementCategory.BASE
+    )
     public static String[] getParameterValues(Object caller, String param){
 
         if(caller == null){
@@ -60,7 +70,12 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getHeader", usageFilter = UsageFilter.ONLY_SUT)
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "getHeader",
+            usageFilter = UsageFilter.ONLY_SUT,
+            category = ReplacementCategory.BASE
+    )
     public static String getHeader(Object caller, String header){
 
         if(caller == null){
@@ -80,7 +95,12 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
         }
     }
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getHeaderValues", usageFilter = UsageFilter.ONLY_SUT)
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "getHeaderValues",
+            usageFilter = UsageFilter.ONLY_SUT,
+            category = ReplacementCategory.BASE
+    )
     public static String[] getHeaderValues(Object caller, String header){
 
         if(caller == null){

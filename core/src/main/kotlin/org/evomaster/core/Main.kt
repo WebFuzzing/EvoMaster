@@ -573,9 +573,10 @@ class Main {
                         splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
                             .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
 
-                        if (config.executiveSummary) {
-                            writeExecSummary(injector, controllerInfoDto, splitResult)
-                        }
+                        // disable executiveSummary
+//                        if (config.executiveSummary) {
+//                            writeExecSummary(injector, controllerInfoDto, splitResult)
+//                        }
                     }
                 }
 
