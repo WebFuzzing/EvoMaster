@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -15,7 +16,7 @@ public class ObjectsClassReplacement implements MethodReplacementClass {
         return Objects.class;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
+    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true, category = ReplacementCategory.BASE)
     public static boolean equals(Object left, Object right, String idTemplate) {
 
         if(left instanceof String && right instanceof String){

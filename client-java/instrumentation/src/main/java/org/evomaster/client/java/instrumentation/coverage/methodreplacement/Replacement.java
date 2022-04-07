@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 import java.lang.annotation.ElementType;
@@ -59,8 +60,10 @@ public @interface Replacement {
     UsageFilter usageFilter() default UsageFilter.ANY;
 
     /**
-     * Whether the method has side-effects. This is important to chech if we can
+     * Whether the method has side-effects. This is important to check if we can
      * call it more than once without worries of changing a state
      */
     boolean isPure() default true;
+
+    ReplacementCategory category();
 }
