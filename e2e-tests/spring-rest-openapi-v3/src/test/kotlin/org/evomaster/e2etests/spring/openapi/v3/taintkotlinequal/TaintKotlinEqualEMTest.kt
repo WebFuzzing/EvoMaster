@@ -16,13 +16,6 @@ class TaintKotlinEqualEMTest : SpringTestBase(){
         @BeforeAll
         @JvmStatic
         fun init() {
-            /*
-                needed because kotlin.jvm.internal.Intrinsics gets loaded in
-                TaintKotlinEqualController before agent is initialized
-             */
-            System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL,EXT_0")
-            InstrumentedSutStarter.loadAgent()
-            InstrumentingAgent.changePackagesToInstrument("com.foo.")
             initClass(TaintKotlinEqualController())
         }
     }
