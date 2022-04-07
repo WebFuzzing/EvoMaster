@@ -671,13 +671,15 @@ public class RPCEndpointsBuilder {
         if (findGetter){
             found = Arrays.stream(clazz.getMethods()).filter(m->
                     Modifier.isPublic(m.getModifiers()) &&
-                            (m.getName().equalsIgnoreCase("get"+field.getName()) || m.getName().equalsIgnoreCase("is"+field.getName())) &&
+//                            (m.getName().equalsIgnoreCase("get"+field.getName()) || m.getName().equalsIgnoreCase("is"+field.getName())) &&
+                            isGetter(field.getName(), m.getName(), field.getType().getTypeName()) &&
                             m.getParameterCount() == 0
             ).collect(Collectors.toList());
         }else {
             found = Arrays.stream(clazz.getMethods()).filter(m->
                     Modifier.isPublic(m.getModifiers()) &&
-                            m.getName().equalsIgnoreCase("set"+field.getName()) &&
+//                            m.getName().equalsIgnoreCase("set"+field.getName()) &&
+                            isSetter(field.getName(), m.getName(), field.getType().getTypeName()) &&
                             m.getParameterCount() == 1 &&
                             (m.getParameterTypes()[0].equals(field.getType()) || m.getParameterTypes()[0].equals(PrimitiveOrWrapperParam.getPrimitiveOrWrapper(field.getType())))
             ).collect(Collectors.toList());
@@ -692,6 +694,20 @@ public class RPCEndpointsBuilder {
         }
 
         throw new IllegalStateException(msg);
+    }
+
+    private static boolean isSetter(String fieldName, String methodName, String type){
+        boolean isBoolean = type.equals(Boolean.class.getName()) || type.equals(boolean.class.getName());
+        String fieldText = fieldName;
+        if (isBoolean && fieldText.startsWith("is") && fieldText.length() > 2)
+            fieldText = fieldText.substring(2);
+        String gsMethod = "set";
+        return methodName.equalsIgnoreCase(gsMethod+fieldText) || methodName.equalsIgnoreCase(gsMethod+fieldName);
+    }
+
+    private static boolean isGetter(String fieldName, String methodName, String type){
+        boolean isBoolean = type.equals(Boolean.class.getName()) || type.equals(boolean.class.getName());
+        return methodName.equalsIgnoreCase("get"+fieldName) || (isBoolean && (methodName.equalsIgnoreCase(fieldName) || methodName.equalsIgnoreCase("is"+fieldName)));
     }
 
     private static void handleNamedValueWithCustomizedDto(NamedTypedValue namedTypedValue, Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization){
