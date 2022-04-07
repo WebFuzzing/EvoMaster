@@ -323,6 +323,9 @@ if not CLUSTER:
             shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX), BASE_DIR)
         elif sut.platform == JS or sut.platform == DOTNET_3:
             # copy folders, which include both SUT and EM Controller
+            # Note: if this fails when running on Windows, you need to increase the max path for
+            # files (default is 260 characters) by enabling "Enable Win32 long paths".
+            # See https://helpdeskgeek.com/how-to/how-to-fix-filename-is-too-long-issue-in-windows/
             shutil.copytree(os.path.join(CASESTUDY_DIR, sut.name), os.path.join(BASE_DIR, sut.name))
 
 

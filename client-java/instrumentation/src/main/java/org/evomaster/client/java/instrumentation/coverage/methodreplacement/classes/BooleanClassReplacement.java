@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -30,7 +31,7 @@ public class BooleanClassReplacement implements MethodReplacementClass {
      * @param idTemplate
      * @return
      */
-    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
+    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true, category = ReplacementCategory.BASE)
     public static boolean parseBoolean(String input, String idTemplate) {
 
         if (ExecutionTracer.isTaintInput(input)) {
@@ -64,7 +65,7 @@ public class BooleanClassReplacement implements MethodReplacementClass {
         return res;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
+    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true, category = ReplacementCategory.BASE)
     public static boolean valueOf(String input, String idTemplate) {
         return parseBoolean(input,idTemplate);
     }

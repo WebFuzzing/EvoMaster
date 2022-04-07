@@ -20,6 +20,15 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class WriteJsonTest {
+
+    private fun getConfig(format: OutputFormat): EMConfig {
+        val config = EMConfig()
+        config.outputFormat = format
+        config.expectationsActive = false
+        config.testTimeout  = -1
+        return config
+    }
+
     @Test
     fun testJSONBEmpty() {
 
@@ -38,9 +47,7 @@ class WriteJsonTest {
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -86,9 +93,7 @@ class WriteJsonTest {
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -132,9 +137,7 @@ class WriteJsonTest {
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
@@ -178,9 +181,7 @@ class WriteJsonTest {
         val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
+        val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 

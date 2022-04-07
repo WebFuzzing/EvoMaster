@@ -11,13 +11,16 @@ public class InputProperties {
      */
     public static final String EXTERNAL_PORT_PROP = "evomaster.javaagent.external.port";
 
-    /**
-     * Set up P6Spy for the given SQL driver
-     */
-    public static final String SQL_DRIVER = "evomaster.javaagent.sql.driver";
 
     /**
      * Option to write to disk the obtained coverage once the SUT ends
      */
     public static final String OUTPUT_FILE = "evomaster.javaagent.outputfile";
+
+
+    /**
+     * Which categories to apply for the method replacements.
+     * This is a comma "," separated list of category names.
+     */
+    public static final String REPLACEMENT_CATEGORIES = "evomaster.javaagent.replacement_categories";
 }

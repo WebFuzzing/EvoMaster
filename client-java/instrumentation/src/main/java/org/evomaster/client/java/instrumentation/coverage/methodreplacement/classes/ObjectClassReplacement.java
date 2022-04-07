@@ -2,9 +2,8 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-
-import java.util.Objects;
 
 public class ObjectClassReplacement implements MethodReplacementClass {
 
@@ -14,7 +13,7 @@ public class ObjectClassReplacement implements MethodReplacementClass {
         return Object.class;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0)
     public static boolean equals(Object left, Object right, String idTemplate) {
 
         if(left == null) {

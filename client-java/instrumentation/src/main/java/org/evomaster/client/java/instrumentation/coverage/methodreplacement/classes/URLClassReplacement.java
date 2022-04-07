@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
@@ -23,7 +24,8 @@ public class URLClassReplacement implements MethodReplacementClass {
 
     @Replacement(
             type = ReplacementType.TRACKER,
-            id="URL_openConnection_Replacement",
+            category = ReplacementCategory.NET,
+            id = "URL_openConnection_Replacement",
             replacingStatic = false,
             usageFilter = UsageFilter.ANY
     )

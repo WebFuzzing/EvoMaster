@@ -6,9 +6,11 @@ SUT_FOLDER=$1
 DRIVER_NAME=$2
 # the name of the actual SUT Controller class. only needed in JS to setup the needed --jsControllerPath option
 CONTROLLER_NAME=$3
+# fitness evaluation budget
+FITNESS_EVALUATIONS_BUDGET=$4
 # check minimum number of targets that should had been covered
-AT_LEAST_EXPECTED=$4
-NPARAMS=4
+AT_LEAST_EXPECTED=$5
+NPARAMS=5
 
 echo Executing White-Box E2E for $SUT_FOLDER
 
@@ -65,7 +67,7 @@ PID=$!
 # give enough time to start
 sleep 10
 
-java -jar $JAR --seed 42 --maxActionEvaluations 20000  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION --sutControllerPort $PORT
+java -jar $JAR --seed 42 --maxActionEvaluations $FITNESS_EVALUATIONS_BUDGET  --stoppingCriterion FITNESS_EVALUATIONS --testSuiteSplitType NONE --outputFolder $OUTPUT_FOLDER --testSuiteFileName $TEST_NAME --jsControllerPath $CONTROLLER_LOCATION --sutControllerPort $PORT
 
 # stop driver, which was run in background
 kill $PID

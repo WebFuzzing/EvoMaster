@@ -4,6 +4,7 @@ package org.evomaster.client.java.controller;
 import org.evomaster.client.java.controller.api.dto.CustomizedCallResultCode;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
 
 import java.util.List;
 
@@ -45,4 +46,13 @@ public interface CustomizationHandler {
      * @return a list of such annotation
      */
     List<CustomizedNotNullAnnotationForRPCDto> specifyCustomizedNotNullAnnotation();
+
+    /**
+     * <p>
+     *     specify seeded tests for RPC
+     * </p>
+     *
+     * @return a list of dto for seeded tests
+     */
+    List<SeededRPCTestDto> seedRPCTests();
 }

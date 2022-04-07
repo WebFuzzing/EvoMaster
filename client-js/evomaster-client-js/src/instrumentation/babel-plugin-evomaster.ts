@@ -1,13 +1,21 @@
 import {NodePath, Visitor} from "@babel/traverse";
 import * as BabelTypes from "@babel/types";
 import {
-    BinaryExpression, CallExpression,
+    BinaryExpression,
+    CallExpression,
     IfStatement,
-    LogicalExpression, Program,
+    LogicalExpression,
+    Program,
     ReturnStatement,
     Statement,
     UnaryExpression,
-    ConditionalExpression, Expression, isAwaitExpression
+    ConditionalExpression,
+    Expression,
+    isAwaitExpression,
+    MemberExpression,
+    isAssignmentExpression,
+    AssignmentExpression,
+    AssignmentPattern
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
@@ -401,6 +409,53 @@ export default function evomasterPlugin(
         statementCounter++;
     }
 
+    function replaceMemberExpression(path: NodePath){
+        const member = path.node as MemberExpression
+
+        /*
+            TODO: need better, more explicit way to skip traversing
+            new nodes we are adding
+        */
+        if(! member.loc ||
+            // @ts-ignore
+            member.evomaster
+        ){
+            return;
+        }
+
+        // skip to replace it if it is under updateExpression, such as ++, --
+        if (path.parent && (t.isUpdateExpression(path.parent) ||
+            // skip to replace it if it is left of assignmentExpression
+            (t.isAssignmentExpression(path.parent) && ((path.parent as AssignmentExpression).left == path.node)) ||
+            // skip for assignmentpattern https://babeljs.io/docs/en/babel-types#assignmentpattern
+            (t.isAssignmentPattern(path.parent) && ((path.parent as AssignmentPattern).left == path.node))) ||
+            // https://babeljs.io/docs/en/babel-types#arraypattern https://babeljs.io/docs/en/babel-types#lval
+            (t.isArrayPattern(path.parent))
+        )
+            return;
+
+
+
+        const pro = member.property
+        // we need to handle identifier as well
+        // if(pro.type != "NumericLiteral" && pro.type != "StringLiteral")
+        //     return;
+
+        const l = member.loc.start.line;
+        const obj = member.object
+
+        const replaced = t.callExpression(t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.squareBrackets.name)),
+            [t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter), obj,
+                !member.computed ? t.stringLiteral(pro.name) : pro]);
+        // method replace boolean with true and false are created
+        branchCounter++;
+
+        // @ts-ignore
+        member.evomaster = true;
+
+        path.replaceWith(replaced);
+    }
+
     function replaceCallExpression(path: NodePath){
 
         //if(! t.isExpr) //TODO there is no available check for call expressions???
@@ -609,6 +664,18 @@ export default function evomasterPlugin(
             CallExpression:{
                 enter(path: NodePath){
                     replaceCallExpression(path);
+                }
+            },
+            /*
+                https://babeljs.io/docs/en/babel-types#memberexpression
+                just a reminder here:
+                https://babeljs.io/docs/en/babel-types#optionalmemberexpression
+                there also exists optionalMemberExpression, x?.a
+                but since x?["a"] is not allowed, there might be not need to handle it.
+             */
+            MemberExpression:{
+                enter(path: NodePath){
+                    replaceMemberExpression(path);
                 }
             }
         }

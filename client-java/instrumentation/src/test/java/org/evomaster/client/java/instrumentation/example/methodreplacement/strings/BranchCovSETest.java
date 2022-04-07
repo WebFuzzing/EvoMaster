@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.example.methodreplacement.strings;
 
 import com.foo.somedifferentpackage.examples.methodreplacement.strings.StringsExampleImp;
+import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.AfterAll;
@@ -23,6 +24,7 @@ public class BranchCovSETest {
     @Test
     public void testIsFooWithIf() throws Exception{
 
+        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL,EXT_0");
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 

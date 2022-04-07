@@ -559,7 +559,28 @@ class Main {
                     writeExecSummary(injector, controllerInfoDto, splitResult)
                     //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
                 }
-            } else {
+            } else if (config.problemType == EMConfig.ProblemType.RPC){
+
+                when(config.testSuiteSplitType){
+                    EMConfig.TestSuiteSplitType.NONE -> writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)
+                    EMConfig.TestSuiteSplitType.CODE -> throw IllegalStateException("RPC problem does not support splitting tests by code")
+                    /*
+                        for RPC, just simple split based on whether there exist any exception in a test
+                        TODD need to check with Andrea whether we use cluster or other type
+                     */
+                    EMConfig.TestSuiteSplitType.CLUSTER -> {
+                        val splitResult = TestSuiteSplitter.splitRPCByException(solution as Solution<RPCIndividual>)
+                        splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                            .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
+
+                        // disable executiveSummary
+//                        if (config.executiveSummary) {
+//                            writeExecSummary(injector, controllerInfoDto, splitResult)
+//                        }
+                    }
+                }
+
+            }else {
                 /*
                     TODO refactor all the PartialOracle stuff that is meant for only REST
                  */

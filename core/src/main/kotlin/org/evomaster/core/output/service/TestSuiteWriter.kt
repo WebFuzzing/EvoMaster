@@ -298,6 +298,7 @@ class TestSuiteWriter {
             addImport("org.junit.jupiter.api.BeforeAll", lines)
             addImport("org.junit.jupiter.api.BeforeEach", lines)
             addImport("org.junit.jupiter.api.Test", lines)
+            addImport("org.junit.jupiter.api.Timeout", lines)
             addImport("org.junit.jupiter.api.Assertions.*", lines, true)
         }
         if (format.isJUnit4()) {
@@ -359,6 +360,9 @@ class TestSuiteWriter {
             lines.add("const $jsImport = require(\"evomaster-client-js\").EMTestUtils;")
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
+            }
+            if(config.testTimeout > 0 ) {
+                lines.add("jest.setTimeout(${config.testTimeout * 1000});")
             }
         }
 

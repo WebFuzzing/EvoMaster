@@ -1,5 +1,6 @@
 import ReplacementFunction from "./ReplacementFunction";
 import StringClassReplacement from "./classes/StringClassReplacement";
+import ArrayClassReplacement from "./classes/ArrayClassReplacement";
 
 
 /*
@@ -27,6 +28,10 @@ export default class ReplacementList{
         new StringClassReplacement().getReplacements().forEach( f => {
             ReplacementList.replacements.set(f.target, f);
         });
+
+        new ArrayClassReplacement().getReplacements().forEach(f => {
+            ReplacementList.replacements.set(f.target, f);
+        })
     }
 }
 

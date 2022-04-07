@@ -214,6 +214,7 @@ class RemoteController() : DatabaseExecutor {
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.CONTROLLER_INFO)
+                    .queryParam(ControllerConstants.METHOD_REPLACEMENT_CATEGORIES, config.methodReplacementCategories())
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
@@ -234,7 +235,7 @@ class RemoteController() : DatabaseExecutor {
                 getWebTarget()
                         .path(ControllerConstants.RUN_SUT_PATH)
                         .request()
-                        .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics, extractSqlExecutionInfo)))
+                        .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics, extractSqlExecutionInfo, config.methodReplacementCategories())))
             }
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
@@ -264,6 +265,7 @@ class RemoteController() : DatabaseExecutor {
         val response = try {
             getWebTarget()
                     .path(ControllerConstants.CONTROLLER_INFO)
+                    .queryParam(ControllerConstants.METHOD_REPLACEMENT_CATEGORIES, config.methodReplacementCategories())
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         } catch (e: Exception) {

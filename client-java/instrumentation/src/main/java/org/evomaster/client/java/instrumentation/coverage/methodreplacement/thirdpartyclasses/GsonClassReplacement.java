@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
@@ -25,7 +26,8 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "fromJson_string_class",
-            usageFilter = UsageFilter.ONLY_SUT)
+            usageFilter = UsageFilter.ONLY_SUT,
+            category = ReplacementCategory.BASE)
     public static Object fromJson(Object caller, String json, Class<?> classOfT){
 
         if(caller == null){
