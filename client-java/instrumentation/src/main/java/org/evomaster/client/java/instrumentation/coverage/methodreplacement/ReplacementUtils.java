@@ -86,9 +86,9 @@ public class ReplacementUtils {
                     if(requirePure && !br.isPure()){
                         return false;
                     }
-                    String ctg = br.category().toString().toLowerCase();
+                    String ctg = br.category().toString();
                     String categories = System.getProperty(InputProperties.REPLACEMENT_CATEGORIES);
-                    if(categories == null || ! categories.toLowerCase().contains(ctg)){
+                    if(categories == null || ! categories.contains(ctg)){
                         return false;
                     }
 

@@ -5,6 +5,7 @@ import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
@@ -1666,10 +1667,10 @@ class EMConfig {
      */
     fun methodReplacementCategories() : String {
         val categories = mutableListOf<String>()
-        if(instrumentMR_BASE) categories.add("BASE")
-        if(instrumentMR_SQL) categories.add("SQL")
-        if(instrumentMR_EXT_0) categories.add("EXT_0")
-        if(instrumentMR_NET) categories.add("NET")
+        if(instrumentMR_BASE) categories.add(ReplacementCategory.BASE.toString())
+        if(instrumentMR_SQL) categories.add(ReplacementCategory.SQL.toString())
+        if(instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
+        if(instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         return categories.joinToString(",")
     }
 }

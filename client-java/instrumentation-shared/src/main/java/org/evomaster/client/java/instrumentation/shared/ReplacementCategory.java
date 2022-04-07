@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
+package org.evomaster.client.java.instrumentation.shared;
 
 /**
  * Each method replacement is assigned one category.

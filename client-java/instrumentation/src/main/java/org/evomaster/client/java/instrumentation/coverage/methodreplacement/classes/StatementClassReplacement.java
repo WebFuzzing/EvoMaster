@@ -5,15 +5,13 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import org.evomaster.client.java.instrumentation.SqlInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementCategory;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.function.Supplier;
 
 
 public class StatementClassReplacement implements MethodReplacementClass {
