@@ -35,7 +35,7 @@ public class HttpRequestRest {
         StringsResponseDto stringsResponseDto = new StringsResponseDto();
 
         try {
-            URL url = new URL("https://foo.bar/api/echo/foo");
+            URL url = new URL("http://foo.bar:8080/api/echo/foo");
             MockApiResponse result = makeConnection(url);
 
             if (result.message.equals("foo")) {
@@ -60,7 +60,7 @@ public class HttpRequestRest {
         StringsResponseDto stringsResponseDto = new StringsResponseDto();
 
         try {
-            URL url = new URL("https://foo.bar/api/echo/foo?x=1&y=foo");
+            URL url = new URL("http://foo.bar:8080/api/echo/foo?x=1&y=foo");
             MockApiResponse result = makeConnection(url);
 
             if (result.message.equals("foo")) {
