@@ -69,7 +69,7 @@ class SqlMultidimensionalArrayGene<T>(
 
     companion object {
 
-        val DEFAULT_MIN_SIZE = 0
+        const val DEFAULT_MIN_SIZE = 0
 
         val log: Logger = LoggerFactory.getLogger(SqlMultidimensionalArrayGene::class.java)
 
@@ -385,9 +385,11 @@ class SqlMultidimensionalArrayGene<T>(
      */
     override fun getSpecifiedMaxSize() = numberOfDimensions * maxDimensionSize
 
-    override fun getMaxSizeOrDefault(): Int {
-        TODO("Not yet implemented")
-    }
+    /**
+     * Returns the maxDimensionalSize * numberOfDimensions
+     * By default, maxDimensionalSize is equal to ArrayGene.MAX_SIZE.
+     */
+    override fun getMaxSizeOrDefault() = getSpecifiedMaxSize()
 
     /**
      * 1 is for 'remove' or 'add' element.

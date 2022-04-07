@@ -1,8 +1,12 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.search.gene.ArrayGene
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -470,5 +474,117 @@ class SqlMultidimensionalArrayGeneTest {
         assertEquals(1.0 + w0 + w1, arrayGene.mutationWeight(), DELTA)
 
     }
+
+    @Test
+    fun testIsEmpty() {
+        val arrayGene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
+        )
+
+        assertTrue(arrayGene.isEmpty())
+
+        arrayGene.replaceElements(dimensionSizes = listOf(2, 1))
+
+        assertFalse(arrayGene.isEmpty())
+
+    }
+
+    @Test
+    fun testMinSize() {
+        val arrayGene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
+        )
+
+        assertEquals(0, arrayGene.getSpecifiedMinSize())
+        assertEquals(0, arrayGene.getMinSizeOrDefault())
+    }
+
+    @Test
+    fun testMaxSize() {
+        val arrayGene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2,
+                maxDimensionSize = 3
+        )
+
+        assertEquals(2 * 3, arrayGene.getSpecifiedMaxSize())
+        assertEquals(2 * ArrayGene.MAX_SIZE, arrayGene.getDefaultMaxSize())
+        assertEquals(2 * 3, arrayGene.getMaxSizeOrDefault())
+
+    }
+
+    @Test
+    fun testGetSizeOfElements() {
+        val gene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
+        )
+
+        assertEquals(0, gene.getSizeOfElements(true))
+        assertEquals(0, gene.getSizeOfElements(false))
+
+        gene.replaceElements(dimensionSizes = listOf(2, 3))
+
+        assertEquals(6, gene.getSizeOfElements(true))
+        assertEquals(6, gene.getSizeOfElements(false))
+    }
+
+    @Test
+    fun testRandomize() {
+        val gene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
+        )
+
+        assertEquals(true, gene.isEmpty())
+
+        val randomness = Randomness()
+        gene.randomize(randomness, forceNewValue = true, allGenes = listOf())
+
+        assertEquals(false, gene.isEmpty())
+
+    }
+
+    @Test
+    fun testInnerGenes() {
+        val gene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
+        )
+
+        assertTrue(gene.innerGene().isEmpty())
+
+        gene.replaceElements(dimensionSizes = listOf(2, 1))
+
+        assertFalse(gene.innerGene().isEmpty())
+
+    }
+
+    @Test
+    fun testContainsSameValueAsDiffDimensions() {
+        val gene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 2
+        )
+
+        val otherGene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 3
+        )
+
+        assertFalse(gene.containsSameValueAs(otherGene))
+
+    }
+
 
 }
