@@ -4,9 +4,11 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Meth
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Objects;
 
 public class URLClassReplacement implements MethodReplacementClass {
 
@@ -26,8 +28,14 @@ public class URLClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static URLConnection openConnection(URL caller) throws java.io.IOException {
-        if (caller == null) {
-            throw new NullPointerException();
+        Objects.requireNonNull(caller);
+
+        /*
+          Add the external service hostname to the ExecutionTracer
+          This will consider if the hostname is not localhost
+          */
+        if ((caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) && !caller.getHost().equals("localhost")) {
+            ExecutionTracer.addExternalService(caller.getHost());
         }
 
         return caller.openConnection();
