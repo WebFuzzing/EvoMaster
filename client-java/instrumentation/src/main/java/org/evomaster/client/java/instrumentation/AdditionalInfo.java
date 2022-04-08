@@ -66,29 +66,18 @@ public class AdditionalInfo implements Serializable {
     private final Map<String, Deque<StatementDescription>> lastExecutedStatementStacks = new ConcurrentHashMap<>();
 
     /**
-     * To keep track of external hostnames called by the SUT.
-     * This will contain all the HTTP/S hostnames.
+     * To keep track of external service hosts called by the SUT.
+     * When captured mock hostname will be empty, till the WireMock instance
+     * initiated.
      */
-    private final Map<String, String> externalServices = new ConcurrentHashMap<>();
+    private final Set<ExternalServiceInfo> externalServices = new CopyOnWriteArraySet<>();
 
-    public void addExternalService(String host, String replacement) {
-        externalServices.putIfAbsent(host, replacement);
+    public void addExternalService(ExternalServiceInfo hostInfo) {
+        externalServices.add(hostInfo);
     }
 
-    public void addExternalService(String host) {
-        /*
-        Before WireMock instance initiated, this will add the host without the
-        replacement value.
-         */
-        externalServices.putIfAbsent(host, "");
-    }
-
-    public void updateExternalService(String host, String replacement) {
-        externalServices.replace(host, replacement);
-    }
-
-    public String getExternalServiceMapping(String host) {
-        return externalServices.get(host);
+    public Set<ExternalServiceInfo> getExternalServices() {
+        return externalServices;
     }
 
     /**

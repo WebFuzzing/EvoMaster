@@ -494,8 +494,8 @@ public class ExecutionTracer {
     /**
      * Add the external HTTP/S hostname to the additional info to keep track.
      */
-    public static void addExternalService(String host) {
-        getCurrentAdditionalInfo().addExternalService(host);
+    public static void addExternalServiceHost(ExternalServiceInfo hostInfo) {
+        getCurrentAdditionalInfo().addExternalService(hostInfo);
     }
 
 

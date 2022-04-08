@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
@@ -37,7 +38,8 @@ public class URLClassReplacement implements MethodReplacementClass {
           This will consider if the hostname is not localhost
           */
         if ((caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) && !caller.getHost().equals("localhost")) {
-            ExecutionTracer.addExternalService(caller.getHost());
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(caller.getHost(), caller.getPort(), "", -1);
+            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
         }
 
         return caller.openConnection();
