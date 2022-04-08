@@ -6,12 +6,6 @@ import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 
 public class HttpRequestController extends SpringController {
 
-    // experiment
-    static {
-        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL,EXT_0,NET");
-        InstrumentingAgent.changePackagesToInstrument("com.foo.");
-    }
-
     public HttpRequestController() {
         super(HttpRequestApplication.class);
     }
