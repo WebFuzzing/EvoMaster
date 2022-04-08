@@ -6,6 +6,8 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import io.restassured.http.ContentType;
+import org.evomaster.client.java.instrumentation.InputProperties;
+import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,6 +24,9 @@ public class HttpRequestManualTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
+        System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL,EXT_0,NET");
+        InstrumentingAgent.changePackagesToInstrument("com.foo.");
+
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
 
         wireMockServer = new WireMockServer(new WireMockConfiguration().bindAddress("127.0.0.2").port(8080).extensions(new ResponseTemplateTransformer(false)));
