@@ -166,9 +166,7 @@ object StateBuilder {
                                     fieldType = elementInfields.type.ofType.ofType.name,
                                     typeName = elementInTypes.name,
 
-                                    enumValues = enumElement,
-                                    unionTypes = listOf(),
-                                    interfaceTypes = listOf()
+                                    enumValues = enumElement
                                 )
                             )
                         }
@@ -187,10 +185,7 @@ object StateBuilder {
                                     kindOfFieldType = kind2.toString(),
                                     fieldType = elementInfields.type.ofType.ofType.name,
                                     typeName = elementInTypes.name,
-
-                                    enumValues = listOf(),//it is not an enum, it is a union
-                                    unionTypes = unionElement,
-                                    interfaceTypes = listOf()
+                                    unionTypes = unionElement
                                 )
                             )
 
@@ -210,9 +205,6 @@ object StateBuilder {
                                     kindOfFieldType = kind2.toString(),
                                     fieldType = elementInfields.type.ofType.ofType.name,
                                     typeName = elementInTypes.name,
-
-                                    enumValues = listOf(),//it is not an enum, it is a union
-                                    unionTypes = listOf(),
                                     interfaceTypes = interfaceElement
                                 )
                             )
@@ -229,11 +221,7 @@ object StateBuilder {
 
                                     kindOfFieldType = kind2.toString(),
                                     fieldType = elementInfields.type.ofType.ofType.name,
-                                    typeName = elementInTypes.name,
-
-                                    enumValues = listOf(),
-                                    unionTypes = listOf(),
-                                    interfaceTypes = listOf()
+                                    typeName = elementInTypes.name
                                 )
                             )
                         }
@@ -258,9 +246,8 @@ object StateBuilder {
                                     fieldType = elementInfields.type.ofType.name,
                                     typeName = elementInTypes.name,
 
-                                    enumValues = enumElement,
-                                    unionTypes = listOf(),
-                                    interfaceTypes = listOf()
+                                    enumValues = enumElement
+
                                 )
                             )
                         }
@@ -281,9 +268,8 @@ object StateBuilder {
                                     fieldType = elementInfields.type.ofType.name,
                                     typeName = elementInTypes.name,
 
-                                    enumValues = listOf(),
-                                    unionTypes = unionElement,
-                                    interfaceTypes = listOf()
+                                    unionTypes = unionElement
+
                                 )
                             )
 
@@ -304,8 +290,6 @@ object StateBuilder {
                                     fieldType = elementInfields.type.ofType.name,
                                     typeName = elementInTypes.name,
 
-                                    enumValues = listOf(),
-                                    unionTypes = listOf(),
                                     interfaceTypes = interfaceElement
                                 )
                             )
@@ -322,11 +306,7 @@ object StateBuilder {
 
                                     kindOfFieldType = kind1.toString(),
                                     fieldType = elementInfields.type.ofType.name,
-                                    typeName = elementInTypes.name,
-
-                                    enumValues = listOf(),
-                                    unionTypes = listOf(),
-                                    interfaceTypes = listOf()
+                                    typeName = elementInTypes.name
                                 )
                             )
                         }
@@ -350,9 +330,7 @@ object StateBuilder {
                                 fieldType = elementInfields.type.name,
                                 typeName = elementInTypes.name,
 
-                                enumValues = enumElement,
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                enumValues = enumElement
                             )
                         )
 
@@ -371,9 +349,7 @@ object StateBuilder {
                                 fieldType = elementInfields.type.name,
                                 typeName = elementInTypes.name,
 
-                                enumValues = listOf(),
-                                unionTypes = unionElement,
-                                interfaceTypes = listOf()
+                                unionTypes = unionElement
                             )
                         )
                     }
@@ -391,8 +367,6 @@ object StateBuilder {
                                 fieldType = elementInfields.type.name,
                                 typeName = elementInTypes.name,
 
-                                enumValues = listOf(),
-                                unionTypes = listOf(),
                                 interfaceTypes = interfaceElement
                             )
                         )
@@ -407,11 +381,7 @@ object StateBuilder {
 
                                 kindOfFieldType = kind0.toString(),
                                 fieldType = elementInfields.type.name,
-                                typeName = elementInTypes.name,
-
-                                enumValues = listOf(),
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                typeName = elementInTypes.name
                             )
                         )
                     }
@@ -450,9 +420,7 @@ object StateBuilder {
                                 typeName = elementIntypes.name,
                                 isKindOfFieldNameOptional = false,
 
-                                enumValues = enumElement,
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                enumValues = enumElement
                             )
                         )
 
@@ -472,9 +440,7 @@ object StateBuilder {
                                 typeName = elementIntypes.name,
                                 isKindOfFieldNameOptional = false,
 
-                                enumValues = listOf(),
-                                unionTypes = unionElement,
-                                interfaceTypes = listOf()
+                                unionTypes = unionElement
                             )
                         )
                     }
@@ -493,8 +459,6 @@ object StateBuilder {
                                 typeName = elementIntypes.name,
                                 isKindOfFieldNameOptional = false,
 
-                                enumValues = listOf(),
-                                unionTypes = listOf(),
                                 interfaceTypes = interfaceElement
                             )
                         )
@@ -511,11 +475,7 @@ object StateBuilder {
                                 kindOfFieldType = kind3.toString(),//kind3 could be null
                                 fieldType = elementInfields.type.ofType.ofType.ofType.name,
                                 typeName = elementIntypes.name,
-                                isKindOfFieldNameOptional = false,
-
-                                enumValues = listOf(),
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                isKindOfFieldNameOptional = false
                             )
                         )
                     }
@@ -540,9 +500,7 @@ object StateBuilder {
                                     fieldType = elementInfields.type.ofType.ofType.name,
                                     typeName = elementIntypes.name,
 
-                                    enumValues = enumElement,
-                                    unionTypes = listOf(),
-                                    interfaceTypes = listOf()
+                                    enumValues = enumElement
                                 )
                             )
                         }
@@ -561,10 +519,7 @@ object StateBuilder {
                                     fieldType = elementInfields.type.ofType.ofType.name,
                                     typeName = elementIntypes.name,
 
-                                    enumValues = listOf(),
-                                    unionTypes = unionElement,
-                                    interfaceTypes = listOf()
-
+                                    unionTypes = unionElement
                                 )
                             )
                         }
@@ -583,10 +538,7 @@ object StateBuilder {
                                     fieldType = elementInfields.type.ofType.ofType.name,
                                     typeName = elementIntypes.name,
 
-                                    enumValues = listOf(),
-                                    unionTypes = listOf(),
                                     interfaceTypes = interfaceElement
-
                                 )
                             )
                         }
@@ -601,11 +553,7 @@ object StateBuilder {
                                     kindOfFieldType = kind2.toString(),
                                     isKindOfFieldTypeOptional = true,
                                     fieldType = elementInfields.type.ofType.ofType.name,
-                                    typeName = elementIntypes.name,
-
-                                    enumValues = listOf(),//to correct
-                                    unionTypes = listOf(),
-                                    interfaceTypes = listOf()
+                                    typeName = elementIntypes.name
                                 )
                             )
 
@@ -628,9 +576,7 @@ object StateBuilder {
                             fieldType = elementInfields.type.ofType.name,
                             typeName = elementIntypes.name,
 
-                            enumValues = enumElement,
-                            unionTypes = listOf(),
-                            interfaceTypes = listOf()
+                            enumValues = enumElement
                         )
                     )
                 }
@@ -650,9 +596,7 @@ object StateBuilder {
                             fieldType = elementInfields.type.ofType.name,
                             typeName = elementIntypes.name,
 
-                            enumValues = listOf(),
-                            unionTypes = unionElement,
-                            interfaceTypes = listOf()
+                            unionTypes = unionElement
                         )
                     )
                 }
@@ -671,8 +615,6 @@ object StateBuilder {
                             fieldType = elementInfields.type.ofType.name,
                             typeName = elementIntypes.name,
 
-                            enumValues = listOf(),
-                            unionTypes = listOf(),
                             interfaceTypes = interfaceElement
                         )
                     )
@@ -688,10 +630,6 @@ object StateBuilder {
                             kindOfFieldType = kind1.toString(),
                             fieldType = elementInfields.type.ofType.name,
                             typeName = elementIntypes.name,
-
-                            enumValues = listOf(),
-                            unionTypes = listOf(),
-                            interfaceTypes = listOf()
                         )
                     )
                 }
@@ -763,11 +701,7 @@ object StateBuilder {
                             kindOfFieldType = __TypeKind.INPUT_OBJECT.toString(),
                             isKindOfFieldTypeOptional = false,
                             fieldType = elementInArgs.type.ofType.ofType.ofType.name,
-                            fieldName = elementInArgs.name,
-
-                            enumValues = listOf(),
-                            unionTypes = listOf(),
-                            interfaceTypes = listOf()
+                            fieldName = elementInArgs.name
                         )
                     )
             } else // non optional scalar or enum
@@ -788,9 +722,7 @@ object StateBuilder {
                                 fieldType = elementInArgs.type.ofType.ofType.ofType.name,
                                 fieldName = elementInArgs.name,
 
-                                enumValues = enumElement,
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                enumValues = enumElement
                             )
                         )
                     } else
@@ -805,11 +737,7 @@ object StateBuilder {
                                 kindOfFieldType = __TypeKind.SCALAR.toString(),
                                 isKindOfFieldTypeOptional = false,
                                 fieldType = elementInArgs.type.ofType.ofType.ofType.name,
-                                fieldName = elementInArgs.name,
-
-                                enumValues = listOf(),
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                fieldName = elementInArgs.name
                             )
                         )
                 } else // optional input object or scalar or enum
@@ -831,9 +759,7 @@ object StateBuilder {
                                     fieldType = elementInArgs.type.ofType.ofType.name,
                                     fieldName = elementInArgs.name,
 
-                                    enumValues = enumElement,
-                                    unionTypes = listOf(),
-                                    interfaceTypes = listOf()
+                                    enumValues = enumElement
                                 )
                             )
                         } else
@@ -849,11 +775,7 @@ object StateBuilder {
 
                                     kindOfFieldType = kind2.toString(),
                                     fieldType = elementInArgs.type.ofType.ofType.name,
-                                    fieldName = elementInArgs.name,
-
-                                    enumValues = listOf(),
-                                    unionTypes = listOf(),
-                                    interfaceTypes = listOf()
+                                    fieldName = elementInArgs.name
                                 )
                             )
                     }
@@ -873,9 +795,7 @@ object StateBuilder {
                             fieldType = elementInArgs.type.ofType.name,
                             fieldName = elementInArgs.name,
 
-                            enumValues = enumElement,
-                            unionTypes = listOf(),
-                            interfaceTypes = listOf()
+                            enumValues = enumElement
                         )
                     )
                 } else
@@ -888,10 +808,6 @@ object StateBuilder {
                             isKindOfFieldTypeOptional = false,
                             fieldType = elementInArgs.type.ofType.name,
                             fieldName = elementInArgs.name,
-
-                            enumValues = listOf(),
-                            unionTypes = listOf(),
-                            interfaceTypes = listOf()
                         )
                     )
             }
@@ -928,9 +844,7 @@ object StateBuilder {
                                 fieldType = elementInArgs.type.ofType.ofType.name,
                                 fieldName = elementInArgs.name,
 
-                                enumValues = enumElement,
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                enumValues = enumElement
                             )
                         )
                     } else
@@ -945,11 +859,7 @@ object StateBuilder {
                                 kindOfFieldType = kind2.toString(),
                                 isKindOfFieldTypeOptional = false,
                                 fieldType = elementInArgs.type.ofType.ofType.name,
-                                fieldName = elementInArgs.name,
-
-                                enumValues = listOf(),
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                fieldName = elementInArgs.name
                             )
                         )
                 }
@@ -972,9 +882,7 @@ object StateBuilder {
                                 fieldType = elementInArgs.type.ofType.name,
                                 fieldName = elementInArgs.name,
 
-                                enumValues = enumElement,
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                enumValues = enumElement
                             )
                         )
                     } else
@@ -989,11 +897,7 @@ object StateBuilder {
                                 kindOfFieldType = kind1.toString(),
                                 isKindOfFieldTypeOptional = true,
                                 fieldType = elementInArgs.type.ofType.name,
-                                fieldName = elementInArgs.name,
-
-                                enumValues = listOf(),
-                                unionTypes = listOf(),
-                                interfaceTypes = listOf()
+                                fieldName = elementInArgs.name
                             )
                         )
                 }
@@ -1013,9 +917,7 @@ object StateBuilder {
                             isKindOfFieldTypeOptional = true,
                             fieldType = elementInArgs.type.name,
                             fieldName = elementInArgs.name,
-                            enumValues = enumElement,
-                            unionTypes = listOf(),
-                            interfaceTypes = listOf()
+                            enumValues = enumElement
                         )
                     )
                 } else
@@ -1027,11 +929,7 @@ object StateBuilder {
                             kindOfFieldType = kind0.toString(),
                             isKindOfFieldTypeOptional = true,
                             fieldType = elementInArgs.type.name,
-                            fieldName = elementInArgs.name,
-
-                            enumValues = listOf(),
-                            unionTypes = listOf(),
-                            interfaceTypes = listOf()
+                            fieldName = elementInArgs.name
                         )
                     )
             }
@@ -1069,9 +967,7 @@ object StateBuilder {
                                                 fieldType = elementInInputFields.type.ofType.name,
                                                 fieldName = elementInInputFields.name,
 
-                                                enumValues = enumElement,
-                                                unionTypes = listOf(),
-                                                interfaceTypes = listOf()
+                                                enumValues = enumElement
                                             )
                                         )
                                     } else
@@ -1081,11 +977,7 @@ object StateBuilder {
                                                 kindOfFieldType = kind1.toString(),
                                                 isKindOfFieldTypeOptional = false,
                                                 fieldType = elementInInputFields.type.ofType.name,
-                                                fieldName = elementInInputFields.name,
-
-                                                enumValues = listOf(),
-                                                unionTypes = listOf(),
-                                                interfaceTypes = listOf()
+                                                fieldName = elementInInputFields.name
                                             )
                                         )
                                 }
@@ -1102,9 +994,7 @@ object StateBuilder {
                                                 fieldType = elementInInputFields.type.name,
                                                 fieldName = elementInInputFields.name,
 
-                                                enumValues = enumElement,
-                                                unionTypes = listOf(),
-                                                interfaceTypes = listOf()
+                                                enumValues = enumElement
                                             )
                                         )
                                     } else
@@ -1114,11 +1004,7 @@ object StateBuilder {
                                                 kindOfFieldType = kind0.toString(),
                                                 isKindOfFieldTypeOptional = true,
                                                 fieldType = elementInInputFields.type.name,
-                                                fieldName = elementInInputFields.name,
-
-                                                enumValues = listOf(),
-                                                unionTypes = listOf(),
-                                                interfaceTypes = listOf()
+                                                fieldName = elementInInputFields.name
                                             )
                                         )
                                 }

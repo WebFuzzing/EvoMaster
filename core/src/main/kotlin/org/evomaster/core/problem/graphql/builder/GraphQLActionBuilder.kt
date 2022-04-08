@@ -494,14 +494,7 @@ object GraphQLActionBuilder {
                 val copy = element.copy(
                     fieldType = element.typeName,
                     KindOfFieldName = element.fieldType,
-                    kindOfFieldType = element.kindOfFieldType,
-                    typeName = element.fieldName,
-                    isKindOfFieldTypeOptional = element.isKindOfFieldTypeOptional,
-                    isKindOfFieldNameOptional = element.isKindOfFieldNameOptional,
-                    enumValues = element.enumValues,
-                    unionTypes = element.unionTypes,
-                    interfaceTypes = element.interfaceTypes,
-                    isFieldNameWithArgs = element.isFieldNameWithArgs,
+                    typeName = element.fieldName
                 )
 
                 val template = getInputGene(state, history, maxNumberOfGenes, copy)
@@ -523,14 +516,7 @@ object GraphQLActionBuilder {
                         val copy = element.copy(
                             fieldType = element.typeName,
                             KindOfFieldName = element.kindOfFieldType,
-                            kindOfFieldType = element.kindOfFieldType,
-                            typeName = element.fieldName,
-                            isKindOfFieldTypeOptional = element.isKindOfFieldTypeOptional,
-                            isKindOfFieldNameOptional = element.isKindOfFieldNameOptional,
-                            enumValues = element.enumValues,
-                            unionTypes = element.unionTypes,
-                            interfaceTypes = element.interfaceTypes,
-                            isFieldNameWithArgs = element.isFieldNameWithArgs
+                            typeName = element.fieldName
                         )
                         val template = getInputGene(state, history, maxNumberOfGenes, copy)
 
@@ -545,16 +531,9 @@ object GraphQLActionBuilder {
         secondElement: Table
     ): Table {
         return element.copy(
-            fieldType = element.fieldType,
-            KindOfFieldName = element.KindOfFieldName,
-            kindOfFieldType = element.kindOfFieldType,
             typeName = element.fieldType,
             isKindOfFieldTypeOptional = secondElement.isKindOfFieldTypeOptional,
-            isKindOfFieldNameOptional = secondElement.isKindOfFieldNameOptional,
-            enumValues = element.enumValues,
-            unionTypes = element.unionTypes,
-            interfaceTypes = element.interfaceTypes,
-            isFieldNameWithArgs = element.isFieldNameWithArgs
+            isKindOfFieldNameOptional = secondElement.isKindOfFieldNameOptional
         )
     }
 
@@ -702,7 +681,7 @@ object GraphQLActionBuilder {
         accum: Int,
         maxNumberOfGenes: Int,
         element: Table
-    ): Gene {
+    ): ObjectGene {
         val fields: MutableList<Gene> = mutableListOf()
         var accum = accum
 
@@ -812,16 +791,9 @@ object GraphQLActionBuilder {
 
         if (tableElement.KindOfFieldName.lowercase() == GqlConst.LIST) {
             val copy = tableElement.copy(
-                fieldType = tableElement.fieldType,
-                KindOfFieldName = tableElement.KindOfFieldName,
-                kindOfFieldType = tableElement.kindOfFieldType,
                 typeName = tableElement.fieldType,
                 isKindOfFieldTypeOptional = isKindOfTableFieldTypeOptional,
-                isKindOfFieldNameOptional = isKindOfTableFieldOptional,
-                enumValues = tableElement.enumValues,
-                unionTypes = tableElement.unionTypes,
-                interfaceTypes = tableElement.interfaceTypes,
-                isFieldNameWithArgs = tableElement.isFieldNameWithArgs
+                isKindOfFieldNameOptional = isKindOfTableFieldOptional
             )
             val gene = getReturnGene(state, history, accum, maxNumberOfGenes, copy)
             tupleElements.add(gene)
@@ -894,9 +866,6 @@ object GraphQLActionBuilder {
                 history.addLast(elementInUnionTypes)
                 val copy = element.copy(
                     typeName = elementInUnionTypes,
-                    kindOfFieldType = element.kindOfFieldType,
-                    isKindOfFieldTypeOptional = element.isKindOfFieldTypeOptional,
-                    isKindOfFieldNameOptional = element.isKindOfFieldNameOptional,
                     fieldName = elementInUnionTypes
                 )
 
@@ -935,22 +904,17 @@ object GraphQLActionBuilder {
                 history.addLast(elementInInterfaceTypes)
                 val copy = element.copy(
                     typeName = elementInInterfaceTypes,
-                    kindOfFieldType = element.kindOfFieldType,
-                    isKindOfFieldTypeOptional = element.isKindOfFieldTypeOptional,
-                    isKindOfFieldNameOptional = element.isKindOfFieldNameOptional,
                     fieldName = elementInInterfaceTypes
                 )
-                val objGeneTemplate = createObjectGene(state, history, accum, maxNumberOfGenes, copy)
-
+                var objGeneTemplate = createObjectGene(state, history, accum, maxNumberOfGenes, copy)
 
                 history.removeLast()
 
-                var myObjGne = objGeneTemplate as ObjectGene//To object
+                objGeneTemplate =
+                    objGeneTemplate.copyFields(interfaceBaseOptObjGene as ObjectGene)//remove useless fields
 
-                myObjGne = myObjGne.copyFields(interfaceBaseOptObjGene as ObjectGene)//remove useless fields
-
-                if (myObjGne.fields.isNotEmpty())
-                    fields.add(OptionalGene(myObjGne.name, myObjGne))
+                if (objGeneTemplate.fields.isNotEmpty())
+                    fields.add(OptionalGene(objGeneTemplate.name, objGeneTemplate))
             } else {
                 fields.add(
                     OptionalGene(

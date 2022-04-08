@@ -56,17 +56,17 @@ data class Table(
         /**
          * Containing the enum values
          */
-        val enumValues: List<String>,
+        val enumValues: List<String> = listOf(),
 
         /**
          * Containing the union possible types
          */
-        val unionTypes: List<String>,
+        val unionTypes: List<String> = listOf(),
 
         /**
          * Containing the interface possible types
           */
-        val interfaceTypes: List<String>
+        val interfaceTypes: List<String> = listOf()
 
 ){
 
