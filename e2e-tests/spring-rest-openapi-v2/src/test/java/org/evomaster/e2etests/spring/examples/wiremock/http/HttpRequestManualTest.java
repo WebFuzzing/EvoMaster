@@ -23,7 +23,6 @@ public class HttpRequestManualTest extends SpringTestBase {
 
     private static WireMockServer wireMockServer;
 
-
     @BeforeAll
     public static void initClass() throws Exception {
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
