@@ -22,11 +22,14 @@ public class HttpRequestManualTest extends SpringTestBase {
 
     private static WireMockServer wireMockServer;
 
-    @BeforeAll
-    public static void initClass() throws Exception {
+    // experiment
+    static {
         System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, "BASE,SQL,EXT_0,NET");
         InstrumentingAgent.changePackagesToInstrument("com.foo.");
+    }
 
+    @BeforeAll
+    public static void initClass() throws Exception {
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
 
         wireMockServer = new WireMockServer(new WireMockConfiguration().bindAddress("127.0.0.2").port(8080).extensions(new ResponseTemplateTransformer(false)));
