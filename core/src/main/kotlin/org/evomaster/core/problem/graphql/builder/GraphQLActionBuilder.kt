@@ -33,6 +33,16 @@ object GraphQLActionBuilder {
       */
     private val mutationQueryConstants = listOf(GqlConst.MUTATION, GqlConst.QUERY, GqlConst.ROOT, GqlConst.QUERY_TYPE)
 
+    /**
+     * Cache to avoid rebuilding the same genes again and again.
+     *
+     * Key: id of element in schema
+     * Value: a gene for it
+     *
+     * Note: this is NOT thread-safe
+     */
+    private val cache  = mutableMapOf<String, Gene>()
+
 
     /**
      * @param schema: the schema extracted from a GraphQL API, as a JSON string
@@ -45,6 +55,8 @@ object GraphQLActionBuilder {
         actionCluster: MutableMap<String, Action>,
         treeDepth: Int = Int.MAX_VALUE  //no restrictions by default
     ) {
+        cache.clear()
+
         val schemaObj: SchemaObj = try {
             Gson().fromJson(schema, SchemaObj::class.java)
         } catch (e: Exception) {
@@ -146,10 +158,6 @@ object GraphQLActionBuilder {
             }
         }
 
-
-        /*
-        prevent LimitObjectGene
-         */
         params.map { it.gene }.forEach { GeneUtils.preventLimit(it, true) }
 
         //Create the action
@@ -174,7 +182,6 @@ object GraphQLActionBuilder {
         state: TempState,
         maxNumberOfGenes: Int,
         element: Table
-
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
@@ -185,13 +192,8 @@ object GraphQLActionBuilder {
 
             for (element in selectionInArgs) {
                 if (element.kindOfFieldType == SCALAR.toString() || element.kindOfFieldType == ENUM.toString()) {//array scalar type or array enum type, the gene is constructed from getInputGene to take the correct names
-                    val gene = getInputScalarListOrEnumListGene(
-                        state,
-                        history,
-                        element
-                    )
+                    val gene = getInputScalarListOrEnumListGene(state, element)
                     params.add(GQInputParam(element.fieldName, gene))
-
                 } else {//for input objects types and objects types
                     val gene = getInputGene(
                         state,
@@ -260,18 +262,23 @@ object GraphQLActionBuilder {
      */
     private fun getInputScalarListOrEnumListGene(
         state: TempState,
-        history: Deque<String>,
         element: Table
     ): Gene {
-        when (element.KindOfFieldName.lowercase()) {
+
+        val gene = cache[element.uniqueId]
+        if(gene != null){
+            return gene.copy()
+        }
+
+        val created : Gene = when (element.KindOfFieldName.lowercase()) {
             GqlConst.LIST ->
-                return if (element.isKindOfFieldNameOptional) {
+                if (element.isKindOfFieldNameOptional) {
                     val copy = element.copy(
                         fieldType = element.typeName, KindOfFieldName = element.kindOfFieldType,
                         kindOfFieldType = element.KindOfFieldName,
                         typeName = element.fieldType
                     )
-                    val template = getInputScalarListOrEnumListGene(state, history, copy)
+                    val template = getInputScalarListOrEnumListGene(state, copy)
                     OptionalGene(element.fieldName, ArrayGene(element.fieldName, template))
                 } else {
                     val copy = element.copy(
@@ -279,31 +286,31 @@ object GraphQLActionBuilder {
                         kindOfFieldType = element.KindOfFieldName,
                         typeName = element.fieldType
                     )
-                    val template = getInputScalarListOrEnumListGene(state, history, copy)
+                    val template = getInputScalarListOrEnumListGene(state, copy)
                     ArrayGene(element.fieldName, template)
                 }
             "int" ->
-                return if (element.isKindOfFieldTypeOptional)
+                if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, IntegerGene(element.fieldName))
                 else
                     IntegerGene(element.fieldName)
             "string" ->
-                return if (element.isKindOfFieldTypeOptional)
+                if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, StringGene(element.fieldName))
                 else
                     StringGene(element.fieldName)
             "float" ->
-                return if (element.isKindOfFieldTypeOptional)
+                if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, FloatGene(element.fieldName))
                 else
                     FloatGene(element.fieldName)
             "boolean" ->
-                return if (element.isKindOfFieldTypeOptional)
+                if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, BooleanGene(element.fieldName))
                 else
                     BooleanGene(element.fieldName)
             "long" ->
-                return if (element.isKindOfFieldTypeOptional)
+                if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, LongGene(element.fieldName))
                 else
                     LongGene(element.fieldName)
@@ -313,10 +320,10 @@ object GraphQLActionBuilder {
                     kindOfFieldType = element.KindOfFieldName,
                     typeName = element.fieldType
                 )
-                return getInputScalarListOrEnumListGene(state, history, copy)
+                getInputScalarListOrEnumListGene(state, copy)
             }
             "date" ->
-                return if (element.isKindOfFieldTypeOptional)
+                if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, BooleanGene(element.fieldName))
                 else
                     DateGene(element.fieldName)
@@ -325,33 +332,36 @@ object GraphQLActionBuilder {
                     KindOfFieldName = element.typeName,
                     typeName = element.KindOfFieldName
                 )
-                return getInputScalarListOrEnumListGene(state, history, copy)
+                getInputScalarListOrEnumListGene(state, copy)
             }
             "id" ->
-                return if (element.isKindOfFieldTypeOptional)
+                if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, StringGene(element.fieldName))
                 else
                     StringGene(element.fieldName)
             GqlConst.ENUM ->
-                return if (element.isKindOfFieldTypeOptional)
+                if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, EnumGene(element.fieldName, element.enumValues))
                 else
                     EnumGene(element.fieldName, element.enumValues)
 
             GqlConst.UNION -> {
                 LoggingUtil.uniqueWarn(log, "GQL does not support union in input type: ${element.KindOfFieldName}")
-                return StringGene("Not supported type")
+                StringGene("Not supported type")
             }
             GqlConst.INTERFACE -> {
                 LoggingUtil.uniqueWarn(log, "GQL does not support union in input type: ${element.KindOfFieldName}")
-                return StringGene("Not supported type")
+                StringGene("Not supported type")
             }
             else ->
-                return if (element.isKindOfFieldTypeOptional)
+                if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, StringGene(element.fieldName))
                 else
                     StringGene(element.fieldName)
         }
+
+        cache[element.uniqueId] = created
+        return created
     }
 
 
@@ -711,7 +721,6 @@ object GraphQLActionBuilder {
                      */
                         val gene = getInputScalarListOrEnumListGene(
                             state,
-                            history,
                             argElement
                         )
                         /*
