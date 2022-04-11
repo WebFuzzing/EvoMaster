@@ -539,6 +539,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.MAP,
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT,
             RPCSupportedDataType.PAIR -> dto.innerContent == null
+            RPCSupportedDataType.BIGDECIMAL, RPCSupportedDataType.BIGINTEGER -> TODO()
         }
     }
 
@@ -569,6 +570,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene
             RPCSupportedDataType.UTIL_DATE -> valueGene is DateTimeGene
             RPCSupportedDataType.PAIR -> valueGene is PairGene<*,*>
+            RPCSupportedDataType.BIGDECIMAL, RPCSupportedDataType.BIGINTEGER -> TODO()
         }
     }
 
@@ -635,6 +637,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> CycleObjectGene(param.name)
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
+            RPCSupportedDataType.BIGDECIMAL, RPCSupportedDataType.BIGINTEGER -> TODO()
         }
 
         if (param.candidates != null){
