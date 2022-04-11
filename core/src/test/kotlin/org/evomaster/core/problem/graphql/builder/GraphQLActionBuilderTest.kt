@@ -993,7 +993,6 @@ class GraphQLActionBuilderTest {
 
 
 
-    @Disabled
     @Test
     fun anigListSchemaTest() {
 
@@ -1070,7 +1069,7 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
+
     @Test
     fun universeSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()

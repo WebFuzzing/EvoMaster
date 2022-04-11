@@ -43,6 +43,7 @@ object GraphQLActionBuilder {
      */
     private val cache = mutableMapOf<String, Gene>()
 
+    private val depthBasedCache = mutableMapOf<String, Gene>()
 
     /**
      * @param schema: the schema extracted from a GraphQL API, as a JSON string
@@ -56,6 +57,7 @@ object GraphQLActionBuilder {
             treeDepth: Int = Int.MAX_VALUE  //no restrictions by default
     ) {
         cache.clear()
+        depthBasedCache.clear()
 
         val schemaObj: SchemaObj = try {
             Gson().fromJson(schema, SchemaObj::class.java)
@@ -557,9 +559,16 @@ object GraphQLActionBuilder {
                 return if (checkDepthIsOK(accum, treeDepth)) {
                     history.addLast(element.typeName)
                     if (history.count { it == element.typeName } == 1) {
-                        val objGene = createObjectGene(
-                                state, history, accum, treeDepth, element
-                        )
+
+                        val id = "$accum:${element.uniqueId}"
+                        val gene = depthBasedCache[id]
+                        val objGene = if(gene != null ) {
+                            gene.copy() as ObjectGene
+                        } else {
+                            val g = createObjectGene(state, history, accum, treeDepth, element)
+                            depthBasedCache[id] = g
+                            g
+                        }
                         history.removeLast()
                         OptionalGene(element.fieldName, objGene)
                     } else {
