@@ -28,10 +28,6 @@ object GraphQLActionBuilder {
      */
     private val idGenerator = AtomicInteger()
 
-    /**
-     * TODO potential for refactoring, as not thread-safe
-     */
-    private var accum: Int = 0
     /*
       In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
       */
@@ -211,7 +207,7 @@ object GraphQLActionBuilder {
             val gene = getReturnGene(
                 state,
                 history,
-                accum,
+                0,
                 maxNumberOfGenes,
                 element
             )
@@ -225,7 +221,7 @@ object GraphQLActionBuilder {
             val gene = getReturnGene(
                 state,
                 history,
-                accum,
+                0,
                 maxNumberOfGenes,
                 element
             )
@@ -391,10 +387,10 @@ object GraphQLActionBuilder {
                 }
             GqlConst.OBJECT ->
                 return if (element.isKindOfFieldTypeOptional) {
-                    val optObjGene = createObjectGene(state, history, accum, maxNumberOfGenes, element)
+                    val optObjGene = createObjectGene(state, history, 0, maxNumberOfGenes, element)
                     OptionalGene(element.fieldName, optObjGene)
                 } else
-                    createObjectGene(state, history, accum, maxNumberOfGenes, element)
+                    createObjectGene(state, history, 0, maxNumberOfGenes, element)
             GqlConst.INPUT_OBJECT ->
                 return if (element.isKindOfFieldTypeOptional) {
                     val optInputObjGene = createInputObjectGene(state, history, maxNumberOfGenes, element)

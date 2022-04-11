@@ -1070,6 +1070,7 @@ class GraphQLActionBuilderTest {
 
     }
 
+    @Disabled
     @Test
     fun universeSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
