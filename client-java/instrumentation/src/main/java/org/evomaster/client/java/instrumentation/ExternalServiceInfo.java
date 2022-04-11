@@ -12,13 +12,16 @@ public class ExternalServiceInfo implements Serializable {
      */
     private final String remoteHostname;
 
+    private final String protocol;
+
     private final int remotePort;
 
     private final String mockHostname;
 
     private final int mockHostPort;
 
-    public ExternalServiceInfo(String remoteHostname, int remotePort, String mockHostname, int mockHostPort) {
+    public ExternalServiceInfo(String protocol, String remoteHostname, int remotePort, String mockHostname, int mockHostPort) {
+        this.protocol = protocol;
         this.remoteHostname = remoteHostname;
         this.remotePort = remotePort;
         this.mockHostname = mockHostname;
@@ -27,6 +30,10 @@ public class ExternalServiceInfo implements Serializable {
 
     public String getHostname() {
         return remoteHostname;
+    }
+
+    public String getProtocol() {
+        return protocol;
     }
 
     public int getRemotePort() {
