@@ -67,10 +67,10 @@ object GraphQLActionBuilder {
 
 
     private fun handleOperation(
-        state: TempState,
-        actionCluster: MutableMap<String, Action>,
-        maxNumberOfGenes: Int,
-        element: Table
+            state: TempState,
+            actionCluster: MutableMap<String, Action>,
+            treeDepth: Int,
+            element: Table
     ) {
         val type = when {
             element.typeName.equals(GqlConst.QUERY, true) -> GQMethodType.QUERY
@@ -88,11 +88,11 @@ object GraphQLActionBuilder {
 
         val actionId = "${element.fieldName}${idGenerator.incrementAndGet()}"
 
-        val params = extractParams(
-            state,
-            maxNumberOfGenes,
-            element
-        )
+        /*
+            For this operation, we extract the inputs (if any) and return object (if any) as
+            parameter that the search can evolve
+         */
+        val params = extractParams(state, treeDepth, element)
 
         //Note: if a return param is a primitive type it will be null
 
