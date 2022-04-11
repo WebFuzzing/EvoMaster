@@ -36,4 +36,10 @@ public class PrimitiveOrWrapperType extends TypeSchema {
         return  clazz == Integer.class || clazz == Byte.class || clazz == Short.class || clazz == Long.class ||
                 clazz== Float.class || clazz == Double.class || clazz == Boolean.class || clazz == Character.class;
     }
+
+
+    @Override
+    public PrimitiveOrWrapperType copy() {
+        return new PrimitiveOrWrapperType(getType(), getFullTypeName(), isWrapper, getClazz());
+    }
 }

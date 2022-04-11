@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 
 import java.math.BigInteger;
 
-public class BigIntegerType extends TypeSchema{
+public class BigIntegerType extends TypeSchema {
 
     private final static String BIGINTEGER_TYPE_NAME = BigInteger.class.getSimpleName();
     private final static String FULL_BIGINTEGER_TYPE_NAME = BigInteger.class.getName();
@@ -20,5 +20,10 @@ public class BigIntegerType extends TypeSchema{
         TypeDto dto = super.getDto();
         dto.type = RPCSupportedDataType.BIGINTEGER;
         return dto;
+    }
+
+    @Override
+    public BigDecimalType copy() {
+        return new BigDecimalType();
     }
 }

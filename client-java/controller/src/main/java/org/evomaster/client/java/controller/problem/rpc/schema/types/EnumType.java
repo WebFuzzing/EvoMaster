@@ -30,4 +30,9 @@ public class EnumType extends TypeSchema {
         dto.fixedItems = items;
         return dto;
     }
+
+    @Override
+    public EnumType copy() {
+        return new EnumType(getType(), getFullTypeName(), items, getClazz());
+    }
 }
