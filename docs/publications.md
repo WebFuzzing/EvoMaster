@@ -12,9 +12,15 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2022
 
+* A. Belhadi, M. Zhang, A. Arcuri.
+  *Evolutionary-based Automated Testing for GraphQL APIs*.
+  ACM Genetic and Evolutionary Computation Conference (GECCO).
+  [[PDF](publications/2022_gecco.pdf)]
+  [[Scripts](exp/2022_gecco.py)]
+
 * M. Zhang, A. Belhadi, A. Arcuri.
   *JavaScript Instrumentation for Search-Based Software Testing: A Study with RESTful APIs*.
-  IEEE International Conference on Software Testing, Validation and Verification (ICST). (*to appear*)
+  IEEE International Conference on Software Testing, Validation and Verification (ICST). 
   [[PDF](publications/2022_icst.pdf)]
 
 * B. Marculescu, M. Zhang, A. Arcuri.
