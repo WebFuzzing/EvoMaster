@@ -442,7 +442,9 @@ def createJobHead(port, sut, timeoutMinutes):
     elif sut.platform == JS:
         # TODO sutPort
         before = "pushd " + sut.name + "\n"
-        command = " EM_PORT=" + controllerPort + " npm run em:run > " + sut_log + " 2>&1 & "
+        command = "node instrumented/em/em-main.js"
+        #command = "npm run em:run" # This does not work when trying then to kill this process
+        command = " EM_PORT=" + controllerPort + " " + command +" > " + sut_log + " 2>&1 & "
         command = before + command
 
     elif sut.platform == DOTNET_3:
@@ -454,7 +456,8 @@ def createJobHead(port, sut, timeoutMinutes):
         script.write("echo\n\n")
 
     script.write(command + "\n\n")
-    # FIXME: this does not work for JS... as the process running NPM dies immediately after spawning Node
+    # as the process running NPM dies immediately after spawning Node, to make this work we need to run Node
+    # directly and not NPM
     script.write(CONTROLLER_PID + "=$! \n\n")  # store pid of process, so can kill it
 
     if sut.platform == JS:
