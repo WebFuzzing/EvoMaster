@@ -184,7 +184,9 @@ class Sut:
 # of the SUTs (eg, by commenting them out)
 
 SUTS = [
-    # REST
+    # IND
+    # Sut("ind0", 1, JDK_8),
+    # REST JVM
     Sut("features-service", 1, JDK_8),
     Sut("scout-api", 2, JDK_8),
     Sut("proxyprint", 2, JDK_8),
@@ -194,17 +196,26 @@ SUTS = [
     Sut("catwatch", 1, JDK_8),
     Sut("restcountries", 2, JDK_8),
     Sut("languagetool", 3, JDK_8),
-    # GRAPHQL
+    Sut("ocvn-rest", 1, JDK_8),
+    Sut("gestaohospital", 1, JDK_8),
+    Sut("cwa-verification", 1, JDK_11),
+    # GRAPHQL JVM
     # Sut("petclinic", 1, JDK_8),
     # Sut("patio-api", 1, JDK_11),
     # Sut("timbuctoo", 1, JDK_11),
     # Sut("graphql-ncs", 1, JDK_8),
     # Sut("graphql-scs", 1, JDK_8),
-    # Sut("ind0", 1, JDK_8),
-    Sut("ocvn-rest", 1, JDK_8),
-    # Sut("ncs-js", 1, JS),
-    # Sut("scs-js", 1, JS)
-    # .Net
+    # REST NodeJS
+    # Sut("js-rest-ncs", 1, JS),
+    # Sut("js-rest-scs", 1, JS),
+    # Sut("cyclotron", 1, JS),
+    # Sut("disease-sh-api", 1, JS),
+    # Sut("realworld-app", 1, JS),
+    # Sut("spacex-api", 1, JS),
+    # GRAPHQL NodeJS
+    # Sut("react-finland", 1, JS),
+    # Sut("ecommerce-server", 1, JS),
+    # .NET
     # Sut("cs-rest-ncs",1,DOTNET_3),
     # Sut("cs-rest-scs",1,DOTNET_3),
     # Sut("sampleproject",1,DOTNET_3),
@@ -431,7 +442,7 @@ def createJobHead(port, sut, timeoutMinutes):
     elif sut.platform == JS:
         # TODO sutPort
         before = "pushd " + sut.name + "\n"
-        command = " EM_PORT=" + controllerPort + " npm run em > " + sut_log + " 2>&1 & "
+        command = " EM_PORT=" + controllerPort + " npm run em:run > " + sut_log + " 2>&1 & "
         command = before + command
 
     elif sut.platform == DOTNET_3:
