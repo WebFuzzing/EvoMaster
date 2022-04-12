@@ -72,14 +72,6 @@ public class AdditionalInfo implements Serializable {
      */
     private final Set<ExternalServiceInfo> externalServices = new CopyOnWriteArraySet<>();
 
-    public void addExternalService(ExternalServiceInfo hostInfo) {
-        externalServices.add(hostInfo);
-    }
-
-    public Set<ExternalServiceInfo> getExternalServices() {
-        return externalServices;
-    }
-
     /**
      * In case we pop all elements from stack, keep track of last one separately.
      */
@@ -243,4 +235,13 @@ public class AdditionalInfo implements Serializable {
             noExceptionStatement = statementDescription;
         }
     }
+
+    public void addExternalService(ExternalServiceInfo hostInfo) {
+        externalServices.add(hostInfo);
+    }
+
+    public Set<ExternalServiceInfo> getExternalServices() {
+        return Collections.unmodifiableSet(externalServices);
+    }
+
 }
