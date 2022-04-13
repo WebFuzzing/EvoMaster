@@ -159,7 +159,7 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testCyclotron() {
-        loadAndAssertActions("/swagger/others/cyclotron.json", 50)
+        loadAndAssertActions("/swagger/sut/cyclotron.json", 50)
     }
 
 
@@ -173,6 +173,38 @@ class RestActionBuilderV3Test{
     fun testMultiParamPath() {
         loadAndAssertActions("/swagger/artificial/multi_param_path.json", 1)
     }
+
+
+    @Test
+    fun testNcs() {
+        loadAndAssertActions("/swagger/sut/ncs.json", 6)
+    }
+
+    @Test
+    fun testScs() {
+        loadAndAssertActions("/swagger/sut/scs.json", 11)
+    }
+
+    @Test
+    fun testGestaoHospital() {
+        loadAndAssertActions("/swagger/sut/gestaohospital.json", 20)
+    }
+
+    @Test
+    fun testDisease() {
+        loadAndAssertActions("/swagger/sut/disease_sh_api.json", 34)
+    }
+
+    @Test
+    fun testRealWorld() {
+        loadAndAssertActions("/swagger/sut/realworld_app.json", 11)
+    }
+
+    @Test
+    fun testSpaceX() {
+        loadAndAssertActions("/swagger/sut/spacex_api.json", 94)
+    }
+
 
 
     @Test
