@@ -5,7 +5,7 @@
     "version": "1.0",
     "title": "Sistema de Gestão Hospital API"
   },
-  "host": "localhost:8763",
+  "host": "localhost:8080",
   "basePath": "/",
   "tags": [
     {
