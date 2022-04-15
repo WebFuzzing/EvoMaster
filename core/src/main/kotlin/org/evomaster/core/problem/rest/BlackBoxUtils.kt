@@ -35,12 +35,18 @@ object BlackBoxUtils {
                     val schema = (sampler as AbstractRestSampler).swagger
                     return if (schema.servers == null || schema.servers.isEmpty() || schema.servers[0].url == "/") {
                         // "/" is default if value missing in schema
-                        LoggingUtil.uniqueUserWarn("Schema has info on where the API is, eg 'host' in v2 and 'servers' in v3." +
+                        LoggingUtil.uniqueUserWarn("Schema has no info on where the API is, eg 'host' in v2 and 'servers' in v3." +
                                 " Going to use same location as where the schema was downloaded from")
                         //try to infer it from Swagger URL
                         extractTarget(config.bbSwaggerUrl)
                     } else {
-                        extractTarget(schema.servers[0].url)
+                        val url = schema.servers[0].url
+                        if(url.startsWith("//")){
+                            // this can happen if 'scheme' is missing in V2, resulting in an invalid URL in current parser
+                            extractTarget("http:$url")
+                        } else {
+                            extractTarget(url)
+                        }
                     }
                 }
                 else -> throw IllegalStateException("Black-box testing is currently not supported for ${config.problemType}")
