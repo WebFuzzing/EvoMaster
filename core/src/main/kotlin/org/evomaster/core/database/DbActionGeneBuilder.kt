@@ -252,6 +252,8 @@ class DbActionGeneBuilder {
                 ColumnDataType.TSRANGE, ColumnDataType.TSTZRANGE ->
                     SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
 
+                ColumnDataType.COMPOSITE_TYPE ->
+                    handleCompositeColumn(id, table, column)
 
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
@@ -300,7 +302,7 @@ class DbActionGeneBuilder {
                 https://dev.mysql.com/doc/refman/8.0/en/integer-types.html
 
              */
-            val min : Long? = if (column.isUnsigned) 0 else null
+            val min: Long? = if (column.isUnsigned) 0 else null
             LongGene(column.name, min = min)
         }
     }
@@ -312,8 +314,8 @@ class DbActionGeneBuilder {
         } else {
 
             if ((column.type == ColumnDataType.INT4
-                        || column.type == ColumnDataType.INT
-                        || column.type == ColumnDataType.INTEGER) && column.isUnsigned
+                            || column.type == ColumnDataType.INT
+                            || column.type == ColumnDataType.INTEGER) && column.isUnsigned
             ) {
                 LongGene(column.name, min = 0L, max = 4294967295L)
             } else {
@@ -333,9 +335,9 @@ class DbActionGeneBuilder {
                 }
 
                 IntegerGene(
-                    column.name,
-                    min = column.lowerBound ?: min,
-                    max = column.upperBound ?: max
+                        column.name,
+                        min = column.lowerBound ?: min,
+                        max = column.upperBound ?: max
                 )
             }
         }
@@ -371,9 +373,9 @@ class DbActionGeneBuilder {
             }
         } else {
             IntegerGene(
-                column.name,
-                min = column.lowerBound ?: Short.MIN_VALUE.toInt(),
-                max = column.upperBound ?: Short.MAX_VALUE.toInt()
+                    column.name,
+                    min = column.lowerBound ?: Short.MIN_VALUE.toInt(),
+                    max = column.upperBound ?: Short.MAX_VALUE.toInt()
             )
         }
     }
@@ -388,9 +390,9 @@ class DbActionGeneBuilder {
             }
         } else {
             IntegerGene(
-                column.name,
-                min = column.lowerBound ?: Byte.MIN_VALUE.toInt(),
-                max = column.upperBound ?: Byte.MAX_VALUE.toInt()
+                    column.name,
+                    min = column.lowerBound ?: Byte.MIN_VALUE.toInt(),
+                    max = column.upperBound ?: Byte.MAX_VALUE.toInt()
             )
         }
     }
@@ -431,19 +433,19 @@ class DbActionGeneBuilder {
             DatabaseType.POSTGRES, DatabaseType.MYSQL -> buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
-                "Must implement LIKE expressions for database %s".format(
-                    databaseType
-                )
+                    "Must implement LIKE expressions for database %s".format(
+                            databaseType
+                    )
             )
         }
     }
 
     private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
         val disjunctionRxGenes = likePatterns
-            .map { createGeneForPostgresLike(it) }
-            .map { it.disjunctions }
-            .map { it.disjunctions }
-            .flatten()
+                .map { createGeneForPostgresLike(it) }
+                .map { it.disjunctions }
+                .map { it.disjunctions }
+                .flatten()
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
@@ -454,47 +456,47 @@ class DbActionGeneBuilder {
      * according to the database we are using
      */
     fun buildSimilarToRegexGene(
-        geneName: String,
-        similarToPatterns: List<String>,
-        databaseType: DatabaseType
+            geneName: String,
+            similarToPatterns: List<String>,
+            databaseType: DatabaseType
     ): RegexGene {
         return when {
             databaseType == DatabaseType.POSTGRES -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
-                "Must implement similarTo expressions for database %s".format(
-                    databaseType
-                )
+                    "Must implement similarTo expressions for database %s".format(
+                            databaseType
+                    )
             )
         }
     }
 
     private fun buildPostgresSimilarToRegexGene(geneName: String, similarToPatterns: List<String>): RegexGene {
         val disjunctionRxGenes = similarToPatterns
-            .map { createGeneForPostgresSimilarTo(it) }
-            .map { it.disjunctions }
-            .map { it.disjunctions }
-            .flatten()
+                .map { createGeneForPostgresSimilarTo(it) }
+                .map { it.disjunctions }
+                .map { it.disjunctions }
+                .flatten()
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
     fun buildSqlTimestampGene(name: String): DateTimeGene {
         return DateTimeGene(
-            name = name,
-            date = DateGene(
-                "date",
-                year = IntegerGene("year", 2016, 1900, 2100),
-                month = IntegerGene("month", 3, 1, 12),
-                day = IntegerGene("day", 12, 1, 31),
-                onlyValidDates = true
-            ),
-            time = TimeGene(
-                "time",
-                hour = IntegerGene("hour", 0, 0, 23),
-                minute = IntegerGene("minute", 0, 0, 59),
-                second = IntegerGene("second", 0, 0, 59)
-            ),
-            dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+                name = name,
+                date = DateGene(
+                        "date",
+                        year = IntegerGene("year", 2016, 1900, 2100),
+                        month = IntegerGene("month", 3, 1, 12),
+                        day = IntegerGene("day", 12, 1, 31),
+                        onlyValidDates = true
+                ),
+                time = TimeGene(
+                        "time",
+                        hour = IntegerGene("hour", 0, 0, 23),
+                        minute = IntegerGene("minute", 0, 0, 59),
+                        second = IntegerGene("second", 0, 0, 59)
+                ),
+                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
         )
 
     }
@@ -555,10 +557,10 @@ class DbActionGeneBuilder {
                  */
                 val range = NumberCalculationUtil.boundaryDecimal(column.size, column.precision)
                 FloatGene(
-                    column.name,
-                    min = if (column.isUnsigned) 0.0f else range.first.toFloat(),
-                    max = range.second.toFloat(),
-                    precision = column.precision
+                        column.name,
+                        min = if (column.isUnsigned) 0.0f else range.first.toFloat(),
+                        max = range.second.toFloat(),
+                        precision = column.precision
                 )
             } else
                 FloatGene(column.name)
@@ -574,10 +576,10 @@ class DbActionGeneBuilder {
             val MONEY_COLUMN_SIZE = 8
             val range = NumberCalculationUtil.boundaryDecimal(MONEY_COLUMN_SIZE, MONEY_COLUMN_PRECISION)
             FloatGene(
-                column.name,
-                min = range.first.toFloat(),
-                max = range.second.toFloat(),
-                precision = MONEY_COLUMN_PRECISION
+                    column.name,
+                    min = range.first.toFloat(),
+                    max = range.second.toFloat(),
+                    precision = MONEY_COLUMN_PRECISION
             )
         }
     }
@@ -591,6 +593,16 @@ class DbActionGeneBuilder {
         } else {
             BooleanGene(column.name)
         }
+    }
+
+    private fun handleCompositeColumn(id: Long, table: Table, column: Column): Gene {
+        if (column.compositeType == null) {
+            throw IllegalArgumentException("Composite column should have a composite type for column ${column.name}")
+        }
+        val fields = column.compositeType
+                .map { t -> buildGene(id, table, t) }
+                .toList()
+        return SqlCompositeGene(column.name, fields, column.compositeTypeName)
     }
 
     /**

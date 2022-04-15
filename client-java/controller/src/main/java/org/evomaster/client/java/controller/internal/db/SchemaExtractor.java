@@ -163,6 +163,7 @@ public class SchemaExtractor {
         if (dt.equals(DatabaseType.POSTGRES)) {
             Map<String, Set<String>> enumLabels = getPostgresEnumTypes(connection);
             addPostgresEnumTypesToSchema(schemaDto, enumLabels);
+            schemaDto.compositeTypes = getPostgresCompositeTypes(connection);
         }
 
         ResultSet tables = md.getTables(null, schemaDto.name, null, new String[]{"TABLE"});
@@ -225,9 +226,14 @@ public class SchemaExtractor {
     }
 
     private static ColumnDto getColumnDto(DbSchemaDto schemaDto, String tableName, String columnName) {
-        TableDto tableDto = schemaDto.tables.stream().filter(t -> t.name.equals(tableName.toLowerCase())).findFirst().orElse(null);
-        ColumnDto columnDto = tableDto.columns.stream().filter(c -> c.name.equals(columnName.toLowerCase())).findFirst().orElse(null);
-        return columnDto;
+        TableDto tableDto = schemaDto.tables.stream()
+                .filter(t -> t.name.equals(tableName.toLowerCase()))
+                .findFirst()
+                .orElse(null);
+        return tableDto.columns.stream()
+                .filter(c -> c.name.equals(columnName.toLowerCase()))
+                .findFirst()
+                .orElse(null);
     }
 
     private static String getSchemaName(Connection connection, DatabaseType dt) throws SQLException {
@@ -292,6 +298,66 @@ public class SchemaExtractor {
             }
         }
         return listOfColumnAttributes;
+    }
+
+    private static List<String> getAllCompositeTypeNames(Connection connection) throws SQLException {
+        // Source: https://stackoverflow.com/questions/3660787/how-to-list-custom-types-using-postgres-information-schema
+        String listAllCompositeTypesQuery = "SELECT      n.nspname as schema, t.typname as typename \n" +
+                "FROM        pg_type t \n" +
+                "LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace \n" +
+                "WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid)) \n" +
+                "AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)\n" +
+                "AND     n.nspname NOT IN ('pg_catalog', 'information_schema')" +
+                "AND     t.typtype ='c';";
+
+        List<String> compositeTypeNames = new ArrayList<>();
+        try (Statement listAllCompositeTypesStmt = connection.createStatement()) {
+            ResultSet listAllCompositeTypesResultSet = listAllCompositeTypesStmt.executeQuery(listAllCompositeTypesQuery);
+            while (listAllCompositeTypesResultSet.next()) {
+                compositeTypeNames.add(listAllCompositeTypesResultSet.getString("typename"));
+            }
+        }
+        return compositeTypeNames;
+    }
+
+    private static List<CompositeTypeDto> getPostgresCompositeTypes(Connection connection) throws SQLException {
+        List<CompositeTypeDto> compositeTypeDtos = new ArrayList<>();
+        List<String> compositeTypeNames = getAllCompositeTypeNames(connection);
+        for (String compositeTypeName : compositeTypeNames) {
+            List<CompositeTypeColumnDto> columnDtos = getAllCompositeTypeColumns(connection, compositeTypeName, compositeTypeNames);
+            CompositeTypeDto compositeTypeDto = new CompositeTypeDto();
+            compositeTypeDto.name = compositeTypeName;
+            compositeTypeDto.columns = columnDtos;
+            compositeTypeDtos.add(compositeTypeDto);
+
+        }
+        return compositeTypeDtos;
+    }
+
+    private static List<CompositeTypeColumnDto> getAllCompositeTypeColumns(Connection connection, String compositeTypeName, List<String> allCompositeTypeNames) throws SQLException {
+        // Source: https://stackoverflow.com/questions/6979282/postgresql-find-information-about-user-defined-types
+        String listAttributesQuery = String.format(
+                "SELECT pg_attribute.attname AS attname, pg_attribute.attnotnull AS attnotnull, pg_attribute.attlen  as attlen, pg_type.typname AS typename " +
+                        " FROM pg_attribute " +
+                        " JOIN pg_type ON pg_attribute.atttypid=pg_type.oid " +
+                        " WHERE pg_attribute.attrelid =\n" +
+                        "  (SELECT typrelid FROM pg_type WHERE typname = '%s') " +
+                        " ORDER BY pg_attribute.attnum ", compositeTypeName);
+
+        List<CompositeTypeColumnDto> columnDtos = new ArrayList<>();
+        try (Statement listAttributesStmt = connection.createStatement()) {
+            ResultSet listAttributesResultSet = listAttributesStmt.executeQuery(listAttributesQuery);
+            while (listAttributesResultSet.next()) {
+                CompositeTypeColumnDto columnDto = new CompositeTypeColumnDto();
+                columnDto.name = listAttributesResultSet.getString("attname");
+                columnDto.type = listAttributesResultSet.getString("typename");
+                columnDto.size = listAttributesResultSet.getInt("attlen");
+                columnDto.nullable = listAttributesResultSet.getBoolean("attnotnull");
+                columnDto.isCompositeType = allCompositeTypeNames.stream().anyMatch(t -> t.equalsIgnoreCase(columnDto.type));
+                columnDtos.add(columnDto);
+            }
+        }
+        return columnDtos;
     }
 
     private static Map<String, Set<String>> getPostgresEnumTypes(Connection connection) throws SQLException {
@@ -464,6 +530,8 @@ public class SchemaExtractor {
                     columnDto.nullable = columns.getBoolean("IS_NULLABLE");
                     columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
                     columnDto.isEnumeratedType = schemaDto.enumeraredTypes.stream()
+                            .anyMatch(k -> k.name.equals(typeAsString));
+                    columnDto.isCompositeType = schemaDto.compositeTypes.stream()
                             .anyMatch(k -> k.name.equals(typeAsString));
                     break;
                 default:

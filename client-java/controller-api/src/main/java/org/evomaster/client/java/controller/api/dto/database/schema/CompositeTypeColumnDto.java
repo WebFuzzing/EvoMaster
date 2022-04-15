@@ -1,30 +1,31 @@
 package org.evomaster.client.java.controller.api.dto.database.schema;
 
-public class ColumnDto {
+import java.util.ArrayList;
+import java.util.List;
 
-    public String table;
+public class CompositeTypeColumnDto {
 
+    /**
+     * The name of the composite type
+     */
     public String name;
 
+    /**
+     * Returns if the column is a composite or a built-in type
+     */
+    public boolean isCompositeType;
+
+    /**
+     * The name of the composite type
+     */
     public String type;
 
     public int size;
 
-    public boolean primaryKey;
-
     public boolean nullable;
-
-    public boolean unique;
-
-    public boolean autoIncrement;
-
-    public boolean foreignKeyToAutoIncrement = false;
 
     public boolean isUnsigned = false;
 
-    public boolean isEnumeratedType = false;
-
-    public boolean isCompositeType = false;
     /**
      * precision of number
      * a negative number means that the precision is unspecified or inapplicable
@@ -35,4 +36,5 @@ public class ColumnDto {
      * The number of dimensions for arrays, matrixs, etc.
      */
     public int numberOfDimensions = 0;
+
 }

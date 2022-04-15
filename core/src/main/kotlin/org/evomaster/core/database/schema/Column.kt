@@ -46,7 +46,11 @@ data class Column(
         /**
          * A column with dimension > 0 represents arrays, matrices, etc.
          */
-        val dimension: Int = 0
+        val dimension: Int = 0,
+
+        val compositeType: List<Column>? = null,
+
+        val compositeTypeName: String? = null,
 
         // public boolean identity;
 

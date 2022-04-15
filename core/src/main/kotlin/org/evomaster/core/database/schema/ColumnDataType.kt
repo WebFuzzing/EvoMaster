@@ -3,7 +3,7 @@ package org.evomaster.core.database.schema
 /**
  * SQL Data types from databases
  * See http://www.h2database.com/html/datatypes.html
- * and https://www.postgresql.org/docs/9.1/datatype.html
+ * and https://www.postgresql.org/docs/14/datatype.html
  * and https://dev.mysql.com/doc/refman/8.0/en/data-types.html
  */
 enum class ColumnDataType(dataTypeName: String) {
@@ -248,12 +248,17 @@ enum class ColumnDataType(dataTypeName: String) {
     JSONPATH("JSONPATH"),
 
     // https://www.postgresql.org/docs/14/rangetypes.html
+    // built-in range types
     INT4RANGE("INT4RANGE"),
     INT8RANGE("INT8RANGE"),
     NUMRANGE("NUMRANGE"),
     TSRANGE("TSRANGE"),
     TSTZRANGE("TSTZRANGE"),
-    DATERANGE("DATERANGE");
+    DATERANGE("DATERANGE"),
+
+    // This is not an actual built-in column data type,
+    // but a placeholder for user-defined composite types.
+    COMPOSITE_TYPE("\$COMPOSITE_TYPE");
 
     fun shouldBePrintedInQuotes(): Boolean {
         /*

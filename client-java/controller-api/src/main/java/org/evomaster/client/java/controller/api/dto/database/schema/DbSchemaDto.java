@@ -14,4 +14,6 @@ public class DbSchemaDto {
     public List<EnumeratedTypeDto> enumeraredTypes = new ArrayList<>();
 
     public boolean employSmartDbClean;
+
+    public List<CompositeTypeDto> compositeTypes = new ArrayList<>();
 }
