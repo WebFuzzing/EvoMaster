@@ -1,0 +1,5180 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "SpaceX API",
+    "description": "Open Source REST API for launch, rocket, core, capsule, starlink, launchpad, and landing pad data (the APIs are defined based on https://github.com/r-spacex/SpaceX-API/blob/master/docs/v4/README.md)."
+  },
+  "servers": [
+    {
+      "url": "/v4"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "User",
+      "description": "Detailed info about users"
+    },
+    {
+      "name": "Capsule",
+      "description": "Detailed info for serialized dragon capsules"
+    },
+    {
+      "name": "Company",
+      "description": "Detailed info about SpaceX as a company"
+    },
+    {
+      "name": "Core",
+      "description": "Detailed info for serialized first stage cores"
+    },
+    {
+      "name": "Crew",
+      "description": "Detailed info on dragon crew members"
+    },
+    {
+      "name": "Dragon",
+      "description": "Detailed info about dragon capsule versions"
+    },
+    {
+      "name": "Landpad",
+      "description": "Detailed info about landing pads and ships"
+    },
+    {
+      "name": "Launch",
+      "description": "Detailed info about launches"
+    },
+    {
+      "name": "Launchpad",
+      "description": "Detailed info about launchpads"
+    },
+    {
+      "name": "Payload",
+      "description": "Detailed info about launch payloads"
+    },
+    {
+      "name": "Fairing",
+      "description": "Detailed info on SpaceX fairings"
+    },
+    {
+      "name": "Roadster",
+      "description": "Detailed info about Elon's Tesla roadster's current position"
+    },
+    {
+      "name": "Rocket",
+      "description": "Detailed info about rocket versions"
+    },
+    {
+      "name": "Ship",
+      "description": "Detailed info about ships in the SpaceX fleet"
+    },
+    {
+      "name": "Starlink",
+      "description": "Detailed info about Starlink satellites and orbits. Includes raw orbit data from Space Track, updated hourly. Space Track data adheres to the standard for Orbit Data Messages"
+    },
+    {
+      "name": "History",
+      "description": "Detailed info on SpaceX historical events"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "description": "Get all users",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "description": "Get a user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the user to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the user to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the user to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/users/query": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "description": "Query users",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/admin/cache": {
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "The api makes use of response caching via Redis for all GET requests, and POST requests on query endpoints.",
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/capsules": {
+      "get": {
+        "tags": [
+          "Capsule"
+        ],
+        "description": "Get all capsules",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Capsule"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Capsule"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a capsule",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Capsule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/capsules/{id}": {
+      "get": {
+        "tags": [
+          "Capsule"
+        ],
+        "description": "Get a capsule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the capsule to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Capsule"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Capsule"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a capsules",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the capsule to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Capsule"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a capsule",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the capsule to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/capsules/query": {
+      "post": {
+        "tags": [
+          "Capsule"
+        ],
+        "description": "Query capsules",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/company": {
+      "get": {
+        "tags": [
+          "Company"
+        ],
+        "description": "Get company info",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Company"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/company/{id}": {
+      "patch": {
+        "tags": [
+          "Company"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a company",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the company to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/cores": {
+      "get": {
+        "tags": [
+          "Core"
+        ],
+        "description": "Get all cores",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Core"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Core"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a core",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Core"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/cores/{id}": {
+      "get": {
+        "tags": [
+          "Core"
+        ],
+        "description": "Get a core",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the core to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Core"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Core"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a core",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the capsule to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Core"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a core",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the capsule to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/cores/query": {
+      "post": {
+        "tags": [
+          "Core"
+        ],
+        "description": "Query cores",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/crew": {
+      "get": {
+        "tags": [
+          "Crew"
+        ],
+        "description": "Get all crew",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Crew"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Crew"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a core",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Crew"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/crew/{id}": {
+      "get": {
+        "tags": [
+          "Crew"
+        ],
+        "description": "Get a crew",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the crew to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Crew"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Crew"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a crew",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the crew to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Crew"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a crew",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the crew to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/crew/query": {
+      "post": {
+        "tags": [
+          "Core"
+        ],
+        "description": "Query crew",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/dragons": {
+      "get": {
+        "tags": [
+          "Dragon"
+        ],
+        "description": "Get all dragons",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Dragon"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dragon"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a dragon",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Dragon"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/dragons/{id}": {
+      "get": {
+        "tags": [
+          "Dragon"
+        ],
+        "description": "Get a dragon",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dragon to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Dragon"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Dragon"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a dragon",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dragon to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Dragon"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a dragon",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the dragon to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/dragons/query": {
+      "post": {
+        "tags": [
+          "Dragon"
+        ],
+        "description": "Query dragon",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/landpads": {
+      "get": {
+        "tags": [
+          "Landpad"
+        ],
+        "description": "Get all landpads",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LandingPad"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Landpad"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a landpad",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LandingPad"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/landpads/{id}": {
+      "get": {
+        "tags": [
+          "Landpad"
+        ],
+        "description": "Get a landpad",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the landpad to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LandingPad"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Landpad"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a landpad",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the landpad to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Landpad"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a landpad",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the landpad to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/landpads/query": {
+      "post": {
+        "tags": [
+          "Landpad"
+        ],
+        "description": "Query landpads",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/launches": {
+      "get": {
+        "tags": [
+          "Launch"
+        ],
+        "description": "Get all launches",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Launch"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Launch"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a launch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Launch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/launches/{id}": {
+      "get": {
+        "tags": [
+          "Launch"
+        ],
+        "description": "Get a launch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the launch to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Launch"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Launch"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a launch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the launch to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Launch"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a launch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the launch to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/launches/query": {
+      "post": {
+        "tags": [
+          "Launch"
+        ],
+        "description": "Query launch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/launches/past": {
+      "get": {
+        "tags": [
+          "Launch"
+        ],
+        "description": "Get past launches",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Launch"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/launches/upcoming": {
+      "get": {
+        "tags": [
+          "Launch"
+        ],
+        "description": "Get upcoming launches",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Launch"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/launches/latest": {
+      "get": {
+        "tags": [
+          "Launch"
+        ],
+        "description": "Get latest launch",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Launch"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/launches/next": {
+      "get": {
+        "tags": [
+          "Launch"
+        ],
+        "description": "Get next launch",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Launch"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/launchpads": {
+      "get": {
+        "tags": [
+          "Launchpad"
+        ],
+        "description": "Get all launchpads",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Launchpad"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Launchpad"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a launchpad",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Launchpad"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/launchpads/{id}": {
+      "get": {
+        "tags": [
+          "Launchpad"
+        ],
+        "description": "Get a launchpad",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the launchpad to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Launchpad"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Launchpad"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a launchpad",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the launchpad to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Launchpad"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a launchpad",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the launchpad to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/launchpads/query": {
+      "post": {
+        "tags": [
+          "Launchpad"
+        ],
+        "description": "Query launchpads",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/payloads": {
+      "get": {
+        "tags": [
+          "Payload"
+        ],
+        "description": "Get all payloads",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Payload"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Payload"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a launchpad",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/payloads/{id}": {
+      "get": {
+        "tags": [
+          "Payload"
+        ],
+        "description": "Get a payload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the payload to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Payload"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Payload"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a payload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the payload to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Payload"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a payload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the payload to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/payloads/query": {
+      "post": {
+        "tags": [
+          "Payload"
+        ],
+        "description": "Query payloads",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/fairings": {
+      "get": {
+        "tags": [
+          "Fairing"
+        ],
+        "description": "Get all fairings",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Fairing"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Fairing"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a fairing",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Fairing"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/fairings/{id}": {
+      "get": {
+        "tags": [
+          "Fairing"
+        ],
+        "description": "Get a fairing",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the fairing to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Fairing"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Fairing"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a fairing",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the fairing to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Fairing"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a fairing",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the fairing to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/fairings/query": {
+      "post": {
+        "tags": [
+          "Fairing"
+        ],
+        "description": "Query fairings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/roadster": {
+      "get": {
+        "tags": [
+          "Roadster"
+        ],
+        "description": "Get roadster info",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fairing"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/roadster/{id}": {
+      "patch": {
+        "tags": [
+          "Roadster"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a roadster",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the roadster to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/roadster/query": {
+      "post": {
+        "tags": [
+          "Roadster"
+        ],
+        "description": "Query roadster",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/rockets": {
+      "get": {
+        "tags": [
+          "Rocket"
+        ],
+        "description": "Get all rockets",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Rocket"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Rocket"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a core",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Rocket"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/rockets/{id}": {
+      "get": {
+        "tags": [
+          "Rocket"
+        ],
+        "description": "Get a rocket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the rocket to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Rocket"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Rocket"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a rocket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the rocket to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Rocket"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a rocket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the rocket to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/rockets/query": {
+      "post": {
+        "tags": [
+          "Rocket"
+        ],
+        "description": "Query rockets",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/ships": {
+      "get": {
+        "tags": [
+          "Ship"
+        ],
+        "description": "Get all ships",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Ship"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Ship"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a ship",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Ship"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/ships/{id}": {
+      "get": {
+        "tags": [
+          "Ship"
+        ],
+        "description": "Get a ship",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the ship to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Ship"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Ship"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a ship",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the ship to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Ship"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a ship",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the ship to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/ships/query": {
+      "post": {
+        "tags": [
+          "Ship"
+        ],
+        "description": "Query ships",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/starlink": {
+      "get": {
+        "tags": [
+          "Starlink"
+        ],
+        "description": "Get all starlink",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Starlink"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Starlink"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a starlink",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Starlink"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/starlink/{id}": {
+      "get": {
+        "tags": [
+          "Starlink"
+        ],
+        "description": "Get a starlink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the starlink to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Starlink"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Starlink"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a starlink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the starlink to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Starlink"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a starlink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the starlink to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/starlink/query": {
+      "post": {
+        "tags": [
+          "Starlink"
+        ],
+        "description": "Query starlink",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    },
+    "/history": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "description": "Get all historical events",
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/History"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "Create a historical event",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/History"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/history/{id}": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "description": "Get a historical event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the historical event to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/History"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "History"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "update a historical event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the historical event to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "update successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "History"
+        ],
+        "security": [
+          {
+            "spacexKeyAuth": []
+          }
+        ],
+        "description": "delete a historical event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "ID of the historical event to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "delete successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/history/query": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "description": "Query historical events",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "get successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "spacexKeyAuth": {
+        "type": "http",
+        "scheme": "spacex-key"
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "The specified resource was not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InvalidRequest": {
+        "description": "Invaild request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "Query": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "object"
+          },
+          "options": {
+            "type": "object"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": [
+          "key",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": null
+          },
+          "key": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "superuser",
+              "user",
+              "create",
+              "update",
+              "delete"
+            ]
+          }
+        }
+      },
+      "Capsule": {
+        "type": "object",
+        "required": [
+          "serial",
+          "status",
+          "type"
+        ],
+        "properties": {
+          "serial": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "active",
+              "retired",
+              "destroyed"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Dragon 1.0",
+              "Dragon 1.1",
+              "Dragon 2.0"
+            ]
+          },
+          "dragon": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reuse_count": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "water_landings": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "land_landings": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "last_update": {
+            "type": "string",
+            "default": null
+          },
+          "launches": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "Company": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "founder": {
+            "type": "string"
+          },
+          "founded": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "employees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "vehicles": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "launch_sites": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "test_sites": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ceo": {
+            "type": "string"
+          },
+          "cto": {
+            "type": "string"
+          },
+          "coo": {
+            "type": "string"
+          },
+          "cto_propulsion": {
+            "type": "string"
+          },
+          "valuation": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "headquarters": {
+            "$ref": "#/components/schemas/Headquarter"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Link"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/Summary"
+          }
+        }
+      },
+      "Headquarter": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        }
+      },
+      "Link": {
+        "type": "object",
+        "properties": {
+          "website": {
+            "type": "string"
+          },
+          "flickr": {
+            "type": "string"
+          },
+          "twitter": {
+            "type": "string"
+          },
+          "elon_twitter": {
+            "type": "string"
+          }
+        }
+      },
+      "Summary": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "Core": {
+        "type": "object",
+        "required": [
+          "serial",
+          "status"
+        ],
+        "properties": {
+          "serial": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "block": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "unknown",
+              "expended",
+              "lost",
+              "retired"
+            ]
+          },
+          "reuse_count": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "rtls_attempts": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "rtls_landings": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "asds_attempts": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "asds_landings": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "last_update": {
+            "type": "string",
+            "default": null
+          },
+          "launches": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "Crew": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": null
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "retired",
+              "unknown"
+            ]
+          },
+          "agency": {
+            "type": "string",
+            "default": null
+          },
+          "image": {
+            "type": "string",
+            "default": null
+          },
+          "wikipedia": {
+            "type": "string",
+            "default": null
+          },
+          "launches": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "Dragon": {
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "active",
+          "crew_capacity",
+          "sidewall_angle_deg",
+          "orbit_duration_yr",
+          "dry_mass_kg",
+          "dry_mass_lb"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "crew_capacity": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sidewall_angle_deg": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orbit_duration_yr": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dry_mass_kg": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dry_mass_lb": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "first_flight": {
+            "type": "string",
+            "default": null
+          },
+          "heat_shield": {
+            "$ref": "#/components/schemas/HeatShield"
+          },
+          "thrusters": {
+            "type": "object"
+          },
+          "launch_payload_mass": {
+            "$ref": "#/components/schemas/Mass"
+          },
+          "launch_payload_vol": {
+            "$ref": "#/components/schemas/CubicVolume"
+          },
+          "return_payload_mass": {
+            "$ref": "#/components/schemas/Mass"
+          },
+          "return_payload_vol": {
+            "$ref": "#/components/schemas/CubicVolume"
+          },
+          "pressurized_capsule": {
+            "$ref": "#/components/schemas/PressurizedCapsule"
+          },
+          "trunk": {
+            "$ref": "#/components/schemas/Trunk"
+          },
+          "height_w_trunk": {
+            "$ref": "#/components/schemas/Length"
+          },
+          "diameter": {
+            "$ref": "#/components/schemas/Length"
+          },
+          "flickr_images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "wikipedia": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "HeatShield": {
+        "type": "object",
+        "required": [
+          "material",
+          "size_meters"
+        ],
+        "properties": {
+          "material": {
+            "type": "string"
+          },
+          "size_meters": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "temp_degrees": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dev_partner": {
+            "type": "string"
+          }
+        }
+      },
+      "Mass": {
+        "type": "object",
+        "properties": {
+          "kg": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lb": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CubicVolume": {
+        "type": "object",
+        "properties": {
+          "cubic_meters": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "cubic_feet": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "PressurizedCapsule": {
+        "type": "object",
+        "properties": {
+          "payload_volume": {
+            "$ref": "#/components/schemas/CubicVolume"
+          }
+        }
+      },
+      "Trunk": {
+        "type": "object",
+        "properties": {
+          "trunk_volume": {
+            "$ref": "#/components/schemas/CubicVolume"
+          },
+          "cargo": {
+            "$ref": "#/components/schemas/Cargo"
+          }
+        }
+      },
+      "Cargo": {
+        "type": "object",
+        "properties": {
+          "solar_array": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "unpressurized_cargo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Length": {
+        "type": "object",
+        "properties": {
+          "meters": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "feet": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "LandingPad": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": null
+          },
+          "full_name": {
+            "type": "string",
+            "default": null
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "unknown",
+              "retired",
+              "lost",
+              "under construction"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "default": null
+          },
+          "locality": {
+            "type": "string",
+            "default": null
+          },
+          "region": {
+            "type": "string",
+            "default": null
+          },
+          "latitude": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "longitude": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "landing_attempts": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "landing_successes": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "wikipedia": {
+            "type": "string",
+            "default": null
+          },
+          "details": {
+            "type": "string",
+            "default": null
+          },
+          "launches": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "Launch": {
+        "type": "object",
+        "required": [
+          "flight_number",
+          "name",
+          "date_utc",
+          "date_unix",
+          "date_local",
+          "date_precision",
+          "upcoming"
+        ],
+        "properties": {
+          "flight_number": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string",
+            "default": null
+          },
+          "date_utc": {
+            "type": "string"
+          },
+          "date_unix": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "date_local": {
+            "type": "string"
+          },
+          "date_precision": {
+            "type": "string",
+            "enum": [
+              "half",
+              "quarter",
+              "year",
+              "month",
+              "day",
+              "hour"
+            ]
+          },
+          "static_fire_date_utc": {
+            "type": "string",
+            "default": null
+          },
+          "static_fire_date_unix": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tbd": {
+            "type": "boolean",
+            "default": false
+          },
+          "net": {
+            "type": "boolean",
+            "default": false
+          },
+          "window": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "rocket": {
+            "type": "string",
+            "format": "uuid",
+            "default": null
+          },
+          "success": {
+            "type": "boolean",
+            "default": null
+          },
+          "failures": {
+            "$ref": "#/components/schemas/Failure"
+          },
+          "upcoming": {
+            "type": "boolean",
+            "default": true
+          },
+          "details": {
+            "type": "string",
+            "default": null
+          },
+          "fairings": {
+            "type": "object",
+            "properties": {
+              "reused": {
+                "type": "boolean",
+                "default": null
+              },
+              "recovery_attempt": {
+                "type": "boolean",
+                "default": null
+              },
+              "recovered": {
+                "type": "boolean",
+                "default": null
+              },
+              "ships": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "crew": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "ships": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "capsules": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "payloads": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "launchpad": {
+            "type": "string",
+            "format": "uuid",
+            "default": null
+          },
+          "cores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LaunchCore"
+            }
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "patch": {
+                "type": "object",
+                "properties": {
+                  "small": {
+                    "type": "string",
+                    "default": null
+                  },
+                  "large": {
+                    "type": "string",
+                    "default": null
+                  }
+                }
+              },
+              "reddit": {
+                "type": "object",
+                "properties": {
+                  "campaign": {
+                    "type": "string",
+                    "default": null
+                  },
+                  "launch": {
+                    "type": "string",
+                    "default": null
+                  },
+                  "media": {
+                    "type": "string",
+                    "default": null
+                  },
+                  "recovery": {
+                    "type": "string",
+                    "default": null
+                  }
+                }
+              },
+              "flicker": {
+                "type": "object",
+                "properties": {
+                  "small": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "original": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "presskit": {
+                "type": "string",
+                "default": null
+              },
+              "webcast": {
+                "type": "string",
+                "default": null
+              },
+              "youtube_id": {
+                "type": "string",
+                "default": null
+              },
+              "article": {
+                "type": "string",
+                "default": null
+              },
+              "wikipedia": {
+                "type": "string",
+                "default": null
+              }
+            }
+          },
+          "auto_update": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "Failure": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "altitude": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "Fairing": {
+        "type": "object",
+        "required": [
+          "serial",
+          "status"
+        ],
+        "properties": {
+          "serial": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "enum": [
+              "1.0",
+              "2.0",
+              "2.1"
+            ],
+            "default": null
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "unknown",
+              "expended",
+              "lost",
+              "retired"
+            ]
+          },
+          "reuse_count": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "net_landing_attempts": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "net_landing": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "water_landing_attempts": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "water_landing": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "last_update": {
+            "type": "string",
+            "default": null
+          },
+          "launches": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "LaunchCore": {
+        "type": "object",
+        "properties": {
+          "core": {
+            "type": "string",
+            "format": "uuid",
+            "default": null
+          },
+          "flight": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "gridfins": {
+            "type": "boolean",
+            "default": null
+          },
+          "legs": {
+            "type": "boolean",
+            "default": null
+          },
+          "reused": {
+            "type": "boolean",
+            "default": null
+          },
+          "landing_attempt": {
+            "type": "boolean",
+            "default": null
+          },
+          "landing_success": {
+            "type": "boolean",
+            "default": null
+          },
+          "landing_type": {
+            "type": "string",
+            "default": null
+          },
+          "landpad": {
+            "type": "string",
+            "format": "uuid",
+            "default": null
+          }
+        }
+      },
+      "Launchpad": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": null
+          },
+          "full_name": {
+            "type": "string",
+            "default": null
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "unknown",
+              "retired",
+              "lost",
+              "under construction"
+            ]
+          },
+          "locality": {
+            "type": "string",
+            "default": null
+          },
+          "region": {
+            "type": "string",
+            "default": null
+          },
+          "timezone": {
+            "type": "string",
+            "default": null
+          },
+          "latitude": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "longitude": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "landing_attempts": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "landing_successes": {
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          },
+          "rockets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "launches": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "Payload": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "default": null
+          },
+          "type": {
+            "type": "string",
+            "default": null
+          },
+          "reused": {
+            "type": "boolean",
+            "default": false
+          },
+          "launch": {
+            "type": "string",
+            "format": "uuid",
+            "default": null
+          },
+          "customers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "norad_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "nationalities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "manufacturers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mass_kg": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "mass_lbs": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "orbit": {
+            "type": "string",
+            "default": null
+          },
+          "reference_system": {
+            "type": "string",
+            "default": null
+          },
+          "regime": {
+            "type": "string",
+            "default": null
+          },
+          "longitude": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "semi_major_axis_km": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "eccentricity": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "periapsis_km": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "apoapsis_km": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "inclination_deg": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "period_min": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "lifespan_years": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "epoch": {
+            "type": "string",
+            "default": null
+          },
+          "mean_motion": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "raan": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "arg_of_pericenter": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "mean_anomaly": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "dragon": {
+            "type": "object",
+            "properties": {
+              "capsule": {
+                "type": "string",
+                "format": "uuid",
+                "default": null
+              },
+              "mass_returned_kg": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "mass_returned_lbs": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "flight_time_sec": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "manifest": {
+                "type": "string",
+                "default": null
+              },
+              "water_landing": {
+                "type": "boolean",
+                "default": null
+              },
+              "land_landing": {
+                "type": "boolean",
+                "default": null
+              }
+            }
+          }
+        }
+      },
+      "Roadster": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "launch_date_utc": {
+            "type": "string"
+          },
+          "launch_date_unix": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "launch_mass_kg": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "launch_mass_lbs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "norad_id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "epoch_jd": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orbit_type": {
+            "type": "string"
+          },
+          "apoapsis_au": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "periapsis_au": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "semi_major_axis_au": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eccentricity": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "inclination": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "longitude": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "periapsis_arg": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "period_days": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "speed_kph": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "speed_mph": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "earth_distance_km": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "earth_distance_mi": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "mars_distance_km": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "mars_distance_mi": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "flickr_images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "wikipedia": {
+            "type": "string"
+          },
+          "video": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      },
+      "Rocket": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "stages": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "boosters": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "cost_per_launch": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "success_rate_pct": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "first_flight": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "height": {
+            "$ref": "#/components/schemas/Length"
+          },
+          "diameter": {
+            "$ref": "#/components/schemas/Length"
+          },
+          "mass": {
+            "$ref": "#/components/schemas/Mass"
+          },
+          "payload_weights": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "first_stage": {
+            "type": "object",
+            "properties": {
+              "reusable": {
+                "type": "boolean"
+              },
+              "engines": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "fuel_amount_tons": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "burn_time_sec": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "thrust_sea_level": {
+                "$ref": "#/components/schemas/Force"
+              },
+              "thrust_vacuum": {
+                "$ref": "#/components/schemas/Force"
+              }
+            }
+          },
+          "second_stage": {
+            "type": "object",
+            "properties": {
+              "reusable": {
+                "type": "boolean"
+              },
+              "engines": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "fuel_amount_tons": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "burn_time_sec": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "thrust_sea_level": {
+                "$ref": "#/components/schemas/Force"
+              },
+              "thrust_vacuum": {
+                "$ref": "#/components/schemas/Force"
+              },
+              "payloads": {
+                "type": "object",
+                "properties": {
+                  "option_1": {
+                    "type": "string"
+                  },
+                  "composite_fairing": {
+                    "type": "object",
+                    "properties": {
+                      "height": {
+                        "$ref": "#/components/schemas/Length"
+                      },
+                      "diameter": {
+                        "$ref": "#/components/schemas/Length"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "engines": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "type": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "layout": {
+                "type": "string"
+              },
+              "isp": {
+                "type": "object",
+                "properties": {
+                  "sea_level": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "vacuum": {
+                    "type": "integer",
+                    "format": "int64"
+                  }
+                }
+              },
+              "engine_loss_max": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "propellant_1": {
+                "type": "string"
+              },
+              "propellant_2": {
+                "type": "string"
+              },
+              "thrust_sea_level": {
+                "$ref": "#/components/schemas/Force"
+              },
+              "thrust_vacuum": {
+                "$ref": "#/components/schemas/Force"
+              },
+              "thrust_to_weight": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          },
+          "landing_legs": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "material": {
+                "type": "object"
+              }
+            }
+          },
+          "flickr_images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "wikipedia": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "Force": {
+        "type": "object",
+        "properties": {
+          "kN": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "lbf": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Ship": {
+        "type": "object",
+        "required": [
+          "name",
+          "active"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "legacy_id": {
+            "type": "string",
+            "default": null
+          },
+          "model": {
+            "type": "string",
+            "default": null
+          },
+          "type": {
+            "type": "string",
+            "default": null
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "imo": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "mmsi": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "abs": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "class": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "mass_kg": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "mass_lbs": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "year_built": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "home_port": {
+            "type": "string",
+            "default": null
+          },
+          "status": {
+            "type": "string",
+            "default": null
+          },
+          "speed_kn": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "course_deg": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "latitude": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "longitude": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "last_ais_update": {
+            "type": "string",
+            "default": null
+          },
+          "link": {
+            "type": "string",
+            "default": null
+          },
+          "image": {
+            "type": "string",
+            "default": null
+          },
+          "launches": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "Starlink": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "default": null
+          },
+          "launch": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "longitude": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "latitude": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "height_km": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "velocity_kms": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "spaceTrack": {
+            "type": "object",
+            "properties": {
+              "CCSDS_OMM_VERS": {
+                "type": "string",
+                "default": null
+              },
+              "COMMENT": {
+                "type": "string",
+                "default": null
+              },
+              "CREATION_DATE": {
+                "type": "string",
+                "default": null
+              },
+              "ORIGINATOR": {
+                "type": "string",
+                "default": null
+              },
+              "OBJECT_NAME": {
+                "type": "string",
+                "default": null
+              },
+              "OBJECT_ID": {
+                "type": "string",
+                "default": null
+              },
+              "CENTER_NAME": {
+                "type": "string",
+                "default": null
+              },
+              "REF_FRAME": {
+                "type": "string",
+                "default": null
+              },
+              "TIME_SYSTEM": {
+                "type": "string",
+                "default": null
+              },
+              "MEAN_ELEMENT_THEORY": {
+                "type": "string",
+                "default": null
+              },
+              "EPOCH": {
+                "type": "string",
+                "default": null
+              },
+              "MEAN_MOTION": {
+                "type": "string",
+                "default": null
+              },
+              "ECCENTRICITY": {
+                "type": "string",
+                "default": null
+              },
+              "INCLINATION": {
+                "type": "string",
+                "default": null
+              },
+              "RA_OF_ASC_NODE": {
+                "type": "string",
+                "default": null
+              },
+              "ARG_OF_PERICENTER": {
+                "type": "string",
+                "default": null
+              },
+              "MEAN_ANOMALY": {
+                "type": "string",
+                "default": null
+              },
+              "EPHEMERIS_TYPE": {
+                "type": "string",
+                "default": null
+              },
+              "CLASSIFICATION_TYPE": {
+                "type": "string",
+                "default": null
+              },
+              "NORAD_CAT_ID": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "ELEMENT_SET_NO": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "REV_AT_EPOCH": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "BSTAR": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "MEAN_MOTION_DOT": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "MEAN_MOTION_DDOT": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "SEMIMAJOR_AXIS": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "PERIOD": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "APOAPSIS": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "PERIAPSIS": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "OBJECT_TYPE": {
+                "type": "string",
+                "default": null
+              },
+              "RCS_SIZE": {
+                "type": "string",
+                "default": null
+              },
+              "COUNTRY_CODE": {
+                "type": "string",
+                "default": null
+              },
+              "LAUNCH_DATE": {
+                "type": "string",
+                "default": null
+              },
+              "SITE": {
+                "type": "string",
+                "default": null
+              },
+              "DECAY_DATE": {
+                "type": "string",
+                "default": null
+              },
+              "DECAYED": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "FILE": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "GP_ID": {
+                "type": "integer",
+                "format": "int64",
+                "default": null
+              },
+              "TLE_LINE0": {
+                "type": "string",
+                "default": null
+              },
+              "TLE_LINE1": {
+                "type": "string",
+                "default": null
+              },
+              "TLE_LINE2": {
+                "type": "string",
+                "default": null
+              }
+            }
+          }
+        }
+      },
+      "History": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "default": null
+          },
+          "event_date_utc": {
+            "type": "string",
+            "default": null
+          },
+          "event_date_unix": {
+            "type": "integer",
+            "format": "int64",
+            "default": null
+          },
+          "details": {
+            "type": "string",
+            "default": null
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "article": {
+                "type": "string",
+                "default": null
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
