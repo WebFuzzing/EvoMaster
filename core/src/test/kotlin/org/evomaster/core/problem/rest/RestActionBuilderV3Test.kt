@@ -197,7 +197,7 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testRealWorld() {
-        loadAndAssertActions("/swagger/sut/realworld_app.json", 11)
+        loadAndAssertActions("/swagger/sut/realworld_app.json", 19)
     }
 
     @Test
