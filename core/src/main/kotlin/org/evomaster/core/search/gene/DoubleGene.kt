@@ -38,31 +38,13 @@ class DoubleGene(name: String,
     override fun copyContent() = DoubleGene(name, value, min, max, precision, scale)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-        var rand = randomness.nextDouble()
-        if (isRangeSpecified() && ((rand < (min ?: Double.MIN_VALUE)) || (rand > (max ?: Double.MAX_VALUE)))){
-            rand = randomness.nextDouble(min?:Double.MIN_VALUE, max?:Double.MAX_VALUE)
-        }
-        value = getFormattedValue(rand)
-
+        value = NumberMutator.randomizeDouble(min, max, scale, randomness)
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
-            if (additionalGeneMutationInfo.hasHistory()){
-                try {
-                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                            additionalGeneMutationInfo,
-                            this,
-                            allGenes
-                    )
-                    return true
-                }catch (e : DifferentGeneInHistory){}
-
-            }
-        }
+        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        if (mutated) return true
 
         value = mutateFloatingPointNumber(randomness, apc)
 

@@ -163,4 +163,8 @@ class IntegerGene(
         return this.max > this.min
     }
 
+    override fun getMaximum(): Int = max
+
+    override fun getMinimum(): Int = min
+
 }

@@ -41,4 +41,19 @@ abstract class NumberGene<T : Number>(name: String,
         return true
     }
 
+    override fun isMutable(): Boolean {
+        // it is not mutable if max equals to min
+        return min == null || max == null || max != min
+    }
+
+    /**
+     * @return Minimum value of the gene
+     */
+    abstract fun getMinimum() : T
+
+    /**
+     * @return Maximum value of the gene
+     */
+    abstract fun getMaximum() : T
+
 }
