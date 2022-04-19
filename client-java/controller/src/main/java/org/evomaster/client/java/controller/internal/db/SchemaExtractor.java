@@ -399,7 +399,7 @@ public class SchemaExtractor {
                         therefore, here, we only set precision when type is DECIMAL
                      */
                     if (columnDto.type.equals("DECIMAL"))
-                        columnDto.precision = columns.getInt("DECIMAL_DIGITS");
+                        columnDto.scale = columns.getInt("DECIMAL_DIGITS");
                     break;
                 case POSTGRES:
                     columnDto.type = typeAsString;

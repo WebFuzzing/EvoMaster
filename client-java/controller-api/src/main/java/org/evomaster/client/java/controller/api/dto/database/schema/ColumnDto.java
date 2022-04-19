@@ -24,9 +24,9 @@ public class ColumnDto {
 
     public boolean isEnumeratedType = false;
     /**
-     * precision of number
-     * a negative number means that the precision is unspecified or inapplicable
+     * scale of number
+     * a negative number means that the scale is unspecified or inapplicable
      */
-    public int precision = -1;
+    public int scale = -1;
 
 }

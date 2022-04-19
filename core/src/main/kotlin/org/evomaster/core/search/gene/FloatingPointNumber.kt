@@ -2,8 +2,9 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.utils.NumberCalculationUtil
 import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
-import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecision
+import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.min
@@ -17,7 +18,11 @@ abstract class FloatingPointNumber<T:Number>(
     /**
      * specified precision
      */
-    val precision: Int?
+    val precision: Int?,
+    /**
+     * specified scale
+     */
+    val scale: Int?
 ) : NumberGene<T>(name, value, min, max){
 
 
@@ -105,8 +110,8 @@ abstract class FloatingPointNumber<T:Number>(
             if (precision == null) return null
             val mdelta = 1.0/((10.0).pow(precision))
             return when (value) {
-                is Double -> valueWithPrecision(mdelta, precision).toDouble() as N
-                is Float -> valueWithPrecision(mdelta, precision).toFloat() as N
+                is Double -> valueWithPrecisionAndScale(mdelta, precision).toDouble() as N
+                is Float -> valueWithPrecisionAndScale(mdelta, precision).toFloat() as N
                 else -> throw Exception("valueToFormat must be Double or Float, but it is ${value::class.java.simpleName}")
             }
         }
@@ -118,8 +123,8 @@ abstract class FloatingPointNumber<T:Number>(
             if (precision == null)
                 return valueToFormat
             return when (valueToFormat) {
-                is Double -> valueWithPrecision(valueToFormat.toDouble(), precision).toDouble() as N
-                is Float -> valueWithPrecision(valueToFormat.toDouble(), precision).toFloat() as N
+                is Double -> valueWithPrecisionAndScale(valueToFormat.toDouble(), precision).toDouble() as N
+                is Float -> valueWithPrecisionAndScale(valueToFormat.toDouble(), precision).toFloat() as N
                 else -> throw Exception("valueToFormat must be Double or Float, but it is ${valueToFormat::class.java.simpleName}")
             }
         }
@@ -147,22 +152,22 @@ abstract class FloatingPointNumber<T:Number>(
      * mutate Floating Point Number in a standard way
      */
     fun mutateFloatingPointNumber(randomness: Randomness, apc: AdaptiveParameterControl): T{
-        return Companion.mutateFloatingPointNumber(randomness, null, maxRange = null, apc, value, smin = getMinimum(), smax = getMaximum(), precision=precision)
+        return Companion.mutateFloatingPointNumber(randomness, null, maxRange = null, apc, value, smin = getMinimum(), smax = getMaximum(), precision=scale)
     }
 
     /**
-     * @return formatted [value] based on [precision]
+     * @return formatted [value] based on [scale]
      */
     fun getFormattedValue(valueToFormat: T?=null) : T{
-        return Companion.getFormattedValue(valueToFormat?:value, precision)
+        return Companion.getFormattedValue(valueToFormat?:value, scale)
     }
 
     /**
      * @return minimal changes of the [value].
-     * this is typlically used when [precision] is specified
+     * this is typlically used when [scale] is specified
      */
     fun getMinimalDelta(): T?{
-        return Companion.getMinimalDelta(precision, value)
+        return Companion.getMinimalDelta(scale, value)
     }
 
     /**
@@ -181,6 +186,6 @@ abstract class FloatingPointNumber<T:Number>(
      *      2) precision if it is specified
      */
     override fun isValid(): Boolean {
-        return super.isValid() && (precision == null || !value.toString().contains(".") || value.toString().split(".")[1].length <= precision)
+        return super.isValid() && (scale == null || !value.toString().contains(".") || value.toString().split(".")[1].length <= scale)
     }
 }

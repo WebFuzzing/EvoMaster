@@ -27,7 +27,7 @@ object ColumnFactory {
             similarToPatterns = similarToPatternsForColumn,
             likePatterns = likePatternsForColumn,
             databaseType = databaseType,
-            precision = columnDto.precision
+            scale = columnDto.scale
         )
     }
 

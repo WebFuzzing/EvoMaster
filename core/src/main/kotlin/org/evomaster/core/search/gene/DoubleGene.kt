@@ -9,6 +9,7 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -20,14 +21,21 @@ class DoubleGene(name: String,
                  /**
                   * specified precision
                   */
-                 precision: Int? = null
-) : FloatingPointNumber<Double>(name, value, min, max, precision) {
+                 precision: Int? = null,
+                 /**
+                  * specified scale
+                  */
+                 scale: Int? = null
+) : FloatingPointNumber<Double>(name, value,
+    min = if (precision != null && scale != null && min == null) NumberCalculationUtil.boundaryDecimal(precision, scale).first else min,
+    max = if (precision != null && scale != null && max == null) NumberCalculationUtil.boundaryDecimal(precision, scale).second else max,
+    precision, scale) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(DoubleGene::class.java)
     }
 
-    override fun copyContent() = DoubleGene(name, value, min, max, precision)
+    override fun copyContent() = DoubleGene(name, value, min, max, precision, scale)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 

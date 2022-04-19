@@ -543,20 +543,21 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
-            if (column.precision >= 0) {
+            if (column.scale >= 0) {
                 /*
                     set precision and boundary for DECIMAL
                     https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html
                  */
-                val range = NumberCalculationUtil.boundaryDecimal(column.size, column.precision)
+                val range = NumberCalculationUtil.boundaryDecimal(column.size, column.scale)
                 FloatGene(
                     column.name,
                     min = if (column.isUnsigned) 0.0f else range.first.toFloat(),
                     max = range.second.toFloat(),
-                    precision = column.precision
+                    precision = column.size,
+                    scale = column.scale
                 )
             } else
-                FloatGene(column.name)
+                FloatGene(column.name, precision = column.size)
         }
     }
 
@@ -568,11 +569,13 @@ class DbActionGeneBuilder {
             val MONEY_COLUMN_PRECISION = 2
             val MONEY_COLUMN_SIZE = 8
             val range = NumberCalculationUtil.boundaryDecimal(MONEY_COLUMN_SIZE, MONEY_COLUMN_PRECISION)
+            // TODO need to check with the author about the update on setup of precision and scale as below
             FloatGene(
                 column.name,
                 min = range.first.toFloat(),
                 max = range.second.toFloat(),
-                precision = MONEY_COLUMN_PRECISION
+                precision = MONEY_COLUMN_SIZE,
+                scale = MONEY_COLUMN_PRECISION
             )
         }
     }

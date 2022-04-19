@@ -39,19 +39,25 @@ object NumberCalculationUtil {
         }
     }
 
-
-    fun boundaryDecimal(size: Int, precision: Int): Pair<Double, Double>{
-        val value = valueWithPrecision(10.0.pow(size-precision), precision)
-        val p = valueWithPrecision(1.0/(10.0.pow(precision)), precision)
+    /**
+     * get boundary of the decimal which has specified precision and scale
+     * eg, for Decimal (3,2), the boundary is [-99.9, 99.9]
+     */
+    fun boundaryDecimal(size: Int, scale: Int): Pair<Double, Double>{
+        val value = valueWithPrecisionAndScale(10.0.pow(size-scale), scale)
+        val p = valueWithPrecisionAndScale(1.0/(10.0.pow(scale)), scale)
         val boundary = value.subtract(p).toDouble()
-        return valueWithPrecision(boundary * -1, precision).toDouble() to valueWithPrecision(boundary * 1, precision).toDouble()
+        return valueWithPrecisionAndScale(boundary * -1, scale).toDouble() to valueWithPrecisionAndScale(boundary * 1, scale).toDouble()
     }
 
-    fun valueWithPrecision(value: Double, precision: Int) : BigDecimal {
+    /**
+     * @return decimal for double with the specified scale
+     */
+    fun valueWithPrecisionAndScale(value: Double, scale: Int) : BigDecimal {
         return try {
-            BigDecimal(value).setScale(precision, RoundingMode.HALF_UP)
+            BigDecimal(value).setScale(scale, RoundingMode.HALF_UP)
         }catch (e: NumberFormatException){
-            log.warn("fail to get value ($value) with the specified prevision ($precision)")
+            log.warn("fail to get value ($value) with the specified prevision ($scale)")
             throw e
         }
     }

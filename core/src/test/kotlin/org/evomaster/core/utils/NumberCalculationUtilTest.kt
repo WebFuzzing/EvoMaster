@@ -7,7 +7,7 @@ class NumberCalculationUtilTest {
 
     @Test
     fun testPrecisionFormat(){
-        assertEquals(0.01, NumberCalculationUtil.valueWithPrecision(0.0100002, 2).toDouble())
+        assertEquals(0.01, NumberCalculationUtil.valueWithPrecisionAndScale(0.0100002, 2).toDouble())
     }
 
     @Test
