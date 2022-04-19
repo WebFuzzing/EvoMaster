@@ -604,3 +604,21 @@ test("test squareBrackets with null found", async () => {
     expect(k).toBe(undefined);
     expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_false")).toBe(1);
 })
+
+
+test("test string length", async () => {
+    expect(ET.getNumberOfObjectives(ON.METHOD_REPLACEMENT)).toBe(0);
+    let f;
+    const code = dedent`
+        f = function foo(x){
+            return x.length;
+        }
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    let k = f("foo");
+    expect(k).toBe(3);
+
+})
