@@ -634,13 +634,13 @@ object GraphQLActionBuilder {
                                 interfaceBaseOptObjGene
                             )
                         )
-
+                        history.removeLast()
                         //will return a single optional object gene with optional basic interface fields and optional additional interface fields
                         OptionalGene(
                             element.fieldName + GqlConst.INTERFACE_TAG,
                             ObjectGene(element.fieldName + GqlConst.INTERFACE_TAG, interfaceAdditionalOptObjGene)
                         )
-                    } else {
+                    } else {history.removeLast()
                         OptionalGene(element.fieldName, LimitObjectGene(element.fieldName))
                     }
                 } else {
