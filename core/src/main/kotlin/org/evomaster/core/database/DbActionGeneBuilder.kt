@@ -294,6 +294,7 @@ class DbActionGeneBuilder {
                 TODO might need to use ULong to handle unsigned long
                 https://dev.mysql.com/doc/refman/8.0/en/integer-types.html
 
+                Man: TODO need to check whether to update this with BigIntegerGene
              */
             val min : Long? = if (column.isUnsigned) 0 else null
             LongGene(column.name, min = min)
@@ -543,6 +544,9 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
+            /*
+                Man: TODO check whether to update it with BigDecimalGene
+             */
             if (column.scale >= 0) {
                 /*
                     set precision and boundary for DECIMAL
@@ -569,7 +573,10 @@ class DbActionGeneBuilder {
             val MONEY_COLUMN_PRECISION = 2
             val MONEY_COLUMN_SIZE = 8
             val range = NumberCalculationUtil.boundaryDecimal(MONEY_COLUMN_SIZE, MONEY_COLUMN_PRECISION)
-            // TODO need to check with the author about the update on setup of precision and scale as below
+            /*
+                Man: TODO check whether to update it with BigDecimalGene
+                need to check with the author about the update on setup of precision and scale as below
+             */
             FloatGene(
                 column.name,
                 min = range.first.toFloat(),
