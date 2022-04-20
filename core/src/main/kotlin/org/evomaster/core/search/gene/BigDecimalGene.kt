@@ -37,7 +37,7 @@ class BigDecimalGene(
     /**
      * indicate whether to employ float pointing to mutate the gene
      */
-    var floatingPointMode : Boolean,
+    var floatingPointMode : Boolean = true,
 
     /**
      * as jdk,

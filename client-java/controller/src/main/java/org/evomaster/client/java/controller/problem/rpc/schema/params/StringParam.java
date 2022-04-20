@@ -121,9 +121,9 @@ public class StringParam extends NamedTypedValue<StringType, String> {
         if (minSize != null)
             dto.minSize = Long.valueOf(minSize);
         if (min != null)
-            dto.minValue = min;
+            dto.minValue = min.toString();
         if (max != null)
-            dto.maxValue = max;
+            dto.maxValue = max.toString();
         if (pattern != null)
             dto.pattern = pattern;
         return dto;

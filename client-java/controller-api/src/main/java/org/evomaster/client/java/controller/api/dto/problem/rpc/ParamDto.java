@@ -50,12 +50,24 @@ public class ParamDto {
     /**
      * a min value of the param, eg, Numeric
      */
-    public Long minValue;
+    public String minValue;
 
     /**
      * a max value of the param, eg, Numeric
      */
-    public Long maxValue;
+    public String maxValue;
+
+    /**
+     * precision
+     * applicable to bigdecimal, double, float
+     */
+    public Integer precision;
+
+    /**
+     * scale
+     * applicable to bigdecimal, double, float
+     */
+    public Integer scale;
 
     /**
      * pattern specified with regex exp

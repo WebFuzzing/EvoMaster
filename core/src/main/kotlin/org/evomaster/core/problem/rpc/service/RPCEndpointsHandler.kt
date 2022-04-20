@@ -29,6 +29,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.SeededGeneImp
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 
 /**
  * this class is used to manage formulated individual with schemas of SUT
@@ -605,9 +606,9 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT -> IntegerGene(param.name, min = param.minValue?.toInt()?: Int.MIN_VALUE, max = param.maxValue?.toInt()?:Int.MAX_VALUE)
             RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> BooleanGene(param.name)
             RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR -> StringGene(param.name, value="", maxLength = 1, minLength = param.minSize?.toInt()?:0)
-            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> DoubleGene(param.name, min = param.minValue?.toDouble(), max = param.maxValue?.toDouble())
-            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> FloatGene(param.name, min = param.minValue?.toFloat(), max = param.maxValue?.toFloat())
-            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name, min = param.minValue, max = param.maxValue)
+            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> DoubleGene(param.name, min = param.minValue?.toDouble(), max = param.maxValue?.toDouble(), precision = param.precision, scale = param.scale)
+            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> FloatGene(param.name, min = param.minValue?.toFloat(), max = param.maxValue?.toFloat(), precision = param.precision, scale = param.scale)
+            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name, min = param.minValue?.toLongOrNull(), max = param.maxValue?.toLongOrNull())
             RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT -> IntegerGene(param.name, min = param.minValue?.toInt()?:Short.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Short.MAX_VALUE.toInt())
             RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> IntegerGene(param.name, min = param.minValue?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Byte.MAX_VALUE.toInt())
             RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> {
@@ -623,7 +624,7 @@ class RPCEndpointsHandler {
                     strGene = StringGene(param.name).apply {
                         if (param.minValue != null || param.maxValue != null){
                             // add specification based on constraint info
-                            specializationGenes.add(LongGene(param.name, min=param.minValue, max = param.maxValue))
+                            specializationGenes.add(LongGene(param.name, min=param.minValue?.toLongOrNull(), max = param.maxValue?.toLongOrNull()))
                         }
                     }
                 }
@@ -637,7 +638,8 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> CycleObjectGene(param.name)
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
-            RPCSupportedDataType.BIGDECIMAL, RPCSupportedDataType.BIGINTEGER -> TODO()
+            RPCSupportedDataType.BIGINTEGER -> BigIntegerGene(param.name, min = param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull())
+            RPCSupportedDataType.BIGDECIMAL -> BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(), precision = param.precision, scale = param.scale)
         }
 
         if (param.candidates != null){
