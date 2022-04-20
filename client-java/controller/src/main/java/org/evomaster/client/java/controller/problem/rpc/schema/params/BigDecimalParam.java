@@ -20,10 +20,6 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
 
     private BigDecimal max;
 
-    private Integer precision;
-
-    private Integer scale;
-
     public BigDecimalParam(String name, BigDecimalType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
     }
@@ -48,8 +44,6 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         if (copy instanceof BigDecimalParam){
             ((BigDecimalParam) copy).setMax(max);
             ((BigDecimalParam) copy).setMin(min);
-            ((BigDecimalParam) copy).setPrecision(precision);
-            ((BigDecimalParam) copy).setScale(scale);
         }
     }
 
@@ -57,15 +51,15 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     public void setValueBasedOnDto(ParamDto dto) {
         MathContext mc = null;
         BigDecimal bd = null;
-        if (precision == null)
+        if (getPrecision() == null)
             bd = new BigDecimal(dto.stringValue);
         else {
-            mc = new MathContext(precision);
+            mc = new MathContext(getPrecision());
             bd = new BigDecimal(dto.stringValue, mc);
         }
 
-        if (scale != null)
-            bd = bd.setScale(scale, RoundingMode.HALF_UP);
+        if (getScale() != null)
+            bd = bd.setScale(getScale(), RoundingMode.HALF_UP);
 
         setValue(bd);
     }
@@ -88,14 +82,14 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         addCode(codes, "{", indent);
         String mcVar = variableName + "_mc";
         String consParam = getValueAsJavaString();
-        if (precision != null){
+        if (getPrecision() != null){
             addCode(codes, oneLineInstance(true, true, MathContext.class.getName(), mcVar,
-                    newObjectConsParams(MathContext.class.getName(), precision.toString())), indent+1);
+                    newObjectConsParams(MathContext.class.getName(), getPrecision().toString())), indent+1);
             consParam += ", "+mcVar;
         }
         addCode(codes, setInstance(variableName, newObjectConsParams(typeName, consParam)), indent+1);
-        if (scale != null){
-            addCode(codes, oneLineSetterInstance("setScale", null, variableName, scale+", "+RoundingMode.class.getName()+".HALF_UP"), indent+1);
+        if (getScale() != null){
+            addCode(codes, oneLineSetterInstance("setScale", null, variableName, getScale()+", "+RoundingMode.class.getName()+".HALF_UP"), indent+1);
         }
 
         addCode(codes, "}", indent);
@@ -123,8 +117,6 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
             dto.maxValue = max.toString();
         if (min != null)
             dto.minValue = min.toString();
-        dto.precision = precision;
-        dto.scale = scale;
         return dto;
     }
 
@@ -151,19 +143,5 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         this.max = max;
     }
 
-    public Integer getPrecision() {
-        return precision;
-    }
 
-    public void setPrecision(Integer precision) {
-        this.precision = precision;
-    }
-
-    public Integer getScale() {
-        return scale;
-    }
-
-    public void setScale(Integer scale) {
-        this.scale = scale;
-    }
 }

@@ -38,6 +38,7 @@ public class JavaXConstraintHandler {
             case MAX: solved = handleMax(namedTypedValue, annotation, supportType); break;
             case DECIMAL_MIN:
             case MIN: solved = handleMin(namedTypedValue, annotation, supportType); break;
+            case DIGITS: solved = handleDigits(namedTypedValue, annotation,supportType); break;
             default:
                 SimpleLogger.error("ERROR: Not handle "+ supportType.annotation);
         }
@@ -237,5 +238,22 @@ public class JavaXConstraintHandler {
         }
 
         return true;
+    }
+
+    /**
+     * from https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Digits.html
+     *
+     * The annotated element must be a number within accepted range Supported types are:
+     * BigDecimal
+     * BigInteger
+     * CharSequence
+     * byte, short, int, long, and their respective wrapper types
+     * null elements are considered valid.
+     *
+     * @return
+     */
+    private static boolean handleDigits(NamedTypedValue namedTypedValue, Annotation annotation, JavaXConstraintSupportType supportType){
+        //TODO
+        return false;
     }
 }

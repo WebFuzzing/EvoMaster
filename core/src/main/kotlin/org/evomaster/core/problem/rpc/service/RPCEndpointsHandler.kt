@@ -178,7 +178,7 @@ class RPCEndpointsHandler {
         val noSeed = action.copy() as RPCCallAction
         handleActionNoSeededCandidates(noSeed)
         results.add(noSeed)
-        return results;
+        return results
     }
 
     /**

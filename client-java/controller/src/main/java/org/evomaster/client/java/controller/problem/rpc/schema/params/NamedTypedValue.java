@@ -37,9 +37,19 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     private boolean isNullable = true;
 
     /**
-     * a schema for collecting if the param is accessaible
+     * a schema for collecting if the param is accessible
      */
     public final AccessibleSchema accessibleSchema;
+
+    /**
+     * constraints with precision if applicable
+     */
+    private Integer precision;
+
+    /**
+     * constraints with scale if applicable
+     */
+    private Integer scale;
 
 
     public boolean isHasDependentCandidates() {
@@ -127,6 +137,9 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
             dto.candidates = candidates.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         if (candidateReferences!=null)
             dto.candidateReferences = new ArrayList<>(candidateReferences);
+
+        dto.precision = precision;
+        dto.scale = scale;
         return dto;
     }
 
@@ -145,6 +158,8 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
             copy.setCandidates(getCandidates().stream().map(c-> c.copyStructureWithProperties()).collect(Collectors.toList()));
         if (getCandidateReferences()!= null && !getCandidateReferences().isEmpty())
             copy.setCandidateReferences(new ArrayList<>(getCandidateReferences()));
+        copy.setPrecision(precision);
+        copy.setScale(scale);
 
     }
 
@@ -241,4 +256,21 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * eg, float 4.2 could be 4.2f
      */
     public abstract String getValueAsJavaString();
+
+
+    public Integer getPrecision() {
+        return precision;
+    }
+
+    public void setPrecision(Integer precision) {
+        this.precision = precision;
+    }
+
+    public Integer getScale() {
+        return scale;
+    }
+
+    public void setScale(Integer scale) {
+        this.scale = scale;
+    }
 }
