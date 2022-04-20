@@ -657,6 +657,12 @@ class StringGene(
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId.toString()
             }
+            // might check toEngineeringString() and toPlainString()
+            is BigDecimalGene -> value = gene.value.toString()
+            is BigIntegerGene -> value = gene.value.toString()
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
+            }
             else -> {
                 //return false
                 //Man: with taint analysis, g might be any other type.

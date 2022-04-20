@@ -132,6 +132,8 @@ class IntegerGene(
             is FloatGene -> value = gene.value.toInt()
             is DoubleGene -> value = gene.value.toInt()
             is LongGene -> value = gene.value.toInt()
+            is BigDecimalGene -> value = try { gene.value.toInt() } catch (e: Exception) { return false }
+            is BigIntegerGene -> value = try { gene.value.toInt() } catch (e: Exception) { return false }
             is StringGene -> {
                 value = gene.value.toIntOrNull() ?: return false
             }
@@ -143,6 +145,9 @@ class IntegerGene(
             }
             is SqlPrimaryKeyGene -> {
                 value = gene.uniqueId.toInt()
+            }
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind Integer with ${gene::class.java.simpleName}")

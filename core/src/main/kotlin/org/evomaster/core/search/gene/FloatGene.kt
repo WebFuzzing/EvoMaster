@@ -97,6 +97,8 @@ class FloatGene(name: String,
             is DoubleGene -> value = gene.value.toFloat()
             is IntegerGene -> value = gene.value.toFloat()
             is LongGene -> value = gene.value.toFloat()
+            is BigDecimalGene -> value = try { gene.value.toFloat() } catch (e: Exception) { return false }
+            is BigIntegerGene -> value = try { gene.value.toFloat() } catch (e: Exception) { return false }
             is StringGene -> {
                 value = gene.value.toFloatOrNull() ?: return false
             }
@@ -108,6 +110,9 @@ class FloatGene(name: String,
             }
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId.toFloat()
+            }
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "Do not support to bind float gene with the type: ${gene::class.java.simpleName}")

@@ -77,6 +77,8 @@ class DoubleGene(name: String,
             is FloatGene -> value = gene.value.toDouble()
             is IntegerGene -> value = gene.value.toDouble()
             is LongGene -> value = gene.value.toDouble()
+            is BigDecimalGene -> value = try { gene.value.toDouble() } catch (e: Exception) { return false }
+            is BigIntegerGene -> value = try { gene.value.toDouble() } catch (e: Exception) { return false }
             is StringGene -> {
                 value = gene.value.toDoubleOrNull() ?: return false
             }
@@ -88,6 +90,9 @@ class DoubleGene(name: String,
             }
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId.toDouble()
+            }
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
             } else -> {
                 LoggingUtil.uniqueWarn(log, "Do not support to bind double gene with the type: ${gene::class.java.simpleName}")
                 return false

@@ -179,6 +179,7 @@ class BigDecimalGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         val bd = when(gene){
+            is SeededGene<*> -> return this.bindValueBasedOn(gene.getPhenotype())
             is LongGene -> BigDecimal(gene.value)
             is FloatGene -> BigDecimal(gene.value.toDouble())
             is IntegerGene -> BigDecimal(gene.value)

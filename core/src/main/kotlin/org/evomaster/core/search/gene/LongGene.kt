@@ -69,6 +69,8 @@ class LongGene(
             is FloatGene -> value = gene.value.toLong()
             is IntegerGene -> value = gene.value.toLong()
             is DoubleGene -> value = gene.value.toLong()
+            is BigDecimalGene -> value = try { gene.value.toLong() } catch (e: Exception) { return false }
+            is BigIntegerGene -> value = try { gene.value.toLong() } catch (e: Exception) { return false }
             is StringGene -> {
                 value = gene.value.toLongOrNull() ?: return false
             }
@@ -80,6 +82,9 @@ class LongGene(
             }
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId
+            }
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
             }
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
