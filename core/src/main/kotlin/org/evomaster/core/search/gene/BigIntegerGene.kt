@@ -13,6 +13,13 @@ import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.math.BigInteger
 
+/**
+ * gene represents bigInteger
+ *
+ * note that
+ * currently the mutation of biginteger is limited to long mutation
+ * however, biginteger could be mutated with `signum` and `mag`
+ */
 class BigIntegerGene(
     name: String,
     value: BigInteger = BigInteger.ZERO,
@@ -31,26 +38,12 @@ class BigIntegerGene(
 
     override fun copyContent(): BigIntegerGene = BigIntegerGene(name, value, min, max)
 
+
     override fun compareTo(other: ComparableGene): Int {
-        if (other is BigIntegerGene)
-            return value.compareTo(other.value)
-
-        val decimal =  when(other){
-            is IntegerGene -> BigDecimal(other.value)
-            is LongGene -> BigDecimal(other.value)
-
-            /*
-                Man: TODO, check: shall enable comparison with floating point value?
-
-                here ignore precision and scale since those would be converted into big integer
-             */
-            is BigDecimalGene -> other.value
-            is DoubleGene -> BigDecimal(other.value)
-            is FloatGene -> BigDecimal(other.value.toDouble())
-            else -> throw IllegalStateException("Not support compareTo with other type of genes ${other::class.java.simpleName}")
+        if (other !is BigIntegerGene) {
+            throw RuntimeException("Expected BigIntegerGene. Cannot compare to ${other::javaClass} instance")
         }
-
-        return value.compareTo(decimal.toBigInteger())
+        return value.compareTo(other.value)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -89,11 +82,7 @@ class BigIntegerGene(
         if (other !is BigIntegerGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        /*
-            BigInteger is immutable,
-            here, it might be fine to just refer to value
-            otherwise, other.value.add(BigInteger.ZERO)
-         */
+        //BigInteger is immutable, just refer to the value of other gene
         this.value = other.value
     }
 
@@ -115,10 +104,11 @@ class BigIntegerGene(
             /*
                 Man: TODO, it might need to handle radix for string, base64String
              */
-            is StringGene -> gene.value.toLongOrNull()?.let { setValueWithLong(it) }?: return false
-            is Base64StringGene -> gene.data.value.toLongOrNull()?.let { setValueWithLong(it) }?: return false
-            is ImmutableDataHolderGene -> gene.value.toLongOrNull()?.let { setValueWithLong(it) }?: return false
+            is StringGene -> gene.value.toBigIntegerOrNull()?: return false
+            is Base64StringGene -> gene.data.value.toBigIntegerOrNull()?: return false
+            is ImmutableDataHolderGene -> gene.value.toBigIntegerOrNull()?: return false
             is SqlPrimaryKeyGene -> setValueWithLong(gene.uniqueId)
+            is BigDecimalGene -> setValueWithDecimal(gene.value)
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
                 return false
@@ -148,6 +138,10 @@ class BigIntegerGene(
         return true
     }
 
+    /**
+     * note that for biginteger
+     * if the value exceeds the range manipulated by search, we consider it immutable for the moment
+     */
     override fun isMutable(): Boolean {
         return super.isMutable() && checkValueRangeInSearch()
     }

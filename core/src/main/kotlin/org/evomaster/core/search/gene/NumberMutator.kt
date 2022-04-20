@@ -28,7 +28,7 @@ object NumberMutator {
      * mutate double/float number
      */
     fun <N: Number> mutateFloatingPointNumber(randomness: Randomness,
-                                              sdirection: Boolean?,
+                                              sdirection: Boolean? = null,
                                               maxRange: Long? = null,
                                               apc: AdaptiveParameterControl,
                                               value: N, smin: N, smax: N, scale: Int?): N{
