@@ -330,21 +330,11 @@ object GeneUtils {
         loop@ while (p != null) {
             when (p) {
                 is OptionalGene -> {
-                    if (p.parent is TupleGene){
-                        p.forbidSelection()//for the opt
-                        (p.parent as TupleGene).isSelected=false//for the tuple
-                        break@loop
-                    }else{
-
                     p.forbidSelection()
-                    break@loop}
+                    break@loop
                 }
                 is ArrayGene<*> -> {
                     p.forceToOnlyEmpty()
-                    break@loop
-                }
-                is TupleGene ->{
-                    p.isSelected=false
                     break@loop
                 }
                 else -> p = p.parent
@@ -473,8 +463,8 @@ object GeneUtils {
         val selected = obj.fields.filter {
             ((it is OptionalGene && it.isActive) ||
                     (it is BooleanGene && it.value) ||
-                    (it is OptionalGene && it.gene is TupleGene && it.gene.isSelected && isLastSelected(it.gene)) ||
-                    (it is TupleGene && it.isSelected && isLastSelected(it))
+                    (it is OptionalGene && it.gene is TupleGene && isLastSelected(it.gene)) ||
+                    (it is TupleGene && isLastSelected(it))
                     )
         }
 
@@ -493,7 +483,7 @@ object GeneUtils {
             //must select at least one
             val candidates = obj.fields.filter {
                 (it is OptionalGene && it.selectable) || it is BooleanGene ||
-                        (it is TupleGene && it.isSelected && isLastCandidate(it))
+                        (it is TupleGene && isLastCandidate(it))
             }
             assert(candidates.isNotEmpty())
 

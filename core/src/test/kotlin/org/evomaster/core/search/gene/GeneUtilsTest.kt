@@ -250,63 +250,7 @@ internal class GeneUtilsTest {
 
         assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
     }
-
-    @Test
-    fun testRepairBooleanSectionTupleOptionalCycle() {
-        //to see if some checks there are missing
-        val cyc = CycleObjectGene("OptCycle")
-        val opt = OptionalGene("OptCycle", cyc, isActive = false)
-        val obj = ObjectGene(
-            "foo", listOf(
-                BooleanGene("a", false),
-                (TupleGene(
-                    "tupleGene", mutableListOf(
-                        BooleanGene("boolean", true),
-                        opt,
-
-                        )
-                ))
-            )
-        )
-
-        GeneUtils.tryToPreventSelection(cyc)
-        GeneUtils.repairBooleanSelection(obj)
-        assertTrue(obj.fields.any { it is TupleGene && !it.isSelected })
-    }
-
-
-    @Test
-    fun testTryToPreventSelectionTuple() {
-       /* //this case will never happen due to the boolean selection, but it is to see: tryToPreventSelection
-        val cyc= CycleObjectGene("OptCycle")
-        val tuple = (TupleGene(
-            "tupleGene", mutableListOf(
-                BooleanGene("boolean", true),
-                cyc
-            )
-        )
-                )*/
-        //the tim case
-        val cyc= CycleObjectGene("OptCycle")
-        val opt = OptionalGene("OptCycle",cyc, isActive = true)
-        val obj = ObjectGene(
-            "foo", listOf(
-                BooleanGene("a", false),
-                (TupleGene(
-                    "tupleGene", mutableListOf(
-                        BooleanGene("boolean", true),
-                        opt,
-
-                        ),isSelected = true
-                ))
-            )
-        )
-
-        GeneUtils.tryToPreventSelection(cyc )
-
-        assertTrue(obj.fields.any { it is TupleGene && !it.isSelected })
-
-    }
+    
 
     @Test
     fun testRepairInPetclinic() {

@@ -38,8 +38,6 @@ class TupleGene(
      */
     val lastElementTreatedSpecially: Boolean = false,
 
-    var isSelected: Boolean = true
-
 ) : Gene(name, elements) {
 
     init {
