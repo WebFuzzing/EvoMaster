@@ -106,7 +106,7 @@ class DoubleGene(name: String,
     }
 
     override fun getMinimum(): Double {
-        return min?: Double.MIN_VALUE
+        return min?: -Double.MAX_VALUE
     }
 
     override fun compareTo(other: ComparableGene): Int {

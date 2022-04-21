@@ -123,7 +123,7 @@ class FloatGene(name: String,
     }
 
     override fun getMinimum(): Float {
-        return min?:Float.MIN_VALUE
+        return min?: -Float.MAX_VALUE
     }
 
     override fun getMaximum(): Float {

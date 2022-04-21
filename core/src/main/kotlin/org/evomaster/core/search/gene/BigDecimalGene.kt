@@ -72,16 +72,19 @@ class BigDecimalGene(
             if (scale < 0)
                 throw IllegalArgumentException("invalid scale: a negative number for the scale is not allowed")
 
-            //if [scale] is specified, floating mode is immutable
-            forbidFloatingPointModeMutable()
             floatingPointMode = scale > 0
         }
+
+        // format value
+        setValueWithDecimal(value, precision, scale)
     }
 
     /**
      * whether to allow search to change [floatingPointMode]
+     *
+     * if [scale] is specified, floating mode is immutable
      * */
-    var isFloatingPointMutable : Boolean = true
+    var isFloatingPointMutable : Boolean = scale == null
         private set
 
     fun forbidFloatingPointModeMutable(){
@@ -199,11 +202,11 @@ class BigDecimalGene(
     }
 
     fun setValueWithDouble(doubleValue: Double){
-        setValueWithDecimal(BigDecimal(doubleValue), precision, scale)
+        setValueWithDecimal(BigDecimal(doubleValue.toString()), precision, scale)
     }
 
     fun setValueWithLong(longValue: Long){
-        setValueWithDecimal(BigDecimal(longValue), precision, scale)
+        setValueWithDecimal(BigDecimal(longValue.toString()), precision, scale)
     }
 
     private fun getRoundingMode() = DEFAULT_ROUNDING_MODE
@@ -220,7 +223,7 @@ class BigDecimalGene(
     }
 
     private fun getMinUsedInSearch() : Double {
-        if (min == null || BigDecimal.valueOf(Double.MIN_VALUE) >= min) return Double.MIN_VALUE
+        if (min == null || BigDecimal.valueOf(-Double.MAX_VALUE) >= min) return -Double.MAX_VALUE
         if (min >= BigDecimal.valueOf(Double.MAX_VALUE))
             throw IllegalStateException("not support yet: minimum value is greater than Double.MAX")
         return min.toDouble()
@@ -242,9 +245,9 @@ class BigDecimalGene(
     }
 
     override fun isValid(): Boolean {
-        if (max != null && value <= max)
+        if (max != null && value > max)
             return false
-        if (min != null && value >= min)
+        if (min != null && value < min)
             return false
         return true
     }
@@ -262,7 +265,7 @@ class BigDecimalGene(
         val r = if (!isFloatingPointMutable && !floatingPointMode)
                     withinLongRange()
                 else
-                    value <= BigDecimal.valueOf(Double.MAX_VALUE) && value >= BigDecimal.valueOf(Double.MIN_VALUE)
+                    value <= BigDecimal.valueOf(Double.MAX_VALUE) && value >= BigDecimal.valueOf(-Double.MIN_VALUE)
         if (!r)
             LoggingUtil.uniqueWarn(log, "value of BigDecimal exceeds the range of mutation")
         return r

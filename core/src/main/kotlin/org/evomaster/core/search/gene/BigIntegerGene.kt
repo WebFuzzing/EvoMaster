@@ -132,9 +132,9 @@ class BigIntegerGene(
     }
 
     override fun isValid(): Boolean {
-        if (max != null && value <= max)
+        if (max != null && value > max)
             return false
-        if (min != null && value >= min)
+        if (min != null && value < min)
             return false
         return true
     }
