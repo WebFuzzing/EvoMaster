@@ -100,6 +100,16 @@ public class ParamDto {
     public List<String> candidateReferences;
 
     /**
+     * represent whether the param is mutable
+     */
+    public boolean isMutable;
+
+    /**
+     * represent a default value of the param if it has
+     */
+    public ParamDto defaultValue;
+
+    /**
      * @return a copy of the paramDto
      */
     public ParamDto copy(){

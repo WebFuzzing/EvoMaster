@@ -37,6 +37,20 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     private boolean isNullable = true;
 
     /**
+     * represent whether the value is mutable
+     *
+     * note that if the param is not mutable,
+     * then default value cannot be null except primitive type
+     */
+    private boolean isMutable = true;
+
+    /**
+     * default value for the parameter
+     * it is nullable
+     */
+    private V defaultValue;
+
+    /**
      * a schema for collecting if the param is accessible
      */
     public final AccessibleSchema accessibleSchema;
@@ -142,6 +156,8 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     public void copyProperties(NamedTypedValue copy){
         copy.setNullable(isNullable);
         copy.setHasDependentCandidates(isHasDependentCandidates());
+        copy.setMutable(isMutable());
+        copy.setDefaultValue(getDefaultValue());
         if (getCandidates() != null && !getCandidates().isEmpty())
             copy.setCandidates(getCandidates().stream().map(c-> c.copyStructureWithProperties()).collect(Collectors.toList()));
         if (getCandidateReferences()!= null && !getCandidateReferences().isEmpty())
@@ -242,4 +258,19 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      */
     public abstract String getValueAsJavaString();
 
+    public boolean isMutable() {
+        return isMutable;
+    }
+
+    public void setMutable(boolean mutable) {
+        isMutable = mutable;
+    }
+
+    public V getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(V defaultValue) {
+        this.defaultValue = defaultValue;
+    }
 }
