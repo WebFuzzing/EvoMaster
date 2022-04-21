@@ -3,13 +3,13 @@ package org.evomaster.core.output.service
 import com.google.gson.Gson
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
-import org.evomaster.core.output.*
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionResult
+import org.evomaster.core.output.CookieWriter
+import org.evomaster.core.output.Lines
+import org.evomaster.core.output.SqlWriter
+import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.search.EvaluatedDbAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils
-import java.lang.NumberFormatException
 
 abstract class WebTestCaseWriter : TestCaseWriter() {
 
@@ -28,11 +28,11 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
     override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
 
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
-        TokenWriter.handleGettingTokens(format,ind, lines, baseUrlOfSut, this)
+        TokenWriter.handleGettingTokens(format, ind, lines, baseUrlOfSut, this)
 
         val initializingActions = ind.individual.seeInitializingActions().filterIsInstance<DbAction>()
         val initializingActionResults = (ind.seeResults(initializingActions))
-        if(initializingActionResults.any { (it as? DbActionResult)  == null})
+        if (initializingActionResults.any { (it as? DbActionResult) == null })
             throw IllegalStateException("the type of results are expected as DbActionResults")
 
 
@@ -40,7 +40,8 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
             SqlWriter.handleDbInitialization(
                     format,
                     initializingActions.indices.map {
-                        EvaluatedDbAction(initializingActions[it], initializingActionResults[it] as DbActionResult) },
+                        EvaluatedDbAction(initializingActions[it], initializingActionResults[it] as DbActionResult)
+                    },
                     lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
         }
     }
@@ -48,7 +49,7 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
     /**
      * handle assertion with text plain
      */
-    fun handleTextPlainTextAssertion(bodyString: String?, lines: Lines, bodyVarName: String?){
+    fun handleTextPlainTextAssertion(bodyString: String?, lines: Lines, bodyVarName: String?) {
 
         if (bodyString.isNullOrBlank()) {
             lines.add(emptyBodyCheck(bodyVarName))
@@ -61,7 +62,7 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
     /**
      * handle assertion with json body string
      */
-    fun handleJsonStringAssertion(bodyString: String?, lines: Lines, bodyVarName: String?, isTooLargeBody: Boolean){
+    fun handleJsonStringAssertion(bodyString: String?, lines: Lines, bodyVarName: String?, isTooLargeBody: Boolean) {
         when (bodyString?.trim()?.first()) {
             //TODO this should be handled recursively, and not ad-hoc here...
             '[' -> {
@@ -101,7 +102,7 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
 
         val s = bodyString.trim()
 
-        when{
+        when {
             format.isJavaOrKotlin() -> {
                 lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
             }
@@ -110,10 +111,10 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
                     val number = s.toDouble()
                     handleAssertionsOnField(number, lines, fieldPath, responseVariableName)
                     return
-                } catch (e: NumberFormatException){
+                } catch (e: NumberFormatException) {
                 }
 
-                if(s.equals("true", true) || s.equals("false", true)) {
+                if (s.equals("true", true) || s.equals("false", true)) {
                     val tf = bodyString.toBoolean()
                     handleAssertionsOnField(tf, lines, fieldPath, responseVariableName)
                     return
@@ -128,14 +129,14 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
     protected fun handleAssertionsOnObject(resContents: Map<String, *>, lines: Lines, fieldPath: String, responseVariableName: String?) {
         if (resContents.isEmpty()) {
 
-            val k = when{
+            val k = when {
                 /*
                     TODO should do check for when there are spaces in the field name
                     TODO also need more tests to check all these edge cases
                  */
-                format.isJavaOrKotlin() -> if(fieldPath.isEmpty()) "" else if(fieldPath.startsWith("'")) "$fieldPath." else "'$fieldPath'."
-                format.isJavaScript() -> if(fieldPath.isEmpty()) "" else "${if(fieldPath.startsWith("[")|| fieldPath.startsWith("."))"" else "."}$fieldPath"
-                format.isCsharp()  -> if(fieldPath.isEmpty()) "" else "${if(fieldPath.startsWith("["))"" else "."}$fieldPath"
+                format.isJavaOrKotlin() -> if (fieldPath.isEmpty()) "" else if (fieldPath.startsWith("'")) "$fieldPath." else "'$fieldPath'."
+                format.isJavaScript() -> if (fieldPath.isEmpty()) "" else "${if (fieldPath.startsWith("[") || fieldPath.startsWith(".")) "" else "."}$fieldPath"
+                format.isCsharp() -> if (fieldPath.isEmpty()) "" else "${if (fieldPath.startsWith("[")) "" else "."}$fieldPath"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
 
@@ -152,22 +153,37 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
         }
 
         resContents.entries
-            .filter { !isFieldToSkip(it.key) }
-            .forEach {
-                val fieldName = if(format.isJavaOrKotlin()){
-                    "'${it.key}'"
-                    //TODO need to deal with '' as well in JS/C#? see EscapeRest
-                } else {
-                    it.key
-                }
+                .filter { !isFieldToSkip(it.key) }
+                .forEach {
 
-                val extendedPath = if(format.isJavaOrKotlin() && fieldPath.isEmpty()){
-                    fieldName
-                } else {
-                    "$fieldPath.${fieldName}"
+                    var needsDot = true
+
+                    val fieldName = if (format.isJavaOrKotlin()) {
+                        "'${it.key}'"
+                    } else if (format.isJavaScript()) {
+                        //field name could have any character... need to use [] notation then
+                        if (it.key.matches(Regex("^[a-zA-Z][a-zA-Z0-9]*$"))) {
+                            it.key
+                        } else {
+                            needsDot = false
+                            "[\"${it.key}\"]"
+                        }
+                    //TODO need to deal with '' C#? see EscapeRest
+                    } else {
+                        it.key
+                    }
+
+
+                    val extendedPath = if (format.isJavaOrKotlin() && fieldPath.isEmpty()) {
+                        fieldName
+                    } else if (needsDot) {
+                        "${fieldPath}.${fieldName}"
+                    } else {
+                        "${fieldPath}${fieldName}"
+                    }
+
+                    handleAssertionsOnField(it.value, lines, extendedPath, responseVariableName)
                 }
-                handleAssertionsOnField(it.value, lines, extendedPath, responseVariableName)
-            }
     }
 
     private fun handleAssertionsOnField(value: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
@@ -194,8 +210,8 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
             }
         }
 
-        if(format.isJavaOrKotlin()) {
-            val  left = when (value) {
+        if (format.isJavaOrKotlin()) {
+            val left = when (value) {
                 is Boolean -> "equalTo($value)"
                 is Number -> "numberMatches($value)"
                 is String -> "containsString(" +
@@ -203,25 +219,25 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
                         "\")"
                 else -> throw IllegalStateException("Unsupported type: ${value::class}")
             }
-            if(isSuitableToPrint(left)){
+            if (isSuitableToPrint(left)) {
                 lines.add(".body(\"$fieldPath\", $left)")
             }
             return
         }
 
-        if(format.isJavaScript() || format.isCsharp()){
-            val toPrint = if(value is String){
-                "\""+GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format)+"\""
+        if (format.isJavaScript() || format.isCsharp()) {
+            val toPrint = if (value is String) {
+                "\"" + GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format) + "\""
             } else {
                 value.toString()
             }
 
-            if(isSuitableToPrint(toPrint)) {
-                if(format.isJavaScript()) {
+            if (isSuitableToPrint(toPrint)) {
+                if (format.isJavaScript()) {
                     lines.add("expect($responseVariableName.body$fieldPath).toBe($toPrint);")
                 } else {
                     assert(format.isCsharp())
-                    if(fieldPath!=".traceId" || !lines.toString().contains("status == 400"))
+                    if (fieldPath != ".traceId" || !lines.toString().contains("status == 400"))
                         lines.add("Assert.True($responseVariableName$fieldPath == $toPrint);")
                 }
             }
@@ -253,22 +269,22 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
             return
         }
 
-        val limit = if(config.maxAssertionForDataInCollection >= 0){
+        val limit = if (config.maxAssertionForDataInCollection >= 0) {
             //there are more elements than we can print
             config.maxAssertionForDataInCollection
         } else {
             Int.MAX_VALUE
         }
 
-        val skipped =  list.size - limit
+        val skipped = list.size - limit
 
-        for(i in list.indices){
-            if(i == limit){
+        for (i in list.indices) {
+            if (i == limit) {
                 break
             }
             handleAssertionsOnField(list[i], lines, "$fieldPath[$i]", responseVariableName)
         }
-        if(skipped > 0){
+        if (skipped > 0) {
             lines.add("// Skipping assertions on the remaining $skipped elements. This limit of $limit elements can be increased in the configurations")
         }
     }
@@ -293,7 +309,7 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
                     ").toBe(true);"
         }
 
-        if(format.isCsharp()){
+        if (format.isCsharp()) {
             return "Assert.True(string.IsNullOrEmpty(await $responseVariableName.Content.ReadAsStringAsync()));"
         }
 
@@ -308,7 +324,7 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
 
         val instruction = when {
             format.isJavaOrKotlin() -> {
-                val path = if(fieldPath.isEmpty()) "" else "$fieldPath."
+                val path = if (fieldPath.isEmpty()) "" else "$fieldPath."
                 ".body(\"${path}size()\", equalTo($expectedSize))"
             }
             format.isJavaScript() ->
@@ -333,10 +349,10 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
             return "expect($responseVariableName.text).toBe(\"$content\");"
         }
 
-        if(format.isCsharp()){
+        if (format.isCsharp()) {
             val k = when {
-                content.startsWith("\"") -> content.substring(1, content.length-1)
-                content.startsWith("\\\"") -> content.substring(2, content.length-2)
+                content.startsWith("\"") -> content.substring(1, content.length - 1)
+                content.startsWith("\\\"") -> content.substring(2, content.length - 2)
                 else -> content
             }
             return "Assert.True($responseVariableName == \"$k\");"
@@ -351,15 +367,15 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
      */
     protected fun isFieldToSkip(fieldName: String) =
     //TODO this should be from EMConfig
-        /*
-            There are some fields like "id" which are often non-deterministic,
-            which unfortunately would lead to flaky tests
-        */
-        listOf(
-            "id",
-            "timestamp", //needed since timestamps will change between runs
-            "self" //TODO: temporary hack. Needed since ports might change between runs.
-        ).contains(fieldName.toLowerCase())
+            /*
+                There are some fields like "id" which are often non-deterministic,
+                which unfortunately would lead to flaky tests
+            */
+            listOf(
+                    "id",
+                    "timestamp", //needed since timestamps will change between runs
+                    "self" //TODO: temporary hack. Needed since ports might change between runs.
+            ).contains(fieldName.toLowerCase())
 
     /**
      * Some content may be lead to problems in the resultant test case.
