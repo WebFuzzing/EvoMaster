@@ -353,7 +353,7 @@ public class SchemaExtractor {
                 columnDto.type = listAttributesResultSet.getString("typename");
                 columnDto.size = listAttributesResultSet.getInt("attlen");
                 columnDto.nullable = listAttributesResultSet.getBoolean("attnotnull");
-                columnDto.isCompositeType = allCompositeTypeNames.stream().anyMatch(t -> t.equalsIgnoreCase(columnDto.type));
+                columnDto.columnTypeIsComposite = allCompositeTypeNames.stream().anyMatch(t -> t.equalsIgnoreCase(columnDto.type));
                 columnDtos.add(columnDto);
             }
         }
