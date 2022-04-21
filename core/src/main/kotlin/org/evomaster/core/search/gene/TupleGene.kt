@@ -36,7 +36,9 @@ class TupleGene(
      * which we need to select what to retrieve.
      * In these cases, such return object will be part of the tuple, as the last element.
      */
-    val lastElementTreatedSpecially: Boolean = false
+    val lastElementTreatedSpecially: Boolean = false,
+
+    var isSelected: Boolean = true
 
 ) : Gene(name, elements) {
 
