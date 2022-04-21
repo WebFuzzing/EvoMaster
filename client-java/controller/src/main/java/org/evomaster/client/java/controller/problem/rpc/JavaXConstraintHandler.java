@@ -198,7 +198,7 @@ public class JavaXConstraintHandler {
         if (inclusive != null && !inclusive)
             max = max - 1;
 
-        return setMax(namedTypedValue, max.toString(), false);
+        return setMax(namedTypedValue, max.toString(), true);
     }
 
     private static boolean handleMin(NamedTypedValue namedTypedValue, Annotation annotation, JavaXConstraintSupportType supportType){
@@ -227,18 +227,25 @@ public class JavaXConstraintHandler {
             min = min + 1;
 
 
-        return setMin(namedTypedValue, min.toString(), false);
+        return setMin(namedTypedValue, min.toString(), true);
     }
 
     private static boolean setMin(NamedTypedValue namedTypedValue, String min, boolean inclusive){
+        if (!(namedTypedValue instanceof MinMaxValue))
+            SimpleLogger.error("ERROR: Can not set MinValue for the class "+ namedTypedValue.getType().getFullTypeName());
+
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
             ((PrimitiveOrWrapperParam)namedTypedValue).setMin(Long.parseLong(min));
+            ((PrimitiveOrWrapperParam<?>) namedTypedValue).setMinInclusive(inclusive);
         } else if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setMin(Long.parseLong(min));
+            ((StringParam) namedTypedValue).setMinInclusive(inclusive);
         } else if (namedTypedValue instanceof  BigIntegerParam){
             ((BigIntegerParam) namedTypedValue).setMin(new BigInteger(min));
+            ((BigIntegerParam) namedTypedValue).setMinInclusive(inclusive);
         } else if(namedTypedValue instanceof BigDecimalParam){
             ((BigDecimalParam) namedTypedValue).setMin(new BigDecimal(min));
+            ((BigDecimalParam) namedTypedValue).setMinInclusive(inclusive);
         }else {
             SimpleLogger.error("ERROR: Can not solve constraints by setting Min value for the class "+ namedTypedValue.getType().getFullTypeName());
             return false;
@@ -248,14 +255,21 @@ public class JavaXConstraintHandler {
     }
 
     private static boolean setMax(NamedTypedValue namedTypedValue, String max, boolean inclusive){
+        if (!(namedTypedValue instanceof MinMaxValue))
+            SimpleLogger.error("ERROR: Can not set MaxValue for the class "+ namedTypedValue.getType().getFullTypeName());
+
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
             ((PrimitiveOrWrapperParam)namedTypedValue).setMax(Long.parseLong(max));
+            ((PrimitiveOrWrapperParam<?>) namedTypedValue).setMaxInclusive(inclusive);
         } else if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setMax(Long.parseLong(max));
+            ((StringParam) namedTypedValue).setMaxInclusive(inclusive);
         } else if (namedTypedValue instanceof  BigIntegerParam){
             ((BigIntegerParam) namedTypedValue).setMax(new BigInteger(max));
+            ((BigIntegerParam) namedTypedValue).setMaxInclusive(inclusive);
         } else if(namedTypedValue instanceof BigDecimalParam){
             ((BigDecimalParam) namedTypedValue).setMax(new BigDecimal(max));
+            ((BigDecimalParam) namedTypedValue).setMaxInclusive(inclusive);
         }else {
             SimpleLogger.error("ERROR: Can not solve constraints by setting Max value for the class "+ namedTypedValue.getType().getFullTypeName());
             return false;
@@ -302,10 +316,14 @@ public class JavaXConstraintHandler {
     private static boolean handlePositiveOrNegative(NamedTypedValue namedTypedValue, JavaXConstraintSupportType supportType){
         if (namedTypedValue instanceof BigDecimalParam || namedTypedValue instanceof  BigIntegerParam
                 || (namedTypedValue instanceof PrimitiveOrWrapperParam && ((PrimitiveOrWrapperType)namedTypedValue.getType()).isNumber())){
+            String zero = "0";
             switch (supportType){
-
+                case POSITIVE: setMin(namedTypedValue, zero, false); break;
+                case POSITIVEORZERO: setMin(namedTypedValue, zero, true); break;
+                case NEGATIVE: setMax(namedTypedValue, zero, false); break;
+                case NEGATIVEORZERO: setMax(namedTypedValue, zero, true); break;
+                default: throw new IllegalStateException("ERROR: constraint is not handled "+ supportType);
             }
-
         } else {
             SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Digits");
             return false;
