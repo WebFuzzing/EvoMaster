@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * string param
  */
-public class StringParam extends NamedTypedValue<StringType, String> implements MinMaxValue<Long> {
+public class StringParam extends NamedTypedValue<StringType, String> implements NumericConstraintBase<Long> {
 
     /**
      * min length of the string
@@ -48,6 +48,16 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     private boolean minInclusive = true;
 
     private boolean maxInclusive = true;
+
+    /**
+     * constraints with precision if applicable
+     */
+    private Integer precision;
+
+    /**
+     * constraints with scale if applicable
+     */
+    private Integer scale;
 
     public StringParam(String name, StringType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
@@ -138,12 +148,11 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
             dto.maxSize = Long.valueOf(maxSize);
         if (minSize != null)
             dto.minSize = Long.valueOf(minSize);
-        if (min != null)
-            dto.minValue = min.toString();
-        if (max != null)
-            dto.maxValue = max.toString();
         if (pattern != null)
             dto.pattern = pattern;
+
+        handleConstraintsInCopyDto(dto);
+
         return dto;
     }
 
@@ -193,6 +202,8 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
             ((StringParam)copy).setMinSize(minSize);
             ((StringParam)copy).setPattern(pattern);
         }
+
+        handleConstraintsInCopy(copy);
     }
 
     @Override
@@ -213,5 +224,25 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     @Override
     public void setMaxInclusive(boolean inclusive) {
         this.maxInclusive = inclusive;
+    }
+
+    @Override
+    public Integer getPrecision() {
+        return precision;
+    }
+
+    @Override
+    public void setPrecision(Integer precision) {
+        this.precision = precision;
+    }
+
+    @Override
+    public Integer getScale() {
+        return this.scale;
+    }
+
+    @Override
+    public void setScale(Integer scale) {
+        this.scale = scale;
     }
 }

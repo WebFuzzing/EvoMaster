@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Primitive types Param
  */
-public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> implements MinMaxValue<Long> {
+public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> implements NumericConstraintBase<Long> {
 
     /**
      * min value if it is specified
@@ -27,6 +27,16 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     private boolean minInclusive = true;
 
     private boolean maxInclusive = true;
+
+    /**
+     * constraints with precision if applicable
+     */
+    private Integer precision;
+
+    /**
+     * constraints with scale if applicable
+     */
+    private Integer scale;
 
     public PrimitiveOrWrapperParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema){
         this(name, new PrimitiveOrWrapperType(type, fullTypeName, clazz), accessibleSchema);
@@ -103,10 +113,7 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
-        if (min != null)
-            dto.minValue = min.toString();
-        if (max != null)
-            dto.maxValue = max.toString();
+        handleConstraintsInCopyDto(dto);
         return dto;
     }
 
@@ -193,6 +200,8 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
             ((PrimitiveOrWrapperParam)copy).setMin(min);
             ((PrimitiveOrWrapperParam)copy).setMax(max);
         }
+
+        handleConstraintsInCopy(copy);
     }
 
     /**
@@ -221,5 +230,26 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     @Override
     public void setMaxInclusive(boolean inclusive) {
         this.maxInclusive = inclusive;
+    }
+
+
+    @Override
+    public Integer getPrecision() {
+        return precision;
+    }
+
+    @Override
+    public void setPrecision(Integer precision) {
+        this.precision = precision;
+    }
+
+    @Override
+    public Integer getScale() {
+        return this.scale;
+    }
+
+    @Override
+    public void setScale(Integer scale) {
+        this.scale = scale;
     }
 }

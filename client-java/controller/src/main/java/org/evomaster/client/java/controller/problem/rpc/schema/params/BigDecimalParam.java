@@ -14,7 +14,7 @@ import java.util.List;
 
 import static org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator.*;
 
-public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal> implements MinMaxValue<BigDecimal>{
+public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal> implements NumericConstraintBase<BigDecimal> {
 
     private BigDecimal min;
 
@@ -23,6 +23,16 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     private boolean minInclusive = true;
 
     private boolean maxInclusive = true;
+
+    /**
+     * constraints with precision if applicable
+     */
+    private Integer precision;
+
+    /**
+     * constraints with scale if applicable
+     */
+    private Integer scale;
 
     public BigDecimalParam(String name, BigDecimalType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
@@ -49,6 +59,8 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
             ((BigDecimalParam) copy).setMax(max);
             ((BigDecimalParam) copy).setMin(min);
         }
+
+        handleConstraintsInCopy(copy);
     }
 
     @Override
@@ -117,10 +129,7 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
-        if (max != null)
-            dto.maxValue = max.toString();
-        if (min != null)
-            dto.minValue = min.toString();
+        handleConstraintsInCopyDto(dto);
         return dto;
     }
 
@@ -174,5 +183,25 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     @Override
     public void setMaxInclusive(boolean inclusive) {
         this.maxInclusive = inclusive;
+    }
+
+    @Override
+    public Integer getPrecision() {
+        return precision;
+    }
+
+    @Override
+    public void setPrecision(Integer precision) {
+        this.precision = precision;
+    }
+
+    @Override
+    public Integer getScale() {
+        return this.scale;
+    }
+
+    @Override
+    public void setScale(Integer scale) {
+        this.scale = scale;
     }
 }

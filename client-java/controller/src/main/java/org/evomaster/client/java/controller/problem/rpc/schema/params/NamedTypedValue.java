@@ -41,16 +41,6 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      */
     public final AccessibleSchema accessibleSchema;
 
-    /**
-     * constraints with precision if applicable
-     */
-    private Integer precision;
-
-    /**
-     * constraints with scale if applicable
-     */
-    private Integer scale;
-
 
     public boolean isHasDependentCandidates() {
         return hasDependentCandidates;
@@ -138,8 +128,6 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         if (candidateReferences!=null)
             dto.candidateReferences = new ArrayList<>(candidateReferences);
 
-        dto.precision = precision;
-        dto.scale = scale;
         return dto;
     }
 
@@ -158,9 +146,6 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
             copy.setCandidates(getCandidates().stream().map(c-> c.copyStructureWithProperties()).collect(Collectors.toList()));
         if (getCandidateReferences()!= null && !getCandidateReferences().isEmpty())
             copy.setCandidateReferences(new ArrayList<>(getCandidateReferences()));
-        copy.setPrecision(precision);
-        copy.setScale(scale);
-
     }
 
 
@@ -257,20 +242,4 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      */
     public abstract String getValueAsJavaString();
 
-
-    public Integer getPrecision() {
-        return precision;
-    }
-
-    public void setPrecision(Integer precision) {
-        this.precision = precision;
-    }
-
-    public Integer getScale() {
-        return scale;
-    }
-
-    public void setScale(Integer scale) {
-        this.scale = scale;
-    }
 }

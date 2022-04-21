@@ -231,7 +231,7 @@ public class JavaXConstraintHandler {
     }
 
     private static boolean setMin(NamedTypedValue namedTypedValue, String min, boolean inclusive){
-        if (!(namedTypedValue instanceof MinMaxValue))
+        if (!(namedTypedValue instanceof NumericConstraintBase))
             SimpleLogger.error("ERROR: Can not set MinValue for the class "+ namedTypedValue.getType().getFullTypeName());
 
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
@@ -255,7 +255,7 @@ public class JavaXConstraintHandler {
     }
 
     private static boolean setMax(NamedTypedValue namedTypedValue, String max, boolean inclusive){
-        if (!(namedTypedValue instanceof MinMaxValue))
+        if (!(namedTypedValue instanceof NumericConstraintBase))
             SimpleLogger.error("ERROR: Can not set MaxValue for the class "+ namedTypedValue.getType().getFullTypeName());
 
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
@@ -297,15 +297,15 @@ public class JavaXConstraintHandler {
             int dInteger = (int) annotation.annotationType().getDeclaredMethod("integer").invoke(annotation);
             int dFraction = (int) annotation.annotationType().getDeclaredMethod("fraction").invoke(annotation);
 
-            namedTypedValue.setPrecision(dInteger + dFraction);
-            namedTypedValue.setScale(dFraction);
+            ((NumericConstraintBase) namedTypedValue).setPrecision(dInteger + dFraction);
+            ((NumericConstraintBase) namedTypedValue).setScale(dFraction);
 
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
             throw new RuntimeException("ERROR: fail to process Digits ", e);
         }
 
         } else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Digits");
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with Digits constraints");
             return false;
         }
 

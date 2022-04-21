@@ -16,7 +16,7 @@ import java.util.List;
  *      BigInteger constructors and operations throw ArithmeticException when the result is
  *      out of the supported range of -2^Integer.MAX_VALUE (exclusive) to +2^Integer.MAX_VALUE (exclusive).
  */
-public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger> implements MinMaxValue<BigInteger>{
+public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger> implements NumericConstraintBase<BigInteger> {
 
     private BigInteger min;
 
@@ -25,6 +25,16 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
     private boolean minInclusive = true;
 
     private boolean maxInclusive = true;
+
+    /**
+     * constraints with precision if applicable
+     */
+    private Integer precision;
+
+    /**
+     * constraints with scale if applicable
+     */
+    private Integer scale;
 
     public BigIntegerParam(String name, BigIntegerType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
@@ -51,6 +61,7 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
             ((BigIntegerParam) copy).setMax(max);
             ((BigIntegerParam) copy).setMin(min);
         }
+        handleConstraintsInCopy(copy);
     }
 
     @Override
@@ -67,11 +78,7 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
-        if (min != null)
-            dto.minValue = min.toString();
-        if (max != null)
-            dto.maxValue = max.toString();
-
+        handleConstraintsInCopyDto(dto);
         return dto;
     }
 
@@ -155,5 +162,25 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
     @Override
     public void setMaxInclusive(boolean inclusive) {
         this.maxInclusive = inclusive;
+    }
+
+    @Override
+    public Integer getPrecision() {
+        return precision;
+    }
+
+    @Override
+    public void setPrecision(Integer precision) {
+        this.precision = precision;
+    }
+
+    @Override
+    public Integer getScale() {
+        return this.scale;
+    }
+
+    @Override
+    public void setScale(Integer scale) {
+        this.scale = scale;
     }
 }
