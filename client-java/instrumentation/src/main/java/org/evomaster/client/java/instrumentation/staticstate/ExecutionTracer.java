@@ -490,4 +490,13 @@ public class ExecutionTracer {
 
         updateBranch(className, line, branchId, t);
     }
+
+    /**
+     * Add the external HTTP/S hostname to the additional info to keep track.
+     */
+    public static void addExternalServiceHost(ExternalServiceInfo hostInfo) {
+        getCurrentAdditionalInfo().addExternalService(hostInfo);
+    }
+
+
 }

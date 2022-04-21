@@ -36,13 +36,7 @@ public class HttpRequestRest {
 
         try {
             URL url = new URL("http://foo.bar:8080/api/echo/foo");
-
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestProperty("accept", "application/json");
-
-            InputStream responseStream = connection.getInputStream();
-            ObjectMapper mapper = new ObjectMapper();
-            MockApiResponse result = mapper.readValue(responseStream, MockApiResponse.class);
+            MockApiResponse result = makeConnection(url);
 
             if (result.message.equals("foo")) {
                 stringsResponseDto.valid = true;
@@ -55,6 +49,41 @@ public class HttpRequestRest {
         }
 
         return stringsResponseDto;
+    }
+
+    @RequestMapping(
+            value = "/external/url/withQuery",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
+    public StringsResponseDto usingURLConnectionWithQuery() {
+        StringsResponseDto stringsResponseDto = new StringsResponseDto();
+
+        try {
+            URL url = new URL("http://foo.bar:8080/api/echo/foo?x=1&y=foo");
+            MockApiResponse result = makeConnection(url);
+
+            if (result.message.equals("foo")) {
+                stringsResponseDto.valid = true;
+            } else {
+                stringsResponseDto.valid = false;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            stringsResponseDto.valid = false;
+        }
+
+        return stringsResponseDto;
+    }
+
+    private static MockApiResponse makeConnection(URL url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("accept", "application/json");
+
+        InputStream responseStream = connection.getInputStream();
+        ObjectMapper mapper = new ObjectMapper();
+        MockApiResponse result = mapper.readValue(responseStream, MockApiResponse.class);
+        return result;
     }
 
     @RequestMapping(

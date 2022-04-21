@@ -66,7 +66,6 @@ class RemoteController() : DatabaseExecutor {
         this.config = config
     }
 
-    constructor(host: String, port: Int, computeSqlHeuristics: Boolean) : this(host, port, computeSqlHeuristics, computeSqlHeuristics)
 
     @PostConstruct
     private fun initialize() {

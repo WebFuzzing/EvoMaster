@@ -83,7 +83,7 @@ class ReplacementListTest {
                     try {
                         targetMethod = targetClass.getDeclaredMethod(m.getName(), reducedInputs);
                     } catch (NoSuchMethodException noSuchMethodException) {
-                        fail("No target method '"+m.getName()+" in class "+targetClass.getName()+" with the right input parameters");
+                        fail("No target method "+m.getName()+" in class "+targetClass.getName()+" with the right input parameters");
                     }
                 }
 
