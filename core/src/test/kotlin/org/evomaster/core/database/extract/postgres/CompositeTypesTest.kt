@@ -47,7 +47,7 @@ class CompositeTypesTest : ExtractTestBasePostgres() {
         assertTrue(nestedCompositeType!!.columns[0].name.equals("item".lowercase()))
         assertTrue(nestedCompositeType.columns[1].name.equals("count".lowercase()))
 
-        assertTrue(nestedCompositeType.columns.find { it.name.equals("item".lowercase()) }!!.isCompositeType)
+        assertTrue(nestedCompositeType.columns.find { it.name.equals("item".lowercase()) }!!.columnTypeIsComposite)
 
         assertTrue(schema.tables.any { it.name.equals("on_hand".lowercase()) })
         val onHandTable = schema.tables.find { it.name.equals("on_hand".lowercase()) }

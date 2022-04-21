@@ -16,7 +16,7 @@ object ColumnFactory {
         val typeAsString = columnDto.type
         val columns: List<Column>?
         val columnType: ColumnDataType
-        if (columnDto.isCompositeType) {
+        if (columnDto.columnTypeIsComposite) {
             columns = compositeTypes
                     .first { it.name.equals(typeAsString) }
                     .columns
