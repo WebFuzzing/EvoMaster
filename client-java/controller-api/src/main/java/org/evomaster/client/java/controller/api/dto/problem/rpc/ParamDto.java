@@ -70,6 +70,20 @@ public class ParamDto {
     public Integer scale;
 
     /**
+     * represent whether minValue is inclusive
+     *
+     * note that it is typically useful for floating point number
+     */
+    public boolean minInclusive;
+
+    /**
+     * represent whether maxValue is inclusive
+     *
+     * note that it is typically useful for floating point number
+     */
+    public boolean maxInclusive;
+
+    /**
      * pattern specified with regex exp
      */
     public String pattern;

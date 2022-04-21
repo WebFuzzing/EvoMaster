@@ -44,6 +44,11 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
      */
     private String pattern;
 
+
+    private boolean minInclusive = true;
+
+    private boolean maxInclusive = true;
+
     public StringParam(String name, StringType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
     }
@@ -192,21 +197,21 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
 
     @Override
     public boolean getMinInclusive() {
-        return false;
+        return minInclusive;
     }
 
     @Override
     public void setMinInclusive(boolean inclusive) {
-
+        this.minInclusive = inclusive;
     }
 
     @Override
     public boolean getMaxInclusive() {
-        return false;
+        return maxInclusive;
     }
 
     @Override
     public void setMaxInclusive(boolean inclusive) {
-
+        this.maxInclusive = inclusive;
     }
 }

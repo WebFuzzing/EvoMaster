@@ -20,6 +20,10 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
 
     private BigDecimal max;
 
+    private boolean minInclusive = true;
+
+    private boolean maxInclusive = true;
+
     public BigDecimalParam(String name, BigDecimalType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
     }
@@ -154,21 +158,21 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
 
     @Override
     public boolean getMinInclusive() {
-        return false;
+        return minInclusive;
     }
 
     @Override
     public void setMinInclusive(boolean inclusive) {
-
+        this.minInclusive = inclusive;
     }
 
     @Override
     public boolean getMaxInclusive() {
-        return false;
+        return maxInclusive;
     }
 
     @Override
     public void setMaxInclusive(boolean inclusive) {
-
+        this.maxInclusive = inclusive;
     }
 }

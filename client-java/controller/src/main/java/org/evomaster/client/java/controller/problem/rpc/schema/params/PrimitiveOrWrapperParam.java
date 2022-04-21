@@ -24,6 +24,10 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
      */
     private Long max;
 
+    private boolean minInclusive = true;
+
+    private boolean maxInclusive = true;
+
     public PrimitiveOrWrapperParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema){
         this(name, new PrimitiveOrWrapperType(type, fullTypeName, clazz), accessibleSchema);
     }
@@ -201,21 +205,21 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
 
     @Override
     public boolean getMinInclusive() {
-        return false;
+        return this.minInclusive;
     }
 
     @Override
     public void setMinInclusive(boolean inclusive) {
-
+        this.minInclusive = inclusive;
     }
 
     @Override
     public boolean getMaxInclusive() {
-        return false;
+        return this.maxInclusive;
     }
 
     @Override
     public void setMaxInclusive(boolean inclusive) {
-
+        this.maxInclusive = inclusive;
     }
 }

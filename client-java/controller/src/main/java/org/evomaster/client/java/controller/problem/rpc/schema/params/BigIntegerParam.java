@@ -22,6 +22,10 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
 
     private BigInteger max;
 
+    private boolean minInclusive = true;
+
+    private boolean maxInclusive = true;
+
     public BigIntegerParam(String name, BigIntegerType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
     }
@@ -135,21 +139,21 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
 
     @Override
     public boolean getMinInclusive() {
-        return false;
+        return this.minInclusive;
     }
 
     @Override
     public void setMinInclusive(boolean inclusive) {
-
+        this.minInclusive = inclusive;
     }
 
     @Override
     public boolean getMaxInclusive() {
-        return false;
+        return this.maxInclusive;
     }
 
     @Override
     public void setMaxInclusive(boolean inclusive) {
-
+        this.maxInclusive = inclusive;
     }
 }
