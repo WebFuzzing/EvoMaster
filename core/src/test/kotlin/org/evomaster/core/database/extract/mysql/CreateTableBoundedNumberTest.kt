@@ -3,13 +3,11 @@ package org.evomaster.core.database.extract.mysql
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.DoubleGene
-import org.evomaster.core.search.gene.FloatGene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlNullable
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
 
@@ -68,39 +66,39 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
 
 
             val dc1 = this[2]
-            assertTrue(dc1 is FloatGene)
-            (dc1 as FloatGene).apply {
+            assertTrue(dc1 is BigDecimalGene)
+            (dc1 as BigDecimalGene).apply {
                 assertNotNull(scale)
                 assertEquals(2, scale)
-                assertEquals(-99999999.99f, min)
-                assertEquals(99999999.99f, max)
+                assertEquals(BigDecimal("-99999999.99"), min)
+                assertEquals(BigDecimal("99999999.99"), max)
             }
 
             val dc2 = this[3]
-            assertTrue(dc2 is FloatGene)
+            assertTrue(dc2 is BigDecimalGene)
             (dc2 as FloatGene).apply {
                 assertNotNull(scale)
                 assertEquals(3, scale)
-                assertEquals(-99.999f, min)
-                assertEquals(99.999f, max)
+                assertEquals(BigDecimal("-99.999"), min)
+                assertEquals(BigDecimal("99.999"), max)
             }
 
             val dc3 = this[4]
-            assertTrue(dc3 is FloatGene)
+            assertTrue(dc3 is BigDecimalGene)
             (dc3 as FloatGene).apply {
                 assertNotNull(scale)
                 assertEquals(1, scale)
-                assertEquals(-9.9f, min)
-                assertEquals(9.9f, max)
+                assertEquals(BigDecimal("-9.9"), min)
+                assertEquals(BigDecimal("9.9"), max)
             }
 
             val dc4 = this[5]
-            assertTrue(dc4 is FloatGene)
+            assertTrue(dc4 is BigDecimalGene)
             (dc4 as FloatGene).apply {
                 assertNotNull(scale)
                 assertEquals(1, scale)
-                assertEquals(0.0f, min)
-                assertEquals(9.9f, max)
+                assertEquals(BigDecimal("0.0"), min)
+                assertEquals(BigDecimal("9.9"), max)
             }
 
             val tc1 = this[6]
