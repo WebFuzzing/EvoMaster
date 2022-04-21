@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * string param
  */
-public class StringParam extends NamedTypedValue<StringType, String> {
+public class StringParam extends NamedTypedValue<StringType, String> implements MinMaxValue<Long> {
 
     /**
      * min length of the string
@@ -68,23 +68,36 @@ public class StringParam extends NamedTypedValue<StringType, String> {
     }
 
     public void setMaxSize(Integer maxSize) {
-        this.maxSize = maxSize;
+        if (this.maxSize != null)
+            this.maxSize = Math.min(this.maxSize, maxSize);
+        else
+            this.maxSize = maxSize;
     }
 
+    @Override
     public Long getMin() {
         return min;
     }
 
+    @Override
     public void setMin(Long min) {
-        this.min = min;
+        if (this.min != null)
+            this.min = Math.max(this.min, min);
+        else
+            this.min = min;
     }
 
+    @Override
     public Long getMax() {
         return max;
     }
 
+    @Override
     public void setMax(Long max) {
-        this.max = max;
+        if (this.max  != null)
+            this.max = Math.min(this.max, max);
+        else
+            this.max = max;
     }
 
     public String getPattern() {
@@ -175,5 +188,25 @@ public class StringParam extends NamedTypedValue<StringType, String> {
             ((StringParam)copy).setMinSize(minSize);
             ((StringParam)copy).setPattern(pattern);
         }
+    }
+
+    @Override
+    public boolean getMinInclusive() {
+        return false;
+    }
+
+    @Override
+    public void setMinInclusive(boolean inclusive) {
+
+    }
+
+    @Override
+    public boolean getMaxInclusive() {
+        return false;
+    }
+
+    @Override
+    public void setMaxInclusive(boolean inclusive) {
+
     }
 }

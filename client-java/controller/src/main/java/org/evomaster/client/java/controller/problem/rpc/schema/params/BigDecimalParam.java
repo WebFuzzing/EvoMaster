@@ -14,7 +14,7 @@ import java.util.List;
 
 import static org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator.*;
 
-public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>{
+public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal> implements MinMaxValue<BigDecimal>{
 
     private BigDecimal min;
 
@@ -127,21 +127,48 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
         return ""+getValue().toString()+"";
     }
 
+    @Override
     public BigDecimal getMin() {
         return min;
     }
 
+    @Override
     public void setMin(BigDecimal min) {
+        if (this.min != null && this.min.compareTo(min) >=0)
+            return;
         this.min = min;
     }
 
+    @Override
     public BigDecimal getMax() {
         return max;
     }
 
+    @Override
     public void setMax(BigDecimal max) {
+        if (this.max != null && this.max.compareTo(max) <= 0)
+            return;
         this.max = max;
     }
 
 
+    @Override
+    public boolean getMinInclusive() {
+        return false;
+    }
+
+    @Override
+    public void setMinInclusive(boolean inclusive) {
+
+    }
+
+    @Override
+    public boolean getMaxInclusive() {
+        return false;
+    }
+
+    @Override
+    public void setMaxInclusive(boolean inclusive) {
+
+    }
 }

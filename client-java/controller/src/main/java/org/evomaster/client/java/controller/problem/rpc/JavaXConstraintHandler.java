@@ -6,6 +6,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /**
  * this class is to handle constraints defined with javax.validation.constraints
@@ -40,6 +42,10 @@ public class JavaXConstraintHandler {
             case DECIMAL_MIN:
             case MIN: solved = handleMin(namedTypedValue, annotation, supportType); break;
             case DIGITS: solved = handleDigits(namedTypedValue, annotation); break;
+            case POSITIVE:
+            case POSITIVEORZERO:
+            case NEGATIVE:
+            case NEGATIVEORZERO: solved = handlePositiveOrNegative(namedTypedValue, supportType); break;
             default:
                 SimpleLogger.error("ERROR: Not handle "+ supportType.annotation);
         }
@@ -192,16 +198,7 @@ public class JavaXConstraintHandler {
         if (inclusive != null && !inclusive)
             max = max - 1;
 
-        if (namedTypedValue instanceof PrimitiveOrWrapperParam){
-            ((PrimitiveOrWrapperParam)namedTypedValue).setMax(max);
-        } else if (namedTypedValue instanceof StringParam){
-            ((StringParam)namedTypedValue).setMax(max);
-        } else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Max");
-            return false;
-        }
-
-        return true;
+        return setMax(namedTypedValue, max.toString(), false);
     }
 
     private static boolean handleMin(NamedTypedValue namedTypedValue, Annotation annotation, JavaXConstraintSupportType supportType){
@@ -229,12 +226,38 @@ public class JavaXConstraintHandler {
         if (inclusive != null && !inclusive)
             min = min + 1;
 
+
+        return setMin(namedTypedValue, min.toString(), false);
+    }
+
+    private static boolean setMin(NamedTypedValue namedTypedValue, String min, boolean inclusive){
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
-            ((PrimitiveOrWrapperParam)namedTypedValue).setMin(min);
+            ((PrimitiveOrWrapperParam)namedTypedValue).setMin(Long.parseLong(min));
         } else if (namedTypedValue instanceof StringParam){
-            ((StringParam)namedTypedValue).setMin(min);
-        } else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Min");
+            ((StringParam)namedTypedValue).setMin(Long.parseLong(min));
+        } else if (namedTypedValue instanceof  BigIntegerParam){
+            ((BigIntegerParam) namedTypedValue).setMin(new BigInteger(min));
+        } else if(namedTypedValue instanceof BigDecimalParam){
+            ((BigDecimalParam) namedTypedValue).setMin(new BigDecimal(min));
+        }else {
+            SimpleLogger.error("ERROR: Can not solve constraints by setting Min value for the class "+ namedTypedValue.getType().getFullTypeName());
+            return false;
+        }
+
+        return true;
+    }
+
+    private static boolean setMax(NamedTypedValue namedTypedValue, String max, boolean inclusive){
+        if (namedTypedValue instanceof PrimitiveOrWrapperParam){
+            ((PrimitiveOrWrapperParam)namedTypedValue).setMax(Long.parseLong(max));
+        } else if (namedTypedValue instanceof StringParam){
+            ((StringParam)namedTypedValue).setMax(Long.parseLong(max));
+        } else if (namedTypedValue instanceof  BigIntegerParam){
+            ((BigIntegerParam) namedTypedValue).setMax(new BigInteger(max));
+        } else if(namedTypedValue instanceof BigDecimalParam){
+            ((BigDecimalParam) namedTypedValue).setMax(new BigDecimal(max));
+        }else {
+            SimpleLogger.error("ERROR: Can not solve constraints by setting Max value for the class "+ namedTypedValue.getType().getFullTypeName());
             return false;
         }
 
@@ -255,7 +278,7 @@ public class JavaXConstraintHandler {
      */
     private static boolean handleDigits(NamedTypedValue namedTypedValue, Annotation annotation){
         if (namedTypedValue instanceof BigDecimalParam || namedTypedValue instanceof  BigIntegerParam
-                || namedTypedValue instanceof StringParam || (namedTypedValue instanceof PrimitiveOrWrapperParam && ((PrimitiveOrWrapperType)namedTypedValue.getType()).isNumber())){
+                || namedTypedValue instanceof StringParam || (namedTypedValue instanceof PrimitiveOrWrapperParam && ((PrimitiveOrWrapperType)namedTypedValue.getType()).isIntegralNumber())){
         try {
             int dInteger = (int) annotation.annotationType().getDeclaredMethod("integer").invoke(annotation);
             int dFraction = (int) annotation.annotationType().getDeclaredMethod("fraction").invoke(annotation);
@@ -274,5 +297,20 @@ public class JavaXConstraintHandler {
 
 
         return false;
+    }
+
+    private static boolean handlePositiveOrNegative(NamedTypedValue namedTypedValue, JavaXConstraintSupportType supportType){
+        if (namedTypedValue instanceof BigDecimalParam || namedTypedValue instanceof  BigIntegerParam
+                || (namedTypedValue instanceof PrimitiveOrWrapperParam && ((PrimitiveOrWrapperType)namedTypedValue.getType()).isNumber())){
+            switch (supportType){
+
+            }
+
+        } else {
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Digits");
+            return false;
+        }
+
+        return true;
     }
 }

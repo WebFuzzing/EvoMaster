@@ -16,7 +16,7 @@ import java.util.List;
  *      BigInteger constructors and operations throw ArithmeticException when the result is
  *      out of the supported range of -2^Integer.MAX_VALUE (exclusive) to +2^Integer.MAX_VALUE (exclusive).
  */
-public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger> {
+public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger> implements MinMaxValue<BigInteger>{
 
     private BigInteger min;
 
@@ -108,19 +108,48 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
         return ""+getValue().toString()+"";
     }
 
+    @Override
     public BigInteger getMin() {
         return min;
     }
 
+    @Override
     public void setMin(BigInteger min) {
+        if (this.min != null && this.min.compareTo(min) >=0)
+            return;
+
         this.min = min;
     }
 
+    @Override
     public BigInteger getMax() {
         return max;
     }
 
+    @Override
     public void setMax(BigInteger max) {
+        if (this.max != null && this.max.compareTo(max) <= 0)
+            return;
         this.max = max;
+    }
+
+    @Override
+    public boolean getMinInclusive() {
+        return false;
+    }
+
+    @Override
+    public void setMinInclusive(boolean inclusive) {
+
+    }
+
+    @Override
+    public boolean getMaxInclusive() {
+        return false;
+    }
+
+    @Override
+    public void setMaxInclusive(boolean inclusive) {
+
     }
 }

@@ -13,6 +13,11 @@ import java.util.List;
  * double param
  */
 public class DoubleParam extends PrimitiveOrWrapperParam<Double> {
+
+    boolean minInclusive;
+
+    boolean maxInclusive;
+
     public DoubleParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema) {
         super(name, type, fullTypeName, clazz, accessibleSchema);
     }

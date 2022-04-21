@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Primitive types Param
  */
-public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> {
+public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> implements MinMaxValue<Long> {
 
     /**
      * min value if it is specified
@@ -106,20 +106,30 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         return dto;
     }
 
+    @Override
     public Long getMin() {
         return min;
     }
 
+    @Override
     public void setMin(Long min) {
-        this.min = min;
+        if (this.min != null){
+            this.min = Math.max(this.min, min);
+        }else
+            this.min = min;
     }
 
+    @Override
     public Long getMax() {
         return max;
     }
 
+    @Override
     public void setMax(Long max) {
-        this.max = max;
+        if (this.max != null)
+            this.max = Math.min(this.max, max);
+        else
+            this.max = max;
     }
 
     @Override
@@ -189,4 +199,23 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         return null;
     }
 
+    @Override
+    public boolean getMinInclusive() {
+        return false;
+    }
+
+    @Override
+    public void setMinInclusive(boolean inclusive) {
+
+    }
+
+    @Override
+    public boolean getMaxInclusive() {
+        return false;
+    }
+
+    @Override
+    public void setMaxInclusive(boolean inclusive) {
+
+    }
 }
