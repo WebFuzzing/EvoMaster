@@ -1153,13 +1153,50 @@ class GraphQLActionBuilderTest {
         assertTrue(aboutMe.parameters[0].gene is ObjectGene)
         val objAboutMe = aboutMe.parameters[0].gene as ObjectGene
 
-        assertEquals(2, objAboutMe.fields.size)
+        assertEquals(6, objAboutMe.fields.size)
         assertTrue(objAboutMe.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "dataSets" })
         assertTrue(objAboutMe.fields.any { it is TupleGene && it.name == "dataSetMetadataList" })
 
         val tupleDataSetMetadataList = objAboutMe.fields.first { it.name == "dataSetMetadataList" } as TupleGene
         assertEquals(5, tupleDataSetMetadataList.elements.size)
         assertTrue( (tupleDataSetMetadataList.elements.last() as OptionalGene).gene !is CycleObjectGene)
+/*
+        val objDataSetMetadataList1 = (tupleDataSetMetadataList.elements.last() as OptionalGene).gene as ObjectGene
+        assertEquals(20, objDataSetMetadataList1.fields.size)
 
+          assertTrue(objDataSetMetadataList1.fields.any { it is TupleGene && it.name == "collection" })
+          val tupleCollection3 = objDataSetMetadataList1.fields.first { it.name == "collection" } as TupleGene
+          assertEquals(2, tupleCollection3.elements.size)
+          assertTrue( (tupleCollection3.elements.last() as OptionalGene).gene !is CycleObjectGene)
+
+        *//**//*
+        val dataSetMetadataList = actionCluster["dataSetMetadataList"] as GraphQLAction
+        assertEquals(5, dataSetMetadataList.parameters.size)
+        assertTrue(dataSetMetadataList.parameters[4] is GQReturnParam)
+
+        assertTrue(dataSetMetadataList.parameters[4].gene is ObjectGene)
+        val objDataSetMetadataList = dataSetMetadataList.parameters[4].gene as ObjectGene
+
+        assertEquals(20, objDataSetMetadataList.fields.size)
+        assertTrue(objDataSetMetadataList.fields.any { it is TupleGene && it.name == "collection" })
+
+        val tupleCollection = objDataSetMetadataList.fields.first { it.name == "collection" } as TupleGene
+        assertEquals(2, tupleCollection.elements.size)
+        assertTrue( (tupleCollection.elements.last() as OptionalGene).gene !is CycleObjectGene)
+        *//**//*
+
+        val dataSetMetadata = actionCluster["dataSetMetadata"] as GraphQLAction
+        assertEquals(2, dataSetMetadata.parameters.size)
+        assertTrue(dataSetMetadata.parameters[1] is GQReturnParam)
+
+        assertTrue(dataSetMetadata.parameters[1].gene is ObjectGene)
+        val objDataSetMetadata = dataSetMetadata.parameters[1].gene as ObjectGene
+
+        assertEquals(20, objDataSetMetadata.fields.size)
+        assertTrue(objDataSetMetadata.fields.any { it is TupleGene && it.name == "collection" })
+
+        val tupleCollection2 = objDataSetMetadata.fields.first { it.name == "collection" } as TupleGene
+        assertEquals(2, tupleCollection2.elements.size)
+        assertTrue( (tupleCollection2.elements.last() as OptionalGene).gene !is CycleObjectGene)*/
     }
 }
