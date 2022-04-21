@@ -76,7 +76,7 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
 
             val dc2 = this[3]
             assertTrue(dc2 is BigDecimalGene)
-            (dc2 as FloatGene).apply {
+            (dc2 as BigDecimalGene).apply {
                 assertNotNull(scale)
                 assertEquals(3, scale)
                 assertEquals(BigDecimal("-99.999"), min)
@@ -85,7 +85,7 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
 
             val dc3 = this[4]
             assertTrue(dc3 is BigDecimalGene)
-            (dc3 as FloatGene).apply {
+            (dc3 as BigDecimalGene).apply {
                 assertNotNull(scale)
                 assertEquals(1, scale)
                 assertEquals(BigDecimal("-9.9"), min)
@@ -94,7 +94,7 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
 
             val dc4 = this[5]
             assertTrue(dc4 is BigDecimalGene)
-            (dc4 as FloatGene).apply {
+            (dc4 as BigDecimalGene).apply {
                 assertNotNull(scale)
                 assertEquals(1, scale)
                 assertEquals(BigDecimal("0.0"), min)
