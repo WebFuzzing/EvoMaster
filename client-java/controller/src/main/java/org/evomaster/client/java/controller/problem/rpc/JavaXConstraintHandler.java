@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.annotation.Annotation;
@@ -38,7 +39,7 @@ public class JavaXConstraintHandler {
             case MAX: solved = handleMax(namedTypedValue, annotation, supportType); break;
             case DECIMAL_MIN:
             case MIN: solved = handleMin(namedTypedValue, annotation, supportType); break;
-            case DIGITS: solved = handleDigits(namedTypedValue, annotation,supportType); break;
+            case DIGITS: solved = handleDigits(namedTypedValue, annotation); break;
             default:
                 SimpleLogger.error("ERROR: Not handle "+ supportType.annotation);
         }
@@ -250,10 +251,28 @@ public class JavaXConstraintHandler {
      * byte, short, int, long, and their respective wrapper types
      * null elements are considered valid.
      *
-     * @return
+     * @return whether the constraint is handled
      */
-    private static boolean handleDigits(NamedTypedValue namedTypedValue, Annotation annotation, JavaXConstraintSupportType supportType){
-        //TODO
+    private static boolean handleDigits(NamedTypedValue namedTypedValue, Annotation annotation){
+        if (namedTypedValue instanceof BigDecimalParam || namedTypedValue instanceof  BigIntegerParam
+                || namedTypedValue instanceof StringParam || (namedTypedValue instanceof PrimitiveOrWrapperParam && ((PrimitiveOrWrapperType)namedTypedValue.getType()).isNumber())){
+        try {
+            int dInteger = (int) annotation.annotationType().getDeclaredMethod("integer").invoke(annotation);
+            int dFraction = (int) annotation.annotationType().getDeclaredMethod("fraction").invoke(annotation);
+
+            namedTypedValue.setPrecision(dInteger + dFraction);
+            namedTypedValue.setScale(dFraction);
+
+        } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
+            throw new RuntimeException("ERROR: fail to process Digits ", e);
+        }
+
+        } else {
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Digits");
+            return false;
+        }
+
+
         return false;
     }
 }

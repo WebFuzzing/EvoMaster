@@ -42,4 +42,8 @@ public class PrimitiveOrWrapperType extends TypeSchema {
     public PrimitiveOrWrapperType copy() {
         return new PrimitiveOrWrapperType(getType(), getFullTypeName(), isWrapper, getClazz());
     }
+
+    public boolean isNumber(){
+        return Number.class.isAssignableFrom(getClazz()) || getClazz().equals(long.class) || getClazz().equals(int.class) || getClazz().equals(short.class) || getClazz().equals(byte.class);
+    }
 }

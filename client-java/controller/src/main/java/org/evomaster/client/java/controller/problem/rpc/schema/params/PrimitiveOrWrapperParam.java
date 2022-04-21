@@ -188,4 +188,5 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     public String getCastType() {
         return null;
     }
+
 }

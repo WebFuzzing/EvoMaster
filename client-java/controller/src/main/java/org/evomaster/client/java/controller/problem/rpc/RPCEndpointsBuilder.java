@@ -513,9 +513,6 @@ public class RPCEndpointsBuilder {
 
                 long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes))).count();
 
-
-
-
                 if (cycleSize == 1){
                     List<NamedTypedValue> fields = new ArrayList<>();
 
