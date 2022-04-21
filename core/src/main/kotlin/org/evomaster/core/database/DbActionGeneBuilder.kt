@@ -22,6 +22,9 @@ import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.evomaster.core.utils.NumberCalculationUtil
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import kotlin.math.pow
 
 class DbActionGeneBuilder {
@@ -544,24 +547,27 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
-            /*
-                Man: TODO check whether to update it with BigDecimalGene
-             */
             if (column.scale >= 0) {
                 /*
                     set precision and boundary for DECIMAL
                     https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html
+
+                    for mysql, precision is [1, 65] (default 10), and scale is [0, 30] (default 0)
+                    different db might have different range, then do not validate the range for the moment
                  */
                 val range = NumberCalculationUtil.boundaryDecimal(column.size, column.scale)
-                FloatGene(
+                BigDecimalGene(
                     column.name,
-                    min = if (column.isUnsigned) 0.0f else range.first.toFloat(),
-                    max = range.second.toFloat(),
+                    min = if (column.isUnsigned) BigDecimal.ZERO else range.first.toBigDecimal(),
+                    max = range.second.toBigDecimal(),
                     precision = column.size,
                     scale = column.scale
                 )
-            } else
-                FloatGene(column.name, precision = column.size)
+            } else{
+                log.warn("invalid scale value (${column.scale}) for decimal, and it should not be less than 0")
+                // set the scale with default value 0 if it is invalid
+                BigDecimalGene(column.name, precision = column.size, scale = 0)
+            }
         }
     }
 
@@ -573,14 +579,11 @@ class DbActionGeneBuilder {
             val MONEY_COLUMN_PRECISION = 2
             val MONEY_COLUMN_SIZE = 8
             val range = NumberCalculationUtil.boundaryDecimal(MONEY_COLUMN_SIZE, MONEY_COLUMN_PRECISION)
-            /*
-                Man: TODO check whether to update it with BigDecimalGene
-                need to check with the author about the update on setup of precision and scale as below
-             */
-            FloatGene(
+
+            BigDecimalGene(
                 column.name,
-                min = range.first.toFloat(),
-                max = range.second.toFloat(),
+                min = range.first.toBigDecimal(),
+                max = range.second.toBigDecimal(),
                 precision = MONEY_COLUMN_SIZE,
                 scale = MONEY_COLUMN_PRECISION
             )
@@ -617,5 +620,7 @@ class DbActionGeneBuilder {
                 throw IllegalArgumentException("the list of enumerated values cannot be empty")
             }
         }
+
+        private val log: Logger = LoggerFactory.getLogger(DbActionGeneBuilder::class.java)
     }
 }

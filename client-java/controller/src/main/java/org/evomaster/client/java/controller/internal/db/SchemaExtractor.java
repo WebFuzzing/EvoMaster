@@ -398,8 +398,13 @@ public class SchemaExtractor {
                         https://dev.mysql.com/doc/refman/8.0/en/floating-point-types.html
                         therefore, here, we only set precision when type is DECIMAL
                      */
-                    if (columnDto.type.equals("DECIMAL"))
+                    if (columnDto.type.equals("DECIMAL")){
                         columnDto.scale = columns.getInt("DECIMAL_DIGITS");
+                        // default is 0
+                        if (columnDto.scale < 0)
+                            columnDto.scale = 0;
+                    }
+
                     break;
                 case POSTGRES:
                     columnDto.type = typeAsString;
