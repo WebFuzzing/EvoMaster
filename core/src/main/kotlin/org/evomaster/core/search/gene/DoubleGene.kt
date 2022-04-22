@@ -7,11 +7,11 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.RoundingMode
 
 
 class DoubleGene(name: String,
@@ -40,7 +40,7 @@ class DoubleGene(name: String,
     override fun copyContent() = DoubleGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        value = NumberMutator.randomizeDouble(min, max, scale, randomness)
+        value = NumberMutatorUtils.randomizeDouble(min, max, scale, randomness)
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
@@ -104,11 +104,11 @@ class DoubleGene(name: String,
     }
 
     override fun getMaximum(): Double {
-        return max?: Double.MAX_VALUE
+        return (max?: Double.MAX_VALUE).run { if (!maxInclusive) this - Double.MIN_VALUE else this }.run { getFormattedValue(this, RoundingMode.DOWN) }
     }
 
     override fun getMinimum(): Double {
-        return min?: -Double.MAX_VALUE
+        return (min?: -Double.MAX_VALUE).run { if (!minInclusive) this + Double.MIN_VALUE else this }.run { getFormattedValue(this, RoundingMode.UP) }
     }
 
     override fun compareTo(other: ComparableGene): Int {

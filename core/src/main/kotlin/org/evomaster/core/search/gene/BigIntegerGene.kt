@@ -26,9 +26,8 @@ class BigIntegerGene(
     min : BigInteger? = null,
     max : BigInteger? = null,
     minInclusive : Boolean = true,
-    maxInclusive : Boolean = true,
-
-) : NumberGene<BigInteger> (name, value, min, max, minInclusive, maxInclusive) {
+    maxInclusive : Boolean = true
+) : IntegralNumberGene<BigInteger> (name, value, min, max, minInclusive, maxInclusive) {
 
 
     companion object{
@@ -48,7 +47,7 @@ class BigIntegerGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        val longValue = NumberMutator.randomizeLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, forceNewValue)
+        val longValue = NumberMutatorUtils.randomizeLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, forceNewValue)
         setValueWithLong(longValue)
     }
 
@@ -64,7 +63,7 @@ class BigIntegerGene(
         val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (mutated) return true
 
-        val longValue = NumberMutator.mutateLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, apc)
+        val longValue = NumberMutatorUtils.mutateLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, apc)
         setValueWithLong(longValue)
         return true
     }
@@ -156,17 +155,19 @@ class BigIntegerGene(
     }
 
     private fun getMinUsedInSearch() : Long {
-        if (min == null || BigInteger.valueOf(Long.MIN_VALUE) >= min) return Long.MIN_VALUE
-        if (min >= BigInteger.valueOf(Long.MAX_VALUE))
+        if (min!= null && min >= BigInteger.valueOf(Long.MAX_VALUE))
             throw IllegalStateException("not support yet: minimum value is greater than Long.MAX")
-        return min.toLong()
+
+        val m = if (min == null || BigInteger.valueOf(Long.MIN_VALUE) >= min) Long.MIN_VALUE else min.toLong()
+        return m.run { if (!minInclusive) this + 1L else this}
     }
 
     private fun getMaxUsedInSearch() : Long {
-        if (max == null || BigInteger.valueOf(Long.MAX_VALUE) <= min) return Long.MAX_VALUE
-        if (max <= BigInteger.valueOf(Long.MIN_VALUE))
+        if (max!= null && max <= BigInteger.valueOf(Long.MIN_VALUE))
             throw IllegalStateException("not support yet: max value is less than Long.MIN")
-        return max.toLong()
+
+        val m = if (max == null || BigInteger.valueOf(Long.MAX_VALUE) <= min) return Long.MAX_VALUE else max.toLong()
+        return max.toLong().run { if (!maxInclusive) this - 1L else this }
     }
 
     override fun getMinimum(): BigInteger {

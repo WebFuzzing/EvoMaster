@@ -2,10 +2,11 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.NumberMutator.mutateFloatingPointNumber
-import org.evomaster.core.search.gene.NumberMutator.mutateLong
-import org.evomaster.core.search.gene.NumberMutator.randomizeDouble
-import org.evomaster.core.search.gene.NumberMutator.randomizeLong
+import org.evomaster.core.search.gene.NumberMutatorUtils.getFormattedValue
+import org.evomaster.core.search.gene.NumberMutatorUtils.mutateFloatingPointNumber
+import org.evomaster.core.search.gene.NumberMutatorUtils.mutateLong
+import org.evomaster.core.search.gene.NumberMutatorUtils.randomizeDouble
+import org.evomaster.core.search.gene.NumberMutatorUtils.randomizeLong
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -223,17 +224,20 @@ class BigDecimalGene(
     }
 
     private fun getMinUsedInSearch() : Double {
-        if (min == null || BigDecimal.valueOf(-Double.MAX_VALUE) >= min) return -Double.MAX_VALUE
-        if (min >= BigDecimal.valueOf(Double.MAX_VALUE))
+        if (min != null && min >= BigDecimal.valueOf(Double.MAX_VALUE))
             throw IllegalStateException("not support yet: minimum value is greater than Double.MAX")
-        return min.toDouble()
+        val m = if (min == null || BigDecimal.valueOf(-Double.MAX_VALUE) >= min) -Double.MAX_VALUE else min.toDouble()
+
+        return m.run { if (!minInclusive) this + Double.MIN_VALUE else this }.run { getFormattedValue(this, scale, RoundingMode.UP) }
     }
 
     private fun getMaxUsedInSearch() : Double {
-        if (max == null || BigDecimal.valueOf(Double.MAX_VALUE) <= min) return Double.MAX_VALUE
-        if (max <= BigDecimal.valueOf(Double.MIN_VALUE))
+        if (max != null && max <= BigDecimal.valueOf(Double.MIN_VALUE))
             throw IllegalStateException("not support yet: max value is less than Double.MIN")
-        return max.toDouble()
+
+        val m = if (max == null || BigDecimal.valueOf(Double.MAX_VALUE) <= max) Double.MAX_VALUE else max.toDouble()
+
+        return m.run { if (!maxInclusive) this - Double.MIN_VALUE else this }.run { getFormattedValue(this, scale, RoundingMode.DOWN) }
     }
 
     override fun getMinimum(): BigDecimal {

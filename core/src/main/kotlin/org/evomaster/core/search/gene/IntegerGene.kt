@@ -30,7 +30,7 @@ class IntegerGene(
 
     minInclusive : Boolean = true,
     maxInclusive : Boolean = true,
-) : NumberGene<Int>(name, value, min, max, minInclusive, maxInclusive) {
+) : IntegralNumberGene<Int>(name, value, min, max, minInclusive, maxInclusive) {
 
     init {
         if (min == max)
@@ -169,8 +169,8 @@ class IntegerGene(
         return this.max > this.min
     }
 
-    override fun getMaximum(): Int = max
+    override fun getMaximum(): Int = max.run { if (!maxInclusive) this - 1 else this }
 
-    override fun getMinimum(): Int = min
+    override fun getMinimum(): Int = min.run { if (!minInclusive) this + 1 else this }
 
 }

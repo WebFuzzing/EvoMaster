@@ -12,7 +12,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
+import java.math.RoundingMode
 
 
 class FloatGene(name: String,
@@ -123,11 +123,11 @@ class FloatGene(name: String,
     }
 
     override fun getMinimum(): Float {
-        return min?: -Float.MAX_VALUE
+        return (min?: -Float.MAX_VALUE).run { if (!minInclusive) this + Float.MIN_VALUE else this }.run { getFormattedValue(this, RoundingMode.UP) }
     }
 
     override fun getMaximum(): Float {
-        return max?: Float.MAX_VALUE
+        return (max?: Float.MAX_VALUE).run { if (!maxInclusive) this - Float.MIN_VALUE else this }.run { getFormattedValue(this, RoundingMode.DOWN) }
     }
 
     override fun compareTo(other: ComparableGene): Int {

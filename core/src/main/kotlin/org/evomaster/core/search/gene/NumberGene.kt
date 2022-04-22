@@ -62,12 +62,12 @@ abstract class NumberGene<T : Number>(name: String,
     }
 
     /**
-     * @return Minimum value of the gene
+     * @return inclusive Minimum value of the gene
      */
     abstract fun getMinimum() : T
 
     /**
-     * @return Maximum value of the gene
+     * @return inclusive Maximum value of the gene
      */
     abstract fun getMaximum() : T
 

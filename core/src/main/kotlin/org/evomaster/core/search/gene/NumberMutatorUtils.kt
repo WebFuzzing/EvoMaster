@@ -8,7 +8,7 @@ import java.math.RoundingMode
 import kotlin.math.min
 import kotlin.math.pow
 
-object NumberMutator {
+object NumberMutatorUtils {
 
     /**
      * @return the maximum range of the [value] that can be changed based on
@@ -101,12 +101,12 @@ object NumberMutator {
     /**
      * @return formatted value based on precision if it has
      */
-    fun <N: Number> getFormattedValue(valueToFormat: N, scale: Int?) : N {
+    fun <N: Number> getFormattedValue(valueToFormat: N, scale: Int?, roundingMode: RoundingMode= RoundingMode.HALF_UP) : N {
         if (scale == null)
             return valueToFormat
         return when (valueToFormat) {
-            is Double -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale).toDouble() as N
-            is Float -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale).toFloat() as N
+            is Double -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toDouble() as N
+            is Float -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toFloat() as N
             else -> throw Exception("valueToFormat must be Double or Float, but it is ${valueToFormat::class.java.simpleName}")
         }
     }

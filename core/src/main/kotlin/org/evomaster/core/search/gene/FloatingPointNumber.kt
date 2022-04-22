@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
+import java.math.RoundingMode
 
 abstract class FloatingPointNumber<T:Number>(
     name: String,
@@ -43,14 +44,14 @@ abstract class FloatingPointNumber<T:Number>(
      * mutate Floating Point Number in a standard way
      */
     fun mutateFloatingPointNumber(randomness: Randomness, apc: AdaptiveParameterControl): T{
-        return NumberMutator.mutateFloatingPointNumber(randomness, null, maxRange = null, apc, value, smin = getMinimum(), smax = getMaximum(), scale=scale)
+        return NumberMutatorUtils.mutateFloatingPointNumber(randomness, null, maxRange = null, apc, value, smin = getMinimum(), smax = getMaximum(), scale=scale)
     }
 
     /**
      * @return formatted [value] based on [scale]
      */
-    fun getFormattedValue(valueToFormat: T?=null) : T{
-        return NumberMutator.getFormattedValue(valueToFormat?:value, scale)
+    fun getFormattedValue(valueToFormat: T?=null, roundingMode: RoundingMode= RoundingMode.HALF_UP) : T{
+        return NumberMutatorUtils.getFormattedValue(valueToFormat?:value, scale)
     }
 
     /**
@@ -58,7 +59,7 @@ abstract class FloatingPointNumber<T:Number>(
      * this is typlically used when [scale] is specified
      */
     fun getMinimalDelta(): T?{
-        return NumberMutator.getMinimalDelta(scale, value)
+        return NumberMutatorUtils.getMinimalDelta(scale, value)
     }
 
     /**

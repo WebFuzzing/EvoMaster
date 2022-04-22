@@ -18,7 +18,7 @@ class LongGene(
         max : Long? = null,
         minInclusive : Boolean = true,
         maxInclusive : Boolean = true
-) : NumberGene<Long>(name, value, min, max, minInclusive, maxInclusive) {
+) : IntegralNumberGene<Long>(name, value, min, max, minInclusive, maxInclusive) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
@@ -31,14 +31,14 @@ class LongGene(
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        value = NumberMutator.randomizeLong(value, min, max, randomness, forceNewValue)
+        value = NumberMutatorUtils.randomizeLong(value, min, max, randomness, forceNewValue)
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
         val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (mutated) return true
 
-        value = NumberMutator.mutateLong(value, min, max, randomness, apc)
+        value = NumberMutatorUtils.mutateLong(value, min, max, randomness, apc)
 
         return true
     }
@@ -102,7 +102,7 @@ class LongGene(
         return this.toLong().compareTo(other.toLong())
     }
 
-    override fun getMaximum(): Long = max?: Long.MAX_VALUE
+    override fun getMaximum(): Long = (max?: Long.MAX_VALUE).run { if (!maxInclusive) this - 1L else this }
 
-    override fun getMinimum(): Long = min?: Long.MIN_VALUE
+    override fun getMinimum(): Long = (min?: Long.MIN_VALUE).run { if (!minInclusive) this + 1L else this }
 }
