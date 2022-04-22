@@ -2,6 +2,7 @@ package org.evomaster.core.utils
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 
 class NumberCalculationUtilTest {
 
@@ -12,9 +13,13 @@ class NumberCalculationUtilTest {
 
     @Test
     fun testDecBoundary(){
-        val range = NumberCalculationUtil.boundaryDecimal(5, 2)
-        assertEquals(-999.99, range.first)
-        assertEquals(999.99, range.second)
+        val fpRange = NumberCalculationUtil.boundaryDecimal(5, 2)
+        assertEquals(BigDecimal("-999.99"), fpRange.first)
+        assertEquals(BigDecimal("999.99"), fpRange.second)
+
+        val inRange = NumberCalculationUtil.boundaryDecimal(3, 0)
+        assertEquals(BigDecimal("-999"), inRange.first)
+        assertEquals(BigDecimal("999"), inRange.second)
     }
 
     @Test

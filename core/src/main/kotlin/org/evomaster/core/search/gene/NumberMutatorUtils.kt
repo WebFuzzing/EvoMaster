@@ -46,7 +46,7 @@ object NumberMutatorUtils {
         var res = modifyValue(randomness, value.toDouble(), delta = gaussianDelta, maxRange = range, specifiedJumpDelta = GeneUtils.getDelta(randomness, apc, range),scale == null)
 
         if (scale != null && getFormattedValue(value, scale) == getFormattedValue(res, scale)){
-            res += (if (gaussianDelta>0) 1.0 else -1.0).times(getMinimalDelta(scale, value)!!.toDouble())
+            res += (if (gaussianDelta>0) 1.0 else -1.0).times(getMinimalDelta(scale, value).toDouble())
         }
 
         return if (res > smax.toDouble()) smax
@@ -88,12 +88,11 @@ object NumberMutatorUtils {
      * @return minimal delta if it has.
      * this is typically used when the precision is specified
      */
-    fun <N: Number> getMinimalDelta(scale: Int?, value: N): N? {
-        if (scale == null) return null
-        val mdelta = 1.0/((10.0).pow(scale))
+    fun <N: Number> getMinimalDelta(scale: Int?, value: N): N {
         return when (value) {
-            is Double -> NumberCalculationUtil.valueWithPrecisionAndScale(mdelta, scale).toDouble() as N
-            is Float -> NumberCalculationUtil.valueWithPrecisionAndScale(mdelta, scale).toFloat() as N
+            is Double -> Double.MIN_VALUE.run { if (scale == null) this else NumberCalculationUtil.valueWithPrecisionAndScale(this, scale, RoundingMode.UP).toDouble() } as N
+            is Float -> Float.MIN_VALUE.run { if (scale == null) this else NumberCalculationUtil.valueWithPrecisionAndScale(this.toDouble(), scale, RoundingMode.UP).toFloat() } as N
+            is BigDecimal -> Double.MIN_VALUE.run { if (scale == null) this.toBigDecimal() else NumberCalculationUtil.valueWithPrecisionAndScale(this, scale, RoundingMode.UP)} as N
             else -> throw Exception("valueToFormat must be Double or Float, but it is ${value::class.java.simpleName}")
         }
     }
@@ -107,6 +106,7 @@ object NumberMutatorUtils {
         return when (valueToFormat) {
             is Double -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toDouble() as N
             is Float -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toFloat() as N
+            is BigDecimal -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode) as N
             else -> throw Exception("valueToFormat must be Double or Float, but it is ${valueToFormat::class.java.simpleName}")
         }
     }

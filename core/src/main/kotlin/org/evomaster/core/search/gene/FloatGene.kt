@@ -123,11 +123,11 @@ class FloatGene(name: String,
     }
 
     override fun getMinimum(): Float {
-        return (min?: -Float.MAX_VALUE).run { if (!minInclusive) this + Float.MIN_VALUE else this }.run { getFormattedValue(this, RoundingMode.UP) }
+        return (min?: -Float.MAX_VALUE).run { if (!minInclusive) this + getMinimalDelta() else this }.run { getFormattedValue(this) }
     }
 
     override fun getMaximum(): Float {
-        return (max?: Float.MAX_VALUE).run { if (!maxInclusive) this - Float.MIN_VALUE else this }.run { getFormattedValue(this, RoundingMode.DOWN) }
+        return (max?: Float.MAX_VALUE).run { if (!maxInclusive) this - getMinimalDelta() else this }.run { getFormattedValue(this) }
     }
 
     override fun compareTo(other: ComparableGene): Int {

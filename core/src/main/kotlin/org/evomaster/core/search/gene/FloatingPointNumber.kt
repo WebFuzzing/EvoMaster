@@ -56,9 +56,9 @@ abstract class FloatingPointNumber<T:Number>(
 
     /**
      * @return minimal changes of the [value].
-     * this is typlically used when [scale] is specified
+     * this is typically used when [scale] is specified
      */
-    fun getMinimalDelta(): T?{
+    fun getMinimalDelta(): T{
         return NumberMutatorUtils.getMinimalDelta(scale, value)
     }
 

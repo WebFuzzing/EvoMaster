@@ -29,8 +29,8 @@ class DoubleGene(name: String,
                   */
                  scale: Int? = null
 ) : FloatingPointNumber<Double>(name, value,
-    min = if (precision != null && scale != null && min == null) NumberCalculationUtil.boundaryDecimal(precision, scale).first else min,
-    max = if (precision != null && scale != null && max == null) NumberCalculationUtil.boundaryDecimal(precision, scale).second else max,
+    min = if (precision != null && scale != null && min == null) NumberCalculationUtil.boundaryDecimal(precision, scale).first.toDouble() else min,
+    max = if (precision != null && scale != null && max == null) NumberCalculationUtil.boundaryDecimal(precision, scale).second.toDouble() else max,
     minInclusive, maxInclusive, precision, scale) {
 
     companion object{
@@ -104,11 +104,11 @@ class DoubleGene(name: String,
     }
 
     override fun getMaximum(): Double {
-        return (max?: Double.MAX_VALUE).run { if (!maxInclusive) this - Double.MIN_VALUE else this }.run { getFormattedValue(this, RoundingMode.DOWN) }
+        return (max?: Double.MAX_VALUE).run { if (!maxInclusive) this - getMinimalDelta() else this }.run { getFormattedValue(this) }
     }
 
     override fun getMinimum(): Double {
-        return (min?: -Double.MAX_VALUE).run { if (!minInclusive) this + Double.MIN_VALUE else this }.run { getFormattedValue(this, RoundingMode.UP) }
+        return (min?: -Double.MAX_VALUE).run { if (!minInclusive) this + getMinimalDelta() else this }.run { getFormattedValue(this) }
     }
 
     override fun compareTo(other: ComparableGene): Int {

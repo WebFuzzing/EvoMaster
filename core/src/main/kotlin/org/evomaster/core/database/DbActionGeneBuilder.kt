@@ -558,8 +558,8 @@ class DbActionGeneBuilder {
                 val range = NumberCalculationUtil.boundaryDecimal(column.size, column.scale)
                 BigDecimalGene(
                     column.name,
-                    min = if (column.isUnsigned) BigDecimal.ZERO.setScale(column.scale) else range.first.toBigDecimal(),
-                    max = range.second.toBigDecimal(),
+                    min = if (column.isUnsigned) BigDecimal.ZERO.setScale(column.scale) else range.first,
+                    max = range.second,
                     precision = column.size,
                     scale = column.scale
                 )
@@ -582,8 +582,8 @@ class DbActionGeneBuilder {
 
             BigDecimalGene(
                 column.name,
-                min = range.first.toBigDecimal(),
-                max = range.second.toBigDecimal(),
+                min = range.first,
+                max = range.second,
                 precision = MONEY_COLUMN_SIZE,
                 scale = MONEY_COLUMN_PRECISION
             )

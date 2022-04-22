@@ -13,6 +13,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
@@ -44,15 +46,18 @@ class BigDecimalGene(
      * as jdk,
      * the number of decimal digits in this BigDecimal
      */
-    val precision : Int?,
+    precision : Int? = null,
 
     /**
      * as jdk,
      * the number of digits to the right of the decimal point
      */
-    val scale : Int?
+    scale : Int? = null
 
-) : NumberGene<BigDecimal>(name, value, min, max, minInclusive, maxInclusive){
+) : FloatingPointNumber<BigDecimal>(name, value,
+    min = if (precision != null && scale != null && min == null) NumberCalculationUtil.boundaryDecimal(precision, scale).first else min,
+    max = if (precision != null && scale != null && max == null) NumberCalculationUtil.boundaryDecimal(precision, scale).second else max,
+    minInclusive, maxInclusive, precision, scale){
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(BigDecimalGene::class.java)
@@ -64,6 +69,14 @@ class BigDecimalGene(
 
         private val DEFAULT_ROUNDING_MODE : RoundingMode = RoundingMode.HALF_UP
     }
+
+    /**
+     * whether to allow search to change [floatingPointMode]
+     *
+     * if [scale] is specified, floating mode is immutable
+     * */
+    var isFloatingPointMutable : Boolean = scale == null
+        private set
 
     init {
         if (precision != null && precision < 0)
@@ -79,14 +92,6 @@ class BigDecimalGene(
         // format value
         setValueWithDecimal(value, precision, scale)
     }
-
-    /**
-     * whether to allow search to change [floatingPointMode]
-     *
-     * if [scale] is specified, floating mode is immutable
-     * */
-    var isFloatingPointMutable : Boolean = scale == null
-        private set
 
     fun forbidFloatingPointModeMutable(){
         isFloatingPointMutable = false
@@ -228,30 +233,31 @@ class BigDecimalGene(
             throw IllegalStateException("not support yet: minimum value is greater than Double.MAX")
         val m = if (min == null || BigDecimal.valueOf(-Double.MAX_VALUE) >= min) -Double.MAX_VALUE else min.toDouble()
 
-        return m.run { if (!minInclusive) this + Double.MIN_VALUE else this }.run { getFormattedValue(this, scale, RoundingMode.UP) }
+        return m.run { if (!minInclusive) this + getMinimalDelta().toDouble() else this }.run { getFormattedValue(this, scale) }
     }
 
     private fun getMaxUsedInSearch() : Double {
         if (max != null && max <= BigDecimal.valueOf(Double.MIN_VALUE))
-            throw IllegalStateException("not support yet: max value is less than Double.MIN")
+            throw IllegalStateException("not support yet: max value is less than -Double.MAX")
 
         val m = if (max == null || BigDecimal.valueOf(Double.MAX_VALUE) <= max) Double.MAX_VALUE else max.toDouble()
 
-        return m.run { if (!maxInclusive) this - Double.MIN_VALUE else this }.run { getFormattedValue(this, scale, RoundingMode.DOWN) }
+        return m.run { if (!maxInclusive) this - getMinimalDelta().toDouble() else this }.run { getFormattedValue(this, scale) }
     }
 
     override fun getMinimum(): BigDecimal {
-        return BigDecimal.valueOf(getMinUsedInSearch())
+        return valueWithPrecisionAndScale(getMinUsedInSearch(), scale)
     }
 
     override fun getMaximum(): BigDecimal {
-        return BigDecimal.valueOf(getMaxUsedInSearch())
+        return valueWithPrecisionAndScale(getMaxUsedInSearch(), scale)
     }
 
     override fun isValid(): Boolean {
-        if (max != null && value > max)
+        if (!super.isValid()) return false
+        if (max != null && value > getMaximum())
             return false
-        if (min != null && value < min)
+        if (min != null && value < getMinimum())
             return false
         return true
     }
