@@ -46,6 +46,11 @@ public class JavaXConstraintHandler {
             case POSITIVEORZERO:
             case NEGATIVE:
             case NEGATIVEORZERO: solved = handlePositiveOrNegative(namedTypedValue, supportType); break;
+            case ASSERTFALSE:
+            case ASSERTTRUE:
+                solved = handleAssertFalseOrTrue(namedTypedValue, supportType); break;
+            case NULL:
+                solved = handleNull(namedTypedValue); break;
             default:
                 SimpleLogger.error("ERROR: Not handle "+ supportType.annotation);
         }
@@ -331,4 +336,27 @@ public class JavaXConstraintHandler {
 
         return true;
     }
+
+    private static boolean handleAssertFalseOrTrue(NamedTypedValue namedTypedValue, JavaXConstraintSupportType supportType){
+        if (supportType != JavaXConstraintSupportType.ASSERTFALSE && supportType != JavaXConstraintSupportType.ASSERTTRUE)
+            throw new IllegalStateException("ERROR: handleAssertFalseOrTrue cannot handle the constraint " + supportType);
+
+        if (namedTypedValue instanceof BooleanParam){
+            namedTypedValue.setMutable(false);
+            namedTypedValue.setDefaultValue(
+                    supportType == JavaXConstraintSupportType.ASSERTTRUE
+            );
+            return true;
+        }else {
+            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its AssertFalse or AssertTrue");
+            return false;
+        }
+    }
+
+    private static boolean handleNull(NamedTypedValue namedTypedValue){
+        namedTypedValue.setMutable(false);
+        namedTypedValue.setDefaultValue(null);
+        return true;
+    }
+
 }

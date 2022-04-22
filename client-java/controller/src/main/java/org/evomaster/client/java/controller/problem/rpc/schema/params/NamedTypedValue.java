@@ -39,8 +39,8 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     /**
      * represent whether the value is mutable
      *
-     * note that if the param is not mutable,
-     * then default value cannot be null except primitive type
+     * note that if the param is not mutable and the default value is null,
+     * it represents that the value is a fixed NULL
      */
     private boolean isMutable = true;
 
