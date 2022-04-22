@@ -535,12 +535,12 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT,
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG,
             RPCSupportedDataType.ENUM,
+            RPCSupportedDataType.BIGDECIMAL, RPCSupportedDataType.BIGINTEGER,
             RPCSupportedDataType.UTIL_DATE, RPCSupportedDataType.CUSTOM_OBJECT -> dto.stringValue == null
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST,
             RPCSupportedDataType.MAP,
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT,
             RPCSupportedDataType.PAIR -> dto.innerContent == null
-            RPCSupportedDataType.BIGDECIMAL, RPCSupportedDataType.BIGINTEGER -> TODO()
         }
     }
 
@@ -571,7 +571,8 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene
             RPCSupportedDataType.UTIL_DATE -> valueGene is DateTimeGene
             RPCSupportedDataType.PAIR -> valueGene is PairGene<*,*>
-            RPCSupportedDataType.BIGDECIMAL, RPCSupportedDataType.BIGINTEGER -> TODO()
+            RPCSupportedDataType.BIGDECIMAL -> valueGene is BigDecimalGene
+            RPCSupportedDataType.BIGINTEGER -> valueGene is BigIntegerGene
         }
     }
 
@@ -658,7 +659,32 @@ class RPCEndpointsHandler {
             }
         }
 
-        return wrapWithOptionalGene(gene, param.isNullable)
+        val wg = wrapWithOptionalGene(gene, param.isNullable)
+        return handleIsMutableAndDefault(wg, param.isMutable, param.defaultValue)
+    }
+
+    /**
+     * handle isMutable property of Parameter and default value
+     *
+     * note that
+     * if the gene is not mutable, then employ DisruptiveGene to handle it with 0.0 probability
+     */
+    private fun handleIsMutableAndDefault(gene: Gene, isMutable : Boolean, defaultValue: ParamDto?) : Gene{
+        if (isMutable) {
+            if (defaultValue != null)
+                setGeneBasedOnParamDto(gene, defaultValue)
+            return gene
+        }
+
+        if (defaultValue == null){
+            if (gene !is OptionalGene)
+                throw IllegalStateException("Fail to set default value for an immutable gene")
+            gene.isActive = false
+            return DisruptiveGene(gene.name, gene, 0.0)
+        }
+
+        setGeneBasedOnParamDto(gene, defaultValue)
+        return DisruptiveGene(gene.name, gene, 0.0)
     }
 
     private fun handleGeneWithCandidateAsEnumGene(gene: Gene, candidates: List<Gene>) : SeededGene<*>{
