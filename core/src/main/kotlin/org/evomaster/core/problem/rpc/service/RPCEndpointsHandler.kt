@@ -604,14 +604,28 @@ class RPCEndpointsHandler {
 
     private fun handleDtoParam(param: ParamDto): Gene{
         val gene = when(param.type.type){
-            RPCSupportedDataType.P_INT, RPCSupportedDataType.INT -> IntegerGene(param.name, min = param.minValue?.toInt()?: Int.MIN_VALUE, max = param.maxValue?.toInt()?:Int.MAX_VALUE)
+            RPCSupportedDataType.P_INT, RPCSupportedDataType.INT ->
+                IntegerGene(param.name, min = param.minValue?.toInt()?: Int.MIN_VALUE, max = param.maxValue?.toInt()?:Int.MAX_VALUE,
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
             RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> BooleanGene(param.name)
             RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR -> StringGene(param.name, value="", maxLength = 1, minLength = param.minSize?.toInt()?:0)
-            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> DoubleGene(param.name, min = param.minValue?.toDouble(), max = param.maxValue?.toDouble(), precision = param.precision, scale = param.scale)
-            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> FloatGene(param.name, min = param.minValue?.toFloat(), max = param.maxValue?.toFloat(), precision = param.precision, scale = param.scale)
-            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> LongGene(param.name, min = param.minValue?.toLongOrNull(), max = param.maxValue?.toLongOrNull())
-            RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT -> IntegerGene(param.name, min = param.minValue?.toInt()?:Short.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Short.MAX_VALUE.toInt())
-            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE -> IntegerGene(param.name, min = param.minValue?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Byte.MAX_VALUE.toInt())
+            RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE ->
+                DoubleGene(param.name, min = param.minValue?.toDouble(), max = param.maxValue?.toDouble(),
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive,
+                    precision = param.precision, scale = param.scale)
+            RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT ->
+                FloatGene(param.name, min = param.minValue?.toFloat(), max = param.maxValue?.toFloat(),
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive,
+                    precision = param.precision, scale = param.scale)
+            RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG ->
+                LongGene(param.name, min = param.minValue?.toLongOrNull(), max = param.maxValue?.toLongOrNull(),
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
+            RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT ->
+                IntegerGene(param.name, min = param.minValue?.toInt()?:Short.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Short.MAX_VALUE.toInt(),
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
+            RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE ->
+                IntegerGene(param.name, min = param.minValue?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Byte.MAX_VALUE.toInt(),
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
             RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> {
                 var strGene : Gene? = null
                 if (param.pattern != null){
@@ -625,7 +639,8 @@ class RPCEndpointsHandler {
                     strGene = StringGene(param.name).apply {
                         if (param.minValue != null || param.maxValue != null){
                             // add specification based on constraint info
-                            specializationGenes.add(LongGene(param.name, min=param.minValue?.toLongOrNull(), max = param.maxValue?.toLongOrNull()))
+                            specializationGenes.add(LongGene(param.name, min=param.minValue?.toLongOrNull(), max = param.maxValue?.toLongOrNull(),
+                                minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
                         }
                     }
                 }
@@ -639,8 +654,12 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> CycleObjectGene(param.name)
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
-            RPCSupportedDataType.BIGINTEGER -> BigIntegerGene(param.name, min = param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull())
-            RPCSupportedDataType.BIGDECIMAL -> BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(), precision = param.precision, scale = param.scale)
+            RPCSupportedDataType.BIGINTEGER ->
+                BigIntegerGene(param.name, min = param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
+            RPCSupportedDataType.BIGDECIMAL -> BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
+                minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive,
+                precision = param.precision, scale = param.scale)
         }
 
         if (param.candidates != null){
@@ -694,6 +713,7 @@ class RPCEndpointsHandler {
             is FloatGene ->  SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as FloatGene }))
             is LongGene ->  SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as LongGene }))
             is DoubleGene -> SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as DoubleGene }))
+            is BigDecimalGene, is BigIntegerGene -> TODO()
             // might be DateGene
             else -> {
                 throw IllegalStateException("Do not support configuring candidates for ${gene::class.java.simpleName} gene type")
@@ -708,6 +728,7 @@ class RPCEndpointsHandler {
             is FloatGene -> pGene.value.toString()
             is LongGene -> pGene.value.toString()
             is DoubleGene -> pGene.value.toString()
+            is BigDecimalGene, is BigIntegerGene -> TODO()
             else -> {
                 throw IllegalStateException("Do not support configuring candidates for ${gene::class.java.simpleName} gene type")
             }
