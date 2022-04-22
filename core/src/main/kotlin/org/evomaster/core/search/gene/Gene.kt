@@ -16,6 +16,24 @@ import org.slf4j.LoggerFactory
 /**
  * A building block representing one part of an Individual.
  * The terms "gene" comes from the evolutionary algorithm literature
+ *
+ *
+ *
+ * TO enable adaptive hypermutation
+ * 1. override [mutationWeight] if the gene is not simple gene
+ *
+ * 2. if the gene has inner genes which are needed to collect impact info.
+ * implement an impact for the new gene to collect impact info for gene mutation,
+ *  for instance, see [org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact]
+ *  we collect impacts for each field, then could guide on which field to be selected for mutation.
+ *  see more details in comments of [org.evomaster.core.search.impact.impactinfocollection.GeneImpact]
+ *
+ * 3. override [candidatesInternalGenes] to decide 1) whether to apply selection for the internal genes
+ *  2) what candidates are in [this] gene to be selected for mutation, eg, mutable fields for ObjectGene.
+ *      More info could be found with comments of the method.
+ *
+ * 4. with the collected impact info, override [adaptiveSelectSubset] to decide which gene to be selected
+ *
  */
 abstract class Gene(var name: String, children: List<out StructuralElement>) : StructuralElement(children){
 
@@ -143,7 +161,11 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     open fun mutationCheck() : Boolean = true
 
     /**
-     * @return whether to apply a subset selection for internal genes to mutate
+     * @return a list of internal gene to be selected for mutation, eg, weight-based or adaptive weight-based gene selection
+     * note that if return an empty list, [mutate] will be applied to mutate this gene
+     *
+     * For instance, see [ArrayGene.candidatesInternalGenes], with a probability, it returns an empty list.
+     * the empty list means (see [ArrayGene.mutate]) that the mutation is applied to change the size of this array gene.
      */
     open fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?)
             = listOf<Gene>()
@@ -181,6 +203,13 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         }
     }
 
+    /**
+     * @param randomness
+     * @param internalGenes is a set of candidates to be selected
+     * @param mwc is mutation weight controller which can be used to select genes with given weights
+     * @param additionalGeneMutationInfo contains impact info of [this] gene
+     * @return a subset of [internalGenes] with corresponding impact info
+     */
     open fun adaptiveSelectSubset(randomness: Randomness,
                                   internalGenes: List<Gene>,
                                   mwc: MutationWeightControl,
