@@ -11,7 +11,7 @@ class NumberGeneTest {
 
     @Test
     fun testDoubleGene(){
-        val gene = DoubleGene("value", 12.9999999, -99.99, 99.99, null,2)
+        val gene = DoubleGene("value", 12.9999999, -99.99, 99.99, precision = null, scale = 2)
         assertEquals(0.01, gene.getMinimalDelta())
         assertEquals(13.00, gene.getFormattedValue())
         gene.value = 12.010003
@@ -25,7 +25,7 @@ class NumberGeneTest {
 
     @Test
     fun testFloatDelta(){
-        val gene = FloatGene("value", 12.9999999f, -99.99f, 99.99f, null,2)
+        val gene = FloatGene("value", 12.9999999f, -99.99f, 99.99f, precision = null, scale = 2)
         assertEquals(0.01f, gene.getMinimalDelta())
         assertEquals(13.00f, gene.getFormattedValue())
         gene.value = 12.010003f

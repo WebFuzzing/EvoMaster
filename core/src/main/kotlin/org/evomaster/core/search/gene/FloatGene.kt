@@ -17,10 +17,10 @@ import org.slf4j.LoggerFactory
 
 class FloatGene(name: String,
                 value: Float = 0.0f,
-                /** Inclusive */
                 min : Float? = null,
-                /** Inclusive */
                 max : Float? = null,
+                minInclusive : Boolean = true,
+                maxInclusive : Boolean = true,
                 /**
                  * specified precision
                  */
@@ -32,13 +32,13 @@ class FloatGene(name: String,
 ) : FloatingPointNumber<Float>(name, value,
     min = if (precision != null && scale != null && min == null) NumberCalculationUtil.boundaryDecimal(precision, scale).first.toFloat() else min,
     max = if (precision != null && scale != null && max == null) NumberCalculationUtil.boundaryDecimal(precision, scale).second.toFloat() else max,
-    precision, scale) {
+    minInclusive, maxInclusive, precision, scale) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
     }
 
-    override fun copyContent() = FloatGene(name, value, min, max, precision, scale)
+    override fun copyContent() = FloatGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 

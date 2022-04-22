@@ -18,18 +18,19 @@ class IntegerGene(
     name: String,
     value: Int = 0,
     /**
-     * Inclusive
      *
      * For IntegerGene, min must be specified
      * */
     override val min: Int = Int.MIN_VALUE,
     /**
-     * Inclusive
      *
      * For IntegerGene, max must be specified
      * */
-    override val max: Int = Int.MAX_VALUE
-) : NumberGene<Int>(name, value, min, max) {
+    override val max: Int = Int.MAX_VALUE,
+
+    minInclusive : Boolean = true,
+    maxInclusive : Boolean = true,
+) : NumberGene<Int>(name, value, min, max, minInclusive, maxInclusive) {
 
     init {
         if (min == max)

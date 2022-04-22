@@ -23,12 +23,12 @@ import java.math.BigInteger
 class BigIntegerGene(
     name: String,
     value: BigInteger = BigInteger.ZERO,
-    /** Inclusive */
     min : BigInteger? = null,
-    /** Inclusive */
-    max : BigInteger? = null
+    max : BigInteger? = null,
+    minInclusive : Boolean = true,
+    maxInclusive : Boolean = true,
 
-) : NumberGene<BigInteger> (name, value, min, max) {
+) : NumberGene<BigInteger> (name, value, min, max, minInclusive, maxInclusive) {
 
 
     companion object{

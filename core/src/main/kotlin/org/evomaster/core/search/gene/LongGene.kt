@@ -14,11 +14,11 @@ import org.slf4j.LoggerFactory
 class LongGene(
         name: String,
         value: Long = 0,
-        /** Inclusive */
         min : Long? = null,
-        /** Inclusive */
-        max : Long? = null
-) : NumberGene<Long>(name, value, min, max) {
+        max : Long? = null,
+        minInclusive : Boolean = true,
+        maxInclusive : Boolean = true
+) : NumberGene<Long>(name, value, min, max, minInclusive, maxInclusive) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)

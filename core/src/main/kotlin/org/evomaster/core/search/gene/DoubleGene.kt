@@ -18,6 +18,8 @@ class DoubleGene(name: String,
                  value: Double = 0.0,
                  min: Double? = null,
                  max: Double? = null,
+                 minInclusive : Boolean = true,
+                 maxInclusive : Boolean = true,
                  /**
                   * specified precision
                   */
@@ -29,13 +31,13 @@ class DoubleGene(name: String,
 ) : FloatingPointNumber<Double>(name, value,
     min = if (precision != null && scale != null && min == null) NumberCalculationUtil.boundaryDecimal(precision, scale).first else min,
     max = if (precision != null && scale != null && max == null) NumberCalculationUtil.boundaryDecimal(precision, scale).second else max,
-    precision, scale) {
+    minInclusive, maxInclusive, precision, scale) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(DoubleGene::class.java)
     }
 
-    override fun copyContent() = DoubleGene(name, value, min, max, precision, scale)
+    override fun copyContent() = DoubleGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         value = NumberMutator.randomizeDouble(min, max, scale, randomness)

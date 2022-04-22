@@ -9,6 +9,8 @@ abstract class FloatingPointNumber<T:Number>(
     value: T,
     min: T? = null,
     max: T? = null,
+    minInclusive : Boolean,
+    maxInclusive : Boolean,
     /**
      * specified precision
      */
@@ -17,7 +19,7 @@ abstract class FloatingPointNumber<T:Number>(
      * specified scale
      */
     val scale: Int?
-) : NumberGene<T>(name, value, min, max){
+) : NumberGene<T>(name, value, min, max, minInclusive, maxInclusive){
 
     enum class ModifyStrategy{
         //for small changes

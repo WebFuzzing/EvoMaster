@@ -29,10 +29,10 @@ import java.math.RoundingMode
 class BigDecimalGene(
     name: String,
     value: BigDecimal = BigDecimal.ZERO,
-    /** Inclusive */
     min : BigDecimal? = null,
-    /** Inclusive */
     max : BigDecimal? = null,
+    minInclusive : Boolean = true,
+    maxInclusive : Boolean = true,
 
     /**
      * indicate whether to employ float pointing to mutate the gene
@@ -51,7 +51,7 @@ class BigDecimalGene(
      */
     val scale : Int?
 
-) : NumberGene<BigDecimal>(name, value, min, max){
+) : NumberGene<BigDecimal>(name, value, min, max, minInclusive, maxInclusive){
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(BigDecimalGene::class.java)
@@ -92,7 +92,7 @@ class BigDecimalGene(
     }
 
     override fun copyContent(): BigDecimalGene{
-        val copy = BigDecimalGene(name, value, min, max, floatingPointMode, precision, scale)
+        val copy = BigDecimalGene(name, value, min, max, minInclusive, maxInclusive, floatingPointMode, precision, scale)
         copy.isFloatingPointMutable = this.isFloatingPointMutable
         return copy
     }

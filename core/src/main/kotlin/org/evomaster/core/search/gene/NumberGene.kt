@@ -7,8 +7,23 @@ import kotlin.math.min
  */
 abstract class NumberGene<T : Number>(name: String,
                                       var value: T,
+                                      /**
+                                       * lower bound of the number
+                                       */
                                       open val min : T?,
-                                      open val max : T?) : ComparableGene(name, mutableListOf()) {
+                                      /**
+                                       * upper bound of the number
+                                       */
+                                      open val max : T?,
+                                      /**
+                                       * indicate whether to include the lower bound
+                                       */
+                                      val minInclusive : Boolean,
+                                      /**
+                                       * indicate whether to include the upper bound
+                                       */
+                                      val maxInclusive : Boolean
+                                      ) : ComparableGene(name, mutableListOf()) {
 
     override fun getChildren(): MutableList<Gene> = mutableListOf()
 
