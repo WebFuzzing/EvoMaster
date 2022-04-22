@@ -27,9 +27,9 @@ import org.slf4j.LoggerFactory
  * that has bits set to the right of the specified netmask.
  */
 class SqlCidrGene(
-    name: String,
-    val octets: List<IntegerGene> = List(INET_SIZE)
-    { i -> IntegerGene("b$i", min = 0, max = 255) }
+        name: String,
+        val octets: List<IntegerGene> = List(INET_SIZE)
+        { i -> IntegerGene("b$i", min = 0, max = 255) }
 ) : Gene(name, octets.toMutableList()) {
 
     companion object {
@@ -44,33 +44,33 @@ class SqlCidrGene(
     }
 
     override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return octets.toList()
     }
 
     override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
+            previousGenes: List<Gene>,
+            mode: GeneUtils.EscapeMode?,
+            targetFormat: OutputFormat?,
+            extraCheck: Boolean
     ): String {
         return "\"${
             octets
-                .map { Integer.toHexString(it.value) }
-                .joinToString(".")
+                    .map { Integer.toHexString(it.value) }
+                    .joinToString(".")
         }\""
     }
 
     override fun getValueAsRawString(): String {
         return octets
-            .map { Integer.toHexString(it.value) }
-            .joinToString(".")
+                .map { Integer.toHexString(it.value) }
+                .joinToString(".")
 
     }
 
@@ -109,7 +109,7 @@ class SqlCidrGene(
         }
         if (octets.size != other.octets.size) {
             throw IllegalArgumentException(
-                "cannot bind MacAddrGene${octets.size} with MacAddrGene${other.octets.size}"
+                    "cannot bind MacAddrGene${octets.size} with MacAddrGene${other.octets.size}"
             )
         }
         repeat(octets.size) {
@@ -131,4 +131,5 @@ class SqlCidrGene(
         return result
     }
 
+    override fun copyContent() = SqlCidrGene(name, octets.map { it.copyContent() as IntegerGene }.toList())
 }

@@ -22,7 +22,6 @@ import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.evomaster.core.utils.NumberCalculationUtil
-import kotlin.math.pow
 
 class DbActionGeneBuilder {
 
@@ -50,6 +49,9 @@ class DbActionGeneBuilder {
                 // Man: TODO need to check
                 ColumnDataType.BIT ->
                     handleBitColumn(column)
+
+                ColumnDataType.VARBIT ->
+                    handleBitVaryingColumn(column)
 
                 /**
                  * BOOLEAN(1) is assumed to be a boolean/Boolean field
@@ -610,8 +612,16 @@ class DbActionGeneBuilder {
      * https://dev.mysql.com/doc/refman/8.0/en/bit-value-literals.html
      */
     private fun handleBitColumn(column: Column): Gene {
+        val gene = SqlBitstringGene(column.name, minSize = column.size, maxSize = column.size)
+        return gene
+    }
 
-        return IntegerGene(column.name, min = 0, max = (2.0).pow(column.size).toInt() - 1)
+    /**
+     * handle bitvarying for postgres
+     * https://www.postgresql.org/docs/14/datatype-bit.html
+     */
+    private fun handleBitVaryingColumn(column: Column): Gene {
+        return SqlBitstringGene(column.name, minSize = 0, maxSize = column.size)
     }
 
     companion object {
