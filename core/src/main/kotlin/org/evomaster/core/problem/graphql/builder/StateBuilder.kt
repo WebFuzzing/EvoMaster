@@ -107,6 +107,32 @@ object StateBuilder {
             state.tables.distinctBy { Pair(it.typeName, it.fieldName) }.toMutableList()//remove redundant elements
 
         initTablesAndArgsTablesIndexedByName(state)
+
+        println("I am the table: ")
+        for (element in state.tables) {
+            println("{Table Name: ${element?.typeName}, " +
+                    "Field: ${element?.fieldName}, " +
+                    "KindOfTableField: ${element?.KindOfFieldName}, " +
+                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfFieldNameOptional}, " +
+                    "Type: ${element?.fieldType}, " +
+                    "KindOfTableType: ${element?.kindOfFieldType} " +
+                    "IsKindOfKindOfTableTypeOptional?: ${element.isKindOfFieldTypeOptional}}" +
+                    "withArgs?: ${element.isFieldNameWithArgs}}")
+        }
+        println(state.tables.size)
+        println("I am the args table: ")
+        for (element in state.argsTables) {
+            println("{Table Name: ${element?.typeName}, " +
+                    "Field: ${element?.fieldName}, " +
+                    "KindOfTableField: ${element?.KindOfFieldName}, " +
+                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfFieldNameOptional}, " +
+                    "Type: ${element?.fieldType}, " +
+                    "KindOfTableType: ${element?.kindOfFieldType} " +
+                    "IsKindOfKindOfTableTypeOptional?: ${element.isKindOfFieldTypeOptional}}"+
+                    "withArgs?: ${element.isFieldNameWithArgs}}"
+            )
+        }
+        println(state.argsTables.size)
         
         return state
     }
