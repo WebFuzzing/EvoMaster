@@ -343,9 +343,10 @@ public class JavaXConstraintHandler {
 
         if (namedTypedValue instanceof BooleanParam){
             namedTypedValue.setMutable(false);
-            namedTypedValue.setDefaultValue(
-                    supportType == JavaXConstraintSupportType.ASSERTTRUE
-            );
+            // properties for defaultvalue could be ignored
+            NamedTypedValue defaultValue = namedTypedValue.copyStructure();
+            defaultValue.setValue(supportType == JavaXConstraintSupportType.ASSERTTRUE);
+            namedTypedValue.setDefaultValue(defaultValue);
             return true;
         }else {
             SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its AssertFalse or AssertTrue");

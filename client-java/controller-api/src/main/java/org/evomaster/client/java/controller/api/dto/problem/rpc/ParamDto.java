@@ -131,6 +131,11 @@ public class ParamDto {
 
         if (candidateReferences != null)
             copy.candidateReferences = new ArrayList<>(candidateReferences);
+
+        copy.isMutable = isMutable;
+        if (defaultValue != null)
+            copy.defaultValue = defaultValue.copy();
+
         return copy;
     }
 

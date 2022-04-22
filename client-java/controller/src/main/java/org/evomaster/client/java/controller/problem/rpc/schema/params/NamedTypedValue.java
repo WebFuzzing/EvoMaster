@@ -48,7 +48,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * default value for the parameter
      * it is nullable
      */
-    private V defaultValue;
+    private NamedTypedValue defaultValue;
 
     /**
      * a schema for collecting if the param is accessible
@@ -142,6 +142,9 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         if (candidateReferences!=null)
             dto.candidateReferences = new ArrayList<>(candidateReferences);
 
+        dto.isMutable = isMutable;
+        if (defaultValue != null)
+            dto.defaultValue = defaultValue.getDto();
         return dto;
     }
 
@@ -266,11 +269,11 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
         isMutable = mutable;
     }
 
-    public V getDefaultValue() {
+    public NamedTypedValue getDefaultValue() {
         return defaultValue;
     }
 
-    public void setDefaultValue(V defaultValue) {
+    public void setDefaultValue(NamedTypedValue defaultValue) {
         this.defaultValue = defaultValue;
     }
 }
