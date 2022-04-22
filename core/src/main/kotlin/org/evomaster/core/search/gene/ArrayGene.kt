@@ -60,6 +60,8 @@ class ArrayGene<T>(
         }
 
         // might not check min size in constructor
+
+        template.identifyAsRoot()
     }
 
     companion object{

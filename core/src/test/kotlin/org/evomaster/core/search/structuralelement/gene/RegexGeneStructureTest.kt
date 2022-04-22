@@ -67,7 +67,7 @@ class RegexGeneStructureTest : GeneStructuralElementBaseTest() {
 
     @Test
     fun testInitRegexGene(){
-        val root = getStructuralElement()
+        val root = getStructuralElementAndIdentifyAsRoot() as RegexGene
         assertEquals(root, root.getRoot())
 
         root.disjunctions.apply {
