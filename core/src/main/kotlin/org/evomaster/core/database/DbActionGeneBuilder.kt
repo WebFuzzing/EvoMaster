@@ -157,9 +157,13 @@ class DbActionGeneBuilder {
                     handleBLOBColumn(column)
 
 
-                ColumnDataType.REAL, ColumnDataType.FLOAT4, ColumnDataType.FLOAT8 ->
-                    handleRealColumn(column)
 
+                ColumnDataType.REAL,
+                ColumnDataType.FLOAT4 ->
+                    handleFloatColumn(column, MIN_FLOAT4_VALUE, MAX_FLOAT4_VALUE)
+
+                ColumnDataType.FLOAT8 ->
+                    handleFloatColumn(column, MIN_FLOAT8_VALUE, MAX_FLOAT8_VALUE)
 
                 ColumnDataType.DEC,
                 ColumnDataType.DECIMAL,
@@ -530,7 +534,7 @@ class DbActionGeneBuilder {
         }
     }
 
-    private fun handleRealColumn(column: Column): Gene {
+    private fun handleFloatColumn(column: Column, minValue:Double, maxValue: Double): Gene {
         /**
          * REAL is identical to the floating point statement float(24).
          * TODO How to discover if the source field is a float/Float field?
@@ -540,9 +544,11 @@ class DbActionGeneBuilder {
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toDouble() })
 
         } else {
-            DoubleGene(column.name)
+            DoubleGene(column.name, min = minValue, max = maxValue)
         }
     }
+
+
 
     private fun handleDecimalColumn(column: Column): Gene {
         /**
@@ -634,5 +640,18 @@ class DbActionGeneBuilder {
                 throw IllegalArgumentException("the list of enumerated values cannot be empty")
             }
         }
+
+        //  the real type has a range of around 1E-37 to 1E+37 with a precision of at least 6 decimal digits
+        val MAX_FLOAT4_VALUE: Double = "1E38".toDouble()
+
+        // The double precision type has a range of around 1E-307 to 1E+308 with a precision of at least 15 digits
+        val MAX_FLOAT8_VALUE: Double = "1E308".toDouble()
+
+        //  the real type has a range of around 1E-37 to 1E+37 with a precision of at least 6 decimal digits
+        val MIN_FLOAT4_VALUE: Double = MAX_FLOAT4_VALUE.unaryMinus()
+
+        // The double precision type has a range of around 1E-307 to 1E+308 with a precision of at least 15 digits
+        val MIN_FLOAT8_VALUE: Double = MAX_FLOAT8_VALUE.unaryMinus()
+
     }
 }

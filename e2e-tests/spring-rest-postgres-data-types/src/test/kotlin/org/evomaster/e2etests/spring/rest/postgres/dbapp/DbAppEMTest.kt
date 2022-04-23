@@ -10,29 +10,43 @@ import org.junit.jupiter.api.Test
 /**
  * Created by arcuri82 on 21-Jun-19.
  */
-class DbAppEMTest : SpringRestPostgresTestBase(){
+class DbAppEMTest : SpringRestPostgresTestBase() {
 
     companion object {
-            @BeforeAll @JvmStatic
-            fun initClass() {
-                SpringRestPostgresTestBase.initKlass(DbAppController())
-            }
+        @BeforeAll
+        @JvmStatic
+        fun initClass() {
+            initKlass(DbAppController())
         }
+    }
 
-        @Test
-        fun testRunEM() {
+    @Test
+    fun testRunEM() {
 
-            runTestHandlingFlakyAndCompilation(
-                    "DbApp",
-                    "org.bar.Ind0EM",
-                    100
-            ) { args ->
-                val solution = initAndRun(args)
+        runTestHandlingFlakyAndCompilation(
+                "DbApp",
+                "org.bar.DbAppEM",
+                100
+        ) { args ->
+            val solution = initAndRun(args)
 
-                assertTrue(solution.individuals.size >= 1)
+            assertTrue(solution.individuals.size >= 1)
 
-                assertHasAtLeastOne(solution, HttpVerb.GET, 400)
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200)
-            }
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/integerTypes", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/integerTypes", null)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/arbitraryPrecisionNumbers", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/arbitraryPrecisionNumbers", null)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/floatingPointTypes", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/floatingPointTypes", null)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/monetaryTypes", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/monetaryTypes", null)
+
+            //assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/serialTypes", null)
+            //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/serialTypes", null)
+
+        }
     }
 }

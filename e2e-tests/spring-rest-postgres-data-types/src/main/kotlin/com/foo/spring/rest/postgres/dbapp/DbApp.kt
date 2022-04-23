@@ -30,10 +30,10 @@ open class DbApp : SwaggerConfiguration() {
     private lateinit var em: EntityManager
 
 
-    @GetMapping
-    open fun get(): ResponseEntity<Any> {
+    @GetMapping(path = ["/integerTypes"])
+    open fun getIntegerTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from IntegerTypes where integerColumn=0")
+        val query = em.createNativeQuery("select 1 from IntegerTypes where integerColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -43,7 +43,73 @@ open class DbApp : SwaggerConfiguration() {
             status = 400
         }
 
-        return ResponseEntity.status(status).build<Any>()
+        return ResponseEntity.status(status).build()
     }
+
+    @GetMapping(path = ["/arbitraryPrecisionNumbers"])
+    open fun getArbitraryPrecisionNumbers(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from ArbitraryPrecisionNumbers where numericColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    @GetMapping(path = ["/floatingPointTypes"])
+    open fun getFloatingPointTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from FloatingPointTypes where realColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    //@GetMapping(path = ["/serialTypes"])
+    open fun getSerialTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from SerialTypes where serialColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    @GetMapping(path = ["/monetaryTypes"])
+    open fun getMonetaryTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from MonetaryTypes where moneyColumn>'0'")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+
 }
 
