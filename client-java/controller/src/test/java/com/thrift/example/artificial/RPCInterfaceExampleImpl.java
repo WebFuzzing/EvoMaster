@@ -223,4 +223,10 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         if (arg1 == null || arg1.enumWithConstructor == null) return null;
         return arg1.enumWithConstructor.getDesc();
     }
+
+    @Override
+    public String bigNumber(BigNumberObj arg1) {
+        if (arg1 == null) return null;
+        return arg1.toString();
+    }
 }

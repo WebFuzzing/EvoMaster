@@ -66,4 +66,6 @@ public interface RPCInterfaceExample {
     void handleException(String type) throws Exception;
 
     String handleEnumWithConstructor(ObjectEnum arg1);
+
+    String bigNumber(BigNumberObj arg1);
 }

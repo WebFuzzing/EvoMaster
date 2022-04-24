@@ -78,6 +78,51 @@ public class RPCSutControllerTest {
         assertTrue(types.contains(NestedGenericDto.class.getName()+"<"+String.class.getName()+">"));
         assertTrue(types.contains(GenericDto.class.getName()+"<"+String.class.getName()+", "+Integer.class.getName()+">"));
 
+        assertTrue(types.contains(BigNumberObj.class.getName()));
+
+    }
+
+    @Test
+    public void testBigNumber(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("bigNumber")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+
+        ParamDto param = dto.requestParams.get(0);
+        param.stringValue = "{}";
+        assertEquals(8, param.innerContent.size());
+        param.innerContent.get(0).stringValue = "10.12";
+        param.innerContent.get(1).stringValue = "-10.12";
+        param.innerContent.get(2).stringValue = "0.00";
+        param.innerContent.get(3).stringValue = "-2.16";
+        param.innerContent.get(4).stringValue = "10";
+        param.innerContent.get(5).stringValue = "0";
+        param.innerContent.get(6).stringValue = "-10";
+        param.innerContent.get(7).stringValue = "-2";
+
+        rpcController.executeAction(dto, responseDto);
+
+        String expect = "BigNumberObj{" +
+                "bdPositiveFloat=10.12" +
+                ", bdNegativeFloat=-10.12" +
+                ", bdPositiveOrZeroFloat=0.00" +
+                ", bdNegativeOrZeroFloat=-2.16" +
+                ", biPositive=10" +
+                ", biPositiveOrZero=0" +
+                ", biNegative=-10" +
+                ", biNegativeOrZero=-2" +
+                '}';
+        assertEquals(expect, responseDto.rpcResponse.stringValue);
+
+        List<String> assertionScript = responseDto.assertionScript;
+        assertEquals("assertEquals(\"BigNumberObj{bdPositiveFloat=10.12, bdNegativeFloat=-10.12, bdPositiveOrZeroFloat=0.00, bdNegativeOrZeroFloat=-2.16, biPositive=10, biPositiveOrZero=0, biNegative=-10, biNegativeOrZero=-2}\", res1);", assertionScript.get(0));
     }
 
     @Test

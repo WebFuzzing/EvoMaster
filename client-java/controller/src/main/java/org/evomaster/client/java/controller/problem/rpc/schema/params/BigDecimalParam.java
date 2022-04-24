@@ -130,6 +130,8 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
         handleConstraintsInCopyDto(dto);
+        if (getValue() != null)
+            dto.stringValue = getValue().toString();
         return dto;
     }
 
@@ -137,7 +139,7 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
     public String getValueAsJavaString() {
         if (getValue() == null)
             return null;
-        return ""+getValue().toString()+"";
+        return "\""+getValue().toString()+"\"";
     }
 
     @Override

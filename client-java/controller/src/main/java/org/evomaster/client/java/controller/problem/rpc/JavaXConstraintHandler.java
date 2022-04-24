@@ -185,59 +185,51 @@ public class JavaXConstraintHandler {
             https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/DecimalMax.html
             null elements are considered valid.
          */
-        Long max = null;
+        String maxStr = null;
         Boolean inclusive = true;
         try {
             // TODO might change long to BigDecimal
             if (supportType == JavaXConstraintSupportType.DECIMAL_MAX){
-                String maxStr =  (String) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
-                max = Long.valueOf(maxStr);
+                maxStr =  (String) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
                 inclusive = (Boolean) annotation.annotationType().getDeclaredMethod("inclusive").invoke(annotation);
             }else
-                max = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+                maxStr = ((Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation)).toString();
 
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
             throw new RuntimeException("ERROR: fail to process max "+e.getMessage());
         }
 
-        if (max == null){
+        if (maxStr == null){
             SimpleLogger.error("ERROR: Max value is null");
             return false;
         }
 
-        if (inclusive != null && !inclusive)
-            max = max - 1;
-
-        return setMax(namedTypedValue, max.toString(), true);
+        return setMax(namedTypedValue, maxStr, inclusive);
     }
 
     private static boolean handleMin(NamedTypedValue namedTypedValue, Annotation annotation, JavaXConstraintSupportType supportType){
 
-        Long min = null;
+        String minStr = null;
         Boolean inclusive = true;
         try {
             // TODO might change long to BigDecimal
             if (supportType == JavaXConstraintSupportType.DECIMAL_MIN){
-                String minStr = (String) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
-                min = Long.valueOf(minStr);
+                minStr = (String) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
                 inclusive = (Boolean) annotation.annotationType().getDeclaredMethod("inclusive").invoke(annotation);
             }else
-                min = (Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation);
+                minStr = ((Long) annotation.annotationType().getDeclaredMethod("value").invoke(annotation)).toString();
 
         } catch (NoSuchMethodException | InvocationTargetException |IllegalAccessException e) {
             throw new RuntimeException("ERROR: fail to process min "+e.getMessage());
         }
 
-        if (min == null){
+        if (minStr == null){
             SimpleLogger.error("ERROR: Min value is null");
             return false;
         }
 
-        if (inclusive != null && !inclusive)
-            min = min + 1;
 
-
-        return setMin(namedTypedValue, min.toString(), true);
+        return setMin(namedTypedValue, minStr, inclusive);
     }
 
     private static boolean setMin(NamedTypedValue namedTypedValue, String min, boolean inclusive){
@@ -332,7 +324,7 @@ public class JavaXConstraintHandler {
         }
 
 
-        return false;
+        return true;
     }
 
     /**
