@@ -60,8 +60,10 @@ class FloatGene(name: String,
             }
         }
 
-
-        value = mutateFloatingPointNumber(randomness, apc)
+        value = mutateFloatingPointNumber(randomness, apc).run {
+            // it is werid, value sometimes becomes Double with genric function
+            getFormattedValue(this.toFloat())
+        }
 
         return true
     }
