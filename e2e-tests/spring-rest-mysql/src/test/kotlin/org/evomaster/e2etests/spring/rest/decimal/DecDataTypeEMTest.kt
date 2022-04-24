@@ -4,9 +4,7 @@ import com.foo.spring.rest.mysql.decimal.DecDataTypeController
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual
 import org.evomaster.e2etests.utils.RestTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test

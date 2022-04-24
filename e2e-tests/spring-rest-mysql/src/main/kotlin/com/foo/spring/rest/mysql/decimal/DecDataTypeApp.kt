@@ -30,8 +30,8 @@ open class DecDataTypeApp : SwaggerConfiguration() {
     @GetMapping
     open fun get() : ResponseEntity<Any> {
 
-        val pquery = em.createNativeQuery("select * from DECTABLE where pnum < 42.42 and pnum > 42.24 and num > -42.42 and num < -42.24")
-        val res = pquery.resultList
+        val query = em.createNativeQuery("select * from DECTABLE where pnum < 42.42 and pnum > 42.24 and num > -42.42 and num < -42.24")
+        val res = query.resultList
         val status = if(res.isEmpty()) 400 else 200
 
         return ResponseEntity.status(status).build<Any>()
