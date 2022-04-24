@@ -627,23 +627,34 @@ class RPCEndpointsHandler {
                 IntegerGene(param.name, min = param.minValue?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Byte.MAX_VALUE.toInt(),
                     minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
             RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> {
-                var strGene : Gene? = null
+                var strGene : Gene = StringGene(param.name).apply {
+                    // String could have bigDecimal or bigInteger as part of specification if any number related constraint property is specified
+                    if (param.precision != null || param.scale != null){
+                        specializationGenes.add(BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
+                            precision = param.precision, scale = param.scale, minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
+                    } else if (param.minValue != null || param.maxValue != null){
+                        // only max or min, we recognize it as biginteger
+                        specializationGenes.add(BigIntegerGene(param.name, min=param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
+                            minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
+                    }
+                }
+
                 if (param.pattern != null){
                     try {
-                        strGene = RegexHandler.createGeneForEcma262(param.pattern).apply {this.name = param.name}
+                        val regex = RegexHandler.createGeneForEcma262(param.pattern).apply {this.name = param.name}
+                        /*
+                            if there only exists pattern, we recognize it as regexgene
+                            otherwise put the regex as part of specialization
+                         */
+                        if ((strGene as? StringGene)?.specializationGenes?.isNotEmpty() == true){
+                            strGene.specializationGenes.add(regex)
+                        }else
+                            strGene = regex
                     } catch (e: Exception) {
                         LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${param.pattern}")
                     }
                 }
-                if (strGene == null){
-                    strGene = StringGene(param.name).apply {
-                        if (param.minValue != null || param.maxValue != null){
-                            // add specification based on constraint info
-                            specializationGenes.add(LongGene(param.name, min=param.minValue?.toLongOrNull(), max = param.maxValue?.toLongOrNull(),
-                                minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
-                        }
-                    }
-                }
+
                 strGene
 
             }
