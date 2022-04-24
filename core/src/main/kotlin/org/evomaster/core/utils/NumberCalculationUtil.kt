@@ -64,4 +64,12 @@ object NumberCalculationUtil {
             throw e
         }
     }
+
+    /**
+     * @return get middle value of the two values
+     */
+    fun <T: Number> getMiddle(min: T, max : T, scale: Int?) : BigDecimal{
+        val m = (min.toDouble() + max.toDouble())/ 2.0
+        return valueWithPrecisionAndScale(m, scale)
+    }
 }

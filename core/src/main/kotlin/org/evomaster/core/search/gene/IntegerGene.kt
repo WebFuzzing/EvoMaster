@@ -10,33 +10,36 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.BigInteger
+import kotlin.math.max
+import kotlin.math.min
 
 
 class IntegerGene(
     name: String,
-    value: Int = 0,
-    /**
-     *
-     * For IntegerGene, min must be specified
-     * */
-    override val min: Int = Int.MIN_VALUE,
-    /**
-     *
-     * For IntegerGene, max must be specified
-     * */
-    override val max: Int = Int.MAX_VALUE,
+    value: Int?,
+    min: Int,
+    max: Int,
+    precision : Int?,
+    minInclusive : Boolean,
+    maxInclusive : Boolean,
+) : IntegralNumberGene<Int>(name, value, min, max, precision, minInclusive, maxInclusive) {
 
-    minInclusive : Boolean = true,
-    maxInclusive : Boolean = true,
-) : IntegralNumberGene<Int>(name, value, min, max, minInclusive, maxInclusive) {
+    constructor(name: String, value: Int? = null, min: Int? = null, max: Int?=null, precision: Int?=null, minInclusive: Boolean = true, maxInclusive: Boolean = true) :this(
+        name, value,
+        min = min?:((if (precision != null) NumberCalculationUtil.boundaryDecimal(precision, 0) else null)?.first?.toInt()?: Int.MIN_VALUE),
+        max = max?:((if (precision != null) NumberCalculationUtil.boundaryDecimal(precision, 0) else null)?.second?.toInt()?:Int.MAX_VALUE),
+        precision, minInclusive, maxInclusive)
 
     init {
-        if (min == max)
-            this.value = min
-        if (max < min)
+        if (getMaximum() == getMinimum())
+            this.value = getMinimum()
+        if (getMaximum() < getMinimum())
             throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+
     }
 
     companion object {
@@ -44,7 +47,7 @@ class IntegerGene(
     }
 
     override fun copyContent(): Gene {
-        return IntegerGene(name, value, min, max)
+        return IntegerGene(name, value, precision = precision, min = min, max= max, minInclusive = minInclusive, maxInclusive = maxInclusive)
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -63,7 +66,7 @@ class IntegerGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        value = randomness.randomizeBoundedIntAndLong(value.toLong(), min.toLong(), max.toLong(), forceNewValue).toInt()
+        value = randomness.randomizeBoundedIntAndLong(value.toLong(), getMinimum().toLong(), getMaximum().toLong(), forceNewValue).toInt()
     }
 
     override fun mutate(
@@ -93,7 +96,7 @@ class IntegerGene(
         }
 
         //check maximum range. no point in having a delta greater than such range
-        val range = max.toLong() - min.toLong()
+        val range = getMaximum().toLong() - getMinimum().toLong()
 
         //choose an i for 2^i modification
         val delta = getDelta(randomness, apc, range)
@@ -107,8 +110,8 @@ class IntegerGene(
         val res: Long = (value.toLong()) + (sign * delta)
 
         value = when {
-            res > max -> max
-            res < min -> min
+            res > getMaximum() -> getMaximum()
+            res < getMinimum() -> getMinimum()
             else -> res.toInt()
         }
 
@@ -166,11 +169,20 @@ class IntegerGene(
     }
 
     override fun isMutable(): Boolean {
-        return this.max > this.min
+        return this.max!! > this.min!!
     }
 
-    override fun getMaximum(): Int = max.run { if (!maxInclusive) this - 1 else this }
+    override fun getMaximum(): Int = max!!.run { if (!maxInclusive) this - 1 else this }
 
-    override fun getMinimum(): Int = min.run { if (!minInclusive) this + 1 else this }
+    override fun getMinimum(): Int = min!!.run { if (!minInclusive) this + 1 else this }
 
+
+    override fun getDefaultValue(): Int {
+        val df = super.getDefaultValue()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return NumberCalculationUtil.getMiddle(getMinimum(), getMaximum(), 0).toInt()
+    }
+
+    override fun getZero(): Int = 0
 }

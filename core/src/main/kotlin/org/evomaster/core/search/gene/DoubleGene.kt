@@ -15,7 +15,7 @@ import java.math.RoundingMode
 
 
 class DoubleGene(name: String,
-                 value: Double = 0.0,
+                 value: Double? = null,
                  min: Double? = null,
                  max: Double? = null,
                  minInclusive : Boolean = true,
@@ -31,7 +31,7 @@ class DoubleGene(name: String,
 ) : FloatingPointNumber<Double>(name, value,
     min = if (precision != null && scale != null && min == null) NumberCalculationUtil.boundaryDecimal(precision, scale).first.toDouble() else min,
     max = if (precision != null && scale != null && max == null) NumberCalculationUtil.boundaryDecimal(precision, scale).second.toDouble() else max,
-    minInclusive, maxInclusive, precision, scale) {
+    minInclusive = minInclusive, maxInclusive = maxInclusive, precision = precision, scale = scale) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(DoubleGene::class.java)
@@ -117,4 +117,13 @@ class DoubleGene(name: String,
         }
         return this.toDouble().compareTo(other.toDouble())
     }
+
+    override fun getDefaultValue(): Double {
+        val df = super.getDefaultValue()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return NumberCalculationUtil.getMiddle(getMinimum(), getMaximum(), scale).toDouble()
+    }
+
+    override fun getZero(): Double = 0.0
 }

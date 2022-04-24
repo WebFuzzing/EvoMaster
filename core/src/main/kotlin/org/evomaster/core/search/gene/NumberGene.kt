@@ -8,7 +8,7 @@ import kotlin.math.min
  * Common superclass for all number genes (i.e. Float,Double,Integer,Long)
  */
 abstract class NumberGene<T : Number>(name: String,
-                                      var value: T,
+                                      value: T?,
                                       /**
                                        * lower bound of the number
                                        */
@@ -24,8 +24,27 @@ abstract class NumberGene<T : Number>(name: String,
                                       /**
                                        * indicate whether to include the upper bound
                                        */
-                                      val maxInclusive : Boolean
+                                      val maxInclusive : Boolean,
+                                      /**
+                                       * specified precision
+                                       */
+                                      val precision: Int?,
+                                      /**
+                                       * specified scale
+                                       */
+                                      val scale: Int?
                                       ) : ComparableGene(name, mutableListOf()) {
+
+
+    lateinit var value : T
+
+    init {
+        if (value == null)
+            this.value = getDefaultValue()
+        else
+            this.value = value
+    }
+
 
     override fun getChildren(): MutableList<Gene> = mutableListOf()
 
@@ -72,5 +91,15 @@ abstract class NumberGene<T : Number>(name: String,
      * @return inclusive Maximum value of the gene
      */
     abstract fun getMaximum() : T
+
+    /**
+     * @return a default value if the value is not specified
+     */
+    open fun getDefaultValue() : T = getZero()
+
+    /**
+     * @return zero with the number format
+     */
+    abstract fun getZero() : T
 
 }

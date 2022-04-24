@@ -8,10 +8,14 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.boundaryDecimal
+import org.evomaster.core.utils.NumberCalculationUtil.getMiddle
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.math.BigInteger
+import kotlin.math.round
 
 /**
  * gene represents bigInteger
@@ -22,20 +26,30 @@ import java.math.BigInteger
  */
 class BigIntegerGene(
     name: String,
-    value: BigInteger = BigInteger.ZERO,
+    value: BigInteger? = null,
     min : BigInteger? = null,
     max : BigInteger? = null,
+    precision : Int? = null,
     minInclusive : Boolean = true,
     maxInclusive : Boolean = true
-) : IntegralNumberGene<BigInteger> (name, value, min, max, minInclusive, maxInclusive) {
-
+) : IntegralNumberGene<BigInteger> (name, value,
+    min = if (precision!=null && min == null) boundaryDecimal(precision, 0).first.toBigInteger() else min,
+    max = if (precision!=null && max == null) boundaryDecimal(precision, 0).second.toBigInteger() else max,
+    precision, minInclusive, maxInclusive) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(BigIntegerGene::class.java)
 
     }
 
-    override fun copyContent(): BigIntegerGene = BigIntegerGene(name, value, min, max)
+    init {
+        if (getMaximum() == getMinimum())
+            this.value = getMinimum()
+        if (getMaximum() < getMinimum())
+            throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+    }
+
+    override fun copyContent(): BigIntegerGene = BigIntegerGene(name, value, min, max, precision, minInclusive, maxInclusive)
 
 
     override fun compareTo(other: ComparableGene): Int {
@@ -177,5 +191,14 @@ class BigIntegerGene(
     override fun getMaximum(): BigInteger {
         return BigInteger.valueOf(getMaxUsedInSearch())
     }
+
+    override fun getDefaultValue(): BigInteger {
+        val df = getZero()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return getMiddle(getMinimum(), getMaximum(), 0).toBigInteger()
+    }
+
+    override fun getZero(): BigInteger = BigInteger.ZERO
 
 }

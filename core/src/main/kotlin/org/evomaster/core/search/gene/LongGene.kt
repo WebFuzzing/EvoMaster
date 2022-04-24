@@ -7,25 +7,37 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
 class LongGene(
         name: String,
-        value: Long = 0,
+        value: Long? = null,
         min : Long? = null,
         max : Long? = null,
+        precision : Int? = null,
         minInclusive : Boolean = true,
         maxInclusive : Boolean = true
-) : IntegralNumberGene<Long>(name, value, min, max, minInclusive, maxInclusive) {
+) : IntegralNumberGene<Long>(name, value,
+    min = if (precision!=null && min == null) NumberCalculationUtil.boundaryDecimal(precision, 0).first.toLong() else min,
+    max = if (precision!=null && max == null) NumberCalculationUtil.boundaryDecimal(precision, 0).second.toLong() else max,
+    precision, minInclusive, maxInclusive) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
     }
 
+    init {
+        if (getMaximum() == getMinimum())
+            this.value = getMinimum()
+        if (getMaximum() < getMinimum())
+            throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+    }
+
     override fun copyContent(): Gene {
-        val copy = LongGene(name, value, min, max)
+        val copy = LongGene(name, value, min, max, precision, minInclusive, maxInclusive)
         return copy
     }
 
@@ -105,4 +117,13 @@ class LongGene(
     override fun getMaximum(): Long = (max?: Long.MAX_VALUE).run { if (!maxInclusive) this - 1L else this }
 
     override fun getMinimum(): Long = (min?: Long.MIN_VALUE).run { if (!minInclusive) this + 1L else this }
+
+    override fun getDefaultValue(): Long {
+        val df = getZero()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return NumberCalculationUtil.getMiddle(getMinimum(), getMaximum(), 0).toLong()
+    }
+
+    override fun getZero(): Long = 0L
 }

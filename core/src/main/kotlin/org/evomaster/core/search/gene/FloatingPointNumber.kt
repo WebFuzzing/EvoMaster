@@ -7,20 +7,14 @@ import java.math.RoundingMode
 
 abstract class FloatingPointNumber<T:Number>(
     name: String,
-    value: T,
+    value: T?,
     min: T? = null,
     max: T? = null,
     minInclusive : Boolean,
     maxInclusive : Boolean,
-    /**
-     * specified precision
-     */
-    val precision: Int?,
-    /**
-     * specified scale
-     */
-    val scale: Int?
-) : NumberGene<T>(name, value, min, max, minInclusive, maxInclusive){
+    precision: Int?,
+    scale: Int?
+) : NumberGene<T>(name, value, min, max, minInclusive, maxInclusive, precision, scale){
 
     enum class ModifyStrategy{
         //for small changes
@@ -59,7 +53,7 @@ abstract class FloatingPointNumber<T:Number>(
      * this is typically used when [scale] is specified
      */
     fun getMinimalDelta(): T{
-        return NumberMutatorUtils.getMinimalDelta(scale, value)
+        return NumberMutatorUtils.getMinimalDelta(scale, getZero())
     }
 
     /**

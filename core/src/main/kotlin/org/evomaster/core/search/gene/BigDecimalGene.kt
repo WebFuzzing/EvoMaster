@@ -14,10 +14,12 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.getMiddle
 import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.math.MathContext
 import java.math.RoundingMode
 
@@ -31,7 +33,7 @@ import java.math.RoundingMode
  */
 class BigDecimalGene(
     name: String,
-    value: BigDecimal = BigDecimal.ZERO,
+    value: BigDecimal? = null,
     min : BigDecimal? = null,
     max : BigDecimal? = null,
     minInclusive : Boolean = true,
@@ -90,7 +92,7 @@ class BigDecimalGene(
         }
 
         // format value
-        setValueWithDecimal(value, precision, scale)
+        setValueWithDecimal(this.value, precision, scale)
     }
 
     fun forbidFloatingPointModeMutable(){
@@ -282,4 +284,13 @@ class BigDecimalGene(
     }
 
     private fun withinLongRange() : Boolean = value <= BigDecimal.valueOf(Long.MAX_VALUE) && value >= BigDecimal.valueOf(Long.MIN_VALUE)
+
+    override fun getDefaultValue(): BigDecimal {
+        val df = super.getDefaultValue()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return getMiddle(getMinimum(), getMaximum(), scale)
+    }
+
+    override fun getZero(): BigDecimal = BigDecimal.ZERO
 }

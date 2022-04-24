@@ -16,7 +16,7 @@ import java.math.RoundingMode
 
 
 class FloatGene(name: String,
-                value: Float = 0.0f,
+                value: Float? = null,
                 min : Float? = null,
                 max : Float? = null,
                 minInclusive : Boolean = true,
@@ -132,5 +132,13 @@ class FloatGene(name: String,
         return this.toFloat().compareTo(other.toFloat())
     }
 
+    override fun getDefaultValue(): Float {
+        val df = getZero()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return NumberCalculationUtil.getMiddle(getMinimum(), getMaximum(), scale).toFloat()
+    }
+
+    override fun getZero(): Float = 0.0f
 
 }
