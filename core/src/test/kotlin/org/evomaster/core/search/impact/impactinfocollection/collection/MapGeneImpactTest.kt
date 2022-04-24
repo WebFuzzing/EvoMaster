@@ -37,7 +37,7 @@ class MapGeneImpactTest : GeneImpactTest(){
             mutationTag == 1 || (mutationTag == 0 && p)->{
                 val index = Random.nextInt(0, geneToMutate.getAllElements().size)
                 geneToMutate.getAllElements()[index].apply {
-                    second.value += if (second.value + 1> second.max) -1 else 1
+                    second.value += if (second.value + 1> second.getMaximum()) -1 else 1
                 }
             }
             mutationTag == 2 || (mutationTag == 0 && !p)->{

@@ -4,7 +4,7 @@ import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
-import kotlin.math.min
+import java.math.BigInteger
 
 class NumberGeneTest {
 
@@ -80,24 +80,33 @@ class NumberGeneTest {
         BigDecimalGene("foo", precision = 4, scale = 2).apply {
             assertEquals("99.99", getMaximum().toString())
             assertEquals("-99.99", getMinimum().toString())
+            // default
+            assertEquals("0.00", value.toString())
+
             assertTrue(isValid())
             randomize(random, false, listOf())
             assertTrue(isValid())
         }
 
 
-        BigDecimalGene("foo", precision = 4, scale = 2, maxInclusive = false).apply {
-            assertEquals("99.98", getMaximum().toString())
+        BigDecimalGene("foo", max = BigDecimal.ZERO, precision = 4, scale = 2, maxInclusive = false).apply {
+            assertEquals("-0.01", getMaximum().toString())
             assertEquals("-99.99", getMinimum().toString())
+            // default
+            assertEquals("-50.00", value.toString())
+
             assertTrue(isValid())
             randomize(random, false, listOf())
             assertTrue(isValid())
         }
 
 
-        BigDecimalGene("foo", precision = 4, scale = 2, minInclusive = false).apply {
+        BigDecimalGene("foo", min = BigDecimal.ZERO, precision = 4, scale = 2, minInclusive = false).apply {
             assertEquals("99.99", getMaximum().toString())
-            assertEquals("-99.98", getMinimum().toString())
+            assertEquals("0.01", getMinimum().toString())
+            // default
+            assertEquals("50.00", value.toString())
+
             assertTrue(isValid())
             randomize(random, false, listOf())
             assertTrue(isValid())
@@ -111,6 +120,8 @@ class NumberGeneTest {
         DoubleGene("value", min = 0.0,precision = 4, scale = 2, minInclusive = false).apply {
             assertEquals(99.99, getMaximum())
             assertEquals(0.01, getMinimum())
+            // default
+            assertEquals(50.0, value)
 
             assertTrue(isValid())
             randomize(random, false, listOf())
@@ -120,6 +131,8 @@ class NumberGeneTest {
         DoubleGene("value", max = 0.0,precision = 4, scale = 2, maxInclusive = false).apply {
             assertEquals(-0.01, getMaximum())
             assertEquals(-99.99, getMinimum())
+            // default
+            assertEquals(-50.0, value)
 
             assertTrue(isValid())
             randomize(random, false, listOf())
@@ -133,6 +146,8 @@ class NumberGeneTest {
         FloatGene("value", min = 0.0f,precision = 4, scale = 2, minInclusive = false).apply {
             assertEquals(99.99f, getMaximum())
             assertEquals(0.01f, getMinimum())
+            // default
+            assertEquals(50.0f, value)
 
             assertTrue(isValid())
             randomize(random, false, listOf())
@@ -142,6 +157,116 @@ class NumberGeneTest {
         FloatGene("value", max = 0.0f,precision = 4, scale = 2, maxInclusive = false).apply {
             assertEquals(-0.01f, getMaximum())
             assertEquals(-99.99f, getMinimum())
+            // default
+            assertEquals(-50.0f, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+    }
+
+    @Test
+    fun testIntegerGene(){
+        IntegerGene("ig", precision = 2).apply {
+            assertEquals(99, getMaximum())
+            assertEquals(-99, getMinimum())
+            // default
+            assertEquals(0, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        IntegerGene("ig", min = 0, precision = 2, minInclusive = false).apply {
+            assertEquals(99, getMaximum())
+            assertEquals(1, getMinimum())
+            // default
+            assertEquals(50, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        IntegerGene("ig", max = 0, precision = 2, maxInclusive = false).apply {
+            assertEquals(-1, getMaximum())
+            assertEquals(-99, getMinimum())
+            // default
+            assertEquals(-50, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+    }
+
+    @Test
+    fun testLongGene(){
+        LongGene("ig", precision = 2).apply {
+            assertEquals(99, getMaximum())
+            assertEquals(-99, getMinimum())
+            // default
+            assertEquals(0, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        LongGene("ig", min = 0, precision = 2, minInclusive = false).apply {
+            assertEquals(99, getMaximum())
+            assertEquals(1, getMinimum())
+            // default
+            assertEquals(50, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        LongGene("ig", max = 0, precision = 2, maxInclusive = false).apply {
+            assertEquals(-1, getMaximum())
+            assertEquals(-99, getMinimum())
+            // default
+            assertEquals(-50, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+    }
+
+    @Test
+    fun testBigIntegerGene(){
+        BigIntegerGene("ig", precision = 2).apply {
+            assertEquals(99, getMaximum().toInt())
+            assertEquals(-99, getMinimum().toInt())
+            // default
+            assertEquals(0, value.toInt())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        BigIntegerGene("ig", min = BigInteger.ZERO, precision = 2, minInclusive = false).apply {
+            assertEquals(99, getMaximum().toInt())
+            assertEquals(1, getMinimum().toInt())
+            // default
+            assertEquals(50, value.toInt())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        BigIntegerGene("ig", max = BigInteger.ZERO, precision = 2, maxInclusive = false).apply {
+            assertEquals(-1, getMaximum().toInt())
+            assertEquals(-99, getMinimum().toInt())
+            // default
+            assertEquals(-50, value.toInt())
 
             assertTrue(isValid())
             randomize(random, false, listOf())
