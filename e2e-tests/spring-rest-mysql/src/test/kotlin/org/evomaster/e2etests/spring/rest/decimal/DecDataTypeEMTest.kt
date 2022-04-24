@@ -26,7 +26,7 @@ class DecDataTypeEMTest : RestTestBase() {
         runTestHandlingFlakyAndCompilation(
             "DecDataTypeEM",
             "org.bar.mysql.DecDataTypeEM",
-            400
+            500
         ) { args ->
 
                 val solution = initAndRun(args)
