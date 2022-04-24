@@ -1,5 +1,7 @@
 package org.evomaster.core.search.gene
 
+import java.math.BigDecimal
+import java.math.BigInteger
 import kotlin.math.min
 
 /**
@@ -49,9 +51,9 @@ abstract class NumberGene<T : Number>(name: String,
      * @return whether the [value] is between [min] and [max] if they are specified
      */
     override fun isValid() : Boolean{
-        if (max != null && value.toDouble() > max!!.toDouble())
+        if (max != null && max !is BigDecimal && max !is BigInteger && value.toDouble() > max!!.toDouble())
             return false
-        if (min != null && value.toDouble() < min!!.toDouble())
+        if (min != null && max !is BigDecimal && max !is BigInteger && value.toDouble() < min!!.toDouble())
             return false
         return true
     }

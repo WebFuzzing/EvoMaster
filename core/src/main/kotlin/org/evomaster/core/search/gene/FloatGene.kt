@@ -41,13 +41,8 @@ class FloatGene(name: String,
     override fun copyContent() = FloatGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-        var rand = randomness.nextFloat()
-        if (isRangeSpecified() && ((rand < (min ?: Float.MIN_VALUE)) || (rand > (max ?: Float.MAX_VALUE)))){
-            rand = randomness.nextDouble((min?:Float.MIN_VALUE).toDouble(), (max?:Float.MAX_VALUE).toDouble()).toFloat()
-        }
-        value = getFormattedValue(rand)
-
+        val rand = NumberMutatorUtils.randomizeDouble(getMinimum().toDouble(), getMaximum().toDouble(), scale, randomness)
+        value = getFormattedValue(rand.toFloat())
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {

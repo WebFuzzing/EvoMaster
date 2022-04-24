@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.min
@@ -90,9 +91,9 @@ object NumberMutatorUtils {
      */
     fun <N: Number> getMinimalDelta(scale: Int?, value: N): N {
         return when (value) {
-            is Double -> Double.MIN_VALUE.run { if (scale == null) this else NumberCalculationUtil.valueWithPrecisionAndScale(this, scale, RoundingMode.UP).toDouble() } as N
-            is Float -> Float.MIN_VALUE.run { if (scale == null) this else NumberCalculationUtil.valueWithPrecisionAndScale(this.toDouble(), scale, RoundingMode.UP).toFloat() } as N
-            is BigDecimal -> Double.MIN_VALUE.run { if (scale == null) this.toBigDecimal() else NumberCalculationUtil.valueWithPrecisionAndScale(this, scale, RoundingMode.UP)} as N
+            is Double -> Double.MIN_VALUE.run { if (scale == null) this else valueWithPrecisionAndScale(this, scale, RoundingMode.UP).toDouble() } as N
+            is Float -> Float.MIN_VALUE.run { if (scale == null) this else valueWithPrecisionAndScale(this.toDouble(), scale, RoundingMode.UP).toFloat() } as N
+            is BigDecimal -> Double.MIN_VALUE.run { if (scale == null) this.toBigDecimal() else valueWithPrecisionAndScale(this, scale, RoundingMode.UP)} as N
             else -> throw Exception("valueToFormat must be Double or Float, but it is ${value::class.java.simpleName}")
         }
     }
@@ -104,9 +105,9 @@ object NumberMutatorUtils {
         if (scale == null)
             return valueToFormat
         return when (valueToFormat) {
-            is Double -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toDouble() as N
-            is Float -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toFloat() as N
-            is BigDecimal -> NumberCalculationUtil.valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode) as N
+            is Double -> valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toDouble() as N
+            is Float -> valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toFloat() as N
+            is BigDecimal -> valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode) as N
             else -> throw Exception("valueToFormat must be Double or Float, but it is ${valueToFormat::class.java.simpleName}")
         }
     }
@@ -170,10 +171,10 @@ object NumberMutatorUtils {
         return k
     }
 
-    fun randomizeDouble(min: Double?, max: Double?, scale: Int?, randomness: Randomness): Double{
+    fun randomizeDouble(min: Double, max: Double, scale: Int?, randomness: Randomness): Double{
         var rand = randomness.nextDouble()
-        if ((min != null || max != null) && ((rand < (min ?: Double.MIN_VALUE)) || (rand > (max ?: Double.MAX_VALUE)))){
-            rand = randomness.nextDouble(min?:Double.MIN_VALUE, max?:Double.MAX_VALUE)
+        if (rand < min || rand > max){
+            rand = randomness.nextDouble(min, max)
         }
         return getFormattedValue(rand, scale)
     }

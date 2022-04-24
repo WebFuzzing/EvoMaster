@@ -40,7 +40,7 @@ class DoubleGene(name: String,
     override fun copyContent() = DoubleGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        value = NumberMutatorUtils.randomizeDouble(min, max, scale, randomness)
+        value = NumberMutatorUtils.randomizeDouble(getMinimum(), getMaximum(), scale, randomness)
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
@@ -117,5 +117,4 @@ class DoubleGene(name: String,
         }
         return this.toDouble().compareTo(other.toDouble())
     }
-
 }

@@ -111,11 +111,19 @@ class NumberGeneTest {
         DoubleGene("value", min = 0.0,precision = 4, scale = 2, minInclusive = false).apply {
             assertEquals(99.99, getMaximum())
             assertEquals(0.01, getMinimum())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
         }
 
         DoubleGene("value", max = 0.0,precision = 4, scale = 2, maxInclusive = false).apply {
             assertEquals(-0.01, getMaximum())
             assertEquals(-99.99, getMinimum())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
         }
 
     }
@@ -125,11 +133,19 @@ class NumberGeneTest {
         FloatGene("value", min = 0.0f,precision = 4, scale = 2, minInclusive = false).apply {
             assertEquals(99.99f, getMaximum())
             assertEquals(0.01f, getMinimum())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
         }
 
         FloatGene("value", max = 0.0f,precision = 4, scale = 2, maxInclusive = false).apply {
             assertEquals(-0.01f, getMaximum())
             assertEquals(-99.99f, getMinimum())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
         }
     }
 
