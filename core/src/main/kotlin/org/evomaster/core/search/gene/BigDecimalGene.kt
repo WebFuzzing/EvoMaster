@@ -237,7 +237,7 @@ class BigDecimalGene(
     }
 
     private fun getMaxUsedInSearch() : Double {
-        if (max != null && max <= BigDecimal.valueOf(Double.MIN_VALUE))
+        if (max != null && max <= BigDecimal.valueOf(-Double.MAX_VALUE))
             throw IllegalStateException("not support yet: max value is less than -Double.MAX")
 
         val m = if (max == null || BigDecimal.valueOf(Double.MAX_VALUE) <= max) Double.MAX_VALUE else max.toDouble()
@@ -275,7 +275,7 @@ class BigDecimalGene(
         val r = if (!isFloatingPointMutable && !floatingPointMode)
                     withinLongRange()
                 else
-                    value <= BigDecimal.valueOf(Double.MAX_VALUE) && value >= BigDecimal.valueOf(-Double.MIN_VALUE)
+                    value <= BigDecimal.valueOf(Double.MAX_VALUE) && value >= BigDecimal.valueOf(-Double.MAX_VALUE)
         if (!r)
             LoggingUtil.uniqueWarn(log, "value of BigDecimal exceeds the range of mutation")
         return r

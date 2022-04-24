@@ -136,7 +136,7 @@ class ArchiveGeneMutator{
                         history = bdhistory,
                         value =  gene.toDouble(),
                         valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection,
-                        min = gene.min?.toDouble()?: Double.MIN_VALUE, max = gene.max?.toDouble()?: Double.MAX_VALUE, precision = gene.precision, scale = gene.scale),
+                        min = gene.getMinimum().toDouble(), max = gene.getMaximum().toDouble(), precision = gene.precision, scale = gene.scale),
                         start = GeneUtils.intpow2.size, end = 10)
                     gene.setValueWithDouble(fvalue)
                 }else{
