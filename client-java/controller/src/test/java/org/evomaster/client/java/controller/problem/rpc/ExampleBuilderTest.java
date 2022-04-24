@@ -34,7 +34,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 29;
+        return 30;
     }
 
     @Override
@@ -118,6 +118,38 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 }}
         );
     }
+
+    @Test
+    public void testImmutableObj(){
+
+        EndpointSchema endpoint = getOneEndpoint("immutableObj");
+        assertNotNull(endpoint.getResponse());
+        assertNotNull(endpoint.getRequestParams());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+
+        assertEquals(3, ((ObjectParam)p1).getType().getFields().size());
+        for (NamedTypedValue p : ((ObjectParam)p1).getType().getFields()){
+            assertFalse(p.isMutable());
+            if (p.getName().equals("nullLong")){
+                assertTrue(p.isNullable());
+                assertNull(p.getDefaultValue());
+            }else if (p.getName().equals("pbool")){
+                assertFalse(p.isNullable());
+                assertNotNull(p.getDefaultValue());
+                assertTrue(p.getDefaultValue() instanceof BooleanParam);
+                assertFalse(((BooleanParam)p.getDefaultValue()).getValue());
+            }else if (p.getName().equals("wbool")){
+                assertTrue(p.isNullable());
+                assertNotNull(p.getDefaultValue());
+                assertTrue(p.getDefaultValue() instanceof BooleanParam);
+                assertTrue(((BooleanParam)p.getDefaultValue()).getValue());
+            }
+        }
+    }
+
 
 
     @Test

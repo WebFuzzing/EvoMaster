@@ -68,4 +68,6 @@ public interface RPCInterfaceExample {
     String handleEnumWithConstructor(ObjectEnum arg1);
 
     String bigNumber(BigNumberObj arg1);
+
+    String immutableObj(ImmutableObj arg1);
 }
