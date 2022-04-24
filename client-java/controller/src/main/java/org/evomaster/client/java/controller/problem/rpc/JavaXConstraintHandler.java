@@ -80,7 +80,8 @@ public class JavaXConstraintHandler {
         } else if(namedTypedValue instanceof StringParam) {
             ((StringParam) namedTypedValue).setMinSize(1);
         }else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotEmpty");
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotEmpty");
             return false;
         }
 
@@ -97,7 +98,8 @@ public class JavaXConstraintHandler {
         if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setMinSize(1);
         } else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotBlank");
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its NotBlank");
             return false;
         }
         return true;
@@ -138,7 +140,8 @@ public class JavaXConstraintHandler {
             ((StringParam)namedTypedValue).setMinSize(size[0]);
             ((StringParam)namedTypedValue).setMaxSize(size[1]);
         } else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
             return false;
         }
 
@@ -159,14 +162,16 @@ public class JavaXConstraintHandler {
         }
 
         if (pattern == null){
-            SimpleLogger.error("ERROR: Pattern regexp is null");
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Pattern regexp is null for the param:"+namedTypedValue.getName());
             return false;
         }
 
         if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setPattern(pattern);
         }  else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Size");
             return false;
         }
         return true;
@@ -252,7 +257,8 @@ public class JavaXConstraintHandler {
             ((BigDecimalParam) namedTypedValue).setMin(new BigDecimal(min));
             ((BigDecimalParam) namedTypedValue).setMinInclusive(inclusive);
         }else {
-            SimpleLogger.error("ERROR: Can not solve constraints by setting Min value for the class "+ namedTypedValue.getType().getFullTypeName());
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Can not solve constraints by setting Min value for the class "+ namedTypedValue.getType().getFullTypeName());
             return false;
         }
 
@@ -276,7 +282,8 @@ public class JavaXConstraintHandler {
             ((BigDecimalParam) namedTypedValue).setMax(new BigDecimal(max));
             ((BigDecimalParam) namedTypedValue).setMaxInclusive(inclusive);
         }else {
-            SimpleLogger.error("ERROR: Can not solve constraints by setting Max value for the class "+ namedTypedValue.getType().getFullTypeName());
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Can not solve constraints by setting Max value for the class "+ namedTypedValue.getType().getFullTypeName());
             return false;
         }
 
@@ -302,6 +309,15 @@ public class JavaXConstraintHandler {
             int dInteger = (int) annotation.annotationType().getDeclaredMethod("integer").invoke(annotation);
             int dFraction = (int) annotation.annotationType().getDeclaredMethod("fraction").invoke(annotation);
 
+            // check fraction for integral number
+            if (namedTypedValue instanceof  BigIntegerParam || namedTypedValue instanceof PrimitiveOrWrapperParam) {
+                if (dFraction > 0){
+                    // TODO such schema error would send to core later
+                    SimpleLogger.uniqueWarn("ERROR: fraction should be 0 for integral number, param name: "+namedTypedValue.getName());
+                    dFraction = 0;
+                }
+            }
+
             ((NumericConstraintBase) namedTypedValue).setPrecision(dInteger + dFraction);
             ((NumericConstraintBase) namedTypedValue).setScale(dFraction);
 
@@ -310,7 +326,8 @@ public class JavaXConstraintHandler {
         }
 
         } else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with Digits constraints");
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with Digits constraints");
             return false;
         }
 
@@ -318,6 +335,15 @@ public class JavaXConstraintHandler {
         return false;
     }
 
+    /**
+     * eg, for Positive https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/Positive.html
+     *
+     * null is valid
+     *
+     * @param namedTypedValue is the param to handle
+     * @param supportType the supported javax constraint
+     * @return whether the [namedTypedValue] is handled
+     */
     private static boolean handlePositiveOrNegative(NamedTypedValue namedTypedValue, JavaXConstraintSupportType supportType){
         if (namedTypedValue instanceof BigDecimalParam || namedTypedValue instanceof  BigIntegerParam
                 || (namedTypedValue instanceof PrimitiveOrWrapperParam && ((PrimitiveOrWrapperType)namedTypedValue.getType()).isNumber())){
@@ -330,13 +356,23 @@ public class JavaXConstraintHandler {
                 default: throw new IllegalStateException("ERROR: constraint is not handled "+ supportType);
             }
         } else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Digits");
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its Digits");
             return false;
         }
 
         return true;
     }
 
+    /**
+     * eg, https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/AssertFalse.html
+     *
+     * null is valid
+     *
+     * @param namedTypedValue is the param to handle
+     * @param supportType is the supported javax validations contraints
+     * @return whether the param is handled
+     */
     private static boolean handleAssertFalseOrTrue(NamedTypedValue namedTypedValue, JavaXConstraintSupportType supportType){
         if (supportType != JavaXConstraintSupportType.ASSERTFALSE && supportType != JavaXConstraintSupportType.ASSERTTRUE)
             throw new IllegalStateException("ERROR: handleAssertFalseOrTrue cannot handle the constraint " + supportType);
@@ -349,7 +385,8 @@ public class JavaXConstraintHandler {
             namedTypedValue.setDefaultValue(defaultValue);
             return true;
         }else {
-            SimpleLogger.error("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its AssertFalse or AssertTrue");
+            // TODO such schema error would send to core later
+            SimpleLogger.uniqueWarn("ERROR: Do not solve class "+ namedTypedValue.getType().getFullTypeName() + " with its AssertFalse or AssertTrue");
             return false;
         }
     }

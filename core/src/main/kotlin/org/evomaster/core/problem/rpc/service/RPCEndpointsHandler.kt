@@ -606,7 +606,7 @@ class RPCEndpointsHandler {
         val gene = when(param.type.type){
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT ->
                 IntegerGene(param.name, min = param.minValue?.toInt()?: Int.MIN_VALUE, max = param.maxValue?.toInt()?:Int.MAX_VALUE,
-                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive, precision = param.precision)
             RPCSupportedDataType.P_BOOLEAN, RPCSupportedDataType.BOOLEAN -> BooleanGene(param.name)
             RPCSupportedDataType.P_CHAR, RPCSupportedDataType.CHAR -> StringGene(param.name, value="", maxLength = 1, minLength = param.minSize?.toInt()?:0)
             RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE ->
@@ -619,13 +619,13 @@ class RPCEndpointsHandler {
                     precision = param.precision, scale = param.scale)
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG ->
                 LongGene(param.name, min = param.minValue?.toLongOrNull(), max = param.maxValue?.toLongOrNull(),
-                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive, precision = param.precision)
             RPCSupportedDataType.P_SHORT, RPCSupportedDataType.SHORT ->
                 IntegerGene(param.name, min = param.minValue?.toInt()?:Short.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Short.MAX_VALUE.toInt(),
-                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive, precision = param.precision)
             RPCSupportedDataType.P_BYTE, RPCSupportedDataType.BYTE ->
                 IntegerGene(param.name, min = param.minValue?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Byte.MAX_VALUE.toInt(),
-                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive, precision = param.precision)
             RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> {
                 var strGene : Gene = StringGene(param.name).apply {
                     // String could have bigDecimal or bigInteger as part of specification if any number related constraint property is specified
@@ -667,7 +667,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
             RPCSupportedDataType.BIGINTEGER ->
                 BigIntegerGene(param.name, min = param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
-                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive)
+                    minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive, precision = param.precision)
             RPCSupportedDataType.BIGDECIMAL -> BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
                 minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive,
                 precision = param.precision, scale = param.scale)
