@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.impact.impactinfocollection.regex.*
+import org.evomaster.core.search.impact.impactinfocollection.value.collection.SqlMultidimensionalArrayGeneImpact
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -60,7 +61,6 @@ class ImpactUtils {
                 is DateTimeGene -> DateTimeGeneImpact(id, gene)
                 is TimeGene -> TimeGeneImpact(id, gene)
                 is SeededGene<*> -> SeededGeneImpact(id, gene)
-                is TupleGene -> TupleGeneImpact(id, gene)
                 //sql
                 is SqlNullable -> SqlNullableImpact(id, gene)
                 is SqlJSONGene -> SqlJsonGeneImpact(id, gene)
@@ -69,6 +69,7 @@ class ImpactUtils {
                 is SqlPrimaryKeyGene -> SqlPrimaryKeyGeneImpact(id, gene)
                 is SqlForeignKeyGene -> SqlForeignKeyGeneImpact(id)
                 is SqlAutoIncrementGene -> GeneImpact(id)
+                is SqlMultidimensionalArrayGene<*> -> SqlMultidimensionalArrayGeneImpact(id)
                 // regex
                 is RegexGene -> RegexGeneImpact(id, gene)
                 is DisjunctionListRxGene -> DisjunctionListRxGeneImpact(id, gene)

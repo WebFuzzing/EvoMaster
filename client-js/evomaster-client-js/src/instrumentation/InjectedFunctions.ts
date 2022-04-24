@@ -14,6 +14,7 @@ import ExecutionTracer from "./staticstate/ExecutionTracer";
 import HeuristicsForBooleans from "./heuristic/HeuristicsForBooleans";
 import ObjectiveRecorder from "./staticstate/ObjectiveRecorder";
 import FunctionCallHandler from "./methodreplacement/FunctionCallHandler";
+import SquareBracketsHandler from "./methodreplacement/SquareBracketsHandler";
 
 export default class InjectedFunctions {
 
@@ -76,5 +77,9 @@ export default class InjectedFunctions {
 
     public static ternary(f: () => any, fileName: string, line: number, index: number) : any{
        return HeuristicsForBooleans.handleTernary(f, fileName, line, index)
+    }
+
+    public static squareBrackets(fileName: string, line: number, branchId: number, object: Object, property: any) : any{
+        return SquareBracketsHandler.squareBracketInMemberExpression(fileName, line, branchId, object, property);
     }
 }

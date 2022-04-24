@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 
@@ -142,6 +143,19 @@ public class EndpointSchema {
                 // && (getResponse() == null || getResponse().sameParam(dto.responseParam))
                 && ((getRequestParams() == null && dto.requestParams == null) || getRequestParams().size() == dto.requestParams.size())
                 && IntStream.range(0, getRequestParams().size()).allMatch(i-> getRequestParams().get(i).sameParam(dto.requestParams.get(i)));
+    }
+
+    /**
+     * find an endpoint schema based on seeded tests
+     * @param dto a seeded test dto
+     * @return an endpoint schema
+     */
+    public boolean sameEndpoint(SeededRPCActionDto dto){
+        return dto.functionName.equals(name)
+                // only check input parameters
+                // && (getResponse() == null || getResponse().sameParam(dto.responseParam))
+                && ((getRequestParams() == null && dto.inputParams == null) || getRequestParams().size() == dto.inputParams.size())
+                && IntStream.range(0, getRequestParams().size()).allMatch(i-> getRequestParams().get(i).getType().getFullTypeName().equals(dto.inputParamTypes.get(i)));
     }
 
     /**

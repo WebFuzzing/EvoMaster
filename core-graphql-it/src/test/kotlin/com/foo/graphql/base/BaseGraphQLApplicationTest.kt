@@ -2,7 +2,7 @@ package com.foo.graphql.base
 
 import org.evomaster.client.java.controller.problem.GraphQlProblem
 import org.evomaster.core.problem.graphql.GraphQLAction
-import org.evomaster.core.problem.graphql.GraphQLActionBuilder
+import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.IntrospectiveQuery
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*

@@ -1,5 +1,9 @@
 # Seminars/Presentations
 
+* 2022: *SBST Workshop*.
+  Workshop given at Huawei.
+  [[PDF](slides/2022_sbst_huawei.pdf)]
+
 * 2022: *Automated Test Case Generation With AI*.
   Presentation given at NovaCare.
   [[PDF](slides/2022_novacare.pdf)]

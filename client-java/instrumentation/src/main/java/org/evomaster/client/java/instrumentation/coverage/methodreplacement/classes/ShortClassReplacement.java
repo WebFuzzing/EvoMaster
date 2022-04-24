@@ -1,11 +1,9 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -21,7 +19,7 @@ public class ShortClassReplacement implements MethodReplacementClass {
     }
 
 
-    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
     public static short parseShort(String input, String idTemplate) {
 
         if (ExecutionTracer.isTaintInput(input)) {
@@ -45,7 +43,7 @@ public class ShortClassReplacement implements MethodReplacementClass {
         }
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean equals(Short caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
@@ -72,7 +70,7 @@ public class ShortClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
-    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
     public static short valueOf(String input, String idTemplate) {
         return parseShort(input, idTemplate);
     }

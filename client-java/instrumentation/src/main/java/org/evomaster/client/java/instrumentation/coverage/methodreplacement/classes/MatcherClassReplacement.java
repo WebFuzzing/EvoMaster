@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.PatternMatchingHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
@@ -40,7 +41,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
      * @param idTemplate
      * @return
      */
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean matches(Matcher caller, String idTemplate) {
 
         if (caller == null) {
@@ -70,7 +71,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         return matcherMatchesResults;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean find(Matcher caller, String idTemplate) {
         Objects.requireNonNull(caller);
 

@@ -137,11 +137,12 @@ This is the reason why such test executions should be wrapped inside a `handleFl
 Also notice that, for JavaScript and C#, E2E tests are different, as run through bash scripts.
 This is due to the fact that we have to run 2 separate processes using different technologies (e.g., JVM vs. .Net and NodeJS). 
 
-### AVOID TOO LONG METHODS
+### AVOID TOO LONG METHODS/CLASSES
 
 Too long methods (e.g., more than 100 lines) should be split, as difficult to understand.
 For this task, in _IntelliJ_, you can right-click on a code snippet and choose 
-"_Refactor -> Extract -> Function_" 
+"_Refactor -> Extract -> Function_".
+Likewise, should avoid classes with more than 1000 lines.
 
 
 

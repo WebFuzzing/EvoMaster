@@ -1,6 +1,7 @@
 package com.thrift.example.artificial;
 
 import java.util.List;
+import java.util.Map;
 
 public class PrivateFieldInRequestDto {
 
@@ -124,5 +125,16 @@ public class PrivateFieldInRequestDto {
 
     public void setPriSShort(Short priSShort) {
         this.priSShort = priSShort;
+    }
+
+
+    private Map<String, String> priMap;
+
+    public Map<String, String> getPriMap() {
+        return priMap;
+    }
+
+    public void setPriMap(Map<String, String> priMap) {
+        this.priMap = priMap;
     }
 }

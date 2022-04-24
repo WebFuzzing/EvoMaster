@@ -10,16 +10,18 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
 import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
 import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
-import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
@@ -48,7 +50,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -529,10 +530,65 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             if (local!=null && !local.isEmpty())
                 localAuthSetupSchemaMap.putAll(local);
         }catch (Exception e){
-            SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
-            //TODO throw exception
+//            SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
+            throw new RuntimeException("Failed to extract the RPC Schema: " + e.getMessage());
         }
     }
+
+    public List<List<RPCActionDto>> handleSeededTests(){
+
+        if (seedRPCTests() == null || seedRPCTests().isEmpty()) return null;
+
+        if (rpcInterfaceSchema.isEmpty())
+            throw new IllegalStateException("empty RPC interface: The RPC interface schemas are not extracted yet");
+
+        List<List<RPCActionDto>> results = new ArrayList<>();
+
+        for (SeededRPCTestDto dto: seedRPCTests()){
+            if (dto.rpcFunctions != null && !dto.rpcFunctions.isEmpty()){
+                List<RPCActionDto> test = new ArrayList<>();
+                for (SeededRPCActionDto actionDto : dto.rpcFunctions){
+                    InterfaceSchema schema = rpcInterfaceSchema.get(actionDto.interfaceName);
+                    if (schema != null){
+                        EndpointSchema actionSchema = schema.getOneEndpointWithSeededDto(actionDto);
+                        if (actionSchema != null){
+                            EndpointSchema copy = actionSchema.copyStructure();
+                            for (int i = 0; i < copy.getRequestParams().size(); i++){
+                                // TODO need to check if generic type could be handled with jackson
+                                NamedTypedValue p = copy.getRequestParams().get(i);
+                                try {
+                                    String stringValue = actionDto.inputParams.get(i);
+                                    if (p instanceof PrimitiveOrWrapperParam){
+                                        ((PrimitiveOrWrapperParam<?>) p).setValueBasedOnStringValue(stringValue);
+                                    } else if (p instanceof StringParam){
+                                        ((StringParam) p).setValue(stringValue);
+                                    } else if (p instanceof ByteBufferParam){
+                                        ((ByteBufferParam) p).setValue(stringValue.getBytes());
+                                    } else {
+                                        Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
+                                        p.setValueBasedOnInstance(value);
+                                    }
+                                } catch (JsonProcessingException e) {
+                                    throw new IllegalStateException(
+                                            String.format("Seeded Test Error: cannot parse the seeded test %s at the parameter %d with error msg: %s", actionDto, i, e.getMessage()));
+                                }
+                            }
+                            test.add(copy.getDto());
+                        }else {
+                            throw new IllegalStateException("Seeded Test Error: cannot find the action "+actionDto.functionName);
+                        }
+                    } else {
+                        throw new IllegalStateException("Seeded Test Error: cannot find the interface "+ actionDto.interfaceName);
+                    }
+                }
+                results.add(test);
+            } else {
+                SimpleLogger.warn("Seeded Test: empty RPC function calls for the test "+ dto.testName);
+            }
+        }
+        return results;
+    }
+
 
 
     /**
@@ -960,4 +1016,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return null;
     }
 
+    @Override
+    public List<SeededRPCTestDto> seedRPCTests() {
+        return null;
+    }
 }

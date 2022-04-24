@@ -40,4 +40,16 @@ public class DbBaseController extends SpringWithDbController {
 
         return url;
     }
+
+    @Override
+    public void resetStateOfSUT()  {
+        try {
+            // need a further check if we need per invocation
+            client.getInputProtocol().getTransport().flush();
+            client.getOutputProtocol().getTransport().flush();
+        } catch (Exception e) {
+            //e.printStackTrace();
+        }
+
+    }
 }

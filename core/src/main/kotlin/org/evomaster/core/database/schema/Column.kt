@@ -41,7 +41,16 @@ data class Column(
         /**
          * a negative number means that the precision is unspecified or inapplicable
          */
-        val precision: Int = -1
+        val precision: Int = -1,
+
+        /**
+         * A column with dimension > 0 represents arrays, matrices, etc.
+         */
+        val dimension: Int = 0,
+
+        val compositeType: List<Column>? = null,
+
+        val compositeTypeName: String? = null,
 
         // public boolean identity;
 

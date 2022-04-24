@@ -91,7 +91,7 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
         CodeJavaGenerator.addCode(codes, var, indent);
         if (getValue() == null) return codes;
         CodeJavaGenerator.addCode(codes, "{", indent);
-        // new array
+        // new map
         CodeJavaGenerator.addCode(codes,
                 CodeJavaGenerator.setInstance(
                         variableName,

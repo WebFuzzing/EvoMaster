@@ -6,6 +6,9 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import io.restassured.http.ContentType;
+import org.evomaster.client.java.instrumentation.InputProperties;
+import org.evomaster.client.java.instrumentation.InstrumentingAgent;
+import org.evomaster.core.EMConfig;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -13,7 +16,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.Is.is;
 
@@ -41,6 +43,15 @@ public class HttpRequestManualTest extends SpringTestBase {
                                 .withBody("{\"message\": \"{{request.path.[2]}}\"}")
                                 .withTransformers("response-template")));
 
+        wireMockServer.stubFor(get(urlMatching("/api/echo/([a-z]*)\\?x=([0-9]*)&y=([a-z]*)"))
+                .atPriority(1)
+                .willReturn(
+                        aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withStatus(200)
+                                .withBody("{\"message\": \"{{request.path.[2]}}\"}")
+                                .withTransformers("response-template")));
+
         // to prevent from the 404 when no matching stub below stub is added
         wireMockServer.stubFor(get(urlMatching("/.*"))
                 .atPriority(2)
@@ -49,7 +60,9 @@ public class HttpRequestManualTest extends SpringTestBase {
                         .withBody("Not found!!")));
 
         HttpRequestController httpRequestController = new HttpRequestController();
-        SpringTestBase.initClass(httpRequestController);
+        EMConfig config = new EMConfig();
+        config.setInstrumentMR_NET(true);
+        SpringTestBase.initClass(httpRequestController,config);
     }
 
     @AfterAll
@@ -62,6 +75,15 @@ public class HttpRequestManualTest extends SpringTestBase {
     public void testURLConnection() {
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/external/url")
+                .then()
+                .statusCode(200)
+                .body("valid", is(true));
+    }
+
+    @Test
+    public void testURLConnectionWithQuery() {
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/wiremock/external/url/withQuery")
                 .then()
                 .statusCode(200)
                 .body("valid", is(true));

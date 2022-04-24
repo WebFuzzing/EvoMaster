@@ -1,10 +1,8 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DateTimeParsingUtils;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -73,7 +71,7 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
 
     }
 
-    @Replacement(type = ReplacementType.EXCEPTION)
+    @Replacement(type = ReplacementType.EXCEPTION, category = ReplacementCategory.BASE)
     public static Date parse(DateFormat caller, String input, String idTemplate) throws ParseException {
         Objects.requireNonNull(caller);
 

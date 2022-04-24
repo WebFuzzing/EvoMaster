@@ -9,38 +9,51 @@ import java.util.stream.Collectors;
 
 public class ReplacementList {
 
+    private static List<MethodReplacementClass> listCache;
+
+    /**
+     * Return all the available method replacement classes.
+     * Every time a new replacement class is implemented, it needs to
+     * be manually added to this list.
+     */
     public static List<MethodReplacementClass> getList() {
-        return Arrays.asList(
-                new AbstractEndpointClassReplacement(),
-                new BooleanClassReplacement(),
-                new ByteClassReplacement(),
-                new CharacterClassReplacement(),
-                new CollectionClassReplacement(),
-                new DateClassReplacement(),
-                new DateFormatClassReplacement(),
-                new DoubleClassReplacement(),
-                new FloatClassReplacement(),
-                new GsonClassReplacement(),
-                new Http11ProcessorReplacementClass(),
-                new HttpServletRequestClassReplacement(),
-                new IntegerClassReplacement(),
-                new LocalDateClassReplacement(),
-                new LocalDateTimeClassReplacement(),
-                new LocalTimeClassReplacement(),
-                new LongClassReplacement(),
-                new MapClassReplacement(),
-                new MatcherClassReplacement(),
-                new MethodClassReplacement(),
-                new ObjectClassReplacement(),
-                new ObjectsClassReplacement(),
-                new PatternClassReplacement(),
-                new PreparedStatementClassReplacement(),
-                new StatementClassReplacement(),
-                new StringClassReplacement(),
-                new ShortClassReplacement(),
-                new ServletRequestClassReplacement(),
-                new WebRequestClassReplacement()
-        );
+
+        if(listCache == null) {
+            listCache = Arrays.asList(
+                    new AbstractEndpointClassReplacement(),
+                    new BooleanClassReplacement(),
+                    new ByteClassReplacement(),
+                    new CharacterClassReplacement(),
+                    new CollectionClassReplacement(),
+                    new DateClassReplacement(),
+                    new DateFormatClassReplacement(),
+                    new DoubleClassReplacement(),
+                    new FloatClassReplacement(),
+                    new GsonClassReplacement(),
+                    new Http11ProcessorReplacementClass(),
+                    new HttpServletRequestClassReplacement(),
+                    new IntegerClassReplacement(),
+                    new LocalDateClassReplacement(),
+                    new LocalDateTimeClassReplacement(),
+                    new LocalTimeClassReplacement(),
+                    new LongClassReplacement(),
+                    new MapClassReplacement(),
+                    new MatcherClassReplacement(),
+                    new MethodClassReplacement(),
+                    new ObjectClassReplacement(),
+                    new ObjectsClassReplacement(),
+                    new PatternClassReplacement(),
+                    new PreparedStatementClassReplacement(),
+                    new StatementClassReplacement(),
+                    new StringClassReplacement(),
+                    new ShortClassReplacement(),
+                    new ServletRequestClassReplacement(),
+                    new WebRequestClassReplacement(),
+                    new URLClassReplacement()
+            );
+        }
+
+        return listCache;
     }
 
 
@@ -68,6 +81,8 @@ public class ReplacementList {
                             prefixes.add("java.lang.");
                             prefixes.add("java.util.");
                             prefixes.add("java.time.");
+
+                            prefixes.add("java.net.");
 
                             //we don't just use java.sql. as that seems to give issue (see previous comments)
                             prefixes.add("java.sql.Statement");
