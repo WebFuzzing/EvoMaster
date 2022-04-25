@@ -27,7 +27,7 @@ public class ExternalServiceInfo implements Serializable {
      */
     private final Integer mockHostPort;
 
-    public ExternalServiceInfo(String protocol, String remoteHostname, int remotePort, String mockHostname, int mockHostPort) {
+    public ExternalServiceInfo(String protocol, String remoteHostname, Integer remotePort, String mockHostname, Integer mockHostPort) {
         this.protocol = protocol;
         this.remoteHostname = remoteHostname;
         this.remotePort = remotePort;

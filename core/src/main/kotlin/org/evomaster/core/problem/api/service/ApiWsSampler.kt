@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.external.service.ExternalServices
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual

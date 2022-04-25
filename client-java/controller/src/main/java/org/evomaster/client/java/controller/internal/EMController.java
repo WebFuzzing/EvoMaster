@@ -474,6 +474,15 @@ public class EMController {
                     info.lastExecutedStatement = a.getLastExecutedStatement();
                     info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
                     info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
+                    info.externalServices = a.getExternalServices().stream()
+                            .map(es -> new ExternalServiceInfoDto(
+                                    es.getProtocol(),
+                                    es.getHostname(),
+                                    es.getRemotePort(),
+                                    es.getMockHostname(),
+                                    es.getMockHostPort()
+                            ))
+                            .collect(Collectors.toSet());
 
                     info.stringSpecializations = new LinkedHashMap<>();
                     for (Map.Entry<String, Set<StringSpecializationInfo>> entry :

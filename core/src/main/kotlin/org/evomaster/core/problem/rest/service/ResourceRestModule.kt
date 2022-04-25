@@ -5,6 +5,7 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.external.service.ExternalServices
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.Archive
@@ -76,5 +77,9 @@ class ResourceRestModule : AbstractModule(){
 
         bind(TestSuiteWriter::class.java)
                 .asEagerSingleton()
+
+        bind(object: TypeLiteral<ExternalServices>() {})
+                .asEagerSingleton()
+
     }
 }
