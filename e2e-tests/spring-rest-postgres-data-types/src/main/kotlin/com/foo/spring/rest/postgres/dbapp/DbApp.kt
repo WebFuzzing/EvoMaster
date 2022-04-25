@@ -78,22 +78,6 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-    //@GetMapping(path = ["/serialTypes"])
-    open fun getSerialTypes(): ResponseEntity<Any> {
-
-        val query = em.createNativeQuery("select 1 from SerialTypes where serialColumn>0")
-        val res = query.resultList
-
-        val status: Int
-        if (res.isNotEmpty()) {
-            status = 200
-        } else {
-            status = 400
-        }
-
-        return ResponseEntity.status(status).build()
-    }
-
     @GetMapping(path = ["/monetaryTypes"])
     open fun getMonetaryTypes(): ResponseEntity<Any> {
 
@@ -110,6 +94,102 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
+    @GetMapping(path = ["/characterTypes"])
+    open fun getChracterTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from CharacterTypes where varcharColunmn!=''")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    @GetMapping(path = ["/binaryDataTypes"])
+    open fun getBinaryDataTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from BinaryDataTypes where byteaColumn!=''")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+
+    @GetMapping(path = ["/booleanType"])
+    open fun getBooleanType(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from BooleanType where booleanColumn!='true'")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    //@GetMapping(path = ["/geometricTypes"])
+    open fun getGeometricTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from GeometricTypes where pointColumn!='(0,0)'")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    //@GetMapping(path = ["/dateTimeTypes"])
+    open fun getDateTimeTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from DateTimeTypes where timestampColumn!='1999-01-08 04:05:06'")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    //@GetMapping(path = ["/serialTypes"])
+    open fun getSerialTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from SerialTypes where serialColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
 
 }
 

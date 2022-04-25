@@ -26,7 +26,7 @@ class DbAppEMTest : SpringRestPostgresTestBase() {
         runTestHandlingFlakyAndCompilation(
                 "DbApp",
                 "org.bar.DbAppEM",
-                100
+                200
         ) { args ->
             val solution = initAndRun(args)
 
@@ -44,8 +44,23 @@ class DbAppEMTest : SpringRestPostgresTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/monetaryTypes", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/monetaryTypes", null)
 
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/characterTypes", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/characterTypes", null)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/binaryDataTypes", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/binaryDataTypes", null)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/booleanType", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/booleanType", null)
+
+            //assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/geometricTypes", null)
+            //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/geometricTypes", null)
+
             //assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/serialTypes", null)
             //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/serialTypes", null)
+
+            //assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/dateTimeTypes", null)
+            //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/dateTimeTypes", null)
 
         }
     }

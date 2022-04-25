@@ -14,12 +14,12 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class SqlTimeIntervalGene(
-    name: String,
-    val days: IntegerGene = IntegerGene(name = "days", min = 0),
-    val time: TimeGene = TimeGene(
-        "hoursMinutesAndSeconds",
-        timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
-    )
+        name: String,
+        val days: IntegerGene = IntegerGene(name = "days", min = 0),
+        val time: TimeGene = TimeGene(
+                "hoursMinutesAndSeconds",
+                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
+        )
 ) : Gene(name, mutableListOf(days, time)) {
 
     companion object {
@@ -29,9 +29,9 @@ class SqlTimeIntervalGene(
     override fun getChildren(): MutableList<Gene> = mutableListOf(days, time)
 
     override fun copyContent(): Gene = SqlTimeIntervalGene(
-        name,
-        days.copyContent() as IntegerGene,
-        time.copyContent() as TimeGene
+            name,
+            days.copyContent() as IntegerGene,
+            time.copyContent() as TimeGene
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -48,21 +48,21 @@ class SqlTimeIntervalGene(
     }
 
     override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return listOf(days, time)
     }
 
     override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
+            previousGenes: List<Gene>,
+            mode: GeneUtils.EscapeMode?,
+            targetFormat: OutputFormat?,
+            extraCheck: Boolean
     ): String {
         return "\"${days.value} days ${time.getValueAsRawString()}\""
     }
@@ -106,6 +106,7 @@ class SqlTimeIntervalGene(
             }
         }
     }
+
 
 
 }
