@@ -214,7 +214,7 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
                                   internalGenes: List<Gene>,
                                   mwc: MutationWeightControl,
                                   additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-        throw IllegalStateException("adaptive gene selection is unavailable for the gene")
+        throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
     }
 
     /**
