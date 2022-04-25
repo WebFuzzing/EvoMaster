@@ -54,11 +54,11 @@ CREATE TABLE GeometricTypes(
     boxColumn box NOT NULL,
     pathColumn path NOT NULL,
     polygonColumn polygon NOT NULL,
-    circleColumn circle NOT NULL,
-    cidrColumn cidr NOT NULL
+    circleColumn circle NOT NULL
 );
 
 CREATE TABLE NetworkAddressTypes(
+    cidrColumn cidr NOT NULL,
     inetColumn inet NOT NULL,
     macaddrColumn macaddr NOT NULL,
     macaddr8Column macaddr8 NOT NULL
