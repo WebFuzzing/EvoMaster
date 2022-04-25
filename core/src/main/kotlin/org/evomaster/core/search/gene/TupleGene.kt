@@ -78,8 +78,10 @@ class TupleGene(
             buffer.append("$name")
             //printout the inputs. See later if a refactoring is needed
             if (elements.dropLast(1).isNotEmpty()) {
-                buffer.append("(")
-                val s = elements.dropLast(1).map {
+
+                val s = elements.dropLast(1)
+                    .filter { it !is OptionalGene ||  it.isActive }
+                    .map {
 
                     if (it is EnumGene<*> ||
                         (it is OptionalGene && it.gene is EnumGene<*>) ||
@@ -109,8 +111,11 @@ class TupleGene(
 
                 }.joinToString(",").replace("\"", "\\\"")
                 //see another way: eg, joinTo(buffer, ", ").toString().replace("\"", "\\\"") to buffer
-                buffer.append(s)
-                buffer.append(")")
+                if(s.isNotEmpty()) {
+                    buffer.append("(")
+                    buffer.append(s)
+                    buffer.append(")")
+                }
             }
             //printout the return
             val returnGene = elements.last()
