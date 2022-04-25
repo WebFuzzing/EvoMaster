@@ -20,8 +20,8 @@ class FunctionInReturnedObjectWithPrimitivesAndObjectsAsInputTest2 : SpringTestB
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-            "GQL_FunctionInReturnedObjectWithPrimitivesAndObjectsAsInputEM",
-            "org.foo.graphql.FunctionInReturnedObjectWithPrimitivesAndObjectsAsInputEM",
+            "GQL_FunctionInReturnedObjectWithPrimitivesAndObjectsAsInput2EM",
+            "org.foo.graphql.FunctionInReturnedObjectWithPrimitivesAndObjectsAsInput2EM",
             100
         ) { args: MutableList<String> ->
 
