@@ -180,17 +180,17 @@ class ArrayGeneObjStructureTest : GeneStructuralElementBaseTest() {
 
     override fun getStructuralElement(): ArrayGene<ObjectGene> = ArrayGene(
         "foo",
-        template = objTemplate.copy() as ObjectGene,
+        template = objTemplate.copyContent() as ObjectGene,
         maxSize = 20,
-        elements = (0 until size).map { objTemplate.copy() as ObjectGene }.toMutableList())
+        elements = (0 until size).map { objTemplate.copyContent() as ObjectGene }.toMutableList())
 
     override fun getExpectedChildrenSize(): Int  = size
 
     override fun getCopyFromTemplate(): Gene = ArrayGene(
         "foo",
-        template = objTemplate.copy() as ObjectGene,
+        template = objTemplate.copyContent() as ObjectGene,
         maxSize = 20,
-        elements = (0 until copyFromTemplateSize).map {objTemplate.copy() as ObjectGene }.toMutableList())
+        elements = (0 until copyFromTemplateSize).map {objTemplate.copyContent() as ObjectGene }.toMutableList())
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is ArrayGene<*>)
@@ -242,7 +242,7 @@ class DateGeneStructureTest: GeneStructuralElementBaseTest() {
 
     @Test
     fun sameFormat(){
-        val template = getStructuralElement()
+        val template = getStructuralElementAndIdentifyAsRoot() as DateGene
         val copy = template.copy()
         assertEquals(template.dateGeneFormat, (copy as DateGene).dateGeneFormat)
     }
@@ -327,7 +327,7 @@ class ObjectGeneStructureTest: GeneStructuralElementBaseTest() {
 
     @Test
     fun testCopyFields(){
-        val obj = getStructuralElement()
+        val obj = getStructuralElementAndIdentifyAsRoot() as ObjectGene
         val copy = obj.copy() as ObjectGene
         val copyField = obj.copyFields(copy)
 
