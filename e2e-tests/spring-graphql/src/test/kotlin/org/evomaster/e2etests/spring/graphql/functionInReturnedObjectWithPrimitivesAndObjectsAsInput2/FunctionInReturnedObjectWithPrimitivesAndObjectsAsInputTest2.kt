@@ -32,6 +32,8 @@ class FunctionInReturnedObjectWithPrimitivesAndObjectsAsInputTest2 : SpringTestB
             assertNoneWithErrors(solution)
             assertValueInDataAtLeastOnce(solution,"NON_NULL_STORE")
             assertValueInDataAtLeastOnce(solution,"NULL_ID")
+            assertValueInDataAtLeastOnce(solution,"BOTH_NULL")
+
         }
     }
 

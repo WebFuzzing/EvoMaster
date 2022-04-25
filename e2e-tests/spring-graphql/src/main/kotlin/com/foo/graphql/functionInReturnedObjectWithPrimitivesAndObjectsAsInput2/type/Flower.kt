@@ -8,6 +8,10 @@ class Flower (
     fun type(id: Int?, store : Store?): String {
 
         if(id == null){
+            if(store == null){
+                return "BOTH_NULL"
+            }
+
             return "NULL_ID"
         }
 
