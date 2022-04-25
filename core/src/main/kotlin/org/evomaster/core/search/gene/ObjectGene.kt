@@ -328,7 +328,9 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     private fun selection(includedFields: List<Gene>): List<Gene> {
         val selection = includedFields.filter {
             when (it) {
-                is TupleGene -> true
+                is TupleGene ->
+                    (it.elements.last() is OptionalGene && (it.elements.last() as OptionalGene).isActive) ||
+                        (it.elements.last() is BooleanGene && (it.elements.last() as BooleanGene).value)
                 is OptionalGene -> it.isActive
                 is ObjectGene -> true // TODO check if should skip if none of its subfield is selected
                 is BooleanGene -> it.value
