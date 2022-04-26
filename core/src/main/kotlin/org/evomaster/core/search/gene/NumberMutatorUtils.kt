@@ -2,14 +2,58 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.min
 import kotlin.math.pow
 
+
+/**
+ * contains a set of utilities in order to facilitate number mutations
+ */
 object NumberMutatorUtils {
+
+    /**
+     * with, IEEE 754
+     * 15-16 digits for double
+     */
+    const val MAX_DOUBLE_PRECISION = 15
+
+    /**
+     * with, IEEE 754
+     * 6-7 digits for float
+     */
+    const val MAX_FLOAT_PRECISION = 6
+
+    /**
+     * note that
+     * with IEEE 754
+     * the [Double.MAX_VALUE] is 0x7fefffffffffffff
+     * ie, 0 11111111110 1111111111111111111111111111111111111111111111111111
+     * in case that max value is Double.Max and its inclusive is false,
+     * its max inclusive value here is considered as 0x7fdfffffffffffff
+     * (minus smallest positive normal number)
+     * ie, 0 11111111101 1111111111111111111111111111111111111111111111111111
+     *
+     * https://en.wikipedia.org/wiki/Double-precision_floating-point_format
+     */
+    const val MAX_DOUBLE_EXCLUSIVE : Double = 8.988465674311579E307
+
+    /**
+     * note that
+     * the [Float.MAX_VALUE] is 0x7f7fffff
+     * ie, 0 11111110 11111111111111111111111
+     * in case that max value is Float.Max and its inclusive is false,
+     * its max inclusive value here is considered as 0x7f7effff
+     * (minus smallest positive normal number)
+     * ie, 0 11111101 11111111111111111111111
+     *
+     * https://en.wikipedia.org/wiki/Single-precision_floating-point_format
+     */
+    const val MAX_FLOAT_EXCLUSIVE : Float = 3.3895312E38F
+
 
     /**
      * @return the maximum range of the [value] that can be changed based on
@@ -18,11 +62,11 @@ object NumberMutatorUtils {
      * @param max the upper bound of [value]
      * @param value to be further modified
      */
-    fun <N:Number> getRange(direction: Double, min: N, max: N, value : N): Long {
+    private fun <N:Number> getDeltaRange(direction: Double, min: N, max: N, value : N): Long {
         return if (direction > 0)
-            NumberCalculationUtil.calculateIncrement(value.toDouble(), max.toDouble()).toLong()
+            calculateIncrement(value.toDouble(), max.toDouble()).toLong()
         else
-            NumberCalculationUtil.calculateIncrement(min.toDouble(), value.toDouble()).toLong()
+            calculateIncrement(min.toDouble(), value.toDouble()).toLong()
     }
 
     /**
@@ -42,12 +86,12 @@ object NumberMutatorUtils {
 
         val gaussianDelta = getGaussianDeltaWithDirection(randomness, direction)
 
-        val range = maxRange?:getRange(gaussianDelta, smin, smax, value)
+        val range = maxRange?:getDeltaRange(gaussianDelta, smin, smax, value)
 
         var res = modifyValue(randomness, value.toDouble(), delta = gaussianDelta, maxRange = range, specifiedJumpDelta = GeneUtils.getDelta(randomness, apc, range),scale == null)
 
         if (scale != null && getFormattedValue(value, scale) == getFormattedValue(res, scale)){
-            res += (if (gaussianDelta>0) 1.0 else -1.0).times(getMinimalDelta(scale, value).toDouble())
+            res += (if (gaussianDelta>0) 1.0 else -1.0).times(getDecimalEpsilon(scale, value).toDouble())
         }
 
         return if (res > smax.toDouble()) smax
@@ -87,14 +131,18 @@ object NumberMutatorUtils {
 
     /**
      * @return minimal delta if it has.
-     * this is typically used when the precision is specified
+     * this is typically used when the precision/scale is specified
      */
-    fun <N: Number> getMinimalDelta(scale: Int?, value: N): N {
-        return when (value) {
-            is Double -> Double.MIN_VALUE.run { if (scale == null) this else valueWithPrecisionAndScale(this, scale, RoundingMode.UP).toDouble() } as N
-            is Float -> Float.MIN_VALUE.run { if (scale == null) this else valueWithPrecisionAndScale(this.toDouble(), scale, RoundingMode.UP).toFloat() } as N
-            is BigDecimal -> Double.MIN_VALUE.run { if (scale == null) this.toBigDecimal() else valueWithPrecisionAndScale(this, scale, RoundingMode.UP)} as N
-            else -> throw Exception("valueToFormat must be Double or Float, but it is ${value::class.java.simpleName}")
+    fun <N: Number> getDecimalEpsilon(scale: Int?, value: N): N {
+
+        val f = (if (value is Float) MAX_FLOAT_PRECISION else MAX_DOUBLE_PRECISION).run { min(this, scale?:this) }
+        val bd = BigDecimal(1.0/(10.0.pow(f))).setScale(f, RoundingMode.HALF_UP)
+
+        return  when (value) {
+            is Float -> bd.toFloat() as N
+            is Double -> bd.toDouble() as N
+            is BigDecimal -> bd as N
+            else -> throw Exception("valueToFormat must be Double, Float or BigDecimal, but it is ${value::class.java.simpleName}")
         }
     }
 
@@ -108,10 +156,13 @@ object NumberMutatorUtils {
             is Double -> valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toDouble() as N
             is Float -> valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toFloat() as N
             is BigDecimal -> valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode) as N
-            else -> throw Exception("valueToFormat must be Double or Float, but it is ${valueToFormat::class.java.simpleName}")
+            else -> throw Exception("valueToFormat must be Double, Float or BigDecimal, but it is ${valueToFormat::class.java.simpleName}")
         }
     }
 
+    /**
+     * mutate a long with [max], [min] with adaptive parameter control
+     */
     fun mutateLong(value: Long, min: Long?, max: Long?, randomness: Randomness, apc: AdaptiveParameterControl): Long {
 
         //choose an i for 2^i modification
@@ -120,6 +171,9 @@ object NumberMutatorUtils {
         return mutateLong(value, min, max, delta, randomness)
     }
 
+    /**
+     * mutate a long with [max], [min], specified [delta]
+     */
     fun mutateLong(value: Long, min: Long?, max: Long?, delta: Int, randomness: Randomness): Long {
 
         val sign = when {
@@ -146,6 +200,9 @@ object NumberMutatorUtils {
             Long.MAX_VALUE
     }
 
+    /**
+     * randomize a long with [max], [min]
+     */
     fun randomizeLong(value: Long, min: Long?, max: Long?, randomness: Randomness, forceNewValue: Boolean) : Long {
 
         /*
@@ -171,6 +228,9 @@ object NumberMutatorUtils {
         return k
     }
 
+    /**
+     * randomize a double with [max], [min] and [scale]
+     */
     fun randomizeDouble(min: Double, max: Double, scale: Int?, randomness: Randomness): Double{
         var rand = randomness.nextDouble()
         if (rand < min || rand > max){

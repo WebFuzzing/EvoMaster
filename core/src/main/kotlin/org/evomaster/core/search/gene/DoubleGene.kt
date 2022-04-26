@@ -11,7 +11,6 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.RoundingMode
 
 
 class DoubleGene(name: String,
@@ -103,12 +102,16 @@ class DoubleGene(name: String,
         return true
     }
 
-    override fun getMaximum(): Double {
-        return (max?: Double.MAX_VALUE).run { if (!maxInclusive) this - getMinimalDelta() else this }.run { getFormattedValue(this) }
+    override fun getMinimum(): Double {
+        if (minInclusive) return min?: -Double.MAX_VALUE
+        val lowerBounder = if (min != null && min > -Double.MAX_VALUE) min + getMinimalDelta() else -NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE
+        return getFormattedValue(lowerBounder)
     }
 
-    override fun getMinimum(): Double {
-        return (min?: -Double.MAX_VALUE).run { if (!minInclusive) this + getMinimalDelta() else this }.run { getFormattedValue(this) }
+    override fun getMaximum(): Double {
+        if (maxInclusive) return max?: Double.MAX_VALUE
+        val upperBounder = if (max != null && max < Double.MAX_VALUE) max - getMinimalDelta() else NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE
+        return getFormattedValue(upperBounder)
     }
 
     override fun compareTo(other: ComparableGene): Int {

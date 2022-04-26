@@ -45,7 +45,7 @@ abstract class FloatingPointNumber<T:Number>(
      * @return formatted [value] based on [scale]
      */
     fun getFormattedValue(valueToFormat: T?=null, roundingMode: RoundingMode= RoundingMode.HALF_UP) : T{
-        return NumberMutatorUtils.getFormattedValue(valueToFormat?:value, scale)
+        return NumberMutatorUtils.getFormattedValue(valueToFormat?:value, scale, roundingMode)
     }
 
     /**
@@ -53,7 +53,7 @@ abstract class FloatingPointNumber<T:Number>(
      * this is typically used when [scale] is specified
      */
     fun getMinimalDelta(): T{
-        return NumberMutatorUtils.getMinimalDelta(scale, getZero())
+        return NumberMutatorUtils.getDecimalEpsilon(scale, getZero())
     }
 
     /**

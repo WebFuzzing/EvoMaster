@@ -1,5 +1,6 @@
 package org.evomaster.core.utils
 
+import org.evomaster.core.search.gene.NumberMutatorUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
@@ -44,9 +45,13 @@ object NumberCalculationUtil {
      * eg, for Decimal (3,2), the boundary is [-99.9, 99.9]
      */
     fun boundaryDecimal(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP): Pair<BigDecimal, BigDecimal>{
-        val value = valueWithPrecisionAndScale(10.0.pow(size-scale), scale)
-        val p = valueWithPrecisionAndScale(1.0/(10.0.pow(scale)), scale)
-        val boundary = value.subtract(p).toDouble()
+        if (size > NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE){
+            log.warn("there would exist error if the precision is greater than 15")
+        }
+
+        val integral = (10.0).pow(size) - 1
+        val fraction = (10.0).pow(scale)
+        val boundary = integral.div(fraction)
         return valueWithPrecisionAndScale(boundary * -1, scale) to valueWithPrecisionAndScale(boundary * 1, scale, roundingMode)
     }
 
@@ -69,7 +74,7 @@ object NumberCalculationUtil {
      * @return get middle value of the two values
      */
     fun <T: Number> getMiddle(min: T, max : T, scale: Int?) : BigDecimal{
-        val m = (min.toDouble() + max.toDouble())/ 2.0
+        val m = min.toDouble()/2.0  + max.toDouble()/2.0
         return valueWithPrecisionAndScale(m, scale)
     }
 }

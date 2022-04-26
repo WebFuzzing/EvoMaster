@@ -120,11 +120,15 @@ class FloatGene(name: String,
     }
 
     override fun getMinimum(): Float {
-        return (min?: -Float.MAX_VALUE).run { if (!minInclusive) this + getMinimalDelta() else this }.run { getFormattedValue(this) }
+        if (minInclusive) return min?: -Float.MAX_VALUE
+        val lowerBounder = if (min != null && min > -Float.MAX_VALUE) min + getMinimalDelta() else -NumberMutatorUtils.MAX_FLOAT_EXCLUSIVE
+        return getFormattedValue(lowerBounder)
     }
 
     override fun getMaximum(): Float {
-        return (max?: Float.MAX_VALUE).run { if (!maxInclusive) this - getMinimalDelta() else this }.run { getFormattedValue(this) }
+        if (maxInclusive) return max?: Float.MAX_VALUE
+        val upperBounder = if (max != null && max < Float.MAX_VALUE) max - getMinimalDelta() else NumberMutatorUtils.MAX_FLOAT_EXCLUSIVE
+        return getFormattedValue(upperBounder)
     }
 
     override fun compareTo(other: ComparableGene): Int {

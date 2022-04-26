@@ -19,9 +19,10 @@ import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
-import java.math.BigInteger
 import java.math.MathContext
 import java.math.RoundingMode
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * gene representing BigDecimal
@@ -233,18 +234,40 @@ class BigDecimalGene(
     private fun getMinUsedInSearch() : Double {
         if (min != null && min >= BigDecimal.valueOf(Double.MAX_VALUE))
             throw IllegalStateException("not support yet: minimum value is greater than Double.MAX")
-        val m = if (min == null || BigDecimal.valueOf(-Double.MAX_VALUE) >= min) -Double.MAX_VALUE else min.toDouble()
+        if (minInclusive)
+            return getFormattedValue(max(-Double.MAX_VALUE, min?.toDouble()?:-Double.MAX_VALUE), scale)
 
-        return m.run { if (!minInclusive) this + getMinimalDelta().toDouble() else this }.run { getFormattedValue(this, scale) }
+        if (min == null)
+            log.warn("there is no minimum value specified, but minInclusive is false for gene $name")
+
+        val lowerBound = if (min == null || BigDecimal.valueOf(-Double.MAX_VALUE) > min ){
+            -Double.MAX_VALUE
+        }else if (min.toDouble() == -Double.MAX_VALUE){
+            -NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE
+        } else
+            (min + getMinimalDelta()).toDouble()
+
+    return getFormattedValue(lowerBound, scale)
     }
 
     private fun getMaxUsedInSearch() : Double {
         if (max != null && max <= BigDecimal.valueOf(-Double.MAX_VALUE))
             throw IllegalStateException("not support yet: max value is less than -Double.MAX")
 
-        val m = if (max == null || BigDecimal.valueOf(Double.MAX_VALUE) <= max) Double.MAX_VALUE else max.toDouble()
+        if (maxInclusive)
+            return getFormattedValue(min(Double.MAX_VALUE, max?.toDouble()?:Double.MAX_VALUE), scale)
 
-        return m.run { if (!maxInclusive) this - getMinimalDelta().toDouble() else this }.run { getFormattedValue(this, scale) }
+        if (max == null)
+            log.warn("there is no maximum value specified, but maxInclusive is false for gene $name")
+
+        val upperBound = if (max == null || BigDecimal.valueOf(Double.MAX_VALUE) < max ){
+            Double.MAX_VALUE
+        }else if (max.toDouble() == Double.MAX_VALUE){
+            NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE
+        } else
+            (max - getMinimalDelta()).toDouble()
+
+        return getFormattedValue(upperBound, scale)
     }
 
     override fun getMinimum(): BigDecimal {
