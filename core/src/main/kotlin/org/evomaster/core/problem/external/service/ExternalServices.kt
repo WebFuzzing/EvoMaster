@@ -2,9 +2,9 @@ package org.evomaster.core.problem.external.service
 
 class ExternalServices {
 
-    val externalServices: MutableSet<ExternalService> = mutableSetOf()
+    val externalServiceInfos: MutableSet<ExternalServiceInfo> = mutableSetOf()
 
-    fun addExternalService(externalService: ExternalService) {
-        externalServices.add(externalService)
+    fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
+        externalServiceInfos.add(externalServiceInfo)
     }
 }

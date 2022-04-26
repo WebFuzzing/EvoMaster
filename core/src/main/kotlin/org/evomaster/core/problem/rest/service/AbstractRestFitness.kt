@@ -1,10 +1,12 @@
 package org.evomaster.core.problem.rest.service
 
+import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.external.service.ExternalServices
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
@@ -31,6 +33,9 @@ import javax.ws.rs.core.Response
 
 
 abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual {
+
+    @Inject(optional = true)
+    protected lateinit var externalServices: ExternalServices
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)

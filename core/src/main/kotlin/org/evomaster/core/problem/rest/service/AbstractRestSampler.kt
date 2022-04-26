@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.external.service.ExternalServices
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.seeding.Parser
@@ -35,6 +36,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     lateinit var swagger: OpenAPI
         protected set
+
+    @Inject(optional = true)
+    protected lateinit var externalServices: ExternalServices
 
     @PostConstruct
     open fun initialize() {
