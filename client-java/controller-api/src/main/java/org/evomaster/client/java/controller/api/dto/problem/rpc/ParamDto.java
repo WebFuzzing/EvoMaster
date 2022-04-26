@@ -139,4 +139,8 @@ public class ParamDto {
         return copy;
     }
 
+    public boolean hasNumberConstraints(){
+        return minValue != null || maxValue != null || precision != null || scale !=  null;
+    }
+
 }

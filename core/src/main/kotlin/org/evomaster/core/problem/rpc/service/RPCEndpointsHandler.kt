@@ -14,7 +14,6 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
@@ -25,11 +24,10 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.impact.impactinfocollection.value.SeededGeneImpact
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
+import kotlin.math.min
 
 /**
  * this class is used to manage formulated individual with schemas of SUT
@@ -627,36 +625,49 @@ class RPCEndpointsHandler {
                 IntegerGene(param.name, min = param.minValue?.toInt()?:Byte.MIN_VALUE.toInt(), max = param.maxValue?.toInt()?:Byte.MAX_VALUE.toInt(),
                     minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive, precision = param.precision)
             RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> {
-                var strGene : Gene = StringGene(param.name).apply {
-                    // String could have bigDecimal or bigInteger as part of specification if any number related constraint property is specified
-                    if (param.precision != null || param.scale != null){
-                        specializationGenes.add(BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
-                            precision = param.precision, scale = param.scale, minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
-                    } else if (param.minValue != null || param.maxValue != null){
-                        // only max or min, we recognize it as biginteger
-                        specializationGenes.add(BigIntegerGene(param.name, min=param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
-                            minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
+                if (param.hasNumberConstraints() && param.pattern == null){
+                    val p : Int? = if (param.precision!= null && param.maxSize != null){
+                        min(param.precision!!, (if (param.scale == 0) param.maxSize else (param.maxSize-1)).toInt())
+                    }else null
+
+                    NumericStringGene(name = param.name, minLength = param.minSize?.toInt()?:0, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
+                        minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive,
+                        precision = p, scale = param.scale)
+                }else {
+                    if (param.hasNumberConstraints() && param.pattern != null)
+                        log.warn("Not support numeric constraints and pattern together yet, and check the param ${param.name}")
+
+                    var strGene : Gene = StringGene(param.name, minLength = param.minSize?.toInt()?:0, maxLength = param.maxSize?.toInt()?:16).apply {
+
+                        // String could have bigDecimal or bigInteger as part of specification if any number related constraint property is specified
+                        if (param.precision != null || param.scale != null){
+                            specializationGenes.add(BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
+                                precision = param.precision, scale = param.scale, minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
+                        } else if (param.minValue != null || param.maxValue != null){
+                            // only max or min, we recognize it as biginteger
+                            specializationGenes.add(BigIntegerGene(param.name, min=param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
+                                minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
+                        }
                     }
-                }
 
-                if (param.pattern != null){
-                    try {
-                        val regex = RegexHandler.createGeneForEcma262(param.pattern).apply {this.name = param.name}
-                        /*
-                            if there only exists pattern, we recognize it as regexgene
-                            otherwise put the regex as part of specialization
-                         */
-                        if ((strGene as? StringGene)?.specializationGenes?.isNotEmpty() == true){
-                            strGene.specializationGenes.add(regex)
-                        }else
-                            strGene = regex
-                    } catch (e: Exception) {
-                        LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${param.pattern}")
+                    if (param.pattern != null){
+                        try {
+                            val regex = RegexHandler.createGeneForEcma262(param.pattern).apply {this.name = param.name}
+                            /*
+                                if there only exists pattern, we recognize it as regexgene
+                                otherwise put the regex as part of specialization
+                             */
+                            if ((strGene as? StringGene)?.specializationGenes?.isNotEmpty() == true){
+                                strGene.specializationGenes.add(regex)
+                            }else
+                                strGene = regex
+                        } catch (e: Exception) {
+                            LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${param.pattern}")
+                        }
                     }
+
+                    strGene
                 }
-
-                strGene
-
             }
             RPCSupportedDataType.ENUM -> handleEnumParam(param)
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param)
