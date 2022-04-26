@@ -11,6 +11,8 @@ class NumericStringGene(
     name: String,
     /**
      * inclusive
+     *
+     * note that precision would represent maxLength
      */
     val minLength: Int,
     val number : BigDecimalGene
@@ -25,7 +27,7 @@ class NumericStringGene(
                 maxInclusive : Boolean = true,
                 floatingPointMode : Boolean = true,
                 precision : Int? = null,
-                scale : Int? = null) : this(name, minLength, BigDecimalGene(name, value, min, max, minInclusive, maxInclusive, floatingPointMode, precision?:15, scale))
+                scale : Int? = null) : this(name, minLength, BigDecimalGene(name, value, min, max, minInclusive, maxInclusive, floatingPointMode, precision?:if (scale == 0) 20 else 15, scale))
 
 
     override fun getChildren(): List<Gene> = mutableListOf(number)

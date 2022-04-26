@@ -70,4 +70,6 @@ public interface RPCInterfaceExample {
     String bigNumber(BigNumberObj arg1);
 
     String immutableObj(ImmutableObj arg1);
+
+    String numericString(NumericStringObj arg1);
 }

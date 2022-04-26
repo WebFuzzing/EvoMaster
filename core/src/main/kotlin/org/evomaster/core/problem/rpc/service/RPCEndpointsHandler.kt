@@ -627,12 +627,12 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.STRING, RPCSupportedDataType.BYTEBUFFER -> {
                 if (param.hasNumberConstraints() && param.pattern == null){
                     val p : Int? = if (param.precision!= null && param.maxSize != null){
-                        min(param.precision!!, (if (param.scale == 0) param.maxSize else (param.maxSize-1)).toInt())
+                        min(param.precision!!, (if (param.scale == null || param.scale == 0) param.maxSize else (param.maxSize-1)).toInt())
                     }else null
 
                     NumericStringGene(name = param.name, minLength = param.minSize?.toInt()?:0, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
                         minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive,
-                        precision = p, scale = param.scale)
+                        precision = p, scale = param.scale?:0)
                 }else {
                     if (param.hasNumberConstraints() && param.pattern != null)
                         log.warn("Not support numeric constraints and pattern together yet, and check the param ${param.name}")

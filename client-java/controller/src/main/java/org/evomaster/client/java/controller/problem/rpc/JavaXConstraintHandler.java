@@ -240,7 +240,7 @@ public class JavaXConstraintHandler {
             ((PrimitiveOrWrapperParam)namedTypedValue).setMin(Long.parseLong(min));
             ((PrimitiveOrWrapperParam<?>) namedTypedValue).setMinInclusive(inclusive);
         } else if (namedTypedValue instanceof StringParam){
-            ((StringParam)namedTypedValue).setMin(Long.parseLong(min));
+            ((StringParam)namedTypedValue).setMin(new BigDecimal(min));
             ((StringParam) namedTypedValue).setMinInclusive(inclusive);
         } else if (namedTypedValue instanceof  BigIntegerParam){
             ((BigIntegerParam) namedTypedValue).setMin(new BigInteger(min));
@@ -265,7 +265,7 @@ public class JavaXConstraintHandler {
             ((PrimitiveOrWrapperParam)namedTypedValue).setMax(Long.parseLong(max));
             ((PrimitiveOrWrapperParam<?>) namedTypedValue).setMaxInclusive(inclusive);
         } else if (namedTypedValue instanceof StringParam){
-            ((StringParam)namedTypedValue).setMax(Long.parseLong(max));
+            ((StringParam)namedTypedValue).setMax(new BigDecimal(max));
             ((StringParam) namedTypedValue).setMaxInclusive(inclusive);
         } else if (namedTypedValue instanceof  BigIntegerParam){
             ((BigIntegerParam) namedTypedValue).setMax(new BigInteger(max));

@@ -34,7 +34,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 30;
+        return 31;
     }
 
     @Override
@@ -117,6 +117,48 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                     }};
                 }}
         );
+    }
+
+    @Test
+    public void testNumericString(){
+        EndpointSchema endpoint = getOneEndpoint("numericString");
+        assertNotNull(endpoint.getResponse());
+        assertNotNull(endpoint.getRequestParams());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+
+        assertEquals(4, ((ObjectParam)p1).getType().getFields().size());
+        for (NamedTypedValue p : ((ObjectParam)p1).getType().getFields()){
+            assertTrue(p instanceof StringParam);
+            StringParam ns = (StringParam) p;
+            if (p.getName().equals("longValue")){
+                assertTrue(p.isNullable());
+                assertFalse(ns.getMaxInclusive());
+                assertTrue(ns.getMinInclusive());
+                assertEquals(Long.MAX_VALUE, ns.getMax().longValue());
+                assertNull(ns.getMin());
+            }else if (p.getName().equals("intValue")){
+                assertFalse(p.isNullable());
+                assertEquals(Integer.MAX_VALUE, ns.getMax().intValue());
+                assertFalse(ns.getMaxInclusive());
+                assertTrue(ns.getMinInclusive());
+            }else if (p.getName().equals("bigIntegerValue")){
+                assertTrue(p.isNullable());
+                assertEquals(Long.MAX_VALUE, ns.getMax().longValue());
+                assertFalse(ns.getMaxInclusive());
+                assertTrue(ns.getMinInclusive());
+            }else if (p.getName().equals("bigDecimalValue")){
+                assertTrue(p.isNullable());
+                assertEquals(Double.MAX_VALUE, ns.getMax().doubleValue());
+                assertFalse(ns.getMaxInclusive());
+                assertEquals(15, ns.getPrecision());
+                assertEquals(5, ns.getScale());
+                assertFalse(ns.getMinInclusive());
+                assertEquals(0.0, ns.getMin().doubleValue());
+            }
+        }
     }
 
     @Test

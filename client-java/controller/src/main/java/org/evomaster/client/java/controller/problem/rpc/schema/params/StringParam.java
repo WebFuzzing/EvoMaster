@@ -5,13 +5,14 @@ import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.StringType;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * string param
  */
-public class StringParam extends NamedTypedValue<StringType, String> implements NumericConstraintBase<Long> {
+public class StringParam extends NamedTypedValue<StringType, String> implements NumericConstraintBase<BigDecimal> {
 
     /**
      * min length of the string
@@ -29,7 +30,7 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
      * then we still need to collect such info
      * if a string has such info, when init gene, we will add a specification as LongGene for it
      */
-    private Long min;
+    private BigDecimal min;
 
     /**
      * max value of the string
@@ -37,7 +38,7 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
      * then we still need to collect such info
      * if a string has such info, when init gene, we will add a specification as LongGene for it
      */
-    private Long max;
+    private BigDecimal max;
 
     /**
      * pattern specified with regular expression
@@ -90,28 +91,26 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     }
 
     @Override
-    public Long getMin() {
+    public BigDecimal getMin() {
         return min;
     }
 
     @Override
-    public void setMin(Long min) {
-        if (this.min != null)
-            this.min = Math.max(this.min, min);
-        else
+    public void setMin(BigDecimal min) {
+        if (min == null) return;
+        if (this.min == null || this.min.compareTo(min) < 0)
             this.min = min;
     }
 
     @Override
-    public Long getMax() {
+    public BigDecimal getMax() {
         return max;
     }
 
     @Override
-    public void setMax(Long max) {
-        if (this.max  != null)
-            this.max = Math.min(this.max, max);
-        else
+    public void setMax(BigDecimal max) {
+        if (max == null) return;
+        if (this.max  == null || this.max.compareTo(max) > 0)
             this.max = max;
     }
 

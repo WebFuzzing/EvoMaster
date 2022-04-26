@@ -235,4 +235,10 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         if (arg1 == null) return null;
         return arg1.toString();
     }
+
+    @Override
+    public String numericString(NumericStringObj arg1) {
+        if (arg1 == null) return null;
+        return arg1.toString();
+    }
 }
