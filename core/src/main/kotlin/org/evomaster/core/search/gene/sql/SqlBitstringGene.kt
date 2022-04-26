@@ -23,12 +23,6 @@ class SqlBitstringGene(
 
 ) : CollectionGene, Gene(name, booleanArrayGene.getAllElements()) {
 
-    init {
-        repeat (minSize) {
-            booleanArrayGene.addElement(this.booleanArrayGene.template.copyContent())
-        }
-    }
-
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBitstringGene::class.java)
 
@@ -69,7 +63,7 @@ class SqlBitstringGene(
     }
 
     override fun innerGene(): List<Gene> {
-        return booleanArrayGene.innerGene()
+        return listOf(booleanArrayGene)
     }
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

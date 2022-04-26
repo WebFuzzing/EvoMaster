@@ -5,6 +5,8 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.search.gene.ArrayGene
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.sql.SqlBitstringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -29,10 +31,10 @@ class BitStringTypesTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction(
-            "BitStringTypes", setOf(
+                "BitStringTypes", setOf(
                 "bitColumn",
                 "bitvaryingColumn"
-            )
+        )
         )
 
         val genes = actions[0].seeGenes()
@@ -43,6 +45,10 @@ class BitStringTypesTest : ExtractTestBasePostgres() {
         assertEquals(5, bitColumnGene.minSize)
         assertEquals(5, bitColumnGene.maxSize)
 
+        val arrayGene = bitColumnGene.innerGene()[0] as ArrayGene<BooleanGene>
+        repeat(bitColumnGene.minSize) {
+            arrayGene.addElement(BooleanGene("booleanGene"))
+        }
         assertTrue(genes[1] is SqlBitstringGene) //character varying
         val bitVaryingColumnGene = genes[1] as SqlBitstringGene
         assertEquals(0, bitVaryingColumnGene.minSize)

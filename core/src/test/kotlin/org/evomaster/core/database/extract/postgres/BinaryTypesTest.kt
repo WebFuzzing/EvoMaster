@@ -46,4 +46,33 @@ class BinaryTypesTest : ExtractTestBasePostgres() {
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
+
+    @Test
+    fun testFailure() {
+
+        val schema = SchemaExtractor.extract(connection)
+
+        assertNotNull(schema)
+
+        assertEquals("public", schema.name.lowercase())
+        assertEquals(DatabaseType.POSTGRES, schema.databaseType)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction(
+                "BinaryTypes", setOf(
+                "byteaColumn"
+        )
+        )
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is StringGene) //character varying
+
+        val gene = genes[0] as StringGene
+        gene.value = "K9e33\\" // backslash
+        val dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
+    }
 }
