@@ -382,6 +382,9 @@ class RPCEndpointsHandler {
             is EnumGene<*> -> dto.stringValue = valueGene.index.toString()
             is SeededGene<*> -> dto.stringValue = getValueForSeededGene(valueGene)
             is LongGene -> dto.stringValue = valueGene.value.toString()
+            is NumericStringGene -> dto.stringValue = valueGene.number.getValueAsRawString()
+            is BigDecimalGene -> dto.stringValue = valueGene.getValueAsRawString()
+            is BigIntegerGene -> dto.stringValue = valueGene.getValueAsRawString()
             is ArrayGene<*> -> {
                 val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a collection is null")
                 val innerContent = valueGene.getAllElements().map {

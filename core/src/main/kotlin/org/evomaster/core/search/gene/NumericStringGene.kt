@@ -1,8 +1,11 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.impact.impactinfocollection.value.OptionalGeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.numeric.NumericStringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import java.math.BigDecimal
@@ -65,6 +68,18 @@ class NumericStringGene(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return listOf(number)
+    }
+
+    override fun adaptiveSelectSubset(
+        randomness: Randomness,
+        internalGenes: List<Gene>,
+        mwc: MutationWeightControl,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is NumericStringGeneImpact){
+            return listOf(number to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.numberGeneImpact, gene = number))
+        }
+        throw IllegalArgumentException("impact is null or not OptionalGeneImpact")
     }
 
     override fun getValueAsPrintableString(

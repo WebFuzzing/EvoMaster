@@ -63,7 +63,7 @@ class ImpactUtils {
                 // math
                 is BigDecimalGene -> BigDecimalGeneImpact(id)
                 is BigIntegerGene -> BigIntegerGeneImpact(id)
-                is NumericStringGene -> NumericStringGeneImpact(id)
+                is NumericStringGene -> NumericStringGeneImpact(id, gene)
                 //sql
                 is SqlNullable -> SqlNullableImpact(id, gene)
                 is SqlJSONGene -> SqlJsonGeneImpact(id, gene)
