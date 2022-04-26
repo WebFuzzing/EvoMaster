@@ -19,7 +19,7 @@ class SqlInetGene(
 ) : Gene(name, octets.toMutableList()) {
 
     companion object {
-        val INET_SIZE = 4
+        const val INET_SIZE = 4
         val log: Logger = LoggerFactory.getLogger(SqlInetGene::class.java)
     }
 
@@ -45,20 +45,13 @@ class SqlInetGene(
             mode: GeneUtils.EscapeMode?,
             targetFormat: OutputFormat?,
             extraCheck: Boolean
-    ): String {
-        return "\"${
-            octets
-                    .map { Integer.toHexString(it.value) }
-                    .joinToString(".")
-        }\""
-    }
+    ): String = "\"" + this.octets
+            .map { it.value }
+            .joinToString(".") + "\""
 
-    override fun getValueAsRawString(): String {
-        return octets
-                .map { Integer.toHexString(it.value) }
-                .joinToString(".")
-
-    }
+    override fun getValueAsRawString() = this.octets
+            .map { it.value }
+            .joinToString(".")
 
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
