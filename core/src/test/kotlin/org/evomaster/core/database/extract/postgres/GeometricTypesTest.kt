@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.search.gene.ArrayGene
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -53,6 +54,14 @@ class GeometricTypesTest : ExtractTestBasePostgres() {
         p.y.value = 0.0f
         q.x.value = 1.0f
         q.y.value = 1.0f
+
+        val pathGene = genes[4] as SqlPathGene
+        (pathGene.getChildren().first() as ArrayGene<SqlPointGene>).addElement(SqlPointGene("point1"))
+        (pathGene.getChildren().first() as ArrayGene<SqlPointGene>).addElement(SqlPointGene("point2"))
+
+        val polygonGene = genes[5] as SqlPolygonGene
+        (polygonGene.getChildren().first() as ArrayGene<SqlPointGene>).addElement(SqlPointGene("point1"))
+        (polygonGene.getChildren().first() as ArrayGene<SqlPointGene>).addElement(SqlPointGene("point2"))
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)

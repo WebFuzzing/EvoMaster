@@ -14,8 +14,8 @@ class SqlPolygonGene(
     name: String,
     val points: ArrayGene<SqlPointGene> = ArrayGene(
             name = "points",
-            // polygons have at least 3 points
-            minSize = 3,
+            // polygons have at least 2 points
+            minSize = 2,
             template = SqlPointGene("p"))
 ) : Gene(name, mutableListOf(points)) {
 
