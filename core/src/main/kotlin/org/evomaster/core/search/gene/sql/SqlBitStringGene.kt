@@ -9,7 +9,10 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class SqlBitstringGene(
+/**
+ * Bit strings are strings of 1's and 0's.
+ */
+class SqlBitStringGene(
         /**
          * The name of this gene
          */
@@ -24,7 +27,7 @@ class SqlBitstringGene(
 ) : CollectionGene, Gene(name, booleanArrayGene.getAllElements()) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(SqlBitstringGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlBitStringGene::class.java)
 
         const val TRUE_VALUE = "1"
 
@@ -49,14 +52,14 @@ class SqlBitstringGene(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlBitstringGene) {
+        if (other !is SqlBitStringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         booleanArrayGene.copyValueFrom(other.booleanArrayGene)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlBitstringGene) {
+        if (other !is SqlBitStringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return booleanArrayGene.containsSameValueAs(other.booleanArrayGene)
@@ -67,7 +70,7 @@ class SqlBitstringGene(
     }
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlBitstringGene) {
+        if (gene is SqlBitStringGene) {
             return booleanArrayGene.bindValueBasedOn(gene.booleanArrayGene)
         }
         LoggingUtil.uniqueWarn(log, "cannot bind SqlBitstringGene with ${gene::class.java.simpleName}")
@@ -98,7 +101,7 @@ class SqlBitstringGene(
 
     override fun getDefaultMaxSize() = booleanArrayGene.getDefaultMaxSize()
 
-    override fun copyContent() = SqlBitstringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copyContent() as ArrayGene<BooleanGene>)
+    override fun copyContent() = SqlBitStringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copyContent() as ArrayGene<BooleanGene>)
 
 
 }

@@ -6,8 +6,7 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.sql.SqlBinaryStringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -39,8 +38,8 @@ class BinaryTypesTest : ExtractTestBasePostgres() {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is StringGene) //character varying
-        assertEquals(0, (genes[0] as StringGene).minLength)
+        assertTrue(genes[0] is SqlBinaryStringGene) //character varying
+        assertEquals(0, (genes[0] as SqlBinaryStringGene).minSize)
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
@@ -67,10 +66,30 @@ class BinaryTypesTest : ExtractTestBasePostgres() {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is StringGene) //character varying
+        assertTrue(genes[0] is SqlBinaryStringGene)
 
-        val gene = genes[0] as StringGene
-        gene.value = "K9e33\\" // backslash
+        val sqlBinaryStringGene = genes[0] as SqlBinaryStringGene
+
+        val arrayGene  = sqlBinaryStringGene.innerGene()[0] as ArrayGene<IntegerGene>
+        val integerGene0 = arrayGene.template.copyContent() as IntegerGene
+        integerGene0.value = 0
+
+        val integerGene1 = arrayGene.template.copyContent() as IntegerGene
+        integerGene1.value = 42
+
+        val integerGene2 = arrayGene.template.copyContent() as IntegerGene
+        integerGene2.value = 255
+
+        val integerGene3= arrayGene.template.copyContent() as IntegerGene
+        integerGene3.value = 16
+
+        arrayGene.addElement(integerGene0)
+        arrayGene.addElement(integerGene1)
+        arrayGene.addElement(integerGene2)
+        arrayGene.addElement(integerGene3)
+
+        assertEquals("\"\\x002aff10\"",sqlBinaryStringGene.getValueAsPrintableString())
+
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 

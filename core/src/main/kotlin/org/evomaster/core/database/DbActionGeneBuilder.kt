@@ -152,11 +152,11 @@ class DbActionGeneBuilder {
                  * Could be any kind of binary data... so let's just use a string,
                  * which also simplifies when needing generate the test files
                  */
-                ColumnDataType.BLOB,
-                ColumnDataType.BYTEA ->
+                ColumnDataType.BLOB ->
                     handleBLOBColumn(column)
 
-
+                ColumnDataType.BYTEA ->
+                    handleBinaryStringColumn(column)
 
                 ColumnDataType.REAL,
                 ColumnDataType.FLOAT4 ->
@@ -534,6 +534,15 @@ class DbActionGeneBuilder {
         }
     }
 
+    private fun handleBinaryStringColumn(column: Column): Gene {
+        return if (column.enumValuesAsStrings != null) {
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings)
+        } else {
+            SqlBinaryStringGene(name = column.name)
+        }
+    }
+
     private fun handleFloatColumn(column: Column, minValue:Double, maxValue: Double): Gene {
         /**
          * REAL is identical to the floating point statement float(24).
@@ -618,7 +627,7 @@ class DbActionGeneBuilder {
      * https://dev.mysql.com/doc/refman/8.0/en/bit-value-literals.html
      */
     private fun handleBitColumn(column: Column): Gene {
-        val gene = SqlBitstringGene(column.name, minSize = column.size, maxSize = column.size)
+        val gene = SqlBitStringGene(column.name, minSize = column.size, maxSize = column.size)
         return gene
     }
 
@@ -627,7 +636,7 @@ class DbActionGeneBuilder {
      * https://www.postgresql.org/docs/14/datatype-bit.html
      */
     private fun handleBitVaryingColumn(column: Column): Gene {
-        return SqlBitstringGene(column.name, minSize = 0, maxSize = column.size)
+        return SqlBitStringGene(column.name, minSize = 0, maxSize = column.size)
     }
 
     companion object {

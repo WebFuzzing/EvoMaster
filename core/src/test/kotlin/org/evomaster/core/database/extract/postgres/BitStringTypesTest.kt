@@ -7,7 +7,7 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.ArrayGene
 import org.evomaster.core.search.gene.BooleanGene
-import org.evomaster.core.search.gene.sql.SqlBitstringGene
+import org.evomaster.core.search.gene.sql.SqlBitStringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -40,8 +40,8 @@ class BitStringTypesTest : ExtractTestBasePostgres() {
         val genes = actions[0].seeGenes()
 
         assertEquals(2, genes.size)
-        assertTrue(genes[0] is SqlBitstringGene) //character varying
-        val bitColumnGene = genes[0] as SqlBitstringGene
+        assertTrue(genes[0] is SqlBitStringGene) //character varying
+        val bitColumnGene = genes[0] as SqlBitStringGene
         assertEquals(5, bitColumnGene.minSize)
         assertEquals(5, bitColumnGene.maxSize)
 
@@ -49,8 +49,8 @@ class BitStringTypesTest : ExtractTestBasePostgres() {
         repeat(bitColumnGene.minSize) {
             arrayGene.addElement(BooleanGene("booleanGene"))
         }
-        assertTrue(genes[1] is SqlBitstringGene) //character varying
-        val bitVaryingColumnGene = genes[1] as SqlBitstringGene
+        assertTrue(genes[1] is SqlBitStringGene) //character varying
+        val bitVaryingColumnGene = genes[1] as SqlBitStringGene
         assertEquals(0, bitVaryingColumnGene.minSize)
         assertEquals(10, bitVaryingColumnGene.maxSize)
 
