@@ -139,6 +139,19 @@ class NumberGeneTest {
             assertTrue(isValid())
         }
 
+        DoubleGene("value").apply {
+            assertEquals(Double.MAX_VALUE, getMaximum())
+            assertEquals(-Double.MAX_VALUE, getMinimum())
+        }
+
+        DoubleGene("value", minInclusive = false, maxInclusive = false).apply {
+            assertNotEquals(Double.MAX_VALUE, getMaximum())
+            assertTrue(getMaximum() < Double.MAX_VALUE)
+            assertNotEquals(-Double.MAX_VALUE, getMinimum())
+            assertTrue(getMinimum() > -Double.MAX_VALUE)
+            assertTrue(getMinimum() < getMaximum())
+        }
+
     }
 
     @Test
@@ -163,6 +176,18 @@ class NumberGeneTest {
             assertTrue(isValid())
             randomize(random, false, listOf())
             assertTrue(isValid())
+        }
+
+        FloatGene("value").apply {
+            assertEquals(Float.MAX_VALUE, getMaximum())
+            assertEquals(-Float.MAX_VALUE, getMinimum())
+        }
+
+        FloatGene("value", minInclusive = false, maxInclusive = false).apply {
+            assertNotEquals(Float.MAX_VALUE, getMaximum())
+            assertTrue(Float.MAX_VALUE > getMaximum())
+            assertNotEquals(-Float.MAX_VALUE, getMinimum())
+            assertTrue(-Float.MAX_VALUE < getMinimum())
         }
     }
 
@@ -273,5 +298,6 @@ class NumberGeneTest {
             assertTrue(isValid())
         }
     }
+
 
 }
