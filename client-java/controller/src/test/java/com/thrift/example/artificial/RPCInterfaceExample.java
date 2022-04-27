@@ -72,4 +72,9 @@ public interface RPCInterfaceExample {
     String immutableObj(ImmutableObj arg1);
 
     String numericString(NumericStringObj arg1);
+
+    Map<String, NumericStringObj> mapResponse();
+
+    List<BigNumberObj> listResponse();
+
 }

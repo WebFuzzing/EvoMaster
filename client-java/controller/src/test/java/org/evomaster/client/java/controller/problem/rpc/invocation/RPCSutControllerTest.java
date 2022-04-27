@@ -56,6 +56,8 @@ public class RPCSutControllerTest {
         rpcController.stopSut();
     }
 
+
+
     @Test
     public void testTypes(){
         List<String> types = interfaceSchemas.get(0).types.stream().map(t-> t.type.fullTypeNameWithGenericType).collect(Collectors.toList());
@@ -80,6 +82,73 @@ public class RPCSutControllerTest {
 
         assertTrue(types.contains(BigNumberObj.class.getName()));
 
+    }
+
+    @Test
+    public void testMapResponse(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("mapResponse")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(0, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        dto.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        String expectedTestScript ="java.util.Map<java.lang.String,com.thrift.example.artificial.NumericStringObj> res1 = null;\n" +
+                "{\n" +
+                " res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).mapResponse();\n" +
+                "}";
+        assertEquals(expectedTestScript, String.join("\n", responseDto.testScript));
+
+        String expectedAssertions = "assertEquals(2, res1.size());\n" +
+                "assertEquals(\"2L\", res1.get(\"bar\").getLongValue());\n" +
+                "assertEquals(\"2\", res1.get(\"bar\").getIntValue());\n" +
+                "assertEquals(\"242\", res1.get(\"bar\").getBigIntegerValue());\n" +
+                "assertEquals(\"2.42\", res1.get(\"bar\").getBigDecimalValue());\n" +
+                "assertEquals(\"42L\", res1.get(\"foo\").getLongValue());\n" +
+                "assertEquals(\"42\", res1.get(\"foo\").getIntValue());\n" +
+                "assertEquals(\"4242\", res1.get(\"foo\").getBigIntegerValue());\n" +
+                "assertEquals(\"42.42\", res1.get(\"foo\").getBigDecimalValue());";
+
+        assertEquals(expectedAssertions, String.join("\n", responseDto.assertionScript));
+    }
+
+    @Test
+    public void testListResponse(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("listResponse")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(0, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        dto.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        String expectedTestScript ="java.util.List<com.thrift.example.artificial.BigNumberObj> res1 = null;\n" +
+                "{\n" +
+                " res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).listResponse();\n" +
+                "}";
+        assertEquals(expectedTestScript, String.join("\n", responseDto.testScript));
+
+        String expectedAssertions = "assertEquals(1, res1.size());\n" +
+                "assertEquals(\"10.12\", res1.get(0).getBdPositiveFloat().toString());\n" +
+                "assertEquals(\"-10.12\", res1.get(0).getBdNegativeFloat().toString());\n" +
+                "assertEquals(\"0.00\", res1.get(0).getBdPositiveOrZeroFloat().toString());\n" +
+                "assertEquals(\"-2.16\", res1.get(0).getBdNegativeOrZeroFloat().toString());\n" +
+                "assertEquals(\"10\", res1.get(0).getBiPositive().toString());\n" +
+                "assertEquals(\"0\", res1.get(0).getBiPositiveOrZero().toString());\n" +
+                "assertEquals(\"-10\", res1.get(0).getBiNegative().toString());\n" +
+                "assertEquals(\"-2\", res1.get(0).getBiNegativeOrZero().toString());";
+        assertEquals(expectedAssertions, String.join("\n", responseDto.assertionScript));
     }
 
     @Test

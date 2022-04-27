@@ -1,6 +1,8 @@
 package com.thrift.example.artificial;
 
 import java.lang.reflect.UndeclaredThrowableException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -240,5 +242,43 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     public String numericString(NumericStringObj arg1) {
         if (arg1 == null) return null;
         return arg1.toString();
+    }
+
+    @Override
+    public Map<String, NumericStringObj> mapResponse() {
+        return new HashMap<String, NumericStringObj>(){{
+            put("foo", new NumericStringObj(){{
+                setIntValue("42");
+                setLongValue("42L");
+                setBigDecimalValue("42.42");
+                setBigIntegerValue("4242");
+            }});
+
+            put("bar", new NumericStringObj(){{
+                setIntValue("2");
+                setLongValue("2L");
+                setBigDecimalValue("2.42");
+                setBigIntegerValue("242");
+            }});
+        }};
+    }
+
+    @Override
+    public List<BigNumberObj> listResponse() {
+        return Arrays.asList(
+                new BigNumberObj(){{
+                    // bigdecimal
+                    setBdPositiveFloat(new BigDecimal("10.12"));
+                    setBdPositiveOrZeroFloat(new BigDecimal("0.00"));
+                    setBdNegativeFloat(new BigDecimal("-10.12"));
+                    setBdNegativeOrZeroFloat(new BigDecimal("-2.16"));
+
+                    // biginteger
+                    setBiPositive(BigInteger.TEN);
+                    setBiPositiveOrZero(BigInteger.ZERO);
+                    setBiNegative(BigInteger.valueOf(-10));
+                    setBiNegativeOrZero(BigInteger.valueOf(-2));
+                }}
+        );
     }
 }

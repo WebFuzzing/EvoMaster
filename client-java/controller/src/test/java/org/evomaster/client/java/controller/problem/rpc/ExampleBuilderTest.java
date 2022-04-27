@@ -34,7 +34,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 31;
+        return 33;
     }
 
     @Override
@@ -118,6 +118,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 }}
         );
     }
+
 
     @Test
     public void testNumericString(){
