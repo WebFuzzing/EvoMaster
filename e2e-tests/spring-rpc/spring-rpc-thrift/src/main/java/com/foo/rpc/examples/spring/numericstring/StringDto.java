@@ -22,7 +22,7 @@ public class StringDto implements org.apache.thrift.TBase<StringDto, StringDto._
 
   public @org.apache.thrift.annotation.Nullable @DecimalMax(value = "424242", inclusive = false) @Digits(integer = 6, fraction = 0) @DecimalMin(value = "0", inclusive = false) java.lang.String longValue; // required
   public @org.apache.thrift.annotation.Nullable @Digits(integer = 4, fraction = 0) @DecimalMax(value = "0", inclusive = false) java.lang.String intValue; // required
-  public @org.apache.thrift.annotation.Nullable @Digits(integer = 6, fraction = 5) @DecimalMin(value = "0", inclusive = true) java.lang.String doubleValue; // required
+  public @org.apache.thrift.annotation.Nullable @Digits(integer = 2, fraction = 2) @DecimalMin(value = "0", inclusive = true) java.lang.String doubleValue; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
