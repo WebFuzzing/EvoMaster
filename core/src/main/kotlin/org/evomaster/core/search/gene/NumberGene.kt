@@ -12,11 +12,11 @@ abstract class NumberGene<T : Number>(name: String,
                                       /**
                                        * lower bound of the number
                                        */
-                                      open val min : T?,
+                                      val min : T?,
                                       /**
                                        * upper bound of the number
                                        */
-                                      open val max : T?,
+                                      val max : T?,
                                       /**
                                        * indicate whether to include the lower bound
                                        */
@@ -36,7 +36,7 @@ abstract class NumberGene<T : Number>(name: String,
                                       ) : ComparableGene(name, mutableListOf()) {
 
 
-    lateinit var value : T
+    var value : T
 
     init {
         if (value == null)
@@ -70,9 +70,9 @@ abstract class NumberGene<T : Number>(name: String,
      * @return whether the [value] is between [min] and [max] if they are specified
      */
     override fun isValid() : Boolean{
-        if (max != null && max !is BigDecimal && max !is BigInteger && value.toDouble() > max!!.toDouble())
+        if (max != null && max !is BigDecimal && max !is BigInteger && value.toDouble() > max.toDouble())
             return false
-        if (min != null && max !is BigDecimal && max !is BigInteger && value.toDouble() < min!!.toDouble())
+        if (min != null && max !is BigDecimal && max !is BigInteger && value.toDouble() < min.toDouble())
             return false
         return true
     }

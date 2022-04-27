@@ -88,7 +88,8 @@ class NumericStringGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return "\"" + number.getValueAsRawString() + "\""
+        // avoid scientific representation if the number is string
+        return "\"" + number.value.toPlainString() + "\""
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {

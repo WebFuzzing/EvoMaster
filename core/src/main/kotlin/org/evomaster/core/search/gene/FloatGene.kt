@@ -30,8 +30,8 @@ class FloatGene(name: String,
                  */
                 scale: Int? = null
 ) : FloatingPointNumber<Float>(name, value,
-    min = if (precision != null && scale != null && min == null) NumberCalculationUtil.boundaryDecimal(precision, scale).first.toFloat() else min,
-    max = if (precision != null && scale != null && max == null) NumberCalculationUtil.boundaryDecimal(precision, scale).second.toFloat() else max,
+    min = if (precision != null && scale != null) (-NumberCalculationUtil.upperBound(precision, scale)).toFloat().run { if (min== null || this > min) this else min } else min,
+    max = if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).toFloat().run { if (max == null || this < max) this else max } else max,
     minInclusive, maxInclusive, precision, scale) {
 
     companion object{

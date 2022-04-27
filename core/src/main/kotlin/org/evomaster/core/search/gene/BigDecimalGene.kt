@@ -13,8 +13,8 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import org.evomaster.core.utils.NumberCalculationUtil
 import org.evomaster.core.utils.NumberCalculationUtil.getMiddle
+import org.evomaster.core.utils.NumberCalculationUtil.upperBound
 import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -58,8 +58,8 @@ class BigDecimalGene(
     scale : Int? = null
 
 ) : FloatingPointNumber<BigDecimal>(name, value,
-    min = if (precision != null && scale != null && min == null) NumberCalculationUtil.boundaryDecimal(precision, scale).first else min,
-    max = if (precision != null && scale != null && max == null) NumberCalculationUtil.boundaryDecimal(precision, scale).second else max,
+    min = if (precision != null && scale != null) (-upperBound(precision, scale)).run { if (min== null || this > min) this else min } else min,
+    max = if (precision != null && scale != null) upperBound(precision, scale).run { if (max == null || this < max) this else max } else max,
     minInclusive, maxInclusive, precision, scale){
 
     companion object{

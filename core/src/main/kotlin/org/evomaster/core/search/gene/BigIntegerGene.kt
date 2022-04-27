@@ -11,6 +11,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.evomaster.core.utils.NumberCalculationUtil
 import org.evomaster.core.utils.NumberCalculationUtil.boundaryDecimal
 import org.evomaster.core.utils.NumberCalculationUtil.getMiddle
+import org.evomaster.core.utils.NumberCalculationUtil.upperBound
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
@@ -33,8 +34,8 @@ class BigIntegerGene(
     minInclusive : Boolean = true,
     maxInclusive : Boolean = true
 ) : IntegralNumberGene<BigInteger> (name, value,
-    min = if (precision!=null && min == null) boundaryDecimal(precision, 0).first.toBigInteger() else min,
-    max = if (precision!=null && max == null) boundaryDecimal(precision, 0).second.toBigInteger() else max,
+    min = if (precision != null ) (-upperBound(precision, 0)).toBigInteger().run { if (min== null || this > min) this else min } else min,
+    max = if (precision != null ) upperBound(precision, 0).toBigInteger().run { if (max == null || this < max) this else max } else max,
     precision, minInclusive, maxInclusive) {
 
     companion object{
@@ -180,8 +181,8 @@ class BigIntegerGene(
         if (max!= null && max <= BigInteger.valueOf(Long.MIN_VALUE))
             throw IllegalStateException("not support yet: max value is less than Long.MIN")
 
-        val m = if (max == null || BigInteger.valueOf(Long.MAX_VALUE) <= min) return Long.MAX_VALUE else max.toLong()
-        return max.toLong().run { if (!maxInclusive) this - 1L else this }
+        val m = if (max == null || BigInteger.valueOf(Long.MAX_VALUE) <= min) Long.MAX_VALUE else max.toLong()
+        return m.run { if (!maxInclusive) this - 1L else this }
     }
 
     override fun getMinimum(): BigInteger {

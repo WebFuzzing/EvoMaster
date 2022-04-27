@@ -11,6 +11,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.upperBound
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigInteger
@@ -30,8 +31,8 @@ class IntegerGene(
 
     constructor(name: String, value: Int? = null, min: Int? = null, max: Int?=null, precision: Int?=null, minInclusive: Boolean = true, maxInclusive: Boolean = true) :this(
         name, value,
-        min = min?:((if (precision != null) NumberCalculationUtil.boundaryDecimal(precision, 0) else null)?.first?.toInt()?: Int.MIN_VALUE),
-        max = max?:((if (precision != null) NumberCalculationUtil.boundaryDecimal(precision, 0) else null)?.second?.toInt()?:Int.MAX_VALUE),
+        min = (min?:Int.MIN_VALUE).run { if (precision!= null) max(this, (-upperBound(precision, 0)).toInt()) else this },
+        max = (max?:Int.MAX_VALUE).run { if (precision!= null) min(this, (upperBound(precision, 0)).toInt()) else this },
         precision, minInclusive, maxInclusive)
 
     init {

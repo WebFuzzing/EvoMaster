@@ -631,7 +631,7 @@ class RPCEndpointsHandler {
                 if (param.hasNumberConstraints() && param.pattern == null){
                     val p : Int? = if (param.precision!= null && param.maxSize != null){
                         min(param.precision!!, (if (param.scale == null || param.scale == 0) param.maxSize else (param.maxSize-1)).toInt())
-                    }else null
+                    }else param.precision
 
                     NumericStringGene(name = param.name, minLength = param.minSize?.toInt()?:0, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
                         minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive,

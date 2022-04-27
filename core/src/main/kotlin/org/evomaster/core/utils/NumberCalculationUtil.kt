@@ -45,14 +45,23 @@ object NumberCalculationUtil {
      * eg, for Decimal (3,2), the boundary is [-99.9, 99.9]
      */
     fun boundaryDecimal(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP): Pair<BigDecimal, BigDecimal>{
-        if (size > NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE){
-            log.warn("there would exist error if the precision is greater than 15")
+        val upperBound = upperBound(size, scale, roundingMode)
+        return -upperBound to upperBound
+    }
+
+    /**
+     * @return decimal upperbound with specified precision and scale
+     */
+    fun upperBound(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP) : BigDecimal{
+        if (scale > 0 && size > NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE){
+            log.warn("there would exist error if the precision is greater than 15 for floating point number")
         }
 
         val integral = (10.0).pow(size) - 1
         val fraction = (10.0).pow(scale)
         val boundary = integral.div(fraction)
-        return valueWithPrecisionAndScale(boundary * -1, scale) to valueWithPrecisionAndScale(boundary * 1, scale, roundingMode)
+
+        return valueWithPrecisionAndScale(boundary, scale, roundingMode)
     }
 
     /**
