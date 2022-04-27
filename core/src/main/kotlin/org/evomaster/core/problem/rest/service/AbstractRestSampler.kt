@@ -217,12 +217,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      * To collect external service info through SutInfoDto
      */
     private fun initExternalServiceInfo(info: SutInfoDto) {
-        info.externalServicesDto.forEach {
-            externalServices.addExternalService(ExternalServiceInfo(
-                    it.protocol,
-                    it.remoteHostname,
-                    it.remotePort
-            ))
+        if (info.externalServicesDto != null) {
+            info.externalServicesDto.forEach {
+                externalServices.addExternalService(ExternalServiceInfo(
+                        it.protocol,
+                        it.remoteHostname,
+                        it.remotePort
+                ))
+            }
         }
     }
 }
