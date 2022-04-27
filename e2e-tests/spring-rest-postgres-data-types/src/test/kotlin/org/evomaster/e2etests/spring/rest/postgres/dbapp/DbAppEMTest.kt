@@ -47,11 +47,18 @@ class DbAppEMTest : SpringRestPostgresTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/characterTypes", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/characterTypes", null)
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/binaryDataTypes", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/binaryDataTypes", null)
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/binaryDataTypes", null)
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/binaryDataTypes", null)
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/booleanType", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/booleanType", null)
+
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/networkAddressTypes", null)
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/networkAddressTypes", null)
+
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/bitStringTypes", null)
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/bitStringTypes", null)
+
 
             //assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/geometricTypes", null)
             //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/geometricTypes", null)

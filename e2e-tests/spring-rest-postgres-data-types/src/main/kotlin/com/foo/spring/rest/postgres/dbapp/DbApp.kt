@@ -110,10 +110,26 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-    @GetMapping(path = ["/binaryDataTypes"])
+    //@GetMapping(path = ["/binaryDataTypes"])
     open fun getBinaryDataTypes(): ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select 1 from BinaryDataTypes where byteaColumn!=''")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    //@GetMapping(path = ["/bitStringTypes"])
+    open fun getBitStringTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from BitStringTypes where bitColumn!=B''")
         val res = query.resultList
 
         val status: Int
@@ -179,6 +195,23 @@ open class DbApp : SwaggerConfiguration() {
     open fun getSerialTypes(): ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select 1 from SerialTypes where serialColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+
+    //@GetMapping(path = ["/networkAddressTypes"])
+    open fun getNetworkAddressTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from NetworkAddressTypes where macaddrColumn!='08:00:2b:01:02:03'")
         val res = query.resultList
 
         val status: Int
