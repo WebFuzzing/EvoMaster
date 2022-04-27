@@ -47,8 +47,8 @@ class NumericTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[0] is IntegerGene) //smallint
         assertTrue(genes[1] is IntegerGene) // integer
         assertTrue(genes[2] is LongGene) // bigint
-        assertTrue(genes[3] is BigDecimalGene) //decimal
-        assertTrue(genes[4] is BigDecimalGene) // numeric
+        assertTrue(genes[3] is FloatGene) //decimal
+        assertTrue(genes[3] is FloatGene) // numeric
         assertTrue(genes[5] is DoubleGene) //real
         assertTrue(genes[6] is DoubleGene) // double precision
         assertTrue(genes[7] is SqlAutoIncrementGene) // smallserial
