@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import java.util.Objects;
+
 public class ExternalServiceInfoDto {
 
     public String remoteHostname;
@@ -8,17 +10,24 @@ public class ExternalServiceInfoDto {
 
     public Integer remotePort;
 
-    public String mockHostname;
-
-    public Integer mockHostPort;
-
     public ExternalServiceInfoDto(){};
 
-    public ExternalServiceInfoDto(String protocol, String remoteHostname, Integer remotePort, String mockHostname, Integer mockHostPort) {
+    public ExternalServiceInfoDto(String protocol, String remoteHostname, Integer remotePort) {
         this.protocol = protocol;
         this.remoteHostname = remoteHostname;
         this.remotePort = remotePort;
-        this.mockHostname = mockHostname;
-        this.mockHostPort = mockHostPort;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExternalServiceInfoDto that = (ExternalServiceInfoDto) o;
+        return Objects.equals(remoteHostname, that.remoteHostname) && Objects.equals(protocol, that.protocol) && Objects.equals(remotePort, that.remotePort);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(remoteHostname, protocol, remotePort);
     }
 }

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.external.service.ExternalServiceInfo
 import org.evomaster.core.problem.external.service.ExternalServices
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
@@ -84,6 +85,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         setupAuthentication(infoDto)
         initSqlInfo(infoDto)
+
+        initExternalServiceInfo(infoDto)
 
         initAdHocInitialIndividuals()
 
@@ -207,6 +210,19 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     private fun getParser(): Parser {
         return when(config.seedTestCasesFormat) {
             EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
+        }
+    }
+
+    /**
+     * To collect external service info through SutInfoDto
+     */
+    private fun initExternalServiceInfo(info: SutInfoDto) {
+        info.externalServicesDto.forEach {
+            externalServices.addExternalService(ExternalServiceInfo(
+                    it.protocol,
+                    it.remoteHostname,
+                    it.remotePort
+            ))
         }
     }
 }

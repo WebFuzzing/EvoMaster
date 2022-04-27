@@ -17,22 +17,11 @@ public class ExternalServiceInfo implements Serializable {
 
     private final Integer remotePort;
 
-    /*
-        Hostname information about mock server
-     */
-    private final String mockHostname;
 
-    /*
-        Port of the mock server
-     */
-    private final Integer mockHostPort;
-
-    public ExternalServiceInfo(String protocol, String remoteHostname, Integer remotePort, String mockHostname, Integer mockHostPort) {
+    public ExternalServiceInfo(String protocol, String remoteHostname, Integer remotePort) {
         this.protocol = protocol;
         this.remoteHostname = remoteHostname;
         this.remotePort = remotePort;
-        this.mockHostname = mockHostname;
-        this.mockHostPort = mockHostPort;
     }
 
     public String getHostname() {
@@ -47,24 +36,16 @@ public class ExternalServiceInfo implements Serializable {
         return remotePort;
     }
 
-    public String getMockHostname() {
-        return mockHostname;
-    }
-
-    public Integer getMockHostPort() {
-        return mockHostPort;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ExternalServiceInfo that = (ExternalServiceInfo) o;
-        return remotePort == that.remotePort && mockHostPort == that.mockHostPort && Objects.equals(remoteHostname, that.remoteHostname) && Objects.equals(protocol, that.protocol) && Objects.equals(mockHostname, that.mockHostname);
+        return Objects.equals(remoteHostname, that.remoteHostname) && Objects.equals(protocol, that.protocol) && Objects.equals(remotePort, that.remotePort);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(remoteHostname, protocol, remotePort, mockHostname, mockHostPort);
+        return Objects.hash(remoteHostname, protocol, remotePort);
     }
 }

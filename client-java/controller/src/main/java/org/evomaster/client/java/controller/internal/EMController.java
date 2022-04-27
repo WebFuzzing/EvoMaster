@@ -180,7 +180,18 @@ public class EMController {
             dto.infoForAuthentication = noKillSwitch(() -> sutController.getInfoForAuthentication());
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
+
+            Set<ExternalServiceInfoDto> esDto = new HashSet<>();
+            sutController.getAdditionalInfoList().stream().map(e -> e.getExternalServices().stream()
+                    .map(es -> esDto.add(new ExternalServiceInfoDto(
+                    es.getProtocol(),
+                    es.getHostname(),
+                    es.getRemotePort()
+                    ))));
+            dto.externalServicesDto = noKillSwitch(() -> esDto);
+
             info = noKillSwitch(() -> sutController.getProblemInfo());
+
         } catch (RuntimeException e) {
             String msg = e.getMessage();
             SimpleLogger.error(msg, e);
@@ -478,9 +489,7 @@ public class EMController {
                             .map(es -> new ExternalServiceInfoDto(
                                     es.getProtocol(),
                                     es.getHostname(),
-                                    es.getRemotePort(),
-                                    es.getMockHostname(),
-                                    es.getMockHostPort()
+                                    es.getRemotePort()
                             ))
                             .collect(Collectors.toSet());
 
