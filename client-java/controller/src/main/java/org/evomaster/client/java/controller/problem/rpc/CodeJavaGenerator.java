@@ -71,14 +71,35 @@ public class CodeJavaGenerator {
      * @return a string which could create the instance
      */
     public static String oneLineInstance(boolean isDeclaration, boolean doesIncludeName, String fullName, String varName, String value){
+        return oneLineInstance(isDeclaration, doesIncludeName, fullName, varName, value, false);
+    }
+
+    /**
+     * create an instance with one line
+     * eg, fullName varName = value;
+     * @param isDeclaration whether the instance is also for declaration
+     * @param doesIncludeName whether to include variable name
+     * @param fullName is the full name of the variable
+     * @param varName is the variable name
+     * @param value is string to create the instance
+     * @param isPrimitive indicates whether it is primitive type
+     * @return a string which could create the instance
+     */
+    public static String oneLineInstance(boolean isDeclaration, boolean doesIncludeName, String fullName, String varName, String value, Boolean isPrimitive){
         StringBuilder sb = new StringBuilder();
         if (isDeclaration)
             sb.append(handleNestedSymbolInTypeName(fullName)).append(" ");
-        if (doesIncludeName)
-            sb.append(varName).append(" = ");
+        if (doesIncludeName){
+            sb.append(varName);
+            if (value != null || !isPrimitive)
+                sb.append(" = ");
+        }
         String stringValue = NULL_EXP;
+        if (isPrimitive)
+            stringValue = "";
         if (value != null)
             stringValue = value;
+
         sb.append(stringValue).append(";");
         return sb.toString();
     }

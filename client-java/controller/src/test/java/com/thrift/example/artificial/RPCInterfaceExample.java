@@ -77,4 +77,20 @@ public interface RPCInterfaceExample {
 
     List<BigNumberObj> listResponse();
 
+    boolean pBoolResponse();
+
+    byte pByteResponse();
+
+    char pCharResponse();
+
+    short pShortResponse();
+
+    int pIntResponse();
+
+    long pLongResponse();
+
+    float pFloatResponse();
+
+    double pDoubleResponse();
+
 }

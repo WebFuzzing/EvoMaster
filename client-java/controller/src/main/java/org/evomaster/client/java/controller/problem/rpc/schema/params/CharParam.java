@@ -33,7 +33,9 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
     public String getValueAsJavaString() {
         if (getValue() == null)
             return null;
-        return "'"+getValue()+"'";
+
+
+        return "'"+String.format("\\u%04x", (int) getValue())+"'";
     }
 
     @Override

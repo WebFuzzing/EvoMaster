@@ -281,4 +281,44 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
                 }}
         );
     }
+
+    @Override
+    public boolean pBoolResponse() {
+        return false;
+    }
+
+    @Override
+    public byte pByteResponse() {
+        return 0;
+    }
+
+    @Override
+    public char pCharResponse() {
+        return 0;
+    }
+
+    @Override
+    public short pShortResponse() {
+        return 0;
+    }
+
+    @Override
+    public int pIntResponse() {
+        return 0;
+    }
+
+    @Override
+    public long pLongResponse() {
+        return 0;
+    }
+
+    @Override
+    public float pFloatResponse() {
+        return 0;
+    }
+
+    @Override
+    public double pDoubleResponse() {
+        return 0;
+    }
 }

@@ -13,12 +13,14 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 
 import static io.restassured.RestAssured.given;
+import static org.evomaster.client.java.controller.contentMatchers.NumberMatcher.numbersMatch;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -82,6 +84,75 @@ public class RPCSutControllerTest {
 
         assertTrue(types.contains(BigNumberObj.class.getName()));
 
+    }
+
+    @Test
+    public void testPrimitiveResponse(){
+        List<String> functions = Arrays.asList("pBoolResponse","pByteResponse","pCharResponse","pShortResponse","pIntResponse","pLongResponse","pFloatResponse","pDoubleResponse");
+
+        List<String> tests = new ArrayList<>();
+        int index = 1;
+        for (String m : functions){
+            List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals(m)).collect(Collectors.toList());
+            assertEquals(1, dtos.size());
+            RPCActionDto dto = dtos.get(0).copy();
+            assertEquals(0, dto.requestParams.size());
+            dto.doGenerateAssertions = true;
+            dto.doGenerateTestScript = true;
+            dto.controllerVariable = "rpcController";
+            dto.responseVariable = "res"+index;
+            dto.maxAssertionForDataInCollection = -1;
+
+            ActionResponseDto responseDto = new ActionResponseDto();
+            rpcController.executeAction(dto, responseDto);
+
+            tests.addAll(responseDto.testScript);
+            tests.addAll(responseDto.assertionScript);
+            index++;
+        }
+
+        String expected ="boolean res1;\n" +
+                "{\n" +
+                " res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pBoolResponse();\n" +
+                "}\n" +
+                "assertEquals(false, res1);\n" +
+                "byte res2;\n" +
+                "{\n" +
+                " res2 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pByteResponse();\n" +
+                "}\n" +
+                "assertEquals(0, res2);\n" +
+                "char res3;\n" +
+                "{\n" +
+                " res3 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pCharResponse();\n" +
+                "}\n" +
+                "assertEquals('\\u0000', res3);\n" +
+                "short res4;\n" +
+                "{\n" +
+                " res4 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pShortResponse();\n" +
+                "}\n" +
+                "assertEquals(0, res4);\n" +
+                "int res5;\n" +
+                "{\n" +
+                " res5 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pIntResponse();\n" +
+                "}\n" +
+                "assertEquals(0, res5);\n" +
+                "long res6;\n" +
+                "{\n" +
+                " res6 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pLongResponse();\n" +
+                "}\n" +
+                "assertEquals(0L, res6);\n" +
+                "float res7;\n" +
+                "{\n" +
+                " res7 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pFloatResponse();\n" +
+                "}\n" +
+                "assertTrue(numbersMatch(0.0f, res7));\n" +
+                "double res8;\n" +
+                "{\n" +
+                " res8 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pDoubleResponse();\n" +
+                "}\n" +
+                "assertTrue(numbersMatch(0.0, res8));";
+
+        assertEquals(expected, String.join("\n", tests));
     }
 
     @Test
