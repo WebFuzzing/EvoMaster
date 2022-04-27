@@ -41,6 +41,10 @@ public class SqlScriptRunner {
 
     private static final String DOUBLE_APOSTROPHE = "''";
 
+    private static final String QUOTATION_MARK  = "\"";
+
+    private static final String SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER";
+
     private String delimiter = DEFAULT_DELIMITER;
     private boolean fullLineDelimiter = false;
 
@@ -284,8 +288,13 @@ public class SqlScriptRunner {
             value = value.replaceAll(SINGLE_APOSTROPHE, DOUBLE_APOSTROPHE);
             assert (!oldValue.equals(value));
         }
-        if (value.startsWith("\"") && value.endsWith("\"")) {
-            return "'" + value.substring(1, value.length() - 1) + "'";
+        // replace Special Quotation mark with single apostrophe
+        if (value.contains(SINGLE_APOSTROPHE_PLACEHOLDER)) {
+            value = value.replaceAll(SINGLE_APOSTROPHE_PLACEHOLDER, SINGLE_APOSTROPHE);
+        }
+        // replace starting and ending quotation marks (if any)
+        if (value.startsWith(QUOTATION_MARK) && value.endsWith(QUOTATION_MARK)) {
+            return SINGLE_APOSTROPHE + value.substring(1, value.length() - 1) + SINGLE_APOSTROPHE;
         }
 
         return value;

@@ -1,0 +1,559 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Examples of different string algorithms accessible via REST",
+    "version": "1.0",
+    "title": "API for String Case Study (SCS)"
+  },
+  "schemes": [
+    "http"
+  ],
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "scs-rest",
+      "description": "Scs Rest"
+    }
+  ],
+  "paths": {
+    "/api/calc/{op}/{arg1}/{arg2}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "calc",
+        "operationId": "calcUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "arg1",
+            "in": "path",
+            "description": "arg1",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "arg2",
+            "in": "path",
+            "description": "arg2",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "op",
+            "in": "path",
+            "description": "op",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/cookie/{name}/{val}/{site}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "cookie",
+        "operationId": "cookieUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "site",
+            "in": "path",
+            "description": "site",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "val",
+            "in": "path",
+            "description": "val",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/costfuns/{i}/{s}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "costfuns",
+        "operationId": "costfunsUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "i",
+            "in": "path",
+            "description": "i",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "s",
+            "in": "path",
+            "description": "s",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/dateparse/{dayname}/{monthname}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "dateParse",
+        "operationId": "dateParseUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "dayname",
+            "in": "path",
+            "description": "dayname",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "monthname",
+            "in": "path",
+            "description": "monthname",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/filesuffix/{directory}/{file}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "fileSuffix",
+        "operationId": "fileSuffixUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "directory",
+            "in": "path",
+            "description": "directory",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "path",
+            "description": "file",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/notypevar/{i}/{s}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "notyPevar",
+        "operationId": "notyPevarUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "i",
+            "in": "path",
+            "description": "i",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "s",
+            "in": "path",
+            "description": "s",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/ordered4/{w}/{x}/{z}/{y}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "ordered4",
+        "operationId": "ordered4UsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "w",
+            "in": "path",
+            "description": "w",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "x",
+            "in": "path",
+            "description": "x",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "y",
+            "in": "path",
+            "description": "y",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "z",
+            "in": "path",
+            "description": "z",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/pat/{txt}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "regex",
+        "operationId": "regexUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "txt",
+            "in": "path",
+            "description": "txt",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/pat/{txt}/{pat}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "pat",
+        "operationId": "patUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "pat",
+            "in": "path",
+            "description": "pat",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "txt",
+            "in": "path",
+            "description": "txt",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/text2txt/{word1}/{word2}/{word3}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "text2txt",
+        "operationId": "text2txtUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "word1",
+            "in": "path",
+            "description": "word1",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "word2",
+            "in": "path",
+            "description": "word2",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "word3",
+            "in": "path",
+            "description": "word3",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/title/{sex}/{title}": {
+      "get": {
+        "tags": [
+          "scs-rest"
+        ],
+        "summary": "title",
+        "operationId": "titleUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "sex",
+            "in": "path",
+            "description": "sex",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "title",
+            "in": "path",
+            "description": "title",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  }
+}

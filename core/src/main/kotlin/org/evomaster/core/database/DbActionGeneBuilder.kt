@@ -42,6 +42,7 @@ class DbActionGeneBuilder {
         val fk = getForeignKey(table, column)
 
         var gene = when {
+
             //TODO handle all constraints and cases
             column.autoIncrement ->
                 SqlAutoIncrementGene(column.name)
@@ -105,7 +106,6 @@ class DbActionGeneBuilder {
                  * VARCHAR(N) is assumed to be a String with a maximum length of N.
                  * N could be as large as Integer.MAX_VALUE
                  */
-                ColumnDataType.ARRAY_VARCHAR, //FIXME need general solution for arrays
                 ColumnDataType.TINYTEXT,
                 ColumnDataType.TEXT,
                 ColumnDataType.LONGTEXT,
@@ -255,6 +255,8 @@ class DbActionGeneBuilder {
                 ColumnDataType.TSRANGE, ColumnDataType.TSTZRANGE ->
                     SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
 
+                ColumnDataType.COMPOSITE_TYPE ->
+                    handleCompositeColumn(id, table, column)
 
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
@@ -268,6 +270,11 @@ class DbActionGeneBuilder {
         if (column.nullable && fk == null) {
             //FKs handle nullability in their own custom way
             gene = SqlNullable(column.name, gene)
+        }
+
+        if (column.dimension > 0) {
+            // if the column type is an array, matrix, etc.
+            gene = SqlMultidimensionalArrayGene<Gene>(column.name, template = gene, numberOfDimensions = column.dimension)
         }
 
         return gene
@@ -299,7 +306,7 @@ class DbActionGeneBuilder {
 
                 Man: TODO need to check whether to update this with BigIntegerGene
              */
-            val min : Long? = if (column.isUnsigned) 0 else null
+            val min: Long? = if (column.isUnsigned) 0 else null
             LongGene(column.name, min = min)
         }
     }
@@ -311,8 +318,8 @@ class DbActionGeneBuilder {
         } else {
 
             if ((column.type == ColumnDataType.INT4
-                        || column.type == ColumnDataType.INT
-                        || column.type == ColumnDataType.INTEGER) && column.isUnsigned
+                            || column.type == ColumnDataType.INT
+                            || column.type == ColumnDataType.INTEGER) && column.isUnsigned
             ) {
                 LongGene(column.name, min = 0L, max = 4294967295L)
             } else {
@@ -332,9 +339,9 @@ class DbActionGeneBuilder {
                 }
 
                 IntegerGene(
-                    column.name,
-                    min = column.lowerBound ?: min,
-                    max = column.upperBound ?: max
+                        column.name,
+                        min = column.lowerBound ?: min,
+                        max = column.upperBound ?: max
                 )
             }
         }
@@ -370,9 +377,9 @@ class DbActionGeneBuilder {
             }
         } else {
             IntegerGene(
-                column.name,
-                min = column.lowerBound ?: Short.MIN_VALUE.toInt(),
-                max = column.upperBound ?: Short.MAX_VALUE.toInt()
+                    column.name,
+                    min = column.lowerBound ?: Short.MIN_VALUE.toInt(),
+                    max = column.upperBound ?: Short.MAX_VALUE.toInt()
             )
         }
     }
@@ -387,9 +394,9 @@ class DbActionGeneBuilder {
             }
         } else {
             IntegerGene(
-                column.name,
-                min = column.lowerBound ?: Byte.MIN_VALUE.toInt(),
-                max = column.upperBound ?: Byte.MAX_VALUE.toInt()
+                    column.name,
+                    min = column.lowerBound ?: Byte.MIN_VALUE.toInt(),
+                    max = column.upperBound ?: Byte.MAX_VALUE.toInt()
             )
         }
     }
@@ -430,19 +437,19 @@ class DbActionGeneBuilder {
             DatabaseType.POSTGRES, DatabaseType.MYSQL -> buildPostgresMySQLLikeRegexGene(geneName, likePatterns)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
-                "Must implement LIKE expressions for database %s".format(
-                    databaseType
-                )
+                    "Must implement LIKE expressions for database %s".format(
+                            databaseType
+                    )
             )
         }
     }
 
     private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
         val disjunctionRxGenes = likePatterns
-            .map { createGeneForPostgresLike(it) }
-            .map { it.disjunctions }
-            .map { it.disjunctions }
-            .flatten()
+                .map { createGeneForPostgresLike(it) }
+                .map { it.disjunctions }
+                .map { it.disjunctions }
+                .flatten()
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
@@ -453,47 +460,47 @@ class DbActionGeneBuilder {
      * according to the database we are using
      */
     fun buildSimilarToRegexGene(
-        geneName: String,
-        similarToPatterns: List<String>,
-        databaseType: DatabaseType
+            geneName: String,
+            similarToPatterns: List<String>,
+            databaseType: DatabaseType
     ): RegexGene {
         return when {
             databaseType == DatabaseType.POSTGRES -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
-                "Must implement similarTo expressions for database %s".format(
-                    databaseType
-                )
+                    "Must implement similarTo expressions for database %s".format(
+                            databaseType
+                    )
             )
         }
     }
 
     private fun buildPostgresSimilarToRegexGene(geneName: String, similarToPatterns: List<String>): RegexGene {
         val disjunctionRxGenes = similarToPatterns
-            .map { createGeneForPostgresSimilarTo(it) }
-            .map { it.disjunctions }
-            .map { it.disjunctions }
-            .flatten()
+                .map { createGeneForPostgresSimilarTo(it) }
+                .map { it.disjunctions }
+                .map { it.disjunctions }
+                .flatten()
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
     fun buildSqlTimestampGene(name: String): DateTimeGene {
         return DateTimeGene(
-            name = name,
-            date = DateGene(
-                "date",
-                year = IntegerGene("year", 2016, 1900, 2100),
-                month = IntegerGene("month", 3, 1, 12),
-                day = IntegerGene("day", 12, 1, 31),
-                onlyValidDates = true
-            ),
-            time = TimeGene(
-                "time",
-                hour = IntegerGene("hour", 0, 0, 23),
-                minute = IntegerGene("minute", 0, 0, 59),
-                second = IntegerGene("second", 0, 0, 59)
-            ),
-            dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+                name = name,
+                date = DateGene(
+                        "date",
+                        year = IntegerGene("year", 2016, 1900, 2100),
+                        month = IntegerGene("month", 3, 1, 12),
+                        day = IntegerGene("day", 12, 1, 31),
+                        onlyValidDates = true
+                ),
+                time = TimeGene(
+                        "time",
+                        hour = IntegerGene("hour", 0, 0, 23),
+                        minute = IntegerGene("minute", 0, 0, 59),
+                        second = IntegerGene("second", 0, 0, 59)
+                ),
+                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
         )
 
     }
@@ -599,6 +606,16 @@ class DbActionGeneBuilder {
         } else {
             BooleanGene(column.name)
         }
+    }
+
+    private fun handleCompositeColumn(id: Long, table: Table, column: Column): Gene {
+        if (column.compositeType == null) {
+            throw IllegalArgumentException("Composite column should have a composite type for column ${column.name}")
+        }
+        val fields = column.compositeType
+                .map { t -> buildGene(id, table, t) }
+                .toList()
+        return SqlCompositeGene(column.name, fields, column.compositeTypeName)
     }
 
     /**

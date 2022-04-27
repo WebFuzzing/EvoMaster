@@ -1138,4 +1138,32 @@ test("test squareBrackets for arrayPattern and assignmentPattern", ()=>{
 });
 
 
+test("test length", ()=>{
+    const code  = dedent`
+        const x = "foo";
+        const y = x.length;
+    `;
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const x = "foo";
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        const y = __EM__.squareBrackets("test.ts", 2, 0, x, "length");
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+    `);
+});
+
+
 

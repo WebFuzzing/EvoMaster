@@ -41,7 +41,16 @@ data class Column(
         /**
          * a negative number means that the scale is unspecified or inapplicable
          */
-        val scale: Int = -1
+        val scale: Int = -1,
+
+        /**
+         * A column with dimension > 0 represents arrays, matrices, etc.
+         */
+        val dimension: Int = 0,
+
+        val compositeType: List<Column>? = null,
+
+        val compositeTypeName: String? = null
 
         // public boolean identity;
 

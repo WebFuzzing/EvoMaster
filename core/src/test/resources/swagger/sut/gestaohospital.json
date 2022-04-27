@@ -1,0 +1,1169 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Documentação da API de acesso aos endpoints da GestaoHospitalAPI - Aceleradev Brasil\r\nJornada de desafios da Aceleradev Brasil - CodeNation",
+    "version": "1.0",
+    "title": "Sistema de Gestão Hospital API"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "location-resource",
+      "description": "Location Resource"
+    },
+    {
+      "name": "product-resource",
+      "description": "Product Resource"
+    },
+    {
+      "name": "patient-resource",
+      "description": "Patient Resource"
+    },
+    {
+      "name": "hospital-resource",
+      "description": "Hospital Resource"
+    }
+  ],
+  "paths": {
+    "/v1/hospitais/": {
+      "get": {
+        "tags": [
+          "hospital-resource"
+        ],
+        "summary": "findAll",
+        "operationId": "findAllUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HospitalDTO"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "hospital-resource"
+        ],
+        "summary": "insert",
+        "operationId": "insertUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "objDTO",
+            "description": "objDTO",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/HospitalDTO"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/HospitalDTO"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/maisProximo": {
+      "get": {
+        "tags": [
+          "hospital-resource"
+        ],
+        "summary": "hospitalMaisProximo",
+        "operationId": "hospitalMaisProximoUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "description": "lat",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "lon",
+            "in": "query",
+            "description": "lon",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "raioMaximo",
+            "in": "query",
+            "description": "raioMaximo",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/HospitalDTO"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{hospital_id}": {
+      "get": {
+        "tags": [
+          "hospital-resource"
+        ],
+        "summary": "findById",
+        "operationId": "findByIdUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/HospitalDTO"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "hospital-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "objDTO",
+            "description": "objDTO",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/HospitalDTO"
+            }
+          },
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/HospitalDTO"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "hospital-resource"
+        ],
+        "summary": "deleteById",
+        "operationId": "deleteByIdUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{hospital_id}/estoque": {
+      "get": {
+        "tags": [
+          "product-resource"
+        ],
+        "summary": "findAllProductBy",
+        "operationId": "findAllProductByUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ProductDTO"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "product-resource"
+        ],
+        "summary": "insert",
+        "operationId": "insertUsingPOST_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "productDTO",
+            "description": "productDTO",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProductDTO"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ProductDTO"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{hospital_id}/estoque/{produto_id}": {
+      "get": {
+        "tags": [
+          "product-resource"
+        ],
+        "summary": "findProductBy",
+        "operationId": "findProductByUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "produto_id",
+            "in": "path",
+            "description": "produto_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ProductDTO"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "product-resource"
+        ],
+        "summary": "update",
+        "operationId": "updateUsingPUT_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "productDTO",
+            "description": "productDTO",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProductDTO"
+            }
+          },
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "produto_id",
+            "in": "path",
+            "description": "produto_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ProductDTO"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "product-resource"
+        ],
+        "summary": "delete",
+        "operationId": "deleteUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "produto_id",
+            "in": "path",
+            "description": "produto_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{hospital_id}/hospitaisProximos": {
+      "get": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "findHospitalNearHospitalBy",
+        "operationId": "findHospitalNearHospitalByUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "raio",
+            "in": "query",
+            "description": "raio",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HospitalDTO"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{hospital_id}/pacientes": {
+      "get": {
+        "tags": [
+          "patient-resource"
+        ],
+        "summary": "findPatients",
+        "operationId": "findPatientsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Patient"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{hospital_id}/pacientes/checkin": {
+      "post": {
+        "tags": [
+          "patient-resource"
+        ],
+        "summary": "checkinPacient",
+        "operationId": "checkinPacientUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "patient",
+            "description": "patient",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Patient"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Patient"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{hospital_id}/pacientes/checkout": {
+      "post": {
+        "tags": [
+          "patient-resource"
+        ],
+        "summary": "checkoutPacient",
+        "operationId": "checkoutPacientUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "idPatient",
+            "description": "idPatient",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Patient"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{hospital_id}/pacientes/{patientId}": {
+      "get": {
+        "tags": [
+          "patient-resource"
+        ],
+        "summary": "findPatientById",
+        "operationId": "findPatientByIdUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "patientId",
+            "in": "path",
+            "description": "patientId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Patient"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "patient-resource"
+        ],
+        "summary": "updatePatient",
+        "operationId": "updatePatientUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "patientId",
+            "in": "path",
+            "description": "patientId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "patient",
+            "description": "patient",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Patient"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Patient"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{hospital_id}/proximidades": {
+      "get": {
+        "tags": [
+          "location-resource"
+        ],
+        "summary": "findLocationNearHospitalBy",
+        "operationId": "findLocationNearHospitalByUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "hospital_id",
+            "in": "path",
+            "description": "hospital_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LocationDTO"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{id}/leitos": {
+      "get": {
+        "tags": [
+          "hospital-resource"
+        ],
+        "summary": "verificaLeitosDisponiveis",
+        "operationId": "verificaLeitosDisponiveisUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/v1/hospitais/{id}/transferencia/{productId}": {
+      "post": {
+        "tags": [
+          "hospital-resource"
+        ],
+        "summary": "transferenciaProduto",
+        "operationId": "transferenciaProdutoUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "productId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "quantidade",
+            "description": "quantidade",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "HospitalDTO": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "availableBeds": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "beds": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "id": {
+          "type": "string"
+        },
+        "latitude": {
+          "type": "string"
+        },
+        "longitude": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "Patient": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "birthDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cpf": {
+          "type": "string"
+        },
+        "entryDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "exitDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/definitions/Location"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "GeoJsonPoint": {
+      "type": "object",
+      "properties": {
+        "coordinates": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "type": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number",
+          "format": "double"
+        },
+        "y": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "LocationDTO": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "latitude": {
+          "type": "string"
+        },
+        "longitude": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "referenceId": {
+          "type": "string"
+        }
+      }
+    },
+    "ProductDTO": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "productName": {
+          "type": "string"
+        },
+        "productType": {
+          "type": "string",
+          "enum": [
+            "COMMON",
+            "BLOOD"
+          ]
+        },
+        "quantity": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "Location": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/definitions/GeoJsonPoint"
+        },
+        "locationCategory": {
+          "type": "string",
+          "enum": [
+            "HOSPITAL",
+            "PATIENT"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "position": {
+          "$ref": "#/definitions/GeoJsonPoint"
+        },
+        "referenceId": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
