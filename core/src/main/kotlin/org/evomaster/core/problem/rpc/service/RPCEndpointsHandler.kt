@@ -738,7 +738,8 @@ class RPCEndpointsHandler {
             is FloatGene ->  SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as FloatGene }))
             is LongGene ->  SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as LongGene }))
             is DoubleGene -> SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as DoubleGene }))
-            is BigDecimalGene, is BigIntegerGene -> TODO()
+            is BigDecimalGene -> SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as BigDecimalGene }))
+            is BigIntegerGene -> SeededGene(gene.name, gene, EnumGene(gene.name, candidates.map { it as BigIntegerGene }))
             // might be DateGene
             else -> {
                 throw IllegalStateException("Do not support configuring candidates for ${gene::class.java.simpleName} gene type")
