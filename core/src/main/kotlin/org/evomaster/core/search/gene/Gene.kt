@@ -126,7 +126,8 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
             val mutated = mutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
-            if (!mutated) throw IllegalStateException("leaf mutation is not implemented")
+            if (!mutated)
+                throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
             val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
 
