@@ -85,6 +85,7 @@ class EnumGene<T : Comparable<T>>(
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        if(values.isEmpty()) return
 
         val k = if (forceNewValue) {
             randomness.nextInt(0, values.size - 1, index)
