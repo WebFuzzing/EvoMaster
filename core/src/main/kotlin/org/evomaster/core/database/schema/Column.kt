@@ -39,9 +39,9 @@ data class Column(
         val isUnsigned : Boolean = false,
 
         /**
-         * a negative number means that the scale is unspecified or inapplicable
+         * null means that the scale is not applicable
          */
-        val scale: Int?,
+        val scale: Int? = null,
 
         /**
          * A column with dimension > 0 represents arrays, matrices, etc.
