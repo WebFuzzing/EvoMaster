@@ -663,6 +663,9 @@ class StringGene(
             is SeededGene<*> ->{
                 return this.bindValueBasedOn(gene.getPhenotype())
             }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
+            }
             else -> {
                 //return false
                 //Man: with taint analysis, g might be any other type.

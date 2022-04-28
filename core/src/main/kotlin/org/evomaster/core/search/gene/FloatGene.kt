@@ -46,19 +46,8 @@ class FloatGene(name: String,
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
-            if (additionalGeneMutationInfo.hasHistory()){
-                try {
-                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                            additionalGeneMutationInfo,
-                            this,
-                            allGenes
-                    )
-                    return true
-                }catch (e: DifferentGeneInHistory){}
-            }
-        }
+        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        if (mutated) return true
 
         value = mutateFloatingPointNumber(randomness, apc).run {
             // it is werid, value sometimes becomes Double with genric function
@@ -110,6 +99,9 @@ class FloatGene(name: String,
             }
             is SeededGene<*> ->{
                 return this.bindValueBasedOn(gene.getPhenotype())
+            }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "Do not support to bind float gene with the type: ${gene::class.java.simpleName}")

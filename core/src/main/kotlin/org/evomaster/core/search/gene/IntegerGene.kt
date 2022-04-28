@@ -80,21 +80,8 @@ class IntegerGene(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
 
-        if (enableAdaptiveGeneMutation) {
-            additionalGeneMutationInfo
-                ?: throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
-            if (additionalGeneMutationInfo.hasHistory()) {
-                try {
-                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                        additionalGeneMutationInfo,
-                        this,
-                        allGenes
-                    )
-                    return true
-                } catch (e: DifferentGeneInHistory) {
-                }
-            }
-        }
+        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        if (mutated) return true
 
         //check maximum range. no point in having a delta greater than such range
         val range = getMaximum().toLong() - getMinimum().toLong()
@@ -153,6 +140,9 @@ class IntegerGene(
             }
             is SeededGene<*> ->{
                 return this.bindValueBasedOn(gene.getPhenotype())
+            }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind Integer with ${gene::class.java.simpleName}")

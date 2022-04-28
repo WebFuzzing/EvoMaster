@@ -89,6 +89,7 @@ class BigIntegerGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
+        // note that it could return scientific representation
         return value.toString()
     }
 
@@ -112,6 +113,7 @@ class BigIntegerGene(
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when(gene){
             is SeededGene<*> -> return this.bindValueBasedOn(gene.getPhenotype())
+            is NumericStringGene -> return this.bindValueBasedOn(gene.number)
             is LongGene -> setValueWithLong(gene.value)
             is FloatGene -> setValueWithLong(gene.value.toLong())
             is IntegerGene -> setValueWithLong(gene.value.toLong())
@@ -123,6 +125,7 @@ class BigIntegerGene(
             is Base64StringGene -> gene.data.value.toBigIntegerOrNull()?: return false
             is ImmutableDataHolderGene -> gene.value.toBigIntegerOrNull()?: return false
             is SqlPrimaryKeyGene -> setValueWithLong(gene.uniqueId)
+            is BigIntegerGene -> value = gene.value
             is BigDecimalGene -> setValueWithDecimal(gene.value)
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")

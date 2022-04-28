@@ -94,7 +94,11 @@ class DoubleGene(name: String,
             }
             is SeededGene<*> ->{
                 return this.bindValueBasedOn(gene.getPhenotype())
-            } else -> {
+            }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
+            }
+            else -> {
                 LoggingUtil.uniqueWarn(log, "Do not support to bind double gene with the type: ${gene::class.java.simpleName}")
                 return false
             }

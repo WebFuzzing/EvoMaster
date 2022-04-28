@@ -171,6 +171,7 @@ class BigDecimalGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
+        // note that it could return scientific representation
         return value.toString()
     }
 
@@ -192,6 +193,7 @@ class BigDecimalGene(
     override fun bindValueBasedOn(gene: Gene): Boolean {
         val bd = when(gene){
             is SeededGene<*> -> return this.bindValueBasedOn(gene.getPhenotype())
+            is NumericStringGene -> return this.bindValueBasedOn(gene.number)
             is LongGene -> BigDecimal(gene.value)
             is FloatGene -> BigDecimal(gene.value.toDouble())
             is IntegerGene -> BigDecimal(gene.value)
@@ -201,6 +203,7 @@ class BigDecimalGene(
             is ImmutableDataHolderGene -> gene.value.toBigDecimalOrNull()?: return false
             is SqlPrimaryKeyGene -> BigDecimal(gene.uniqueId)
             is BigIntegerGene -> BigDecimal(gene.value)
+            is BigDecimalGene -> gene.value
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
                 return false

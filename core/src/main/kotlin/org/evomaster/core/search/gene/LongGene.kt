@@ -98,6 +98,9 @@ class LongGene(
             is SeededGene<*> ->{
                 return this.bindValueBasedOn(gene.getPhenotype())
             }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
+            }
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
                 return false
