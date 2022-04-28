@@ -693,12 +693,19 @@ public class RPCEndpointsBuilder {
             return found.get(0).getName();
 
         String msg = "RPC extract schema Error: cannot access field property, there exist "+found.size()+" methods to access the field "+ field.getName() + " for the class "+ clazz.getName();
-        if (found.isEmpty()){
+
+        if (found.size() > 1){
+            /*
+                instead of throwing the exception,
+                provide a warning and use the first one
+             */
             SimpleLogger.uniqueWarn(msg);
-            return null;
+            return found.get(0).getName();
         }
 
-        throw new IllegalStateException(msg);
+        SimpleLogger.uniqueWarn(msg);
+        return null;
+
     }
 
     private static boolean isSetter(String fieldName, String methodName, String type){
