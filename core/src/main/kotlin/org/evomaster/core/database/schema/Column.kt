@@ -41,7 +41,7 @@ data class Column(
         /**
          * a negative number means that the scale is unspecified or inapplicable
          */
-        val scale: Int = -1,
+        val scale: Int?,
 
         /**
          * A column with dimension > 0 represents arrays, matrices, etc.

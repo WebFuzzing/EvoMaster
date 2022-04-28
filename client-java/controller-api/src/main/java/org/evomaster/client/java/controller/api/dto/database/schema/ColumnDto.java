@@ -50,11 +50,10 @@ public class ColumnDto {
     public boolean isCompositeType = false;
     /**
      * scale of number
-     * a negative number means that the scale is unspecified or inapplicable
      *
      * the scale is the number of digits to the right of the decimal point
      */
-    public int scale = -1;
+    public Integer scale;
 
     /**
      * The number of dimensions for arrays, matrixs, etc.

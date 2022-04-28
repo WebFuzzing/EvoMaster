@@ -35,7 +35,7 @@ object ColumnFactory {
                 isUnsigned = columnDto.isUnsigned,
                 nullable = columnDto.nullable,
                 databaseType = databaseType,
-                scale = columnDto.precision,
+                scale = columnDto.scale,
                 compositeType = columns
         )
     }

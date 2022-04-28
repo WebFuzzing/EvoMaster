@@ -554,7 +554,7 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
-            if (column.scale >= 0) {
+            if (column.scale!= null && column.scale >= 0) {
                 /*
                     set precision and boundary for DECIMAL
                     https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html
@@ -571,18 +571,22 @@ class DbActionGeneBuilder {
                     scale = column.scale
                 )
             } else{
-                /*
-                    TO check
-                    with CompositeTypesTest for postgres,
-                    the value of precision and scale is -1, may need to check with the authors
-                 */
-                log.warn("invalid scale value (${column.scale}) for decimal, and it should not be less than 0")
-                if (column.size <= 0){
-                    log.warn("invalid precision value (${column.size}) for decimal, and it should not be less than 1")
+                if (column.scale == null){
                     FloatGene(column.name)
-                } else{
-                    // for mysql, set the scale with default value 0 if it is invalid
-                    BigDecimalGene(column.name, precision = column.size, scale = 0)
+                }else{
+                    /*
+                        TO check
+                        with CompositeTypesTest for postgres,
+                        the value of precision and scale is -1, may need to check with the authors
+                     */
+                    log.warn("invalid scale value (${column.scale}) for decimal, and it should not be less than 0")
+                    if (column.size <= 0){
+                        log.warn("invalid precision value (${column.size}) for decimal, and it should not be less than 1")
+                        FloatGene(column.name)
+                    } else{
+                        // for mysql, set the scale with default value 0 if it is invalid
+                        BigDecimalGene(column.name, precision = column.size, scale = 0)
+                    }
                 }
             }
         }

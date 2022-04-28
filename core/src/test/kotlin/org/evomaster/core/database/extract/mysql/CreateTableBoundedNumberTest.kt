@@ -29,7 +29,7 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
         columns.apply {
             assertEquals(8, size)
             assertEquals(listOf("bc", "dd", "dc1", "dc2", "dc3", "dc4", "tc1","tc2"), map { it.name })
-            assertEquals(listOf(-1, -1, 2, 3, 1, 1, -1, -1), map { it.scale })
+            assertEquals(listOf(null, null, 2, 3, 1, 1, null, null), map { it.scale })
             assertTrue(this[0].isUnsigned)
             assertEquals(10, this[2].size)
             assertFalse(this[2].isUnsigned)
