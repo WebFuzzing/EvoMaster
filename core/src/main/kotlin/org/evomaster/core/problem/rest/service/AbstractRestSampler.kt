@@ -227,4 +227,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             }
         }
     }
+
+    fun getExternalServicesInfo(): ExternalServices {
+        return externalServices
+    }
 }

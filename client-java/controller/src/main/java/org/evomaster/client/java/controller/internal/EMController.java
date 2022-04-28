@@ -181,8 +181,10 @@ public class EMController {
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
 
+            List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
+
             Set<ExternalServiceInfoDto> esDto = new HashSet<>();
-            sutController.getAdditionalInfoList().stream().map(e -> e.getExternalServices().stream()
+            additionalInfos.stream().map(e -> e.getExternalServices().stream()
                     .map(es -> esDto.add(new ExternalServiceInfoDto(
                     es.getProtocol(),
                     es.getHostname(),

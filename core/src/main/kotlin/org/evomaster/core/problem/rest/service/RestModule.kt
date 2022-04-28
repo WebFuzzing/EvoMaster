@@ -55,7 +55,8 @@ class RestModule : AbstractModule(){
 
         bind(TestSuiteWriter::class.java)
                 .asEagerSingleton()
-        bind(object: TypeLiteral<ExternalServices>() {})
+
+        bind(ExternalServices::class.java)
                 .asEagerSingleton()
     }
 }
