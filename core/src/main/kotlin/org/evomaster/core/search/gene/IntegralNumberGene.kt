@@ -1,5 +1,9 @@
 package org.evomaster.core.search.gene
 
+/**
+ * this class represent number which does have any fraction or decimals
+ * such as integer, long, biginteger
+ */
 abstract class IntegralNumberGene<T: Number> (
     name: String,
     value: T?,

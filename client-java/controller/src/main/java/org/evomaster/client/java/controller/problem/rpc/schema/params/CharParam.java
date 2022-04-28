@@ -34,7 +34,7 @@ public class CharParam extends PrimitiveOrWrapperParam<Character> {
         if (getValue() == null)
             return null;
 
-
+        // represent char with unicode
         return "'"+String.format("\\u%04x", (int) getValue())+"'";
     }
 

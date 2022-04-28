@@ -49,23 +49,33 @@ public class ParamDto {
 
     /**
      * a min value of the param, eg, Numeric
+     *
+     * note that the minValue could be used by various types of number,
+     * eg, double, long, bigdecimal and biginteger,
+     * then use the string to persist the value
      */
     public String minValue;
 
     /**
      * a max value of the param, eg, Numeric
+     *
+     * note that the minValue could be used by various types of number,
+     * eg, double, long, bigdecimal and biginteger,
+     * then use the string to persist the value
      */
     public String maxValue;
 
     /**
-     * precision
-     * applicable to bigdecimal, double, float
+     * precision applicable to number
+     *
+     * present the number of digits in the unscaled value
      */
     public Integer precision;
 
     /**
-     * scale
-     * applicable to bigdecimal, double, float
+     * scale applicable to floatting point number
+     *
+     * present the number of digits to the right of the decimal point
      */
     public Integer scale;
 

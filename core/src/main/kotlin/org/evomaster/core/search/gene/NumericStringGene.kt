@@ -10,12 +10,19 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import java.math.BigDecimal
 
+/**
+ * A string to represent a number in all aspects,
+ * but in its phenotype it is going to be outputted as a string
+ */
 class NumericStringGene(
     name: String,
     /**
      * inclusive
      *
      * note that precision would represent maxLength
+     *
+     * TODO
+     * update min and max if the minLength is not 0
      */
     val minLength: Int,
     val number : BigDecimalGene
