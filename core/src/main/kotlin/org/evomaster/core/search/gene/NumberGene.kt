@@ -26,11 +26,23 @@ abstract class NumberGene<T : Number>(name: String,
                                        */
                                       val maxInclusive : Boolean,
                                       /**
-                                       * specified precision
+                                       * maximum number of digits
+                                       *
+                                       * Note that this presents the max range,
+                                       * eg, DEC(4,2) on mysql, @Digits(integer=2, fraction=2)
+                                       * the precision is 4 and the scale is 2
+                                       * its range would be from -99.99 to 99.99.
+                                       * 5.2 and 0.1 are considered as `valid`
                                        */
                                       val precision: Int?,
                                       /**
-                                       * specified scale
+                                       * maximum number of digits to the right of the decimal point
+                                       *
+                                       * Note that this presents the max range,
+                                       * eg, DEC(4,2) on mysql, @Digits(integer=2, fraction=2)
+                                       * the precision is 4 and the scale is 2
+                                       * its range would be from -99.99 to 99.99.
+                                       * 5.2 and 0.1 are considered as `valid`
                                        */
                                       val scale: Int?
                                       ) : ComparableGene(name, mutableListOf()) {

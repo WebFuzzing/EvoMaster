@@ -52,6 +52,10 @@ public class ColumnDto {
      * scale of number
      *
      * the scale is the number of digits to the right of the decimal point
+     *
+     * Note that this presents the max range,
+     * eg, DEC(4,2), the scale is 2 and its range would be from -99.99 to 99.99.
+     * 5.2 and 0.1 are considered as `valid`
      */
     public Integer scale;
 
