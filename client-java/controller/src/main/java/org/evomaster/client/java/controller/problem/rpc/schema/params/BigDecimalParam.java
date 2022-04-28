@@ -65,6 +65,12 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
 
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
+        if (dto.stringValue == null){
+            setValue(null);
+            return;
+        }
+
+
         MathContext mc = null;
         BigDecimal bd = null;
         if (getPrecision() == null)
