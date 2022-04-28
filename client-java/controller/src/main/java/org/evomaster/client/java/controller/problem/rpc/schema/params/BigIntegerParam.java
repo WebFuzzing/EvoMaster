@@ -66,8 +66,10 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
 
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
-        if (dto.stringValue == null) setValue(null);
-        setValue(new BigInteger(dto.stringValue));
+        if (dto.stringValue == null)
+            setValue(null);
+        else
+            setValue(new BigInteger(dto.stringValue));
     }
 
     @Override
