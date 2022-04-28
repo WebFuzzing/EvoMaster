@@ -1,4 +1,6 @@
 CREATE TABLE IntegerTypes (
+    dummyColumn integer NOT NULL,
+
     smallintColumn smallint NOT NULL,
     integerColumn integer NOT NULL,
     bigintColumn bigint NOT NULL,
@@ -6,35 +8,42 @@ CREATE TABLE IntegerTypes (
 );
 
 CREATE TABLE ArbitraryPrecisionNumbers (
+    dummyColumn integer NOT NULL,
     numericColumn numeric NOT NULL
 );
 
 CREATE TABLE FloatingPointTypes(
+    dummyColumn integer NOT NULL,
     realColumn real NOT NULL,
     doublePrecisionColumn double precision NOT NULL
 );
 
 CREATE TABLE SerialTypes(
+    dummyColumn integer NOT NULL,
     smallserialColumn smallserial NOT NULL,
     serialColumn serial NOT NULL,
     bigserialColumn bigserial NOT NULL
 );
 
 CREATE TABLE MonetaryTypes(
+    dummyColumn integer NOT NULL,
     moneyColumn money NOT NULL
 );
 
 CREATE TABLE CharacterTypes(
+    dummyColumn integer NOT NULL,
     varcharColunmn varchar(10) NOT NULL,
     charColumn char(10) NOT NULL,
     textColumn text NOT NULL
 );
 
 CREATE TABLE BinaryDataTypes(
+    dummyColumn integer NOT NULL,
     byteaColumn bytea NOT NULL
 );
 
 CREATE TABLE DateTimeTypes(
+    dummyColumn integer NOT NULL,
     timestampColumn timestamp NOT NULL,
     timestampWithTimeZone timestamp with time zone NOT NULL,
     dateColumn date NOT NULL,
@@ -44,10 +53,12 @@ CREATE TABLE DateTimeTypes(
 );
 
 CREATE TABLE BooleanType(
+    dummyColumn integer NOT NULL,
     booleanColumn boolean NOT NULL
 );
 
 CREATE TABLE GeometricTypes(
+    dummyColumn integer NOT NULL,
     pointColumn point NOT NULL,
     lineColumn line NOT NULL,
     lsegColumn lseg NOT NULL,
@@ -58,6 +69,7 @@ CREATE TABLE GeometricTypes(
 );
 
 CREATE TABLE NetworkAddressTypes(
+    dummyColumn integer NOT NULL,
     cidrColumn cidr NOT NULL,
     inetColumn inet NOT NULL,
     macaddrColumn macaddr NOT NULL,
@@ -65,30 +77,36 @@ CREATE TABLE NetworkAddressTypes(
 );
 
 CREATE TABLE BitStringTypes(
+    dummyColumn integer NOT NULL,
     bitColumn bit NOT NULL,
     bitVaryingColumn bit varying NOT NULL
 );
 
 CREATE TABLE TextSearchTypes(
+    dummyColumn integer NOT NULL,
     tsvectorColumn tsvector NOT NULL,
     tsqueryColumn tsquery NOT NULL
 );
 
 CREATE TABLE UUIDType(
+    dummyColumn integer NOT NULL,
     uuidColumn uuid NOT NULL
 );
 
 CREATE TABLE XMLType(
+    dummyColumn integer NOT NULL,
     xmlColumn xml NOT NULL
 );
 
 CREATE TABLE JSONTypes(
+    dummyColumn integer NOT NULL,
     jsonColumn json NOT NULL,
     jsonbColumn jsonb NOT NULL,
     jsonpathColumn jsonpath NOT NULL
 );
 
 CREATE TABLE BuiltInRangeTypes(
+    dummyColumn integer NOT NULL,
     int4rangeColumn int4range NOT NULL,
     int8rangeColumn int8range NOT NULL,
     numrangeColumn numrange NOT NULL,

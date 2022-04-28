@@ -4,7 +4,11 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -100,5 +104,16 @@ class SqlBinaryStringGene(
 
     override fun copyContent() = SqlBinaryStringGene(name, minSize = minSize, maxSize = maxSize, binaryArrayGene.copyContent() as ArrayGene<IntegerGene>)
 
-
+    override fun mutate(
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            mwc: MutationWeightControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        this.randomize(randomness, true, allGenes)
+        return true
+    }
 }

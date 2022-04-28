@@ -33,7 +33,7 @@ open class DbApp : SwaggerConfiguration() {
     @GetMapping(path = ["/integerTypes"])
     open fun getIntegerTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from IntegerTypes where integerColumn>0")
+        val query = em.createNativeQuery("select 1 from IntegerTypes where dummyColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -49,7 +49,7 @@ open class DbApp : SwaggerConfiguration() {
     @GetMapping(path = ["/arbitraryPrecisionNumbers"])
     open fun getArbitraryPrecisionNumbers(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from ArbitraryPrecisionNumbers where numericColumn>0")
+        val query = em.createNativeQuery("select 1 from ArbitraryPrecisionNumbers where dummyColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -65,7 +65,7 @@ open class DbApp : SwaggerConfiguration() {
     @GetMapping(path = ["/floatingPointTypes"])
     open fun getFloatingPointTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from FloatingPointTypes where realColumn>0")
+        val query = em.createNativeQuery("select 1 from FloatingPointTypes where dummyColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -81,7 +81,7 @@ open class DbApp : SwaggerConfiguration() {
     @GetMapping(path = ["/monetaryTypes"])
     open fun getMonetaryTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from MonetaryTypes where moneyColumn>'0'")
+        val query = em.createNativeQuery("select 1 from MonetaryTypes where dummyColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -97,7 +97,7 @@ open class DbApp : SwaggerConfiguration() {
     @GetMapping(path = ["/characterTypes"])
     open fun getChracterTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from CharacterTypes where varcharColunmn!=''")
+        val query = em.createNativeQuery("select 1 from CharacterTypes where dummyColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -110,10 +110,10 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-    //@GetMapping(path = ["/binaryDataTypes"])
+    @GetMapping(path = ["/binaryDataTypes"])
     open fun getBinaryDataTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from BinaryDataTypes where byteaColumn!=''")
+        val query = em.createNativeQuery("select 1 from BinaryDataTypes  where dummyColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -126,10 +126,10 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-    //@GetMapping(path = ["/bitStringTypes"])
+    @GetMapping(path = ["/bitStringTypes"])
     open fun getBitStringTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from BitStringTypes where bitColumn!=B''")
+        val query = em.createNativeQuery("select 1 from BitStringTypes  where dummyColumn>0 ")
         val res = query.resultList
 
         val status: Int
@@ -146,7 +146,7 @@ open class DbApp : SwaggerConfiguration() {
     @GetMapping(path = ["/booleanType"])
     open fun getBooleanType(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from BooleanType where booleanColumn!='true'")
+        val query = em.createNativeQuery("select 1 from BooleanType where dummyColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -159,10 +159,10 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-    //@GetMapping(path = ["/geometricTypes"])
+    @GetMapping(path = ["/geometricTypes"])
     open fun getGeometricTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from GeometricTypes where pointColumn!='(0,0)'")
+        val query = em.createNativeQuery("select 1 from GeometricTypes  where dummyColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -175,10 +175,10 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-    //@GetMapping(path = ["/dateTimeTypes"])
+    @GetMapping(path = ["/dateTimeTypes"])
     open fun getDateTimeTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from DateTimeTypes where timestampColumn!='1999-01-08 04:05:06'")
+        val query = em.createNativeQuery("select 1 from DateTimeTypes  where dummyColumn>0")
         val res = query.resultList
 
         val status: Int
@@ -191,10 +191,10 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-    //@GetMapping(path = ["/serialTypes"])
+    @GetMapping(path = ["/serialTypes"])
     open fun getSerialTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from SerialTypes where serialColumn>0")
+        val query = em.createNativeQuery("select 1 from SerialTypes  where dummyColumn>0 ")
         val res = query.resultList
 
         val status: Int
@@ -208,10 +208,10 @@ open class DbApp : SwaggerConfiguration() {
     }
 
 
-    //@GetMapping(path = ["/networkAddressTypes"])
+    @GetMapping(path = ["/networkAddressTypes"])
     open fun getNetworkAddressTypes(): ResponseEntity<Any> {
 
-        val query = em.createNativeQuery("select 1 from NetworkAddressTypes where macaddrColumn!='08:00:2b:01:02:03'")
+        val query = em.createNativeQuery("select 1 from NetworkAddressTypes where dummyColumn>0 ")
         val res = query.resultList
 
         val status: Int
@@ -224,5 +224,84 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
+    @GetMapping(path = ["/textSearchTypes"])
+    open fun getTextSearchTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from TextSearchTypes where dummyColumn>0 ")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    @GetMapping(path = ["/uuidType"])
+    open fun getUUIDType(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from UUIDType where dummyColumn>0 ")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    @GetMapping(path = ["/xmlType"])
+    open fun getXMLType(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from XMLType  where dummyColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    @GetMapping(path = ["/jsonTypes"])
+    open fun getJSONTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from JSONTypes  where dummyColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    @GetMapping(path = ["/builtInRangeTypes"])
+    open fun getBuiltInRangeTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from BuiltInRangeTypes  where dummyColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
 }
 
