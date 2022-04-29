@@ -27,7 +27,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ExternalServiceEMTest extends SpringTestBase {
     /**
-     * Ignore this test, incomplete
+     * Test to check the AdditionalInfoDto transaction between driver and core.
+     *
+     * ExecutionTracer reset the AdditionalInfoList several times during the start-up. As the
+     * result, calls made during the start-up got captured and get cleared during this.
+     *
+     * TODO: Test will be disabled till ExecutionTracer reset issues handled
      */
 
     private static WireMockServer wireMockServer;
@@ -41,7 +46,7 @@ public class ExternalServiceEMTest extends SpringTestBase {
         wireMockServer = new WireMockServer(new WireMockConfiguration().bindAddress("127.0.0.2").port(8080).extensions(new ResponseTemplateTransformer(false)));
         wireMockServer.start();
 
-        /**
+        /*
          * WireMock endpoint will respond the third value of the request path
          * as JSON response.
          * */
@@ -83,22 +88,7 @@ public class ExternalServiceEMTest extends SpringTestBase {
     }
 
     @Disabled
-    public void testRunEM() throws Throwable {
-        runTestHandlingFlakyAndCompilation(
-                "ExternalServiceEM",
-                "org.bar.ExternalServiceEM",
-                500,
-                (args) -> {
-
-                    Solution<RestIndividual> solution = initAndRun(args);
-
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "true");
-                });
-    }
-
-    @Test
-    public void dummyTest() throws Throwable {
-
+    public void externalServiceCallsCaptureTest() throws Throwable {
         String[] args = new String[]{
                 "--createTests", "false",
                 "--seed", "42",
@@ -120,11 +110,11 @@ public class ExternalServiceEMTest extends SpringTestBase {
         RestIndividual restIndividual = resourceSampler.sample();
 
         // asserts whether the call made during the start-up is captured
-        assertEquals(0, externalServices.getExternalServicesCount());
+        assertEquals(1, externalServices.getExternalServicesCount());
         ff.calculateCoverage(restIndividual, Collections.emptySet());
 
         // assertion after the execution
-        assertEquals(1, externalServices.getExternalServicesCount());
+        assertEquals(2, externalServices.getExternalServicesCount());
 
     }
 }
