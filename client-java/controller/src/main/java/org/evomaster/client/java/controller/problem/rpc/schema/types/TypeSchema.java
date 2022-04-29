@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.TypeDto;
 /**
  * type schema
  */
-public class TypeSchema {
+public abstract class TypeSchema {
 
     /**
      * simple name of the type
@@ -51,9 +51,7 @@ public class TypeSchema {
         return fullTypeName;
     }
 
-    public TypeSchema copy(){
-        return new TypeSchema(type, fullTypeName, clazz);
-    }
+    public abstract TypeSchema copy();
 
     public TypeDto getDto(){
         TypeDto dto = new TypeDto();

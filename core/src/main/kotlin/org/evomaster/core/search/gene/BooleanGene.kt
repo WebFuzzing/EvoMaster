@@ -64,6 +64,9 @@ class BooleanGene(
     override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is SeededGene<*>){
+            return this.bindValueBasedOn(gene.getPhenotype())
+        }
         if (gene !is BooleanGene){
             LoggingUtil.uniqueWarn(log, "Do not support to bind boolean gene with the type: ${gene::class.java.simpleName}")
             return false

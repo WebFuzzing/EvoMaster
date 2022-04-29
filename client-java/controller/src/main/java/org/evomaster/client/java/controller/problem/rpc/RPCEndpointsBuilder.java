@@ -16,6 +16,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -433,6 +435,12 @@ public class RPCEndpointsBuilder {
             } else if (clazz == String.class) {
                 StringType stringType = new StringType();
                 namedValue = new StringParam(name, stringType, accessibleSchema);
+            } else if (clazz == BigDecimal.class){
+                BigDecimalType bigDecimalType = new BigDecimalType();
+                namedValue = new BigDecimalParam(name, bigDecimalType, accessibleSchema);
+            } else if (clazz == BigInteger.class){
+                BigIntegerType bigIntegerType = new BigIntegerType();
+                namedValue = new BigIntegerParam(name, bigIntegerType, accessibleSchema);
             } else if (clazz.isEnum()) {
                 String [] items = Arrays.stream(clazz.getEnumConstants()).map(e-> getNameEnumConstant(e)).toArray(String[]::new);
                 EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items, clazz);
@@ -504,9 +512,6 @@ public class RPCEndpointsBuilder {
                 }
 
                 long cycleSize = depth.stream().filter(s-> s.equals(getObjectTypeNameWithFlag(clazz, clazzWithGenericTypes))).count();
-
-
-
 
                 if (cycleSize == 1){
                     List<NamedTypedValue> fields = new ArrayList<>();
@@ -688,12 +693,19 @@ public class RPCEndpointsBuilder {
             return found.get(0).getName();
 
         String msg = "RPC extract schema Error: cannot access field property, there exist "+found.size()+" methods to access the field "+ field.getName() + " for the class "+ clazz.getName();
-        if (found.isEmpty()){
+
+        if (found.size() > 1){
+            /*
+                instead of throwing the exception,
+                provide a warning and use the first one
+             */
             SimpleLogger.uniqueWarn(msg);
-            return null;
+            return found.get(0).getName();
         }
 
-        throw new IllegalStateException(msg);
+        SimpleLogger.uniqueWarn(msg);
+        return null;
+
     }
 
     private static boolean isSetter(String fieldName, String methodName, String type){

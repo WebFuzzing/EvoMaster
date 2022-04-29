@@ -8,6 +8,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -226,7 +227,25 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
                     allGenes: List<Gene> = listOf(),
                     selectionStrategy: SubsetGeneSelectionStrategy,
                     enableAdaptiveGeneMutation: Boolean,
-                    additionalGeneMutationInfo: AdditionalGeneMutationInfo?) = false
+                    additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+        if (enableAdaptiveGeneMutation){
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
+            if (additionalGeneMutationInfo.hasHistory()){
+                try {
+                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
+                        additionalGeneMutationInfo,
+                        this,
+                        allGenes
+                    )
+                    return true
+                }catch (e: DifferentGeneInHistory){
+                    LoggingUtil.uniqueWarn(log, e.message?:"Fail to employ adaptive gene value mutation due to failure in handling its history")
+                }
+            }
+        }
+
+        return false
+    }
 
     /**
      * Return the value as a printable string.

@@ -40,7 +40,7 @@ class ArrayGeneImpactTest : GeneImpactTest(){
             mutationTag == 1 || (mutationTag == 0 && p)->{
                 val index = Random.nextInt(0, geneToMutate.getAllElements().size)
                 geneToMutate.getAllElements()[index].apply {
-                    value += if (value + 1> max) -1 else 1
+                    value += if (value + 1> getMaximum()) -1 else 1
                 }
             }
             mutationTag == 2 || (mutationTag == 0 && !p)->{

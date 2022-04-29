@@ -222,4 +222,10 @@ public class DateType extends TypeSchema {
         dto.type = RPCSupportedDataType.UTIL_DATE;
         return dto;
     }
+
+
+    @Override
+    public DateType copy() {
+        return new DateType();
+    }
 }

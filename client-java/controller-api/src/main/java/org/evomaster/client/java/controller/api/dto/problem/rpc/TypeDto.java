@@ -34,5 +34,11 @@ public class TypeDto {
      * eg, items for Enum
      */
     public String[] fixedItems;
+
+    /**
+     * precision for numeric parameter if specified
+     * negative number means the precision is not specified
+     */
+    public int precision = -1;
 }
 

@@ -21,4 +21,9 @@ public class StringType extends TypeSchema {
         dto.type = RPCSupportedDataType.STRING;
         return dto;
     }
+
+    @Override
+    public StringType copy() {
+        return new StringType();
+    }
 }

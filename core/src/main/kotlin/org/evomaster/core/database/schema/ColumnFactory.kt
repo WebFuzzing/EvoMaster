@@ -35,7 +35,7 @@ object ColumnFactory {
                 isUnsigned = columnDto.isUnsigned,
                 nullable = columnDto.nullable,
                 databaseType = databaseType,
-                precision = columnDto.precision,
+                scale = columnDto.scale,
                 compositeType = columns
         )
     }
@@ -74,7 +74,7 @@ object ColumnFactory {
                 similarToPatterns = similarToPatternsForColumn,
                 likePatterns = likePatternsForColumn,
                 databaseType = databaseType,
-                precision = columnDto.precision,
+                scale = columnDto.scale,
                 compositeType = if (columnDataType.equals(ColumnDataType.COMPOSITE_TYPE)) compositeTypes[columnDto.type]!!.columns else null,
                 compositeTypeName = columnDto.type
         )

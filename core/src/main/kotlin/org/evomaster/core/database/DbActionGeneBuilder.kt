@@ -22,6 +22,9 @@ import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.evomaster.core.utils.NumberCalculationUtil
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 import kotlin.math.pow
 
 class DbActionGeneBuilder {
@@ -301,6 +304,7 @@ class DbActionGeneBuilder {
                 TODO might need to use ULong to handle unsigned long
                 https://dev.mysql.com/doc/refman/8.0/en/integer-types.html
 
+                Man: TODO need to check whether to update this with BigIntegerGene
              */
             val min: Long? = if (column.isUnsigned) 0 else null
             LongGene(column.name, min = min)
@@ -550,20 +554,41 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
-            if (column.precision >= 0) {
+            if (column.scale!= null && column.scale >= 0) {
                 /*
                     set precision and boundary for DECIMAL
                     https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html
+
+                    for mysql, precision is [1, 65] (default 10), and scale is [0, 30] (default 0)
+                    different db might have different range, then do not validate the range for the moment
                  */
-                val range = NumberCalculationUtil.boundaryDecimal(column.size, column.precision)
-                FloatGene(
-                        column.name,
-                        min = if (column.isUnsigned) 0.0f else range.first.toFloat(),
-                        max = range.second.toFloat(),
-                        precision = column.precision
+                val range = NumberCalculationUtil.boundaryDecimal(column.size, column.scale)
+                BigDecimalGene(
+                    column.name,
+                    min = if (column.isUnsigned) BigDecimal.ZERO.setScale(column.scale) else range.first,
+                    max = range.second,
+                    precision = column.size,
+                    scale = column.scale
                 )
-            } else
-                FloatGene(column.name)
+            } else{
+                if (column.scale == null){
+                    FloatGene(column.name)
+                }else{
+                    /*
+                        TO check
+                        with CompositeTypesTest for postgres,
+                        the value of precision and scale is -1, may need to check with the authors
+                     */
+                    log.warn("invalid scale value (${column.scale}) for decimal, and it should not be less than 0")
+                    if (column.size <= 0){
+                        log.warn("invalid precision value (${column.size}) for decimal, and it should not be less than 1")
+                        FloatGene(column.name)
+                    } else{
+                        // for mysql, set the scale with default value 0 if it is invalid
+                        BigDecimalGene(column.name, precision = column.size, scale = 0)
+                    }
+                }
+            }
         }
     }
 
@@ -575,11 +600,13 @@ class DbActionGeneBuilder {
             val MONEY_COLUMN_PRECISION = 2
             val MONEY_COLUMN_SIZE = 8
             val range = NumberCalculationUtil.boundaryDecimal(MONEY_COLUMN_SIZE, MONEY_COLUMN_PRECISION)
-            FloatGene(
-                    column.name,
-                    min = range.first.toFloat(),
-                    max = range.second.toFloat(),
-                    precision = MONEY_COLUMN_PRECISION
+
+            BigDecimalGene(
+                column.name,
+                min = range.first,
+                max = range.second,
+                precision = MONEY_COLUMN_SIZE,
+                scale = MONEY_COLUMN_PRECISION
             )
         }
     }
@@ -624,5 +651,7 @@ class DbActionGeneBuilder {
                 throw IllegalArgumentException("the list of enumerated values cannot be empty")
             }
         }
+
+        private val log: Logger = LoggerFactory.getLogger(DbActionGeneBuilder::class.java)
     }
 }
