@@ -25,7 +25,7 @@ public class WireMockManualTest extends SpringTestBase {
         // DNS cache manipulator sets the IP for foo.bar to a different loopback address
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
 
-        /**
+        /*
          * For the moment port is set to 8080, under a different loopback address
          * Ports 80 and 443 can be set, but require sudo permission, so application
          * should run as root
@@ -79,7 +79,7 @@ public class WireMockManualTest extends SpringTestBase {
 
     @Test
     public void testExternalCall() {
-        /**
+        /*
          * The test will check whether the external call is a success or
          * not. If the target host replaced with the Wiremock, it'll respond
          * true otherwise false.
