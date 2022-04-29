@@ -627,9 +627,11 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     private fun handleExternalServiceInfo(infoDto: List<AdditionalInfoDto>) {
-        infoDto.forEach { info ->
-            info.externalServices.forEach { es ->
-                externalServices.addExternalService(ExternalServiceInfo(es.protocol, es.remoteHostname, es.remotePort))
+        if (infoDto.isNotEmpty()) {
+            infoDto.forEach { info ->
+                info.externalServices.forEach { es ->
+                    externalServices.addExternalService(ExternalServiceInfo(es.protocol, es.remoteHostname, es.remotePort))
+                }
             }
         }
     }
