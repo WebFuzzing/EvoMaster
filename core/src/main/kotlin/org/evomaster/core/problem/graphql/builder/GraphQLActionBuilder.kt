@@ -754,8 +754,27 @@ object GraphQLActionBuilder {
                 The the tuple field is constructed
                 put it into an optional ? todo
              */
-                val constructedTuple =
-                    OptionalGene(tupleElements.last().name, TupleGene(tupleElements.last().name, tupleElements))
+               /* val constructedTuple =
+                    OptionalGene(tupleElements.last().name, TupleGene(tupleElements.last().name, tupleElements))*/
+
+                tupleElements.last()
+
+                val constructedTuple = if (isLastNotPrimitive(tupleElements.last())) {
+                    OptionalGene(
+                        tupleElements.last().name, TupleGene(
+                            tupleElements.last().name, tupleElements,
+                            lastElementTreatedSpecially = true
+                        )
+                    )
+                } else {
+                    OptionalGene(
+                        tupleElements.last().name, TupleGene(
+                            tupleElements.last().name, tupleElements.dropLast(1),
+                            lastElementTreatedSpecially = false
+                        )
+                    )
+                }
+
                 fields.add(constructedTuple)
 
             } else
@@ -777,6 +796,14 @@ object GraphQLActionBuilder {
 
         return ObjectGene(element.fieldName, fields)
     }
+
+    private fun isLastNotPrimitive(lastElements: Gene) = ((lastElements is ObjectGene) ||
+                ((lastElements is OptionalGene) && (lastElements.gene is ObjectGene)) ||
+                ((lastElements is ArrayGene<*>) && (lastElements.template is ObjectGene)) ||
+                ((lastElements is ArrayGene<*>) && (lastElements.template is OptionalGene) && (lastElements.template.gene is ObjectGene)) ||
+                ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is ObjectGene)) ||
+                ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is ObjectGene))
+                )
 
     private fun constructReturn(
         state: TempState,

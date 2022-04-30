@@ -539,11 +539,16 @@ object GeneUtils {
                     if (gene.gene is ArrayGene<*>)
                         handleBooleanSelection(gene.gene.template)
                     else
-                        if (gene.gene is TupleGene)
+                        if (gene.gene is TupleGene) if (gene.gene.lastElementTreatedSpecially)//opt tuple
+
                             TupleGene(
                                 gene.name,
                                 gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last()))
-                            )
+                            ) else TupleGene(
+                            gene.name,
+                            gene.gene.elements)
+
+
                         else
                         // on by default, but can be deselected during the search
                             BooleanGene(gene.name, true)
@@ -559,8 +564,9 @@ object GeneUtils {
                 ObjectGene(gene.name, gene.fields.map { handleBooleanSelection(it) })
             }
             is ArrayGene<*> -> handleBooleanSelection(gene.template)
-            is TupleGene -> {
-                TupleGene(gene.name, gene.elements.dropLast(1).plus(handleBooleanSelection(gene.elements.last())))
+            is TupleGene -> {//not opt tuple
+                if ( gene.lastElementTreatedSpecially)
+                TupleGene(gene.name, gene.elements.dropLast(1).plus(handleBooleanSelection(gene.elements.last())))else gene
             }
             else -> {
                 BooleanGene(gene.name, true)
