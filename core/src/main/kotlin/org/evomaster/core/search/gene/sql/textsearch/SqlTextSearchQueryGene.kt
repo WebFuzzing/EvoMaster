@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 class SqlTextSearchQueryGene(
     name: String,
-    val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", template = StringGene("p"))
+    val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", minSize = 1, template = StringGene("p"))
 ) : Gene(name, mutableListOf(queryLexemes)) {
 
     companion object {
