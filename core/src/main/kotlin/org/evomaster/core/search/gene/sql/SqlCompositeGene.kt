@@ -5,7 +5,11 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -21,7 +25,7 @@ class SqlCompositeGene(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlCompositeGene::class.java)
 
-        val SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER"
+        const val SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER"
 
     }
 
@@ -92,4 +96,21 @@ class SqlCompositeGene(
 
     override fun getChildren() = fields
 
+    override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copyContent() }.toList(), this.compositeTypeName)
+
+    /**
+     * Dummy mutation for composite genes
+     */
+    override fun mutate(
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            mwc: MutationWeightControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        this.randomize(randomness, true, allGenes)
+        return true
+    }
 }
