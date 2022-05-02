@@ -509,6 +509,9 @@ public class ExecutionTracer {
      */
     public static void addExternalServiceHost(ExternalServiceInfo hostInfo) {
         getCurrentAdditionalInfo().addExternalService(hostInfo);
+        // here, we only register external info into ObjectiveRecorder if it occurs during the startup
+        if (!executingAction)
+            ObjectiveRecorder.registerExternalServiceInfoAtSutStartupTime(hostInfo);
     }
 
 

@@ -1,9 +1,12 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
+import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+
 import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -83,6 +86,10 @@ public class ObjectiveRecorder {
      */
     private static final Queue<String> firstTimeEncountered = new ConcurrentLinkedQueue<>();
 
+    /**
+     * a list of external service which are initialized during SUT startup
+     */
+    private static final List<ExternalServiceInfo> externalServiceInfoAtSutStartupTime = new CopyOnWriteArrayList<>();
 
     /**
      * Reset all the static state in this class
@@ -101,9 +108,19 @@ public class ObjectiveRecorder {
                 it is only computed at SUT classloading time
              */
             allTargets.clear();
+
+            externalServiceInfoAtSutStartupTime.clear();
         }
     }
 
+    /**
+     * register external service info at Sut Startup Time
+     * @param info to append
+     */
+    public static void registerExternalServiceInfoAtSutStartupTime(ExternalServiceInfo info){
+        if (externalServiceInfoAtSutStartupTime.isEmpty() || externalServiceInfoAtSutStartupTime.stream().noneMatch(s-> s.equals(info)))
+            externalServiceInfoAtSutStartupTime.add(info.copy());
+    }
 
     /**
      * Mark the existence of a testing target.
