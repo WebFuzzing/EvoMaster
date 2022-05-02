@@ -49,10 +49,15 @@ public class ColumnDto {
 
     public boolean isCompositeType = false;
     /**
-     * precision of number
-     * a negative number means that the precision is unspecified or inapplicable
+     * scale of number
+     *
+     * the scale is the number of digits to the right of the decimal point
+     *
+     * Note that this presents the max range,
+     * eg, DEC(4,2), the scale is 2 and its range would be from -99.99 to 99.99.
+     * 5.2 and 0.1 are considered as `valid`
      */
-    public int precision = -1;
+    public Integer scale;
 
     /**
      * The number of dimensions for arrays, matrixs, etc.

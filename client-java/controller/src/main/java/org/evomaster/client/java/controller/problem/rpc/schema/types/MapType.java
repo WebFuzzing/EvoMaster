@@ -41,4 +41,9 @@ public class MapType extends TypeSchema{
         String value = template.getType().getSecondTemplate().getType().getTypeNameForInstance();
         return Map.class.getName()+"<"+key+","+value+">";
     }
+
+    @Override
+    public MapType copy() {
+        return new MapType(getType(),getFullTypeName(), template, getClazz());
+    }
 }

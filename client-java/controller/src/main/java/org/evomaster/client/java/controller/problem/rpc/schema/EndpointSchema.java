@@ -4,6 +4,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
+import org.evomaster.client.java.controller.problem.rpc.schema.params.PrimitiveOrWrapperParam;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -192,7 +194,8 @@ public class EndpointSchema {
     public List<String> newInvocationWithJava(String responseVarName, String controllerVarName){
         List<String> javaCode = new ArrayList<>();
         if (response != null){
-            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getFullTypeNameWithGenericType(), responseVarName, null));
+            boolean isPrimitive = (response.getType() instanceof PrimitiveOrWrapperType) && !((PrimitiveOrWrapperType)response.getType()).isWrapper;
+            javaCode.add(CodeJavaGenerator.oneLineInstance(true, true, response.getType().getTypeNameForInstance(), responseVarName, null, isPrimitive));
         }
         javaCode.add("{");
         int indent = 1;

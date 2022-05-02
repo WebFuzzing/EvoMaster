@@ -47,10 +47,10 @@ class DisruptiveGeneImpact (
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.current  !is DisruptiveGene<*>){
-            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be DisruptiveGene")
         }
         if (gc.previous != null && gc.previous !is DisruptiveGene<*>){
-            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlNullable")
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be DisruptiveGene")
         }
 
         val mutatedGeneWithContext = MutatedGeneWithContext(

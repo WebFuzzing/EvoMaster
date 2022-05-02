@@ -7,54 +7,45 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
 class DoubleGene(name: String,
-                 value: Double = 0.0,
+                 value: Double? = null,
                  min: Double? = null,
                  max: Double? = null,
+                 minInclusive : Boolean = true,
+                 maxInclusive : Boolean = true,
                  /**
                   * specified precision
                   */
-                 precision: Int? = null
-) : FloatingPointNumber<Double>(name, value, min, max, precision) {
+                 precision: Int? = null,
+                 /**
+                  * specified scale
+                  */
+                 scale: Int? = null
+) : FloatingPointNumber<Double>(name, value,
+    min = if (precision != null && scale != null) (-NumberCalculationUtil.upperBound(precision, scale)).toDouble().run { if (min== null || this > min) this else min } else min,
+    max = if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).toDouble().run { if (max == null || this < max) this else max } else max,
+    minInclusive = minInclusive, maxInclusive = maxInclusive, precision = precision, scale = scale) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(DoubleGene::class.java)
     }
 
-    override fun copyContent() = DoubleGene(name, value, min, max, precision)
+    override fun copyContent() = DoubleGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-        var rand = randomness.nextDouble()
-        if (isRangeSpecified() && ((rand < (min ?: Double.MIN_VALUE)) || (rand > (max ?: Double.MAX_VALUE)))){
-            rand = randomness.nextDouble(min?:Double.MIN_VALUE, max?:Double.MAX_VALUE)
-        }
-        value = getFormattedValue(rand)
-
+        value = NumberMutatorUtils.randomizeDouble(getMinimum(), getMaximum(), scale, randomness)
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
-        if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
-            if (additionalGeneMutationInfo.hasHistory()){
-                try {
-                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                            additionalGeneMutationInfo,
-                            this,
-                            allGenes
-                    )
-                    return true
-                }catch (e : DifferentGeneInHistory){}
-
-            }
-        }
+        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        if (mutated) return true
 
         value = mutateFloatingPointNumber(randomness, apc)
 
@@ -87,6 +78,8 @@ class DoubleGene(name: String,
             is FloatGene -> value = gene.value.toDouble()
             is IntegerGene -> value = gene.value.toDouble()
             is LongGene -> value = gene.value.toDouble()
+            is BigDecimalGene -> value = try { gene.value.toDouble() } catch (e: Exception) { return false }
+            is BigIntegerGene -> value = try { gene.value.toDouble() } catch (e: Exception) { return false }
             is StringGene -> {
                 value = gene.value.toDoubleOrNull() ?: return false
             }
@@ -98,7 +91,14 @@ class DoubleGene(name: String,
             }
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId.toDouble()
-            } else -> {
+            }
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
+            }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
+            }
+            else -> {
                 LoggingUtil.uniqueWarn(log, "Do not support to bind double gene with the type: ${gene::class.java.simpleName}")
                 return false
             }
@@ -106,12 +106,16 @@ class DoubleGene(name: String,
         return true
     }
 
-    override fun getMaximum(): Double {
-        return max?: Double.MAX_VALUE
+    override fun getMinimum(): Double {
+        if (minInclusive) return min?: -Double.MAX_VALUE
+        val lowerBounder = if (min != null && min > -Double.MAX_VALUE) min + getMinimalDelta() else -NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE
+        return getFormattedValue(lowerBounder)
     }
 
-    override fun getMinimum(): Double {
-        return min?: Double.MIN_VALUE
+    override fun getMaximum(): Double {
+        if (maxInclusive) return max?: Double.MAX_VALUE
+        val upperBounder = if (max != null && max < Double.MAX_VALUE) max - getMinimalDelta() else NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE
+        return getFormattedValue(upperBounder)
     }
 
     override fun compareTo(other: ComparableGene): Int {
@@ -121,4 +125,12 @@ class DoubleGene(name: String,
         return this.toDouble().compareTo(other.toDouble())
     }
 
+    override fun getDefaultValue(): Double {
+        val df = super.getDefaultValue()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return NumberCalculationUtil.getMiddle(getMinimum(), getMaximum(), scale).toDouble()
+    }
+
+    override fun getZero(): Double = 0.0
 }

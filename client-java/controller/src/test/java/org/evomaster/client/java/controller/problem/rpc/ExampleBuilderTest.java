@@ -12,6 +12,9 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.glassfish.jersey.server.model.Suspendable;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,7 +34,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
 
     @Override
     public int expectedNumberOfEndpoints() {
-        return 28;
+        return 41;
     }
 
     @Override
@@ -116,6 +119,254 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         );
     }
 
+
+    @Test
+    public void testNumericString(){
+        EndpointSchema endpoint = getOneEndpoint("numericString");
+        assertNotNull(endpoint.getResponse());
+        assertNotNull(endpoint.getRequestParams());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+
+        assertEquals(4, ((ObjectParam)p1).getType().getFields().size());
+        for (NamedTypedValue p : ((ObjectParam)p1).getType().getFields()){
+            assertTrue(p instanceof StringParam);
+            StringParam ns = (StringParam) p;
+            if (p.getName().equals("longValue")){
+                assertTrue(p.isNullable());
+                assertFalse(ns.getMaxInclusive());
+                assertTrue(ns.getMinInclusive());
+                assertEquals(Long.MAX_VALUE, ns.getMax().longValue());
+                assertNull(ns.getMin());
+            }else if (p.getName().equals("intValue")){
+                assertFalse(p.isNullable());
+                assertEquals(Integer.MAX_VALUE, ns.getMax().intValue());
+                assertFalse(ns.getMaxInclusive());
+                assertTrue(ns.getMinInclusive());
+            }else if (p.getName().equals("bigIntegerValue")){
+                assertTrue(p.isNullable());
+                assertEquals(Long.MAX_VALUE, ns.getMax().longValue());
+                assertFalse(ns.getMaxInclusive());
+                assertTrue(ns.getMinInclusive());
+            }else if (p.getName().equals("bigDecimalValue")){
+                assertTrue(p.isNullable());
+                assertEquals(Double.MAX_VALUE, ns.getMax().doubleValue());
+                assertFalse(ns.getMaxInclusive());
+                assertEquals(15, ns.getPrecision());
+                assertEquals(5, ns.getScale());
+                assertFalse(ns.getMinInclusive());
+                assertEquals(0.0, ns.getMin().doubleValue());
+            }
+        }
+    }
+
+    @Test
+    public void testImmutableObj(){
+
+        EndpointSchema endpoint = getOneEndpoint("immutableObj");
+        assertNotNull(endpoint.getResponse());
+        assertNotNull(endpoint.getRequestParams());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+
+        assertEquals(3, ((ObjectParam)p1).getType().getFields().size());
+        for (NamedTypedValue p : ((ObjectParam)p1).getType().getFields()){
+            assertFalse(p.isMutable());
+            if (p.getName().equals("nullLong")){
+                assertTrue(p.isNullable());
+                assertNull(p.getDefaultValue());
+            }else if (p.getName().equals("pbool")){
+                assertFalse(p.isNullable());
+                assertNotNull(p.getDefaultValue());
+                assertTrue(p.getDefaultValue() instanceof BooleanParam);
+                assertFalse(((BooleanParam)p.getDefaultValue()).getValue());
+            }else if (p.getName().equals("wbool")){
+                assertTrue(p.isNullable());
+                assertNotNull(p.getDefaultValue());
+                assertTrue(p.getDefaultValue() instanceof BooleanParam);
+                assertTrue(((BooleanParam)p.getDefaultValue()).getValue());
+            }
+        }
+    }
+
+
+
+    @Test
+    public void testbigNumber(){
+        EndpointSchema endpoint = getOneEndpoint("bigNumber");
+        assertNotNull(endpoint.getResponse());
+        assertNotNull(endpoint.getRequestParams());
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        NamedTypedValue p1 = endpoint.getRequestParams().get(0);
+        assertTrue(p1 instanceof ObjectParam);
+
+        assertEquals(8, ((ObjectParam)p1).getType().getFields().size());
+        for (NamedTypedValue p : ((ObjectParam)p1).getType().getFields()){
+
+            assertTrue(p instanceof NumericConstraintBase);
+            if (p.getName().equals("bdPositiveFloat")){
+                assertEquals(4, ((NumericConstraintBase)p).getPrecision());
+                assertEquals(2, ((NumericConstraintBase)p).getScale());
+                assertEquals("42.42", ((NumericConstraintBase)p).getMax().toString());
+                assertEquals("0", ((NumericConstraintBase)p).getMin().toString());
+                assertFalse(((NumericConstraintBase) p).getMinInclusive());
+                assertTrue(((NumericConstraintBase) p).getMaxInclusive());
+
+            }else if (p.getName().equals("bdPositiveOrZeroFloat")){
+                assertEquals(4, ((NumericConstraintBase)p).getPrecision());
+                assertEquals(2, ((NumericConstraintBase)p).getScale());
+                assertEquals("42.42", ((NumericConstraintBase)p).getMax().toString());
+                assertEquals("0", ((NumericConstraintBase)p).getMin().toString());
+                assertTrue(((NumericConstraintBase) p).getMinInclusive());
+                assertTrue(((NumericConstraintBase) p).getMaxInclusive());
+
+            } else if (p.getName().equals("bdNegativeFloat")){
+                assertEquals(4, ((NumericConstraintBase)p).getPrecision());
+                assertEquals(2, ((NumericConstraintBase)p).getScale());
+                assertEquals("0", ((NumericConstraintBase)p).getMax().toString());
+                assertEquals("-42.42", ((NumericConstraintBase)p).getMin().toString());
+                assertTrue(((NumericConstraintBase) p).getMinInclusive());
+                assertFalse(((NumericConstraintBase) p).getMaxInclusive());
+
+            } else if (p.getName().equals("bdNegativeOrZeroFloat")){
+                assertEquals(4, ((NumericConstraintBase)p).getPrecision());
+                assertEquals(2, ((NumericConstraintBase)p).getScale());
+                assertEquals("0", ((NumericConstraintBase)p).getMax().toString());
+                assertEquals("-42.42", ((NumericConstraintBase)p).getMin().toString());
+                assertTrue(((NumericConstraintBase) p).getMinInclusive());
+                assertTrue(((NumericConstraintBase) p).getMaxInclusive());
+
+            } else if (p.getName().equals("biPositive")){
+                assertEquals(2, ((NumericConstraintBase)p).getPrecision());
+                assertEquals(0, ((NumericConstraintBase)p).getScale());
+                assertEquals("42", ((NumericConstraintBase)p).getMax().toString());
+                assertEquals("0", ((NumericConstraintBase)p).getMin().toString());
+                assertFalse(((NumericConstraintBase) p).getMinInclusive());
+                assertTrue(((NumericConstraintBase) p).getMaxInclusive());
+
+            }else if (p.getName().equals("biPositiveOrZero")){
+                assertEquals(2, ((NumericConstraintBase)p).getPrecision());
+                assertEquals(0, ((NumericConstraintBase)p).getScale());
+                assertEquals("42", ((NumericConstraintBase)p).getMax().toString());
+                assertEquals("0", ((NumericConstraintBase)p).getMin().toString());
+                assertTrue(((NumericConstraintBase) p).getMinInclusive());
+                assertTrue(((NumericConstraintBase) p).getMaxInclusive());
+
+            } else if (p.getName().equals("biNegative")){
+                assertEquals(2, ((NumericConstraintBase)p).getPrecision());
+                assertEquals(0, ((NumericConstraintBase)p).getScale());
+                assertEquals("0", ((NumericConstraintBase)p).getMax().toString());
+                assertEquals("-42", ((NumericConstraintBase)p).getMin().toString());
+                assertTrue(((NumericConstraintBase) p).getMinInclusive());
+                assertFalse(((NumericConstraintBase) p).getMaxInclusive());
+
+            } else if (p.getName().equals("biNegativeOrZero")){
+                assertEquals(2, ((NumericConstraintBase)p).getPrecision());
+                assertEquals(0, ((NumericConstraintBase)p).getScale());
+                assertEquals("0", ((NumericConstraintBase)p).getMax().toString());
+                assertEquals("-42", ((NumericConstraintBase)p).getMin().toString());
+                assertTrue(((NumericConstraintBase) p).getMinInclusive());
+                assertTrue(((NumericConstraintBase) p).getMaxInclusive());
+
+            }
+        }
+
+        BigNumberObj bigNumberObj = new BigNumberObj(){{
+           // bigdecimal
+           setBdPositiveFloat(new BigDecimal("10.12"));
+           setBdPositiveOrZeroFloat(new BigDecimal("0.00"));
+           setBdNegativeFloat(new BigDecimal("-10.12"));
+           setBdNegativeOrZeroFloat(new BigDecimal("-2.16"));
+
+           // biginteger
+           setBiPositive(BigInteger.TEN);
+           setBiPositiveOrZero(BigInteger.ZERO);
+           setBiNegative(BigInteger.valueOf(-10));
+           setBiNegativeOrZero(BigInteger.valueOf(-2));
+        }};
+
+        p1.setValueBasedOnInstance(bigNumberObj);
+        ParamDto dto = p1.getDto();
+        assertNotNull(dto.stringValue);
+        assertEquals(8, dto.innerContent.size());
+        assertEquals("10.12", dto.innerContent.get(0).stringValue);
+        assertEquals("-10.12", dto.innerContent.get(1).stringValue);
+        assertEquals("0.00", dto.innerContent.get(2).stringValue);
+        assertEquals("-2.16", dto.innerContent.get(3).stringValue);
+        assertEquals("10", dto.innerContent.get(4).stringValue);
+        assertEquals("0", dto.innerContent.get(5).stringValue);
+        assertEquals("-10", dto.innerContent.get(6).stringValue);
+        assertEquals("-2", dto.innerContent.get(7).stringValue);
+
+        List<String> testScript = p1.newInstanceWithJava(0);
+        assertEquals("com.thrift.example.artificial.BigNumberObj arg0 = null;",testScript.get(0));
+        assertEquals("{",testScript.get(1));
+        assertEquals(" arg0 = new com.thrift.example.artificial.BigNumberObj();",testScript.get(2));
+        assertEquals(" java.math.BigDecimal arg0_bdPositiveFloat = null;",testScript.get(3));
+        assertEquals(" {",testScript.get(4));
+        assertEquals("  java.math.MathContext arg0_bdPositiveFloat_mc = new java.math.MathContext(4);",testScript.get(5));
+        assertEquals("  arg0_bdPositiveFloat = new java.math.BigDecimal(\"10.12\", arg0_bdPositiveFloat_mc);",testScript.get(6));
+        assertEquals("  arg0_bdPositiveFloat.setScale(2, java.math.RoundingMode.HALF_UP);",testScript.get(7));
+        assertEquals(" }",testScript.get(8));
+        assertEquals(" arg0.setBdPositiveFloat(arg0_bdPositiveFloat);",testScript.get(9));
+        assertEquals(" java.math.BigDecimal arg0_bdNegativeFloat = null;",testScript.get(10));
+        assertEquals(" {",testScript.get(11));
+        assertEquals("  java.math.MathContext arg0_bdNegativeFloat_mc = new java.math.MathContext(4);",testScript.get(12));
+        assertEquals("  arg0_bdNegativeFloat = new java.math.BigDecimal(\"-10.12\", arg0_bdNegativeFloat_mc);",testScript.get(13));
+        assertEquals("  arg0_bdNegativeFloat.setScale(2, java.math.RoundingMode.HALF_UP);",testScript.get(14));
+        assertEquals(" }",testScript.get(15));
+        assertEquals(" arg0.setBdNegativeFloat(arg0_bdNegativeFloat);",testScript.get(16));
+        assertEquals(" java.math.BigDecimal arg0_bdPositiveOrZeroFloat = null;",testScript.get(17));
+        assertEquals(" {",testScript.get(18));
+        assertEquals("  java.math.MathContext arg0_bdPositiveOrZeroFloat_mc = new java.math.MathContext(4);",testScript.get(19));
+        assertEquals("  arg0_bdPositiveOrZeroFloat = new java.math.BigDecimal(\"0.00\", arg0_bdPositiveOrZeroFloat_mc);",testScript.get(20));
+        assertEquals("  arg0_bdPositiveOrZeroFloat.setScale(2, java.math.RoundingMode.HALF_UP);",testScript.get(21));
+        assertEquals(" }",testScript.get(22));
+        assertEquals(" arg0.setBdPositiveOrZeroFloat(arg0_bdPositiveOrZeroFloat);",testScript.get(23));
+        assertEquals(" java.math.BigDecimal arg0_bdNegativeOrZeroFloat = null;",testScript.get(24));
+        assertEquals(" {",testScript.get(25));
+        assertEquals("  java.math.MathContext arg0_bdNegativeOrZeroFloat_mc = new java.math.MathContext(4);",testScript.get(26));
+        assertEquals("  arg0_bdNegativeOrZeroFloat = new java.math.BigDecimal(\"-2.16\", arg0_bdNegativeOrZeroFloat_mc);",testScript.get(27));
+        assertEquals("  arg0_bdNegativeOrZeroFloat.setScale(2, java.math.RoundingMode.HALF_UP);",testScript.get(28));
+        assertEquals(" }",testScript.get(29));
+        assertEquals(" arg0.setBdNegativeOrZeroFloat(arg0_bdNegativeOrZeroFloat);",testScript.get(30));
+        assertEquals(" java.math.BigInteger arg0_biPositive = null;",testScript.get(31));
+        assertEquals(" {",testScript.get(32));
+        assertEquals("  arg0_biPositive = new java.math.BigInteger(\"10\");",testScript.get(33));
+        assertEquals(" }",testScript.get(34));
+        assertEquals(" arg0.setBiPositive(arg0_biPositive);",testScript.get(35));
+        assertEquals(" java.math.BigInteger arg0_biPositiveOrZero = null;",testScript.get(36));
+        assertEquals(" {",testScript.get(37));
+        assertEquals("  arg0_biPositiveOrZero = new java.math.BigInteger(\"0\");",testScript.get(38));
+        assertEquals(" }",testScript.get(39));
+        assertEquals(" arg0.setBiPositiveOrZero(arg0_biPositiveOrZero);",testScript.get(40));
+        assertEquals(" java.math.BigInteger arg0_biNegative = null;",testScript.get(41));
+        assertEquals(" {",testScript.get(42));
+        assertEquals("  arg0_biNegative = new java.math.BigInteger(\"-10\");",testScript.get(43));
+        assertEquals(" }",testScript.get(44));
+        assertEquals(" arg0.setBiNegative(arg0_biNegative);",testScript.get(45));
+        assertEquals(" java.math.BigInteger arg0_biNegativeOrZero = null;",testScript.get(46));
+        assertEquals(" {",testScript.get(47));
+        assertEquals("  arg0_biNegativeOrZero = new java.math.BigInteger(\"-2\");",testScript.get(48));
+        assertEquals(" }",testScript.get(49));
+        assertEquals(" arg0.setBiNegativeOrZero(arg0_biNegativeOrZero);",testScript.get(50));
+        assertEquals("}",testScript.get(51));
+
+        List<String> assertionScript = p1.newAssertionWithJava("arg0", 0);
+        assertEquals("assertEquals(\"10.12\", arg0.getBdPositiveFloat().toString());", assertionScript.get(0));
+        assertEquals("assertEquals(\"-10.12\", arg0.getBdNegativeFloat().toString());", assertionScript.get(1));
+        assertEquals("assertEquals(\"0.00\", arg0.getBdPositiveOrZeroFloat().toString());", assertionScript.get(2));
+        assertEquals("assertEquals(\"-2.16\", arg0.getBdNegativeOrZeroFloat().toString());", assertionScript.get(3));
+        assertEquals("assertEquals(\"10\", arg0.getBiPositive().toString());", assertionScript.get(4));
+        assertEquals("assertEquals(\"0\", arg0.getBiPositiveOrZero().toString());", assertionScript.get(5));
+        assertEquals("assertEquals(\"-10\", arg0.getBiNegative().toString());", assertionScript.get(6));
+        assertEquals("assertEquals(\"-2\", arg0.getBiNegativeOrZero().toString());", assertionScript.get(7));
+    }
 
     @Test
     public void testEnumWithConstructor(){
@@ -362,8 +613,10 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 assertFalse(f.isNullable());
             }else if(f.getName().equals("longWithInclusiveFDecimalMainMax")){
                 assertTrue(f instanceof LongParam);
-                assertEquals(2L, ((LongParam) f).getMin());
-                assertEquals(9L, ((LongParam) f).getMax());
+                assertEquals(1L, ((LongParam) f).getMin());
+                assertFalse(((LongParam) f).getMinInclusive());
+                assertEquals(10L, ((LongParam) f).getMax());
+                assertFalse(((LongParam) f).getMaxInclusive());
                 assertTrue(f.isNullable());
             }else
                 fail("do not handle param " + f.getName());
@@ -483,8 +736,8 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0.setPribool(false);", javaCodes.get(18));
         assertEquals(" arg0.setPriBByte(((byte)(15)));", javaCodes.get(19));
         assertEquals(" arg0.setPribyte(((byte)(5)));", javaCodes.get(20));
-        assertEquals(" arg0.setPriCharacter('a');", javaCodes.get(21));
-        assertEquals(" arg0.setPriChar('0');", javaCodes.get(22));
+        assertEquals(" arg0.setPriCharacter('\\u0061');", javaCodes.get(21));
+        assertEquals(" arg0.setPriChar('\\u0030');", javaCodes.get(22));
         assertEquals(" arg0.setPriShort(((short)(2)));", javaCodes.get(23));
         assertEquals(" arg0.setPriSShort(((short)(42)));", javaCodes.get(24));
         assertEquals(" java.util.Map<java.lang.String,java.lang.String> arg0_priMap = null;", javaCodes.get(25));
@@ -515,8 +768,8 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(false, res1.isPribool());", assertionJavaCode.get(8));
         assertEquals("assertEquals(15, res1.getPriBByte().byteValue());", assertionJavaCode.get(9));
         assertEquals("assertEquals(5, res1.getPribyte());", assertionJavaCode.get(10));
-        assertEquals("assertEquals('a', res1.getPriCharacter().charValue());", assertionJavaCode.get(11));
-        assertEquals("assertEquals('0', res1.getPriChar());", assertionJavaCode.get(12));
+        assertEquals("assertEquals('\\u0061', res1.getPriCharacter().charValue());", assertionJavaCode.get(11));
+        assertEquals("assertEquals('\\u0030', res1.getPriChar());", assertionJavaCode.get(12));
         assertEquals("assertEquals(2, res1.getPriShort());", assertionJavaCode.get(13));
         assertEquals("assertEquals(42, res1.getPriSShort().shortValue());", assertionJavaCode.get(14));
         assertEquals("assertEquals(2, res1.getPriMap().size());", assertionJavaCode.get(15));
@@ -558,8 +811,8 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("  tmp_priRequest.setPribool(false);", javaCodesForResponse.get(22));
         assertEquals("  tmp_priRequest.setPriBByte(((byte)(15)));", javaCodesForResponse.get(23));
         assertEquals("  tmp_priRequest.setPribyte(((byte)(5)));", javaCodesForResponse.get(24));
-        assertEquals("  tmp_priRequest.setPriCharacter('a');", javaCodesForResponse.get(25));
-        assertEquals("  tmp_priRequest.setPriChar('0');", javaCodesForResponse.get(26));
+        assertEquals("  tmp_priRequest.setPriCharacter('\\u0061');", javaCodesForResponse.get(25));
+        assertEquals("  tmp_priRequest.setPriChar('\\u0030');", javaCodesForResponse.get(26));
         assertEquals("  tmp_priRequest.setPriShort(((short)(2)));", javaCodesForResponse.get(27));
         assertEquals("  tmp_priRequest.setPriSShort(((short)(42)));", javaCodesForResponse.get(28));
         assertEquals("  java.util.Map<java.lang.String,java.lang.String> tmp_priRequest_priMap = null;", javaCodesForResponse.get(29));
@@ -591,8 +844,8 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(false, res1.getPriRequest().isPribool());", assertionJavaCodeForResponse.get(9));
         assertEquals("assertEquals(15, res1.getPriRequest().getPriBByte().byteValue());", assertionJavaCodeForResponse.get(10));
         assertEquals("assertEquals(5, res1.getPriRequest().getPribyte());", assertionJavaCodeForResponse.get(11));
-        assertEquals("assertEquals('a', res1.getPriRequest().getPriCharacter().charValue());", assertionJavaCodeForResponse.get(12));
-        assertEquals("assertEquals('0', res1.getPriRequest().getPriChar());", assertionJavaCodeForResponse.get(13));
+        assertEquals("assertEquals('\\u0061', res1.getPriRequest().getPriCharacter().charValue());", assertionJavaCodeForResponse.get(12));
+        assertEquals("assertEquals('\\u0030', res1.getPriRequest().getPriChar());", assertionJavaCodeForResponse.get(13));
         assertEquals("assertEquals(2, res1.getPriRequest().getPriShort());", assertionJavaCodeForResponse.get(14));
         assertEquals("assertEquals(42, res1.getPriRequest().getPriSShort().shortValue());", assertionJavaCodeForResponse.get(15));
         assertEquals("assertEquals(2, res1.getPriRequest().getPriMap().size());", assertionJavaCodeForResponse.get(16));
@@ -632,7 +885,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals(" arg0.setPriBByte(null);", javaCodes.get(10));
         assertEquals(" arg0.setPribyte(((byte)(0)));", javaCodes.get(11));
         assertEquals(" arg0.setPriCharacter(null);", javaCodes.get(12));
-        assertEquals(" arg0.setPriChar('"+'\u0000'+"');", javaCodes.get(13));
+        assertEquals(" arg0.setPriChar('\\u0000');", javaCodes.get(13));
         assertEquals(" arg0.setPriShort(((short)(0)));", javaCodes.get(14));
         assertEquals(" arg0.setPriSShort(null);", javaCodes.get(15));
         assertEquals(" java.util.Map<java.lang.String,java.lang.String> arg0_priMap = null;", javaCodes.get(16));
@@ -652,7 +905,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertNull(res1.getPriBByte());", assertionJavaCode.get(6));
         assertEquals("assertEquals(0, res1.getPribyte());", assertionJavaCode.get(7));
         assertEquals("assertNull(res1.getPriCharacter());", assertionJavaCode.get(8));
-        assertEquals("assertEquals('"+'\u0000'+"', res1.getPriChar());", assertionJavaCode.get(9));
+        assertEquals("assertEquals('\\u0000', res1.getPriChar());", assertionJavaCode.get(9));
         assertEquals("assertEquals(0, res1.getPriShort());", assertionJavaCode.get(10));
         assertEquals("assertNull(res1.getPriSShort());", assertionJavaCode.get(11));
         assertEquals("assertNull(res1.getPriMap());", assertionJavaCode.get(12));
@@ -704,7 +957,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("  tmp_priRequest.setPriBByte(null);", javaCodesForResponse.get(14));
         assertEquals("  tmp_priRequest.setPribyte(((byte)(0)));", javaCodesForResponse.get(15));
         assertEquals("  tmp_priRequest.setPriCharacter(null);", javaCodesForResponse.get(16));
-        assertEquals("  tmp_priRequest.setPriChar('"+'\u0000'+"');", javaCodesForResponse.get(17));
+        assertEquals("  tmp_priRequest.setPriChar('\\u0000');", javaCodesForResponse.get(17));
         assertEquals("  tmp_priRequest.setPriShort(((short)(0)));", javaCodesForResponse.get(18));
         assertEquals("  tmp_priRequest.setPriSShort(null);", javaCodesForResponse.get(19));
         assertEquals("  java.util.Map<java.lang.String,java.lang.String> tmp_priRequest_priMap = null;", javaCodesForResponse.get(20));
@@ -725,7 +978,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertNull(res1.getPriRequest().getPriBByte());", assertionJavaCodeForResponse.get(7));
         assertEquals("assertEquals(0, res1.getPriRequest().getPribyte());", assertionJavaCodeForResponse.get(8));
         assertEquals("assertNull(res1.getPriRequest().getPriCharacter());", assertionJavaCodeForResponse.get(9));
-        assertEquals("assertEquals('"+'\u0000'+"', res1.getPriRequest().getPriChar());", assertionJavaCodeForResponse.get(10));
+        assertEquals("assertEquals('\\u0000', res1.getPriRequest().getPriChar());", assertionJavaCodeForResponse.get(10));
         assertEquals("assertEquals(0, res1.getPriRequest().getPriShort());", assertionJavaCodeForResponse.get(11));
         assertEquals("assertNull(res1.getPriRequest().getPriSShort());", assertionJavaCodeForResponse.get(12));
         assertEquals("assertNull(res1.getPriRequest().getPriMap());", assertionJavaCodeForResponse.get(13));

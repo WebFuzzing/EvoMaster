@@ -5,13 +5,14 @@ import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.StringType;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * string param
  */
-public class StringParam extends NamedTypedValue<StringType, String> {
+public class StringParam extends NamedTypedValue<StringType, String> implements NumericConstraintBase<BigDecimal> {
 
     /**
      * min length of the string
@@ -29,7 +30,7 @@ public class StringParam extends NamedTypedValue<StringType, String> {
      * then we still need to collect such info
      * if a string has such info, when init gene, we will add a specification as LongGene for it
      */
-    private Long min;
+    private BigDecimal min;
 
     /**
      * max value of the string
@@ -37,12 +38,27 @@ public class StringParam extends NamedTypedValue<StringType, String> {
      * then we still need to collect such info
      * if a string has such info, when init gene, we will add a specification as LongGene for it
      */
-    private Long max;
+    private BigDecimal max;
 
     /**
      * pattern specified with regular expression
      */
     private String pattern;
+
+
+    private boolean minInclusive = true;
+
+    private boolean maxInclusive = true;
+
+    /**
+     * constraints with precision if applicable
+     */
+    private Integer precision;
+
+    /**
+     * constraints with scale if applicable
+     */
+    private Integer scale;
 
     public StringParam(String name, StringType type, AccessibleSchema accessibleSchema) {
         super(name, type, accessibleSchema);
@@ -68,23 +84,34 @@ public class StringParam extends NamedTypedValue<StringType, String> {
     }
 
     public void setMaxSize(Integer maxSize) {
-        this.maxSize = maxSize;
+        if (this.maxSize != null)
+            this.maxSize = Math.min(this.maxSize, maxSize);
+        else
+            this.maxSize = maxSize;
     }
 
-    public Long getMin() {
+    @Override
+    public BigDecimal getMin() {
         return min;
     }
 
-    public void setMin(Long min) {
-        this.min = min;
+    @Override
+    public void setMin(BigDecimal min) {
+        if (min == null) return;
+        if (this.min == null || this.min.compareTo(min) < 0)
+            this.min = min;
     }
 
-    public Long getMax() {
+    @Override
+    public BigDecimal getMax() {
         return max;
     }
 
-    public void setMax(Long max) {
-        this.max = max;
+    @Override
+    public void setMax(BigDecimal max) {
+        if (max == null) return;
+        if (this.max  == null || this.max.compareTo(max) > 0)
+            this.max = max;
     }
 
     public String getPattern() {
@@ -120,12 +147,11 @@ public class StringParam extends NamedTypedValue<StringType, String> {
             dto.maxSize = Long.valueOf(maxSize);
         if (minSize != null)
             dto.minSize = Long.valueOf(minSize);
-        if (min != null)
-            dto.minValue = min;
-        if (max != null)
-            dto.maxValue = max;
         if (pattern != null)
             dto.pattern = pattern;
+
+        handleConstraintsInCopyDto(dto);
+
         return dto;
     }
 
@@ -175,5 +201,47 @@ public class StringParam extends NamedTypedValue<StringType, String> {
             ((StringParam)copy).setMinSize(minSize);
             ((StringParam)copy).setPattern(pattern);
         }
+
+        handleConstraintsInCopy(copy);
+    }
+
+    @Override
+    public boolean getMinInclusive() {
+        return minInclusive;
+    }
+
+    @Override
+    public void setMinInclusive(boolean inclusive) {
+        this.minInclusive = inclusive;
+    }
+
+    @Override
+    public boolean getMaxInclusive() {
+        return maxInclusive;
+    }
+
+    @Override
+    public void setMaxInclusive(boolean inclusive) {
+        this.maxInclusive = inclusive;
+    }
+
+    @Override
+    public Integer getPrecision() {
+        return precision;
+    }
+
+    @Override
+    public void setPrecision(Integer precision) {
+        this.precision = precision;
+    }
+
+    @Override
+    public Integer getScale() {
+        return this.scale;
+    }
+
+    @Override
+    public void setScale(Integer scale) {
+        this.scale = scale;
     }
 }

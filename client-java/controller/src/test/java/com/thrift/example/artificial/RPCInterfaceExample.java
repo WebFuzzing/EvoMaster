@@ -66,4 +66,31 @@ public interface RPCInterfaceExample {
     void handleException(String type) throws Exception;
 
     String handleEnumWithConstructor(ObjectEnum arg1);
+
+    String bigNumber(BigNumberObj arg1);
+
+    String immutableObj(ImmutableObj arg1);
+
+    String numericString(NumericStringObj arg1);
+
+    Map<String, NumericStringObj> mapResponse();
+
+    List<BigNumberObj> listResponse();
+
+    boolean pBoolResponse();
+
+    byte pByteResponse();
+
+    char pCharResponse();
+
+    short pShortResponse();
+
+    int pIntResponse();
+
+    long pLongResponse();
+
+    float pFloatResponse();
+
+    double pDoubleResponse();
+
 }

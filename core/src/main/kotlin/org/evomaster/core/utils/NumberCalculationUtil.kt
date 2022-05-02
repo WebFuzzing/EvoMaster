@@ -1,5 +1,6 @@
 package org.evomaster.core.utils
 
+import org.evomaster.core.search.gene.NumberMutatorUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
@@ -39,20 +40,50 @@ object NumberCalculationUtil {
         }
     }
 
-
-    fun boundaryDecimal(size: Int, precision: Int): Pair<Double, Double>{
-        val value = valueWithPrecision(10.0.pow(size-precision), precision)
-        val p = valueWithPrecision(1.0/(10.0.pow(precision)), precision)
-        val boundary = value.subtract(p).toDouble()
-        return valueWithPrecision(boundary * -1, precision).toDouble() to valueWithPrecision(boundary * 1, precision).toDouble()
+    /**
+     * get boundary of the decimal which has specified precision and scale
+     * eg, for Decimal (3,2), the boundary is [-99.9, 99.9]
+     */
+    fun boundaryDecimal(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP): Pair<BigDecimal, BigDecimal>{
+        val upperBound = upperBound(size, scale, roundingMode)
+        return -upperBound to upperBound
     }
 
-    fun valueWithPrecision(value: Double, precision: Int) : BigDecimal {
+    /**
+     * @return decimal upperbound with specified precision and scale
+     */
+    fun upperBound(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP) : BigDecimal{
+        if (scale > 0 && size > NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE){
+            log.warn("there would exist error if the precision is greater than 15 for floating point number")
+        }
+
+        val integral = (10.0).pow(size) - 1
+        val fraction = (10.0).pow(scale)
+        val boundary = integral.div(fraction)
+
+        return valueWithPrecisionAndScale(boundary, scale, roundingMode)
+    }
+
+    /**
+     * @return decimal for double with the specified scale
+     */
+    fun valueWithPrecisionAndScale(value: Double, scale: Int?, roundingMode: RoundingMode = RoundingMode.HALF_UP) : BigDecimal {
         return try {
-            BigDecimal(value).setScale(precision, RoundingMode.HALF_UP)
+            if (scale == null)
+                BigDecimal.valueOf(value)
+            else
+                BigDecimal(value).setScale(scale, roundingMode)
         }catch (e: NumberFormatException){
-            log.warn("fail to get value ($value) with the specified prevision ($precision)")
+            log.warn("fail to get value ($value) with the specified prevision ($scale)")
             throw e
         }
+    }
+
+    /**
+     * @return get middle value of the two values
+     */
+    fun <T: Number> getMiddle(min: T, max : T, scale: Int?) : BigDecimal{
+        val m = min.toDouble()/2.0  + max.toDouble()/2.0
+        return valueWithPrecisionAndScale(m, scale)
     }
 }

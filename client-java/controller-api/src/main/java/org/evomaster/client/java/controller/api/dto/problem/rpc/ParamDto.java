@@ -49,13 +49,49 @@ public class ParamDto {
 
     /**
      * a min value of the param, eg, Numeric
+     *
+     * note that the minValue could be used by various types of number,
+     * eg, double, long, bigdecimal and biginteger,
+     * then use the string to persist the value
      */
-    public Long minValue;
+    public String minValue;
 
     /**
      * a max value of the param, eg, Numeric
+     *
+     * note that the minValue could be used by various types of number,
+     * eg, double, long, bigdecimal and biginteger,
+     * then use the string to persist the value
      */
-    public Long maxValue;
+    public String maxValue;
+
+    /**
+     * precision applicable to number
+     *
+     * present the number of digits in the unscaled value
+     */
+    public Integer precision;
+
+    /**
+     * scale applicable to floatting point number
+     *
+     * present the number of digits to the right of the decimal point
+     */
+    public Integer scale;
+
+    /**
+     * represent whether minValue is inclusive
+     *
+     * note that it is typically useful for floating point number
+     */
+    public boolean minInclusive;
+
+    /**
+     * represent whether maxValue is inclusive
+     *
+     * note that it is typically useful for floating point number
+     */
+    public boolean maxInclusive;
 
     /**
      * pattern specified with regex exp
@@ -72,6 +108,16 @@ public class ParamDto {
      * dependent candidates which have same reference
      */
     public List<String> candidateReferences;
+
+    /**
+     * represent whether the param is mutable
+     */
+    public boolean isMutable;
+
+    /**
+     * represent a default value of the param if it has
+     */
+    public ParamDto defaultValue;
 
     /**
      * @return a copy of the paramDto
@@ -95,7 +141,16 @@ public class ParamDto {
 
         if (candidateReferences != null)
             copy.candidateReferences = new ArrayList<>(candidateReferences);
+
+        copy.isMutable = isMutable;
+        if (defaultValue != null)
+            copy.defaultValue = defaultValue.copy();
+
         return copy;
+    }
+
+    public boolean hasNumberConstraints(){
+        return minValue != null || maxValue != null || precision != null || scale !=  null;
     }
 
 }

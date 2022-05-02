@@ -9,56 +9,50 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
+import java.math.RoundingMode
 
 
 class FloatGene(name: String,
-                value: Float = 0.0f,
-                /** Inclusive */
+                value: Float? = null,
                 min : Float? = null,
-                /** Inclusive */
                 max : Float? = null,
+                minInclusive : Boolean = true,
+                maxInclusive : Boolean = true,
                 /**
                  * specified precision
                  */
-                precision: Int? = null
-) : FloatingPointNumber<Float>(name, value, min, max, precision) {
+                precision: Int? = null,
+                /**
+                 * specified scale
+                 */
+                scale: Int? = null
+) : FloatingPointNumber<Float>(name, value,
+    min = if (precision != null && scale != null) (-NumberCalculationUtil.upperBound(precision, scale)).toFloat().run { if (min== null || this > min) this else min } else min,
+    max = if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).toFloat().run { if (max == null || this < max) this else max } else max,
+    minInclusive, maxInclusive, precision, scale) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
     }
 
-    override fun copyContent() = FloatGene(name, value, min, max, precision)
+    override fun copyContent() = FloatGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-        var rand = randomness.nextFloat()
-        if (isRangeSpecified() && ((rand < (min ?: Float.MIN_VALUE)) || (rand > (max ?: Float.MAX_VALUE)))){
-            rand = randomness.nextDouble((min?:Float.MIN_VALUE).toDouble(), (max?:Float.MAX_VALUE).toDouble()).toFloat()
-        }
-        value = getFormattedValue(rand)
-
+        val rand = NumberMutatorUtils.randomizeDouble(getMinimum().toDouble(), getMaximum().toDouble(), scale, randomness)
+        value = getFormattedValue(rand.toFloat())
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
-            if (additionalGeneMutationInfo.hasHistory()){
-                try {
-                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                            additionalGeneMutationInfo,
-                            this,
-                            allGenes
-                    )
-                    return true
-                }catch (e: DifferentGeneInHistory){}
-            }
+        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        if (mutated) return true
+
+        value = mutateFloatingPointNumber(randomness, apc).run {
+            // it is werid, value sometimes becomes Double with genric function
+            getFormattedValue(this.toFloat())
         }
-
-
-        value = mutateFloatingPointNumber(randomness, apc)
 
         return true
     }
@@ -89,6 +83,8 @@ class FloatGene(name: String,
             is DoubleGene -> value = gene.value.toFloat()
             is IntegerGene -> value = gene.value.toFloat()
             is LongGene -> value = gene.value.toFloat()
+            is BigDecimalGene -> value = try { gene.value.toFloat() } catch (e: Exception) { return false }
+            is BigIntegerGene -> value = try { gene.value.toFloat() } catch (e: Exception) { return false }
             is StringGene -> {
                 value = gene.value.toFloatOrNull() ?: return false
             }
@@ -101,6 +97,12 @@ class FloatGene(name: String,
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId.toFloat()
             }
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
+            }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
+            }
             else -> {
                 LoggingUtil.uniqueWarn(log, "Do not support to bind float gene with the type: ${gene::class.java.simpleName}")
                 return false
@@ -110,11 +112,15 @@ class FloatGene(name: String,
     }
 
     override fun getMinimum(): Float {
-        return min?:Float.MIN_VALUE
+        if (minInclusive) return min?: -Float.MAX_VALUE
+        val lowerBounder = if (min != null && min > -Float.MAX_VALUE) min + getMinimalDelta() else -NumberMutatorUtils.MAX_FLOAT_EXCLUSIVE
+        return getFormattedValue(lowerBounder)
     }
 
     override fun getMaximum(): Float {
-        return max?: Float.MAX_VALUE
+        if (maxInclusive) return max?: Float.MAX_VALUE
+        val upperBounder = if (max != null && max < Float.MAX_VALUE) max - getMinimalDelta() else NumberMutatorUtils.MAX_FLOAT_EXCLUSIVE
+        return getFormattedValue(upperBounder)
     }
 
     override fun compareTo(other: ComparableGene): Int {
@@ -124,5 +130,13 @@ class FloatGene(name: String,
         return this.toFloat().compareTo(other.toFloat())
     }
 
+    override fun getDefaultValue(): Float {
+        val df = getZero()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return NumberCalculationUtil.getMiddle(getMinimum(), getMaximum(), scale).toFloat()
+    }
+
+    override fun getZero(): Float = 0.0f
 
 }

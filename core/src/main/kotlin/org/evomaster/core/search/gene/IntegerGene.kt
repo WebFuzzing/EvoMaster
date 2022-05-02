@@ -10,32 +10,37 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.utils.NumberCalculationUtil
+import org.evomaster.core.utils.NumberCalculationUtil.upperBound
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.math.BigInteger
+import kotlin.math.max
+import kotlin.math.min
 
 
 class IntegerGene(
     name: String,
-    value: Int = 0,
-    /**
-     * Inclusive
-     *
-     * For IntegerGene, min must be specified
-     * */
-    override val min: Int = Int.MIN_VALUE,
-    /**
-     * Inclusive
-     *
-     * For IntegerGene, max must be specified
-     * */
-    override val max: Int = Int.MAX_VALUE
-) : NumberGene<Int>(name, value, min, max) {
+    value: Int?,
+    min: Int,
+    max: Int,
+    precision : Int?,
+    minInclusive : Boolean,
+    maxInclusive : Boolean,
+) : IntegralNumberGene<Int>(name, value, min, max, precision, minInclusive, maxInclusive) {
+
+    constructor(name: String, value: Int? = null, min: Int? = null, max: Int?=null, precision: Int?=null, minInclusive: Boolean = true, maxInclusive: Boolean = true) :this(
+        name, value,
+        min = (min?:Int.MIN_VALUE).run { if (precision!= null) max(this, (-upperBound(precision, 0)).toInt()) else this },
+        max = (max?:Int.MAX_VALUE).run { if (precision!= null) min(this, (upperBound(precision, 0)).toInt()) else this },
+        precision, minInclusive, maxInclusive)
 
     init {
-        if (min == max)
-            this.value = min
-        if (max < min)
+        if (getMaximum() == getMinimum())
+            this.value = getMinimum()
+        if (getMaximum() < getMinimum())
             throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+
     }
 
     companion object {
@@ -43,7 +48,7 @@ class IntegerGene(
     }
 
     override fun copyContent(): Gene {
-        return IntegerGene(name, value, min, max)
+        return IntegerGene(name, value, precision = precision, min = min, max= max, minInclusive = minInclusive, maxInclusive = maxInclusive)
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -62,7 +67,7 @@ class IntegerGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        value = randomness.randomizeBoundedIntAndLong(value.toLong(), min.toLong(), max.toLong(), forceNewValue).toInt()
+        value = randomness.randomizeBoundedIntAndLong(value.toLong(), getMinimum().toLong(), getMaximum().toLong(), forceNewValue).toInt()
     }
 
     override fun mutate(
@@ -75,24 +80,11 @@ class IntegerGene(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
 
-        if (enableAdaptiveGeneMutation) {
-            additionalGeneMutationInfo
-                ?: throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
-            if (additionalGeneMutationInfo.hasHistory()) {
-                try {
-                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                        additionalGeneMutationInfo,
-                        this,
-                        allGenes
-                    )
-                    return true
-                } catch (e: DifferentGeneInHistory) {
-                }
-            }
-        }
+        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        if (mutated) return true
 
         //check maximum range. no point in having a delta greater than such range
-        val range = max.toLong() - min.toLong()
+        val range = getMaximum().toLong() - getMinimum().toLong()
 
         //choose an i for 2^i modification
         val delta = getDelta(randomness, apc, range)
@@ -106,8 +98,8 @@ class IntegerGene(
         val res: Long = (value.toLong()) + (sign * delta)
 
         value = when {
-            res > max -> max
-            res < min -> min
+            res > getMaximum() -> getMaximum()
+            res < getMinimum() -> getMinimum()
             else -> res.toInt()
         }
 
@@ -132,6 +124,8 @@ class IntegerGene(
             is FloatGene -> value = gene.value.toInt()
             is DoubleGene -> value = gene.value.toInt()
             is LongGene -> value = gene.value.toInt()
+            is BigDecimalGene -> value = try { gene.value.toInt() } catch (e: Exception) { return false }
+            is BigIntegerGene -> value = try { gene.value.toInt() } catch (e: Exception) { return false }
             is StringGene -> {
                 value = gene.value.toIntOrNull() ?: return false
             }
@@ -143,6 +137,12 @@ class IntegerGene(
             }
             is SqlPrimaryKeyGene -> {
                 value = gene.uniqueId.toInt()
+            }
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
+            }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind Integer with ${gene::class.java.simpleName}")
@@ -160,7 +160,20 @@ class IntegerGene(
     }
 
     override fun isMutable(): Boolean {
-        return this.max > this.min
+        return this.max!! > this.min!!
     }
 
+    override fun getMaximum(): Int = max!!.run { if (!maxInclusive) this - 1 else this }
+
+    override fun getMinimum(): Int = min!!.run { if (!minInclusive) this + 1 else this }
+
+
+    override fun getDefaultValue(): Int {
+        val df = super.getDefaultValue()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return NumberCalculationUtil.getMiddle(getMinimum(), getMaximum(), 0).toInt()
+    }
+
+    override fun getZero(): Int = 0
 }

@@ -194,6 +194,7 @@ class DateGene(
             }
             gene is DateTimeGene -> bindValueBasedOn(gene.date)
             gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
+            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype())
             // Man: convert to string based on the format?
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateGene with ${gene::class.java.simpleName}")
