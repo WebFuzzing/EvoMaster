@@ -63,6 +63,10 @@ public class ExternalServiceInfo implements Serializable {
         return remotePort == that.remotePort && mockHostPort == that.mockHostPort && Objects.equals(remoteHostname, that.remoteHostname) && Objects.equals(protocol, that.protocol) && Objects.equals(mockHostname, that.mockHostname);
     }
 
+    public ExternalServiceInfo copy(){
+        return new ExternalServiceInfo(protocol, remoteHostname, remotePort, mockHostname, mockHostPort);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(remoteHostname, protocol, remotePort, mockHostname, mockHostPort);

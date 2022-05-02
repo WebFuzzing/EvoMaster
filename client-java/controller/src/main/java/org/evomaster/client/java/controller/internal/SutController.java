@@ -975,6 +975,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void setExecutingInitSql(boolean executingInitSql);
 
+    public abstract void setExecutingAction(boolean executingAction);
+
     public abstract String getExecutableFullPath();
 
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){

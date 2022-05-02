@@ -30,6 +30,11 @@ public class ExecutionTracer {
      */
     private static boolean executingInitSql = false;
 
+    /**
+     * indicate whether now it is to execute action during the search
+     */
+    private static boolean executingAction = false;
+
     /*
         Careful if you change the signature of any of the
         methods in this class, as they are injected in the
@@ -112,6 +117,14 @@ public class ExecutionTracer {
 
     public static void setExecutingInitSql(boolean executingInitSql) {
         ExecutionTracer.executingInitSql = executingInitSql;
+    }
+
+    public static boolean isExecutingAction() {
+        return executingAction;
+    }
+
+    public static void setExecutingAction(boolean executingAction) {
+        ExecutionTracer.executingAction = executingAction;
     }
 
     public static void setAction(Action action) {

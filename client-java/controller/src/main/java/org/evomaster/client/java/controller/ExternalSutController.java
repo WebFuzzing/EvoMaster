@@ -378,6 +378,14 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingAction(boolean executingAction){
+        checkInstrumentation();
+        serverController.setExecutingAction(executingAction);
+        // sync executingAction on the local ExecutionTracer
+        ExecutionTracer.setExecutingAction(executingAction);
+    }
+
+    @Override
     public final String getExecutableFullPath(){
         validateJarPath();
 

@@ -79,6 +79,11 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingAction(boolean executingAction){
+        ExecutionTracer.setExecutingAction(executingAction);
+    }
+
+    @Override
     public final String getExecutableFullPath(){
         return null; //not needed for embedded
     }

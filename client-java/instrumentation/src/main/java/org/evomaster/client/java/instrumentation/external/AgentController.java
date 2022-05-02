@@ -89,6 +89,10 @@ public class AgentController {
                         handleExecutingInitSql();
                         sendCommand(Command.ACK);
                         break;
+                    case EXECUTING_ACTION:
+                        handleExecutingAction();
+                        sendCommand(Command.ACK);
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -147,6 +151,16 @@ public class AgentController {
             InstrumentationController.setExecutingInitSql(executingInitSql);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling executing-init-sql: "+e.getMessage());
+        }
+    }
+
+    private static void handleExecutingAction() {
+        try {
+            Object msg = in.readObject();
+            Boolean executingAction = (Boolean) msg;
+            InstrumentationController.setExecutingAction(executingAction);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-action: "+e.getMessage());
         }
     }
 
