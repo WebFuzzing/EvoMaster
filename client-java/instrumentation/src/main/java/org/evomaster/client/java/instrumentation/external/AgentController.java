@@ -93,6 +93,9 @@ public class AgentController {
                         handleExecutingAction();
                         sendCommand(Command.ACK);
                         break;
+                    case EXTERNAL_SERVICE_INFO_STARTUP:
+                        handleExternalServiceInfoAtSutStartup();
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -170,6 +173,14 @@ public class AgentController {
             sendObject(InstrumentationController.getAdditionalInfoList());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling additional info: "+e.getMessage());
+        }
+    }
+
+    private static void handleExternalServiceInfoAtSutStartup(){
+        try {
+            sendObject(InstrumentationController.getExternalServiceInfoAtSutStartup());
+        }catch (Exception e) {
+            SimpleLogger.error("Failure in handling External Service Info: "+e.getMessage());
         }
     }
 

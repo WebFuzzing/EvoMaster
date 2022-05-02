@@ -84,6 +84,11 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
+    public List<ExternalServiceInfo> getExternalServiceInfoAtSutStartup() {
+        return  InstrumentationController.getExternalServiceInfoAtSutStartup();
+    }
+
+    @Override
     public final String getExecutableFullPath(){
         return null; //not needed for embedded
     }

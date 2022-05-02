@@ -89,7 +89,7 @@ public class ObjectiveRecorder {
     /**
      * a list of external service which are initialized during SUT startup
      */
-    private static final List<ExternalServiceInfo> externalServiceInfoAtSutStartupTime = new CopyOnWriteArrayList<>();
+    private static final List<ExternalServiceInfo> externalServiceInfoAtSutStartup = new CopyOnWriteArrayList<>();
 
     /**
      * Reset all the static state in this class
@@ -109,7 +109,7 @@ public class ObjectiveRecorder {
              */
             allTargets.clear();
 
-            externalServiceInfoAtSutStartupTime.clear();
+            externalServiceInfoAtSutStartup.clear();
         }
     }
 
@@ -118,8 +118,17 @@ public class ObjectiveRecorder {
      * @param info to append
      */
     public static void registerExternalServiceInfoAtSutStartupTime(ExternalServiceInfo info){
-        if (externalServiceInfoAtSutStartupTime.isEmpty() || externalServiceInfoAtSutStartupTime.stream().noneMatch(s-> s.equals(info)))
-            externalServiceInfoAtSutStartupTime.add(info.copy());
+        if (externalServiceInfoAtSutStartup.isEmpty() || externalServiceInfoAtSutStartup.stream().noneMatch(s-> s.equals(info)))
+            externalServiceInfoAtSutStartup.add(info.copy());
+    }
+
+    /**
+     *
+     * @return a list of external service info during sut startup
+     */
+    public static List<ExternalServiceInfo> getExternalServiceInfoAtSutStartup(){
+        // read-only
+        return Collections.unmodifiableList(new ArrayList<>(externalServiceInfoAtSutStartup));
     }
 
     /**

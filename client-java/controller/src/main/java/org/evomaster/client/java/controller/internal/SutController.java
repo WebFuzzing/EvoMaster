@@ -30,7 +30,7 @@ import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
-import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
@@ -648,7 +648,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         newTestSpecificHandler();
 
         // set executingAction state false for newTest
-        ExecutionTracer.setExecutingAction(false);
+        setExecutingAction(false);
     }
 
     /**
@@ -980,6 +980,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void setExecutingInitSql(boolean executingInitSql);
 
     public abstract void setExecutingAction(boolean executingAction);
+
+    public abstract List<ExternalServiceInfo> getExternalServiceInfoAtSutStartup();
 
     public abstract String getExecutableFullPath();
 

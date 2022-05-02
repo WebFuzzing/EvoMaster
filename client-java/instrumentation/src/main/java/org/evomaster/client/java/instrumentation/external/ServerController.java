@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.external;
 
 import org.evomaster.client.java.instrumentation.Action;
+import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
@@ -254,6 +255,27 @@ public class ServerController {
         }
 
         return (List<AdditionalInfo>) response;
+    }
+
+    public synchronized List<ExternalServiceInfo> getExternalServiceInfoAtSutStartup() {
+
+        boolean sent = sendCommand(Command.EXTERNAL_SERVICE_INFO_STARTUP);
+        if (!sent) {
+            SimpleLogger.error("Failed to send message");
+            return null;
+        }
+
+        Object response = waitAndGetResponse();
+        if (response == null) {
+            SimpleLogger.error("Failed to read response about External Service Info");
+            return null;
+        }
+
+        if (!(response instanceof List<?>)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a List"));
+        }
+
+        return (List<ExternalServiceInfo>) response;
     }
 
     public synchronized UnitsInfoRecorder getUnitsInfoRecorder(){

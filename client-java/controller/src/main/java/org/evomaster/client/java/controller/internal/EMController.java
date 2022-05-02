@@ -18,6 +18,7 @@ import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -184,9 +185,8 @@ public class EMController {
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
             info = noKillSwitch(() -> sutController.getProblemInfo());
-            /*
-                TODO append external info at startup here
-             */
+            List<ExternalServiceInfo> externalServiceInfos = noKillSwitch(()-> sutController.getExternalServiceInfoAtSutStartup());
+            // TODO add info to SutInfoDto
         } catch (RuntimeException e) {
             String msg = e.getMessage();
             SimpleLogger.error(msg, e);
@@ -426,7 +426,7 @@ public class EMController {
             @Context HttpServletRequest httpServletRequest) {
 
         // notify that actions execution is done.
-        ExecutionTracer.setExecutingAction(false);
+        noKillSwitch(()->sutController.setExecutingAction(false));
 
         assert trackRequestSource(httpServletRequest);
 
@@ -533,7 +533,7 @@ public class EMController {
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
         // notify that the action is executing
-        ExecutionTracer.setExecutingAction(true);
+        noKillSwitch(()-> sutController.setExecutingAction(true));
 
         // executingInitSql should be false when reaching here
         assert (!ExecutionTracer.isExecutingInitSql());

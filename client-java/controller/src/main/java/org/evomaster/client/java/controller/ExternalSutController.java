@@ -2,14 +2,10 @@ package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.ActionDto;
 import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
-import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
-import org.evomaster.client.java.instrumentation.Action;
-import org.evomaster.client.java.instrumentation.InputProperties;
+import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.external.JarAgentLocator;
 import org.evomaster.client.java.instrumentation.external.ServerController;
 
@@ -341,6 +337,12 @@ public abstract class ExternalSutController extends SutController {
     public final List<AdditionalInfo> getAdditionalInfoList(){
         checkInstrumentation();
         return serverController.getAdditionalInfoList();
+    }
+
+    @Override
+    public final List<ExternalServiceInfo> getExternalServiceInfoAtSutStartup(){
+        checkInstrumentation();
+        return serverController.getExternalServiceInfoAtSutStartup();
     }
 
 
