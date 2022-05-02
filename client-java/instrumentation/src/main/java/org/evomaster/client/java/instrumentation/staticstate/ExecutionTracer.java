@@ -100,6 +100,7 @@ public class ExecutionTracer {
             inputVariables = new HashSet<>();
             killSwitch = false;
             expensiveOperation = 0;
+            executingAction = false;
         }
     }
 
