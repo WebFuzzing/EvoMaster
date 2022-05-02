@@ -153,6 +153,9 @@ public class EMController {
     @GET
     public Response getSutInfo(@Context HttpServletRequest httpServletRequest) {
 
+        // this should be false when requesting SutInfo
+        assert !ExecutionTracer.isExecutingAction();
+
         String connectionHeader = httpServletRequest.getHeader("Connection");
         if (connectionHeader == null
                 || !connectionHeader.equalsIgnoreCase("keep-alive")) {
@@ -181,6 +184,9 @@ public class EMController {
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
             info = noKillSwitch(() -> sutController.getProblemInfo());
+            /*
+                TODO append external info at startup here
+             */
         } catch (RuntimeException e) {
             String msg = e.getMessage();
             SimpleLogger.error(msg, e);
@@ -419,6 +425,9 @@ public class EMController {
                     boolean killSwitch,
             @Context HttpServletRequest httpServletRequest) {
 
+        // notify that actions execution is done.
+        ExecutionTracer.setExecutingAction(false);
+
         assert trackRequestSource(httpServletRequest);
 
         try {
@@ -523,6 +532,9 @@ public class EMController {
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
+        // notify that the action is executing
+        ExecutionTracer.setExecutingAction(true);
+
         // executingInitSql should be false when reaching here
         assert (!ExecutionTracer.isExecutingInitSql());
         /*
