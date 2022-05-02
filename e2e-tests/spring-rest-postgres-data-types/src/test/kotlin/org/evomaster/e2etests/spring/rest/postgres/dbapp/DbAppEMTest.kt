@@ -1,9 +1,7 @@
 package org.evomaster.e2etests.spring.rest.postgres.dbapp
 
 import com.foo.spring.rest.postgres.dbapp.DbAppController
-import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.e2etests.spring.rest.postgres.SpringRestPostgresTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -88,6 +86,14 @@ class DbAppEMTest : SpringRestPostgresTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/textSearchTypes", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/textSearchTypes", null)
 
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/enumType", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/enumType", null)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/compositeType", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/compositeType", null)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/nestedCompositeType", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/nestedCompositeType", null)
 
         }
     }

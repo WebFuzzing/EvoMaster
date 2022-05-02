@@ -32,26 +32,51 @@ class CompositeTypesTest : ExtractTestBasePostgres() {
         assertFalse(schema.compositeTypes.any { it.name.equals("communication_channels".lowercase()) })
 
         assertTrue(schema.compositeTypes.any { it.name.equals("complex".lowercase()) })
-        val complexCompositeType = schema.compositeTypes.find { it.name.equals("complex".lowercase()) }
-        assertTrue(complexCompositeType!!.columns[0].name.equals("r".lowercase()))
-        assertTrue(complexCompositeType.columns[1].name.equals("i".lowercase()))
+        val complexCompositeType = schema.compositeTypes.find { it.name.equals("complex".lowercase()) }!!
+        val rColumn = complexCompositeType.columns[0]
+        val iColumn = complexCompositeType.columns[1]
+
+        assertTrue(rColumn.name.equals("r".lowercase()))
+        assertTrue(iColumn.name.equals("i".lowercase()))
+
+        assertTrue(rColumn.nullable)
+        assertTrue(iColumn.nullable)
 
         assertTrue(schema.compositeTypes.any { it.name.equals("inventory_item".lowercase()) })
-        val inventoryItemType = schema.compositeTypes.find { it.name.equals("inventory_item".lowercase()) }
-        assertTrue(inventoryItemType!!.columns[0].name.equals("name".lowercase()))
-        assertTrue(inventoryItemType.columns[1].name.equals("supplier_id".lowercase()))
-        assertTrue(inventoryItemType.columns[2].name.equals("price".lowercase()))
+        val inventoryItemType = schema.compositeTypes.find { it.name.equals("inventory_item".lowercase()) }!!
+
+        val zipcodeColumn = inventoryItemType.columns[0]!!
+        val supplierIdColumn = inventoryItemType.columns[1]!!
+        val priceColumn = inventoryItemType.columns[2]!!
+
+        assertTrue(zipcodeColumn.name.equals("zipcode".lowercase()))
+        assertTrue(supplierIdColumn.name.equals("supplier_id".lowercase()))
+        assertTrue(priceColumn.name.equals("price".lowercase()))
+
+        assertTrue(zipcodeColumn.nullable)
+        assertTrue(supplierIdColumn.nullable)
+        assertTrue(priceColumn.nullable)
+
+        assertEquals(4, zipcodeColumn.size)
+        assertEquals(4, supplierIdColumn.size)
+        assertEquals(0, priceColumn.size)
+
 
         assertTrue(schema.compositeTypes.any { it.name.equals("nested_composite_type".lowercase()) })
-        val nestedCompositeType = schema.compositeTypes.find { it.name.equals("nested_composite_type".lowercase()) }
-        assertTrue(nestedCompositeType!!.columns[0].name.equals("item".lowercase()))
-        assertTrue(nestedCompositeType.columns[1].name.equals("count".lowercase()))
+        val nestedCompositeType = schema.compositeTypes.find { it.name.equals("nested_composite_type".lowercase()) }!!
 
-        assertTrue(nestedCompositeType.columns.find { it.name.equals("item".lowercase()) }!!.columnTypeIsComposite)
+        val itemColumn = nestedCompositeType.columns[0]
+        val countColumn = nestedCompositeType.columns[1]
+
+        assertTrue(itemColumn.name.equals("item".lowercase()))
+        assertTrue(countColumn.name.equals("count".lowercase()))
+
+        assertTrue(itemColumn.columnTypeIsComposite)
 
         assertTrue(schema.tables.any { it.name.equals("on_hand".lowercase()) })
-        val onHandTable = schema.tables.find { it.name.equals("on_hand".lowercase()) }
-        assertTrue(onHandTable!!.columns[0].name.equals("item".lowercase()))
+        val onHandTable = schema.tables.find { it.name.equals("on_hand".lowercase()) }!!
+
+        assertTrue(onHandTable.columns[0].name.equals("item".lowercase()))
         assertTrue(onHandTable.columns[1].name.equals("count".lowercase()))
         assertTrue(onHandTable.columns[2].name.equals("nestedColumn".lowercase()))
 

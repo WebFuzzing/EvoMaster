@@ -1,5 +1,6 @@
 package org.evomaster.core.database.extract.postgres
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
@@ -8,9 +9,7 @@ import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.StringGene
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 /**
@@ -23,6 +22,30 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
     @Test
     fun testExtraction() {
         val schema = SchemaExtractor.extract(connection)
+
+        assertNotNull(schema)
+
+        assertEquals("public", schema.name.lowercase())
+        assertEquals(DatabaseType.POSTGRES, schema.databaseType)
+
+        assertTrue(schema.tables.any { it.name.equals("people".lowercase()) })
+        val peopleTable = schema.tables.find { it.name.equals("people".lowercase()) }
+
+        val idColumn = peopleTable!!.columns[0]
+        val nameColumn = peopleTable.columns[1]
+        val addressColumn = peopleTable.columns[2]
+
+        assertTrue(idColumn.name.equals("id".lowercase()))
+        assertTrue(nameColumn.name.equals("name".lowercase()))
+        assertTrue(addressColumn.name.equals("address".lowercase()))
+
+        assertFalse(idColumn.nullable)
+        assertFalse(nameColumn.nullable)
+        assertTrue(addressColumn.nullable)
+
+        assertEquals(10, idColumn.size)
+        assertEquals(2147483647, nameColumn.size)
+        assertEquals(2147483647, addressColumn.size)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
@@ -55,7 +78,7 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
 
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
-        Assertions.assertFalse(queryResultAfterInsertion.isEmpty)
+        assertFalse(queryResultAfterInsertion.isEmpty)
 
         val row = queryResultAfterInsertion.seeRows()[0]
         assertEquals(nameValue, row.getValueByName("name"))
@@ -88,7 +111,7 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
 
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
         val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
-        Assertions.assertFalse(queryResultAfterInsertion.isEmpty)
+        assertFalse(queryResultAfterInsertion.isEmpty)
 
         val row = queryResultAfterInsertion.seeRows()[0]
         assertEquals(oneQuoteStr, row.getValueByName("name"))

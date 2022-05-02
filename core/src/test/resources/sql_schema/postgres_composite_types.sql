@@ -15,7 +15,7 @@ CREATE TYPE complex AS
 
 CREATE TYPE inventory_item AS
 (
-    name        text,
+    zipcode        integer,
     supplier_id integer,
     price       numeric
 );

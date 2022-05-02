@@ -114,3 +114,45 @@ CREATE TABLE BuiltInRangeTypes(
     tstzrangeColumn tstzrange NOT NULL,
     daterangeColumn daterange NOT NULL
 );
+
+CREATE TYPE EnumType AS ENUM
+   ('value0',
+    'value1',
+    'value2',
+    'value3');
+
+CREATE TABLE TableUsingEnumType (
+    dummyColumn integer NOT NULL,
+    enumColumn EnumType NOT null
+);
+
+CREATE TYPE complex AS (
+    r double precision,
+    i double precision
+);
+
+CREATE TABLE TableUsingCompositeType (
+    dummyColumn integer,
+    complexColumn complex
+);
+
+
+CREATE TYPE inventory_item AS
+(
+    zipCode        integer,
+    supplier_id integer,
+    price       numeric
+);
+
+CREATE TYPE nested_composite_type AS
+(
+    item  inventory_item,
+    count integer
+);
+
+CREATE TABLE TableUsingNestedCompositeType (
+   dummyColumn integer NOT NULL,
+   item             inventory_item NOT NULL,
+   count            integer NOT NULL,
+   nestedColumn     nested_composite_type NOT NULL
+);

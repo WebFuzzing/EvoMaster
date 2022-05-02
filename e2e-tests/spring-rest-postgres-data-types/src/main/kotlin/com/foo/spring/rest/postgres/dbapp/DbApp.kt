@@ -303,5 +303,54 @@ open class DbApp : SwaggerConfiguration() {
 
         return ResponseEntity.status(status).build()
     }
+
+    @GetMapping(path = ["/enumType"])
+    open fun getEnumType(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from TableUsingEnumType  where dummyColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    @GetMapping(path = ["/compositeType"])
+    open fun getCompositeType(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from TableUsingCompositeType  where dummyColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
+    @GetMapping(path = ["/nestedCompositeType"])
+    open fun getNestedCompositeType(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from TableUsingNestedCompositeType where dummyColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
 }
 
