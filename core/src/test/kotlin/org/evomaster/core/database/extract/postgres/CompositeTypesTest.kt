@@ -45,21 +45,21 @@ class CompositeTypesTest : ExtractTestBasePostgres() {
         assertTrue(schema.compositeTypes.any { it.name.equals("inventory_item".lowercase()) })
         val inventoryItemType = schema.compositeTypes.find { it.name.equals("inventory_item".lowercase()) }!!
 
-        val zipcodeColumn = inventoryItemType.columns[0]!!
+        val addressColumn = inventoryItemType.columns[0]!!
         val supplierIdColumn = inventoryItemType.columns[1]!!
         val priceColumn = inventoryItemType.columns[2]!!
 
-        assertTrue(zipcodeColumn.name.equals("zipcode".lowercase()))
+        assertTrue(addressColumn.name.equals("address".lowercase()))
         assertTrue(supplierIdColumn.name.equals("supplier_id".lowercase()))
         assertTrue(priceColumn.name.equals("price".lowercase()))
 
-        assertTrue(zipcodeColumn.nullable)
+        assertTrue(addressColumn.nullable)
         assertTrue(supplierIdColumn.nullable)
         assertTrue(priceColumn.nullable)
 
-        assertEquals(4, zipcodeColumn.size)
+        assertEquals(Int.MAX_VALUE, addressColumn.size)
         assertEquals(4, supplierIdColumn.size)
-        assertEquals(0, priceColumn.size)
+        assertEquals(8, priceColumn.size)
 
 
         assertTrue(schema.compositeTypes.any { it.name.equals("nested_composite_type".lowercase()) })

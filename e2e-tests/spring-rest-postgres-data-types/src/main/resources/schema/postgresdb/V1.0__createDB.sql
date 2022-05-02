@@ -141,7 +141,7 @@ CREATE TYPE inventory_item AS
 (
     zipCode        integer,
     supplier_id integer,
-    price       numeric
+    price       monetary
 );
 
 CREATE TYPE nested_composite_type AS
