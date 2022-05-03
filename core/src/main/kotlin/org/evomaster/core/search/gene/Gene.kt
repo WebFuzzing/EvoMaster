@@ -15,19 +15,23 @@ import org.slf4j.LoggerFactory
 
 
 /**
+ * TODO we need 2 new classes in the hierarchy: SimpleGene and ComposedGene
+ *
+ *
  * A building block representing one part of an Individual.
  * The terms "gene" comes from the evolutionary algorithm literature
  *
  *
  *
  * TO enable adaptive hypermutation
- * 1. override [mutationWeight] if the gene is not simple gene
+ * 1. override [mutationWeight] if the gene is not simple gene, e.g., it is complex with many genes inside
  *
- * 2. if the gene has inner genes which are needed to collect impact info.
- * implement an impact for the new gene to collect impact info for gene mutation,
- *  for instance, see [org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact]
+ * 2. if the gene has inner genes, then we need to collect impact info.
+ * Implement an impact (a subclass of [GeneImpact]) for the new gene to collect impact info for gene mutation.
+ * Impact here is referred to how the gene is influencing the fitness.
+ * For instance, see [org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact]
  *  we collect impacts for each field, then could guide on which field to be selected for mutation.
- *  see more details in comments of [org.evomaster.core.search.impact.impactinfocollection.GeneImpact]
+ * See more details in comments of [org.evomaster.core.search.impact.impactinfocollection.GeneImpact]
  *
  * 3. override [candidatesInternalGenes] to decide 1) whether to apply selection for the internal genes
  *  2) what candidates are in [this] gene to be selected for mutation, eg, mutable fields for ObjectGene.
@@ -36,7 +40,21 @@ import org.slf4j.LoggerFactory
  * 4. with the collected impact info, override [adaptiveSelectSubset] to decide which gene to be selected
  *
  */
-abstract class Gene(var name: String, children: List<out StructuralElement>) : StructuralElement(children){
+abstract class Gene(
+        /**
+         * The name for this gene, mainly needed for debugging.
+         * One actual use is for binding, e.g., paremeters in HTTP requests
+         */
+        var name: String,
+        /**
+         * TODO refactor
+         * this is just initializing the parent-child relationship, not setting any child.
+         *
+         * TODO also should be Gene, as why a Gene would have a child that is not a Gene??? do
+         * we have cases for this?
+         */
+        children: List<out StructuralElement>
+) : StructuralElement(children){
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
@@ -58,9 +76,17 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         return copy
     }
 
-    override fun copyContent(): Gene {
-        throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
-    }
+    /*
+     * override to force return type Gene
+     */
+    abstract override  fun copyContent(): Gene
+
+
+    /*
+        TODO shall we remove to default function implementation? to make sure new
+        genes are forced to set them up, and not forget about them?
+        or can we write invariants which will make tests fail in those cases?
+     */
 
     /**
      * weight for mutation
@@ -83,11 +109,19 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
 
 
     /**
+     *   TODO this method is always needed to be called before the Gene is usable.
+     *   there is no comment here, but I remember writing something like this...
+     *   if so, must be called at least once, or should throw an exception.
+     *
+     *   TODO Or must we guarantee validity of constraints in constructor???
+     *
      *   Randomize the content of this gene.
      *
      *   @param randomness the source of non-determinism
      *   @param forceNewValue whether we should force the change of value. When we do mutation,
      *          it could otherwise happen that a value is replace with itself
+     *
+     *   TODO likely deprecated, because we can traverse the tree upward now
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
      */
@@ -118,6 +152,7 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,
+            //TODO likely deprecated
             allGenes: List<Gene> = listOf(),
             internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
             enableAdaptiveGeneMutation: Boolean = false,
@@ -167,21 +202,31 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
      *
      * For instance, see [ArrayGene.candidatesInternalGenes], with a probability, it returns an empty list.
      * the empty list means (see [ArrayGene.mutate]) that the mutation is applied to change the size of this array gene.
+     *
+     * A default implementation for "simple" genes would be to return "listOf<Gene>()"
      */
-    open fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?)
-            = listOf<Gene>()
+    abstract fun candidatesInternalGenes(randomness: Randomness,
+                                         apc: AdaptiveParameterControl,
+                                         //TODO remove deprecated
+                                         allGenes: List<Gene>,
+                                         selectionStrategy: SubsetGeneSelectionStrategy,
+                                         enableAdaptiveGeneMutation: Boolean,
+                                         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): List<Gene>
+
 
     /**
      * @return a subset of internal genes to apply mutations
      */
-    open fun selectSubset(internalGenes: List<Gene>,
+    private fun selectSubset(internalGenes: List<Gene>,
                           randomness: Randomness,
                           apc: AdaptiveParameterControl,
                           mwc: MutationWeightControl,
                           allGenes: List<Gene> = listOf(),
                           selectionStrategy: SubsetGeneSelectionStrategy,
                           enableAdaptiveGeneMutation: Boolean,
-                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         return  when(selectionStrategy){
             SubsetGeneSelectionStrategy.DEFAULT -> {
                 val s = randomness.choose(internalGenes)

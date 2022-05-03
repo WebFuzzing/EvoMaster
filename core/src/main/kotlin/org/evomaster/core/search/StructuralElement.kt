@@ -39,12 +39,16 @@ abstract class StructuralElement (
 
     /**
      * @return children of [this]
+     *
+     * FIXME: this is not related to children in input. confusing, might need to change name
      */
     abstract fun getChildren(): List<out StructuralElement>
 
     /**
      * add a child of the element
      * Note that the default method is only to build the parent/children relationship
+     *
+     * FIXME: this is setting up the parent-child relationship, not adding to children
      */
     open fun addChild(child: StructuralElement){
         child.parent = this
@@ -53,6 +57,8 @@ abstract class StructuralElement (
     /**
      * add children of the element
      * Note that the default method is only to build the parent/children relationship
+     *
+     * FIXME see previous comment
      */
     open fun addChildren(children : List<StructuralElement>){
         initChildren(children)
@@ -61,8 +67,11 @@ abstract class StructuralElement (
     /**
      * make a deep copy on the content
      *
-     * Noet that here we only copy the content the element,
-     * do not further build relationship (e.g., binding) among the elements
+     * Note that here we only copy the content the element,
+     * do not further build relationship (e.g., binding) among the elements.
+     *
+     * After this method is called, need to call [postCopy] to setup to
+     * relationship. This will be handled in [copy]
      */
     abstract fun copyContent(): StructuralElement
 
