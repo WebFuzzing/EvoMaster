@@ -36,6 +36,7 @@ import javax.ws.rs.core.Response
 abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual {
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
+    @Inject
     protected lateinit var externalServices: ExternalServices
 
     companion object {

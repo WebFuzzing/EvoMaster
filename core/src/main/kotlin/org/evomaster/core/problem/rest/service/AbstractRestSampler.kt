@@ -37,7 +37,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     lateinit var swagger: OpenAPI
         protected set
-
+    @Inject
     protected lateinit var externalServices: ExternalServices
 
     @PostConstruct
