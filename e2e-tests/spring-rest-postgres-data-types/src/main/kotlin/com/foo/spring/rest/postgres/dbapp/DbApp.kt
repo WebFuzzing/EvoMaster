@@ -352,5 +352,21 @@ open class DbApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
+    @GetMapping(path = ["/arrayTypes"])
+    open fun getArrayTypes(): ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select 1 from ArrayTypes where dummyColumn>0")
+        val res = query.resultList
+
+        val status: Int
+        if (res.isNotEmpty()) {
+            status = 200
+        } else {
+            status = 400
+        }
+
+        return ResponseEntity.status(status).build()
+    }
+
 }
 

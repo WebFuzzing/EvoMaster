@@ -156,3 +156,21 @@ CREATE TABLE TableUsingNestedCompositeType (
    count            integer NOT NULL,
    nestedColumn     nested_composite_type NOT NULL
 );
+
+CREATE TABLE ArrayTypes (
+  dummyColumn integer NOT NULL,
+
+  integerArrayColumn integer[] NOT NULL,
+  integerMatrixColumn integer[][] NOT NULL,
+  integerSpaceColumn integer[][][] NOT NULL,
+  integerManyDimensionsColumn integer[][][][] NOT NULL,
+  integerExactSizeArrayColumn integer[3] NOT NULL,
+  integerExactSizeMatrixColumn integer[3][3] NOT NULL,
+
+  varcharArrayColumn varchar[] NOT NULL,
+  varcharmatrixColumn varchar[][] NOT NULL,
+  varcharSpaceColumn varchar[][][] NOT NULL,
+  varcharManyDimensionsColumn varchar[][][][] NOT NULL,
+  varcharExactSizeArrayColumn varchar[3] NOT NULL,
+  varcharExactSizeMatrixColumn varchar[3][3] NOT NULL
+);
