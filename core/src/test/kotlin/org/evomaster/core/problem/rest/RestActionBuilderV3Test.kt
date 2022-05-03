@@ -452,6 +452,25 @@ class RestActionBuilderV3Test{
         loadAndAssertActions("/swagger/apisguru-v2/greenpeace.org.json", 6)
     }
 
+
+    @Test
+    fun testRestApiExample(){
+        val resourcePath = "/swagger/others/rest-api-example.json"
+        val actions = loadAndAssertActions(resourcePath, 3)
+
+        val get = actions["GET:/api/items"]
+        assertNotNull(get)
+
+        val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
+        val map = mutableMapOf<String,ObjectGene>()
+        RestActionBuilderV3.getModelsFromSwagger(schema, map)
+
+        assertEquals(3, map.size)
+        val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
+        assertEquals(0, x.fields.size)
+    }
+
+
     @ParameterizedTest
     @ValueSource(strings = ["/swagger/artificial/reference_type_v2.json","/swagger/artificial/reference_type_v3.json"])
     fun testReferenceType(path: String){
