@@ -44,6 +44,7 @@ experiments/target/
 /extra_heuristics.csv
 /dbconstraint/target/
 /e2e-tests/spring-rest-postgres/target/
+/e2e-tests/spring-rest-postgres-data-types/target/
 /core/testWithEMB.sh
 /resource-rest-experiments/api-generator/target/
 /client-js/node_modules/
