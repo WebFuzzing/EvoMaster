@@ -83,5 +83,5 @@ public class SutInfoDto {
     /**
      * Information about the external services used inside the SUT
      */
-    public Set<ExternalServiceInfoDto> externalServicesDto;
+    public List<ExternalServiceInfoDto> externalServicesDto;
 }

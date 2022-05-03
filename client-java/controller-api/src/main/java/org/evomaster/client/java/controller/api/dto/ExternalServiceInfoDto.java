@@ -4,10 +4,20 @@ import java.util.Objects;
 
 public class ExternalServiceInfoDto {
 
+    /**
+     * Hostname of the remote service captured in the external call
+     */
     public String remoteHostname;
 
+    /**
+     * Refers to the protocol used in the external service calls.
+     * Usually HTTP/S
+     */
     public String protocol;
 
+    /**
+     * Port of the remote service
+     */
     public Integer remotePort;
 
     public ExternalServiceInfoDto(){};

@@ -8,11 +8,9 @@ import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemp
 import com.google.inject.Injector;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.external.service.ExternalServices;
-import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
-import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -105,16 +103,16 @@ public class ExternalServiceEMTest extends SpringTestBase {
 
         ExternalServices externalServices = injector.getInstance(ExternalServices.class);
 
-        RestResourceFitness ff = injector.getInstance(RestResourceFitness.class);
+        RestResourceFitness restResourceFitness = injector.getInstance(RestResourceFitness.class);
         ResourceSampler resourceSampler = injector.getInstance(ResourceSampler.class);
         RestIndividual restIndividual = resourceSampler.sample();
 
         // asserts whether the call made during the start-up is captured
-        assertEquals(1, externalServices.getExternalServicesCount());
-        ff.calculateCoverage(restIndividual, Collections.emptySet());
+        assertEquals(1, externalServices.getExternalServices().size());
+        restResourceFitness.calculateCoverage(restIndividual, Collections.emptySet());
 
         // assertion after the execution
-        assertEquals(2, externalServices.getExternalServicesCount());
+        assertEquals(2, externalServices.getExternalServices().size());
 
     }
 }

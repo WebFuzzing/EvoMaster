@@ -35,7 +35,7 @@ import javax.ws.rs.core.Response
 
 abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual {
 
-    @Inject(optional = true)
+    // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     protected lateinit var externalServices: ExternalServices
 
     companion object {
@@ -627,11 +627,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     private fun handleExternalServiceInfo(infoDto: List<AdditionalInfoDto>) {
-        if (infoDto.isNotEmpty()) {
-            infoDto.forEach { info ->
-                info.externalServices.forEach { es ->
-                    externalServices.addExternalService(ExternalServiceInfo(es.protocol, es.remoteHostname, es.remotePort))
-                }
+        infoDto.forEach { info ->
+            info.externalServices.forEach { es ->
+                externalServices.addExternalService(ExternalServiceInfo(es.protocol, es.remoteHostname, es.remotePort))
             }
         }
     }

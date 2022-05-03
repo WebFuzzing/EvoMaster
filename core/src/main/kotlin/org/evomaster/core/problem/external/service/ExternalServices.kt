@@ -9,9 +9,9 @@ class ExternalServices {
      */
 
     /**
-     * Set contains the information about each external calls made
+     * Contains the information about each external calls made
      */
-    val externalServiceInfos: MutableSet<ExternalServiceInfo> = mutableSetOf()
+    private val externalServiceInfos: MutableList<ExternalServiceInfo> = mutableListOf()
 
     /**
      * This will allow adding ExternalServiceInfo to the set
@@ -20,11 +20,7 @@ class ExternalServices {
         externalServiceInfos.add(externalServiceInfo)
     }
 
-    /**
-     * Implemented for testing purposes, ignore this.
-     * Will be refactored once the test is completed
-     */
-    fun getExternalServicesCount() : Int {
-        return externalServiceInfos.size
+    fun getExternalServices() : MutableList<ExternalServiceInfo> {
+        return externalServiceInfos
     }
 }

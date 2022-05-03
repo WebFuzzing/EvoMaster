@@ -59,5 +59,5 @@ public class AdditionalInfoDto {
     /**
      * To keep track of all external service calls used under SUT.
      */
-    public Set<ExternalServiceInfoDto> externalServices = new HashSet<>();
+    public List<ExternalServiceInfoDto> externalServices = new ArrayList<>();
 }

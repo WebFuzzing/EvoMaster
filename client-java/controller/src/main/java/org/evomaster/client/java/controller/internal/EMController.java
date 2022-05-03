@@ -180,17 +180,12 @@ public class EMController {
             dto.infoForAuthentication = noKillSwitch(() -> sutController.getInfoForAuthentication());
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
-
-            List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
-
-            Set<ExternalServiceInfoDto> esDto = new HashSet<>();
-            additionalInfos.stream().map(e -> e.getExternalServices().stream()
-                    .map(es -> esDto.add(new ExternalServiceInfoDto(
-                    es.getProtocol(),
-                    es.getHostname(),
-                    es.getRemotePort()
-                    ))));
-            dto.externalServicesDto = noKillSwitch(() -> esDto);
+            dto.externalServicesDto = noKillSwitch(() -> sutController.getAdditionalInfoList()
+                    .stream()
+                    .flatMap(e -> e.getExternalServices().stream())
+                    .map(e -> new ExternalServiceInfoDto(e.getProtocol(), e.getHostname(), e.getRemotePort()))
+                    .collect(Collectors.toList())
+            );
 
             info = noKillSwitch(() -> sutController.getProblemInfo());
 
@@ -493,7 +488,7 @@ public class EMController {
                                     es.getHostname(),
                                     es.getRemotePort()
                             ))
-                            .collect(Collectors.toSet());
+                            .collect(Collectors.toList());
 
                     info.stringSpecializations = new LinkedHashMap<>();
                     for (Map.Entry<String, Set<StringSpecializationInfo>> entry :
