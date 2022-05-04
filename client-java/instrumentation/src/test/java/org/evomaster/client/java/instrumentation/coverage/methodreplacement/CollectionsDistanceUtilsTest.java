@@ -90,4 +90,29 @@ class CollectionsDistanceUtilsTest {
         assertTrue(h >= H_NOT_EMPTY);
     }
 
+
+    @Test
+    public void testAllInputEmpty(){
+
+        List<Integer> data = Arrays.asList(1,2,3,4);
+        List<Integer> other = Arrays.asList();
+
+        assertTrue(data.containsAll(other));
+
+        double h = CollectionsDistanceUtils.getHeuristicToContainsAll(data, other);
+        assertEquals(1, h, 0.0001);
+    }
+
+    @Test
+    public void testAllEmpty(){
+
+        List<Integer> data = Arrays.asList();
+        List<Integer> other = Arrays.asList();
+
+        assertTrue(data.containsAll(other));
+
+        double h = CollectionsDistanceUtils.getHeuristicToContainsAll(data, other);
+        assertEquals(1, h, 0.0001);
+    }
+
 }
