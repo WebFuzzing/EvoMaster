@@ -38,7 +38,7 @@ class TupleGene(
      */
     val lastElementTreatedSpecially: Boolean = false,
 
-) : Gene(name, elements) {
+    ) : Gene(name, elements) {
 
     init {
         if (elements.isEmpty()) {
@@ -77,11 +77,11 @@ class TupleGene(
             //need the name for input and return
             buffer.append("$name")
             //printout the inputs. See later if a refactoring is needed
-            if (elements.dropLast(1).isNotEmpty()) {
+           // if (elements.dropLast(1).isNotEmpty()) {
+            if (lastElementTreatedSpecially){
 
-                val s = elements.dropLast(1)
-                    .filter { it !is OptionalGene ||  it.isActive }
-                    .map {
+                buffer.append("(")
+                val s = elements.dropLast(1).map {
 
                     if (it is EnumGene<*> ||
                         (it is OptionalGene && it.gene is EnumGene<*>) ||
@@ -111,12 +111,9 @@ class TupleGene(
 
                 }.joinToString(",").replace("\"", "\\\"")
                 //see another way: eg, joinTo(buffer, ", ").toString().replace("\"", "\\\"") to buffer
-                if(s.isNotEmpty()) {
-                    buffer.append("(")
-                    buffer.append(s)
-                    buffer.append(")")
-                }
-            }
+                buffer.append(s)
+                buffer.append(")")
+
             //printout the return
             val returnGene = elements.last()
             buffer.append(
@@ -139,8 +136,48 @@ class TupleGene(
                     } else ""
             )
         } else {
+                buffer.append("(")
+                val s = elements.map {
+
+                    if (it is EnumGene<*> ||
+                        (it is OptionalGene && it.gene is EnumGene<*>) ||
+                        (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is EnumGene<*>) ||
+                        (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is OptionalGene && it.gene.template.gene is EnumGene<*>) ||
+                        (it is ArrayGene<*> && it.template is EnumGene<*>) ||
+                        (it is ArrayGene<*> && it.template is OptionalGene && it.template.gene is EnumGene<*>)
+                    ) {
+                        val i = it.getValueAsRawString()
+                        "${it.name} : $i"
+                    } else {
+                        if (it is ObjectGene || (it is OptionalGene && it.gene is ObjectGene)) {
+                            val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                            " $i"
+                        } else {
+                            if (it is ArrayGene<*> || (it is OptionalGene && it.gene is ArrayGene<*>)) {
+                                val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
+                                "${it.name} : $i"
+                            } else {
+                                val mode =
+                                    if (ParamUtil.getValueGene(it) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
+                                val i = it.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
+                                "${it.name} : $i"
+                            }
+                        }
+                    }
+
+                }.joinToString(",").replace("\"", "\\\"")
+                //see another way: eg, joinTo(buffer, ", ").toString().replace("\"", "\\\"") to buffer
+                buffer.append(s)
+                buffer.append(")")
+
+
+            }        }
+
+
+
+       /*     else {
             "[" + elements.map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }.joinTo(buffer, ", ") + "]"
-        }
+        }*/
         return buffer.toString()
 
     }
@@ -149,9 +186,9 @@ class TupleGene(
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         if (elements.isNotEmpty())
-        elements.forEach {
-            it.randomize(randomness, false)
-        }
+            elements.forEach {
+                it.randomize(randomness, false)
+            }
     }
 
     override fun copyValueFrom(other: Gene) {
