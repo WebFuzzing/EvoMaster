@@ -11,6 +11,15 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * This gene represents values of a ts_vector column in postgres.
+ * In order to create such values, function to_tsvector() must be invoked.
+ * For example,
+ *   ts_vector('')
+ *   ts_vector('foo bar')
+ *
+ *  are valid values for a ts_vector column.
+ */
 class SqlTextSearchVectorGene(
         name: String,
         private val textLexeme: StringGene = StringGene(name = "textLexemes")

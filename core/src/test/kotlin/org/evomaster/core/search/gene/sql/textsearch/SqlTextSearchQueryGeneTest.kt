@@ -19,17 +19,28 @@ class SqlTextSearchQueryGeneTest {
         val gene = SqlTextSearchQueryGene("textSearchVector")
 
         val textLexemes = gene.innerGene()[0] as ArrayGene<StringGene>
-        textLexemes.addElement(StringGene("lexeme",value="foo bar"))
-        Assertions.assertEquals("to_tsquery(${SINGLE_APOSTROPHE_PLACEHOLDER}foo bar${SINGLE_APOSTROPHE_PLACEHOLDER})", gene.getValueAsPrintableString())
+        val stringGene = textLexemes.template.copy() as StringGene
+        stringGene.value = "foo"
+        textLexemes.addElement(stringGene)
+        Assertions.assertEquals("to_tsquery(${SINGLE_APOSTROPHE_PLACEHOLDER}foo${SINGLE_APOSTROPHE_PLACEHOLDER})", gene.getValueAsPrintableString())
     }
     @Test
     fun testManyElementTextSearchQuery() {
         val gene = SqlTextSearchQueryGene("textSearchVector")
 
         val textLexemes = gene.innerGene()[0] as ArrayGene<StringGene>
-        textLexemes.addElement(StringGene("lexeme",value="foo"))
-        textLexemes.addElement(StringGene("lexeme",value="bar"))
-        textLexemes.addElement(StringGene("lexeme",value="cat"))
+        val stringGene0 = textLexemes.template.copy() as StringGene
+        stringGene0.value = "foo"
+
+        val stringGene1 = textLexemes.template.copy() as StringGene
+        stringGene1.value = "bar"
+
+        val stringGene2 = textLexemes.template.copy() as StringGene
+        stringGene2.value = "cat"
+
+        textLexemes.addElement(stringGene0)
+        textLexemes.addElement(stringGene1)
+        textLexemes.addElement(stringGene2)
 
         Assertions.assertEquals("to_tsquery(${SINGLE_APOSTROPHE_PLACEHOLDER}foo & bar & cat${SINGLE_APOSTROPHE_PLACEHOLDER})", gene.getValueAsPrintableString())
     }

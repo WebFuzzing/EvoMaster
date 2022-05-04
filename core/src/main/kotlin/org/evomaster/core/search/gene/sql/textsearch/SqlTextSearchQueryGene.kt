@@ -12,6 +12,24 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * This gene represents a query value of a ts_query column in postgres.
+ * A query is a list of strings separated by & ('foo & bar').
+ * In order to create this type the to_tsquery() function must be invoked.
+ * For instance.
+ *  ts_query('')
+ *  ts_query('foo bar')
+ *  ts_query('foo & bar')
+ *
+ *  are all valid ts_query values.
+ *
+ *  In contrast, operand must not be used with blank lexemes.
+ *  ts_query(' & ')
+ *  ts_query('foo & ')
+ *  ts_qyert(' & bar')
+ *
+ *  are NOT valid ts_query values
+ */
 class SqlTextSearchQueryGene(
         /*
          * The name of this gene
@@ -20,7 +38,8 @@ class SqlTextSearchQueryGene(
         /*
          * TS queries are lists of lexemes.
          */
-        val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", template = StringGene("lexeme template"))
+        val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes",
+                template = StringGene("lexeme template", minLength = 0, invalidChars = listOf(' ', '&')))
 ) : Gene(name, mutableListOf(queryLexemes)) {
 
     companion object {
