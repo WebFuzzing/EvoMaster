@@ -1,13 +1,14 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -28,6 +29,11 @@ class Statistics : SearchListener {
         const val DISTINCT_ACTIONS = "distinctActions"
         const val COVERED_2XX = "covered2xx"
         const val GQL_NO_ERRORS = "gqlNoErrors"
+
+        /**
+         * represent that boot-time info is unavailable to collect
+         */
+        const val BOOT_TIME_INFO_UNAVAILABLE = -1
     }
 
     @Inject
@@ -169,11 +175,19 @@ class Statistics : SearchListener {
 
     fun getData(solution: Solution<*>): List<Pair> {
 
-        val unitsInfo = if(!config.blackBox || config.bbExperiments) {
-            remoteController?.getSutInfo()?.unitsInfoDto
+        val sutInfo : SutInfoDto? = if(!config.blackBox || config.bbExperiments) {
+            remoteController?.getSutInfo()
         } else {
             null
         }
+
+        val unitsInfo = sutInfo?.unitsInfoDto
+        val bootTimeInfo = sutInfo?.bootTimeInfoDto
+
+        val bootTimeCoveredTargets = bootTimeInfo?.targets?.filter { it.value == FitnessValue.MAX_VALUE}
+        val numOfBootTimeCoveredTargets = bootTimeCoveredTargets?.size?: BOOT_TIME_INFO_UNAVAILABLE
+        val numOfBootTimeCoveredLines = bootTimeCoveredTargets?.count { it?.descriptiveId?.startsWith(ObjectiveNaming.LINE)?:false }?: BOOT_TIME_INFO_UNAVAILABLE
+        val numOfBootTimeCoveredBranches = bootTimeCoveredTargets?.count { it?.descriptiveId?.startsWith(ObjectiveNaming.BRANCH)?:false }?: BOOT_TIME_INFO_UNAVAILABLE
 
         val list: MutableList<Pair> = mutableListOf()
 
@@ -229,6 +243,11 @@ class Statistics : SearchListener {
 
             add(Pair("coveredLines", "" + solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)))
             add(Pair("coveredBranches", "" + solution.overall.coveredTargets(ObjectiveNaming.BRANCH, idMapper)))
+
+            // statistic info during sut boot time
+            add(Pair("bootTimeCoveredTargets", "$numOfBootTimeCoveredTargets"))
+            add(Pair("bootTimeCoveredLines", "$numOfBootTimeCoveredLines"))
+            add(Pair("bootTimeCoveredBranches", "$numOfBootTimeCoveredBranches"))
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
