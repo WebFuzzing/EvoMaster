@@ -37,6 +37,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     lateinit var swagger: OpenAPI
         protected set
+
+    // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
     @Inject
     protected lateinit var externalServices: ExternalServices
 

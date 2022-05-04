@@ -20,7 +20,7 @@ class ExternalServices {
         externalServiceInfos.add(externalServiceInfo)
     }
 
-    fun getExternalServices() : MutableList<ExternalServiceInfo> {
-        return externalServiceInfos
+    fun getExternalServices() : List<ExternalServiceInfo> {
+        return externalServiceInfos.toList()
     }
 }
