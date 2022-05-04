@@ -21,6 +21,6 @@ class ExternalServices {
     }
 
     fun getExternalServices() : List<ExternalServiceInfo> {
-        return externalServiceInfos.toList()
+        return externalServiceInfos
     }
 }
