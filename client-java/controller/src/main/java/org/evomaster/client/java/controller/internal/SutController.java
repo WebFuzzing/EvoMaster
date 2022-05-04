@@ -990,7 +990,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         BootTimeInfoDto infoDto = new BootTimeInfoDto();
         infoDto.targets = info.getObjectiveCoverageAtSutBootTime()
-                .entrySet().stream().sorted().map(e-> new TargetInfoDto(){{
+                .entrySet().stream().map(e-> new TargetInfoDto(){{
                     descriptiveId = e.getKey();
                     value = e.getValue();
                 }}).collect(Collectors.toList());
