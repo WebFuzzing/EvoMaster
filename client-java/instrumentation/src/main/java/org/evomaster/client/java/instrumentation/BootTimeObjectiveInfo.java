@@ -12,11 +12,11 @@ public class BootTimeObjectiveInfo implements Serializable {
 
 
     /**
-     * Key -> descriptive id of the target,
+     * Key descriptive id of the target,
      * note that here, we do not use unique integer id as the key
      * since the integer id might be changed in multiple search.
-     * <br>
-     * Value -> heuristic [0,1], where 1 means covered.
+     *
+     * Value heuristic [0,1], where 1 means covered.
      * Only the highest value found so far is kept.
      */
     private final Map<String, Double> maxObjectiveCoverage =
