@@ -45,7 +45,7 @@ class BootTimeTargetsEMTest : SpringTestBase() {
             val done = LocalDateTime.now()
             assertTrue(solution.individuals.size >= 1)
 
-            val ok = solution.individuals.any { e-> e.evaluatedActions().any { r-> (r.result as? RestCallResult)?.getBody()?.split(";")?.run {
+            val ok = solution.individuals.all { e-> e.evaluatedActions().all { r-> (r.result as? RestCallResult)?.getBody()?.split(";")?.run {
                 LocalDateTime.parse(this[0]).isBefore(done) && LocalDateTime.parse(this[0]).isBefore(LocalDateTime.parse(this[1]))
             }?:false } }
             assertTrue(ok)
