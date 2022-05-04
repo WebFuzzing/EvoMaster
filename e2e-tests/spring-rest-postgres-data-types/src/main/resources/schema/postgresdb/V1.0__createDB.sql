@@ -174,3 +174,9 @@ CREATE TABLE ArrayTypes (
   varcharExactSizeArrayColumn varchar[3] NOT NULL,
   varcharExactSizeMatrixColumn varchar[3][3] NOT NULL
 );
+
+CREATE TABLE PgLsnType (
+    dummyColumn integer NOT NULL,
+
+    pglsnColumn pg_lsn NOT NULL
+);

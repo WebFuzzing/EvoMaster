@@ -98,6 +98,9 @@ class DbAppEMTest : SpringRestPostgresTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/arrayTypes", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/arrayTypes", null)
 
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/pglsnType", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/pglsnType", null)
+
         }
     }
 }
