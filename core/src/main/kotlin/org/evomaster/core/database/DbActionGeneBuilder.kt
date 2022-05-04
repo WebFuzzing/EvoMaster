@@ -247,19 +247,34 @@ class DbActionGeneBuilder {
                     SqlJSONPathGene(column.name)
 
                 ColumnDataType.INT4RANGE ->
-                    SqlRangeGene(column.name, template = IntegerGene("bound"))
+                    buildSqlIntegerRangeGene(column)
 
                 ColumnDataType.INT8RANGE ->
-                    SqlRangeGene(column.name, template = LongGene("bound"))
+                    buildSqlLongRangeGene(column)
 
                 ColumnDataType.NUMRANGE ->
-                    SqlRangeGene(column.name, template = FloatGene("bound"))
+                    buildSqlFloatRangeGene(column)
 
                 ColumnDataType.DATERANGE ->
-                    SqlRangeGene(column.name, template = DateGene("bound"))
+                    buildSqlDateRangeGene(column)
 
                 ColumnDataType.TSRANGE, ColumnDataType.TSTZRANGE ->
-                    SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
+                    buildSqlTimestampRangeGene(column)
+
+                ColumnDataType.INT4MULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlIntegerRangeGene(column))
+
+                ColumnDataType.INT8MULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlLongRangeGene(column))
+
+                ColumnDataType.NUMMULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlFloatRangeGene(column))
+
+                ColumnDataType.DATEMULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlDateRangeGene(column))
+
+                ColumnDataType.TSMULTIRANGE, ColumnDataType.TSTZMULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlTimestampRangeGene(column))
 
                 ColumnDataType.PG_LSN ->
                     SqlLogSeqNumber(column.name)
@@ -288,6 +303,21 @@ class DbActionGeneBuilder {
 
         return gene
     }
+
+    private fun buildSqlTimestampRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
+
+    private fun buildSqlDateRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = DateGene("bound"))
+
+    private fun buildSqlFloatRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = FloatGene("bound"))
+
+    private fun buildSqlLongRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = LongGene("bound"))
+
+    private fun buildSqlIntegerRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = IntegerGene("bound"))
 
     /*
         https://dev.mysql.com/doc/refman/8.0/en/year.html

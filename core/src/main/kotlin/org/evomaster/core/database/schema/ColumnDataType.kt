@@ -261,6 +261,15 @@ enum class ColumnDataType(dataTypeName: String) {
     TSTZRANGE("TSTZRANGE"),
     DATERANGE("DATERANGE"),
 
+    // https://www.postgresql.org/docs/14/rangetypes.html
+    // built-in multirange types
+    INT4MULTIRANGE("INT4MULTIRANGE"),
+    INT8MULTIRANGE("INT8MULTIRANGE"),
+    NUMMULTIRANGE("NUMMULTIRANGE"),
+    TSMULTIRANGE("TSMULTIRANGE"),
+    TSTZMULTIRANGE("TSTZMULTIRANGE"),
+    DATEMULTIRANGE("DATEMULTIRANGE"),
+
     // https://www.postgresql.org/docs/current/datatype-pg-lsn.html
     // postgres log sequence number
     PG_LSN("PG_LSN"),

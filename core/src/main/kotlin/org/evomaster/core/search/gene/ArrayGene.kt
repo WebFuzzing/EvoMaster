@@ -16,7 +16,7 @@ import kotlin.math.min
 /**
  *  A representation of typical array, for a fixed type T, ie, no mixed types are allowed here.
  */
-class ArrayGene<T>(
+open class ArrayGene<T>(
         /**
          * The name of this gene
          */
@@ -40,7 +40,7 @@ class ArrayGene<T>(
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
          */
-        private var elements: MutableList<T> = mutableListOf()
+        protected var elements: MutableList<T> = mutableListOf()
 ) : CollectionGene, Gene(name, elements)
         where T : Gene {
 
