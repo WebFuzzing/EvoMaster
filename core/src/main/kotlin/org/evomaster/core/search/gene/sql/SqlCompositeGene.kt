@@ -25,8 +25,6 @@ class SqlCompositeGene(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlCompositeGene::class.java)
 
-        const val SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER"
-
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -37,10 +35,10 @@ class SqlCompositeGene(
     private val QUOTATION_MARK = "\""
 
     private fun replaceEnclosedQuotationMarks(str: String): String {
-        if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
-            return SINGLE_APOSTROPHE_PLACEHOLDER + str.subSequence(1, str.length - 1) + SINGLE_APOSTROPHE_PLACEHOLDER
+        return if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
+            SqlStrings.SINGLE_APOSTROPHE_PLACEHOLDER + str.subSequence(1, str.length - 1) + SqlStrings.SINGLE_APOSTROPHE_PLACEHOLDER
         } else {
-            return str
+            str
         }
     }
 
