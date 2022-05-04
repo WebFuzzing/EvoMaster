@@ -30,6 +30,7 @@ import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
+import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -981,7 +982,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void setExecutingAction(boolean executingAction);
 
-    public abstract List<ExternalServiceInfo> getExternalServiceInfoAtSutStartup();
+    public abstract BootTimeInfoDto getBootTimeInfoDto();
+
+    protected BootTimeInfoDto getBootTimeInfoDto(BootTimeObjectiveInfo info){
+        if (info == null)
+            return null;
+
+        BootTimeInfoDto infoDto = new BootTimeInfoDto();
+        infoDto.targets = info.getObjectiveCoverageAtSutBootTime()
+                .entrySet().stream().sorted().map(e-> new TargetInfoDto(){{
+                    descriptiveId = e.getKey();
+                    value = e.getValue();
+                }}).collect(Collectors.toList());
+        //TODO external service info
+        return infoDto;
+    }
 
     public abstract String getExecutableFullPath();
 

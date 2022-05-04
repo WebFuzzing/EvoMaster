@@ -1,12 +1,12 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
+import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 
 import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -89,7 +89,7 @@ public class ObjectiveRecorder {
     /**
      * a list of external service which are initialized during SUT startup
      */
-    private static final List<ExternalServiceInfo> externalServiceInfoAtSutStartup = new CopyOnWriteArrayList<>();
+    private static final BootTimeObjectiveInfo bootTimeObjectiveInfo = new BootTimeObjectiveInfo();
 
     /**
      * Reset all the static state in this class
@@ -109,7 +109,7 @@ public class ObjectiveRecorder {
              */
             allTargets.clear();
 
-            externalServiceInfoAtSutStartup.clear();
+            bootTimeObjectiveInfo.reset();
         }
     }
 
@@ -118,18 +118,17 @@ public class ObjectiveRecorder {
      * @param info to append
      */
     public static void registerExternalServiceInfoAtSutStartupTime(ExternalServiceInfo info){
-        if (externalServiceInfoAtSutStartup.isEmpty() || externalServiceInfoAtSutStartup.stream().noneMatch(s-> s.equals(info)))
-            externalServiceInfoAtSutStartup.add(info.copy());
+        bootTimeObjectiveInfo.registerExternalServiceInfoAtSutBootTime(info);
     }
 
     /**
      *
      * @return a list of external service info during sut startup
      */
-    public static List<ExternalServiceInfo> getExternalServiceInfoAtSutStartup(){
-        // read-only
-        return Collections.unmodifiableList(new ArrayList<>(externalServiceInfoAtSutStartup));
+    public static BootTimeObjectiveInfo getBootTimeObjectiveInfo(){
+        return bootTimeObjectiveInfo;
     }
+
 
     /**
      * Mark the existence of a testing target.
@@ -208,7 +207,7 @@ public class ObjectiveRecorder {
      * @param descriptiveId of the objective/target
      * @param value         of the coverage heuristic, in [0,1]
      */
-    public static void update(String descriptiveId, double value) {
+    public static void update(String descriptiveId, double value, boolean bootTime) {
 
         Objects.requireNonNull(descriptiveId);
         if (value < 0d || value > 1) {
@@ -228,6 +227,10 @@ public class ObjectiveRecorder {
                 maxObjectiveCoverage.put(id, value);
             }
         }
+
+        if (bootTime){
+            bootTimeObjectiveInfo.updateMaxObjectiveCoverage(descriptiveId, value);
+        }
     }
 
     public static int getMappedId(String descriptiveId) {
@@ -241,7 +244,6 @@ public class ObjectiveRecorder {
 
         return id;
     }
-
 
     public static Map<Integer, String> getDescriptiveIds(Collection<Integer> ids) {
 

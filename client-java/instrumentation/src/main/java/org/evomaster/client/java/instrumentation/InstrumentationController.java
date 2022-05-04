@@ -87,7 +87,8 @@ public class InstrumentationController {
         return new ArrayList<>(ExecutionTracer.exposeAdditionalInfoList());
     }
 
-    public static List<ExternalServiceInfo> getExternalServiceInfoAtSutStartup(){
-        return ObjectiveRecorder.getExternalServiceInfoAtSutStartup();
+    public static BootTimeObjectiveInfo getBootTimeObjectiveInfo(){
+        return ObjectiveRecorder.getBootTimeObjectiveInfo();
     }
+
 }

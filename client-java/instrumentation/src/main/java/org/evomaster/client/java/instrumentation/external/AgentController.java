@@ -93,8 +93,8 @@ public class AgentController {
                         handleExecutingAction();
                         sendCommand(Command.ACK);
                         break;
-                    case EXTERNAL_SERVICE_INFO_STARTUP:
-                        handleExternalServiceInfoAtSutStartup();
+                    case BOOT_TIME_INFO:
+                        handleBootTimeObjectiveInfo();
                         break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
@@ -176,11 +176,11 @@ public class AgentController {
         }
     }
 
-    private static void handleExternalServiceInfoAtSutStartup(){
+    private static void handleBootTimeObjectiveInfo(){
         try {
-            sendObject(InstrumentationController.getExternalServiceInfoAtSutStartup());
+            sendObject(InstrumentationController.getBootTimeObjectiveInfo());
         }catch (Exception e) {
-            SimpleLogger.error("Failure in handling External Service Info: "+e.getMessage());
+            SimpleLogger.error("Failure in handling Boot-time Objective Info: "+e.getMessage());
         }
     }
 

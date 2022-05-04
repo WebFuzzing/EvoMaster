@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.ActionDto;
+import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto;
 import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -340,11 +341,12 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public final List<ExternalServiceInfo> getExternalServiceInfoAtSutStartup(){
-        checkInstrumentation();
-        return serverController.getExternalServiceInfoAtSutStartup();
+    public BootTimeInfoDto getBootTimeInfoDto() {
+        if(!isInstrumentationActivated()){
+            return null;
+        }
+        return getBootTimeInfoDto(serverController.handleBootTimeObjectiveInfo());
     }
-
 
     @Override
     public final void newActionSpecificHandler(ActionDto dto) {
