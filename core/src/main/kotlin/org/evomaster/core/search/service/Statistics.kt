@@ -364,6 +364,14 @@ class Statistics : SearchListener {
                 }
             }
         }
+
+        // append boot-time targets
+        if(!config.blackBox || config.bbExperiments) {
+            remoteController?.getSutInfo()?.bootTimeInfoDto?.targets?.map { it.descriptiveId }?.sorted()?.apply {
+                if (isNotEmpty())
+                    content.addAll(this)
+            }
+        }
         Files.write(path, content)
     }
 
