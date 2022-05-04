@@ -5,9 +5,19 @@ object SqlStrings {
 
     private val QUOTATION_MARK = "\""
 
-    fun replaceEnclosedQuotationMarks(str: String): String {
+    fun removeEnclosedQuotationMarks(str: String): String {
         return if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
-            SINGLE_APOSTROPHE_PLACEHOLDER + str.subSequence(1, str.length - 1) + SINGLE_APOSTROPHE_PLACEHOLDER
+            str.subSequence(1, str.length - 1).toString()
+        } else {
+            str
+        }
+    }
+
+    private fun encloseWithSingleApostrophePlaceHolder(str: String) = SINGLE_APOSTROPHE_PLACEHOLDER + str + SINGLE_APOSTROPHE_PLACEHOLDER
+
+    fun replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(str: String): String {
+        return if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
+            encloseWithSingleApostrophePlaceHolder(removeEnclosedQuotationMarks(str))
         } else {
             str
         }

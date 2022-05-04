@@ -3,7 +3,8 @@ package org.evomaster.core.search.gene.sql.textsearch
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.sql.SqlStrings.replaceEnclosedQuotationMarks
+import org.evomaster.core.search.gene.sql.SqlStrings.SINGLE_APOSTROPHE_PLACEHOLDER
+import org.evomaster.core.search.gene.sql.SqlStrings.removeEnclosedQuotationMarks
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -12,8 +13,14 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class SqlTextSearchQueryGene(
+        /*
+         * The name of this gene
+         */
         name: String,
-        val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", minSize = 1, template = StringGene("p"))
+        /*
+         * TS queries are lists of lexemes.
+         */
+        val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", template = StringGene("lexeme template"))
 ) : Gene(name, mutableListOf(queryLexemes)) {
 
     companion object {
@@ -58,17 +65,14 @@ class SqlTextSearchQueryGene(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        val queryStr = if (queryLexemes.isEmpty())
-            replaceEnclosedQuotationMarks("\"\"") else
-            queryLexemes.getAllElements()
-                    .map {
-                        replaceEnclosedQuotationMarks(
-                                it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
-                    }
-                    .joinToString(" & ")
-        return "${TO_TSQUERY}(${queryStr})"
-
-
+        val queryStr =
+                queryLexemes.getAllElements()
+                        .map {
+                            removeEnclosedQuotationMarks(
+                                    it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
+                        }
+                        .joinToString(" & ")
+        return "${TO_TSQUERY}(${SINGLE_APOSTROPHE_PLACEHOLDER + queryStr + SINGLE_APOSTROPHE_PLACEHOLDER})"
     }
 
     override fun getValueAsRawString(): String {

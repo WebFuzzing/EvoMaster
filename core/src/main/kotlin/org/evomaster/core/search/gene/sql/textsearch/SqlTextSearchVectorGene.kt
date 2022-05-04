@@ -3,7 +3,7 @@ package org.evomaster.core.search.gene.sql.textsearch
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.sql.SqlStrings.replaceEnclosedQuotationMarks
+import org.evomaster.core.search.gene.sql.SqlStrings.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -51,7 +51,7 @@ class SqlTextSearchVectorGene(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        val str = replaceEnclosedQuotationMarks(
+        val str = replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(
                 textLexeme.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
         return "${TO_TSVECTOR}(${str})"
     }

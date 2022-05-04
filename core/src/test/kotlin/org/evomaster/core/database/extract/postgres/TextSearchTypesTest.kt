@@ -80,4 +80,45 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
+
+    @Test
+    fun testInsertionOfManyLexemesTextSearchQueryType() {
+
+        val schema = SchemaExtractor.extract(connection)
+
+        assertNotNull(schema)
+
+        assertEquals("public", schema.name.lowercase())
+        assertEquals(DatabaseType.POSTGRES, schema.databaseType)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction(
+                "TextSearchTypes", setOf(
+                "tsvectorColumn",
+                "tsqueryColumn"
+        )
+        )
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(2, genes.size)
+
+        assertTrue(genes[0] is SqlTextSearchVectorGene)
+        assertTrue(genes[1] is SqlTextSearchQueryGene)
+
+        val textSearchVectorGene = genes[0] as SqlTextSearchVectorGene
+        val stringGene = textSearchVectorGene.innerGene()[0] as StringGene
+        stringGene.value = "foo bar"
+
+        val textSearchQueryGene = genes[1] as SqlTextSearchQueryGene
+        val textSearchQueryElementGene0 = StringGene("queryLexeme", value= "foo")
+        val textSearchQueryElementGene1 = StringGene("queryLexeme", value ="bar")
+        textSearchQueryGene.queryLexemes.addElement(textSearchQueryElementGene0)
+        textSearchQueryGene.queryLexemes.addElement(textSearchQueryElementGene1)
+
+        val dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
+    }
+
 }

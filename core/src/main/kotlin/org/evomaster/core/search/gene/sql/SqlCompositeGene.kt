@@ -36,7 +36,7 @@ class SqlCompositeGene(
         return "ROW(${
             fields
                     .map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
-                    .joinToString { SqlStrings.replaceEnclosedQuotationMarks(it) }
+                    .joinToString { SqlStrings.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(it) }
         })"
     }
 
