@@ -32,22 +32,11 @@ class SqlCompositeGene(
                 .forEach { it.randomize(randomness, forceNewValue, allGenes) }
     }
 
-    private val QUOTATION_MARK = "\""
-
-    private fun replaceEnclosedQuotationMarks(str: String): String {
-        return if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
-            SqlStrings.SINGLE_APOSTROPHE_PLACEHOLDER + str.subSequence(1, str.length - 1) + SqlStrings.SINGLE_APOSTROPHE_PLACEHOLDER
-        } else {
-            str
-        }
-    }
-
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "ROW(${
             fields
                     .map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
-                    .map { replaceEnclosedQuotationMarks(it) }
-                    .joinToString()
+                    .joinToString { SqlStrings.replaceEnclosedQuotationMarks(it) }
         })"
     }
 

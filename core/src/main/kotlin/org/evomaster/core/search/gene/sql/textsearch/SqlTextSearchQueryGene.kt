@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.sql.textsearch
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.sql.SqlStrings.replaceEnclosedQuotationMarks
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -11,20 +12,21 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class SqlTextSearchQueryGene(
-    name: String,
-    val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", minSize = 1, template = StringGene("p"))
+        name: String,
+        val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", minSize = 1, template = StringGene("p"))
 ) : Gene(name, mutableListOf(queryLexemes)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchQueryGene::class.java)
+        const val TO_TSQUERY = "to_tsquery"
     }
 
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(queryLexemes)
 
     override fun copyContent(): Gene = SqlTextSearchQueryGene(
-        name,
-        queryLexemes.copyContent() as ArrayGene<StringGene>
+            name,
+            queryLexemes.copyContent() as ArrayGene<StringGene>
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -40,25 +42,32 @@ class SqlTextSearchQueryGene(
     }
 
     override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return listOf(queryLexemes)
     }
 
     override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
+            previousGenes: List<Gene>,
+            mode: GeneUtils.EscapeMode?,
+            targetFormat: OutputFormat?,
+            extraCheck: Boolean
     ): String {
-        return queryLexemes.getAllElements()
-            .map { it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) }
-            .joinToString(" & ")
+        val queryStr = if (queryLexemes.isEmpty())
+            replaceEnclosedQuotationMarks("\"\"") else
+            queryLexemes.getAllElements()
+                    .map {
+                        replaceEnclosedQuotationMarks(
+                                it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
+                    }
+                    .joinToString(" & ")
+        return "${TO_TSQUERY}(${queryStr})"
+
 
     }
 

@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.search.gene.ArrayGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
@@ -20,7 +21,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
 
 
     @Test
-    fun testTextSearchTypes() {
+    fun testInsertionOfOneLexemeTextSearchTypes() {
 
         val schema = SchemaExtractor.extract(connection)
 
@@ -31,10 +32,10 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction(
-            "TextSearchTypes", setOf(
+                "TextSearchTypes", setOf(
                 "tsvectorColumn",
                 "tsqueryColumn"
-            )
+        )
         )
 
         val genes = actions[0].seeGenes()
@@ -45,14 +46,38 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[1] is SqlTextSearchQueryGene)
 
         val textSearchVectorGene = genes[0] as SqlTextSearchVectorGene
-        val textSearchVectorElementGene = StringGene("textLexeme")
-        textSearchVectorElementGene.value = "bar"
-        textSearchVectorGene.textLexemes.addElement(textSearchVectorElementGene)
+        val textSearchVectorElementGene0 = StringGene("textLexeme")
+        textSearchVectorElementGene0.value = "foo bar"
+        val textLexemesArray = textSearchVectorGene.innerGene()[0] as ArrayGene<StringGene>
+        textLexemesArray.addElement(textSearchVectorElementGene0)
 
         val textSearchQueryGene = genes[1] as SqlTextSearchQueryGene
-        val textSearchQueryElementGene = StringGene("queryLexeme")
-        textSearchQueryElementGene.value = "bar"
-        textSearchQueryGene.queryLexemes.addElement(textSearchQueryElementGene)
+        val textSearchQueryElementGene0 = StringGene("queryLexeme")
+        textSearchQueryElementGene0.value = "foo"
+        textSearchQueryGene.queryLexemes.addElement(textSearchQueryElementGene0)
+
+        val dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
+    }
+
+    @Test
+    fun testInsertEmptyTypes() {
+
+        val schema = SchemaExtractor.extract(connection)
+
+        assertNotNull(schema)
+
+        assertEquals("public", schema.name.lowercase())
+        assertEquals(DatabaseType.POSTGRES, schema.databaseType)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction(
+                "TextSearchTypes", setOf(
+                "tsvectorColumn",
+                "tsqueryColumn"
+        )
+        )
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
