@@ -9,6 +9,33 @@ public abstract class CollectionsDistanceUtils {
         return getHeuristicToContains(c, o, -1);
     }
 
+    public static double getHeuristicToContainsAll(Collection c, Collection other) {
+        return getHeuristicToContainsAll(c, other, -1);
+    }
+
+    public static double getHeuristicToContainsAll(Collection c, Collection other, int limit) {
+        Objects.requireNonNull(c);
+
+        boolean result = c.containsAll(other);
+
+        if (result) {
+            return 1d;
+        }
+
+        assert c!=null && other!=null && !other.isEmpty(); // otherwise function would had returned or exception
+
+        double sum = 0d;
+        //TODO should the "limit" applied to "other" as well?
+        for(Object x : other.toArray()){
+            sum += getHeuristicToContains(c, x, limit);
+        }
+        sum = sum / (double) other.size();
+
+        assert sum >=0 && sum <= 1;
+
+        return sum;
+     }
+
     /**
      * Compute distance of object from each one of the elements in the collection.
      * But look only up to limit elements.
