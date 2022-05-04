@@ -20,6 +20,8 @@ public abstract class CollectionsDistanceUtils {
 
         if (result) {
             return 1d;
+        } else if(c.isEmpty()){
+            return DistanceHelper.H_REACHED_BUT_EMPTY;
         }
 
         assert c!=null && other!=null && !other.isEmpty(); // otherwise function would had returned or exception

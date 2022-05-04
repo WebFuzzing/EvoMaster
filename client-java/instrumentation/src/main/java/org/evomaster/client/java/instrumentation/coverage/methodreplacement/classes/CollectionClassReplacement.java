@@ -87,4 +87,41 @@ public class CollectionClassReplacement implements MethodReplacementClass {
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return result;
     }
+
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0, isPure = false)
+    public static boolean remove(Collection caller, Object obj, String idTemplate){
+        Objects.requireNonNull(caller);
+
+        boolean result = caller.remove(obj);
+        if (idTemplate == null) {
+            return result;
+        }
+
+        String inputString = null;
+        if (obj instanceof String) {
+            inputString = (String) obj;
+        }
+
+        if (ExecutionTracer.isTaintInput(inputString)) {
+            for (Object value : caller) {
+                if (value instanceof String) {
+                    ExecutionTracer.addStringSpecialization(inputString,
+                            new StringSpecializationInfo(StringSpecialization.CONSTANT, (String) value));
+                }
+            }
+        }
+
+        //note: here we cannot call directly contains(), as remove() might have changed the container
+
+        Truthness t;
+        if (result) {
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
+        } else {
+            //element was not removed, so not contained
+            double h = CollectionsDistanceUtils.getHeuristicToContains(caller, obj);
+            t = new Truthness(h, 1d);
+        }
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return result;
+    }
 }

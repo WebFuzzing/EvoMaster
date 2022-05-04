@@ -115,4 +115,43 @@ class CollectionsDistanceUtilsTest {
         assertEquals(1, h, 0.0001);
     }
 
+
+    @Test
+    public void testAllThisEmpty() {
+
+        List<Integer> data = Arrays.asList();
+        List<Integer> other = Arrays.asList(1,2,3,4);
+
+        assertFalse(data.containsAll(other));
+
+        double h = CollectionsDistanceUtils.getHeuristicToContainsAll(data, other);
+        assertEquals(H_REACHED_BUT_EMPTY, h);
+    }
+
+    @Test
+    public void testAllOneMatch() {
+
+        List<Integer> data = Arrays.asList(1,444,555);
+        List<Integer> other = Arrays.asList(1,2,3,4);
+
+        assertFalse(data.containsAll(other));
+
+        double h = CollectionsDistanceUtils.getHeuristicToContainsAll(data, other);
+        assertTrue(h < 1.0);
+        assertTrue(h > H_NOT_EMPTY);
+        assertTrue(h >= 1d/ (double) other.size());
+    }
+
+    @Test
+    public void testAllMatches() {
+
+        List<Integer> data = Arrays.asList(4,5,67,3,2,1,88);
+        List<Integer> other = Arrays.asList(1,2,3,4);
+
+        assertTrue(data.containsAll(other));
+
+        double h = CollectionsDistanceUtils.getHeuristicToContainsAll(data, other);
+        assertEquals(1d, h);
+    }
+
 }
