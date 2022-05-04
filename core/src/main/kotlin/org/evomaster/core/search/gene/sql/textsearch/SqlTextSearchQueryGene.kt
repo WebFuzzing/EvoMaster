@@ -39,12 +39,16 @@ class SqlTextSearchQueryGene(
          * TS queries are lists of lexemes.
          */
         val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes",
-                template = StringGene("lexeme template", minLength = 0, invalidChars = listOf(' ', '&')))
+                template = StringGene("lexeme template", minLength = 0, invalidChars = listOf(BLANK_CHAR, AMPERSAND_CHAR)))
 ) : Gene(name, mutableListOf(queryLexemes)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchQueryGene::class.java)
         const val TO_TSQUERY = "to_tsquery"
+
+        const val AMPERSAND_CHAR = '&'
+
+        const val BLANK_CHAR = ' '
     }
 
 
@@ -90,14 +94,14 @@ class SqlTextSearchQueryGene(
                             removeEnclosedQuotationMarks(
                                     it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
                         }
-                        .joinToString(" & ")
+                        .joinToString(" $AMPERSAND_CHAR ")
         return "${TO_TSQUERY}(${SINGLE_APOSTROPHE_PLACEHOLDER + queryStr + SINGLE_APOSTROPHE_PLACEHOLDER})"
     }
 
     override fun getValueAsRawString(): String {
         return queryLexemes.getAllElements()
                 .map { it.getValueAsRawString() }
-                .joinToString(" & ")
+                .joinToString(" $AMPERSAND_CHAR ")
 
     }
 
