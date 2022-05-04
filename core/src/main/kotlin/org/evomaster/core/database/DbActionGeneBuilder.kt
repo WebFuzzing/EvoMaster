@@ -261,6 +261,9 @@ class DbActionGeneBuilder {
                 ColumnDataType.TSRANGE, ColumnDataType.TSTZRANGE ->
                     SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
 
+                ColumnDataType.PG_LSN ->
+                    SqlLogSeqNumber(column.name)
+
                 ColumnDataType.COMPOSITE_TYPE ->
                     handleCompositeColumn(id, table, column)
 

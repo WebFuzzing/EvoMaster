@@ -261,6 +261,10 @@ enum class ColumnDataType(dataTypeName: String) {
     TSTZRANGE("TSTZRANGE"),
     DATERANGE("DATERANGE"),
 
+    // https://www.postgresql.org/docs/current/datatype-pg-lsn.html
+    // postgres log sequence number
+    PG_LSN("PG_LSN"),
+
     // This is not an actual built-in column data type,
     // but a placeholder for user-defined composite types.
     COMPOSITE_TYPE("\$COMPOSITE_TYPE");
