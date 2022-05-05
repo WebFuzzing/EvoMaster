@@ -11,14 +11,20 @@ import java.time.LocalDateTime
 @RequestMapping(path = ["/api/boottimetargets"])
 class BootTimeTargetsRest {
 
+    private val startupTime  = LocalDateTime.now()
+    private var startupInfo : String
+
+    init {
+        startupInfo = "${branchTarget()}:$startupTime"
+        println("startupInfo:$startupInfo")
+    }
+
     companion object{
-
-        private val STARTUP = "${LocalDateTime.now()}"
-
+        // TODO might need a further check, targets for lines 24 and 25 seems to be skipped
+        private const val SKIPPED_LINE = "SKIPPED?"
         init {
-            println(STARTUP)
+            println("Hello $SKIPPED_LINE")
         }
-
     }
 
 
@@ -27,6 +33,14 @@ class BootTimeTargetsRest {
 
         return ResponseEntity.status(200)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body("$STARTUP;${LocalDateTime.now()}")
+                .body("$startupTime;${LocalDateTime.now()}")
     }
+
+    private fun branchTarget() : String{
+        return if (startupTime.second % 2 == 0)
+            "EVEN"
+        else
+            "ODD"
+    }
+
 }

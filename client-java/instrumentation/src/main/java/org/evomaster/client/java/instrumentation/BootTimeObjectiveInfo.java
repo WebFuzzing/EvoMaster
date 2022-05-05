@@ -21,6 +21,10 @@ public class BootTimeObjectiveInfo implements Serializable {
      *
      * Value heuristic [0,1], where 1 means covered.
      * Only the highest value found so far is kept.
+     *
+     *
+     * TODO: for JVM, the target in static init seems to be skipped,
+     * Need a further check whether it would have any side-effect
      */
     private final Map<String, Double> maxObjectiveCoverage =
             new ConcurrentHashMap<>(65536);
