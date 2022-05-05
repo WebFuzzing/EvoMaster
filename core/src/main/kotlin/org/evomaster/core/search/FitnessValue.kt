@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
@@ -144,6 +145,29 @@ class FitnessValue(
                 .filter { it.value.distance == MAX_VALUE }
                 .filter { idMapper.getDescriptiveId(it.key).startsWith(prefix) }
                 .count()
+    }
+
+    /**
+     * this method is to report the union results with targets at boot-time
+     *
+     * @return first is boot-time
+     *         second is search time, and
+     *         third is a union of boot-time and search time
+     */
+    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int): Triple<Int, Int, Int>{
+        if (bootTimeInfoDto?.targets == null){
+            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { Triple(unavailableBootTime,this,this) }
+        }
+        val bootTime = bootTimeInfoDto.targets.filter { it.value == MAX_VALUE && (prefix == null || it.descriptiveId.startsWith(prefix)) }
+        // with the exported targets, there might exist duplicated class targets
+        var duplicatedcounter = 0
+        val searchTime = targets.entries.count { e ->
+            (e.value.distance == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))).apply {
+                if (this && bootTime.any { it.descriptiveId == idMapper.getDescriptiveId(e.key) })
+                    duplicatedcounter++
+            }
+        }
+        return Triple(bootTime.size, searchTime, bootTime.size + searchTime - duplicatedcounter)
     }
 
     fun coverTarget(id: Int) {

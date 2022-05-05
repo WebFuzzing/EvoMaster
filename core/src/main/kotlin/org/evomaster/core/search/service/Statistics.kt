@@ -184,10 +184,9 @@ class Statistics : SearchListener {
         val unitsInfo = sutInfo?.unitsInfoDto
         val bootTimeInfo = sutInfo?.bootTimeInfoDto
 
-        val bootTimeCoveredTargets = bootTimeInfo?.targets?.filter { it.value == FitnessValue.MAX_VALUE}
-        val numOfBootTimeCoveredTargets = bootTimeCoveredTargets?.size?: BOOT_TIME_INFO_UNAVAILABLE
-        val numOfBootTimeCoveredLines = bootTimeCoveredTargets?.count { it?.descriptiveId?.startsWith(ObjectiveNaming.LINE)?:false }?: BOOT_TIME_INFO_UNAVAILABLE
-        val numOfBootTimeCoveredBranches = bootTimeCoveredTargets?.count { it?.descriptiveId?.startsWith(ObjectiveNaming.BRANCH)?:false }?: BOOT_TIME_INFO_UNAVAILABLE
+        val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
+        val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
+        val branchesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.BRANCH, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
 
         val list: MutableList<Pair> = mutableListOf()
 
@@ -198,7 +197,7 @@ class Statistics : SearchListener {
             add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
-            add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
+            add(Pair("coveredTargets", "" + targetsInfo.third))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
             add(Pair(DISTINCT_ACTIONS, "" + distinctActions()))
             add(Pair("endpoints", "" + distinctActions()))
@@ -241,13 +240,18 @@ class Statistics : SearchListener {
             add(Pair("numberOfInstrumentedNumberComparisons", "" + (unitsInfo?.numberOfInstrumentedNumberComparisons ?: 0)))
             add(Pair("numberOfUnits", "" + (unitsInfo?.unitNames?.size ?: 0)))
 
-            add(Pair("coveredLines", "" + solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)))
-            add(Pair("coveredBranches", "" + solution.overall.coveredTargets(ObjectiveNaming.BRANCH, idMapper)))
+            add(Pair("coveredLines", "${linesInfo.third}"))
+            add(Pair("coveredBranches", "${branchesInfo.third}"))
 
             // statistic info during sut boot time
-            add(Pair("bootTimeCoveredTargets", "$numOfBootTimeCoveredTargets"))
-            add(Pair("bootTimeCoveredLines", "$numOfBootTimeCoveredLines"))
-            add(Pair("bootTimeCoveredBranches", "$numOfBootTimeCoveredBranches"))
+            add(Pair("bootTimeCoveredTargets", "${targetsInfo.first}"))
+            add(Pair("bootTimeCoveredLines", "${linesInfo.first}"))
+            add(Pair("bootTimeCoveredBranches", "${branchesInfo.first}"))
+
+            // statistic info during search
+            add(Pair("searchTimeCoveredTargets", "${targetsInfo.second}"))
+            add(Pair("searchTimeCoveredLines", "${linesInfo.second}"))
+            add(Pair("searchTimeCoveredBranches", "${branchesInfo.second}"))
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
