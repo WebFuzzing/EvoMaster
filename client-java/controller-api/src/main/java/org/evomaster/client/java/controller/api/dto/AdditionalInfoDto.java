@@ -54,4 +54,10 @@ public class AdditionalInfoDto {
      * Note: the actual content of schema is queried separately.
      */
     public Set<String> parsedDtoNames = new HashSet<>();
+
+
+    /**
+     * To keep track of all external service calls used under SUT.
+     */
+    public List<ExternalServiceInfoDto> externalServices = new ArrayList<>();
 }
