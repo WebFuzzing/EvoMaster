@@ -61,7 +61,7 @@ class BootTimeTargetsEMTest : SpringTestBase() {
         val targets = file.readText()
         assertTrue(targets.contains("Class_com.foo.rest.examples.spring.openapi.v3.SpringController") &&
                 targets.contains("Class_com.foo.rest.examples.spring.openapi.v3.boottimetargets.BootTimeTargetsApplication") &&
-                targets.contains("Class_com.foo.rest.examples.spring.openapi.v3.boottimetargets.BootTimeTargetsRest") &&
+                targets.contains("Class_com.foo.rest.examples.spring.openapi.v3.boottimetargets.BootTimeTargetsApplication\$Companion") &&
                 targets.contains("Line_at_com.foo.rest.examples.spring.openapi.v3.boottimetargets.BootTimeTargetsRest\$Companion_00014"), targets)
     }
 

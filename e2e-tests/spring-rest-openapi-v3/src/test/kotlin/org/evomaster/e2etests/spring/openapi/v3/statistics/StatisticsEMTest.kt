@@ -53,6 +53,13 @@ class StatisticsEMTest : SpringTestBase() {
                     assertTrue(p.element.toInt() > 0, "${p.header} should be more than 0, but it is ${p.element.toInt()}")
                 }
             }
+
+            data.filter { p -> p.header.startsWith("searchTimeCovered")}.apply {
+                assertEquals(3, size)
+                forEach { p->
+                    assertTrue(p.element.toInt() > 0, "${p.header} should be more than 0, but it is ${p.element.toInt()}")
+                }
+            }
         }
     }
 }
