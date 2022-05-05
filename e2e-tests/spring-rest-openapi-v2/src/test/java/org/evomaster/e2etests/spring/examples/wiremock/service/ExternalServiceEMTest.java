@@ -6,6 +6,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.google.inject.Injector;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.external.service.ExternalServiceInfo;
 import org.evomaster.core.problem.external.service.ExternalServices;
@@ -39,6 +40,13 @@ public class ExternalServiceEMTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
+        /*
+            in other e2e, e2e-tests/spring-rest-openapi-v2/src/main/java/com/foo/rest/examples/spring/wiremock/http
+            see HttpRequestRest
+            there exists an open collection at boot-time
+            to avoid the side-effect on this e2e, then clean the ObjectiveRecorder
+         */
+        ObjectiveRecorder.reset(true);
 
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
         DnsCacheManipulator.setDnsCache("baz.bar", "127.0.0.2");
