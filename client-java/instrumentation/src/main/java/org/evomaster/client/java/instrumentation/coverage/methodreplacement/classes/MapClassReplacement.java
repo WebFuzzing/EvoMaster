@@ -85,6 +85,17 @@ public class MapClassReplacement implements MethodReplacementClass {
         return result;
     }
 
+    @Replacement(type = ReplacementType.OBJECT, category = ReplacementCategory.EXT_0)
+    public static Object get(Map map, Object key, String idTemplate){
+        containsKey(map, key, idTemplate);
+        return map.get(key);
+    }
+
+    @Replacement(type = ReplacementType.OBJECT, category = ReplacementCategory.EXT_0)
+    public static Object getOrDefault(Map map, Object key, Object defaultValue, String idTemplate){
+        containsKey(map, key, idTemplate);
+        return map.getOrDefault(key,defaultValue);
+    }
 
     @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0)
     public static boolean containsValue(Map c, Object o, String idTemplate) {
