@@ -5,8 +5,7 @@ import org.evomaster.core.output.Termination
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -47,17 +46,16 @@ class StatisticsEMTest : SpringTestBase() {
             assertEquals("3", data.find { p -> p.header.contains("potentialFaults")}?.element)
 
 
-            data.filter { p -> p.header.startsWith("bootTimeCovered")}.apply {
-                assertEquals(3, size)
-                forEach { p->
-                    assertTrue(p.element.toInt() > 0, "${p.header} should be more than 0, but it is ${p.element.toInt()}")
-                }
-            }
-
-            data.filter { p -> p.header.startsWith("searchTimeCovered")}.apply {
-                assertEquals(3, size)
-                forEach { p->
-                    assertTrue(p.element.toInt() > 0, "${p.header} should be more than 0, but it is ${p.element.toInt()}")
+            listOf("coveredTargets", "coveredLines", "coveredBranches").forEach { key->
+                data.filter { p-> p.header.endsWith(key, ignoreCase = true) }.apply {
+                    assertEquals(3, size)
+                    val bootTime = find { t-> t.header.startsWith("bootTime") }?.element?.toInt()
+                    val searchTime = find { t-> t.header.startsWith("searchTime") }?.element?.toInt()
+                    val total = find { t-> t.header.startsWith("covered") }?.element?.toInt()
+                    assertNotNull(bootTime)
+                    assertNotNull(searchTime)
+                    assertNotNull(total)
+                    assertTrue(bootTime!! + searchTime!! >= total!!, "bootTime:$bootTime, searchTime:$searchTime, and total:$total")
                 }
             }
         }
