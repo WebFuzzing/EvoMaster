@@ -1,16 +1,82 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+
 import java.util.Collection;
 import java.util.Objects;
 
 public abstract class CollectionsDistanceUtils {
 
+    private static final int SCAN_LIMIT = 50;
+
+
+    public static void evaluateTaint(Collection c, Object o){
+        String inputString = null;
+        if (o instanceof String) {
+            inputString = (String) o;
+        } else {
+            return;
+        }
+
+        if (ExecutionTracer.isTaintInput(inputString)) {
+            int counter = 0;
+
+            for (Object value : c) {
+                if (value instanceof String) {
+                    ExecutionTracer.addStringSpecialization(inputString,
+                            new StringSpecializationInfo(StringSpecialization.CONSTANT, (String) value));
+                    counter++;
+                    if(counter >= 10){
+                        return;
+                    }
+                }  else {
+                    return;
+                }
+            }
+        }
+    }
+
     public static double getHeuristicToContains(Collection c, Object o) {
-        return getHeuristicToContains(c, o, -1);
+        return getHeuristicToContains(c, o, SCAN_LIMIT);
     }
 
     public static double getHeuristicToContainsAll(Collection c, Collection other) {
-        return getHeuristicToContainsAll(c, other, -1);
+        return getHeuristicToContainsAll(c, other, SCAN_LIMIT);
+    }
+
+    public static double getHeuristicToContainsAny(Collection c, Collection other){
+        return getHeuristicToContainsAny(c, other, SCAN_LIMIT);
+    }
+
+    /**
+     *  There must be at least 1 element in 'other' that is inside 'c'
+     */
+    public static double getHeuristicToContainsAny(Collection c, Collection other, int limit){
+        Objects.requireNonNull(c);
+
+        double base = DistanceHelper.H_REACHED_BUT_EMPTY / 3d;
+
+        if(c.isEmpty()){
+            return base;
+        }
+        if(other == null){
+            return base * 2;
+        }
+        if(other.isEmpty()){
+            return  base * 3;
+        }
+
+        double max = DistanceHelper.H_REACHED_BUT_EMPTY;
+        for(Object obj : other){
+            max = Math.max(max, getHeuristicToContains(c,obj, limit));
+            if(max == 1d){
+                return 1d;
+            }
+        }
+
+        return max;
     }
 
     public static double getHeuristicToContainsAll(Collection c, Collection other, int limit) {
@@ -31,11 +97,13 @@ public abstract class CollectionsDistanceUtils {
         for(Object x : other.toArray()){
             sum += getHeuristicToContains(c, x, limit);
         }
-        sum = sum / (double) other.size();
+        sum = sum / (double) (other.size() + Math.log(other.size())); // punish more elements
 
         assert sum >=0 && sum <= 1;
 
-        return sum;
+        double h = DistanceHelper.scaleHeuristicWithBase(sum, DistanceHelper.H_REACHED_BUT_EMPTY);
+
+        return h;
      }
 
     /**

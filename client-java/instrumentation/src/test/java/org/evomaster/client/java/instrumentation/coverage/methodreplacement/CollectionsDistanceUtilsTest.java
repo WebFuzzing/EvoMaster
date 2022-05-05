@@ -154,4 +154,20 @@ class CollectionsDistanceUtilsTest {
         assertEquals(1d, h);
     }
 
+    @Test
+    public void testAnyEmpty(){
+
+        double h0 = CollectionsDistanceUtils.getHeuristicToContainsAny(Arrays.asList(), Arrays.asList(1));
+        double h1 = CollectionsDistanceUtils.getHeuristicToContainsAny(Arrays.asList(0), null);
+        double h2 = CollectionsDistanceUtils.getHeuristicToContainsAny(Arrays.asList(1), Arrays.asList());
+        double h3 = CollectionsDistanceUtils.getHeuristicToContainsAny(Arrays.asList(1,2,3), Arrays.asList(5));
+        double h4 = CollectionsDistanceUtils.getHeuristicToContainsAny(Arrays.asList(1,2,3), Arrays.asList(1));
+
+        assertTrue(h1 > h0);
+        assertTrue(h2 > h1);
+        assertTrue(h3 > h2);
+        assertTrue(h4 > h3);
+        assertTrue(h2 <= H_REACHED_BUT_EMPTY);
+        assertEquals(1d, h4, 0.0001);
+    }
 }

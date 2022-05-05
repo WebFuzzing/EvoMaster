@@ -250,14 +250,14 @@ public class CollectionClassReplacementTest {
     }
 
     @Test
-    public void testRemove(){
+    public void testRemove() {
 
         List<String> data = new ArrayList<>();
         data.add("aaa");
         data.add("bbb");
 
         assertFalse(data.remove("x"));
-        assertFalse(CollectionClassReplacement.remove(data,"x",idTemplate));
+        assertFalse(CollectionClassReplacement.remove(data, "x", idTemplate));
 
         Map<String, Set<StringSpecializationInfo>> specializations = ExecutionTracer.exposeAdditionalInfoList().get(0).getStringSpecializationsView();
         assertEquals(0, specializations.size());
@@ -268,17 +268,17 @@ public class CollectionClassReplacementTest {
         double h0 = ExecutionTracer.getValue(objectiveId);
         assertTrue(h0 > DistanceHelper.H_NOT_EMPTY);
 
-        assertFalse(CollectionClassReplacement.remove(data,"xx",idTemplate));
+        assertFalse(CollectionClassReplacement.remove(data, "xx", idTemplate));
         double h1 = ExecutionTracer.getValue(objectiveId);
         assertTrue(h1 > h0);
 
-        assertFalse(CollectionClassReplacement.remove(data,"xxx",idTemplate));
+        assertFalse(CollectionClassReplacement.remove(data, "xxx", idTemplate));
         double h2 = ExecutionTracer.getValue(objectiveId);
         assertTrue(h2 > h1);
 
 
         String taint = TaintInputName.getTaintName(0);
-        CollectionClassReplacement.remove(data,taint,idTemplate);
+        CollectionClassReplacement.remove(data, taint, null);//taint collected even when no heuristics
         specializations = ExecutionTracer.exposeAdditionalInfoList().get(0).getStringSpecializationsView();
         assertEquals(1, specializations.size());
         Set<StringSpecializationInfo> s = specializations.get(taint);
@@ -287,7 +287,7 @@ public class CollectionClassReplacementTest {
         assertTrue(s.stream().anyMatch(t -> t.getValue().equals("bbb")));
 
         assertEquals(2, data.size());
-        boolean result = CollectionClassReplacement.remove(data,"aaa",idTemplate);
+        boolean result = CollectionClassReplacement.remove(data, "aaa", idTemplate);
         assertTrue(result);
         assertEquals(1, data.size());
 
@@ -295,6 +295,73 @@ public class CollectionClassReplacementTest {
         assertEquals(0, nonCoveredObjectives.size());
         double h3 = ExecutionTracer.getValue(objectiveId);
         assertEquals(1d, h3);
+    }
 
+
+    @Test
+    public void testRemoveAll() {
+
+        List<String> data = new ArrayList<>();
+        data.add("aaa");
+        data.add("bbb");
+        data.add("ccc");
+
+        assertFalse(data.removeAll(Arrays.asList("x")));
+        assertFalse(CollectionClassReplacement.removeAll(data, Arrays.asList("x"), idTemplate));
+
+        Set<String> nonCoveredObjectives = ExecutionTracer.getNonCoveredObjectives(idTemplate);
+        assertEquals(1, nonCoveredObjectives.size());
+        String objectiveId = nonCoveredObjectives.iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h0 > DistanceHelper.H_NOT_EMPTY);
+
+        assertFalse(CollectionClassReplacement.removeAll(data, Arrays.asList("x","x","x","k"), idTemplate));
+        double h1 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h1 > h0); // just need 1 to remove, to get returned true
+
+        assertTrue(CollectionClassReplacement.removeAll(data, Arrays.asList("x","x","x","k","bbb"), idTemplate));
+        double h2 = ExecutionTracer.getValue(objectiveId);
+        assertEquals(1d, h2, 0.0001);
+    }
+
+
+    @Test
+    public void testContainsAll() {
+
+        List<String> data = new ArrayList<>();
+        data.add("aaa");
+        data.add("bbb");
+        data.add("ccc");
+
+        assertFalse(data.containsAll(Arrays.asList("x")));
+        assertFalse(CollectionClassReplacement.containsAll(data, Arrays.asList("x"), idTemplate));
+
+        Set<String> nonCoveredObjectives = ExecutionTracer.getNonCoveredObjectives(idTemplate);
+        assertEquals(1, nonCoveredObjectives.size());
+        String objectiveId = nonCoveredObjectives.iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h0 > DistanceHelper.H_NOT_EMPTY);
+
+        ExecutionTracer.reset(); //as want to check worse result
+        assertFalse(CollectionClassReplacement.containsAll(data, Arrays.asList("x","x","x","k"), idTemplate));
+        double h1 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h1 < h0); // worse, as more elements
+
+        assertFalse(CollectionClassReplacement.containsAll(data, Arrays.asList("x","x","x","bbb"), idTemplate));
+        double h2 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h2 > h1);
+
+        assertFalse(CollectionClassReplacement.containsAll(data, Arrays.asList("x","x","aaa","bbb"), idTemplate));
+        double h3 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h3 > h2);
+
+        assertFalse(CollectionClassReplacement.containsAll(data, Arrays.asList("ccc","x","aaa","bbb"), idTemplate));
+        double h4 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h4 > h3);
+
+        assertTrue(CollectionClassReplacement.containsAll(data, Arrays.asList("ccc","aaa","bbb"), idTemplate));
+        double h5 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h5 > h4);
+        assertEquals(1d, h5, 0.0001);
     }
 }

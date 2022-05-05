@@ -74,6 +74,18 @@ public class DistanceHelper {
        return base + ((1 - base) / (distance + 1));
     }
 
+    public static double scaleHeuristicWithBase(double heuristic, double base){
+
+        if(heuristic < 0 || heuristic >= 1){
+            throw new IllegalArgumentException("Invalid heuristic: " + base);
+        }
+        if(base < 0 || base >= 1){
+            throw new IllegalArgumentException("Invalid base: " + base);
+        }
+
+        return base + ((1-base)*heuristic);
+    }
+
     public static int distanceToDigit(char c) {
         return distanceToRange(c, '0', '9');
     }

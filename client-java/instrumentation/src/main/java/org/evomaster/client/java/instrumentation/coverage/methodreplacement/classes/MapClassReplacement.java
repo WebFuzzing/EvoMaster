@@ -27,13 +27,6 @@ public class MapClassReplacement implements MethodReplacementClass {
             return c.containsKey(o);
         }
 
-
-        String inputString = null;
-        if (o instanceof String) {
-            inputString = (String) o;
-        }
-
-
         /*
             keySet() returns a set instance that indirectly calls
             to containsKey() when doing a contains().
@@ -50,21 +43,7 @@ public class MapClassReplacement implements MethodReplacementClass {
         //Collection keyCollection = new HashSet(c.keySet());
         Collection keyCollection = c.keySet();
 
-        if (ExecutionTracer.isTaintInput(inputString)) {
-            int counter = 0;
-            for (Object value : keyCollection) {
-                if (value instanceof String) {
-                    ExecutionTracer.addStringSpecialization(inputString,
-                            new StringSpecializationInfo(StringSpecialization.CONSTANT, (String) value));
-                    counter++;
-                    if(counter >= 10){
-                        //no point in creating possibly hundreds/thousands of constants...
-                        break;
-                    }
-                }
-            }
-        }
-
+        CollectionsDistanceUtils.evaluateTaint(keyCollection, o);
 
         boolean result = keyCollection.contains(o);
 
@@ -76,7 +55,7 @@ public class MapClassReplacement implements MethodReplacementClass {
         if (result) {
             t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
         } else {
-            double h = CollectionsDistanceUtils.getHeuristicToContains(keyCollection, o, 50);
+            double h = CollectionsDistanceUtils.getHeuristicToContains(keyCollection, o);
             t = new Truthness(h, 1d);
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
