@@ -47,6 +47,12 @@ class StringGene(
 
 ) : ComparableGene(name, specializationGenes) {
 
+    init {
+        if (minLength>maxLength) {
+            throw IllegalArgumentException("Cannot create string gene ${this.name} with mininum length ${this.minLength} and maximum length ${this.maxLength}")
+        }
+    }
+
     companion object {
 
         private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)

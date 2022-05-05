@@ -19,13 +19,6 @@ class SqlTextSearchVectorGene(
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchVectorGene::class.java)
     }
 
-    init {
-        /*
-         * Text Search vectors must be non-empty lists
-         */
-        textLexemes.addElement(StringGene("lexeme"))
-    }
-
     override fun getChildren(): MutableList<Gene> = mutableListOf(textLexemes)
 
     override fun copyContent(): Gene = SqlTextSearchVectorGene(

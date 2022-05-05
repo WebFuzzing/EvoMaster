@@ -181,6 +181,13 @@ public class EMController {
             dto.infoForAuthentication = noKillSwitch(() -> sutController.getInfoForAuthentication());
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
+            dto.externalServicesDto = noKillSwitch(() -> sutController.getAdditionalInfoList()
+                    .stream()
+                    .flatMap(e -> e.getExternalServices().stream())
+                    .map(e -> new ExternalServiceInfoDto(e.getProtocol(), e.getHostname(), e.getRemotePort()))
+                    .collect(Collectors.toList())
+            );
+
             info = noKillSwitch(() -> sutController.getProblemInfo());
             dto.bootTimeInfoDto = noKillSwitch(()-> sutController.getBootTimeInfoDto());
         } catch (RuntimeException e) {
@@ -479,6 +486,13 @@ public class EMController {
                     info.lastExecutedStatement = a.getLastExecutedStatement();
                     info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
                     info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
+                    info.externalServices = a.getExternalServices().stream()
+                            .map(es -> new ExternalServiceInfoDto(
+                                    es.getProtocol(),
+                                    es.getHostname(),
+                                    es.getRemotePort()
+                            ))
+                            .collect(Collectors.toList());
 
                     info.stringSpecializations = new LinkedHashMap<>();
                     for (Map.Entry<String, Set<StringSpecializationInfo>> entry :

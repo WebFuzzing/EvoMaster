@@ -370,14 +370,14 @@ class SqlMultidimensionalArrayGene<T>(
 
     override fun getSpecifiedMinSize() = DEFAULT_MIN_SIZE
 
-    override fun getMinSizeOrDefault()= DEFAULT_MIN_SIZE
+    override fun getMinSizeOrDefault() = DEFAULT_MIN_SIZE
 
     /**
      * For example, a multidimensional array built with 3 dimensions
      * has a default max size of 3 * ArrayGene.MAX_SIZE,
      * independently of the maxDimensionSize passed to the constructor.
      */
-    override fun getDefaultMaxSize() = numberOfDimensions *  ArrayGene.MAX_SIZE
+    override fun getDefaultMaxSize() = numberOfDimensions * ArrayGene.MAX_SIZE
 
     /**
      * For example, a multidimensional array built with 3 and a
@@ -421,7 +421,7 @@ class SqlMultidimensionalArrayGene<T>(
         return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(geneImpact, s))
     }
 
-    
+
     override fun candidatesInternalGenes(randomness: Randomness,
                                          apc: AdaptiveParameterControl,
                                          allGenes: List<Gene>,
@@ -459,5 +459,23 @@ class SqlMultidimensionalArrayGene<T>(
      */
     private fun timesProbToModifySize(): Int = 3
 
+    override fun copyContent() = SqlMultidimensionalArrayGene(name = name,
+            template = template.copyContent(),
+            numberOfDimensions = numberOfDimensions,
+            maxDimensionSize = maxDimensionSize,
+            nestedListOfElements = copyValueFrom(nestedListOfElements).toMutableList())
+
+    override fun mutate(
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            mwc: MutationWeightControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        this.randomize(randomness, true, allGenes)
+        return true
+    }
 
 }

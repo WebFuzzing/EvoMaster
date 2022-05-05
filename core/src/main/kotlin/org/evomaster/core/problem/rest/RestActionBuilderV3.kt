@@ -743,7 +743,10 @@ object RestActionBuilderV3 {
                         when (model) {
                             //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
                             is ObjectGene -> modelCluster.put(it.component1(), model)
-                            is MapGene<*, *> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
+                            //is MapGene<*, *> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
+                            //Andrea: this was wrong, as generating invalid genes where writing expectations.
+                            // this is a tmp fix
+                            is MapGene<*, *> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf()))
                         }
 
                     }
