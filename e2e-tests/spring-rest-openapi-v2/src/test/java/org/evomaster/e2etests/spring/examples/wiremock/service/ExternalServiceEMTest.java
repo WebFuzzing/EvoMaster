@@ -85,7 +85,7 @@ public class ExternalServiceEMTest extends SpringTestBase {
         DnsCacheManipulator.clearDnsCache();
     }
 
-    @Disabled
+    @Test
     public void externalServiceCallsCaptureTest() throws Throwable {
         String[] args = new String[]{
                 "--createTests", "false",
