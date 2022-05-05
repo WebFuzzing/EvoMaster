@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -15,6 +16,28 @@ public class MapClassReplacement implements MethodReplacementClass {
     public Class<?> getTargetClass() {
         return Map.class;
     }
+
+    /*
+        This is same code as in Collection.
+        However, Map does not extend Collection...
+        so, in theory, could have a Map that is not a Collection...
+     */
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0)
+    public static boolean isEmpty(Map caller, String idTemplate) {
+        Objects.requireNonNull(caller);
+
+        boolean result = caller.isEmpty();
+        if (idTemplate == null) {
+            return result;
+        }
+
+        int len = caller.size();
+        Truthness t = TruthnessUtils.getTruthnessToEmpty(len);
+
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return result;
+    }
+
 
     @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
     public static boolean containsKey(Map c, Object o, String idTemplate) {
@@ -56,6 +79,82 @@ public class MapClassReplacement implements MethodReplacementClass {
             t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
         } else {
             double h = CollectionsDistanceUtils.getHeuristicToContains(keyCollection, o);
+            t = new Truthness(h, 1d);
+        }
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return result;
+    }
+
+
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0)
+    public static boolean containsValue(Map c, Object o, String idTemplate) {
+        Objects.requireNonNull(c);
+
+        if (idTemplate == null || c instanceof IdentityHashMap) {
+            /*
+                IdentityHashMap does not use .equals() for the comparisons
+             */
+            return c.containsValue(o);
+        }
+
+        Collection data = c.values();
+
+        CollectionsDistanceUtils.evaluateTaint(data, o);
+
+        boolean result = data.contains(o);
+
+        if (idTemplate == null) {
+            return result;
+        }
+
+        Truthness t;
+        if (result) {
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
+        } else {
+            double h = CollectionsDistanceUtils.getHeuristicToContains(data, o);
+            t = new Truthness(h, 1d);
+        }
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return result;
+    }
+
+
+
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0, isPure = false)
+    public static boolean remove(Map map, Object key, Object value, String idTemplate) {
+        Objects.requireNonNull(map);
+
+        /*
+        Object curValue = get(key);
+        if (!Objects.equals(curValue, value) ||
+            (curValue == null && !containsKey(key))) {
+            return false;
+        }
+        remove(key);
+        return true;
+         */
+
+        CollectionsDistanceUtils.evaluateTaint(map.keySet(), key);
+        Object curValue = map.get(key);
+        if(curValue != null) {
+            CollectionsDistanceUtils.evaluateTaint(Arrays.asList(curValue), value);
+        }
+
+        boolean result = map.remove(key, value);
+
+        if (idTemplate == null) {
+            return result;
+        }
+
+        Truthness t;
+        if (result) {
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
+        } else {
+            double hb = CollectionsDistanceUtils.getHeuristicToContains(map.keySet(), key) / 2d;
+            double dv = DistanceHelper.getDistance(value, curValue);
+            double hv = DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, dv) / 2d;
+            double h = hb + hv;
+            assert h >= DistanceHelper.H_NOT_NULL && h <= 1;
             t = new Truthness(h, 1d);
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);

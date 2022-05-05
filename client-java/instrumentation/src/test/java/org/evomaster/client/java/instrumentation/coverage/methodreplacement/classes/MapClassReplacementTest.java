@@ -1,9 +1,16 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintInputName;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,9 +19,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MapClassReplacementTest {
 
+    private final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "idTemplate";
 
     @Test
-    public void testBase(){
+    public void testContainsKey(){
 
         HashMap<String, Integer> map = new HashMap<>();
         map.put("foo", 42);
@@ -45,5 +53,100 @@ class MapClassReplacementTest {
 
         assertTrue(MapClassReplacement.containsKey(map,a,null));
         assertFalse(MapClassReplacement.containsKey(map,b,null));
+    }
+
+    @Test
+    public void testContainsValue(){
+
+        Map<Integer, String> data = new HashMap<>();
+        data.put(1, "a");
+        data.put(2, "g");
+
+        assertFalse(MapClassReplacement.containsValue(data,"x", idTemplate));
+
+        Set<String> nonCoveredObjectives = ExecutionTracer.getNonCoveredObjectives(idTemplate);
+        assertEquals(1, nonCoveredObjectives.size());
+        String objectiveId = nonCoveredObjectives.iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h0 > DistanceHelper.H_NOT_EMPTY);
+
+        assertFalse(MapClassReplacement.containsValue(data,"c", idTemplate));
+        double h1 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h1 > h0);
+
+        assertFalse(MapClassReplacement.containsValue(data,"f", idTemplate));
+        double h2 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h2 > h1);
+
+        assertTrue(MapClassReplacement.containsValue(data,"a", idTemplate));
+        double h3 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h3 > h2);
+        assertEquals(1d, h3, 0.0001);
+    }
+
+
+    @Test
+    public void testRemoveTaint(){
+
+        Map<String, String> data = new HashMap<>();
+        data.put("abc", "foo");
+        data.put("xyz", "bar");
+
+        String taintedKey = TaintInputName.getTaintName(0);
+        String taintedValue = TaintInputName.getTaintName(1);
+
+
+        assertFalse(MapClassReplacement.remove(data,taintedKey, "x", idTemplate));
+        Map<String, Set<StringSpecializationInfo>> specializations = ExecutionTracer.exposeAdditionalInfoList().get(0).getStringSpecializationsView();
+        assertEquals(1, specializations.size());
+        Set<StringSpecializationInfo> s = specializations.get(taintedKey);
+        assertEquals(2, s.size());
+        assertTrue(s.stream().anyMatch(t -> t.getValue().equals("abc")));
+        assertTrue(s.stream().anyMatch(t -> t.getValue().equals("xyz")));
+
+
+        assertFalse(MapClassReplacement.remove(data,"abc", taintedValue, idTemplate));
+        assertEquals(2, specializations.size());
+        s = specializations.get(taintedValue);
+        assertEquals(1, s.size());
+        assertTrue(s.stream().anyMatch(t -> t.getValue().equals("foo")));
+
+        assertTrue(MapClassReplacement.remove(data,"abc", "foo", null));
+    }
+
+    @Test
+    public void testRemoveHeuristics() {
+
+        Map<String, String> data = new HashMap<>();
+        data.put("abc", "foo");
+        data.put("xyz", "bar");
+
+        assertFalse(MapClassReplacement.remove(data,"a", "foo", idTemplate));
+        Set<String> nonCoveredObjectives = ExecutionTracer.getNonCoveredObjectives(idTemplate);
+        assertEquals(1, nonCoveredObjectives.size());
+        String objectiveId = nonCoveredObjectives.iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h0 > DistanceHelper.H_NOT_EMPTY);
+
+        assertFalse(MapClassReplacement.remove(data,"ab", "1", idTemplate));
+        double h1 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h1 > h0);
+
+        assertFalse(MapClassReplacement.remove(data,"abc", "1", idTemplate));
+        double h2 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h2 > h1);
+
+        assertFalse(MapClassReplacement.remove(data,"abc", "f", idTemplate));
+        double h3 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h3 > h2);
+
+        assertFalse(MapClassReplacement.remove(data,"xyz", "ba", idTemplate));
+        double h4 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h4 > h3);
+
+        assertTrue(MapClassReplacement.remove(data,"abc", "foo", idTemplate));
+        double h5 = ExecutionTracer.getValue(objectiveId);
+        assertTrue(h5 > h4);
+        assertEquals(1d, h5, 0.0001);
     }
 }

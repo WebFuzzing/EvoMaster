@@ -193,8 +193,13 @@ public class DistanceHelper {
     }
 
     public static double getDistance(Object left, Object right) {
-        Objects.requireNonNull(left);
-        Objects.requireNonNull(right);
+
+        if(left == null && right == null){
+            return 0;
+        }
+        if(left == null || right == null){
+            return Double.MAX_VALUE;
+        }
 
         final double distance;
         if (left instanceof String && right instanceof String) {

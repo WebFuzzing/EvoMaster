@@ -51,7 +51,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
         return result;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.BASE)
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0)
     public static boolean containsAll(Collection caller, Collection other, String idTemplate) {
         Objects.requireNonNull(caller);
 
