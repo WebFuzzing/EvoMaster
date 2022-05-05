@@ -181,15 +181,9 @@ public class EMController {
             dto.infoForAuthentication = noKillSwitch(() -> sutController.getInfoForAuthentication());
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
-            dto.externalServicesDto = noKillSwitch(() -> sutController.getAdditionalInfoList()
-                    .stream()
-                    .flatMap(e -> e.getExternalServices().stream())
-                    .map(e -> new ExternalServiceInfoDto(e.getProtocol(), e.getHostname(), e.getRemotePort()))
-                    .collect(Collectors.toList())
-            );
-
             info = noKillSwitch(() -> sutController.getProblemInfo());
             dto.bootTimeInfoDto = noKillSwitch(()-> sutController.getBootTimeInfoDto());
+
         } catch (RuntimeException e) {
             String msg = e.getMessage();
             SimpleLogger.error(msg, e);

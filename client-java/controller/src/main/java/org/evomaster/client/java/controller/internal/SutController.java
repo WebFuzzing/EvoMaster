@@ -994,7 +994,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     descriptiveId = e.getKey();
                     value = e.getValue();
                 }}).collect(Collectors.toList());
-        //TODO external service info
+
+        infoDto.externalServicesDto = info.getExternalServiceInfo().stream()
+                .map(e -> new ExternalServiceInfoDto(e.getProtocol(), e.getHostname(), e.getRemotePort()))
+                .collect(Collectors.toList());
         return infoDto;
     }
 

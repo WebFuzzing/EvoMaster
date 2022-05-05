@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * contain targets info which are collected during SUT boot-time
+ */
 public class BootTimeObjectiveInfo implements Serializable {
 
 

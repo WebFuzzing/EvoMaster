@@ -44,7 +44,7 @@ public class ExternalServiceInfo implements Serializable {
     }
 
     public ExternalServiceInfo copy(){
-        return new ExternalServiceInfo(protocol, remoteHostname, remotePort, mockHostname, mockHostPort);
+        return new ExternalServiceInfo(protocol, remoteHostname, remotePort);
     }
 
     @Override

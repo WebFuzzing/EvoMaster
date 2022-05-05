@@ -88,7 +88,7 @@ public class InstrumentationController {
     }
 
     public static BootTimeObjectiveInfo getBootTimeObjectiveInfo(){
-        return ObjectiveRecorder.getBootTimeObjectiveInfo();
+        return ObjectiveRecorder.exposeBootTimeObjectiveInfo();
     }
 
 }

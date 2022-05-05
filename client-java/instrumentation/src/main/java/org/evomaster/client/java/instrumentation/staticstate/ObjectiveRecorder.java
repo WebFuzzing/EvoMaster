@@ -87,7 +87,7 @@ public class ObjectiveRecorder {
     private static final Queue<String> firstTimeEncountered = new ConcurrentLinkedQueue<>();
 
     /**
-     * a list of external service which are initialized during SUT startup
+     * Objective info are collected during SUT startup
      */
     private static final BootTimeObjectiveInfo bootTimeObjectiveInfo = new BootTimeObjectiveInfo();
 
@@ -123,9 +123,9 @@ public class ObjectiveRecorder {
 
     /**
      *
-     * @return a list of external service info during sut startup
+     * @return bootTime objective info
      */
-    public static BootTimeObjectiveInfo getBootTimeObjectiveInfo(){
+    public static BootTimeObjectiveInfo exposeBootTimeObjectiveInfo(){
         return bootTimeObjectiveInfo;
     }
 
@@ -228,6 +228,7 @@ public class ObjectiveRecorder {
             }
         }
 
+        // also update the objective info to bootTimeObjectiveInfo
         if (bootTime){
             bootTimeObjectiveInfo.updateMaxObjectiveCoverage(descriptiveId, value);
         }

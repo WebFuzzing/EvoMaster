@@ -83,9 +83,4 @@ public class SutInfoDto {
      * info collected during SUT boot-time
      */
     public BootTimeInfoDto bootTimeInfoDto;
-
-    /**
-     * Information about the external services used inside the SUT
-     */
-    public List<ExternalServiceInfoDto> externalServicesDto;
 }
