@@ -26,7 +26,7 @@ class DbAppEMTest : SpringRestPostgresTestBase() {
         runTestHandlingFlakyAndCompilation(
                 "DbApp",
                 "org.bar.DbAppEM",
-                400
+                600
         ) { args ->
             args.add("--enableWeightBasedMutationRateSelectionForGene")
             args.add("false")
@@ -100,6 +100,9 @@ class DbAppEMTest : SpringRestPostgresTestBase() {
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/pglsnType", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/pglsnType", null)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/builtInMultiRangeTypes", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/builtInMultiRangeTypes", null)
 
         }
     }

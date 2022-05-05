@@ -39,7 +39,15 @@ class SqlTextSearchQueryGene(
          * TS queries are lists of lexemes.
          */
         val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes",
-                template = StringGene("lexeme template", minLength = 0, invalidChars = listOf(BLANK_CHAR, AMPERSAND_CHAR)))
+                template = StringGene("lexeme template",
+                        // lexemes are non empty strings
+                        minLength = 1,
+                        // lexemes do not contain '&' or ' ' (blank characters)
+                        invalidChars = listOf(BLANK_CHAR, AMPERSAND_CHAR)),
+                // the list of lexemes is empty to represent the valid '' query
+                minSize = 0
+                ),
+
 ) : Gene(name, mutableListOf(queryLexemes)) {
 
     companion object {

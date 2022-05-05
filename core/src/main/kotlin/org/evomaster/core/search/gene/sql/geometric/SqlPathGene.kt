@@ -33,12 +33,6 @@ class SqlPathGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         points.randomize(randomness, forceNewValue, allGenes)
-        /*
-         * A geometric path must be always a non-empty list
-         */
-        if (points.getAllElements().isEmpty()) {
-            points.addElement(SqlPointGene("p"))
-        }
     }
 
     override fun candidatesInternalGenes(

@@ -153,7 +153,8 @@ class SqlMultidimensionalArrayGene<T>(
         ): String {
             return nestedListOfElements.joinToString(",") { e ->
                 when (e) {
-                    is Gene -> e.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                    is Gene ->
+                        e.getValueAsPrintableString(previousGenes, mode = GeneUtils.EscapeMode.TEXT, targetFormat = OutputFormat.DEFAULT, extraCheck)
                     is List<*> -> "{${
                         getValueAsPrintableString(
                                 e as List<Any>,
