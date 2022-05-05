@@ -160,4 +160,27 @@ public class MapClassReplacement implements MethodReplacementClass {
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return result;
     }
+
+
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0, isPure = false)
+    public static boolean replace(Map map, Object key, Object oldValue, Object newValue, String idTemplate) {
+        Objects.requireNonNull(map);
+
+        /*
+         Object curValue = get(key);
+        if (!Objects.equals(curValue, oldValue) ||
+                (curValue == null && !containsKey(key))) {
+            return false;
+        }
+        put(key, newValue);
+        return true;
+         */
+
+        boolean removed = remove(map, key, oldValue,idTemplate);
+        if(removed){
+            map.put(key, newValue);
+        }
+        return removed;
+    }
+
 }

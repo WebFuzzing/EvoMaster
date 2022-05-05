@@ -155,4 +155,30 @@ class MapClassReplacementTest {
         assertTrue(h5 > h4);
         assertEquals(1d, h5, 0.0001);
     }
+
+    @Test
+    public void testReplace(){
+
+        Map<String, String> data = new HashMap<>();
+        data.put("abc", "foo");
+        data.put("xyz", "bar");
+
+        boolean replaced = MapClassReplacement.replace(data, "foo", "bar", "HELLO", idTemplate);
+        assertFalse(replaced);
+        assertTrue(data.size() == 2);
+        assertTrue(data.containsValue("foo"));
+        assertTrue(data.containsValue("bar"));
+
+        replaced = MapClassReplacement.replace(data, "abc", "bar", "HELLO", idTemplate);
+        assertFalse(replaced);
+        assertTrue(data.size() == 2);
+        assertTrue(data.containsValue("foo"));
+        assertTrue(data.containsValue("bar"));
+
+        replaced = MapClassReplacement.replace(data, "xyz", "bar", "HELLO", idTemplate);
+        assertTrue(replaced);
+        assertTrue(data.size() == 2);
+        assertTrue(data.containsValue("foo"));
+        assertTrue(data.containsValue("HELLO"));
+    }
 }
