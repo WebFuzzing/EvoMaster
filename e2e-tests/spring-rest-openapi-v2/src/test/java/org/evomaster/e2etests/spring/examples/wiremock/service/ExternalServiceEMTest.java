@@ -41,10 +41,9 @@ public class ExternalServiceEMTest extends SpringTestBase {
     @BeforeAll
     public static void initClass() throws Exception {
         /*
-            in other e2e, e2e-tests/spring-rest-openapi-v2/src/main/java/com/foo/rest/examples/spring/wiremock/http
-            see HttpRequestRest
-            there exists an open collection at boot-time
-            to avoid the side-effect on this e2e, then clean the ObjectiveRecorder
+            in other e2e, see e2e-tests/spring-rest-openapi-v2/src/main/java/com/foo/rest/examples/spring/wiremock/http/HttpRequestRest.java
+            there exists open connection at boot-time
+            to avoid side effect on this e2e, then reset the ObjectiveRecorder
          */
         ObjectiveRecorder.reset(true);
 
