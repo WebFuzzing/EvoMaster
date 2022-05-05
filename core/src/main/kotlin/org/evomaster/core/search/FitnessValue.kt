@@ -150,11 +150,11 @@ class FitnessValue(
     /**
      * this method is to report the union results with targets at boot-time
      *
-     * @return first is boot-time
+     * @return first is boot-time (negative means that the boot-time info is unavailable)
      *         second is search time, and
      *         third is a union of boot-time and search time
      */
-    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int): Triple<Int, Int, Int>{
+    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int = -1): Triple<Int, Int, Int>{
         if (bootTimeInfoDto?.targets == null){
             return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { Triple(unavailableBootTime,this,this) }
         }

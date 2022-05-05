@@ -187,16 +187,19 @@ class Main {
                 if (!config.blackBox || config.bbExperiments) {
                     val rc = injector.getInstance(RemoteController::class.java)
                     val unitsInfo = rc.getSutInfo()?.unitsInfoDto
+                    val bootTimeInfo = rc.getSutInfo()?.bootTimeInfoDto
+
+                    val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo)
+                    val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo)
 
                     if (unitsInfo != null) {
                         val units = unitsInfo.unitNames.size
                         val totalLines = unitsInfo.numberOfLines
-                        val coveredLines = solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)
-                        val percentage = String.format("%.0f", (coveredLines / totalLines.toDouble()) * 100)
+                        val percentage = String.format("%.0f", (linesInfo.third / totalLines.toDouble()) * 100)
 
-                        info("Covered targets (lines, branches, faults, etc.): ${solution.overall.coveredTargets()}")
+                        info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.third}")
                         info("Potential faults: ${faults.size}")
-                        info("Bytecode line coverage: $percentage% ($coveredLines out of $totalLines in $units units/classes)")
+                        info("Bytecode line coverage: $percentage% (${linesInfo.third} out of $totalLines in $units units/classes)")
                     } else {
                         warn("Failed to retrieve SUT info")
                     }
