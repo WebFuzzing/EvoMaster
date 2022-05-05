@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -20,6 +21,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class MapClassReplacementTest {
 
     private final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "idTemplate";
+
+    @BeforeEach
+    public void setUp() {
+        ExecutionTracer.reset();
+    }
 
     @Test
     public void testContainsKey(){
