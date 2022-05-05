@@ -549,6 +549,7 @@ class StringGene(
             return StringEscapeUtils.escapeXml10(rawValue)
         } else {
             when {
+                (mode == EscapeMode.GQL_INPUT_MODE)-> return "\"${rawValue.replace("\\", "\\\\\\\\")}\""
                 // TODO this code should be refactored with other getValueAsPrintableString() methods
                 (targetFormat == null) -> return "\"${rawValue}\""
                 //"\"${rawValue.replace("\"", "\\\"")}\""
