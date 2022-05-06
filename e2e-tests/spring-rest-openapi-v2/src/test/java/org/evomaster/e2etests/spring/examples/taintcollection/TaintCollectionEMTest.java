@@ -27,7 +27,7 @@ public class TaintCollectionEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TaintCollectionEM",
                 "org.bar.TaintCollectionEM",
-                5000,
+                10_000, //TODO likely this can be reduced when supporting taint in sampling
                 (args) -> {
 
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -38,7 +38,14 @@ public class TaintCollectionEMTest extends SpringTestBase {
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"contains", "OK");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"containsAll", "OK");
-                    //assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"", "OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"remove", "OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"removeAll", "OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"map/containsKey", "OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"map/containsValue", "OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"map/get", "OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"map/getOrDefault", "OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"map/remove", "OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, base+"map/replace", "OK");
                 });
     }
 }
