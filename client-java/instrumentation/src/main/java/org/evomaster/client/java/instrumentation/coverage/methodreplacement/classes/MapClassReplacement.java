@@ -5,13 +5,24 @@ import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
+import java.lang.reflect.Method;
 import java.util.*;
 
 public class MapClassReplacement implements MethodReplacementClass {
+
+    private static final Method linearCostContainsKey;
+
+    static {
+        try {
+            linearCostContainsKey = AbstractMap.class.getMethod("containsKey", Object.class);
+        } catch (NoSuchMethodException e) {
+            //should never happen...
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public Class<?> getTargetClass() {
         return Map.class;
@@ -43,7 +54,7 @@ public class MapClassReplacement implements MethodReplacementClass {
     public static boolean containsKey(Map c, Object o, String idTemplate) {
         Objects.requireNonNull(c);
 
-        if (idTemplate == null || c instanceof IdentityHashMap) {
+        if (c instanceof IdentityHashMap) {
             /*
                 IdentityHashMap does not use .equals() for the comparisons
              */
@@ -87,13 +98,26 @@ public class MapClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.OBJECT, category = ReplacementCategory.EXT_0)
     public static Object get(Map map, Object key, String idTemplate){
-        containsKey(map, key, idTemplate);
+        Objects.requireNonNull(map);
+
+        if(! (map instanceof IdentityHashMap)) {
+            try {
+                Method m = map.getClass().getMethod("containsKey",Object.class);
+                if(! m.equals(linearCostContainsKey)) {
+                    //check Map.containsKey is not from AbstractMap, which is O(n). Case for Kotlin's ZipEntryMap
+                    containsKey(map, key, idTemplate);
+                }
+            } catch (Exception e) {
+                //do nothing
+                //this does actually happen in Kotlin for ConcurrentRefValueHashMap throwing a IncorrectOperationException
+            }
+        }
         return map.get(key);
     }
 
     @Replacement(type = ReplacementType.OBJECT, category = ReplacementCategory.EXT_0)
-    public static Object getOrDefault(Map map, Object key, Object defaultValue, String idTemplate){
-        containsKey(map, key, idTemplate);
+    public static Object getOrDefault(Map map, Object key, Object defaultValue, String idTemplate) {
+        get(map,key,idTemplate);//compute taint + heuristics
         return map.getOrDefault(key,defaultValue);
     }
 
