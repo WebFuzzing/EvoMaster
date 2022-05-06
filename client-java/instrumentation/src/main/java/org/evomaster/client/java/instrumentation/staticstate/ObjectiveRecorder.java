@@ -216,15 +216,18 @@ public class ObjectiveRecorder {
 
         int id = getMappedId(descriptiveId);
 
-        if (!maxObjectiveCoverage.containsKey(id)) {
-            firstTimeEncountered.add(descriptiveId);
-            maxObjectiveCoverage.put(id, value);
-
-        } else {
-
-            double old = maxObjectiveCoverage.get(id);
-            if (value > old) {
+        // ignore the targets covered at sut booting time
+        if (!bootTimeObjectiveInfo.coveredAtBootTime(descriptiveId)){
+            if (!maxObjectiveCoverage.containsKey(id)) {
+                firstTimeEncountered.add(descriptiveId);
                 maxObjectiveCoverage.put(id, value);
+
+            } else {
+
+                double old = maxObjectiveCoverage.get(id);
+                if (value > old) {
+                    maxObjectiveCoverage.put(id, value);
+                }
             }
         }
 

@@ -47,6 +47,10 @@ public class BootTimeObjectiveInfo implements Serializable {
             externalServiceInfo.add(info.copy());
     }
 
+    public boolean coveredAtBootTime(String descriptiveId){
+        return maxObjectiveCoverage.containsKey(descriptiveId) && maxObjectiveCoverage.get(descriptiveId) == 1.0;
+    }
+
     public List<ExternalServiceInfo> getExternalServiceInfo(){
         // read-only
         return Collections.unmodifiableList(externalServiceInfo);
