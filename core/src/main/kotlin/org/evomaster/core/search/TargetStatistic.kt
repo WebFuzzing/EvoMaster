@@ -13,9 +13,11 @@ data class TargetStatistic(
     /**
      * achieved by search
      */
-    val searchTime: Int,
+    val searchTime: Int
+){
     /**
-     * a total of unique targets covered at the end
+     * derived based on [bootTime] and [searchTime]
      */
     val total: Int
-)
+        get(){return bootTime + searchTime}
+}

@@ -55,7 +55,9 @@ class StatisticsEMTest : SpringTestBase() {
                     assertNotNull(bootTime)
                     assertNotNull(searchTime)
                     assertNotNull(total)
-                    assertTrue(bootTime!! + searchTime!! >= total!!, "bootTime:$bootTime, searchTime:$searchTime, and total:$total")
+                    assertTrue(bootTime!! > 0)
+                    assertTrue(searchTime!! > 0)
+                    assertEquals(total!!, bootTime+searchTime)
                 }
             }
         }

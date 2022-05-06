@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
@@ -155,10 +156,10 @@ class FitnessValue(
      */
     fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int = -1): TargetStatistic{
         if (bootTimeInfoDto?.targets == null){
-            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { TargetStatistic(unavailableBootTime,this,this) }
+            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { TargetStatistic(unavailableBootTime,this) }
         }
         val bootTime = bootTimeInfoDto.targets.filter { it.value == MAX_VALUE && (prefix == null || it.descriptiveId.startsWith(prefix)) }
-        // with the exported targets, there might exist duplicated class targets
+        // counter for duplicated targets
         var duplicatedcounter = 0
         val searchTime = targets.entries.count { e ->
             (e.value.distance == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))).apply {
@@ -166,7 +167,11 @@ class FitnessValue(
                     duplicatedcounter++
             }
         }
-        return TargetStatistic(bootTime.size, searchTime, bootTime.size + searchTime - duplicatedcounter)
+        Lazy.assert {
+            // there should not exist any duplicated targets between boot-time and search-time
+            duplicatedcounter == 0
+        }
+        return TargetStatistic(bootTime.size, searchTime)
     }
 
     fun coverTarget(id: Int) {
