@@ -30,7 +30,7 @@ class DateGene(
     val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
     val onlyValidDates: Boolean = false,
     val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
-) : ComparableGene(name, mutableListOf(year, month, day)) {
+) : ComparableGene, Gene(name, mutableListOf(year, month, day)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(DateGene::class.java)
@@ -194,7 +194,7 @@ class DateGene(
             }
             gene is DateTimeGene -> bindValueBasedOn(gene.date)
             gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype())
+            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype() as Gene)
             // Man: convert to string based on the format?
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateGene with ${gene::class.java.simpleName}")

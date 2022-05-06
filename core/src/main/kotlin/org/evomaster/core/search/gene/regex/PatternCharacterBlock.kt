@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.SimpleGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -15,7 +16,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 class PatternCharacterBlock(
         name: String,
         val stringBlock: String
-) : RxAtom(name, listOf()) {
+) : RxAtom, SimpleGene(name) {
 
     override fun isMutable(): Boolean {
         return false

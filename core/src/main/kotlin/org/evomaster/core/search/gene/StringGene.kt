@@ -45,7 +45,7 @@ class StringGene(
          */
         val specializationGenes: MutableList<Gene> = mutableListOf()
 
-) : ComparableGene(name, specializationGenes) {
+) : ComparableGene, Gene(name, specializationGenes) {
 
     companion object {
 
@@ -145,6 +145,10 @@ class StringGene(
         repair()
         selectedSpecialization = -1
         handleBinding(allGenes)
+    }
+
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+        return listOf()
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>,
@@ -661,7 +665,7 @@ class StringGene(
             is BigDecimalGene -> value = gene.value.toString()
             is BigIntegerGene -> value = gene.value.toString()
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype())
+                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
                 return this.bindValueBasedOn(gene.number)

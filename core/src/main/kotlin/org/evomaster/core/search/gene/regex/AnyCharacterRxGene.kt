@@ -12,7 +12,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class AnyCharacterRxGene : RxAtom(".", listOf()){
+class AnyCharacterRxGene : RxAtom, SimpleGene("."){
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(AnyCharacterRxGene::class.java)

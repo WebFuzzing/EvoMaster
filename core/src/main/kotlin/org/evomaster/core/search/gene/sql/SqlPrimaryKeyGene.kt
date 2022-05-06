@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
 import org.evomaster.core.search.gene.GeneUtils
@@ -28,7 +29,7 @@ class SqlPrimaryKeyGene(name: String,
                          * Cannot be negative
                          */
                         val uniqueId: Long
-) : SqlWrapperGene(name, mutableListOf(gene)) {
+) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
 
     init {

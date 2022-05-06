@@ -79,8 +79,12 @@ abstract class Gene(
     /*
      * override to force return type Gene
      */
-    abstract override  fun copyContent(): Gene
+    //TODO put back, once we have tests for it
+    //abstract override  fun copyContent(): Gene
 
+    override fun copyContent(): Gene {
+        throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
+    }
 
     /*
         TODO shall we remove to default function implementation? to make sure new

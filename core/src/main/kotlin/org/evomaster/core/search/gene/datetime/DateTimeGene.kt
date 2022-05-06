@@ -23,7 +23,7 @@ open class DateTimeGene(
     val date: DateGene = DateGene("date"),
     val time: TimeGene = TimeGene("time"),
     val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
-) : ComparableGene(name, mutableListOf(date, time)) {
+) : ComparableGene, Gene(name, mutableListOf(date, time)) {
 
     enum class DateTimeGeneFormat {
         // YYYY-MM-DDTHH:SS:MM
@@ -175,7 +175,7 @@ open class DateTimeGene(
             gene is StringGene && gene.getSpecializationGene() != null -> {
                 bindValueBasedOn(gene.getSpecializationGene()!!)
             }
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype())
+            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype()as Gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateTimeGene with ${gene::class.java.simpleName}")
                 false

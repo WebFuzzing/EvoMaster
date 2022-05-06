@@ -13,7 +13,11 @@ import org.evomaster.core.search.service.Randomness
  *  A typical example is a Primary Key in a database, and we want
  *  a Foreign Key pointing to it
  */
-class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boolean) : Gene(name, mutableListOf()){
+class ImmutableDataHolderGene(
+        name: String,
+        val value: String,
+        val inQuotes: Boolean
+        ) : SimpleGene(name){
 
     /*
         Note that instead of returning itself, here we create a copy for it since it might be bound with other genes.

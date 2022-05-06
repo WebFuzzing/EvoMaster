@@ -139,7 +139,7 @@ class IntegerGene(
                 value = gene.uniqueId.toInt()
             }
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype())
+                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
                 return this.bindValueBasedOn(gene.number)

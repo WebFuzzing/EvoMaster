@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
 import org.evomaster.core.search.gene.GeneUtils
@@ -17,7 +18,7 @@ import java.lang.IllegalStateException
 class SqlNullable(name: String,
                   val gene: Gene,
                   var isPresent: Boolean = true
-) : SqlWrapperGene(name, listOf(gene)) {
+) : SqlWrapperGene, CompositeGene(name, listOf(gene)) {
 
     init{
         if(gene is SqlWrapperGene && gene.getForeignKey() != null){

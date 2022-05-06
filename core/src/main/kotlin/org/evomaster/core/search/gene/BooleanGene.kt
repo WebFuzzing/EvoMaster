@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 class BooleanGene(
         name: String,
         var value: Boolean = true
-) : Gene(name, mutableListOf()) {
+) : SimpleGene(name) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(BooleanGene::class.java)
@@ -65,7 +65,7 @@ class BooleanGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SeededGene<*>){
-            return this.bindValueBasedOn(gene.getPhenotype())
+            return this.bindValueBasedOn(gene.getPhenotype()as Gene)
         }
         if (gene !is BooleanGene){
             LoggingUtil.uniqueWarn(log, "Do not support to bind boolean gene with the type: ${gene::class.java.simpleName}")

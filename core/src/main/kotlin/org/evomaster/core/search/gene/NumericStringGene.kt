@@ -26,7 +26,7 @@ class NumericStringGene(
      */
     val minLength: Int,
     val number : BigDecimalGene
-) : ComparableGene(name, mutableListOf(number)) {
+) : ComparableGene, Gene(name, mutableListOf(number)) {
 
     constructor(name: String,
                 minLength: Int = 0,

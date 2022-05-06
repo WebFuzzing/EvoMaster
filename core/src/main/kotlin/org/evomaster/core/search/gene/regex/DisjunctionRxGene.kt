@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
@@ -18,12 +19,19 @@ import org.slf4j.LoggerFactory
 
 class DisjunctionRxGene(
         name: String,
-        val terms: List<RxTerm>,
+        val terms: List<Gene>,
         /**  does this disjunction match the beginning of the string, or could it be at any position? */
         var matchStart: Boolean,
         /** does this disjunction match the end of the string, or could it be at any position? */
         var matchEnd: Boolean
-) : RxAtom(name, terms.toMutableList()) {
+) : RxAtom, CompositeGene(name, terms.toMutableList()) {
+
+    init{
+        if(terms.any { it !is RxTerm }){
+            throw IllegalArgumentException("All terms must be RxTerm")
+        }
+    }
+
 
     /**
      * whether we should append a prefix.
@@ -42,10 +50,10 @@ class DisjunctionRxGene(
         private val log : Logger = LoggerFactory.getLogger(DisjunctionRxGene::class.java)
     }
 
-    override fun getChildren(): List<RxTerm> = terms
+    override fun getChildren(): List<Gene> = terms
 
     override fun copyContent(): Gene {
-        val copy = DisjunctionRxGene(name, terms.map { it.copyContent() as RxTerm }, matchStart, matchEnd)
+        val copy = DisjunctionRxGene(name, terms.map { it.copyContent() as Gene }, matchStart, matchEnd)
         copy.extraPrefix = this.extraPrefix
         copy.extraPostfix = this.extraPostfix
         return copy

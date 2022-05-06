@@ -93,7 +93,7 @@ class DoubleGene(name: String,
                 value = gene.uniqueId.toDouble()
             }
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype())
+                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
                 return this.bindValueBasedOn(gene.number)

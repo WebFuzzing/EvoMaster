@@ -32,7 +32,7 @@ class SqlRangeGene<T>(
     private val isRightClosed: BooleanGene = BooleanGene("isRightClosed")
 
 ) : Gene(name, mutableListOf(isLeftClosed, left, right, isRightClosed))
-        where T : ComparableGene {
+        where T : ComparableGene, T: Gene {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlRangeGene::class.java)
@@ -83,8 +83,8 @@ class SqlRangeGene<T>(
         }
 
         isLeftClosed.copyValueFrom(other.isLeftClosed)
-        left.copyValueFrom(other.left)
-        right.copyValueFrom(other.right)
+        left.copyValueFrom(other.left as Gene)
+        right.copyValueFrom(other.right as Gene)
         isRightClosed.copyValueFrom(other.isRightClosed)
     }
 
@@ -93,8 +93,8 @@ class SqlRangeGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return isLeftClosed.containsSameValueAs(other.isRightClosed)
-                && left.containsSameValueAs(other.left)
-                && right.containsSameValueAs(other.right)
+                && left.containsSameValueAs(other.left as Gene)
+                && right.containsSameValueAs(other.right as Gene)
                 && isRightClosed.containsSameValueAs(other.isRightClosed)
     }
 
@@ -168,8 +168,8 @@ class SqlRangeGene<T>(
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
             this.isLeftClosed.bindValueBasedOn(gene.isLeftClosed)
-            this.left.bindValueBasedOn(gene.left)
-            this.right.bindValueBasedOn(gene.right)
+            this.left.bindValueBasedOn(gene.left as Gene)
+            this.right.bindValueBasedOn(gene.right as Gene)
             this.isRightClosed.bindValueBasedOn(gene.isRightClosed)
         }
         LoggingUtil.uniqueWarn(

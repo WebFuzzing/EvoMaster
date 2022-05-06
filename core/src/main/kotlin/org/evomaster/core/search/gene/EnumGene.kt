@@ -22,7 +22,7 @@ class EnumGene<T : Comparable<T>>(
     name: String,
     data: Collection<T>,
     var index: Int = 0
-) : Gene(name, mutableListOf()) {
+) : SimpleGene(name) {
 
     companion object {
 

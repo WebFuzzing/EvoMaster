@@ -199,7 +199,7 @@ class RPCEndpointsHandler {
 
     private fun handleActionWithSeededCandidates(action: RPCCallAction, candidateKey: String){
         action.seeGenes().flatMap { it.flatView() }.filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
-            val index = ((g as DisruptiveGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it.name == candidateKey }
+            val index = ((g as DisruptiveGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it is Gene && it.name == candidateKey }
             if (index != -1){
                 (g.gene as SeededGene<*>).employSeeded = true
                 g.gene.seeded.index = index
@@ -210,7 +210,7 @@ class RPCEndpointsHandler {
     private fun handleActionNoSeededCandidates(action: RPCCallAction){
         action.seeGenes().filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
             ((g as DisruptiveGene<*>).gene as SeededGene<*>).employSeeded = false
-            (g.gene as SeededGene<*>).gene.randomize(randomness, false)
+            ((g.gene as SeededGene<*>).gene as Gene).randomize(randomness, false)
         }
     }
 
@@ -461,7 +461,7 @@ class RPCEndpointsHandler {
                         response might refer to input dto, then it might exist seeded gene
                      */
                     valueGene.employSeeded = false
-                    setGeneBasedOnParamDto(valueGene.gene, dto)
+                    setGeneBasedOnParamDto(valueGene.gene as Gene, dto)
                 }
                 is PairGene<*, *> -> {
                     Lazy.assert { dto.innerContent.size == 2 }
@@ -551,7 +551,7 @@ class RPCEndpointsHandler {
     private fun isValidToSetValue(gene: Gene, dto: ParamDto) : Boolean{
         val valueGene = ParamUtil.getValueGene(gene)
         if (valueGene is SeededGene<*>)
-            return isValidToSetValue(valueGene.gene, dto)
+            return isValidToSetValue(valueGene.gene  as Gene, dto)
 
         return when(dto.type.type){
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT,
@@ -749,7 +749,7 @@ class RPCEndpointsHandler {
     }
 
     private fun getValueForSeededGene(gene: SeededGene<*>) : String{
-        return when (val pGene = gene.getPhenotype()) {
+        return when (val pGene = gene.getPhenotype() as Gene) {
             is StringGene -> pGene.getValueAsRawString()
             is IntegerGene -> pGene.value.toString()
             is FloatGene -> pGene.value.toString()

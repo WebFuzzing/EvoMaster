@@ -13,7 +13,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 /**
  * represent gene which contains seeded values customized by user with the driver
  */
-class SeededGene<T : ComparableGene>(
+class SeededGene<T>(
     name: String,
     /**
      * the gene and its value could be randomized and handled during the search
@@ -28,7 +28,7 @@ class SeededGene<T : ComparableGene>(
      * otherwise apply [gene]
      */
     var employSeeded: Boolean = false
-) : Gene(name, mutableListOf(gene, seeded)) {
+) : Gene(name, mutableListOf(gene, seeded)) where T : ComparableGene, T: Gene{
 
     /**
      * we might prevent search to manipulate the [employSeeded]
@@ -93,28 +93,30 @@ class SeededGene<T : ComparableGene>(
         if (employSeeded)
             this.seeded.copyValueFrom(other.seeded)
         else
-            this.gene.copyValueFrom(other.gene)
+            this.gene.copyValueFrom(other.gene as Gene)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SeededGene<*>)
             throw IllegalArgumentException("Invalid gene ${other::class.java}")
         return this.employSeeded == other.employSeeded
-                && (if (employSeeded) this.seeded.containsSameValueAs(other.seeded) else this.gene.containsSameValueAs(other.gene))
+                && (if (employSeeded) this.seeded.containsSameValueAs(other.seeded)
+        else this.gene.containsSameValueAs(other.gene as Gene))
     }
 
     override fun innerGene(): List<Gene> {
         return listOf(gene, seeded)
     }
 
-    override fun possiblySame(gene : Gene) : Boolean = super.possiblySame(gene) && this.gene.possiblySame((gene as SeededGene<*>).gene)
+    override fun possiblySame(gene : Gene) : Boolean =
+            super.possiblySame(gene) && this.gene.possiblySame((gene as SeededGene<*>).gene as Gene)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // only allow bind value for gene
         if (gene is SeededGene<*> && isEmploySeededMutable){
             employSeeded = gene.employSeeded
             if (!employSeeded)
-                return ParamUtil.getValueGene(this.gene).bindValueBasedOn(ParamUtil.getValueGene(gene.gene))
+                return ParamUtil.getValueGene(this.gene).bindValueBasedOn(ParamUtil.getValueGene(gene.gene as Gene))
             else
                 return seeded.bindValueBasedOn(gene.seeded)
         }
