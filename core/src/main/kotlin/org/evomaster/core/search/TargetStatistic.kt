@@ -3,7 +3,7 @@ package org.evomaster.core.search
 /**
  * info for targets covered during different phases
  */
-data class TargetStatisticTriple(
+data class TargetStatistic(
     /**
      * SUT boot-time
      *
