@@ -40,12 +40,6 @@ public class ExternalServiceEMTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
-        /*
-            in other e2e, see e2e-tests/spring-rest-openapi-v2/src/main/java/com/foo/rest/examples/spring/wiremock/http/HttpRequestRest.java
-            there exists open connection at boot-time
-            to avoid side effect on this e2e, then reset the ObjectiveRecorder
-         */
-        ObjectiveRecorder.reset(true);
 
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
         DnsCacheManipulator.setDnsCache("baz.bar", "127.0.0.2");
