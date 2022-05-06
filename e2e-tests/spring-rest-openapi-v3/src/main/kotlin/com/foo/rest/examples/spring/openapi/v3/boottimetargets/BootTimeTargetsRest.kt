@@ -20,7 +20,7 @@ class BootTimeTargetsRest {
     }
 
     companion object{
-        // TODO might need a further check, targets for lines 24 and 25 seems to be skipped
+        // TODO targets for lines 24 and 25 seems to be skipped, need a further check once class initializer is instrumented
         private const val SKIPPED_LINE = "SKIPPED?"
         init {
             println("Hello $SKIPPED_LINE")

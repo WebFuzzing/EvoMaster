@@ -195,11 +195,11 @@ class Main {
                     if (unitsInfo != null) {
                         val units = unitsInfo.unitNames.size
                         val totalLines = unitsInfo.numberOfLines
-                        val percentage = String.format("%.0f", (linesInfo.third / totalLines.toDouble()) * 100)
+                        val percentage = String.format("%.0f", (linesInfo.total / totalLines.toDouble()) * 100)
 
-                        info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.third}")
+                        info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
                         info("Potential faults: ${faults.size}")
-                        info("Bytecode line coverage: $percentage% (${linesInfo.third} out of $totalLines in $units units/classes)")
+                        info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
                     } else {
                         warn("Failed to retrieve SUT info")
                     }

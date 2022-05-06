@@ -23,8 +23,10 @@ public class BootTimeObjectiveInfo implements Serializable {
      * Only the highest value found so far is kept.
      *
      *
-     * TODO: for JVM, the target in static init seems to be skipped (see doc at SuccessCallMethodVisitor.java),
-     * Might need a further check on whether it would have any side-effect in reporting statistics
+     * TODO: for JVM, the targets in static init are skipped,
+     * This would have side-effect in collecting boot-time info.
+     * the problem is that classes can be loaded at boot-time, but also during test evaluation.
+     * so, those should be instrumented, but reported separately (ie, still NOT part of a fitness function).
      */
     private final Map<String, Double> maxObjectiveCoverage =
             new ConcurrentHashMap<>(65536);

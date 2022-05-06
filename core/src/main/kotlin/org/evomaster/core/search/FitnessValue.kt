@@ -150,13 +150,12 @@ class FitnessValue(
     /**
      * this method is to report the union results with targets at boot-time
      *
-     * @return first is boot-time (negative means that the boot-time info is unavailable)
-     *         second is search time, and
-     *         third is a union of boot-time and search time
+     * @return a number of targets covered during various phases ie,
+     *          at boot-time (negative means that the boot-time info is unavailable), during search, and at the end
      */
-    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int = -1): Triple<Int, Int, Int>{
+    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int = -1): TargetStatisticTriple{
         if (bootTimeInfoDto?.targets == null){
-            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { Triple(unavailableBootTime,this,this) }
+            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { TargetStatisticTriple(unavailableBootTime,this,this) }
         }
         val bootTime = bootTimeInfoDto.targets.filter { it.value == MAX_VALUE && (prefix == null || it.descriptiveId.startsWith(prefix)) }
         // with the exported targets, there might exist duplicated class targets
@@ -167,7 +166,7 @@ class FitnessValue(
                     duplicatedcounter++
             }
         }
-        return Triple(bootTime.size, searchTime, bootTime.size + searchTime - duplicatedcounter)
+        return TargetStatisticTriple(bootTime.size, searchTime, bootTime.size + searchTime - duplicatedcounter)
     }
 
     fun coverTarget(id: Int) {

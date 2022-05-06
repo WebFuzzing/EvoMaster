@@ -197,7 +197,7 @@ class Statistics : SearchListener {
             add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
-            add(Pair("coveredTargets", "" + targetsInfo.third))
+            add(Pair("coveredTargets", "" + targetsInfo.total))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
             add(Pair(DISTINCT_ACTIONS, "" + distinctActions()))
             add(Pair("endpoints", "" + distinctActions()))
@@ -240,18 +240,18 @@ class Statistics : SearchListener {
             add(Pair("numberOfInstrumentedNumberComparisons", "" + (unitsInfo?.numberOfInstrumentedNumberComparisons ?: 0)))
             add(Pair("numberOfUnits", "" + (unitsInfo?.unitNames?.size ?: 0)))
 
-            add(Pair("coveredLines", "${linesInfo.third}"))
-            add(Pair("coveredBranches", "${branchesInfo.third}"))
+            add(Pair("coveredLines", "${linesInfo.total}"))
+            add(Pair("coveredBranches", "${branchesInfo.total}"))
 
             // statistic info during sut boot time
-            add(Pair("bootTimeCoveredTargets", "${targetsInfo.first}"))
-            add(Pair("bootTimeCoveredLines", "${linesInfo.first}"))
-            add(Pair("bootTimeCoveredBranches", "${branchesInfo.first}"))
+            add(Pair("bootTimeCoveredTargets", "${targetsInfo.bootTime}"))
+            add(Pair("bootTimeCoveredLines", "${linesInfo.bootTime}"))
+            add(Pair("bootTimeCoveredBranches", "${branchesInfo.bootTime}"))
 
             // statistic info during search
-            add(Pair("searchTimeCoveredTargets", "${targetsInfo.second}"))
-            add(Pair("searchTimeCoveredLines", "${linesInfo.second}"))
-            add(Pair("searchTimeCoveredBranches", "${branchesInfo.second}"))
+            add(Pair("searchTimeCoveredTargets", "${targetsInfo.searchTime}"))
+            add(Pair("searchTimeCoveredLines", "${linesInfo.searchTime}"))
+            add(Pair("searchTimeCoveredBranches", "${branchesInfo.searchTime}"))
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
