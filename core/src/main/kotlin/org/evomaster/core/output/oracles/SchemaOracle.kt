@@ -121,6 +121,10 @@ class SchemaOracle : ImplementedOracle() {
         //val referenceObject = objectGenerator.getNamedReference("$expectedObject")
         val referenceObject = getReferenceObject(expectedObject)
 
+        if(referenceObject.fields.isEmpty()){
+            //this could happen when schema generated automatically and it is invalid
+            return
+        }
 
         val referenceKeys = referenceObject.fields
                 .filterNot { it is OptionalGene }
@@ -132,25 +136,29 @@ class SchemaOracle : ImplementedOracle() {
             format.isJava() ->lines.add(".that($variableName, ((Map) $json_ref).keySet().containsAll(Arrays.asList($referenceKeys)))")
             format.isKotlin() -> lines.add(".that($variableName, ($json_ref as Map<*,*>).keys.containsAll(Arrays.asList($referenceKeys)))")
         }
+
         val referenceOptionalKeys = referenceObject.fields
                 .filter { it is OptionalGene }
                 .map { "\"${it.name}\"" }
                 .joinToString(separator = ", ")
 
+        /*
+         * TODO Andrea: this is unclear...
+         * why must a response contain optional fields? if those are optional, they could be missing...
+         *
+         * TODO would it better to check if there is any field that is not declared in the schema?
+         *
         when {
             format.isJava() -> {
                 lines.add(".that($variableName, Arrays.asList($referenceOptionalKeys)")
-                lines.indented {
-                    lines.add(".containsAll(((Map) $json_ref).keySet()))")
-                }
+                lines.add(".containsAll(((Map) $json_ref).keySet()))")
             }
             format.isKotlin() -> {
                 lines.add(".that($variableName, listOf<Any>($referenceOptionalKeys)")
-                lines.indented {
-                    lines.add(".containsAll(($json_ref as Map<*,*>).keys))")
-                }
+                lines.add(".containsAll(($json_ref as Map<*,*>).keys))")
             }
         }
+         */
     }
 
     /**

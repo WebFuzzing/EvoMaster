@@ -24,7 +24,7 @@ public class TaintRest {
                     String value
     ){
         int x = Integer.parseInt(value);
-        return "integer " + x;
+        return "integer OK";
     }
 
     @GetMapping(path = "/date")
@@ -33,7 +33,7 @@ public class TaintRest {
                     String value
     ){
         LocalDate x = LocalDate.parse(value);
-        return "date " +x;
+        return "date OK";
     }
 
     @GetMapping(path = "/constant")
@@ -69,7 +69,7 @@ public class TaintRest {
             throw new IllegalArgumentException(":-(");
         }
 
-        return "collection " + value;
+        return "collection OK";
     }
 
 }

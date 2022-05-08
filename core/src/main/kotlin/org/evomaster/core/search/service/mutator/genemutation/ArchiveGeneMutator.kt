@@ -79,7 +79,7 @@ class ArchiveGeneMutator{
                                 ).value.toLong() to (it.second.result?.value?:-2)
                     },
                     value = gene.value.toLong(),
-                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min.toLong(), max = gene.max.toLong()),
+                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.getMinimum(), max = gene.getMaximum()),
                     start = GeneUtils.intpow2.size, end = 10
             ).toInt()
             is LongGene -> gene.value =  sampleValue(
@@ -88,7 +88,7 @@ class ArchiveGeneMutator{
                                 ?: throw DifferentGeneInHistory(gene, it.first)).value to (it.second.result?.value?:-2)
                     },
                     value = gene.value,
-                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min?: Long.MIN_VALUE, max = gene.max?: Long.MAX_VALUE),
+                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.getMinimum(), max = gene.getMaximum()),
                     start = GeneUtils.intpow2.size, end = 10
             )
             is DoubleGene -> gene.value =  sampleValue(
@@ -98,7 +98,7 @@ class ArchiveGeneMutator{
                     value = gene.value,
                     valueUpdate = DoubleMutationUpdate(
                         config.archiveGeneMutation.withDirection,
-                        min = gene.getMinimum(), max = gene.getMaximum(), precision = gene.precision),
+                        min = gene.getMinimum(), max = gene.getMaximum(), precision = gene.precision, scale = gene.scale),
                     start = GeneUtils.intpow2.size, end = 10
             )
             is FloatGene -> gene.value = sampleValue(
@@ -108,9 +108,52 @@ class ArchiveGeneMutator{
                     value = gene.value.toDouble(),
                     valueUpdate = DoubleMutationUpdate(
                         config.archiveGeneMutation.withDirection,
-                        min = gene.getMinimum().toDouble(), max = gene.getMaximum().toDouble(), precision = gene.precision),
+                        min = gene.getMinimum().toDouble(), max = gene.getMaximum().toDouble(), precision = gene.precision, scale = gene.scale),
                     start = GeneUtils.intpow2.size, end = 10
             ).toFloat()
+
+            is BigIntegerGene -> {
+                val bihistory = history.map {
+                    ((it.first as? BigIntegerGene)?: throw DifferentGeneInHistory(gene, it.first)).value.toLong() to (it.second.result?.value?:EvaluatedMutation.UNSURE.value)
+                }
+
+                val lvalue = sampleValue(
+                    history = bihistory,
+                    value =  gene.toLong(),
+                    valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min?.toLong()?: Long.MIN_VALUE, max = gene.max?.toLong()?: Long.MAX_VALUE),
+                    start = GeneUtils.intpow2.size, end = 10
+                )
+                gene.setValueWithLong(lvalue)
+
+
+            }
+            is BigDecimalGene ->{
+                if (gene.floatingPointMode){
+                    val bdhistory = history.map {
+                        ((it.first as? BigDecimalGene)?: throw DifferentGeneInHistory(gene, it.first)).value.toDouble() to (it.second.result?.value?:EvaluatedMutation.UNSURE.value)
+                    }
+                    val fvalue = sampleValue(
+                        history = bdhistory,
+                        value =  gene.toDouble(),
+                        valueUpdate = DoubleMutationUpdate(config.archiveGeneMutation.withDirection,
+                        min = gene.getMinimum().toDouble(), max = gene.getMaximum().toDouble(), precision = gene.precision, scale = gene.scale),
+                        start = GeneUtils.intpow2.size, end = 10)
+                    gene.setValueWithDouble(fvalue)
+                }else{
+
+                    val bdhistory = history.map {
+                        ((it.first as? BigDecimalGene)?: throw DifferentGeneInHistory(gene, it.first)).value.toLong() to (it.second.result?.value?:EvaluatedMutation.UNSURE.value)
+                    }
+                    val lvalue = sampleValue(
+                        history = bdhistory,
+                        value =  gene.toLong(),
+                        valueUpdate = LongMutationUpdate(config.archiveGeneMutation.withDirection, min = gene.min?.toLong()?: Long.MIN_VALUE, max = gene.max?.toLong()?: Long.MAX_VALUE),
+                        start = GeneUtils.intpow2.size, end = 10
+                    )
+                    gene.setValueWithLong(lvalue)
+                }
+            }
+
             else -> throw IllegalArgumentException("history-based value mutation is not applicable for ${gene::class.java.simpleName}")
         }
     }

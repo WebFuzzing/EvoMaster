@@ -42,9 +42,10 @@ public class CompositeTypeColumnDto {
 
     /**
      * precision of number
-     * a negative number means that the precision is unspecified or inapplicable
+     *
+     * the scale is the number of digits to the right of the decimal point
      */
-    public int precision = -1;
+    public Integer scale;
 
     /**
      * The number of dimensions for arrays, matrixs, etc.

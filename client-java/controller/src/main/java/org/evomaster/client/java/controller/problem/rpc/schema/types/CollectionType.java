@@ -35,4 +35,9 @@ public class CollectionType extends TypeSchema{
             return generic+"[]";
         return getFullTypeName()+"<"+generic+">";
     }
+
+    @Override
+    public CollectionType copy() {
+        return new CollectionType(getType(), getFullTypeName(), template, getClazz());
+    }
 }

@@ -22,6 +22,7 @@ abstract class MutationBoundaryUpdate<T> (
         val direction : Boolean,
         val min : T, val max : T,
         val precision: Int?,
+        val scale: Int?,
         var counter : Int = 0, var reached : Boolean = false,
         var updateTimes : Int = 0,
         var resetTimes : Int = 0, var latest: T? = null, var preferMin : T = min, var preferMax : T = max) where T : Number{

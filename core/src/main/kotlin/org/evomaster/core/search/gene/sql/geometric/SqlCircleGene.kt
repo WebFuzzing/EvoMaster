@@ -11,9 +11,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class SqlCircleGene(
-    name: String,
-    val c: SqlPointGene = SqlPointGene(name = "c"),
-    val r: FloatGene = FloatGene(name = "r")
+        name: String,
+        val c: SqlPointGene = SqlPointGene(name = "c"),
+        // radius cannot be negative
+        val r: FloatGene = FloatGene(name = "r", min = 0f, minInclusive = true)
 ) : Gene(name, mutableListOf(c, r)) {
 
     companion object {
@@ -23,9 +24,9 @@ class SqlCircleGene(
     override fun getChildren(): MutableList<Gene> = mutableListOf(c, r)
 
     override fun copyContent(): Gene = SqlCircleGene(
-        name,
-        c.copyContent() as SqlPointGene,
-        r.copyContent()
+            name,
+            c.copyContent() as SqlPointGene,
+            r.copyContent()
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -34,21 +35,21 @@ class SqlCircleGene(
     }
 
     override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return listOf(c, r)
     }
 
     override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
+            previousGenes: List<Gene>,
+            mode: GeneUtils.EscapeMode?,
+            targetFormat: OutputFormat?,
+            extraCheck: Boolean
     ): String {
         return "\" ( ${c.getValueAsRawString()} , ${r.getValueAsRawString()} ) \""
     }
@@ -78,7 +79,7 @@ class SqlCircleGene(
             listOf(this).plus(c.flatView(excludePredicate)).plus(r.flatView(excludePredicate))
     }
 
-    override fun innerGene(): List<Gene> = listOf(c,r)
+    override fun innerGene(): List<Gene> = listOf(c, r)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

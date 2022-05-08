@@ -48,6 +48,11 @@ enum class ColumnDataType(dataTypeName: String) {
     BIT("BIT"),
 
     /**
+     * https://www.postgresql.org/docs/14/datatype-bit.html
+     */
+    VARBIT("VARBIT"),
+
+    /**
      * A Boolean value (true/false)
      */
     BOOL("BOOL"),

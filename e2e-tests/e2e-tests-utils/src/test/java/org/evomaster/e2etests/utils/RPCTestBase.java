@@ -68,6 +68,13 @@ public class RPCTestBase extends WsTestBase{
         assertTrue(ok, errorMsg);
     }
 
+    public void assertNoneContentInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, List<String> contents){
+        List<String> comparedHistory = new ArrayList<>();
+        boolean ok = contents.stream().noneMatch(content->containsContent(solution, methodName, content, comparedHistory));
+        String errorMsg = seedMsg()+" none should be found, but find any " +String.join(",", contents)+ " from responses" +System.lineSeparator() + String.join(System.lineSeparator(), comparedHistory);
+        assertTrue(ok, errorMsg);
+    }
+
     public boolean containsContent(Solution<RPCIndividual> solution, String methodName, String content, List<String> comparedHistory){
         return solution.getIndividuals().stream().anyMatch(s->
                 s.getIndividual().seeActions().stream().anyMatch(a-> {

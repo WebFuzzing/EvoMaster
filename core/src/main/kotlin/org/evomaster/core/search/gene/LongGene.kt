@@ -1,90 +1,56 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.math.min
 
 
 class LongGene(
         name: String,
-        value: Long = 0,
-        /** Inclusive */
+        value: Long? = null,
         min : Long? = null,
-        /** Inclusive */
-        max : Long? = null
-) : NumberGene<Long>(name, value, min, max) {
+        max : Long? = null,
+        precision : Int? = null,
+        minInclusive : Boolean = true,
+        maxInclusive : Boolean = true
+) : IntegralNumberGene<Long>(name, value,
+    min = if (precision != null) (-NumberCalculationUtil.upperBound(precision, 0)).toLong().run { if (min== null || this > min) this else min } else min,
+    max = if (precision != null) NumberCalculationUtil.upperBound(precision, 0).toLong().run { if (max == null || this < max) this else max } else max,
+    precision, minInclusive, maxInclusive) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(LongGene::class.java)
     }
 
+    init {
+        if (getMaximum() == getMinimum())
+            this.value = getMinimum()
+        if (getMaximum() < getMinimum())
+            throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+    }
+
     override fun copyContent(): Gene {
-        val copy = LongGene(name, value, min, max)
+        val copy = LongGene(name, value, min, max, precision, minInclusive, maxInclusive)
         return copy
     }
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-        /*
-            if one of min or max is specified,
-            we employ [randomness.randomizeBoundedIntAndLong] for randomizing long that is same as randomizing int
-         */
-        if (isRangeSpecified()){
-            value = randomness.randomizeBoundedIntAndLong(value, min?: Long.MIN_VALUE, max?: Long.MAX_VALUE, forceNewValue)
-            return
-        }
-
-        var k = if (randomness.nextBoolean(0.1)) {
-                randomness.nextLong()
-        } else if (randomness.nextBoolean(0.1)) {
-            randomness.nextInt().toLong()
-        } else {
-            randomness.nextInt(1000).toLong()
-        }
-
-        while (forceNewValue && k == value) {
-            k = randomness.nextInt().toLong()
-        }
-
-        value = k
+        value = NumberMutatorUtils.randomizeLong(value, min, max, randomness, forceNewValue)
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
-        if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info shouldnot be null when adaptive gene mutation is enabled")
-            if (additionalGeneMutationInfo.hasHistory()){
-                try {
-                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                            additionalGeneMutationInfo,
-                            this,
-                            allGenes
-                    )
-                    return true
-                }catch (e: DifferentGeneInHistory){}
-            }
-        }
+        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        if (mutated) return true
 
-        //choose an i for 2^i modification
-        val delta = GeneUtils.getDelta(randomness, apc, delta())
-
-        val sign = when{
-            max != null && (value >= max || ((value+delta) > max)) -> -1
-            min != null && (value <= min || ((value-delta) < min)) -> +1
-            else -> randomness.choose(listOf(-1, +1))
-        }
-
-        value += (sign * delta)
-
+        value = NumberMutatorUtils.mutateLong(value, min, max, randomness, apc)
 
         return true
     }
@@ -115,6 +81,8 @@ class LongGene(
             is FloatGene -> value = gene.value.toLong()
             is IntegerGene -> value = gene.value.toLong()
             is DoubleGene -> value = gene.value.toLong()
+            is BigDecimalGene -> value = try { gene.value.toLong() } catch (e: Exception) { return false }
+            is BigIntegerGene -> value = try { gene.value.toLong() } catch (e: Exception) { return false }
             is StringGene -> {
                 value = gene.value.toLongOrNull() ?: return false
             }
@@ -127,6 +95,12 @@ class LongGene(
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId
             }
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
+            }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
+            }
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
                 return false
@@ -136,26 +110,23 @@ class LongGene(
     }
 
 
-
-    /**
-     * calculate the delta based on [min] and [max] that is used for eg, mutation
-     * note the delta is less than [Long.MAX_VALUE]
-     */
-    private fun delta() : Long{
-        return if (isRangeSpecified()){
-            try{
-                min(Long.MAX_VALUE, Math.subtractExact(max?: Long.MAX_VALUE, min?: Long.MIN_VALUE))
-            }catch (e : ArithmeticException) {
-                Long.MAX_VALUE
-            }
-        }else
-            Long.MAX_VALUE
-    }
-
     override fun compareTo(other: ComparableGene): Int {
         if (other !is LongGene) {
             throw RuntimeException("Expected LongGene. Cannot compare to ${other::javaClass} instance")
         }
         return this.toLong().compareTo(other.toLong())
     }
+
+    override fun getMaximum(): Long = (max?: Long.MAX_VALUE).run { if (!maxInclusive) this - 1L else this }
+
+    override fun getMinimum(): Long = (min?: Long.MIN_VALUE).run { if (!minInclusive) this + 1L else this }
+
+    override fun getDefaultValue(): Long {
+        val df = getZero()
+        if (df <= getMaximum() && df >= getMinimum())
+            return df
+        return NumberCalculationUtil.getMiddle(getMinimum(), getMaximum(), 0).toLong()
+    }
+
+    override fun getZero(): Long = 0L
 }

@@ -11,26 +11,24 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class SqlPathGene(
-    name: String,
-    val points: ArrayGene<SqlPointGene> = ArrayGene(name = "points", template = SqlPointGene("p"))
+        name: String,
+        val points: ArrayGene<SqlPointGene> = ArrayGene(
+                name = "points",
+                // paths are lists of at least 2 points
+                minSize = 2,
+                template = SqlPointGene("p"))
 ) : Gene(name, mutableListOf(points)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
     }
 
-    init {
-        /*
-         * Paths must be non-empty lists
-         */
-        points.addElement(SqlPointGene("p1"))
-    }
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(points)
 
     override fun copyContent(): Gene = SqlPathGene(
-        name,
-        points.copyContent() as ArrayGene<SqlPointGene>
+            name,
+            points.copyContent() as ArrayGene<SqlPointGene>
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -44,34 +42,34 @@ class SqlPathGene(
     }
 
     override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return listOf(points)
     }
 
     override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
+            previousGenes: List<Gene>,
+            mode: GeneUtils.EscapeMode?,
+            targetFormat: OutputFormat?,
+            extraCheck: Boolean
     ): String {
         return "\" ( ${
             points.getAllElements()
-                .map { it.getValueAsRawString() }
-                .joinToString(" , ")
+                    .map { it.getValueAsRawString() }
+                    .joinToString(" , ")
         } ) \""
     }
 
     override fun getValueAsRawString(): String {
         return "( ${
             points.getAllElements()
-                .map { it.getValueAsRawString() }
-                .joinToString(" , ")
+                    .map { it.getValueAsRawString() }
+                    .joinToString(" , ")
         } ) "
     }
 
