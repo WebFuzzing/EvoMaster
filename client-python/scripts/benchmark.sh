@@ -10,7 +10,6 @@ then
     exit
 fi
 
-find . | grep -E "(__pycache__|pytest_cache|\.pyc|\.pyo$)" | xargs rm -rf  # delete cached python bytecode
 export PYTHONDONTWRITEBYTECODE=1  # avoid caching python bytecode
 
 for NSEED in {1..5}
@@ -19,6 +18,8 @@ do
     do
         for LEVEL in 0 1 2 3
         do
+            find . | grep -E "(__pycache__|pytest_cache|\.pyc|\.pyo$)" | xargs rm -rf  # delete cached python bytecode
+
             # Prepare workdirs
             GENERATED_DIR="generated/$APP/$LEVEL"
             mkdir -p $GENERATED_DIR
