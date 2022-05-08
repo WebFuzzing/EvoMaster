@@ -12,18 +12,15 @@ import org.slf4j.LoggerFactory
 
 class SqlPolygonGene(
     name: String,
-    val points: ArrayGene<SqlPointGene> = ArrayGene(name = "points", template = SqlPointGene("p"))
+    val points: ArrayGene<SqlPointGene> = ArrayGene(
+            name = "points",
+            // polygons have at least 2 points
+            minSize = 2,
+            template = SqlPointGene("p"))
 ) : Gene(name, mutableListOf(points)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPolygonGene::class.java)
-    }
-
-    init {
-        /*
-         * Polygons must be non-empty lists
-         */
-        points.addElement(SqlPointGene("p1"))
     }
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(points)

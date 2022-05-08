@@ -74,6 +74,18 @@ public class DistanceHelper {
        return base + ((1 - base) / (distance + 1));
     }
 
+    public static double scaleHeuristicWithBase(double heuristic, double base){
+
+        if(heuristic < 0 || heuristic >= 1){
+            throw new IllegalArgumentException("Invalid heuristic: " + base);
+        }
+        if(base < 0 || base >= 1){
+            throw new IllegalArgumentException("Invalid base: " + base);
+        }
+
+        return base + ((1-base)*heuristic);
+    }
+
     public static int distanceToDigit(char c) {
         return distanceToRange(c, '0', '9');
     }
@@ -181,8 +193,13 @@ public class DistanceHelper {
     }
 
     public static double getDistance(Object left, Object right) {
-        Objects.requireNonNull(left);
-        Objects.requireNonNull(right);
+
+        if(left == null && right == null){
+            return 0;
+        }
+        if(left == null || right == null){
+            return Double.MAX_VALUE;
+        }
 
         final double distance;
         if (left instanceof String && right instanceof String) {

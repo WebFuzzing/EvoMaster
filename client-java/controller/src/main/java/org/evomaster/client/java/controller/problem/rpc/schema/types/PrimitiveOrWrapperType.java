@@ -14,6 +14,9 @@ public class PrimitiveOrWrapperType extends TypeSchema {
      */
     public final boolean isWrapper;
 
+    private final static List<Class<?>> INTEGRAL_NUMBER = Arrays.asList(Byte.class, byte.class, Short.class, short.class, Integer.class, int.class, Long.class, long.class);
+    private final static List<Class<?>> FLOATINGPOINT_NUMBER = Arrays.asList(Float.class, float.class, Double.class, double.class);
+
     public PrimitiveOrWrapperType(String type, String fullTypeName, boolean isWrapper, Class<?> clazz) {
         super(type, fullTypeName, clazz);
         if (!isPrimitiveOrTypes(type))
@@ -35,5 +38,23 @@ public class PrimitiveOrWrapperType extends TypeSchema {
         if (clazz.isPrimitive()) return true;
         return  clazz == Integer.class || clazz == Byte.class || clazz == Short.class || clazz == Long.class ||
                 clazz== Float.class || clazz == Double.class || clazz == Boolean.class || clazz == Character.class;
+    }
+
+
+    @Override
+    public PrimitiveOrWrapperType copy() {
+        return new PrimitiveOrWrapperType(getType(), getFullTypeName(), isWrapper, getClazz());
+    }
+
+    public boolean isNumber(){
+        return isIntegralNumber() || isFloatingPointNumber();
+    }
+
+    public boolean isFloatingPointNumber(){
+        return FLOATINGPOINT_NUMBER.contains(getClazz());
+    }
+
+    public boolean isIntegralNumber(){
+        return INTEGRAL_NUMBER.contains(getClazz());
     }
 }

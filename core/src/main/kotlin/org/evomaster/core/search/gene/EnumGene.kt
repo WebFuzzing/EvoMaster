@@ -48,27 +48,28 @@ class EnumGene<T : Comparable<T>>(
              */
             //throw IllegalArgumentException("Empty list of values")
             log.warn("Enum Gene (name: $name) has empty list of values")
-        }
+            values = listOf()
+        }else{
+            val list = data
+                .toSet() // we want no duplicate
+                .toList() // need ordering to specify index of selection, so Set would not do
+                .sorted() // sort, to make meaningful list comparisons
+                .map { if (it is String) it.intern() as T else it } //if strings, make sure to intern them
 
-        val list = data
-            .toSet() // we want no duplicate
-            .toList() // need ordering to specify index of selection, so Set would not do
-            .sorted() // sort, to make meaningful list comparisons
-            .map { if (it is String) it.intern() as T else it } //if strings, make sure to intern them
+            /*
+               we need to make sure that, if we are adding a list that has content equal to
+               an already present list in the cache, we only use this latter
+             */
+            values = if (cache.contains(list)) {
+                cache.find { it == list }!! as List<T> // equality based on content, not reference
+            } else {
+                cache.add(list)
+                list
+            }
 
-        /*
-           we need to make sure that, if we are adding a list that has content equal to
-           an already present list in the cache, we only use this latter
-         */
-        values = if (cache.contains(list)) {
-            cache.find { it == list }!! as List<T> // equality based on content, not reference
-        } else {
-            cache.add(list)
-            list
-        }
-
-        if (index < 0 || index >= values.size) {
-            throw IllegalArgumentException("Invalid index: $index")
+            if (index < 0 || index >= values.size) {
+                throw IllegalArgumentException("Invalid index: $index")
+            }
         }
     }
 
@@ -84,6 +85,7 @@ class EnumGene<T : Comparable<T>>(
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        if(values.isEmpty()) return
 
         val k = if (forceNewValue) {
             randomness.nextInt(0, values.size - 1, index)

@@ -47,4 +47,9 @@ public class PairType extends TypeSchema{
         dto.type = RPCSupportedDataType.PAIR;
         return dto;
     }
+
+    @Override
+    public PairType copy() {
+        return new PairType(getFirstTemplate(), getSecondTemplate());
+    }
 }

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.service.mutator.genemutation.mutationupdate
 
-import org.evomaster.core.search.gene.FloatingPointNumber.Companion.getFormattedValue
-import org.evomaster.core.search.gene.FloatingPointNumber.Companion.mutateFloatingPointNumber
+
+import org.evomaster.core.search.gene.NumberMutatorUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.utils.NumberCalculationUtil
@@ -11,10 +11,11 @@ class DoubleMutationUpdate(direction: Boolean,
                            min: Double,
                            max: Double,
                            precision: Int?,
+                           scale: Int?,
                            updateTimes : Int = 0,
                            counter: Int = 0,
                            reached: Boolean = false, latest : Double? = null, preferMin: Double = min, preferMax : Double = max)
-    : MutationBoundaryUpdate<Double>(direction, min, max, precision = precision, updateTimes = updateTimes, counter = counter, reached = reached, latest = latest, preferMin = preferMin, preferMax = preferMax), Comparable<DoubleMutationUpdate> {
+    : MutationBoundaryUpdate<Double>(direction, min, max, precision = precision, scale=scale, updateTimes = updateTimes, counter = counter, reached = reached, latest = latest, preferMin = preferMin, preferMax = preferMax), Comparable<DoubleMutationUpdate> {
 
     override fun compareTo(other: DoubleMutationUpdate): Int {
         val r = -candidatesBoundary() + other.candidatesBoundary()
@@ -32,13 +33,13 @@ class DoubleMutationUpdate(direction: Boolean,
     override fun random(apc: AdaptiveParameterControl, randomness: Randomness, current: Double, probOfMiddle: Double, start: Int, end: Int, minimalTimeForUpdate: Int): Double {
         if(randomness.nextBoolean(probOfMiddle)) {
             val m = middle()
-            if (m != current) return getFormattedValue(m, precision)
+            if (m != current) return NumberMutatorUtils.getFormattedValue(m, scale)
         }
 
         val sdirection = if (direction) randomDirection(randomness)?.run { this > 0 } else null
 
-        return mutateFloatingPointNumber(
-            randomness, sdirection, maxRange = candidatesBoundary().toLong(),apc, current, preferMin, preferMax, precision
+        return NumberMutatorUtils.mutateFloatingPointNumber(
+            randomness, sdirection, maxRange = candidatesBoundary().toLong(),apc, current, preferMin, preferMax, scale
         )
     }
 

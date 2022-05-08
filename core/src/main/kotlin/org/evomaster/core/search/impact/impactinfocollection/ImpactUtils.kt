@@ -61,6 +61,10 @@ class ImpactUtils {
                 is DateTimeGene -> DateTimeGeneImpact(id, gene)
                 is TimeGene -> TimeGeneImpact(id, gene)
                 is SeededGene<*> -> SeededGeneImpact(id, gene)
+                // math
+                is BigDecimalGene -> BigDecimalGeneImpact(id)
+                is BigIntegerGene -> BigIntegerGeneImpact(id)
+                is NumericStringGene -> NumericStringGeneImpact(id, gene)
                 //sql
                 is SqlNullable -> SqlNullableImpact(id, gene)
                 is SqlJSONGene -> SqlJsonGeneImpact(id, gene)

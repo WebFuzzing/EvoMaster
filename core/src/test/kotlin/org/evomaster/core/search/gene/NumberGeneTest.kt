@@ -1,9 +1,10 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.service.Randomness
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
+import java.math.BigInteger
 
 class NumberGeneTest {
 
@@ -11,7 +12,7 @@ class NumberGeneTest {
 
     @Test
     fun testDoubleGene(){
-        val gene = DoubleGene("value", 12.9999999, -99.99, 99.99, 2)
+        val gene = DoubleGene("value", 12.9999999, -99.99, 99.99, precision = null, scale = 2)
         assertEquals(0.01, gene.getMinimalDelta())
         assertEquals(13.00, gene.getFormattedValue())
         gene.value = 12.010003
@@ -25,7 +26,7 @@ class NumberGeneTest {
 
     @Test
     fun testFloatDelta(){
-        val gene = FloatGene("value", 12.9999999f, -99.99f, 99.99f, 2)
+        val gene = FloatGene("value", 12.9999999f, -99.99f, 99.99f, precision = null, scale = 2)
         assertEquals(0.01f, gene.getMinimalDelta())
         assertEquals(13.00f, gene.getFormattedValue())
         gene.value = 12.010003f
@@ -36,5 +37,267 @@ class NumberGeneTest {
 
         assertTrue(gene.isValid())
     }
+
+
+    @Test
+    fun testBigDecimalIntegralNumberFormat(){
+        BigDecimalGene("foo", precision = 2, scale = 0).apply {
+            assertEquals("99", getMaximum().toString())
+            assertEquals("-99", getMinimum().toString())
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+
+            this.value = BigDecimal("100")
+            assertFalse(isValid())
+        }
+
+        BigDecimalGene("foo", precision = 2, scale = 0, maxInclusive = false).apply {
+            assertEquals("98", getMaximum().toString())
+            assertEquals("-99", getMinimum().toString())
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        BigDecimalGene("foo", precision = 2, scale = 0, minInclusive = false).apply {
+            assertEquals("99", getMaximum().toString())
+            assertEquals("-98", getMinimum().toString())
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        BigDecimalGene("foo", min= BigDecimal("42"), max = BigDecimal("42")).apply {
+            assertFalse(isMutable())
+        }
+
+    }
+
+    @Test
+    fun testBigDecimalFloatingPointNumberFormat(){
+
+        BigDecimalGene("foo", precision = 4, scale = 2).apply {
+            assertEquals("99.99", getMaximum().toString())
+            assertEquals("-99.99", getMinimum().toString())
+            // default
+            assertEquals("0.00", value.toString())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+
+        BigDecimalGene("foo", max = BigDecimal.ZERO, precision = 4, scale = 2, maxInclusive = false).apply {
+            assertEquals("-0.01", getMaximum().toString())
+            assertEquals("-99.99", getMinimum().toString())
+            // default
+            assertEquals("-50.00", value.toString())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+
+        BigDecimalGene("foo", min = BigDecimal.ZERO, precision = 4, scale = 2, minInclusive = false).apply {
+            assertEquals("99.99", getMaximum().toString())
+            assertEquals("0.01", getMinimum().toString())
+            // default
+            assertEquals("50.00", value.toString())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+    }
+
+
+    @Test
+    fun testDoubleGeneInclusive(){
+        DoubleGene("value", min = 0.0,precision = 4, scale = 2, minInclusive = false).apply {
+            assertEquals(99.99, getMaximum())
+            assertEquals(0.01, getMinimum())
+            // default
+            assertEquals(50.0, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        DoubleGene("value", max = 0.0,precision = 4, scale = 2, maxInclusive = false).apply {
+            assertEquals(-0.01, getMaximum())
+            assertEquals(-99.99, getMinimum())
+            // default
+            assertEquals(-50.0, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        DoubleGene("value").apply {
+            assertEquals(Double.MAX_VALUE, getMaximum())
+            assertEquals(-Double.MAX_VALUE, getMinimum())
+        }
+
+        DoubleGene("value", minInclusive = false, maxInclusive = false).apply {
+            assertNotEquals(Double.MAX_VALUE, getMaximum())
+            assertTrue(getMaximum() < Double.MAX_VALUE)
+            assertNotEquals(-Double.MAX_VALUE, getMinimum())
+            assertTrue(getMinimum() > -Double.MAX_VALUE)
+            assertTrue(getMinimum() < getMaximum())
+        }
+
+    }
+
+    @Test
+    fun testFloatDeltaInclusive(){
+        FloatGene("value", min = 0.0f,precision = 4, scale = 2, minInclusive = false).apply {
+            assertEquals(99.99f, getMaximum())
+            assertEquals(0.01f, getMinimum())
+            // default
+            assertEquals(50.0f, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        FloatGene("value", max = 0.0f,precision = 4, scale = 2, maxInclusive = false).apply {
+            assertEquals(-0.01f, getMaximum())
+            assertEquals(-99.99f, getMinimum())
+            // default
+            assertEquals(-50.0f, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        FloatGene("value").apply {
+            assertEquals(Float.MAX_VALUE, getMaximum())
+            assertEquals(-Float.MAX_VALUE, getMinimum())
+        }
+
+        FloatGene("value", minInclusive = false, maxInclusive = false).apply {
+            assertNotEquals(Float.MAX_VALUE, getMaximum())
+            assertTrue(Float.MAX_VALUE > getMaximum())
+            assertNotEquals(-Float.MAX_VALUE, getMinimum())
+            assertTrue(-Float.MAX_VALUE < getMinimum())
+        }
+    }
+
+    @Test
+    fun testIntegerGene(){
+        IntegerGene("ig", precision = 2).apply {
+            assertEquals(99, getMaximum())
+            assertEquals(-99, getMinimum())
+            // default
+            assertEquals(0, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        IntegerGene("ig", min = 0, precision = 2, minInclusive = false).apply {
+            assertEquals(99, getMaximum())
+            assertEquals(1, getMinimum())
+            // default
+            assertEquals(50, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        IntegerGene("ig", max = 0, precision = 2, maxInclusive = false).apply {
+            assertEquals(-1, getMaximum())
+            assertEquals(-99, getMinimum())
+            // default
+            assertEquals(-50, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+    }
+
+    @Test
+    fun testLongGene(){
+        LongGene("ig", precision = 2).apply {
+            assertEquals(99, getMaximum())
+            assertEquals(-99, getMinimum())
+            // default
+            assertEquals(0, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        LongGene("ig", min = 0, precision = 2, minInclusive = false).apply {
+            assertEquals(99, getMaximum())
+            assertEquals(1, getMinimum())
+            // default
+            assertEquals(50, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        LongGene("ig", max = 0, precision = 2, maxInclusive = false).apply {
+            assertEquals(-1, getMaximum())
+            assertEquals(-99, getMinimum())
+            // default
+            assertEquals(-50, value)
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+    }
+
+    @Test
+    fun testBigIntegerGene(){
+        BigIntegerGene("ig", precision = 2).apply {
+            assertEquals(99, getMaximum().toInt())
+            assertEquals(-99, getMinimum().toInt())
+            // default
+            assertEquals(0, value.toInt())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        BigIntegerGene("ig", min = BigInteger.ZERO, precision = 2, minInclusive = false).apply {
+            assertEquals(99, getMaximum().toInt())
+            assertEquals(1, getMinimum().toInt())
+            // default
+            assertEquals(50, value.toInt())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+
+        BigIntegerGene("ig", max = BigInteger.ZERO, precision = 2, maxInclusive = false).apply {
+            assertEquals(-1, getMaximum().toInt())
+            assertEquals(-99, getMinimum().toInt())
+            // default
+            assertEquals(-50, value.toInt())
+
+            assertTrue(isValid())
+            randomize(random, false, listOf())
+            assertTrue(isValid())
+        }
+    }
+
 
 }

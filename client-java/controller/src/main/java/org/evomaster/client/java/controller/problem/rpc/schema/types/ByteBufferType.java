@@ -23,4 +23,9 @@ public class ByteBufferType extends TypeSchema {
         dto.type = RPCSupportedDataType.BYTEBUFFER;
         return dto;
     }
+
+    @Override
+    public ByteBufferType copy() {
+        return new ByteBufferType();
+    }
 }

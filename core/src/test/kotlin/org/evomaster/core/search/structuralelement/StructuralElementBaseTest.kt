@@ -12,15 +12,19 @@ abstract class StructuralElementBaseTest {
 
     abstract fun getExpectedChildrenSize() : Int
 
+    fun getStructuralElementAndIdentifyAsRoot() : StructuralElement{
+        return getStructuralElement().apply { identifyAsRoot() }
+    }
+
     @Test
     fun testInstance(){
-        val template = getStructuralElement()
+        val template = getStructuralElementAndIdentifyAsRoot()
         assertChildren(template, getExpectedChildrenSize())
     }
 
     @Test
     fun testCopy(){
-        val template = getStructuralElement()
+        val template = getStructuralElementAndIdentifyAsRoot()
         val copy = template.copy()
         assertCopy(template, copy)
     }

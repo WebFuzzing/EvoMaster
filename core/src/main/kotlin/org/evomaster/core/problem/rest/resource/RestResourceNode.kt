@@ -348,7 +348,7 @@ class RestResourceNode(
      * sample a rest resource call with given [action]
      */
     fun sampleOneAction(action : RestCallAction, randomness: Randomness) : RestResourceCalls{
-        val copy = action.copy() as RestCallAction
+        val copy = action.copyContent() as RestCallAction
         copy.randomize(randomness, false)
 
         val template = templates[copy.verb.toString()]

@@ -15,9 +15,9 @@ CREATE TYPE complex AS
 
 CREATE TYPE inventory_item AS
 (
-    name        text,
+    address        text,
     supplier_id integer,
-    price       numeric
+    price       money
 );
 
 CREATE TYPE nested_composite_type AS

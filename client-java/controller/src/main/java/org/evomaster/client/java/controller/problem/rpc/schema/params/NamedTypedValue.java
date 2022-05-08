@@ -37,7 +37,21 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     private boolean isNullable = true;
 
     /**
-     * a schema for collecting if the param is accessaible
+     * represent whether the value is mutable
+     *
+     * note that if the param is not mutable and the default value is null,
+     * it represents that the value is a fixed NULL
+     */
+    private boolean isMutable = true;
+
+    /**
+     * default value for the parameter
+     * it is nullable
+     */
+    private NamedTypedValue defaultValue;
+
+    /**
+     * a schema for collecting if the param is accessible
      */
     public final AccessibleSchema accessibleSchema;
 
@@ -127,6 +141,10 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
             dto.candidates = candidates.stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         if (candidateReferences!=null)
             dto.candidateReferences = new ArrayList<>(candidateReferences);
+
+        dto.isMutable = isMutable;
+        if (defaultValue != null)
+            dto.defaultValue = defaultValue.getDto();
         return dto;
     }
 
@@ -141,11 +159,12 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     public void copyProperties(NamedTypedValue copy){
         copy.setNullable(isNullable);
         copy.setHasDependentCandidates(isHasDependentCandidates());
+        copy.setMutable(isMutable());
+        copy.setDefaultValue(getDefaultValue());
         if (getCandidates() != null && !getCandidates().isEmpty())
             copy.setCandidates(getCandidates().stream().map(c-> c.copyStructureWithProperties()).collect(Collectors.toList()));
         if (getCandidateReferences()!= null && !getCandidateReferences().isEmpty())
             copy.setCandidateReferences(new ArrayList<>(getCandidateReferences()));
-
     }
 
 
@@ -241,4 +260,20 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
      * eg, float 4.2 could be 4.2f
      */
     public abstract String getValueAsJavaString();
+
+    public boolean isMutable() {
+        return isMutable;
+    }
+
+    public void setMutable(boolean mutable) {
+        isMutable = mutable;
+    }
+
+    public NamedTypedValue getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(NamedTypedValue defaultValue) {
+        this.defaultValue = defaultValue;
+    }
 }

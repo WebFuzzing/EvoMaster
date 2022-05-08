@@ -47,6 +47,12 @@ class StringGene(
 
 ) : ComparableGene(name, specializationGenes) {
 
+    init {
+        if (minLength>maxLength) {
+            throw IllegalArgumentException("Cannot create string gene ${this.name} with mininum length ${this.minLength} and maximum length ${this.maxLength}")
+        }
+    }
+
     companion object {
 
         private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
@@ -656,6 +662,15 @@ class StringGene(
             is ImmutableDataHolderGene -> value = gene.value
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId.toString()
+            }
+            // might check toEngineeringString() and toPlainString()
+            is BigDecimalGene -> value = gene.value.toString()
+            is BigIntegerGene -> value = gene.value.toString()
+            is SeededGene<*> ->{
+                return this.bindValueBasedOn(gene.getPhenotype())
+            }
+            is NumericStringGene ->{
+                return this.bindValueBasedOn(gene.number)
             }
             else -> {
                 //return false

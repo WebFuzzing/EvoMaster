@@ -75,7 +75,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
 
     @Test
     fun testTraverseBackIndex(){
-        val root = getStructuralElement()
+        val root = getStructuralElementAndIdentifyAsRoot() as RestIndividual
         assertEquals(root, root.getRoot())
 
         val barId = root.seeInitializingActions()[1].seeGenes()[0]
