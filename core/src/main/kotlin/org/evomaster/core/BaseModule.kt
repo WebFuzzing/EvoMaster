@@ -93,13 +93,4 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
         config.updateProperties(options)
         return config
     }
-
-//    @Provides @Singleton
-//    fun getTestSuiteWriter(config: EMConfig): TestSuiteWriter {
-//        return when {
-//            // TODO Python: Refactor TestSuiteWriter per language
-//            config.outputFormat.isPython() -> TestSuiteWriter()
-//            else -> TestSuiteWriter()
-//        }
-//    }
 }
