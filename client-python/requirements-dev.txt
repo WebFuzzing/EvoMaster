@@ -1,10 +1,12 @@
 -r requirements.txt
+build==0.7.0
 flake8==3.8.4
 flask-restx==0.5.1
 pylint==2.6.0
 pytest-cov==2.11.1
 pytest==6.1.1
-requests==2.24.0
+requests==2.27.1
+twine==4.0.0
 wheel==0.35.1
 # Below are the ones used by EMB
 flask-marshmallow==0.14.0
