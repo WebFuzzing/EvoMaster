@@ -20,9 +20,9 @@ class SeededGene<T>(
      */
     val gene: T,
     /**
-     * a set of candidates specified by user, the search could manipluate which one is applied
+     * a set of candidates specified by user, the search could manipulate which one is applied
      */
-    val seeded: EnumGene<T>,
+    val seeded: EnumGene<T>, //FIXME but T genes are not immutable... need a ChoiceGene
     /**
      * representing if the [seeded] is applied to represent this
      * otherwise apply [gene]

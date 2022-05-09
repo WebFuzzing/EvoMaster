@@ -59,7 +59,6 @@ object GeneSamplerForTests {
                 Note that here we do NOT randomize the values of genes, but rather
                 the (fixed) constraints
              */
-            StringGene::class -> sampleStringGene(rand) as T
             ArrayGene::class -> sampleArrayGene(rand) as T
             Base64StringGene::class -> sampleBase64StringGene(rand) as T
             BigDecimalGene::class -> sampleBigDecimalGene(rand) as T
@@ -76,6 +75,9 @@ object GeneSamplerForTests {
             NumericStringGene::class -> sampleNumericStringGene(rand) as T
             ObjectGene::class -> sampleObjectGene(rand) as T
             OptionalGene::class -> sampleOptionalGene(rand) as T
+            PairGene::class -> samplePairGene(rand) as T
+            //TODO SeededGene but need to make ChoiceGene first
+            StringGene::class -> sampleStringGene(rand) as T
             else -> throw IllegalStateException("No sampler for $klass")
 
             //TODO need for all Genes
@@ -84,6 +86,33 @@ object GeneSamplerForTests {
     }
 
 
+    fun sampleTupleGene(rand: Randomness) : TupleGene{
+
+        val selection = geneClasses
+
+        return TupleGene(
+                name = "rand TupleGene ${rand.nextInt()}",
+                elements = listOf(
+                        sample(rand.choose(selection), rand),
+                        sample(rand.choose(selection), rand),
+                        sample(rand.choose(selection), rand)
+                ),
+                lastElementTreatedSpecially = rand.nextBoolean()
+
+        )
+    }
+
+    fun samplePairGene(rand: Randomness) : PairGene<*,*>{
+
+        val selection = geneClasses
+
+        return PairGene(
+                name = "rand PairGene",
+                first = sample(rand.choose(selection), rand),
+                second = sample(rand.choose(selection), rand),
+                isFirstMutable = rand.nextBoolean()
+        )
+    }
 
     fun sampleOptionalGene(rand: Randomness) : OptionalGene{
 
