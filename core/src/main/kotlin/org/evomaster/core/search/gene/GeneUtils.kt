@@ -599,7 +599,6 @@ object GeneUtils {
     }
 
     private fun isTupleOptionalObjetNotCycle(gene: Gene):Boolean {
-        assert(gene is TupleGene && gene.lastElementTreatedSpecially)
         return (gene is TupleGene && gene.elements.last() is OptionalGene
                 && (gene.elements.last() as OptionalGene).gene is ObjectGene &&
                 (gene.elements.last() as OptionalGene).gene !is CycleObjectGene)
