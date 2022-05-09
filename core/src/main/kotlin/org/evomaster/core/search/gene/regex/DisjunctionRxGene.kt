@@ -32,7 +32,6 @@ class DisjunctionRxGene(
         }
     }
 
-
     /**
      * whether we should append a prefix.
      * this can only happen if [matchStart] is false
@@ -49,6 +48,11 @@ class DisjunctionRxGene(
         private const val APPEND = 0.05
         private val log : Logger = LoggerFactory.getLogger(DisjunctionRxGene::class.java)
     }
+
+    /**
+     *  to handle "term*", as * can be empty, representing an empty string ""
+     */
+    override fun canBeChildless() = true
 
     override fun getChildren(): List<Gene> = terms
 

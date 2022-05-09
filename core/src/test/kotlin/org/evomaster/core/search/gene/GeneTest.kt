@@ -17,6 +17,9 @@ class GeneTest {
         @JvmStatic
         @BeforeAll
         fun init() {
+            /*
+                Load all the classes that extends from Gene
+             */
             val target = File("target/classes")
             if (!target.exists()) {
                 throw IllegalStateException("Compiled class folder does not exist: ${target.absolutePath}")
@@ -72,4 +75,32 @@ class GeneTest {
         }
         assertEquals(0, wrongPackage.size)
     }
+
+    @Test
+    fun testNameSuffix(){
+
+        val wrongName = genes.map { it.qualifiedName!! }
+                .filter { ! it.endsWith("Gene") }
+
+        if(wrongName.size > 0){
+            println("Wrong names: $wrongName")
+        }
+        assertEquals(0, wrongName.size)
+    }
+
+    @Test
+    fun testHierarchy(){
+
+        val wrongHierarchy = genes.filter {
+            it != Gene::class && !SimpleGene::class.isSuperclassOf(it) && !CompositeGene::class.isSuperclassOf(it)
+        }
+
+        if(wrongHierarchy.size > 0){
+            println("Wrong names: $wrongHierarchy")
+        }
+        assertEquals(0, wrongHierarchy.size)
+    }
+
+
+    //TODO for each *Gene, sample random instances, and verify properties
 }

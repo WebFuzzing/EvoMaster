@@ -11,9 +11,10 @@ abstract class CompositeGene(
 ) : Gene(name, children){
 
     init {
-        if(children.isEmpty()){
-            // TODO this is breaking the tests in org.evomaster.core.parser due to DisjunctionRxGene
-            //throw IllegalStateException("A composite gene must have at least 1 internal gene")
+        if(children.isEmpty() && !canBeChildless()){
+            throw IllegalStateException("A composite gene must have at least 1 internal gene")
         }
     }
+
+    open fun canBeChildless() = false
 }
