@@ -11,51 +11,7 @@ import kotlin.reflect.KClass
 
 class GeneTest {
 
-
-    companion object {
-
-        private val genes: MutableList<KClass<out Gene>> = mutableListOf()
-
-        @JvmStatic
-        @BeforeAll
-        fun init() {
-            /*
-                Load all the classes that extends from Gene
-             */
-            val target = File("target/classes")
-            if (!target.exists()) {
-                throw IllegalStateException("Compiled class folder does not exist: ${target.absolutePath}")
-            }
-
-            target.walk()
-                    .filter { it.name.endsWith(".class") }
-                    .map {
-                        val s = it.path.replace("\\", "/")
-                                .replace("target/classes/", "")
-                                .replace("/", ".")
-                        s.substring(0, s.length - ".class".length)
-                    }
-                    .filter { ! it.endsWith("\$Companion") }
-                    .filter { !it.contains("$") }
-                    .forEach {
-                        //println("Analyzing $it")
-                        val c = try {
-                             this.javaClass.classLoader.loadClass(it).kotlin
-                        }catch (e: Exception){
-                            println("Failed to load class: ${e.message}")
-                            throw e
-                        }
-                        val subclass : Boolean = try {
-                            Gene::class.isSuperclassOf(c)
-                        } catch (e: java.lang.UnsupportedOperationException){
-                            false
-                        }
-                        if(subclass){
-                            genes.add(c as KClass<out Gene>)
-                        }
-                    }
-        }
-    }
+    private val genes = GeneSamplerForTests.geneClasses
 
     @Test
     fun testNumberOfGenes(){
@@ -114,6 +70,7 @@ class GeneTest {
         for(i in 0..100){
             val s = GeneSamplerForTests.sample(StringGene::class, rand)
             s.randomize(rand, true, listOf())
+            assertTrue(s.isValid())
             assertTrue(s.value.length >= s.minLength)
             assertTrue(s.value.length <= s.maxLength)
         }
@@ -164,6 +121,25 @@ class GeneTest {
                 var p = n
                 while(p != null){p = p.parent as Gene}
                 assertEquals(root, p)
+            }
+        }
+    }
+
+    @Test
+    fun testParentWhenCopy(){
+
+        val sample = getSample(321)
+
+        sample.forEach { root ->
+            root.identifyAsRoot()
+            val copy = root.copy()
+            assertTrue(copy != root) //TODO what is immutable root? might fail
+            val wholeTree = copy.flatView{it != root}
+
+            wholeTree.forEach { n ->
+                var p = n
+                while(p != null){p = p.parent as Gene}
+                assertEquals(copy, p)
             }
         }
     }
