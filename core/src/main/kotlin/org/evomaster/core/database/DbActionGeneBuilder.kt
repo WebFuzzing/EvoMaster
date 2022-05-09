@@ -282,6 +282,21 @@ class DbActionGeneBuilder {
                 ColumnDataType.COMPOSITE_TYPE ->
                     handleCompositeColumn(id, table, column)
 
+                ColumnDataType.OID,
+                ColumnDataType.REGCLASS,
+                ColumnDataType.REGCOLLATION,
+                ColumnDataType.REGCONFIG,
+                ColumnDataType.REGDICTIONARY,
+                ColumnDataType.REGNAMESPACE,
+                ColumnDataType.REGOPER,
+                ColumnDataType.REGOPERATOR,
+                ColumnDataType.REGPROC,
+                ColumnDataType.REGPROCEDURE,
+                ColumnDataType.REGROLE,
+                ColumnDataType.REGTYPE ->
+                    handleObjectIdentifierType(column.name)
+
+
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
 
@@ -693,6 +708,14 @@ class DbActionGeneBuilder {
                 .toList()
         return SqlCompositeGene(column.name, fields, column.compositeTypeName)
     }
+
+    /**
+     * Handle Postgres Object identifier type
+     * (https://www.postgresql.org/docs/current/datatype-oid.html) as
+     * integers.
+     */
+    private fun handleObjectIdentifierType(name: String) = IntegerGene(name)
+
 
     /**
      * handle bit for mysql
