@@ -250,6 +250,7 @@ internal class GeneUtilsTest {
 
         assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
     }
+    
 
     @Test
     fun testRepairInPetclinic() {
