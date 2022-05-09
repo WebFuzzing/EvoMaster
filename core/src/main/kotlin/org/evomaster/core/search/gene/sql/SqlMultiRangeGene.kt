@@ -3,7 +3,7 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.sql.SqlStrings.removeEnclosedQuotationMarks
+import org.evomaster.core.search.gene.GeneUtils.removeEnclosedQuotationMarks
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -34,7 +34,7 @@ class SqlMultiRangeGene<T>(
         val log: Logger = LoggerFactory.getLogger(SqlMultiRangeGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(rangeGenes)
+    override fun getChildren(): List<Gene> = listOf(rangeGenes)
 
     override fun copyContent(): Gene {
         val copyOfRangeGenes = rangeGenes.copyContent() as ArrayGene<SqlRangeGene<T>>

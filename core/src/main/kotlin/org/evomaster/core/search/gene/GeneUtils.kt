@@ -592,5 +592,53 @@ object GeneUtils {
                 && (it.elements.last() as OptionalGene).gene is ObjectGene &&
                 (it.elements.last() as OptionalGene).gene !is CycleObjectGene)
 
+
+    /**
+     * A special string used for representing a place in the string
+     * where we should add a SINGLE APOSTROPHE (').
+     * This is used mainly for SQL value handling.
+     */
+    const val SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER"
+
+    private val QUOTATION_MARK = "\""
+
+    /**
+     * Returns a new string by removing the enclosing quotation marks of a string.
+     * For example,
+     * ""Hello World"" -> "Hello World"
+     * """" -> ""
+     * If the input string does not start and end with a
+     * quotation mark, the output string is equal to the input string.
+     * For example:
+     * "Hello World"" -> "Hello World""
+     * ""Hello World" -> ""Hello World"
+     */
+    fun removeEnclosedQuotationMarks(str: String): String {
+        return if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
+            str.subSequence(1, str.length - 1).toString()
+        } else {
+            str
+        }
+    }
+
+    private fun encloseWithSingleApostrophePlaceHolder(str: String) = SINGLE_APOSTROPHE_PLACEHOLDER + str + SINGLE_APOSTROPHE_PLACEHOLDER
+
+    /**
+     * If the input string is enclosed in Quotation Marks, these symbols are replaced
+     * by the special string in SINGLE_APOSTROPHE_PLACEHOLDER in the output string.
+     * For example:
+     * ""Hello"" -> "SINGLE_APOSTROPHE_PLACEHOLDERHelloSINGLE_APOSTROPHE_PLACEHOLDER".
+     *
+     * If the input string is not enclosed in quotation marks, the output string is equal
+     * to the input string (i.e. no changes).
+     */
+    fun replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(str: String): String {
+        return if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
+            encloseWithSingleApostrophePlaceHolder(removeEnclosedQuotationMarks(str))
+        } else {
+            str
+        }
+    }
+
 }
 

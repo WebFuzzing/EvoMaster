@@ -3,8 +3,8 @@ package org.evomaster.core.search.gene.sql.textsearch
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.sql.SqlStrings.SINGLE_APOSTROPHE_PLACEHOLDER
-import org.evomaster.core.search.gene.sql.SqlStrings.removeEnclosedQuotationMarks
+import org.evomaster.core.search.gene.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
+import org.evomaster.core.search.gene.GeneUtils.removeEnclosedQuotationMarks
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo

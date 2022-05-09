@@ -1,8 +1,8 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.core.search.gene.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
-import org.evomaster.core.search.gene.sql.SqlStrings.SINGLE_APOSTROPHE_PLACEHOLDER
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

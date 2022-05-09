@@ -5,6 +5,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -36,7 +37,7 @@ class SqlCompositeGene(
         return "ROW(${
             fields
                     .map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
-                    .joinToString { SqlStrings.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(it) }
+                    .joinToString { replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(it) }
         })"
     }
 
