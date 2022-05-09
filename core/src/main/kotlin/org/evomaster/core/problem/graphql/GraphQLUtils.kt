@@ -89,14 +89,6 @@ object GraphQLUtils {
                     )
 
                 }
-                /*  else if (returnGene.name.endsWith(ObjectGene.GqlConst.unionTag)|| returnGene.name.endsWith(ObjectGene.interfaceTag)) {//The first one is a union
-
-                      var query = getQuery(returnGene, a)
-                      Entity.json("""
-                     {"query" : "    { $query }     ","variables":null}
-                  """.trimIndent())
-
-                  } */
                 else {
                     var query = getQuery(returnGene, a)
                     Entity.json(
@@ -203,7 +195,6 @@ object GraphQLUtils {
             a.parameters.filterIsInstance<GQReturnParam>().forEach { p ->
                 if (p.gene is ObjectGene ) {
                     p.gene.fields.forEach { if ((it is TupleGene && it.lastElementTreatedSpecially)|| (it is BooleanGene ) || (it is OptionalGene) ) GeneUtils.repairBooleanSelection(p.gene) }
-                   // GeneUtils.repairBooleanSelection(p.gene)
                 }
             }
         }

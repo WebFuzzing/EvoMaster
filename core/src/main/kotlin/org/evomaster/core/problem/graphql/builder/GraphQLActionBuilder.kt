@@ -754,26 +754,21 @@ object GraphQLActionBuilder {
                 The the tuple field is constructed
                 put it into an optional ? todo
              */
-               /* val constructedTuple =
-                    OptionalGene(tupleElements.last().name, TupleGene(tupleElements.last().name, tupleElements))*/
-
-                tupleElements.last()
-
-                val constructedTuple = if (isLastNotPrimitive(tupleElements.last())) {
+                val constructedTuple = if (isLastNotPrimitive(tupleElements.last()))
                     OptionalGene(
                         tupleElements.last().name, TupleGene(
                             tupleElements.last().name, tupleElements,
                             lastElementTreatedSpecially = true
                         )
                     )
-                } else {
+                else
+                //Dropping the last element since it is a primitive type
                     OptionalGene(
                         tupleElements.last().name, TupleGene(
                             tupleElements.last().name, tupleElements.dropLast(1),
                             lastElementTreatedSpecially = false
                         )
                     )
-                }
 
                 fields.add(constructedTuple)
 
