@@ -6,7 +6,9 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.google.inject.Injector;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.core.EMConfig;
+import org.evomaster.core.problem.external.service.ExternalServiceInfo;
 import org.evomaster.core.problem.external.service.ExternalServices;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -85,7 +88,7 @@ public class ExternalServiceEMTest extends SpringTestBase {
         DnsCacheManipulator.clearDnsCache();
     }
 
-    @Disabled
+    @Test
     public void externalServiceCallsCaptureTest() throws Throwable {
         String[] args = new String[]{
                 "--createTests", "false",
@@ -108,7 +111,8 @@ public class ExternalServiceEMTest extends SpringTestBase {
         RestIndividual restIndividual = resourceSampler.sample();
 
         // asserts whether the call made during the start-up is captured
-        assertEquals(1, externalServices.getExternalServices().size());
+        assertEquals(1, externalServices.getExternalServices().size(), externalServices.getExternalServices().stream().map(ExternalServiceInfo::getRemoteHostname).collect(Collectors.joining(",")));
+        assertEquals("baz.bar", externalServices.getExternalServices().get(0).getRemoteHostname());
         restResourceFitness.calculateCoverage(restIndividual, Collections.emptySet());
 
         // assertion after the execution

@@ -17,9 +17,7 @@ import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
-import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.InputProperties;
-import org.evomaster.client.java.instrumentation.TargetInfo;
+import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -153,6 +151,9 @@ public class EMController {
     @GET
     public Response getSutInfo(@Context HttpServletRequest httpServletRequest) {
 
+        // this should be false when requesting SutInfo
+        assert !ExecutionTracer.isExecutingAction();
+
         String connectionHeader = httpServletRequest.getHeader("Connection");
         if (connectionHeader == null
                 || !connectionHeader.equalsIgnoreCase("keep-alive")) {
@@ -180,14 +181,8 @@ public class EMController {
             dto.infoForAuthentication = noKillSwitch(() -> sutController.getInfoForAuthentication());
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
-            dto.externalServicesDto = noKillSwitch(() -> sutController.getAdditionalInfoList()
-                    .stream()
-                    .flatMap(e -> e.getExternalServices().stream())
-                    .map(e -> new ExternalServiceInfoDto(e.getProtocol(), e.getHostname(), e.getRemotePort()))
-                    .collect(Collectors.toList())
-            );
-
             info = noKillSwitch(() -> sutController.getProblemInfo());
+            dto.bootTimeInfoDto = noKillSwitch(()-> sutController.getBootTimeInfoDto());
 
         } catch (RuntimeException e) {
             String msg = e.getMessage();
@@ -427,6 +422,9 @@ public class EMController {
                     boolean killSwitch,
             @Context HttpServletRequest httpServletRequest) {
 
+        // notify that actions execution is done.
+        noKillSwitch(()->sutController.setExecutingAction(false));
+
         assert trackRequestSource(httpServletRequest);
 
         try {
@@ -538,6 +536,9 @@ public class EMController {
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
+        // notify that the action is executing
+        noKillSwitch(()-> sutController.setExecutingAction(true));
+
         // executingInitSql should be false when reaching here
         assert (!ExecutionTracer.isExecutingInitSql());
         /*

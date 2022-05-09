@@ -1,5 +1,8 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
+import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
+import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+
 import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,6 +86,10 @@ public class ObjectiveRecorder {
      */
     private static final Queue<String> firstTimeEncountered = new ConcurrentLinkedQueue<>();
 
+    /**
+     * Objective info are collected during SUT startup
+     */
+    private static final BootTimeObjectiveInfo bootTimeObjectiveInfo = new BootTimeObjectiveInfo();
 
     /**
      * Reset all the static state in this class
@@ -101,7 +108,25 @@ public class ObjectiveRecorder {
                 it is only computed at SUT classloading time
              */
             allTargets.clear();
+
+            bootTimeObjectiveInfo.reset();
         }
+    }
+
+    /**
+     * register external service info at Sut Startup Time
+     * @param info to append
+     */
+    public static void registerExternalServiceInfoAtSutStartupTime(ExternalServiceInfo info){
+        bootTimeObjectiveInfo.registerExternalServiceInfoAtSutBootTime(info);
+    }
+
+    /**
+     *
+     * @return bootTime objective info
+     */
+    public static BootTimeObjectiveInfo exposeBootTimeObjectiveInfo(){
+        return bootTimeObjectiveInfo;
     }
 
 
@@ -182,7 +207,7 @@ public class ObjectiveRecorder {
      * @param descriptiveId of the objective/target
      * @param value         of the coverage heuristic, in [0,1]
      */
-    public static void update(String descriptiveId, double value) {
+    public static void update(String descriptiveId, double value, boolean bootTime) {
 
         Objects.requireNonNull(descriptiveId);
         if (value < 0d || value > 1) {
@@ -191,16 +216,24 @@ public class ObjectiveRecorder {
 
         int id = getMappedId(descriptiveId);
 
-        if (!maxObjectiveCoverage.containsKey(id)) {
-            firstTimeEncountered.add(descriptiveId);
-            maxObjectiveCoverage.put(id, value);
-
-        } else {
-
-            double old = maxObjectiveCoverage.get(id);
-            if (value > old) {
+        // ignore the targets covered at sut booting time
+        if (!bootTimeObjectiveInfo.coveredAtBootTime(descriptiveId)){
+            if (!maxObjectiveCoverage.containsKey(id)) {
+                firstTimeEncountered.add(descriptiveId);
                 maxObjectiveCoverage.put(id, value);
+
+            } else {
+
+                double old = maxObjectiveCoverage.get(id);
+                if (value > old) {
+                    maxObjectiveCoverage.put(id, value);
+                }
             }
+        }
+
+        // also update the objective info to bootTimeObjectiveInfo
+        if (bootTime){
+            bootTimeObjectiveInfo.updateMaxObjectiveCoverage(descriptiveId, value);
         }
     }
 
@@ -215,7 +248,6 @@ public class ObjectiveRecorder {
 
         return id;
     }
-
 
     public static Map<Integer, String> getDescriptiveIds(Collection<Integer> ids) {
 

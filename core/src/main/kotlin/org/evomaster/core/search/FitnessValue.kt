@@ -1,8 +1,10 @@
 package org.evomaster.core.search
 
+import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
@@ -144,6 +146,32 @@ class FitnessValue(
                 .filter { it.value.distance == MAX_VALUE }
                 .filter { idMapper.getDescriptiveId(it.key).startsWith(prefix) }
                 .count()
+    }
+
+    /**
+     * this method is to report the union results with targets at boot-time
+     *
+     * @return a number of targets covered during various phases ie,
+     *          at boot-time (negative means that the boot-time info is unavailable), during search, and at the end
+     */
+    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int = -1): TargetStatistic{
+        if (bootTimeInfoDto?.targets == null){
+            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { TargetStatistic(unavailableBootTime,this) }
+        }
+        val bootTime = bootTimeInfoDto.targets.filter { it.value == MAX_VALUE && (prefix == null || it.descriptiveId.startsWith(prefix)) }
+        // counter for duplicated targets
+        var duplicatedcounter = 0
+        val searchTime = targets.entries.count { e ->
+            (e.value.distance == MAX_VALUE && (prefix == null || idMapper.getDescriptiveId(e.key).startsWith(prefix))).apply {
+                if (this && bootTime.any { it.descriptiveId == idMapper.getDescriptiveId(e.key) })
+                    duplicatedcounter++
+            }
+        }
+        Lazy.assert {
+            // there should not exist any duplicated targets between boot-time and search-time
+            duplicatedcounter == 0
+        }
+        return TargetStatistic(bootTime.size, searchTime)
     }
 
     fun coverTarget(id: Int) {

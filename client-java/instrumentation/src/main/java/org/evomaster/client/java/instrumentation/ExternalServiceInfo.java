@@ -43,6 +43,10 @@ public class ExternalServiceInfo implements Serializable {
         return Objects.equals(remoteHostname, that.remoteHostname) && Objects.equals(protocol, that.protocol) && Objects.equals(remotePort, that.remotePort);
     }
 
+    public ExternalServiceInfo copy(){
+        return new ExternalServiceInfo(protocol, remoteHostname, remotePort);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(remoteHostname, protocol, remotePort);
