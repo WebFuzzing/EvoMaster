@@ -6,7 +6,6 @@ import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 
 import java.util.List;
-import java.util.Set;
 
 public class SutInfoDto {
 
@@ -81,7 +80,7 @@ public class SutInfoDto {
     public UnitsInfoDto unitsInfoDto;
 
     /**
-     * Information about the external services used inside the SUT
+     * info collected during SUT boot-time
      */
-    public List<ExternalServiceInfoDto> externalServicesDto;
+    public BootTimeInfoDto bootTimeInfoDto;
 }

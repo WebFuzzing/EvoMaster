@@ -107,7 +107,7 @@ object StateBuilder {
             state.tables.distinctBy { Pair(it.typeName, it.fieldName) }.toMutableList()//remove redundant elements
 
         initTablesAndArgsTablesIndexedByName(state)
-        
+
         return state
     }
 
@@ -741,8 +741,8 @@ object StateBuilder {
                             )
                         )
                 } else // optional input object or scalar or enum
-                    if (isKindInputObjOrScaOrEnum(kind1!!)) {
-                        if (kind1 == __TypeKind.ENUM) {
+                    if (isKindInputObjOrScaOrEnum(kind2!!)) {
+                        if (kind2 == __TypeKind.ENUM) {
                             val enumElement: MutableList<String> =
                                 collectEnumElementsInTable(schemaObj, elementInArgs.type.ofType.ofType.name)
                             state.argsTables.add(

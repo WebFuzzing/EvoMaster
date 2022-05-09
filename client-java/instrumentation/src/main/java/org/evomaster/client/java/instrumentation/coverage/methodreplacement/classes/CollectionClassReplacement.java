@@ -20,6 +20,8 @@ public class CollectionClassReplacement implements MethodReplacementClass {
     }
 
 
+
+
     /**
      * @param c
      * @param o
@@ -30,19 +32,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
     public static boolean contains(Collection c, Object o, String idTemplate) {
         Objects.requireNonNull(c);
 
-        String inputString = null;
-        if (o instanceof String) {
-            inputString = (String) o;
-        }
-
-        if (ExecutionTracer.isTaintInput(inputString)) {
-            for (Object value : c) {
-                if (value instanceof String) {
-                    ExecutionTracer.addStringSpecialization(inputString,
-                            new StringSpecializationInfo(StringSpecialization.CONSTANT, (String) value));
-                }
-            }
-        }
+        CollectionsDistanceUtils.evaluateTaint(c,o);
 
         boolean result = c.contains(o);
 
@@ -55,6 +45,32 @@ public class CollectionClassReplacement implements MethodReplacementClass {
             t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
         } else {
             double h = CollectionsDistanceUtils.getHeuristicToContains(c, o);
+            t = new Truthness(h, 1d);
+        }
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return result;
+    }
+
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0)
+    public static boolean containsAll(Collection caller, Collection other, String idTemplate) {
+        Objects.requireNonNull(caller);
+
+        if(other != null && !other.isEmpty()){
+            for(Object obj : other){
+                CollectionsDistanceUtils.evaluateTaint(caller,obj);
+            }
+        }
+
+        boolean result = caller.containsAll(other);
+        if (idTemplate == null) {
+            return result;
+        }
+
+        Truthness t;
+        if (result) {
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
+        } else {
+            double h = CollectionsDistanceUtils.getHeuristicToContainsAll(caller, other);
             t = new Truthness(h, 1d);
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
@@ -84,6 +100,58 @@ public class CollectionClassReplacement implements MethodReplacementClass {
         int len = caller.size();
         Truthness t = TruthnessUtils.getTruthnessToEmpty(len);
 
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return result;
+    }
+
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0, isPure = false)
+    public static boolean remove(Collection caller, Object obj, String idTemplate){
+        Objects.requireNonNull(caller);
+
+        CollectionsDistanceUtils.evaluateTaint(caller,obj);
+
+        boolean result = caller.remove(obj);
+        if (idTemplate == null) {
+            return result;
+        }
+
+        //note: here we cannot call directly contains(), as remove() might have changed the container
+
+        Truthness t;
+        if (result) {
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
+        } else {
+            //element was not removed, so not contained
+            double h = CollectionsDistanceUtils.getHeuristicToContains(caller, obj);
+            t = new Truthness(h, 1d);
+        }
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return result;
+    }
+
+    @Replacement(type = ReplacementType.BOOLEAN, category = ReplacementCategory.EXT_0, isPure = false)
+    public static boolean removeAll(Collection caller, Collection other, String idTemplate){
+        Objects.requireNonNull(caller);
+
+        if(other != null && !other.isEmpty()){
+            for(Object obj : other){
+                CollectionsDistanceUtils.evaluateTaint(caller,obj);
+            }
+        }
+
+        boolean result = caller.removeAll(other);
+        if (idTemplate == null) {
+            return result;
+        }
+
+        Truthness t;
+        if (result) {
+            t = new Truthness(1d, DistanceHelper.H_NOT_NULL);
+        } else {
+            //no element was removed, so not contained
+            double h = CollectionsDistanceUtils.getHeuristicToContainsAny(caller, other);
+            t = new Truthness(h, 1d);
+        }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return result;
     }

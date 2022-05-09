@@ -622,3 +622,38 @@ test("test string length", async () => {
     expect(k).toBe(3);
 
 })
+
+test("test array with square brackets and length", async () => {
+    expect(ET.getNumberOfObjectives(ON.METHOD_REPLACEMENT)).toBe(0);
+    let a;
+    let s;
+    let l;
+    const code = dedent`
+        a = [1];
+        s = function setA(k, v){
+            a[k] = v;
+            return a["length"];
+        }
+    `;
+
+    const instrumented = runPlugin(code).code;
+    eval(instrumented);
+
+    expect(a["0"]).toBe(1);
+    expect(a.length).toBe(1);
+    expect(a["length"]).toBe(a.length);
+
+    l = s("foo", 2);
+    expect(a["foo"]).toBe(2);
+    expect(l).toBe(a.length);
+
+    l = s("bar", "barV");
+    expect(a["bar"]).toBe("barV");
+    expect(l).toBe(a.length);
+
+    a[2] = 2;
+    expect(a.length).toBe(3);
+    l = s(1, 2);
+    expect(a["1"]).toBe(2);
+    expect(l).toBe(3);
+})

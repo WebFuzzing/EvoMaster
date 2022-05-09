@@ -1,13 +1,14 @@
 package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.ActionDto;
+import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto;
 import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
-import javax.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 
@@ -76,6 +77,16 @@ public abstract class EmbeddedSutController extends SutController {
     @Override
     public final void setExecutingInitSql(boolean executingInitSql) {
         ExecutionTracer.setExecutingInitSql(executingInitSql);
+    }
+
+    @Override
+    public final void setExecutingAction(boolean executingAction){
+        ExecutionTracer.setExecutingAction(executingAction);
+    }
+
+    @Override
+    public BootTimeInfoDto getBootTimeInfoDto() {
+        return getBootTimeInfoDto(InstrumentationController.getBootTimeObjectiveInfo());
     }
 
     @Override

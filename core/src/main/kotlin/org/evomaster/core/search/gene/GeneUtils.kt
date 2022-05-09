@@ -463,6 +463,7 @@ object GeneUtils {
         val selected = obj.fields.filter {
             ((it is OptionalGene && it.isActive) ||
                     (it is BooleanGene && it.value) ||
+                    (it is OptionalGene && it.gene is TupleGene && isLastSelected(it.gene)) ||
                     (it is TupleGene && isLastSelected(it))
                     )
         }
@@ -538,11 +539,13 @@ object GeneUtils {
                     if (gene.gene is ArrayGene<*>)
                         handleBooleanSelection(gene.gene.template)
                     else
-                        if (gene.gene is TupleGene)
+                        if (gene.gene is TupleGene && gene.gene.lastElementTreatedSpecially)//opt tuple
                             TupleGene(
                                 gene.name,
-                                gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last()))
-                            )
+                                gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last())),
+                                lastElementTreatedSpecially = true
+                            ) else if (gene.gene is TupleGene)
+                            gene.gene
                         else
                         // on by default, but can be deselected during the search
                             BooleanGene(gene.name, true)
@@ -558,8 +561,13 @@ object GeneUtils {
                 ObjectGene(gene.name, gene.fields.map { handleBooleanSelection(it) })
             }
             is ArrayGene<*> -> handleBooleanSelection(gene.template)
-            is TupleGene -> {
-                TupleGene(gene.name, gene.elements.dropLast(1).plus(handleBooleanSelection(gene.elements.last())))
+            is TupleGene -> {//not opt tuple
+                if (gene.lastElementTreatedSpecially)
+                    TupleGene(
+                        gene.name,
+                        gene.elements.dropLast(1).plus(handleBooleanSelection(gene.elements.last())),
+                        lastElementTreatedSpecially = true
+                    ) else gene
             }
             else -> {
                 BooleanGene(gene.name, true)
@@ -577,7 +585,8 @@ object GeneUtils {
 
     private fun isLastSelected(gene: TupleGene): Boolean {
         val lastElement = gene.elements[gene.elements.size - 1]
-        return (lastElement is OptionalGene && lastElement.isActive) || (lastElement is BooleanGene && lastElement.value)
+        return (lastElement is OptionalGene && lastElement.isActive) ||
+                (lastElement is BooleanGene && lastElement.value)
 
     }
 
@@ -587,11 +596,11 @@ object GeneUtils {
 
     }
 
-    private fun isTupleOptionalObjetNotCycle(it: Gene) =
-        (it is TupleGene && it.elements.last() is OptionalGene
-                && (it.elements.last() as OptionalGene).gene is ObjectGene &&
-                (it.elements.last() as OptionalGene).gene !is CycleObjectGene)
-
+    private fun isTupleOptionalObjetNotCycle(gene: Gene):Boolean {
+        return (gene is TupleGene && gene.elements.last() is OptionalGene
+                && (gene.elements.last() as OptionalGene).gene is ObjectGene &&
+                (gene.elements.last() as OptionalGene).gene !is CycleObjectGene)
+    }
 
     /**
      * A special string used for representing a place in the string
@@ -639,6 +648,5 @@ object GeneUtils {
             str
         }
     }
-
 }
 

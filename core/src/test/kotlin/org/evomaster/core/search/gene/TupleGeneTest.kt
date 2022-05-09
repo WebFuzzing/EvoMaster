@@ -82,4 +82,11 @@ class TupleGeneTest {
             assertEquals(1, (this[2] as ArrayGene<*>).getAllElements().size)
         }
     }
+
+    @Test
+    fun lastElement(){
+
+
+
+    }
 }

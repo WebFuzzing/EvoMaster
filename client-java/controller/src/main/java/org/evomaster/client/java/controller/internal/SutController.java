@@ -30,6 +30,8 @@ import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
+import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
+import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
@@ -645,6 +647,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         accessedTables.clear();
 
         newTestSpecificHandler();
+
+        // set executingAction state false for newTest
+        setExecutingAction(false);
     }
 
     /**
@@ -974,6 +979,27 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void setKillSwitch(boolean b);
 
     public abstract void setExecutingInitSql(boolean executingInitSql);
+
+    public abstract void setExecutingAction(boolean executingAction);
+
+    public abstract BootTimeInfoDto getBootTimeInfoDto();
+
+    protected BootTimeInfoDto getBootTimeInfoDto(BootTimeObjectiveInfo info){
+        if (info == null)
+            return null;
+
+        BootTimeInfoDto infoDto = new BootTimeInfoDto();
+        infoDto.targets = info.getObjectiveCoverageAtSutBootTime()
+                .entrySet().stream().map(e-> new TargetInfoDto(){{
+                    descriptiveId = e.getKey();
+                    value = e.getValue();
+                }}).collect(Collectors.toList());
+
+        infoDto.externalServicesDto = info.getExternalServiceInfo().stream()
+                .map(e -> new ExternalServiceInfoDto(e.getProtocol(), e.getHostname(), e.getRemotePort()))
+                .collect(Collectors.toList());
+        return infoDto;
+    }
 
     public abstract String getExecutableFullPath();
 

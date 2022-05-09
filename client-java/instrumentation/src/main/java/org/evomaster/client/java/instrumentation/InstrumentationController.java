@@ -44,6 +44,10 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingInitSql(executingInitSql);
     }
 
+    public static void setExecutingAction(boolean executingAction){
+        ExecutionTracer.setExecutingAction(executingAction);
+    }
+
     public static List<TargetInfo> getTargetInfos(Collection<Integer> ids){
 
         List<TargetInfo> list = new ArrayList<>();
@@ -82,4 +86,9 @@ public class InstrumentationController {
     public static List<AdditionalInfo> getAdditionalInfoList(){
         return new ArrayList<>(ExecutionTracer.exposeAdditionalInfoList());
     }
+
+    public static BootTimeObjectiveInfo getBootTimeObjectiveInfo(){
+        return ObjectiveRecorder.exposeBootTimeObjectiveInfo();
+    }
+
 }
