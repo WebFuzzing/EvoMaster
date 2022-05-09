@@ -11,6 +11,19 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * This gene is used for Postgres SQL multigrange types such as int4multirange,
+ * int8multirange, nummultirange, tsmultirange, tstzmultirange and
+ * datemultirange.
+ *
+ * A multirange is a sequence (potentially empty) of range types. For example,
+ * a int4multirange is a sequence of int4range values.
+ * Some examples are:
+ *   {} an empty multirange
+ *   { empty } a multirange with a single, empty, range
+ *   {[ 0.0 , 0.23751964 ], [ 0.0 , 0.0 ], [ 0.0 , 0.82279074 ], empty} a nummultirange
+ *   with 4 different numranges.
+ */
 class SqlMultiRangeGene<T>(
         name: String,
         val template: SqlRangeGene<T>,
