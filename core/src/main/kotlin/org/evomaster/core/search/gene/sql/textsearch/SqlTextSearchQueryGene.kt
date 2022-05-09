@@ -12,19 +12,13 @@ import org.slf4j.LoggerFactory
 
 class SqlTextSearchQueryGene(
     name: String,
-    val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", template = StringGene("p"))
+    val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes", minSize = 1, template = StringGene("p"))
 ) : Gene(name, mutableListOf(queryLexemes)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchQueryGene::class.java)
     }
 
-    init {
-        /*
-         * Text Search vectors must be non-empty lists
-         */
-        queryLexemes.addElement(StringGene("lexeme"))
-    }
 
     override fun getChildren(): MutableList<Gene> = mutableListOf(queryLexemes)
 

@@ -58,6 +58,8 @@ public class BranchesInstrumentedTest {
     public void init(){
         ObjectiveRecorder.reset(false);
         ExecutionTracer.reset();
+        // force the state as executing action
+        ExecutionTracer.setExecutingAction(true);
         assertEquals(0 , ExecutionTracer.getNumberOfObjectives());
     }
 

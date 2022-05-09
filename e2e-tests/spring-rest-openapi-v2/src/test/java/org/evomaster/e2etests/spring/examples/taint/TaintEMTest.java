@@ -37,11 +37,11 @@ public class TaintEMTest extends SpringTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/integer","integer");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/date","date");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/constant","constant");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/thirdparty","thirdparty");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/collection","collection");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/integer","integer OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/date","date OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/constant","constant OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/thirdparty","thirdparty OK");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/collection","collection OK");
                 });
     }
 }

@@ -23,6 +23,7 @@
         <module>spring-rest-mysql</module>
         <module>spring-rpc</module>
         <module>wiremock</module>
+        <module>spring-rest-postgres-data-types</module>
     </modules>
 
 

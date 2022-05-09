@@ -1,0 +1,347 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Examples of different numerical algorithms accessible via REST",
+    "version": "1.0",
+    "title": "API for Numerical Case Study (NCS)"
+  },
+  "schemes": [
+    "http"
+  ],
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "ncs-rest",
+      "description": "Ncs Rest"
+    }
+  ],
+  "paths": {
+    "/api/bessj/{n}/{x}": {
+      "get": {
+        "tags": [
+          "ncs-rest"
+        ],
+        "summary": "bessj",
+        "operationId": "bessjUsingGET",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "n",
+            "in": "path",
+            "description": "n",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "x",
+            "in": "path",
+            "description": "x",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Dto",
+              "originalRef": "Dto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/expint/{n}/{x}": {
+      "get": {
+        "tags": [
+          "ncs-rest"
+        ],
+        "summary": "expint",
+        "operationId": "expintUsingGET",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "n",
+            "in": "path",
+            "description": "n",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "x",
+            "in": "path",
+            "description": "x",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Dto",
+              "originalRef": "Dto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/fisher/{m}/{n}/{x}": {
+      "get": {
+        "tags": [
+          "ncs-rest"
+        ],
+        "summary": "fisher",
+        "operationId": "fisherUsingGET",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "m",
+            "in": "path",
+            "description": "m",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "n",
+            "in": "path",
+            "description": "n",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "x",
+            "in": "path",
+            "description": "x",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Dto",
+              "originalRef": "Dto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/gammq/{a}/{x}": {
+      "get": {
+        "tags": [
+          "ncs-rest"
+        ],
+        "summary": "gammq",
+        "operationId": "gammqUsingGET",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "a",
+            "in": "path",
+            "description": "a",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "x",
+            "in": "path",
+            "description": "x",
+            "required": true,
+            "type": "number",
+            "format": "double"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Dto",
+              "originalRef": "Dto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/remainder/{a}/{b}": {
+      "get": {
+        "tags": [
+          "ncs-rest"
+        ],
+        "summary": "remainder",
+        "operationId": "remainderUsingGET",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "a",
+            "in": "path",
+            "description": "a",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "b",
+            "in": "path",
+            "description": "b",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Dto",
+              "originalRef": "Dto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/triangle/{a}/{b}/{c}": {
+      "get": {
+        "tags": [
+          "ncs-rest"
+        ],
+        "summary": "Check the triangle type of the given three edges",
+        "operationId": "checkTriangleUsingGET",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "a",
+            "in": "path",
+            "description": "First edge",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "b",
+            "in": "path",
+            "description": "Second edge",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "c",
+            "in": "path",
+            "description": "Third edge",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Dto",
+              "originalRef": "Dto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "definitions": {
+    "Dto": {
+      "type": "object",
+      "properties": {
+        "resultAsDouble": {
+          "type": "number",
+          "format": "double"
+        },
+        "resultAsInt": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "Dto"
+    }
+  }
+}

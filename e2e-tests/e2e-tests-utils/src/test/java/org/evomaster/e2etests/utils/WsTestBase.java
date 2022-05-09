@@ -10,7 +10,9 @@ import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
 import org.evomaster.core.StaticCounter;
 import org.evomaster.core.logging.TestLoggingUtil;
@@ -60,6 +62,11 @@ public abstract class WsTestBase {
             being not instrumented when tests start (as controllers might load them)
          */
         InstrumentedSutStarter.loadAgent();
+
+        /*
+            avoid boot-time info across e2e tests
+         */
+        ObjectiveRecorder.reset(true);
     }
 
     @AfterAll
@@ -394,8 +401,15 @@ public abstract class WsTestBase {
         throw error;
     }
 
-
     protected static void initClass(EmbeddedSutController controller) throws Exception {
+        initClass(controller, new EMConfig());
+    }
+
+    /**
+     * Passing config here is only needed when dealing with Method Replacements, as it impacts
+     * what gets instrumented
+     */
+    protected static void initClass(EmbeddedSutController controller, EMConfig config) throws Exception {
 
         WsTestBase.controller = controller;
 
@@ -404,7 +418,7 @@ public abstract class WsTestBase {
 
         controllerPort = embeddedStarter.getControllerServerPort();
 
-        remoteController = new RemoteController("localhost", controllerPort, true);
+        remoteController = new RemoteController("localhost", controllerPort, true, true, config);
         boolean started = remoteController.startSUT();
         assertTrue(started, "Failed to start the SUT");
 

@@ -30,6 +30,8 @@ import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
+import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
+import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
@@ -353,27 +355,32 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
                 }
             }
+            handleInitSql(tableDataToInit, emDbClean);
 
-            // init db script
-            boolean initAll = initSqlScriptAndGetInsertMap(getConnectionIfExist(), emDbClean);
-            if (!initAll && tableDataToInit!= null &&!tableDataToInit.isEmpty()){
-                tableDataToInit.forEach(a->{
-                    tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
-                        tableInitSqlMap.get(t).forEach(c->{
-                            try {
-                                SqlScriptRunner.execCommand(getConnectionIfExist(), c);
-                            } catch (SQLException e) {
-                                throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
-                            }
-                        });
-                    });
-                });
-            }
         }catch (SQLException e) {
             throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
         }finally {
             setExecutingInitSql(false);
         }
+    }
+
+    private void handleInitSql(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
+        // init db script
+        boolean initAll = initSqlScriptAndGetInsertMap(getConnectionIfExist(), spec);
+        if (!initAll && tableDataToInit!= null &&!tableDataToInit.isEmpty()){
+            tableDataToInit.forEach(a->{
+                tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
+                    tableInitSqlMap.get(t).forEach(c->{
+                        try {
+                            SqlScriptRunner.execCommand(getConnectionIfExist(), c);
+                        } catch (SQLException e) {
+                            throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
+                        }
+                    });
+                });
+            });
+        }
+
     }
 
     /**
@@ -419,6 +426,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private boolean initSqlScriptAndGetInsertMap(Connection connection, DbSpecification dbSpecification) throws SQLException {
         if (dbSpecification.initSqlOnResourcePath == null
                 && dbSpecification.initSqlScript == null) return false;
+        // TODO to handle initSqlMap for multiple connections
         if (tableInitSqlMap.isEmpty()){
             List<String> all = new ArrayList<>();
             if (dbSpecification.initSqlOnResourcePath != null){
@@ -639,6 +647,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         accessedTables.clear();
 
         newTestSpecificHandler();
+
+        // set executingAction state false for newTest
+        setExecutingAction(false);
     }
 
     /**
@@ -969,6 +980,27 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void setExecutingInitSql(boolean executingInitSql);
 
+    public abstract void setExecutingAction(boolean executingAction);
+
+    public abstract BootTimeInfoDto getBootTimeInfoDto();
+
+    protected BootTimeInfoDto getBootTimeInfoDto(BootTimeObjectiveInfo info){
+        if (info == null)
+            return null;
+
+        BootTimeInfoDto infoDto = new BootTimeInfoDto();
+        infoDto.targets = info.getObjectiveCoverageAtSutBootTime()
+                .entrySet().stream().map(e-> new TargetInfoDto(){{
+                    descriptiveId = e.getKey();
+                    value = e.getValue();
+                }}).collect(Collectors.toList());
+
+        infoDto.externalServicesDto = info.getExternalServiceInfo().stream()
+                .map(e -> new ExternalServiceInfoDto(e.getProtocol(), e.getHostname(), e.getRemotePort()))
+                .collect(Collectors.toList());
+        return infoDto;
+    }
+
     public abstract String getExecutableFullPath();
 
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
@@ -1019,5 +1051,29 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     @Override
     public List<SeededRPCTestDto> seedRPCTests() {
         return null;
+    }
+
+
+    @Override
+    public void resetDatabase(List<String> tablesToClean) {
+
+        if (getDbSpecifications()!= null && !getDbSpecifications().isEmpty()){
+            getDbSpecifications().forEach(spec->{
+                if (spec==null || spec.connection == null || !spec.employSmartDbClean){
+                    return;
+                }
+                if (spec.schemaNames == null || spec.schemaNames.isEmpty())
+                    DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
+                else
+                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
+
+                try {
+                    handleInitSql(tablesToClean, spec);
+                } catch (SQLException e) {
+                    throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
+                }
+
+            });
+        }
     }
 }

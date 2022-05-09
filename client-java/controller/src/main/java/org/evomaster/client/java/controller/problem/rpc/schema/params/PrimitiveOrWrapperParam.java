@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Primitive types Param
  */
-public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> {
+public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> implements NumericConstraintBase<Long> {
 
     /**
      * min value if it is specified
@@ -23,6 +23,20 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
      * max value of it is specified
      */
     private Long max;
+
+    private boolean minInclusive = true;
+
+    private boolean maxInclusive = true;
+
+    /**
+     * constraints with precision if applicable
+     */
+    private Integer precision;
+
+    /**
+     * constraints with scale if applicable
+     */
+    private Integer scale;
 
     public PrimitiveOrWrapperParam(String name, String type, String fullTypeName, Class<?> clazz, AccessibleSchema accessibleSchema){
         this(name, new PrimitiveOrWrapperType(type, fullTypeName, clazz), accessibleSchema);
@@ -99,25 +113,34 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     @Override
     public ParamDto getDto() {
         ParamDto dto = super.getDto();
-        dto.minValue = min;
-        dto.maxValue = max;
+        handleConstraintsInCopyDto(dto);
         return dto;
     }
 
+    @Override
     public Long getMin() {
         return min;
     }
 
+    @Override
     public void setMin(Long min) {
-        this.min = min;
+        if (this.min != null){
+            this.min = Math.max(this.min, min);
+        }else
+            this.min = min;
     }
 
+    @Override
     public Long getMax() {
         return max;
     }
 
+    @Override
     public void setMax(Long max) {
-        this.max = max;
+        if (this.max != null)
+            this.max = Math.min(this.max, max);
+        else
+            this.max = max;
     }
 
     @Override
@@ -177,6 +200,8 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
             ((PrimitiveOrWrapperParam)copy).setMin(min);
             ((PrimitiveOrWrapperParam)copy).setMax(max);
         }
+
+        handleConstraintsInCopy(copy);
     }
 
     /**
@@ -185,5 +210,46 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
      */
     public String getCastType() {
         return null;
+    }
+
+    @Override
+    public boolean getMinInclusive() {
+        return this.minInclusive;
+    }
+
+    @Override
+    public void setMinInclusive(boolean inclusive) {
+        this.minInclusive = inclusive;
+    }
+
+    @Override
+    public boolean getMaxInclusive() {
+        return this.maxInclusive;
+    }
+
+    @Override
+    public void setMaxInclusive(boolean inclusive) {
+        this.maxInclusive = inclusive;
+    }
+
+
+    @Override
+    public Integer getPrecision() {
+        return precision;
+    }
+
+    @Override
+    public void setPrecision(Integer precision) {
+        this.precision = precision;
+    }
+
+    @Override
+    public Integer getScale() {
+        return this.scale;
+    }
+
+    @Override
+    public void setScale(Integer scale) {
+        this.scale = scale;
     }
 }

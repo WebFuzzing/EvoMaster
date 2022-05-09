@@ -128,5 +128,16 @@ public enum RPCSupportedDataType {
      *         A a;
      *     }
      */
-    CUSTOM_CYCLE_OBJECT
+    CUSTOM_CYCLE_OBJECT,
+
+
+    /**
+     * java.math.BigInteger
+     */
+    BIGINTEGER,
+
+    /**
+     *  java.math.BigDecimal
+     */
+    BIGDECIMAL
 }

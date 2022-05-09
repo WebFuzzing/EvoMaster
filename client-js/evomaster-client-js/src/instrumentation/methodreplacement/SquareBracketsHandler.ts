@@ -27,8 +27,11 @@ export default class SquareBracketsHandler{
 
         const idTemplate = ObjectiveNaming.methodReplacementObjectiveNameTemplate(fileName, line, branchId);
 
+        const objType = typeof object
 
         if (object == null || object == undefined ||
+            // handle only object type
+            objType != "object" ||
             // handle taint analysis for null, undefined, number and string
             (property && ((typeof  property) != "number") && ((typeof property) != "string"))){
             /*

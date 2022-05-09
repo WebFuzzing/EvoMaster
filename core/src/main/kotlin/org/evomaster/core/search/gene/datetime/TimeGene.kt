@@ -2,10 +2,7 @@ package org.evomaster.core.search.gene.datetime
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -210,6 +207,7 @@ class TimeGene(
             }
             gene is DateTimeGene -> bindValueBasedOn(gene.time)
             gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
+            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype())
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind TimeGene with ${gene::class.java.simpleName}")
                 false

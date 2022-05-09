@@ -30,6 +30,11 @@ public class ExecutionTracer {
      */
     private static boolean executingInitSql = false;
 
+    /**
+     * indicate whether now it is to execute action during the search
+     */
+    private static boolean executingAction = false;
+
     /*
         Careful if you change the signature of any of the
         methods in this class, as they are injected in the
@@ -95,6 +100,7 @@ public class ExecutionTracer {
             inputVariables = new HashSet<>();
             killSwitch = false;
             expensiveOperation = 0;
+            executingAction = false;
         }
     }
 
@@ -112,6 +118,14 @@ public class ExecutionTracer {
 
     public static void setExecutingInitSql(boolean executingInitSql) {
         ExecutionTracer.executingInitSql = executingInitSql;
+    }
+
+    public static boolean isExecutingAction() {
+        return executingAction;
+    }
+
+    public static void setExecutingAction(boolean executingAction) {
+        ExecutionTracer.executingAction = executingAction;
     }
 
     public static void setAction(Action action) {
@@ -328,7 +342,7 @@ public class ExecutionTracer {
             }
         }
 
-        ObjectiveRecorder.update(id, value);
+        ObjectiveRecorder.update(id, value, !executingAction);
     }
 
     public static void executedNumericComparison(String idTemplate, double lt, double eq, double gt) {
@@ -490,4 +504,16 @@ public class ExecutionTracer {
 
         updateBranch(className, line, branchId, t);
     }
+
+    /**
+     * Add the external HTTP/S hostname to the additional info to keep track.
+     */
+    public static void addExternalServiceHost(ExternalServiceInfo hostInfo) {
+        getCurrentAdditionalInfo().addExternalService(hostInfo);
+        // here, we only register external info into ObjectiveRecorder if it occurs during the startup
+        if (!executingAction)
+            ObjectiveRecorder.registerExternalServiceInfoAtSutStartupTime(hostInfo);
+    }
+
+
 }

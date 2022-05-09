@@ -26,7 +26,7 @@ class SqlPrimaryGeneImpactTest : GeneImpactTest() {
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
         geneToMutate as SqlPrimaryKeyGene
         val gene = geneToMutate.gene as IntegerGene
-        gene.value += if (gene.value + 1 > gene.max) -1 else 1
+        gene.value += if (gene.value + 1 > gene.getMaximum()) -1 else 1
         return MutatedGeneWithContext(previous = original, current = geneToMutate)
     }
 

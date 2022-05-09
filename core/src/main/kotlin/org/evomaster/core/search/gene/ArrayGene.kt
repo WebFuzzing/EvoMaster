@@ -60,6 +60,8 @@ class ArrayGene<T>(
         }
 
         // might not check min size in constructor
+
+        template.identifyAsRoot()
     }
 
     companion object{
@@ -76,12 +78,16 @@ class ArrayGene<T>(
     override fun getChildren(): MutableList<T> = elements
 
     override fun copyContent(): Gene {
-        return ArrayGene<T>(name,
+        val copy = ArrayGene<T>(name,
                 template.copyContent() as T,
                 maxSize,
                 minSize,
                 elements.map { e -> e.copyContent() as T }.toMutableList()
         )
+        if (copy.getChildren().size!=this.getChildren().size) {
+            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${getChildren().size}) vs. template (${template.getChildren().size})")
+        }
+        return copy
     }
 
     override fun copyValueFrom(other: Gene) {

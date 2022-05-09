@@ -5,12 +5,8 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.DoubleGene
+import org.evomaster.core.search.gene.BigDecimalGene
 import org.evomaster.core.search.gene.FloatGene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.LongGene
-import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -38,8 +34,8 @@ class MonetaryTypesTest : ExtractTestBasePostgres() {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is FloatGene) // money
-        assertEquals(2, (genes[0] as FloatGene).precision)
+        assertTrue(genes[0] is BigDecimalGene) // money
+        assertEquals(2, (genes[0] as BigDecimalGene).scale)
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)

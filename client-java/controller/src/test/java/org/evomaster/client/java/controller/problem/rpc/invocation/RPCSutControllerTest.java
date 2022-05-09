@@ -13,12 +13,14 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 
 import static io.restassured.RestAssured.given;
+import static org.evomaster.client.java.controller.contentMatchers.NumberMatcher.numbersMatch;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,6 +58,8 @@ public class RPCSutControllerTest {
         rpcController.stopSut();
     }
 
+
+
     @Test
     public void testTypes(){
         List<String> types = interfaceSchemas.get(0).types.stream().map(t-> t.type.fullTypeNameWithGenericType).collect(Collectors.toList());
@@ -78,6 +82,187 @@ public class RPCSutControllerTest {
         assertTrue(types.contains(NestedGenericDto.class.getName()+"<"+String.class.getName()+">"));
         assertTrue(types.contains(GenericDto.class.getName()+"<"+String.class.getName()+", "+Integer.class.getName()+">"));
 
+        assertTrue(types.contains(BigNumberObj.class.getName()));
+
+    }
+
+    @Test
+    public void testPrimitiveResponse(){
+        List<String> functions = Arrays.asList("pBoolResponse","pByteResponse","pCharResponse","pShortResponse","pIntResponse","pLongResponse","pFloatResponse","pDoubleResponse");
+
+        List<String> tests = new ArrayList<>();
+        int index = 1;
+        for (String m : functions){
+            List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals(m)).collect(Collectors.toList());
+            assertEquals(1, dtos.size());
+            RPCActionDto dto = dtos.get(0).copy();
+            assertEquals(0, dto.requestParams.size());
+            dto.doGenerateAssertions = true;
+            dto.doGenerateTestScript = true;
+            dto.controllerVariable = "rpcController";
+            dto.responseVariable = "res"+index;
+            dto.maxAssertionForDataInCollection = -1;
+
+            ActionResponseDto responseDto = new ActionResponseDto();
+            rpcController.executeAction(dto, responseDto);
+
+            tests.addAll(responseDto.testScript);
+            tests.addAll(responseDto.assertionScript);
+            index++;
+        }
+
+        String expected ="boolean res1;\n" +
+                "{\n" +
+                " res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pBoolResponse();\n" +
+                "}\n" +
+                "assertEquals(false, res1);\n" +
+                "byte res2;\n" +
+                "{\n" +
+                " res2 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pByteResponse();\n" +
+                "}\n" +
+                "assertEquals(0, res2);\n" +
+                "char res3;\n" +
+                "{\n" +
+                " res3 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pCharResponse();\n" +
+                "}\n" +
+                "assertEquals('\\u0000', res3);\n" +
+                "short res4;\n" +
+                "{\n" +
+                " res4 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pShortResponse();\n" +
+                "}\n" +
+                "assertEquals(0, res4);\n" +
+                "int res5;\n" +
+                "{\n" +
+                " res5 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pIntResponse();\n" +
+                "}\n" +
+                "assertEquals(0, res5);\n" +
+                "long res6;\n" +
+                "{\n" +
+                " res6 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pLongResponse();\n" +
+                "}\n" +
+                "assertEquals(0L, res6);\n" +
+                "float res7;\n" +
+                "{\n" +
+                " res7 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pFloatResponse();\n" +
+                "}\n" +
+                "assertTrue(numbersMatch(0.0f, res7));\n" +
+                "double res8;\n" +
+                "{\n" +
+                " res8 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).pDoubleResponse();\n" +
+                "}\n" +
+                "assertTrue(numbersMatch(0.0, res8));";
+
+        assertEquals(expected, String.join("\n", tests));
+    }
+
+    @Test
+    public void testMapResponse(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("mapResponse")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(0, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        dto.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        String expectedTestScript ="java.util.Map<java.lang.String,com.thrift.example.artificial.NumericStringObj> res1 = null;\n" +
+                "{\n" +
+                " res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).mapResponse();\n" +
+                "}";
+        assertEquals(expectedTestScript, String.join("\n", responseDto.testScript));
+
+        String expectedAssertions = "assertEquals(2, res1.size());\n" +
+                "assertEquals(\"2L\", res1.get(\"bar\").getLongValue());\n" +
+                "assertEquals(\"2\", res1.get(\"bar\").getIntValue());\n" +
+                "assertEquals(\"242\", res1.get(\"bar\").getBigIntegerValue());\n" +
+                "assertEquals(\"2.42\", res1.get(\"bar\").getBigDecimalValue());\n" +
+                "assertEquals(\"42L\", res1.get(\"foo\").getLongValue());\n" +
+                "assertEquals(\"42\", res1.get(\"foo\").getIntValue());\n" +
+                "assertEquals(\"4242\", res1.get(\"foo\").getBigIntegerValue());\n" +
+                "assertEquals(\"42.42\", res1.get(\"foo\").getBigDecimalValue());";
+
+        assertEquals(expectedAssertions, String.join("\n", responseDto.assertionScript));
+    }
+
+    @Test
+    public void testListResponse(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("listResponse")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(0, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        dto.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        String expectedTestScript ="java.util.List<com.thrift.example.artificial.BigNumberObj> res1 = null;\n" +
+                "{\n" +
+                " res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(rpcController.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).listResponse();\n" +
+                "}";
+        assertEquals(expectedTestScript, String.join("\n", responseDto.testScript));
+
+        String expectedAssertions = "assertEquals(1, res1.size());\n" +
+                "assertEquals(\"10.12\", res1.get(0).getBdPositiveFloat().toString());\n" +
+                "assertEquals(\"-10.12\", res1.get(0).getBdNegativeFloat().toString());\n" +
+                "assertEquals(\"0.00\", res1.get(0).getBdPositiveOrZeroFloat().toString());\n" +
+                "assertEquals(\"-2.16\", res1.get(0).getBdNegativeOrZeroFloat().toString());\n" +
+                "assertEquals(\"10\", res1.get(0).getBiPositive().toString());\n" +
+                "assertEquals(\"0\", res1.get(0).getBiPositiveOrZero().toString());\n" +
+                "assertEquals(\"-10\", res1.get(0).getBiNegative().toString());\n" +
+                "assertEquals(\"-2\", res1.get(0).getBiNegativeOrZero().toString());";
+        assertEquals(expectedAssertions, String.join("\n", responseDto.assertionScript));
+    }
+
+    @Test
+    public void testBigNumber(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("bigNumber")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+
+        ParamDto param = dto.requestParams.get(0);
+        param.stringValue = "{}";
+        assertEquals(8, param.innerContent.size());
+        param.innerContent.get(0).stringValue = "10.12";
+        param.innerContent.get(1).stringValue = "-10.12";
+        param.innerContent.get(2).stringValue = "0.00";
+        param.innerContent.get(3).stringValue = "-2.16";
+        param.innerContent.get(4).stringValue = "10";
+        param.innerContent.get(5).stringValue = "0";
+        param.innerContent.get(6).stringValue = "-10";
+        param.innerContent.get(7).stringValue = "-2";
+
+        rpcController.executeAction(dto, responseDto);
+
+        String expect = "BigNumberObj{" +
+                "bdPositiveFloat=10.12" +
+                ", bdNegativeFloat=-10.12" +
+                ", bdPositiveOrZeroFloat=0.00" +
+                ", bdNegativeOrZeroFloat=-2.16" +
+                ", biPositive=10" +
+                ", biPositiveOrZero=0" +
+                ", biNegative=-10" +
+                ", biNegativeOrZero=-2" +
+                '}';
+        assertEquals(expect, responseDto.rpcResponse.stringValue);
+
+        List<String> assertionScript = responseDto.assertionScript;
+        assertEquals("assertEquals(\"BigNumberObj{bdPositiveFloat=10.12, bdNegativeFloat=-10.12, bdPositiveOrZeroFloat=0.00, bdNegativeOrZeroFloat=-2.16, biPositive=10, biPositiveOrZero=0, biNegative=-10, biNegativeOrZero=-2}\", res1);", assertionScript.get(0));
     }
 
     @Test

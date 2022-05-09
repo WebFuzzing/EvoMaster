@@ -9,7 +9,6 @@ import org.evomaster.core.search.gene.DoubleGene
 import org.evomaster.core.search.gene.FloatGene
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.LongGene
-import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -34,15 +33,15 @@ class NumericTypesTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("NumericTypes", setOf("smallintColumn",
-            "integerColumn",
-            "bigintColumn",
-            "decimalColumn",
-            "numericColumn",
-            "realColumn",
-            "doublePrecisionColumn",
-            "smallserialColumn",
-            "serialColumn",
-            "bigserialColumn"))
+                "integerColumn",
+                "bigintColumn",
+                "decimalColumn",
+                "numericColumn",
+                "realColumn",
+                "doublePrecisionColumn",
+                "smallserialColumn",
+                "serialColumn",
+                "bigserialColumn"))
 
         val genes = actions[0].seeGenes()
 
@@ -62,4 +61,59 @@ class NumericTypesTest : ExtractTestBasePostgres() {
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
+
+    @Test
+    fun testRealTypeMaximumValue() {
+
+        val schema = SchemaExtractor.extract(connection)
+
+        assertNotNull(schema)
+
+        assertEquals("public", schema.name.lowercase())
+        assertEquals(DatabaseType.POSTGRES, schema.databaseType)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("NumericTypes", setOf("smallintColumn",
+                "integerColumn",
+                "bigintColumn",
+                "decimalColumn",
+                "numericColumn",
+                "realColumn",
+                "doublePrecisionColumn",
+                "smallserialColumn",
+                "serialColumn",
+                "bigserialColumn"))
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(10, genes.size)
+        assertTrue(genes[5] is DoubleGene)
+
+        val realColumnGene = genes[5] as DoubleGene
+        assertEquals("realColumn".lowercase(), realColumnGene.name.lowercase())
+
+
+        assertTrue(genes[6] is DoubleGene)
+        val doublePrecisionColumnGene = genes[6] as DoubleGene
+        assertEquals("doublePrecisionColumn".lowercase(), doublePrecisionColumnGene.name.lowercase())
+
+        // check max values
+        assertEquals("1E+38".toDouble(), realColumnGene.max)
+        assertEquals("1E+308".toDouble(), doublePrecisionColumnGene.max)
+
+        realColumnGene.value = "1E+38".toDouble()
+        doublePrecisionColumnGene.value = "1E+308".toDouble()
+
+        var dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
+        realColumnGene.value = "-1E+38".toDouble()
+        doublePrecisionColumnGene.value = "-1E+308".toDouble()
+
+        dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
+    }
+
+
 }

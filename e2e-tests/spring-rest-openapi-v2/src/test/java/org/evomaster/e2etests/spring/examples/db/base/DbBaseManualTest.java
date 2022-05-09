@@ -2,7 +2,11 @@ package org.evomaster.e2etests.spring.examples.db.base;
 
 import com.foo.rest.examples.spring.db.base.DbBaseDto;
 import io.restassured.http.ContentType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
@@ -88,4 +92,10 @@ public class DbBaseManualTest extends DbBaseTestBase {
                 .statusCode(200)
                 .body("size()", is(2));
     }
+
+    @BeforeEach
+    public void reset(){
+        controller.resetDatabase(Collections.singletonList("db_base_entity"));
+    }
+
 }

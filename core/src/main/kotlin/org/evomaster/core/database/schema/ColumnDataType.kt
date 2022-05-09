@@ -3,7 +3,7 @@ package org.evomaster.core.database.schema
 /**
  * SQL Data types from databases
  * See http://www.h2database.com/html/datatypes.html
- * and https://www.postgresql.org/docs/9.1/datatype.html
+ * and https://www.postgresql.org/docs/14/datatype.html
  * and https://dev.mysql.com/doc/refman/8.0/en/data-types.html
  */
 enum class ColumnDataType(dataTypeName: String) {
@@ -28,6 +28,7 @@ enum class ColumnDataType(dataTypeName: String) {
     DATETIME("DATETIME"),
     TIME("TIME"),
 
+
     /**
      * year (1 or 2) or 4
      * https://dev.mysql.com/doc/refman/8.0/en/year.html
@@ -45,6 +46,11 @@ enum class ColumnDataType(dataTypeName: String) {
      * https://dev.mysql.com/doc/refman/8.0/en/bit-type.html
      */
     BIT("BIT"),
+
+    /**
+     * https://www.postgresql.org/docs/14/datatype-bit.html
+     */
+    VARBIT("VARBIT"),
 
     /**
      * A Boolean value (true/false)
@@ -201,10 +207,6 @@ enum class ColumnDataType(dataTypeName: String) {
 
     SERIAL("SERIAL"),
 
-    //TODO tmp for dealing with arrays of chars in patio-api. would need more general solution, see:
-    //https://www.postgresql.org/docs/9.1/arrays.html
-    ARRAY_VARCHAR("_VARCHAR"),
-
     // POSTGRES
     // https://www.postgresql.org/docs/14/datatype-numeric.html
     FLOAT4("FLOAT4"),
@@ -250,14 +252,18 @@ enum class ColumnDataType(dataTypeName: String) {
     // https://www.postgresql.org/docs/14/datatype-json.html#DATATYPE-JSONPATH
     JSONPATH("JSONPATH"),
 
-
     // https://www.postgresql.org/docs/14/rangetypes.html
+    // built-in range types
     INT4RANGE("INT4RANGE"),
     INT8RANGE("INT8RANGE"),
     NUMRANGE("NUMRANGE"),
     TSRANGE("TSRANGE"),
     TSTZRANGE("TSTZRANGE"),
-    DATERANGE("DATERANGE");
+    DATERANGE("DATERANGE"),
+
+    // This is not an actual built-in column data type,
+    // but a placeholder for user-defined composite types.
+    COMPOSITE_TYPE("\$COMPOSITE_TYPE");
 
     fun shouldBePrintedInQuotes(): Boolean {
         /*

@@ -1,8 +1,11 @@
 package org.evomaster.core.problem.rest
 
 import io.swagger.parser.OpenAPIParser
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
+import org.evomaster.core.problem.rest.resource.ResourceCluster
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
@@ -79,6 +82,47 @@ class RestActionBuilderV3Test{
         assertEquals(expectedNumberOfActions, actions.size)
 
         return actions
+    }
+
+    private fun checkNumOfRootGene(actionCluster: Map<String, Action>,
+                                   skipActions: List<String>,
+                                   expectedNumberOfActions: Int,
+                                   expectedNumOfRootGene: Int,
+                                   expectedNumOfIG0: Int,
+                                   expectedNumOfIGM: Int,
+                                   expectedNumOfObjOfIGM: Int){
+
+
+        val cluster = actionCluster.filterNot { skipActions.contains(it.key.split(":")[1]) }
+        assertEquals(expectedNumberOfActions, cluster.size)
+
+        var numOfRG = 0
+        var numOfIG0 = 0
+        var numOfIGM = 0
+        var numOfObjOfIGM = 0
+
+        cluster.values.forEach { a->
+            numOfRG += a.seeGenes().size
+            numOfIG0 += a.seeGenes().count { g-> g.innerGene().isEmpty() }
+            numOfIGM += a.seeGenes().count { g-> g.innerGene().isNotEmpty() }
+            numOfObjOfIGM += a.seeGenes().count { g-> ParamUtil.getValueGene(g) is ObjectGene }
+        }
+        assertEquals(expectedNumOfRootGene, numOfRG)
+        assertEquals(expectedNumOfIG0, numOfIG0)
+        assertEquals(expectedNumOfIGM, numOfIGM)
+        assertEquals(expectedNumOfObjOfIGM, numOfObjOfIGM)
+    }
+
+    private fun checkNumResource(actionCluster: Map<String, Action>, skipActions: List<String>, numOfResource: Int, numOfIndResource: Int){
+        val manipulated  = actionCluster.filterNot { skipActions.contains(it.key.split(":")[1]) }
+
+        val cluster = ResourceCluster()
+        val config = EMConfig()
+        config.doesApplyNameMatching = true
+        cluster.initResourceCluster(manipulated, config = config)
+
+        assertEquals(numOfResource, cluster.getCluster().size)
+        assertEquals(numOfIndResource, cluster.getCluster().count { it.value.isIndependent() })
     }
 
     // ----------- V3 --------------
@@ -159,7 +203,9 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testCyclotron() {
-        loadAndAssertActions("/swagger/others/cyclotron.json", 50)
+        val map = loadAndAssertActions("/swagger/sut/cyclotron.json", 50)
+        checkNumOfRootGene(map, listOf(),50, 87, 16, 71, 11)
+        checkNumResource(map, listOf(), 40, 18)
     }
 
 
@@ -176,6 +222,53 @@ class RestActionBuilderV3Test{
 
 
     @Test
+    fun testNcs() {
+        val map = loadAndAssertActions("/swagger/sut/ncs.json", 6)
+        checkNumOfRootGene(map, listOf(),6, 14, 0, 14, 0)
+        checkNumResource(map, listOf(), 6, 6)
+
+    }
+
+    @Test
+    fun testScs() {
+        val map = loadAndAssertActions("/swagger/sut/scs.json", 11)
+        checkNumOfRootGene(map, listOf(),11, 26, 0, 26, 0)
+        checkNumResource(map, listOf(), 11, 11)
+
+    }
+
+    @Test
+    fun testGestaoHospital() {
+        val map = loadAndAssertActions("/swagger/sut/gestaohospital.json", 20)
+        checkNumOfRootGene(map, listOf(),20, 43, 14, 29, 6)
+        checkNumResource(map, listOf(), 13, 0)
+
+    }
+
+    @Test
+    fun testDisease() {
+        val map = loadAndAssertActions("/swagger/sut/disease_sh_api.json", 34)
+        checkNumOfRootGene(map, listOf(),34, 57, 0, 57, 0)
+        checkNumResource(map, listOf(), 34, 34)
+    }
+
+    @Test
+    fun testRealWorld() {
+        val map = loadAndAssertActions("/swagger/sut/realworld_app.json", 19)
+        checkNumOfRootGene(map, listOf(),19, 31, 6, 25, 6)
+        checkNumResource(map, listOf(), 11, 2)
+    }
+
+    @Test
+    fun testSpaceX() {
+        val map = loadAndAssertActions("/swagger/sut/spacex_api.json", 94)
+        checkNumOfRootGene(map, listOf(),94, 102, 29, 73, 29)
+        checkNumResource(map, listOf(), 52, 5)
+    }
+
+
+
+    @Test
     fun testNews() {
         val map = loadAndAssertActions("/swagger/sut/news.json", 7)
 
@@ -187,6 +280,9 @@ class RestActionBuilderV3Test{
         assertNotNull((bodyNews as OptionalGene).gene is ObjectGene)
         assertNotNull((bodyNews.gene as ObjectGene).refType)
         assertEquals("NewsDto", (bodyNews.gene as ObjectGene).refType)
+
+        checkNumOfRootGene(map, listOf(),7, 12, 3, 9, 2)
+        checkNumResource(map, listOf(), 4, 1)
 
     }
 
@@ -201,6 +297,10 @@ class RestActionBuilderV3Test{
         assertNotNull(bodyPostScoring)
         assertTrue(bodyPostScoring is OptionalGene)
         assertTrue((bodyPostScoring as OptionalGene).gene is StringGene)
+
+        val skipInEM = listOf("/fetch", "/health", "/health.json", "/error")
+        checkNumOfRootGene(map,skipInEM ,13, 36, 4, 32, 1)
+        checkNumResource(map, skipInEM, 13, 11)
     }
 
     @Test
@@ -224,6 +324,24 @@ class RestActionBuilderV3Test{
         // Same for WebRequest
         assertTrue(register.parameters.none { it is BodyParam })
 
+        val skipInEM = listOf(
+            "/heapdump", "/heapdump.json",
+            "/autoconfig", "/autoconfig.json",
+            "/beans", "/beans.json",
+            "/configprops", "/configprops.json",
+            "/dump", "/dump.json",
+            "/env", "/env.json", "/env/{name}",
+            "/error",
+            "/health", "/health.json",
+            "/info", "/info.json",
+            "/mappings", "/mappings.json",
+            "/metrics", "/metrics.json", "/metrics/{name}",
+            "/trace", "/trace.json"
+        )
+        checkNumOfRootGene(map, skipInEM, 74, 82,22, 60, 14)
+
+        checkNumResource(map, skipInEM, 56, 26)
+
     }
 
     @Test
@@ -239,7 +357,10 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testOCVN() {
-        loadAndAssertActions("/swagger/sut/ocvn_1oc.json", 192)
+        val map = loadAndAssertActions("/swagger/sut/ocvn_1oc.json", 192)
+        checkNumOfRootGene(map, listOf(),192, 2852, 0, 2852, 0)
+        checkNumResource(map, listOf(), 96, 0)
+
     }
 
     @Disabled("This is a bug in Swagger Core, reported at https://github.com/swagger-api/swagger-core/issues/2100")
@@ -250,27 +371,37 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testFeaturesServices() {
-        loadAndAssertActions("/swagger/sut/features_service.json", 18)
+        val map = loadAndAssertActions("/swagger/sut/features_service.json", 18)
+        checkNumOfRootGene(map, listOf(),18, 37, 4, 33, 4)
+        checkNumResource(map, listOf(), 11, 1)
     }
 
     @Test
     fun testScoutApi() {
-        loadAndAssertActions("/swagger/sut/scout-api.json", 49)
+        val map = loadAndAssertActions("/swagger/sut/scout-api.json", 49)
+        checkNumOfRootGene(map, listOf(),49, 127, 19, 108, 19)
+        checkNumResource(map, listOf(), 21, 2)
     }
 
     @Test
     fun testLanguageTool(){
-        loadAndAssertActions("/swagger/sut/languagetool.json", 2)
+        val map = loadAndAssertActions("/swagger/sut/languagetool.json", 2)
+        checkNumOfRootGene(map, listOf(),2, 2, 1, 1, 1)
+        checkNumResource(map, listOf(), 2, 1)
     }
 
     @Test
     fun testRestCountries(){
-        loadAndAssertActions("/swagger/sut/restcountries.yaml", 22)
+        val map = loadAndAssertActions("/swagger/sut/restcountries.yaml", 22)
+        checkNumOfRootGene(map, listOf(),22, 34, 2, 32, 0)
+        checkNumResource(map, listOf(), 22, 22)
     }
 
     @Test
     fun testCwaVerification(){
-        loadAndAssertActions("/swagger/sut/cwa_verification.json", 5)
+        val map = loadAndAssertActions("/swagger/sut/cwa_verification.json", 5)
+        checkNumOfRootGene(map, listOf(),5, 12, 4, 8, 5)
+        checkNumResource(map, listOf(), 5, 0)
     }
 
 
@@ -320,6 +451,25 @@ class RestActionBuilderV3Test{
     fun testGreenPeace() {
         loadAndAssertActions("/swagger/apisguru-v2/greenpeace.org.json", 6)
     }
+
+
+    @Test
+    fun testRestApiExample(){
+        val resourcePath = "/swagger/others/rest-api-example.json"
+        val actions = loadAndAssertActions(resourcePath, 3)
+
+        val get = actions["GET:/api/items"]
+        assertNotNull(get)
+
+        val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
+        val map = mutableMapOf<String,ObjectGene>()
+        RestActionBuilderV3.getModelsFromSwagger(schema, map)
+
+        assertEquals(3, map.size)
+        val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
+        assertEquals(0, x.fields.size)
+    }
+
 
     @ParameterizedTest
     @ValueSource(strings = ["/swagger/artificial/reference_type_v2.json","/swagger/artificial/reference_type_v3.json"])

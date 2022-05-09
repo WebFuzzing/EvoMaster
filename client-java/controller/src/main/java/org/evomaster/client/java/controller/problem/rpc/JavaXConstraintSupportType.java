@@ -11,7 +11,29 @@ public enum JavaXConstraintSupportType {
     MAX("Max"),
     MIN("Min"),
     DECIMAL_MAX("DecimalMax"),
-    DECIMAL_MIN("DecimalMin");
+    DECIMAL_MIN("DecimalMin"),
+    DIGITS("Digits"),
+    POSITIVE("Positive"),
+    POSITIVEORZERO("PositiveOrZero"),
+    NEGATIVE("Negative"),
+    NEGATIVEORZERO("NegativeOrZero"),
+    ASSERTFALSE("AssertFalse"),
+    ASSERTTRUE("AssertTrue"),
+    NULL("Null")
+    ;
+
+    /*
+    TODO https://javaee.github.io/javaee-spec/javadocs/javax/validation/constraints/package-frame.html
+
+    Email
+    Future
+    FutureOrPresent
+    Past
+    PastOrPresent
+    *.List
+
+     */
+
 
     public final String annotation;
 

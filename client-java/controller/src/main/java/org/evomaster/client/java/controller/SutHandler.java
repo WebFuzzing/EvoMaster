@@ -4,9 +4,11 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -181,27 +183,5 @@ public interface SutHandler {
      * reset database if the smart db cleaning is employed
      * </p>
      */
-    default void resetDatabase(List<String> tablesToClean){
-        if (getDbSpecifications()!= null && !getDbSpecifications().isEmpty()){
-            getDbSpecifications().forEach(spec->{
-                if (spec==null || spec.connection == null || !spec.employSmartDbClean){
-                    return;
-                }
-                if (spec.schemaNames == null || spec.schemaNames.isEmpty())
-                    DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
-                else
-                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
-                if (spec.initSqlScript != null) {
-                    try {
-                        // init data only if the table exists in [tablesToClean]
-                        SqlScriptRunner.execScript(spec.connection, spec.initSqlScript, tablesToClean);
-                    } catch (SQLException e) {
-                        throw new RuntimeException("Fail to execute the specified initSqlScript "+e);
-                    }
-                }
-            });
-        }
-    }
-
-
+    default void resetDatabase(List<String> tablesToClean){}
 }

@@ -5,6 +5,8 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.external.service.ExternalServiceInfo
+import org.evomaster.core.problem.external.service.ExternalServices
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.seeding.Parser
@@ -35,6 +37,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     lateinit var swagger: OpenAPI
         protected set
+
+    // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
+    @Inject
+    protected lateinit var externalServices: ExternalServices
 
     @PostConstruct
     open fun initialize() {
@@ -80,6 +86,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         setupAuthentication(infoDto)
         initSqlInfo(infoDto)
+
+        initExternalServiceInfo(infoDto)
 
         initAdHocInitialIndividuals()
 
@@ -204,5 +212,24 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         return when(config.seedTestCasesFormat) {
             EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger)
         }
+    }
+
+    /**
+     * To collect external service info through SutInfoDto
+     */
+    private fun initExternalServiceInfo(info: SutInfoDto) {
+        if (info.bootTimeInfoDto?.externalServicesDto != null) {
+            info.bootTimeInfoDto.externalServicesDto.forEach {
+                externalServices.addExternalService(ExternalServiceInfo(
+                        it.protocol,
+                        it.remoteHostname,
+                        it.remotePort
+                ))
+            }
+        }
+    }
+
+    fun getExternalServicesInfo(): ExternalServices {
+        return externalServices
     }
 }

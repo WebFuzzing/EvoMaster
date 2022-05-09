@@ -24,6 +24,11 @@ abstract class StructuralElement (
     var parent : StructuralElement? = null
         private set
 
+    /**
+     * present whether the element is defined root
+     */
+    private var isDefinedRoot : Boolean = false
+
     init {
         initChildren(children)
     }
@@ -77,7 +82,8 @@ abstract class StructuralElement (
      * @return a new Copyable based on [this]
      */
     open fun copy() : StructuralElement {
-        if (parent != null)
+        // except individual, all elements should have a parent
+        if (parent == null && !isDefinedRoot())
             LoggingUtil.uniqueWarn(log, "${this::class.java} should have a parent but currently it is null")
         val copy = copyContent()
         copy.postCopy(this)
@@ -156,6 +162,18 @@ abstract class StructuralElement (
             back.add(0, index)
             parent!!.traverseBackIndex(back)
         }
+    }
+
+    /**
+     * clarify if the element is root as defined
+     */
+    fun isDefinedRoot() = isDefinedRoot
+
+    /**
+     * identify the element as root
+     */
+    fun identifyAsRoot(){
+        isDefinedRoot = true
     }
 
 }

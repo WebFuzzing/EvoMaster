@@ -1,0 +1,18 @@
+type Query {
+    page(PerPage:Int):Page
+    pageInfo: PageInfo
+}
+
+type Page {
+    users(Search:String): User
+}
+
+type PageInfo {
+    total(id:Int): User
+    total2(id:Int): User
+}
+
+type User{
+    about(AsHtml:Boolean):String
+}
+
