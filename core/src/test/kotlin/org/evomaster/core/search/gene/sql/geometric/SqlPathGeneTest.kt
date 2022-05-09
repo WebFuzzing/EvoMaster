@@ -21,7 +21,7 @@ class SqlPathGeneTest {
         gene.points.addElement(p1)
         gene.points.addElement(p2)
 
-        assertEquals("\"[(0.0,0.1),(0.1,0.0)]\"", gene.getValueAsPrintableString().replace(" ",""))
+        assertEquals("\"((0.0,0.1),(0.1,0.0))\"", gene.getValueAsPrintableString().replace(" ",""))
     }
 
     @Test
@@ -40,6 +40,6 @@ class SqlPathGeneTest {
         gene.points.addElement(p1)
         gene.points.addElement(p2)
 
-        assertEquals("\"((0.0,0.1),(0.1,0.0))\"", gene.getValueAsPrintableString().replace(" ",""))
+        assertEquals("\"[(0.0,0.1),(0.1,0.0)]\"", gene.getValueAsPrintableString().replace(" ",""))
     }
 }

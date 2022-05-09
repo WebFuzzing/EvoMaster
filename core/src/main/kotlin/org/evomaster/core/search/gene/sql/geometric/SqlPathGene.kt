@@ -56,9 +56,10 @@ class SqlPathGene(
         return listOf(isClosedPath, points)
     }
 
-    private fun printBeginOfPath(): String = if (this.isClosedPath.value) LEFT_SQUARE_BRACKET else LEFT_PARENTHESIS
-
-    private fun printEndOfPath(): String = if (this.isClosedPath.value) RIGHT_SQUARE_BRACKET else RIGHT_PARENTHESIS
+    private fun enclosePath(pathStr: String): String =
+            if (this.isClosedPath.value)
+                LEFT_PARENTHESIS + pathStr + RIGHT_PARENTHESIS
+            else LEFT_SQUARE_BRACKET + pathStr + RIGHT_SQUARE_BRACKET
 
     override fun getValueAsPrintableString(
             previousGenes: List<Gene>,
@@ -66,9 +67,7 @@ class SqlPathGene(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\" " + printBeginOfPath() +
-                " " + points.getAllElements().joinToString(" , ") { it.getValueAsRawString() } +
-                " " + printEndOfPath() + " \""
+        return "\" " + enclosePath(points.getAllElements().joinToString(" , ") { it.getValueAsRawString() }) + " \""
     }
 
     override fun getValueAsRawString(): String {
