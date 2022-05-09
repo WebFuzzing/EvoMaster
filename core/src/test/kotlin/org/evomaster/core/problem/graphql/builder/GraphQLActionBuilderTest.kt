@@ -1043,7 +1043,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun gitLabSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
