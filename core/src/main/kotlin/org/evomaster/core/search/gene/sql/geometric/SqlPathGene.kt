@@ -12,27 +12,37 @@ import org.slf4j.LoggerFactory
 
 class SqlPathGene(
         name: String,
+        val isClosedPath: BooleanGene = BooleanGene("isClosedPath"),
         val points: ArrayGene<SqlPointGene> = ArrayGene(
                 name = "points",
                 // paths are lists of at least 2 points
                 minSize = 2,
                 template = SqlPointGene("p"))
-) : Gene(name, mutableListOf(points)) {
+) : Gene(name, mutableListOf(isClosedPath, points)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
+
+        const val LEFT_PARENTHESIS = "("
+
+        const val LEFT_SQUARE_BRACKET = "["
+
+        const val RIGHT_PARENTHESIS = ")"
+
+        const val RIGHT_SQUARE_BRACKET = "]"
     }
 
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(points)
+    override fun getChildren(): MutableList<Gene> = mutableListOf(isClosedPath, points)
 
     override fun copyContent(): Gene = SqlPathGene(
             name,
+            isClosedPath.copyContent() as BooleanGene,
             points.copyContent() as ArrayGene<SqlPointGene>
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, forceNewValue, allGenes)
+        listOf(isClosedPath, points).forEach { it.randomize(randomness, forceNewValue, allGenes) }
     }
 
     override fun candidatesInternalGenes(
@@ -43,8 +53,12 @@ class SqlPathGene(
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        return listOf(points)
+        return listOf(isClosedPath, points)
     }
+
+    private fun printBeginOfPath(): String = if (this.isClosedPath.value) LEFT_SQUARE_BRACKET else LEFT_PARENTHESIS
+
+    private fun printEndOfPath(): String = if (this.isClosedPath.value) RIGHT_SQUARE_BRACKET else RIGHT_PARENTHESIS
 
     override fun getValueAsPrintableString(
             previousGenes: List<Gene>,
@@ -52,11 +66,9 @@ class SqlPathGene(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\" ( ${
-            points.getAllElements()
-                    .map { it.getValueAsRawString() }
-                    .joinToString(" , ")
-        } ) \""
+        return "\" " + printBeginOfPath() +
+                " " + points.getAllElements().joinToString(" , ") { it.getValueAsRawString() } +
+                " " + printEndOfPath() + " \""
     }
 
     override fun getValueAsRawString(): String {

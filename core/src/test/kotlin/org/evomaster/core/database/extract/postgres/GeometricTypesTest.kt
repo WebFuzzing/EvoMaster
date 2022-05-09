@@ -56,14 +56,12 @@ class GeometricTypesTest : ExtractTestBasePostgres() {
         q.y.value = 1.0f
 
         val pathGene = genes[4] as SqlPathGene
-        (pathGene.getChildren().first() as ArrayGene<SqlPointGene>).addElement(SqlPointGene("point1"))
-        (pathGene.getChildren().first() as ArrayGene<SqlPointGene>).addElement(SqlPointGene("point2"))
+        pathGene.points.addElement(SqlPointGene("point1"))
+        pathGene.points.addElement(SqlPointGene("point2"))
 
         val polygonGene = genes[5] as SqlPolygonGene
         (polygonGene.getChildren().first() as ArrayGene<SqlPointGene>).addElement(SqlPointGene("point1"))
         (polygonGene.getChildren().first() as ArrayGene<SqlPointGene>).addElement(SqlPointGene("point2"))
-
-        val circleGene = genes[6] as SqlCircleGene
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
