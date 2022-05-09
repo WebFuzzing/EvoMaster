@@ -584,7 +584,6 @@ object GeneUtils {
             mode == EscapeMode.GQL_STR_VALUE
 
     private fun isLastSelected(gene: TupleGene): Boolean {
-        assert(gene.lastElementTreatedSpecially)
         val lastElement = gene.elements[gene.elements.size - 1]
         return (lastElement is OptionalGene && lastElement.isActive) ||
                 (lastElement is BooleanGene && lastElement.value)
@@ -592,7 +591,6 @@ object GeneUtils {
     }
 
     private fun isLastCandidate(gene: TupleGene): Boolean {
-        assert(gene.lastElementTreatedSpecially)
         val lastElement = gene.elements[gene.elements.size - 1]
         return (lastElement is OptionalGene && lastElement.selectable) || (lastElement is BooleanGene)
 
