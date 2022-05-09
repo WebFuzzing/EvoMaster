@@ -104,6 +104,9 @@ class DbAppEMTest : SpringRestPostgresTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/builtInMultiRangeTypes", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/builtInMultiRangeTypes", null)
 
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/postgres/objectIdentifierTypes", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/postgres/objectIdentifierTypes", null)
+
         }
     }
 }
