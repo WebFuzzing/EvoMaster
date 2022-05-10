@@ -1,9 +1,14 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.service.Randomness
 import java.io.File
 import java.math.BigDecimal
 import kotlin.reflect.KClass
+import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSuperclassOf
 
 object GeneSamplerForTests {
@@ -31,6 +36,7 @@ object GeneSamplerForTests {
                 }
                 .filter { !it.endsWith("\$Companion") }
                 .filter { !it.contains("$") }
+                .filter { !it.contains(".Sql") } // TODO remove once adding samplers for SQL genes
                 .forEach {
                     //println("Analyzing $it")
                     val c = try {
@@ -76,8 +82,23 @@ object GeneSamplerForTests {
             ObjectGene::class -> sampleObjectGene(rand) as T
             OptionalGene::class -> sampleOptionalGene(rand) as T
             PairGene::class -> samplePairGene(rand) as T
-            //TODO SeededGene but need to make ChoiceGene first
+            SeededGene::class -> sampleSeededGene(rand) as T
             StringGene::class -> sampleStringGene(rand) as T
+            TupleGene::class -> sampleTupleGene(rand) as T
+            DateGene::class -> sampleDateGene(rand) as T
+            DateTimeGene::class -> sampleDateGene(rand) as T
+            TimeGene::class -> sampleTimeGene(rand) as T
+            AnyCharacterRxGene::class -> sampleAnyCharacterRxGene(rand) as T
+            CharacterClassEscapeRxGene::class -> sampleCharacterClassEscapeRxGene(rand) as T
+            CharacterRangeRxGene::class -> sampleCharacterRangeRxGene(rand) as T
+            DisjunctionRxGene::class -> sampleDisjunctionRxGene(rand) as T
+            DisjunctionListRxGene::class -> sampleDisjunctionListRxGene(rand) as T
+            PatternCharacterBlock::class -> samplePatternCharacterBlock(rand) as T
+            QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
+            RegexGene::class -> sampleRegexGene(rand) as T
+
+            //TODO SQL genes
+
             else -> throw IllegalStateException("No sampler for $klass")
 
             //TODO need for all Genes
@@ -85,6 +106,87 @@ object GeneSamplerForTests {
         }
     }
 
+    fun sampleRegexGene(rand: Randomness) : RegexGene{
+        return RegexGene(name="rand RegexGene", disjunctions = sampleDisjunctionListRxGene(rand))
+    }
+    fun sampleQuantifierRxGene(rand: Randomness) : QuantifierRxGene{
+
+        val selection = geneClasses
+        val min = rand.nextInt(2)
+
+        return QuantifierRxGene(
+                name = "rand QuantifierRxGene",
+                template = sample(rand.choose(selection), rand),
+                min = min,
+                max = min + rand.nextInt(2)
+        )
+    }
+
+    fun samplePatternCharacterBlock(rand: Randomness) : PatternCharacterBlock{
+        return PatternCharacterBlock(name="rand PatternCharacterBlock", stringBlock = rand.nextWordString())
+    }
+
+    fun sampleDisjunctionListRxGene(rand: Randomness) : DisjunctionListRxGene{
+
+        return DisjunctionListRxGene(listOf(
+                sampleDisjunctionRxGene(rand),
+                sampleDisjunctionRxGene(rand)
+        ))
+    }
+
+    fun sampleDisjunctionRxGene(rand: Randomness) : DisjunctionRxGene{
+
+        val selection = geneClasses.filter { it.isSubclassOf(RxTerm::class) }
+
+        return DisjunctionRxGene(
+                name = "rand DisjunctionRxGene",
+                terms = listOf(
+                        sample(rand.choose(selection), rand),
+                        sample(rand.choose(selection), rand),
+                        sample(rand.choose(selection), rand)
+                ),
+                matchStart = rand.nextBoolean(),
+                matchEnd = rand.nextBoolean()
+        )
+    }
+
+    fun sampleCharacterRangeRxGene(rand: Randomness) : CharacterRangeRxGene{
+        return CharacterRangeRxGene(
+                negated = false, // TODO update once fixed
+                ranges = listOf(Pair('a','z'))
+        )
+    }
+
+    fun sampleCharacterClassEscapeRxGene(rand: Randomness) : CharacterClassEscapeRxGene{
+        return CharacterClassEscapeRxGene(type = rand.choose(listOf("w", "W", "d", "D", "s", "S")))
+    }
+
+    fun sampleAnyCharacterRxGene(rand: Randomness) : AnyCharacterRxGene{
+        return AnyCharacterRxGene()
+    }
+
+    fun sampleTimeGene(rand: Randomness) : TimeGene{
+        return TimeGene(name= "rand TimeGene")
+    }
+    fun sampleDateTimeGene(rand: Randomness) : DateTimeGene{
+        return DateTimeGene("rand DateTimeGene")
+    }
+
+    fun sampleDateGene(rand: Randomness) : DateGene{
+        return DateGene(name = "rand DateGene", onlyValidDates = rand.nextBoolean())
+    }
+
+    fun sampleSeededGene(rand: Randomness) : SeededGene<*>{
+
+        //TODO update after refactoring SeededGene with ChoiceGene (to implement)
+
+        return SeededGene(
+                name = "rand SeededGene",
+                gene = sampleStringGene(rand),
+                seeded = sampleEnumGene(rand) as EnumGene<StringGene>,
+                employSeeded = rand.nextBoolean()
+                )
+    }
 
     fun sampleTupleGene(rand: Randomness) : TupleGene{
 

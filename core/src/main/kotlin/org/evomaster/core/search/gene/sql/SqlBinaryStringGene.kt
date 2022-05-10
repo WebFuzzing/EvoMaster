@@ -39,6 +39,10 @@ class SqlBinaryStringGene(
         binaryArrayGene.randomize(randomness, forceNewValue, allGenes)
     }
 
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+        TODO("Not yet implemented")
+    }
+
     private fun toHex2(value: Int) = value.toString(16).padStart(2, '0')
 
 
