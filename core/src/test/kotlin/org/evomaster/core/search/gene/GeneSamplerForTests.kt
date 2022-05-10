@@ -7,6 +7,7 @@ import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.service.Randomness
 import java.io.File
 import java.math.BigDecimal
+import java.math.BigInteger
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSuperclassOf
@@ -68,11 +69,13 @@ object GeneSamplerForTests {
             ArrayGene::class -> sampleArrayGene(rand) as T
             Base64StringGene::class -> sampleBase64StringGene(rand) as T
             BigDecimalGene::class -> sampleBigDecimalGene(rand) as T
+            BigIntegerGene::class -> sampleBigIntegerGene(rand) as T
             BooleanGene::class -> sampleBooleanGene(rand) as T
             CycleObjectGene::class -> sampleCycleObjectGene(rand) as T
             DisruptiveGene::class -> sampleDisruptiveGene(rand) as T
             DoubleGene::class -> sampleDoubleGene(rand) as T
             EnumGene::class -> sampleEnumGene(rand) as T
+            FloatGene::class -> sampleFloatGene(rand) as T
             ImmutableDataHolderGene::class -> sampleImmutableDataHolderGene(rand) as T
             IntegerGene::class -> sampleIntegerGene(rand) as T
             LimitObjectGene::class -> sampleLimitObjectGene(rand) as T
@@ -112,13 +115,15 @@ object GeneSamplerForTests {
     fun sampleQuantifierRxGene(rand: Randomness) : QuantifierRxGene{
 
         val selection = geneClasses
+                .filter { !it.isAbstract }
+                .filter { it.isSubclassOf(RxAtom::class) }
         val min = rand.nextInt(2)
 
         return QuantifierRxGene(
                 name = "rand QuantifierRxGene",
                 template = sample(rand.choose(selection), rand),
                 min = min,
-                max = min + rand.nextInt(2)
+                max = min + rand.nextInt(1,2)
         )
     }
 
@@ -136,7 +141,9 @@ object GeneSamplerForTests {
 
     fun sampleDisjunctionRxGene(rand: Randomness) : DisjunctionRxGene{
 
-        val selection = geneClasses.filter { it.isSubclassOf(RxTerm::class) }
+        val selection = geneClasses
+                .filter { !it.isAbstract }
+                .filter { it.isSubclassOf(RxTerm::class) }
 
         return DisjunctionRxGene(
                 name = "rand DisjunctionRxGene",
@@ -190,7 +197,7 @@ object GeneSamplerForTests {
 
     fun sampleTupleGene(rand: Randomness) : TupleGene{
 
-        val selection = geneClasses
+        val selection = geneClasses.filter { !it.isAbstract }
 
         return TupleGene(
                 name = "rand TupleGene ${rand.nextInt()}",
@@ -206,7 +213,7 @@ object GeneSamplerForTests {
 
     fun samplePairGene(rand: Randomness) : PairGene<*,*>{
 
-        val selection = geneClasses
+        val selection = geneClasses.filter { !it.isAbstract }
 
         return PairGene(
                 name = "rand PairGene",
@@ -218,7 +225,7 @@ object GeneSamplerForTests {
 
     fun sampleOptionalGene(rand: Randomness) : OptionalGene{
 
-        val selection = geneClasses
+        val selection = geneClasses.filter { !it.isAbstract }
 
         return OptionalGene(
                 name="rand OptionalGene",
@@ -228,7 +235,7 @@ object GeneSamplerForTests {
 
     fun sampleObjectGene(rand: Randomness) : ObjectGene{
 
-        val selection = geneClasses
+        val selection = geneClasses.filter { !it.isAbstract }
 
         return ObjectGene(
                 name = "rand ObjectGene ${rand.nextInt()}",
@@ -278,7 +285,9 @@ object GeneSamplerForTests {
 
 
     fun sampleDisruptiveGene(rand: Randomness) : DisruptiveGene<*>{
-        val selection = geneClasses.filter { it != DisruptiveGene::class }
+        val selection = geneClasses
+                .filter { !it.isAbstract }
+                .filter { it != DisruptiveGene::class }
         val chosen = sample(rand.choose(selection), rand)
 
         return DisruptiveGene("rand DisruptiveGene", chosen, 0.5)
@@ -303,7 +312,7 @@ object GeneSamplerForTests {
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, rand.nextInt())),
-                scale = rand.choose(listOf(null, rand.nextInt()))
+                scale = rand.choose(listOf(null, rand.nextInt(0,2)))
         )
     }
 
@@ -314,7 +323,7 @@ object GeneSamplerForTests {
         return IntegerGene(
                 name = "rand IntegerGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + rand.nextInt()/2)),
+                max = rand.choose(listOf(null, min + rand.nextInt(0,100))),
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, rand.nextInt())),
@@ -327,10 +336,10 @@ object GeneSamplerForTests {
         return LongGene(
                 name = "rand LongGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + rand.nextLong()/2)),
+                max = rand.choose(listOf(null, min + rand.nextInt(0,100))),
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
-                precision = rand.choose(listOf(null, rand.nextInt())),
+                precision = rand.choose(listOf(null, rand.nextInt(0,2))),
         )
     }
 
@@ -344,7 +353,7 @@ object GeneSamplerForTests {
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, rand.nextInt())),
-                scale = rand.choose(listOf(null, rand.nextInt()))
+                scale = rand.choose(listOf(null, rand.nextInt(0,2)))
         )
     }
 
@@ -360,13 +369,27 @@ object GeneSamplerForTests {
               maxInclusive = rand.nextBoolean(),
               floatingPointMode = rand.nextBoolean(),
               precision = rand.choose(listOf(null, rand.nextInt())),
-              scale = rand.choose(listOf(null, rand.nextInt()))
+              scale = rand.choose(listOf(null, rand.nextInt(0,2)))
+        )
+    }
+
+    fun sampleBigIntegerGene(rand: Randomness) : BigIntegerGene{
+
+        val min = rand.nextLong()
+
+        return BigIntegerGene(
+                name = "rand BigIntegerGene ${rand.nextInt()}",
+                min = rand.choose(listOf(null, BigInteger.valueOf(min))),
+                max = rand.choose(listOf(null, BigInteger.valueOf(min + rand.nextInt()))),
+                minInclusive = rand.nextBoolean(),
+                maxInclusive = rand.nextBoolean(),
+                precision = rand.choose(listOf(null, rand.nextInt())),
         )
     }
 
     fun sampleArrayGene(rand: Randomness): ArrayGene<*> {
 
-        val selection = geneClasses // TODO might filter out some genes here
+        val selection = geneClasses.filter { !it.isAbstract } // TODO might filter out some more genes here
         val chosen = sample(rand.choose(selection), rand)
 
         return ArrayGene("rand array ${rand.nextInt()}", chosen)

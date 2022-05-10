@@ -28,7 +28,7 @@ class SqlMultiRangeGene<T>(
         name: String,
         val template: SqlRangeGene<T>,
         val rangeGenes: ArrayGene<SqlRangeGene<T>> = ArrayGene(name, template)
-) : Gene(name, mutableListOf(rangeGenes)) where T : ComparableGene {
+) : Gene(name, mutableListOf(rangeGenes)) where T : ComparableGene, T: Gene {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlMultiRangeGene::class.java)

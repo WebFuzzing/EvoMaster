@@ -184,7 +184,7 @@ class BigIntegerGene(
         if (max!= null && max <= BigInteger.valueOf(Long.MIN_VALUE))
             throw IllegalStateException("not support yet: max value is less than Long.MIN")
 
-        val m = if (max == null || BigInteger.valueOf(Long.MAX_VALUE) <= min) Long.MAX_VALUE else max.toLong()
+        val m = if (max == null || (min != null && BigInteger.valueOf(Long.MAX_VALUE) <= min)) Long.MAX_VALUE else max.toLong()
         return m.run { if (!maxInclusive) this - 1L else this }
     }
 
