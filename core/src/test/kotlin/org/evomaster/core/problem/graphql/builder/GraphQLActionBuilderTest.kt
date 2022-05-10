@@ -114,8 +114,6 @@ class GraphQLActionBuilderTest {
     }
 
 
-
-
     @Test
     fun bitquerySchemaTest() {
 
@@ -283,7 +281,6 @@ class GraphQLActionBuilderTest {
         assertEquals(14, actionCluster.size)
 
     }
-
 
 
     @Test
@@ -475,7 +472,6 @@ class GraphQLActionBuilderTest {
         val objPotStore = (interfaceObjectStore.fields[0] as OptionalGene).gene as ObjectGene
         assertEquals(1, objPotStore.fields.size)
 
-        //optional or not todo
         assertTrue(objPotStore.fields.any { it is TupleGene && it.name == "address" })
 
         val tupleAddress = objPotStore.fields.first { it.name == "address" } as TupleGene
@@ -561,7 +557,7 @@ class GraphQLActionBuilderTest {
         assertTrue(unionObjBouquet.fields[0] is OptionalGene)
         assertTrue((unionObjBouquet.fields[0] as OptionalGene).gene is ObjectGene)
         val objFlower = (unionObjBouquet.fields[0] as OptionalGene).gene as ObjectGene
-        assertTrue(objFlower.name=="Flower")
+        assertTrue(objFlower.name == "Flower")
         assertTrue(objFlower.fields.any { it is BooleanGene && it.name == "id" })
         assertTrue(objFlower.fields.any { it is BooleanGene && it.name == "color" })
         /**/
@@ -802,7 +798,6 @@ class GraphQLActionBuilderTest {
 
         assertEquals(8, objPage.fields.size)
         assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo" })
-        //a tuple is optional or not todo
         assertTrue(objPage.fields.any { it is TupleGene && it.name == "users" })
         assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo2" })
         assertTrue(objPage.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "pageInfo3" })
@@ -978,9 +973,6 @@ class GraphQLActionBuilderTest {
     }
 
 
-
-
-    @Disabled
     @Test
     fun anigListSchemaTest() {
 
@@ -1044,7 +1036,6 @@ class GraphQLActionBuilderTest {
 
     }
 
-    @Disabled
     @Test
     fun gitLabSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -1070,10 +1061,11 @@ class GraphQLActionBuilderTest {
     }
 
     @Test
-    fun historyInFunctionInReturnedObject(){
+    fun historyInFunctionInReturnedObject() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/HistoryInFunctionInReturnedObject.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/HistoryInFunctionInReturnedObject.json")
+            .readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1098,11 +1090,11 @@ class GraphQLActionBuilderTest {
 
         val objUser = (tupleUsers.elements.last() as OptionalGene).gene as ObjectGene
         assertEquals(1, objUser.fields.size)
-        assertTrue(objUser.fields.any {it is TupleGene && it.name == "about"  })
+        assertTrue(objUser.fields.any { it is TupleGene && it.name == "about" })
 
         val tupleAbout = objUser.fields.first { it.name == "about" } as TupleGene
         assertEquals(1, tupleAbout.elements.size)
-        assertTrue(tupleAbout.elements.any {it is OptionalGene && it.gene is BooleanGene && it.name == "AsHtml" })
+        assertTrue(tupleAbout.elements.any { it is OptionalGene && it.gene is BooleanGene && it.name == "AsHtml" })
         /**/
         val pageInfo = actionCluster["pageInfo"] as GraphQLAction
         assertEquals(1, pageInfo.parameters.size)
@@ -1117,14 +1109,14 @@ class GraphQLActionBuilderTest {
         val tupleTotal = objPageInfo.fields.first { it.name == "total" } as TupleGene
         assertEquals(2, tupleTotal.elements.size)
         assertTrue(tupleTotal.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "id" })
-        assertTrue( (tupleTotal.elements.last() as OptionalGene).gene is ObjectGene)
+        assertTrue((tupleTotal.elements.last() as OptionalGene).gene is ObjectGene)
 
         /**/
         assertTrue(objPageInfo.fields.any { it is TupleGene && it.name == "total2" })
     }
 
     @Test
-    fun timbuctooSchemaTest(){
+    fun timbuctooSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Timbuctoo.json").readText()
 
@@ -1146,7 +1138,7 @@ class GraphQLActionBuilderTest {
 
         val tupleDataSetMetadataList = objAboutMe.fields.first { it.name == "dataSetMetadataList" } as TupleGene
         assertEquals(5, tupleDataSetMetadataList.elements.size)
-        assertTrue( (tupleDataSetMetadataList.elements.last() as OptionalGene).gene !is CycleObjectGene)
+        assertTrue((tupleDataSetMetadataList.elements.last() as OptionalGene).gene !is CycleObjectGene)
     }
 
 }

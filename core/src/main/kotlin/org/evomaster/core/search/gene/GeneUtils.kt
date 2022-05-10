@@ -303,25 +303,7 @@ object GeneUtils {
      * [force] if true, throw exception if cannot prevent the cyclces
      */
     fun preventCycles(gene: Gene, force: Boolean = false) {
-
-        val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
-        if (cycles.isEmpty()) {
-            //nothing to do
-            return
-        }
-
-        for (c in cycles) {
-
-            val prevented = tryToPreventSelection(c)
-
-            if (!prevented) {
-                val msg = "Could not prevent cycle in ${gene.name} gene"
-                if (force) {
-                    throw RuntimeException(msg)
-                }
-                log.warn(msg)
-            }
-        }
+        preventSelectionOfGeneType(gene, CycleObjectGene::class.java, force)
     }
 
     fun tryToPreventSelection(gene: Gene): Boolean {
@@ -344,20 +326,34 @@ object GeneUtils {
         return p != null
     }
 
-    fun preventLimit(gene: Gene, force: Boolean = false) {
 
-        val limits = gene.flatView().filterIsInstance<LimitObjectGene>()
-        if (limits.isEmpty()) {
+    /**
+     * When building a graph/tree of objects with fields, we might want to put a limit on the depth
+     * of such tree.
+     * In these cases, then LimitObjectGene will be created as place-holder to stop the recursion when
+     * building the tree.
+     *
+     * Here, we make sure to LimitObjectGene are not reachable, in the same way as when dealing with
+     * cycles.
+     */
+    fun preventLimit(gene: Gene, force: Boolean = false) {
+        preventSelectionOfGeneType(gene, LimitObjectGene::class.java, force)
+    }
+
+    private fun preventSelectionOfGeneType(root: Gene, type: Class<out Gene>, force: Boolean = false) {
+
+        val toExclude = root.flatView().filterIsInstance(type)
+        if (toExclude.isEmpty()) {
             //nothing to do
             return
         }
 
-        for (c in limits) {
+        for (c in toExclude) {
 
             val prevented = tryToPreventSelection(c)
 
             if (!prevented) {
-                val msg = "Could not prevent limit gene in ${gene.name} gene"
+                val msg = "Could not prevent skipping gene in ${root.name} gene of type $type"
                 if (force) {
                     throw RuntimeException(msg)
                 }
@@ -365,6 +361,7 @@ object GeneUtils {
             }
         }
     }
+
 
 
     fun hasNonHandledCycles(gene: Gene): Boolean {
