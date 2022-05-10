@@ -147,7 +147,7 @@ class StringGene(
         }
          */
 
-        value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
+        value = randomness.nextString(minLength, Math.min(maxLength, maxForRandomization))
         repair()
         selectedSpecialization = -1
         handleBinding(allGenes)

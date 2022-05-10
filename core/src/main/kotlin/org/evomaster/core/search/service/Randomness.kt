@@ -2,7 +2,6 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.utils.NumberCalculationUtil
 import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -40,7 +39,7 @@ class Randomness {
 
     private val wordSet = "_$digitSet$asciiLetterSet"
     private val spaceSet = " \t\r\n"
-    private val punctuationSet = "!@#$%^&*()[]{}<>:;|"
+    private val punctuationSet = "_.!?@#$%^&*+-()[]{}<>:;|"
 
     private val allSet = "$wordSet$spaceSet$norwegianLetterSet$punctuationSet"
 
@@ -202,19 +201,7 @@ class Randomness {
         return k
     }
 
-    fun nextWordString(min: Int = 0, max: Int = 10): String {
-
-        val n = nextInt(min, max)
-
-        val chars = CharArray(n)
-        (0 until n).forEach {
-            chars[it] = nextWordChar()
-        }
-
-        val k = String(chars)
-        log.trace("nextWordString(): {}", k)
-        return k
-    }
+   
 
     fun randomizeBoundedIntAndLong(value: Long, min: Long, max: Long, forceNewValue: Boolean) : Long{
         val z = 1000L
@@ -260,6 +247,20 @@ class Randomness {
         return set[random.nextInt(set.length)]
     }
 
+    fun nextString(min: Int = 0, max: Int = 10): String {
+
+        val n = nextInt(min, max)
+
+        val chars = CharArray(n)
+        (0 until n).forEach {
+            chars[it] = nextFromStringSet(allSet)
+        }
+
+        val k = String(chars)
+        log.trace("nextWordString(): {}", k)
+        return k
+    }
+    
     fun nextWordChar(): Char {
         val k = nextFromStringSet(wordSet)
         log.trace("nextWordChar(): {}", k)
