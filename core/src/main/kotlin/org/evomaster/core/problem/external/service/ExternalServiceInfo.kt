@@ -33,4 +33,15 @@ class ExternalServiceInfo(
         result = 31 * result + remotePort
         return result
     }
+//
+//    fun initService(address: String) {
+//        wireMockAddress = address
+//
+//        wireMockServer = WireMockServer(WireMockConfiguration()
+//                .bindAddress(wireMockAddress)
+//                .port(Companion.WIREMOCK_PORT)
+//                .extensions(ResponseTemplateTransformer(false)))
+//        wireMockServer.start()
+//    }
+//
 }
