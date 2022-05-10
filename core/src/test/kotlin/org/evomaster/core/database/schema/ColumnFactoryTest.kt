@@ -2,6 +2,7 @@ package org.evomaster.core.database.schema
 
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThat
@@ -53,6 +54,6 @@ internal class ColumnFactoryTest {
                     databaseType = databaseType)
         }
 
-        assertThat(assertionThrown.message, equalTo("Column data type invalid is not supported in EvoMaster Data types"))
+        assertThat(assertionThrown.message, containsString("Column data type invalid is not supported"))
     }
 }

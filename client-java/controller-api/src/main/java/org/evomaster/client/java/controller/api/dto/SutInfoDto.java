@@ -78,4 +78,9 @@ public class SutInfoDto {
      * Information about the "units" in the SUT.
      */
     public UnitsInfoDto unitsInfoDto;
+
+    /**
+     * info collected during SUT boot-time
+     */
+    public BootTimeInfoDto bootTimeInfoDto;
 }

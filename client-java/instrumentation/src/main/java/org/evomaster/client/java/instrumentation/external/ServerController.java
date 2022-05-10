@@ -1,10 +1,8 @@
 package org.evomaster.client.java.instrumentation.external;
 
-import org.evomaster.client.java.instrumentation.Action;
+import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
-import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.TargetInfo;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -206,6 +204,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.EXECUTING_INIT_SQL, executingInitSql);
     }
 
+    public boolean setExecutingAction(boolean executingAction){
+        return sendWithDataAndExpectACK(Command.EXECUTING_ACTION, executingAction);
+    }
+
     public synchronized List<TargetInfo> getTargetsInfo(Collection<Integer> ids) {
         boolean sent = sendCommand(Command.TARGETS_INFO);
         if (!sent) {
@@ -250,6 +252,27 @@ public class ServerController {
         }
 
         return (List<AdditionalInfo>) response;
+    }
+
+    public synchronized BootTimeObjectiveInfo handleBootTimeObjectiveInfo() {
+
+        boolean sent = sendCommand(Command.BOOT_TIME_INFO);
+        if (!sent) {
+            SimpleLogger.error("Failed to send message");
+            return null;
+        }
+
+        Object response = waitAndGetResponse();
+        if (response == null) {
+            SimpleLogger.error("Failed to read response about Boot-time Objective Info");
+            return null;
+        }
+
+        if (!(response instanceof BootTimeObjectiveInfo)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a List"));
+        }
+
+        return (BootTimeObjectiveInfo) response;
     }
 
     public synchronized UnitsInfoRecorder getUnitsInfoRecorder(){

@@ -99,7 +99,13 @@ object ColumnFactory {
         } catch (e: Exception) {
             throw IllegalArgumentException(
                     String.format(
-                            "Column data type %s is not supported in EvoMaster Data types",
+                            "Column data type %s is not supported in EvoMaster data types." +
+                                    " Note that EvoMaster only support certain databases, including" +
+                                    " Postgres and MySQL. You can see the full, updated list on the main documentation" +
+                                    " page of EvoMaster." +
+                                    " If your database is listed there, please report this as an issue." +
+                                    " If not, you can still open a 'feature request' to ask to add support for such database." +
+                                    " But, of course, no guarantee of if/when it will be supported.",
                             typeAsString
                     )
             )

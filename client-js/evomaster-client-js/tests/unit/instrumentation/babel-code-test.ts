@@ -1166,4 +1166,40 @@ test("test length", ()=>{
 });
 
 
+test("test array with square brackets", ()=>{
+    const code  = dedent`
+        let x = [1];
+        x.foo = 2;
+        const y = x["foo"];
+    `;
+    const instrumented = runPlugin(code).code;
+    expect(instrumented).toEqual(dedent`
+        //File instrumented with EvoMaster
+    
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+        
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Line_test.ts_00003", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1", "Statement_test.ts_00003_2"]);
+        
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        let x = [1];
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+        
+        __EM__.enteringStatement("test.ts", 2, 1);
+        
+        x.foo = 2;
+        
+        __EM__.completedStatement("test.ts", 2, 1);
+        
+        __EM__.enteringStatement("test.ts", 3, 2);
+        
+        const y = __EM__.squareBrackets("test.ts", 3, 0, x, "foo");
+        
+        __EM__.completedStatement("test.ts", 3, 2);
+        
+    `);
+});
+
+
 

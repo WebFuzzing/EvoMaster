@@ -28,6 +28,7 @@ public class ReplacementList {
                     new DateClassReplacement(),
                     new DateFormatClassReplacement(),
                     new DoubleClassReplacement(),
+                    new EnumClassReplacement(),
                     new FloatClassReplacement(),
                     new GsonClassReplacement(),
                     new Http11ProcessorReplacementClass(),

@@ -1,13 +1,14 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -28,6 +29,11 @@ class Statistics : SearchListener {
         const val DISTINCT_ACTIONS = "distinctActions"
         const val COVERED_2XX = "covered2xx"
         const val GQL_NO_ERRORS = "gqlNoErrors"
+
+        /**
+         * represent that boot-time info is unavailable to collect
+         */
+        const val BOOT_TIME_INFO_UNAVAILABLE = -1
     }
 
     @Inject
@@ -169,11 +175,18 @@ class Statistics : SearchListener {
 
     fun getData(solution: Solution<*>): List<Pair> {
 
-        val unitsInfo = if(!config.blackBox || config.bbExperiments) {
-            remoteController?.getSutInfo()?.unitsInfoDto
+        val sutInfo : SutInfoDto? = if(!config.blackBox || config.bbExperiments) {
+            remoteController?.getSutInfo()
         } else {
             null
         }
+
+        val unitsInfo = sutInfo?.unitsInfoDto
+        val bootTimeInfo = sutInfo?.bootTimeInfoDto
+
+        val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
+        val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
+        val branchesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.BRANCH, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
 
         val list: MutableList<Pair> = mutableListOf()
 
@@ -184,7 +197,7 @@ class Statistics : SearchListener {
             add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
-            add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
+            add(Pair("coveredTargets", "" + targetsInfo.total))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
             add(Pair(DISTINCT_ACTIONS, "" + distinctActions()))
             add(Pair("endpoints", "" + distinctActions()))
@@ -227,8 +240,18 @@ class Statistics : SearchListener {
             add(Pair("numberOfInstrumentedNumberComparisons", "" + (unitsInfo?.numberOfInstrumentedNumberComparisons ?: 0)))
             add(Pair("numberOfUnits", "" + (unitsInfo?.unitNames?.size ?: 0)))
 
-            add(Pair("coveredLines", "" + solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)))
-            add(Pair("coveredBranches", "" + solution.overall.coveredTargets(ObjectiveNaming.BRANCH, idMapper)))
+            add(Pair("coveredLines", "${linesInfo.total}"))
+            add(Pair("coveredBranches", "${branchesInfo.total}"))
+
+            // statistic info during sut boot time
+            add(Pair("bootTimeCoveredTargets", "${targetsInfo.bootTime}"))
+            add(Pair("bootTimeCoveredLines", "${linesInfo.bootTime}"))
+            add(Pair("bootTimeCoveredBranches", "${branchesInfo.bootTime}"))
+
+            // statistic info during search
+            add(Pair("searchTimeCoveredTargets", "${targetsInfo.searchTime}"))
+            add(Pair("searchTimeCoveredLines", "${linesInfo.searchTime}"))
+            add(Pair("searchTimeCoveredBranches", "${branchesInfo.searchTime}"))
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
@@ -342,6 +365,16 @@ class Statistics : SearchListener {
                         if there exists names of tests, we might refer to them.
                      */
                     content.addAll(info.filter { it.second.contains(test) }.map { c-> c.first }.sorted().map { listOf(test, it).joinToString(separator) })
+                }
+            }
+        }
+
+        // append boot-time targets
+        if(!config.blackBox || config.bbExperiments) {
+            remoteController?.getSutInfo()?.bootTimeInfoDto?.targets?.map { it.descriptiveId }?.sorted()?.apply {
+                if (isNotEmpty()){
+                    content.add(System.lineSeparator())
+                    content.addAll(this)
                 }
             }
         }

@@ -166,7 +166,8 @@ abstract class Gene(
         val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
             val mutated = mutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
-            if (!mutated) throw IllegalStateException("leaf mutation is not implemented")
+            if (!mutated)
+                throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
             val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
 
@@ -264,7 +265,7 @@ abstract class Gene(
                                   internalGenes: List<Gene>,
                                   mwc: MutationWeightControl,
                                   additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-        throw IllegalStateException("adaptive gene selection is unavailable for the gene")
+        throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
     }
 
     /**

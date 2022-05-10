@@ -211,5 +211,71 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
 
     }
 
+    @Test
+    fun testInsertStringIntoArrayWithQuotes() {
+
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction(
+                "StringArrayTable",
+                setOf(
+                        "stringArrayColumn"
+                )
+        )
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+
+        val stringArrayColumn = genes[0] as SqlMultidimensionalArrayGene<*>
+        assertEquals(1, stringArrayColumn.numberOfDimensions)
+        assertTrue(stringArrayColumn.template is StringGene)
+        assertEquals("\"{}\"", stringArrayColumn.getValueAsPrintableString())
+
+        stringArrayColumn.replaceElements(dimensionSizes = listOf(1))
+
+        val stringGene = stringArrayColumn.getElement(listOf(0)) as StringGene
+        stringGene.value = "Hello\"World"
+
+        assertEquals("\"{\"Hello\\\"World\"}\"", stringArrayColumn.getValueAsPrintableString())
+
+        val dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
+    }
+
+
+    @Test
+    fun testInsertStringIntoArrayWithApostrophe() {
+
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction(
+                "StringArrayTable",
+                setOf(
+                        "stringArrayColumn"
+                )
+        )
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+
+        val stringArrayColumn = genes[0] as SqlMultidimensionalArrayGene<*>
+        assertEquals(1, stringArrayColumn.numberOfDimensions)
+        assertTrue(stringArrayColumn.template is StringGene)
+        assertEquals("\"{}\"", stringArrayColumn.getValueAsPrintableString())
+
+        stringArrayColumn.replaceElements(dimensionSizes = listOf(1))
+
+        val stringGene = stringArrayColumn.getElement(listOf(0)) as StringGene
+        stringGene.value = "Hello'World"
+
+        assertEquals("\"{\"Hello'World\"}\"", stringArrayColumn.getValueAsPrintableString())
+
+        val dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
+    }
 
 }

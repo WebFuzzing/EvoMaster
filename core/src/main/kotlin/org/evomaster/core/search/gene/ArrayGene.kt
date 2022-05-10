@@ -10,7 +10,6 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import kotlin.math.min
 
 
 /**
@@ -40,7 +39,7 @@ class ArrayGene<T>(
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
          */
-        private var elements: MutableList<T> = mutableListOf()
+        var elements: MutableList<T> = mutableListOf()
 ) : CollectionGene, Gene(name, elements)
         where T : Gene {
 
@@ -78,12 +77,16 @@ class ArrayGene<T>(
     override fun getChildren(): MutableList<T> = elements
 
     override fun copyContent(): Gene {
-        return ArrayGene<T>(name,
+        val copy = ArrayGene<T>(name,
                 template.copyContent() as T,
                 maxSize,
                 minSize,
                 elements.map { e -> e.copyContent() as T }.toMutableList()
         )
+        if (copy.getChildren().size!=this.getChildren().size) {
+            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${getChildren().size}) vs. template (${template.getChildren().size})")
+        }
+        return copy
     }
 
     override fun copyValueFrom(other: Gene) {

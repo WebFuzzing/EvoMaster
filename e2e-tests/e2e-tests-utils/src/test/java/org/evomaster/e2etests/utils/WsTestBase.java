@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
@@ -61,6 +62,11 @@ public abstract class WsTestBase {
             being not instrumented when tests start (as controllers might load them)
          */
         InstrumentedSutStarter.loadAgent();
+
+        /*
+            avoid boot-time info across e2e tests
+         */
+        ObjectiveRecorder.reset(true);
     }
 
     @AfterAll

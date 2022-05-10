@@ -47,6 +47,12 @@ class StringGene(
 
 ) : ComparableGene, Gene(name, specializationGenes) {
 
+    init {
+        if (minLength>maxLength) {
+            throw IllegalArgumentException("Cannot create string gene ${this.name} with mininum length ${this.minLength} and maximum length ${this.maxLength}")
+        }
+    }
+
     companion object {
 
         private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
@@ -549,15 +555,16 @@ class StringGene(
         }
 
         val rawValue = getValueAsRawString()
-        if (mode != null && mode == EscapeMode.XML) {
-            return StringEscapeUtils.escapeXml10(rawValue)
+        return if (mode != null && mode == EscapeMode.XML) {
+            StringEscapeUtils.escapeXml10(rawValue)
         } else {
             when {
+                (mode == EscapeMode.GQL_INPUT_MODE)-> "\"${rawValue.replace("\\", "\\\\\\\\")}\""
                 // TODO this code should be refactored with other getValueAsPrintableString() methods
-                (targetFormat == null) -> return "\"${rawValue}\""
+                (targetFormat == null) -> "\"${rawValue}\""
                 //"\"${rawValue.replace("\"", "\\\"")}\""
-                (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
-                else -> return "\"${GeneUtils.applyEscapes(rawValue, EscapeMode.TEXT, targetFormat)}\""
+                (mode != null) -> "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
+                else -> "\"${GeneUtils.applyEscapes(rawValue, EscapeMode.TEXT, targetFormat)}\""
             }
 
         }

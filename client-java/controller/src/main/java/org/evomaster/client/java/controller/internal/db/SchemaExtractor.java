@@ -334,10 +334,24 @@ public class SchemaExtractor {
         return compositeTypeDtos;
     }
 
+    private static final String TEXT_DATA_TYPE = "text";
+
+    private static final String BIT_DATA_TYPE = "bit";
+
+    private static final String VAR_BIT_DATA_TYPE = "varbit";
+
+    private static final String CHAR_DATA_TYPE = "char";
+
+    private static final String VAR_CHAR_DATA_TYPE = "varchar";
+
+    private static final String BLANK_PADDED_CHAR_DATA_TYPE = "bpchar";
+
+    private static final String NUMERIC_DATA_TYPE = "numeric";
+
     private static List<CompositeTypeColumnDto> getAllCompositeTypeColumns(Connection connection, String compositeTypeName, List<String> allCompositeTypeNames) throws SQLException {
         // Source: https://stackoverflow.com/questions/6979282/postgresql-find-information-about-user-defined-types
         String listAttributesQuery = String.format(
-                "SELECT pg_attribute.attname AS attname, pg_attribute.attnotnull AS attnotnull, pg_attribute.attlen  as attlen, pg_type.typname AS typename " +
+                "SELECT pg_attribute.attname AS attname, pg_attribute.attlen  as attlen, pg_type.typname AS typename " +
                         " FROM pg_attribute " +
                         " JOIN pg_type ON pg_attribute.atttypid=pg_type.oid " +
                         " WHERE pg_attribute.attrelid =\n" +
@@ -351,9 +365,36 @@ public class SchemaExtractor {
                 CompositeTypeColumnDto columnDto = new CompositeTypeColumnDto();
                 columnDto.name = listAttributesResultSet.getString("attname");
                 columnDto.type = listAttributesResultSet.getString("typename");
-                columnDto.size = listAttributesResultSet.getInt("attlen");
-                columnDto.nullable = listAttributesResultSet.getBoolean("attnotnull");
+                int attlen = listAttributesResultSet.getInt("attlen");
+                /*
+                 *  Composite type columns can not include constraints (such as NOT NULL).
+                 *  Therefore, all columns in composite types are nullable.
+                 */
+                columnDto.nullable = true;
                 columnDto.columnTypeIsComposite = allCompositeTypeNames.stream().anyMatch(t -> t.equalsIgnoreCase(columnDto.type));
+
+                if (columnDto.columnTypeIsComposite) {
+                    columnDto.size = 0;
+                } else {
+                    switch (columnDto.type) {
+                        case TEXT_DATA_TYPE: {
+                            columnDto.size = Integer.MAX_VALUE;
+                        }
+                        break;
+                        case NUMERIC_DATA_TYPE:
+                        case CHAR_DATA_TYPE:
+                        case VAR_CHAR_DATA_TYPE:
+                        case BIT_DATA_TYPE:
+                        case VAR_BIT_DATA_TYPE:
+                        case BLANK_PADDED_CHAR_DATA_TYPE: {
+                            throw new UnsupportedOperationException("cannot get variable length size of type (varchar, char, varbit, bit, numeric) currently not supported for postgres composite types: " + columnDto.name + " with type " + columnDto.type);
+                        }
+                        default: {
+                            columnDto.size = attlen;
+                        }
+                    }
+                }
+
                 columnDtos.add(columnDto);
             }
         }
@@ -522,7 +563,7 @@ public class SchemaExtractor {
                         https://dev.mysql.com/doc/refman/8.0/en/floating-point-types.html
                         therefore, here, we only set precision when type is DECIMAL
                      */
-                    if (columnDto.type.equals("DECIMAL")){
+                    if (columnDto.type.equals("DECIMAL")) {
                         columnDto.scale = columns.getInt("DECIMAL_DIGITS");
                         // default is 0
                         if (columnDto.scale < 0)

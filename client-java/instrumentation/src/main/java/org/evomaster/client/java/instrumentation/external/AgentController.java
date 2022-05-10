@@ -89,6 +89,13 @@ public class AgentController {
                         handleExecutingInitSql();
                         sendCommand(Command.ACK);
                         break;
+                    case EXECUTING_ACTION:
+                        handleExecutingAction();
+                        sendCommand(Command.ACK);
+                        break;
+                    case BOOT_TIME_INFO:
+                        handleBootTimeObjectiveInfo();
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -150,12 +157,30 @@ public class AgentController {
         }
     }
 
+    private static void handleExecutingAction() {
+        try {
+            Object msg = in.readObject();
+            Boolean executingAction = (Boolean) msg;
+            InstrumentationController.setExecutingAction(executingAction);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-action: "+e.getMessage());
+        }
+    }
+
 
     private static void handleAdditionalInfo(){
         try {
             sendObject(InstrumentationController.getAdditionalInfoList());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling additional info: "+e.getMessage());
+        }
+    }
+
+    private static void handleBootTimeObjectiveInfo(){
+        try {
+            sendObject(InstrumentationController.getBootTimeObjectiveInfo());
+        }catch (Exception e) {
+            SimpleLogger.error("Failure in handling Boot-time Objective Info: "+e.getMessage());
         }
     }
 

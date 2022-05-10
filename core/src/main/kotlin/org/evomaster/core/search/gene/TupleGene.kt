@@ -36,9 +36,9 @@ class TupleGene(
      * which we need to select what to retrieve.
      * In these cases, such return object will be part of the tuple, as the last element.
      */
-    val lastElementTreatedSpecially: Boolean = false
+    val lastElementTreatedSpecially: Boolean = false,
 
-) : Gene(name, elements) {
+    ) : Gene(name, elements) {
 
     init {
         if (elements.isEmpty()) {
@@ -76,46 +76,22 @@ class TupleGene(
         if (mode== GeneUtils.EscapeMode.GQL_NONE_MODE) {
             //need the name for input and return
             buffer.append("$name")
-            //printout the inputs. See later if a refactoring is needed
-            if (elements.dropLast(1).isNotEmpty()) {
+
+            if (lastElementTreatedSpecially){
+                //printout the inputs. See later if a refactoring is needed
                 buffer.append("(")
-                val s = elements.dropLast(1).map {
+                val s = elements.dropLast(1).joinToString(",") {
 
-                    if (it is EnumGene<*> ||
-                        (it is OptionalGene && it.gene is EnumGene<*>) ||
-                        (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is EnumGene<*>) ||
-                        (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is OptionalGene && it.gene.template.gene is EnumGene<*>) ||
-                        (it is ArrayGene<*> && it.template is EnumGene<*>) ||
-                        (it is ArrayGene<*> && it.template is OptionalGene && it.template.gene is EnumGene<*>)
-                    ) {
-                        val i = it.getValueAsRawString()
-                        "${it.name} : $i"
-                    } else {
-                        if (it is ObjectGene || (it is OptionalGene && it.gene is ObjectGene)) {
-                            val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                            " $i"
-                        } else {
-                            if (it is ArrayGene<*> || (it is OptionalGene && it.gene is ArrayGene<*>)) {
-                                val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
-                                "${it.name} : $i"
-                            } else {
-                                val mode =
-                                    if (ParamUtil.getValueGene(it) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
-                                val i = it.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
-                                "${it.name} : $i"
-                            }
-                        }
-                    }
+                    gqlInputsPrinting(it, targetFormat)
 
-                }.joinToString(",").replace("\"", "\\\"")
-                //see another way: eg, joinTo(buffer, ", ").toString().replace("\"", "\\\"") to buffer
+                }.replace("\"", "\\\"")
                 buffer.append(s)
                 buffer.append(")")
-            }
+
             //printout the return
             val returnGene = elements.last()
             buffer.append(
-                if (returnGene is OptionalGene) {
+                if (returnGene is OptionalGene && returnGene.isActive) {
                     assert(returnGene.gene is ObjectGene)
                     returnGene.gene.getValueAsPrintableString(
                         previousGenes,
@@ -133,20 +109,64 @@ class TupleGene(
                         )
                     } else ""
             )
-        } else {
-            "[" + elements.map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }.joinTo(buffer, ", ") + "]"
+        } else { //printout only the inputs, since there is no return (is a primitive type)
+                val s = elements.filter { it !is OptionalGene || it.isActive }.joinToString(",") {
+
+                    gqlInputsPrinting(it, targetFormat)
+
+                }.replace("\"", "\\\"")
+
+                if(s.isNotEmpty()) {
+                    buffer.append("(")
+                    buffer.append(s)
+                    buffer.append(")")
+                }
+
+            }        }
+
+            else {
+            "[" + elements.joinTo(buffer, ", ") { it.getValueAsPrintableString(previousGenes, mode, targetFormat) } + "]"
         }
         return buffer.toString()
 
+    }
+
+    private fun gqlInputsPrinting(
+        it: Gene,
+        targetFormat: OutputFormat?
+    ) = if (it is EnumGene<*> ||
+        (it is OptionalGene && it.gene is EnumGene<*>) ||
+        (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is EnumGene<*>) ||
+        (it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is OptionalGene && it.gene.template.gene is EnumGene<*>) ||
+        (it is ArrayGene<*> && it.template is EnumGene<*>) ||
+        (it is ArrayGene<*> && it.template is OptionalGene && it.template.gene is EnumGene<*>)
+    ) {
+        val i = it.getValueAsRawString()
+        "${it.name} : $i"
+    } else {
+        if (it is ObjectGene || (it is OptionalGene && it.gene is ObjectGene)) {
+            val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+            " $i"
+        } else {
+            if (it is ArrayGene<*> || (it is OptionalGene && it.gene is ArrayGene<*>)) {
+                val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
+                "${it.name} : $i"
+            } else {
+                val mode =
+                    if (ParamUtil.getValueGene(it) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
+                val i = it.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
+                "${it.name} : $i"
+            }
+        }
     }
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         if (elements.isNotEmpty())
-        elements.forEach {
-            it.randomize(randomness, false)
-        }
+            elements.forEach {
+                it.randomize(randomness, false)
+            }
     }
 
     override fun copyValueFrom(other: Gene) {

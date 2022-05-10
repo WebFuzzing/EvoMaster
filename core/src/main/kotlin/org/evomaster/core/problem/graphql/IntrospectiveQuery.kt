@@ -19,8 +19,8 @@ class IntrospectiveQuery {
     }
 
     private val clientConfiguration = ClientConfig()
-            .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
-            .property(ClientProperties.READ_TIMEOUT, 10_000)
+            .property(ClientProperties.CONNECT_TIMEOUT, 30_000)
+            .property(ClientProperties.READ_TIMEOUT, 30_000)
             //workaround bug in Jersey client
             .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
             .property(ClientProperties.FOLLOW_REDIRECTS, false)

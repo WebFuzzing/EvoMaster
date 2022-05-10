@@ -303,25 +303,7 @@ object GeneUtils {
      * [force] if true, throw exception if cannot prevent the cyclces
      */
     fun preventCycles(gene: Gene, force: Boolean = false) {
-
-        val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
-        if (cycles.isEmpty()) {
-            //nothing to do
-            return
-        }
-
-        for (c in cycles) {
-
-            val prevented = tryToPreventSelection(c)
-
-            if (!prevented) {
-                val msg = "Could not prevent cycle in ${gene.name} gene"
-                if (force) {
-                    throw RuntimeException(msg)
-                }
-                log.warn(msg)
-            }
-        }
+        preventSelectionOfGeneType(gene, CycleObjectGene::class.java, force)
     }
 
     fun tryToPreventSelection(gene: Gene): Boolean {
@@ -344,20 +326,34 @@ object GeneUtils {
         return p != null
     }
 
-    fun preventLimit(gene: Gene, force: Boolean = false) {
 
-        val limits = gene.flatView().filterIsInstance<LimitObjectGene>()
-        if (limits.isEmpty()) {
+    /**
+     * When building a graph/tree of objects with fields, we might want to put a limit on the depth
+     * of such tree.
+     * In these cases, then LimitObjectGene will be created as place-holder to stop the recursion when
+     * building the tree.
+     *
+     * Here, we make sure to LimitObjectGene are not reachable, in the same way as when dealing with
+     * cycles.
+     */
+    fun preventLimit(gene: Gene, force: Boolean = false) {
+        preventSelectionOfGeneType(gene, LimitObjectGene::class.java, force)
+    }
+
+    private fun preventSelectionOfGeneType(root: Gene, type: Class<out Gene>, force: Boolean = false) {
+
+        val toExclude = root.flatView().filterIsInstance(type)
+        if (toExclude.isEmpty()) {
             //nothing to do
             return
         }
 
-        for (c in limits) {
+        for (c in toExclude) {
 
             val prevented = tryToPreventSelection(c)
 
             if (!prevented) {
-                val msg = "Could not prevent limit gene in ${gene.name} gene"
+                val msg = "Could not prevent skipping gene in ${root.name} gene of type $type"
                 if (force) {
                     throw RuntimeException(msg)
                 }
@@ -365,6 +361,7 @@ object GeneUtils {
             }
         }
     }
+
 
 
     fun hasNonHandledCycles(gene: Gene): Boolean {
@@ -463,6 +460,7 @@ object GeneUtils {
         val selected = obj.fields.filter {
             ((it is OptionalGene && it.isActive) ||
                     (it is BooleanGene && it.value) ||
+                    (it is OptionalGene && it.gene is TupleGene && isLastSelected(it.gene)) ||
                     (it is TupleGene && isLastSelected(it))
                     )
         }
@@ -538,11 +536,13 @@ object GeneUtils {
                     if (gene.gene is ArrayGene<*>)
                         handleBooleanSelection(gene.gene.template)
                     else
-                        if (gene.gene is TupleGene)
+                        if (gene.gene is TupleGene && gene.gene.lastElementTreatedSpecially)//opt tuple
                             TupleGene(
                                 gene.name,
-                                gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last()))
-                            )
+                                gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last())),
+                                lastElementTreatedSpecially = true
+                            ) else if (gene.gene is TupleGene)
+                            gene.gene
                         else
                         // on by default, but can be deselected during the search
                             BooleanGene(gene.name, true)
@@ -558,8 +558,13 @@ object GeneUtils {
                 ObjectGene(gene.name, gene.fields.map { handleBooleanSelection(it) })
             }
             is ArrayGene<*> -> handleBooleanSelection(gene.template)
-            is TupleGene -> {
-                TupleGene(gene.name, gene.elements.dropLast(1).plus(handleBooleanSelection(gene.elements.last())))
+            is TupleGene -> {//not opt tuple
+                if (gene.lastElementTreatedSpecially)
+                    TupleGene(
+                        gene.name,
+                        gene.elements.dropLast(1).plus(handleBooleanSelection(gene.elements.last())),
+                        lastElementTreatedSpecially = true
+                    ) else gene
             }
             else -> {
                 BooleanGene(gene.name, true)
@@ -577,7 +582,8 @@ object GeneUtils {
 
     private fun isLastSelected(gene: TupleGene): Boolean {
         val lastElement = gene.elements[gene.elements.size - 1]
-        return (lastElement is OptionalGene && lastElement.isActive) || (lastElement is BooleanGene && lastElement.value)
+        return (lastElement is OptionalGene && lastElement.isActive) ||
+                (lastElement is BooleanGene && lastElement.value)
 
     }
 
@@ -587,10 +593,57 @@ object GeneUtils {
 
     }
 
-    private fun isTupleOptionalObjetNotCycle(it: Gene) =
-        (it is TupleGene && it.elements.last() is OptionalGene
-                && (it.elements.last() as OptionalGene).gene is ObjectGene &&
-                (it.elements.last() as OptionalGene).gene !is CycleObjectGene)
+    private fun isTupleOptionalObjetNotCycle(gene: Gene):Boolean {
+        return (gene is TupleGene && gene.elements.last() is OptionalGene
+                && (gene.elements.last() as OptionalGene).gene is ObjectGene &&
+                (gene.elements.last() as OptionalGene).gene !is CycleObjectGene)
+    }
 
+    /**
+     * A special string used for representing a place in the string
+     * where we should add a SINGLE APOSTROPHE (').
+     * This is used mainly for SQL value handling.
+     */
+    const val SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER"
+
+    private val QUOTATION_MARK = "\""
+
+    /**
+     * Returns a new string by removing the enclosing quotation marks of a string.
+     * For example,
+     * ""Hello World"" -> "Hello World"
+     * """" -> ""
+     * If the input string does not start and end with a
+     * quotation mark, the output string is equal to the input string.
+     * For example:
+     * "Hello World"" -> "Hello World""
+     * ""Hello World" -> ""Hello World"
+     */
+    fun removeEnclosedQuotationMarks(str: String): String {
+        return if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
+            str.subSequence(1, str.length - 1).toString()
+        } else {
+            str
+        }
+    }
+
+    private fun encloseWithSingleApostrophePlaceHolder(str: String) = SINGLE_APOSTROPHE_PLACEHOLDER + str + SINGLE_APOSTROPHE_PLACEHOLDER
+
+    /**
+     * If the input string is enclosed in Quotation Marks, these symbols are replaced
+     * by the special string in SINGLE_APOSTROPHE_PLACEHOLDER in the output string.
+     * For example:
+     * ""Hello"" -> "SINGLE_APOSTROPHE_PLACEHOLDERHelloSINGLE_APOSTROPHE_PLACEHOLDER".
+     *
+     * If the input string is not enclosed in quotation marks, the output string is equal
+     * to the input string (i.e. no changes).
+     */
+    fun replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(str: String): String {
+        return if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
+            encloseWithSingleApostrophePlaceHolder(removeEnclosedQuotationMarks(str))
+        } else {
+            str
+        }
+    }
 }
 

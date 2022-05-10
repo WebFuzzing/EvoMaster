@@ -17,10 +17,10 @@ import org.slf4j.LoggerFactory
  * Gene type for 6 and 8 byte MAC addresses.
  */
 class SqlMacAddrGene(
-    name: String,
-    numberOfOctets: Int = MACADDR6_SIZE,
-    private val octets: List<IntegerGene> = List(numberOfOctets)
-    { i -> IntegerGene("b$i", min = 0, max = 255) }
+        name: String,
+        numberOfOctets: Int = MACADDR6_SIZE,
+        private val octets: List<IntegerGene> = List(numberOfOctets)
+        { i -> IntegerGene("b$i", min = 0, max = 255) }
 ) : Gene(name, octets.toMutableList()) {
 
     companion object {
@@ -39,33 +39,33 @@ class SqlMacAddrGene(
     }
 
     override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return octets.toList()
     }
 
     override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
+            previousGenes: List<Gene>,
+            mode: GeneUtils.EscapeMode?,
+            targetFormat: OutputFormat?,
+            extraCheck: Boolean
     ): String {
         return "\"${
             octets
-                .map { String.format("%02X", it.value) }
-                .joinToString(":")
+                    .map { String.format("%02X", it.value) }
+                    .joinToString(":")
         }\""
     }
 
     override fun getValueAsRawString(): String {
         return octets
-            .map { Integer.toHexString(it.value) }
-            .joinToString(":")
+                .map { Integer.toHexString(it.value) }
+                .joinToString(":")
 
     }
 
@@ -104,7 +104,7 @@ class SqlMacAddrGene(
         }
         if (octets.size != other.octets.size) {
             throw IllegalArgumentException(
-                "cannot bind MacAddrGene${octets.size} with MacAddrGene${other.octets.size}"
+                    "cannot bind MacAddrGene${octets.size} with MacAddrGene${other.octets.size}"
             )
         }
         repeat(octets.size) {
@@ -128,4 +128,5 @@ class SqlMacAddrGene(
 
     fun size() = octets.size
 
+    override fun copyContent() = SqlMacAddrGene(name, numberOfOctets = octets.size, octets.map { it.copyContent() as IntegerGene }.toList())
 }

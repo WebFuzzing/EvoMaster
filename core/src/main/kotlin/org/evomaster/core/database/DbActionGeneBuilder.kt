@@ -25,7 +25,6 @@ import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
-import kotlin.math.pow
 
 class DbActionGeneBuilder {
 
@@ -53,6 +52,9 @@ class DbActionGeneBuilder {
                 // Man: TODO need to check
                 ColumnDataType.BIT ->
                     handleBitColumn(column)
+
+                ColumnDataType.VARBIT ->
+                    handleBitVaryingColumn(column)
 
                 /**
                  * BOOLEAN(1) is assumed to be a boolean/Boolean field
@@ -153,19 +155,23 @@ class DbActionGeneBuilder {
                  * Could be any kind of binary data... so let's just use a string,
                  * which also simplifies when needing generate the test files
                  */
-                ColumnDataType.BLOB,
-                ColumnDataType.BYTEA ->
+                ColumnDataType.BLOB ->
                     handleBLOBColumn(column)
 
+                ColumnDataType.BYTEA ->
+                    handleBinaryStringColumn(column)
 
-                ColumnDataType.REAL, ColumnDataType.FLOAT4, ColumnDataType.FLOAT8 ->
-                    handleRealColumn(column)
 
+                ColumnDataType.REAL,
+                ColumnDataType.FLOAT4 ->
+                    handleFloatColumn(column, MIN_FLOAT4_VALUE, MAX_FLOAT4_VALUE)
+
+                ColumnDataType.FLOAT8 ->
+                    handleFloatColumn(column, MIN_FLOAT8_VALUE, MAX_FLOAT8_VALUE)
 
                 ColumnDataType.DEC,
                 ColumnDataType.DECIMAL,
-                ColumnDataType.NUMERIC
-                ->
+                ColumnDataType.NUMERIC ->
                     handleDecimalColumn(column)
 
                 /**
@@ -241,22 +247,55 @@ class DbActionGeneBuilder {
                     SqlJSONPathGene(column.name)
 
                 ColumnDataType.INT4RANGE ->
-                    SqlRangeGene(column.name, template = IntegerGene("bound"))
+                    buildSqlIntegerRangeGene(column)
 
                 ColumnDataType.INT8RANGE ->
-                    SqlRangeGene(column.name, template = LongGene("bound"))
+                    buildSqlLongRangeGene(column)
 
                 ColumnDataType.NUMRANGE ->
-                    SqlRangeGene(column.name, template = FloatGene("bound"))
+                    buildSqlFloatRangeGene(column)
 
                 ColumnDataType.DATERANGE ->
-                    SqlRangeGene(column.name, template = DateGene("bound"))
+                    buildSqlDateRangeGene(column)
 
                 ColumnDataType.TSRANGE, ColumnDataType.TSTZRANGE ->
-                    SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
+                    buildSqlTimestampRangeGene(column)
+
+                ColumnDataType.INT4MULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlIntegerRangeGene(column))
+
+                ColumnDataType.INT8MULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlLongRangeGene(column))
+
+                ColumnDataType.NUMMULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlFloatRangeGene(column))
+
+                ColumnDataType.DATEMULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlDateRangeGene(column))
+
+                ColumnDataType.TSMULTIRANGE, ColumnDataType.TSTZMULTIRANGE ->
+                    SqlMultiRangeGene(column.name, template = buildSqlTimestampRangeGene(column))
+
+                ColumnDataType.PG_LSN ->
+                    SqlLogSeqNumber(column.name)
 
                 ColumnDataType.COMPOSITE_TYPE ->
                     handleCompositeColumn(id, table, column)
+
+                ColumnDataType.OID,
+                ColumnDataType.REGCLASS,
+                ColumnDataType.REGCOLLATION,
+                ColumnDataType.REGCONFIG,
+                ColumnDataType.REGDICTIONARY,
+                ColumnDataType.REGNAMESPACE,
+                ColumnDataType.REGOPER,
+                ColumnDataType.REGOPERATOR,
+                ColumnDataType.REGPROC,
+                ColumnDataType.REGPROCEDURE,
+                ColumnDataType.REGROLE,
+                ColumnDataType.REGTYPE ->
+                    handleObjectIdentifierType(column.name)
+
 
                 else -> throw IllegalArgumentException("Cannot handle: $column.")
             }
@@ -279,6 +318,21 @@ class DbActionGeneBuilder {
 
         return gene
     }
+
+    private fun buildSqlTimestampRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
+
+    private fun buildSqlDateRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = DateGene("bound"))
+
+    private fun buildSqlFloatRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = FloatGene("bound"))
+
+    private fun buildSqlLongRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = LongGene("bound"))
+
+    private fun buildSqlIntegerRangeGene(column: Column) =
+            SqlRangeGene(column.name, template = IntegerGene("bound"))
 
     /*
         https://dev.mysql.com/doc/refman/8.0/en/year.html
@@ -364,6 +418,29 @@ class DbActionGeneBuilder {
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toDouble() })
         } else {
             DoubleGene(column.name)
+        }
+    }
+
+    private fun handleBinaryStringColumn(column: Column): Gene {
+        return if (column.enumValuesAsStrings != null) {
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings)
+        } else {
+            SqlBinaryStringGene(name = column.name)
+        }
+    }
+
+    private fun handleFloatColumn(column: Column, minValue: Double, maxValue: Double): Gene {
+        /**
+         * REAL is identical to the floating point statement float(24).
+         * TODO How to discover if the source field is a float/Float field?
+         */
+        return if (column.enumValuesAsStrings != null) {
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toDouble() })
+
+        } else {
+            DoubleGene(column.name, min = minValue, max = maxValue)
         }
     }
 
@@ -554,7 +631,7 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
-            if (column.scale!= null && column.scale >= 0) {
+            if (column.scale != null && column.scale >= 0) {
                 /*
                     set precision and boundary for DECIMAL
                     https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html
@@ -564,26 +641,26 @@ class DbActionGeneBuilder {
                  */
                 val range = NumberCalculationUtil.boundaryDecimal(column.size, column.scale)
                 BigDecimalGene(
-                    column.name,
-                    min = if (column.isUnsigned) BigDecimal.ZERO.setScale(column.scale) else range.first,
-                    max = range.second,
-                    precision = column.size,
-                    scale = column.scale
+                        column.name,
+                        min = if (column.isUnsigned) BigDecimal.ZERO.setScale(column.scale) else range.first,
+                        max = range.second,
+                        precision = column.size,
+                        scale = column.scale
                 )
-            } else{
-                if (column.scale == null){
+            } else {
+                if (column.scale == null) {
                     FloatGene(column.name)
-                }else{
+                } else {
                     /*
                         TO check
                         with CompositeTypesTest for postgres,
                         the value of precision and scale is -1, may need to check with the authors
                      */
                     log.warn("invalid scale value (${column.scale}) for decimal, and it should not be less than 0")
-                    if (column.size <= 0){
+                    if (column.size <= 0) {
                         log.warn("invalid precision value (${column.size}) for decimal, and it should not be less than 1")
                         FloatGene(column.name)
-                    } else{
+                    } else {
                         // for mysql, set the scale with default value 0 if it is invalid
                         BigDecimalGene(column.name, precision = column.size, scale = 0)
                     }
@@ -602,11 +679,11 @@ class DbActionGeneBuilder {
             val range = NumberCalculationUtil.boundaryDecimal(MONEY_COLUMN_SIZE, MONEY_COLUMN_PRECISION)
 
             BigDecimalGene(
-                column.name,
-                min = range.first,
-                max = range.second,
-                precision = MONEY_COLUMN_SIZE,
-                scale = MONEY_COLUMN_PRECISION
+                    column.name,
+                    min = range.first,
+                    max = range.second,
+                    precision = MONEY_COLUMN_SIZE,
+                    scale = MONEY_COLUMN_PRECISION
             )
         }
     }
@@ -633,12 +710,28 @@ class DbActionGeneBuilder {
     }
 
     /**
+     * Handle Postgres Object identifier type
+     * (https://www.postgresql.org/docs/current/datatype-oid.html) as
+     * integers.
+     */
+    private fun handleObjectIdentifierType(name: String) = IntegerGene(name)
+
+
+    /**
      * handle bit for mysql
      * https://dev.mysql.com/doc/refman/8.0/en/bit-value-literals.html
      */
     private fun handleBitColumn(column: Column): Gene {
+        val gene = SqlBitStringGene(column.name, minSize = column.size, maxSize = column.size)
+        return gene
+    }
 
-        return IntegerGene(column.name, min = 0, max = (2.0).pow(column.size).toInt() - 1)
+    /**
+     * handle bitvarying for postgres
+     * https://www.postgresql.org/docs/14/datatype-bit.html
+     */
+    private fun handleBitVaryingColumn(column: Column): Gene {
+        return SqlBitStringGene(column.name, minSize = 0, maxSize = column.size)
     }
 
     companion object {
@@ -651,6 +744,18 @@ class DbActionGeneBuilder {
                 throw IllegalArgumentException("the list of enumerated values cannot be empty")
             }
         }
+
+        //  the real type has a range of around 1E-37 to 1E+37 with a precision of at least 6 decimal digits
+        val MAX_FLOAT4_VALUE: Double = "1E38".toDouble()
+
+        // The double precision type has a range of around 1E-307 to 1E+308 with a precision of at least 15 digits
+        val MAX_FLOAT8_VALUE: Double = "1E308".toDouble()
+
+        //  the real type has a range of around 1E-37 to 1E+37 with a precision of at least 6 decimal digits
+        val MIN_FLOAT4_VALUE: Double = MAX_FLOAT4_VALUE.unaryMinus()
+
+        // The double precision type has a range of around 1E-307 to 1E+308 with a precision of at least 15 digits
+        val MIN_FLOAT8_VALUE: Double = MAX_FLOAT8_VALUE.unaryMinus()
 
         private val log: Logger = LoggerFactory.getLogger(DbActionGeneBuilder::class.java)
     }
