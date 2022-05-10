@@ -274,8 +274,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         lines.add("expect($validCheck).toBe(true);")
                     }
                     format.isCsharp() -> {
-                        //TODO
-                        lines.add("//Assert.True(IsValidURIorEmpty($location));")
+                        lines.add("Assert.True(Uri.IsWellFormedUriString($location, UriKind.Absolute) || string.IsNullOrEmpty($location));")
                     }
                 }
             } else {
