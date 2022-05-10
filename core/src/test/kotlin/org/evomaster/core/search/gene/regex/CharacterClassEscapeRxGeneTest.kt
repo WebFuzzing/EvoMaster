@@ -84,7 +84,7 @@ class CharacterClassEscapeRxGeneTest {
             val gene = CharacterClassEscapeRxGene("W")
             gene.randomize(randomness, true)
             val k = gene.getValueAsPrintableString()
-            assertTrue(Pattern.matches("\\W", k))
+            assertTrue(Pattern.matches("\\W", k), "Issue with char '$k'")
         }
     }
 

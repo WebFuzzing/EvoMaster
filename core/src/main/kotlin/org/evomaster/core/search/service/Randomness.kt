@@ -37,9 +37,14 @@ class Randomness {
     private val asciiLetterSet = "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
     private val norwegianLetterSet = "æøåÆØÅ"
 
+    /*
+        Note: '_' is under wordSet and not punctuationSet based on how it is used
+        in regex
+     */
+
     private val wordSet = "_$digitSet$asciiLetterSet"
     private val spaceSet = " \t\r\n"
-    private val punctuationSet = "_.!?@#$%^&*+-()[]{}<>:;|"
+    private val punctuationSet = ".!?@#$%^&*+-()[]{}<>:;|"
 
     private val allSet = "$wordSet$spaceSet$norwegianLetterSet$punctuationSet"
 
