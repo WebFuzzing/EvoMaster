@@ -1544,7 +1544,12 @@ class EMConfig {
     @Cfg("Whether to skip failed SQL commands in the generated test files")
     var skipFailureSQLInTestFile = true
 
-    val defaultTreeDepth = 11
+    /**
+     *  TODO Better to have something like 11, based on some statistics of graphs that we analyzed,
+     *  but there are issues of performance (time and memory) in analysis of large graphs, that
+     *  would need to be optimized
+     */
+    val defaultTreeDepth = 5
 
     @Experimental
     @Cfg("Maximum tree depth in mutations/queries to be evaluated;" +
