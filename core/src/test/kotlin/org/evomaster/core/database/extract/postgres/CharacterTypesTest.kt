@@ -6,8 +6,6 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -73,4 +71,40 @@ class CharacterTypesTest : ExtractTestBasePostgres() {
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
     }
+
+    @Test
+    fun testInsertionOfQuotes() {
+
+        val schema = SchemaExtractor.extract(connection)
+
+        assertNotNull(schema)
+
+        assertEquals("public", schema.name.lowercase())
+        assertEquals(DatabaseType.POSTGRES, schema.databaseType)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction(
+                "CharacterTypes", setOf(
+                "characterVaryingColumn",
+                "varcharColumn",
+                "characterColumn",
+                "charColumn",
+                "textColumn"
+        )
+        )
+
+        val genes = actions[0].seeGenes()
+
+        (genes[0] as StringGene).value = "f"
+        (genes[1] as StringGene).value = "f"
+        (genes[2] as StringGene).value = "f"
+        (genes[3] as StringGene).value = "f"
+        (genes[4] as StringGene).value = "Hello\""
+
+        val dbCommandDto = DbActionTransformer.transform(actions)
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
+    }
+
+
 }

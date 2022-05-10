@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.sql.textsearch
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -10,89 +11,89 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * This gene represents values of a ts_vector column in postgres.
+ * In order to create such values, function to_tsvector() must be invoked.
+ * For example,
+ *   ts_vector('')
+ *   ts_vector('foo bar')
+ *
+ *  are valid values for a ts_vector column.
+ */
 class SqlTextSearchVectorGene(
-    name: String,
-    val textLexemes: ArrayGene<StringGene> = ArrayGene(name = "textLexemes", template = StringGene("p"))
-) : Gene(name, mutableListOf(textLexemes)) {
+        name: String,
+        private val textLexeme: StringGene = StringGene(name = "textLexemes")
+) : Gene(name, mutableListOf(textLexeme)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchVectorGene::class.java)
+
+        const val TO_TSVECTOR = "to_tsvector"
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(textLexemes)
+    override fun getChildren(): MutableList<Gene> = mutableListOf(textLexeme)
 
     override fun copyContent(): Gene = SqlTextSearchVectorGene(
-        name,
-        textLexemes.copyContent() as ArrayGene<StringGene>
+            name,
+            textLexeme.copyContent() as StringGene
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        textLexemes.randomize(randomness, forceNewValue, allGenes)
-        /*
-         *  A geometric polygon must be always a non-empty list
-         */
-        if (textLexemes.getAllElements().isEmpty()) {
-            val stringGene = StringGene("lexeme")
-            stringGene.randomize(randomness, forceNewValue, allGenes)
-            textLexemes.addElement(stringGene)
-        }
+        textLexeme.randomize(randomness, forceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            allGenes: List<Gene>,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        return listOf(textLexemes)
+        return listOf(textLexeme)
     }
 
-    override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
-    ): String {
-        return textLexemes.getAllElements()
-            .map { it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) }
-            .joinToString(" ")
 
+    override fun getValueAsPrintableString(
+            previousGenes: List<Gene>,
+            mode: GeneUtils.EscapeMode?,
+            targetFormat: OutputFormat?,
+            extraCheck: Boolean
+    ): String {
+        val str = replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(
+                textLexeme.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
+        return "${TO_TSVECTOR}(${str})"
     }
 
     override fun getValueAsRawString(): String {
-        return textLexemes.getAllElements()
-            .map { it.getValueAsRawString() }
-            .joinToString(" , ")
-
+        return textLexeme.getValueAsRawString()
     }
 
     override fun copyValueFrom(other: Gene) {
         if (other !is SqlTextSearchVectorGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.textLexemes.copyValueFrom(other.textLexemes)
+        this.textLexeme.copyValueFrom(other.textLexeme)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlTextSearchVectorGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.textLexemes.containsSameValueAs(other.textLexemes)
+        return this.textLexeme.containsSameValueAs(other.textLexeme)
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(textLexemes.flatView(excludePredicate))
+            listOf(this).plus(textLexeme.flatView(excludePredicate))
     }
 
-    override fun innerGene(): List<Gene> = listOf(textLexemes)
+    override fun innerGene(): List<Gene> = listOf(textLexeme)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlTextSearchVectorGene -> {
-                textLexemes.bindValueBasedOn(gene.textLexemes)
+                textLexeme.bindValueBasedOn(gene.textLexeme)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

@@ -174,3 +174,37 @@ CREATE TABLE ArrayTypes (
   varcharExactSizeArrayColumn varchar[3] NOT NULL,
   varcharExactSizeMatrixColumn varchar[3][3] NOT NULL
 );
+
+CREATE TABLE PgLsnType (
+    dummyColumn integer NOT NULL,
+
+    pglsnColumn pg_lsn NOT NULL
+);
+
+CREATE TABLE MultiRangeBuiltInTypes(
+    dummyColumn integer NOT NULL,
+
+    int4multirangeColumn int4multirange NOT NULL,
+    int8multirangeColumn int8multirange NOT NULL,
+    nummultirangeColumn  nummultirange  NOT NULL,
+    tsmultirangeColumn tsmultirange NOT NULL,
+    tstzmultirangeColumn tstzmultirange NOT NULL,
+    datemultirangeColumn datemultirange NOT NULL
+);
+
+CREATE TABLE ObjectIdentifierTypes (
+    dummyColumn integer NOT NULL,
+
+    oidColumn oid NOT NULL,
+    regclassColumn regclass NOT NULL,
+    regcollationColumn regcollation NOT NULL,
+    regconfigColumn regconfig NOT NULL,
+    regdictionaryColumn regdictionary NOT NULL,
+    regnamespaceColumn regnamespace NOT NULL,
+    regoperColumn regoper NOT NULL,
+    regoperatorColumn regoperator NOT NULL,
+    regprocColumn regproc NOT NULL,
+    regprocedureColumn regprocedure NOT NULL,
+    regroleColumn regrole NOT NULL,
+    regtypeColumn regtype NOT NULL
+);

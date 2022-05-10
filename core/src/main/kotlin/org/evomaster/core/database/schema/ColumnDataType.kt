@@ -261,6 +261,34 @@ enum class ColumnDataType(dataTypeName: String) {
     TSTZRANGE("TSTZRANGE"),
     DATERANGE("DATERANGE"),
 
+    // https://www.postgresql.org/docs/14/rangetypes.html
+    // built-in multirange types
+    INT4MULTIRANGE("INT4MULTIRANGE"),
+    INT8MULTIRANGE("INT8MULTIRANGE"),
+    NUMMULTIRANGE("NUMMULTIRANGE"),
+    TSMULTIRANGE("TSMULTIRANGE"),
+    TSTZMULTIRANGE("TSTZMULTIRANGE"),
+    DATEMULTIRANGE("DATEMULTIRANGE"),
+
+    // https://www.postgresql.org/docs/current/datatype-pg-lsn.html
+    // postgres log sequence number
+    PG_LSN("PG_LSN"),
+
+    // https://www.postgresql.org/docs/current/datatype-oid.html
+    // postgres aliases for object identifiers
+    OID("OID"),
+    REGCLASS("REGCLASS"),
+    REGCOLLATION("REGCOLLATION"),
+    REGCONFIG("REGCONFIG"),
+    REGDICTIONARY("REGDICTIONARY"),
+    REGNAMESPACE("REGNAMESPACE"),
+    REGOPER("REGOPER"),
+    REGOPERATOR("REGOPERATOR"),
+    REGPROC("REGPROC"),
+    REGPROCEDURE("REGPROCEDURE"),
+    REGROLE("REGROLE"),
+    REGTYPE("REGTYPE"),
+
     // This is not an actual built-in column data type,
     // but a placeholder for user-defined composite types.
     COMPOSITE_TYPE("\$COMPOSITE_TYPE");

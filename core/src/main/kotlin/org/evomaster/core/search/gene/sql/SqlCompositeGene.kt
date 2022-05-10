@@ -5,6 +5,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -25,8 +26,6 @@ class SqlCompositeGene(
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlCompositeGene::class.java)
 
-        const val SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER"
-
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -34,22 +33,11 @@ class SqlCompositeGene(
                 .forEach { it.randomize(randomness, forceNewValue, allGenes) }
     }
 
-    private val QUOTATION_MARK = "\""
-
-    private fun replaceEnclosedQuotationMarks(str: String): String {
-        if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
-            return SINGLE_APOSTROPHE_PLACEHOLDER + str.subSequence(1, str.length - 1) + SINGLE_APOSTROPHE_PLACEHOLDER
-        } else {
-            return str
-        }
-    }
-
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "ROW(${
             fields
                     .map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
-                    .map { replaceEnclosedQuotationMarks(it) }
-                    .joinToString()
+                    .joinToString { replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(it) }
         })"
     }
 
