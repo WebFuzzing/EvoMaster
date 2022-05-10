@@ -7,13 +7,10 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.gene.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
