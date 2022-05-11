@@ -33,7 +33,6 @@ public class ExternalServiceEMTest extends SpringTestBase {
      * ExecutionTracer reset the AdditionalInfoList several times during the start-up. As the
      * result, calls made during the start-up got captured and get cleared during this.
      *
-     * TODO: Test will be disabled till ExecutionTracer reset issues handled
      */
 
     private static WireMockServer wireMockServer;
