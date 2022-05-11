@@ -1689,11 +1689,12 @@ class EMConfig {
          */
         RANDOM
     }
+
     @Cfg("Specify a method to select the first external service spoof IP address.")
     var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.DEFAULT
 
     @Cfg("User provided external service IP.")
-    var externalServiceIP : String? = null
+    var externalServiceIP : String = "127.0.0.2"
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
