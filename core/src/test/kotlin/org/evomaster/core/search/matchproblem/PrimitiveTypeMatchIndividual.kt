@@ -56,5 +56,4 @@ open class PrimitiveTypeMatchIndividual (
         return PrimitiveTypeMatchIndividual(gene.copyContent())
     }
 
-    override fun getChildren(): List<Gene> = listOf(gene)
 }

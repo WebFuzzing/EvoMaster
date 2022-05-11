@@ -48,8 +48,6 @@ class OptionalGene(name: String,
         isActive = false
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
-
     override fun copyContent(): Gene {
         val copy = OptionalGene(name, gene.copyContent(), isActive, requestSelection)
         copy.selectable = this.selectable

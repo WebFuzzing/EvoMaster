@@ -40,7 +40,6 @@ open class DateTimeGene(
             .thenBy { it.time }
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(date, time)
 
     override fun copyContent(): Gene = DateTimeGene(
         name,

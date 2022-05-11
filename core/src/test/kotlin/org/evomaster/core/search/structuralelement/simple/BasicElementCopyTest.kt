@@ -53,7 +53,7 @@ class BasicElementCopyTest {
         val copy = root.copy()
 
         assertTrue(copy is Root)
-        assertEquals(2, copy.getChildren().size)
+        assertEquals(2, copy.getViewOfChildren().size)
         assertEquals(3.0, (copy as Root).data)
         assertEquals(1, copy.middles[0].data)
         assertEquals("A1", copy.middles[0].leaves[0].data)

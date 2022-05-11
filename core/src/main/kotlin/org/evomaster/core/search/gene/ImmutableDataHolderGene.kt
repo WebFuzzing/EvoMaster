@@ -32,8 +32,6 @@ class ImmutableDataHolderGene(
 
     override fun isPrintable() = true
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf()
-
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         throw IllegalStateException("Not supposed to modify an immutable gene")
     }

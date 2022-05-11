@@ -24,7 +24,7 @@ class ArrayGene<T>(
          * The type for this array. Every time we create a new element to add, it has to be based
          * on this template
          */
-        val template: T,
+        val template: T, //TODO refactor all templates, to be KClass and not gene instances, to avoid confusion
         /**
          *  How max elements to have in this array. Usually arrays are unbound, till the maximum int size (ie, 2 billion
          *  elements on the JVM). But, for search reasons, too large arrays are impractical
@@ -74,8 +74,6 @@ class ArrayGene<T>(
         clearElements()
     }
 
-    override fun getChildren(): MutableList<T> = elements
-
     override fun copyContent(): Gene {
         val copy = ArrayGene<T>(name,
                 template.copyContent() as T,
@@ -83,8 +81,8 @@ class ArrayGene<T>(
                 minSize,
                 elements.map { e -> e.copyContent() as T }.toMutableList()
         )
-        if (copy.getChildren().size!=this.getChildren().size) {
-            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${getChildren().size}) vs. template (${template.getChildren().size})")
+        if (copy.children.size!=this.children.size) {
+            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${children.size}) vs. template (${template.getViewOfChildren().size})")
         }
         return copy
     }

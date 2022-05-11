@@ -43,9 +43,6 @@ class SqlJSONPathGene(
     )
 
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(pathExpression)
-
-
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         pathExpression.randomize(randomness, forceNewValue, allGenes)
     }

@@ -7,7 +7,11 @@ import org.evomaster.core.search.StructuralElement
  */
 abstract class CompositeGene(
         name: String,
-        children: List<out StructuralElement>
+        children: MutableList<Gene>
+        /*
+            TODO should cases for mutable and non-mutable. override all modification methods.
+            ie, pass as read-only List, and check if mutable. if so, handle it accordingly
+         */
 ) : Gene(name, children){
 
     init {

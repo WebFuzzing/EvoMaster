@@ -20,7 +20,6 @@ class Base64StringGene(
         val log : Logger = LoggerFactory.getLogger(Base64StringGene::class.java)
     }
 
-    override fun getChildren(): MutableList<StringGene> = mutableListOf(data)
 
     override fun copyContent(): Gene = Base64StringGene(name, data.copyContent() as StringGene)
 

@@ -19,7 +19,7 @@ class QuantifierRxGene(
         val template: Gene,
         val min: Int = 1,
         val max: Int = 1
-) : RxTerm, CompositeGene(name, listOf(template)) {
+) : RxTerm, CompositeGene(name, mutableListOf()) {
 
     init{
         if(template !is RxAtom){
@@ -75,8 +75,6 @@ class QuantifierRxGene(
         }
     }
 
-
-    override fun getChildren(): List<Gene> = listOf(template).plus(atoms)
 
     override fun copyContent(): Gene {
 

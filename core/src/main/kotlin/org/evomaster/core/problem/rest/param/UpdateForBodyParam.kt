@@ -19,7 +19,6 @@ class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body
         return UpdateForBodyParam(body.copyContent() as BodyParam)
     }
 
-    override fun getChildren(): List<Param> = listOf(body)
 
     override fun seeGenes(): List<Gene> {
         return listOf()

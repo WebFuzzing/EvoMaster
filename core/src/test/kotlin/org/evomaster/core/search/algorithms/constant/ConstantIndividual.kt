@@ -16,7 +16,6 @@ class ConstantIndividual(val gene: IntegerGene) : Individual(children = listOf(g
         return ConstantIndividual(gene.copyContent() as IntegerGene)
     }
 
-    override fun getChildren(): List<Gene> = listOf(gene)
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return listOf(gene)

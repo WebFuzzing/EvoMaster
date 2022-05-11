@@ -31,8 +31,6 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         private val log: Logger = LoggerFactory.getLogger(DisruptiveGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
-
     override fun copyContent(): Gene {
         return DisruptiveGene(name, gene.copyContent(), probability)
     }

@@ -21,7 +21,6 @@ class BooleanGene(
         private val log : Logger = LoggerFactory.getLogger(BooleanGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf()
 
     override fun copyContent(): Gene {
         return BooleanGene(name, value)

@@ -4,7 +4,8 @@ import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
 
-abstract class Param(val name: String, val gene : Gene, children: List<StructuralElement>) : StructuralElement(children){
+abstract class Param(val name: String, val gene : Gene, children: List<StructuralElement>
+) : StructuralElement(mutableListOf(gene)){ //TODO check where children is used
 
     constructor(name: String, gene: Gene): this(name, gene, listOf(gene))
 
@@ -21,7 +22,6 @@ abstract class Param(val name: String, val gene : Gene, children: List<Structura
         return copy as Param
     }
 
-    override fun getChildren(): List<out StructuralElement> = listOf(gene)
 
     open fun seeGenes() =  listOf<Gene>(gene)
 

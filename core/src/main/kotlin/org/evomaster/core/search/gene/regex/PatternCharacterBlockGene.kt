@@ -22,7 +22,6 @@ class PatternCharacterBlockGene(
         return false
     }
 
-    override fun getChildren(): List<Gene> = listOf()
 
     override fun copyContent(): Gene {
         return PatternCharacterBlockGene(name, stringBlock)

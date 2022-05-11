@@ -59,9 +59,6 @@ class SqlLogSeqNumber(
     }
 
 
-    override fun getChildren(): MutableList<Gene> =
-            mutableListOf(leftPart, rightPart)
-
     override fun copyContent(): Gene {
         return SqlLogSeqNumber(
                 name = name,

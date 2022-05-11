@@ -18,9 +18,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 class RegexGene(
         name: String,
         val disjunctions: DisjunctionListRxGene
-) : CompositeGene(name, listOf(disjunctions)) {
-
-    override fun getChildren(): List<DisjunctionListRxGene> = listOf(disjunctions)
+) : CompositeGene(name, mutableListOf(disjunctions)) {
 
     override fun copyContent(): Gene {
         return RegexGene(name, disjunctions.copyContent() as DisjunctionListRxGene)

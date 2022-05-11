@@ -18,16 +18,13 @@ import java.net.URLEncoder
 /**
  * @property refType presents the name of reference type of the object
  */
-open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null) : Gene(name, mutableListOf<StructuralElement>().apply { addAll(fields) }) {
+open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null) : Gene(name, fields.toMutableList()) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
 
     }
 
-    override fun getChildren(): List<Gene> {
-        return fields
-    }
 
     override fun copyContent(): Gene {
         return ObjectGene(name, fields.map(Gene::copyContent), refType)

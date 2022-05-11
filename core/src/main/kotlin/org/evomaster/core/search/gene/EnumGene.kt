@@ -73,8 +73,6 @@ class EnumGene<T : Comparable<T>>(
         }
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf()
-
     override fun isMutable(): Boolean {
         return values.size > 1
     }

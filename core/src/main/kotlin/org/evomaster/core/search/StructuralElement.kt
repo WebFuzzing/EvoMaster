@@ -10,7 +10,10 @@ import org.slf4j.LoggerFactory
  * @property parent its parent
  */
 abstract class StructuralElement (
-    children : List<out StructuralElement> = mutableListOf()
+        /*
+            TODO check if needed a function to return copy
+         */
+    protected open val children : MutableList<out StructuralElement> = mutableListOf()
 ) {
 
     companion object{
@@ -33,6 +36,9 @@ abstract class StructuralElement (
         initChildren(children)
     }
 
+
+    open fun getViewOfChildren() : List<StructuralElement> = children
+
     private fun initChildren(children : List<StructuralElement>){
         children.forEach { it.parent = this }
     }
@@ -42,7 +48,7 @@ abstract class StructuralElement (
      *
      * FIXME: this is not related to children in input. confusing, might need to change name
      */
-    abstract fun getChildren(): List<out StructuralElement>
+//    abstract fun getChildren(): List<out StructuralElement>
 
     /**
      * add a child of the element
@@ -50,8 +56,10 @@ abstract class StructuralElement (
      *
      * FIXME: this is setting up the parent-child relationship, not adding to children
      */
-    open fun addChild(child: StructuralElement){
+    open fun addChild(child: StructuralElement){  //TODO check usage
         child.parent = this
+        //TODO re-check proper use of in/out in Kotlin
+        (children as MutableList<StructuralElement>).add(child)
     }
 
     /**
@@ -60,9 +68,13 @@ abstract class StructuralElement (
      *
      * FIXME see previous comment
      */
-    open fun addChildren(children : List<StructuralElement>){
-        initChildren(children)
+    open fun addChildren(children : List<StructuralElement>){ //TODO check usage
+        children.forEach { addChild(it) }
     }
+
+    //TODO add method to kill child, ie remove, otherwise memory leak.
+    //TODO possibly called in CollectionGene?
+
 
     /**
      * make a deep copy on the content
@@ -79,10 +91,10 @@ abstract class StructuralElement (
      * post-handling on the copy based on its [template]
      */
     open fun postCopy(template : StructuralElement){
-        if (getChildren().size != template.getChildren().size)
-            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${getChildren().size}) vs. template (${template.getChildren().size})")
-        getChildren().indices.forEach {
-            getChildren()[it].postCopy(template.getChildren()[it])
+        if (children.size != template.children.size)
+            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${children.size}) vs. template (${template.children.size})")
+        children.indices.forEach {
+            children[it].postCopy(template.children[it])
         }
     }
 
@@ -143,9 +155,9 @@ abstract class StructuralElement (
     fun targetWithIndex(path: List<Int>): StructuralElement {
         var target = this
         path.forEach {
-            if (it >= target.getChildren().size)
-                throw IllegalStateException("cannot get the children at index $it for $target which has ${target.getChildren().size} children")
-            target = target.getChildren()[it]
+            if (it >= target.children.size)
+                throw IllegalStateException("cannot get the children at index $it for $target which has ${target.children.size} children")
+            target = target.children[it]
         }
         return target
     }
@@ -165,7 +177,7 @@ abstract class StructuralElement (
      */
     fun traverseBackIndex(back : MutableList<Int>) {
         if (parent!=null) {
-            val index = parent!!.getChildren().indexOf(this)
+            val index = parent!!.children.indexOf(this)
             if (index == -1)
                 throw IllegalStateException("cannot find this in its parent")
             back.add(0, index)

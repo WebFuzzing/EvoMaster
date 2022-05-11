@@ -9,7 +9,6 @@ import org.evomaster.core.search.service.Randomness
 
 class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf()
 
     override fun copyContent(): Gene {
         return SqlAutoIncrementGene(name)

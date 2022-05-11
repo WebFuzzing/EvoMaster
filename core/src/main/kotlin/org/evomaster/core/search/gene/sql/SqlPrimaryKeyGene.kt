@@ -49,8 +49,6 @@ class SqlPrimaryKeyGene(name: String,
         return null
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
-
     override fun copyContent() = SqlPrimaryKeyGene(name, tableName, gene.copyContent(), uniqueId)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

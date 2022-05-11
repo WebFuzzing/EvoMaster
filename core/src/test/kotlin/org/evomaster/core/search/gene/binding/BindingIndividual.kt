@@ -12,7 +12,6 @@ class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = g
         return BindingIndividual(genes.map { it.copyContent() }.toMutableList())
     }
 
-    override fun getChildren(): List<Gene> = genes
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return genes

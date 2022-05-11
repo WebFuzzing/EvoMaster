@@ -26,8 +26,6 @@ class SqlTimeIntervalGene(
         val log: Logger = LoggerFactory.getLogger(SqlTimeIntervalGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(days, time)
-
     override fun copyContent(): Gene = SqlTimeIntervalGene(
             name,
             days.copyContent() as IntegerGene,

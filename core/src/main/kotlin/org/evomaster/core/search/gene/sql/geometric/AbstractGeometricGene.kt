@@ -14,7 +14,7 @@ abstract class AbstractGeometricGene(
     val doNotAllowSamePoints: Boolean = false
 ) : Gene(name, mutableListOf(p, q)) {
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(p, q)
+
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         p.randomize(randomness, forceNewValue, allGenes)

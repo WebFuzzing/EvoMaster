@@ -21,7 +21,6 @@ class SqlCircleGene(
         val log: Logger = LoggerFactory.getLogger(SqlCircleGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(c, r)
 
     override fun copyContent(): Gene = SqlCircleGene(
             name,

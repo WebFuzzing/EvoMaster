@@ -63,9 +63,6 @@ class SqlRangeGene<T>(
         assert(left <= right)
     }
 
-    override fun getChildren(): MutableList<Gene> =
-            mutableListOf(isLeftClosed, left, right, isRightClosed)
-
     override fun copyContent(): Gene {
         return SqlRangeGene<T>(
                 name = name,

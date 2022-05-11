@@ -51,8 +51,6 @@ class DateGene(
         ISO_LOCAL_DATE_FORMAT
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(year, month, day)
-
     override fun copyContent(): Gene = DateGene(
         name,
         year.copyContent() as IntegerGene,

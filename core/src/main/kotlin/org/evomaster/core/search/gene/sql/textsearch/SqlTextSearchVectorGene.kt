@@ -31,8 +31,6 @@ class SqlTextSearchVectorGene(
         const val TO_TSVECTOR = "to_tsvector"
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(textLexeme)
-
     override fun copyContent(): Gene = SqlTextSearchVectorGene(
             name,
             textLexeme.copyContent() as StringGene

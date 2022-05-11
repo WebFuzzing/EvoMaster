@@ -28,7 +28,7 @@ class SqlBitStringGene(
 
         private val booleanArrayGene: ArrayGene<BooleanGene> = ArrayGene(name, template = BooleanGene(name), minSize = minSize, maxSize = maxSize)
 
-) : CollectionGene, Gene(name, booleanArrayGene.getAllElements()) {
+) : CollectionGene, Gene(name, mutableListOf( booleanArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBitStringGene::class.java)
@@ -52,8 +52,8 @@ class SqlBitStringGene(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return buildString {
             append("B$SINGLE_APOSTROPHE_PLACEHOLDER")
-            append(booleanArrayGene.getChildren().map { g ->
-                if (g.value) TRUE_VALUE else FALSE_VALUE
+            append(booleanArrayGene.getViewOfChildren().map { g ->
+                if ((g as BooleanGene).value) TRUE_VALUE else FALSE_VALUE
             }.joinToString(EMPTY_STR))
             append(SINGLE_APOSTROPHE_PLACEHOLDER)
         }
@@ -85,9 +85,7 @@ class SqlBitStringGene(
         return false
     }
 
-    override fun getChildren(): List<out StructuralElement> {
-        return booleanArrayGene.getChildren()
-    }
+
 
     override fun clearElements() {
         return booleanArrayGene.clearElements()

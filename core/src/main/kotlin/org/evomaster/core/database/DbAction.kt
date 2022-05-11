@@ -59,7 +59,7 @@ class DbAction(
     }
 
 
-    override fun getChildren(): List<Gene> = genes
+
 
     private fun handleVarBinary(column: Column): Gene {
         /*

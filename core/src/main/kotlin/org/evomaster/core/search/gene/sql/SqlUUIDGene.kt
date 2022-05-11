@@ -30,8 +30,6 @@ class SqlUUIDGene(
     val leastSigBits: LongGene = LongGene("leastSigBits", 0L)
 ) : Gene(name, mutableListOf(mostSigBits, leastSigBits)) {
 
-    override fun getChildren(): MutableList<LongGene> = mutableListOf(mostSigBits, leastSigBits)
-
     override fun copyContent(): Gene = SqlUUIDGene(
             name,
             mostSigBits.copyContent() as LongGene,

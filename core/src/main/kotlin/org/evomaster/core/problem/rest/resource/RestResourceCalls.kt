@@ -95,10 +95,7 @@ class RestResourceCalls(
         return copy
     }
 
-    /**
-     * @return children of RestResourceCall which is a sequence of [dbActions] and [actions]
-     */
-    override fun getChildren(): List<Action> = dbActions.plus(actions)
+
 
     override fun copyContent() : RestResourceCalls{
         val copy = RestResourceCalls(

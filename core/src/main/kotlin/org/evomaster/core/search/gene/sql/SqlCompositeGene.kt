@@ -21,7 +21,7 @@ class SqlCompositeGene(
         val fields: List<out Gene>,
         // the name of the composite type
         val compositeTypeName: String? = null
-) : Gene(name, mutableListOf<StructuralElement>().apply { addAll(fields) }) {
+) : Gene(name, fields.toMutableList()) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlCompositeGene::class.java)
@@ -96,8 +96,6 @@ class SqlCompositeGene(
         LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${compositeTypeName ?: "null"}) with ${gene::class.java.simpleName}")
         return false
     }
-
-    override fun getChildren() = fields
 
     override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copyContent() }.toList(), this.compositeTypeName)
 

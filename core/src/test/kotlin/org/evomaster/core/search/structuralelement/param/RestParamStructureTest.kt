@@ -49,7 +49,7 @@ class HeaderParamStructureTest : StructuralElementBaseTest() {
     @Test
     fun testChildType(){
         val update = getStructuralElement()
-        assertTrue(update.getChildren().first() is Gene)
+        assertTrue(update.getViewOfChildren().first() is Gene)
     }
 }
 
@@ -62,7 +62,7 @@ class QueryParamStructureTest : StructuralElementBaseTest() {
     @Test
     fun testChildType(){
         val update = getStructuralElement()
-        assertTrue(update.getChildren().first() is Gene)
+        assertTrue(update.getViewOfChildren().first() is Gene)
     }
 }
 
@@ -79,6 +79,6 @@ class UpdateForBodyParamStructureTest : StructuralElementBaseTest() {
     @Test
     fun testChildType(){
         val update = getStructuralElement()
-        assertTrue(update.getChildren().first() is BodyParam)
+        assertTrue(update.getViewOfChildren().first() is BodyParam)
     }
 }

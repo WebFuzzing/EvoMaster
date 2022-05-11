@@ -20,8 +20,6 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
 
     var value: Char = 'a'
 
-    override fun getChildren(): List<Gene> = listOf()
-
     override fun copyContent(): Gene {
         val copy = AnyCharacterRxGene()
         copy.value = this.value

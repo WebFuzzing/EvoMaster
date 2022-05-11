@@ -60,7 +60,7 @@ class SqlMultidimensionalArrayGene<T>(
          * the length of each dimension is 0).
          */
         private val nestedListOfElements: MutableList<Any> = mutableListOf()
-) : CollectionGene, Gene(name, listOf()) where T : Gene {
+) : CollectionGene, Gene(name, listOf()/* FIXME */) where T : Gene {
 
     init {
         if (numberOfDimensions < 0)
@@ -291,9 +291,10 @@ class SqlMultidimensionalArrayGene<T>(
         return true
     }
 
-    override fun getChildren(): List<out StructuralElement> {
-        return getAllGenes(nestedListOfElements)
-    }
+//    override fun getChildren(): List<out StructuralElement> {
+//        return getAllGenes(nestedListOfElements)
+//        //TODO discuss
+//    }
 
     override fun getValueAsPrintableString(
             previousGenes: List<Gene>,
@@ -357,7 +358,7 @@ class SqlMultidimensionalArrayGene<T>(
         nestedListOfElements.clear()
     }
 
-    override fun isEmpty() = getChildren().isEmpty()
+    override fun isEmpty() = children.isEmpty()
 
     override fun getSizeOfElements(filterMutable: Boolean): Int {
         val genes = getAllGenes(nestedListOfElements)

@@ -19,8 +19,6 @@ abstract class ApiWsAction(
     val parameters: MutableList<Param>
 ) : Action(parameters){
 
-    override fun getChildren(): List<Param> = parameters
-
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
         seeGenes().forEach { it.randomize(randomness, forceNewValue) }
     }

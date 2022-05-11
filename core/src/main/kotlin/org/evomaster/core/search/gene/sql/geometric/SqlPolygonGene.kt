@@ -23,8 +23,6 @@ class SqlPolygonGene(
         val log: Logger = LoggerFactory.getLogger(SqlPolygonGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(points)
-
     override fun copyContent(): Gene = SqlPolygonGene(
         name,
         points.copyContent() as ArrayGene<SqlPointGene>

@@ -34,8 +34,6 @@ class SqlMultiRangeGene<T>(
         val log: Logger = LoggerFactory.getLogger(SqlMultiRangeGene::class.java)
     }
 
-    override fun getChildren(): List<Gene> = listOf(rangeGenes)
-
     override fun copyContent(): Gene {
         val copyOfRangeGenes = rangeGenes.copyContent() as ArrayGene<SqlRangeGene<T>>
         return SqlMultiRangeGene(

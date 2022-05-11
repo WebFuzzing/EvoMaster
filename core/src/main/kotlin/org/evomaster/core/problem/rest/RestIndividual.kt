@@ -66,7 +66,6 @@ class RestIndividual(
         )
     }
 
-    override fun getChildren(): List<StructuralElement> = seeInitializingActions().plus(resourceCalls)
 
     override fun canMutateStructure(): Boolean {
         return sampleType == SampleType.RANDOM ||

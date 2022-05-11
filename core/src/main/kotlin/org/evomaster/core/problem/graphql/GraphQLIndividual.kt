@@ -26,8 +26,6 @@ class GraphQLIndividual(
 
     }
 
-    override fun getChildren(): List<Action> = seeInitializingActions().plus(actions)
-
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
             GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))

@@ -24,8 +24,6 @@ class SqlPathGene(
     }
 
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(points)
-
     override fun copyContent(): Gene = SqlPathGene(
             name,
             points.copyContent() as ArrayGene<SqlPointGene>

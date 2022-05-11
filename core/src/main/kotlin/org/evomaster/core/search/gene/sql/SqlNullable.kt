@@ -18,7 +18,7 @@ import java.lang.IllegalStateException
 class SqlNullable(name: String,
                   val gene: Gene,
                   var isPresent: Boolean = true
-) : SqlWrapperGene, CompositeGene(name, listOf(gene)) {
+) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
     init{
         if(gene is SqlWrapperGene && gene.getForeignKey() != null){
@@ -31,8 +31,6 @@ class SqlNullable(name: String,
         private val log: Logger = LoggerFactory.getLogger(SqlNullable::class.java)
         private const val ABSENT = 0.1
     }
-
-    override fun getChildren(): List<Gene> = listOf(gene)
 
 
     override fun getForeignKey(): SqlForeignKeyGene? {

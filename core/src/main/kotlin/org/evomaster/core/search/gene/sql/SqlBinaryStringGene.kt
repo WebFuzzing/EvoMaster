@@ -27,7 +27,7 @@ class SqlBinaryStringGene(
 
         private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize)
 
-) : CollectionGene, Gene(name, binaryArrayGene.getAllElements()) {
+) : CollectionGene, Gene(name, mutableListOf( binaryArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBinaryStringGene::class.java)
@@ -49,8 +49,9 @@ class SqlBinaryStringGene(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return buildString {
             append("\"\\x")
-            append(binaryArrayGene.getChildren().map { g ->
-                toHex2(g.value)
+            append(binaryArrayGene.getViewOfChildren()
+                    .map { g ->
+                toHex2((g as IntegerGene).value)
             }.joinToString(EMPTY_STR))
             append("\"")
         }
@@ -82,9 +83,6 @@ class SqlBinaryStringGene(
         return false
     }
 
-    override fun getChildren(): List<out StructuralElement> {
-        return binaryArrayGene.getChildren()
-    }
 
     override fun clearElements() {
         return binaryArrayGene.clearElements()

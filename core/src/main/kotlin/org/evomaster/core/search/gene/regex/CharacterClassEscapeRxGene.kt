@@ -36,8 +36,6 @@ class CharacterClassEscapeRxGene(
         }
     }
 
-    override fun getChildren(): List<Gene> = listOf()
-
     override fun copyContent(): Gene {
         val copy = CharacterClassEscapeRxGene(type)
         copy.value = this.value

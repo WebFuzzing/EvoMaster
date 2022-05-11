@@ -214,8 +214,6 @@ class TupleGene(
 
     }
 
-    override fun getChildren(): List<Gene> = elements
-
     override fun isMutable(): Boolean {
         return elements.any { it.isMutable() }
     }

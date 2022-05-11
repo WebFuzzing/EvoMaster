@@ -52,9 +52,6 @@ class MapGene<K, V>(
         const val MAX_SIZE = 5
     }
 
-    override fun getChildren(): MutableList<PairGene<K, V>> {
-        return elements
-    }
 
     override fun copyContent(): Gene {
         return MapGene(name,

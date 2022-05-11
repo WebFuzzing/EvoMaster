@@ -49,9 +49,6 @@ class SqlForeignKeyGene(
         return this
     }
 
-
-    override fun getChildren(): List<Gene> = listOf()
-
     override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

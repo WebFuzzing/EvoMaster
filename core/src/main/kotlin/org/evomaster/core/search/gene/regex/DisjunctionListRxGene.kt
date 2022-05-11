@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
 
 class DisjunctionListRxGene(
         val disjunctions: List<DisjunctionRxGene>
-) : RxAtom, CompositeGene("disjunction_list", disjunctions) {
+) : RxAtom, CompositeGene("disjunction_list", disjunctions.toMutableList()) {
 
     var activeDisjunction: Int = 0
 
@@ -27,7 +27,6 @@ class DisjunctionListRxGene(
         private val log: Logger = LoggerFactory.getLogger(DisjunctionListRxGene::class.java)
     }
 
-    override fun getChildren(): List<DisjunctionRxGene> = disjunctions
 
     override fun copyContent(): Gene {
         val copy = DisjunctionListRxGene(disjunctions.map { it.copyContent() as DisjunctionRxGene })

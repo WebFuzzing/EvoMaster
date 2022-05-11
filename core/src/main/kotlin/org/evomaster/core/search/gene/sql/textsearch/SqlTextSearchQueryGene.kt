@@ -59,9 +59,6 @@ class SqlTextSearchQueryGene(
         const val BLANK_CHAR = ' '
     }
 
-
-    override fun getChildren(): MutableList<Gene> = mutableListOf(queryLexemes)
-
     override fun copyContent(): Gene = SqlTextSearchQueryGene(
             name,
             queryLexemes.copyContent() as ArrayGene<StringGene>

@@ -304,8 +304,6 @@ class IndividualGeneImpactTest {
             return Ind(actions.map { it.copyContent() as IndAction }.toMutableList())
         }
 
-        override fun getChildren(): List<Action> = initialization.plus(actions)
-
         override fun seeGenes(filter: GeneFilter): List<out Gene> {
            return when(filter){
                GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeGenes)
@@ -334,7 +332,7 @@ class IndividualGeneImpactTest {
 
     class IndAction(private val genes : List<out Gene>) : Action(genes){
 
-        override fun getChildren(): List<Gene> = genes
+
 
         companion object{
             fun getIndAction(size: Int = 1): List<IndAction>{

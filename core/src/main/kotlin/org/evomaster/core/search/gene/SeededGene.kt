@@ -128,10 +128,6 @@ class SeededGene<T>(
         return false
     }
 
-    override fun getChildren(): List<out StructuralElement> {
-        return listOf(gene, seeded)
-    }
-
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SeededGeneImpact){
             if (internalGenes.size != 1)

@@ -80,10 +80,6 @@ class PairGene<F,S>(
         return first.bindValueBasedOn(gene.first) && second.bindValueBasedOn(gene.second)
     }
 
-    override fun getChildren(): List<Gene> {
-        return listOf(first, second)
-    }
-
 
     override fun copyContent(): Gene {
         return PairGene(name, first.copyContent(), second.copyContent(), isFirstMutable)

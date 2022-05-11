@@ -58,7 +58,6 @@ abstract class NumberGene<T : Number>(name: String,
     }
 
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf()
 
     open fun isRangeSpecified() = min != null || max != null
 

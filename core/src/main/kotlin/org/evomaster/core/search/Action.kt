@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
  * A variable-length individual will be composed by 1 or more "actions".
  * Actions can be: REST call, setup Wiremock, setup database, etc.
  */
-abstract class Action(children: List<out StructuralElement>) : StructuralElement(children){
+abstract class Action(children: List<StructuralElement>) : StructuralElement(children.toMutableList()){
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(Action::class.java)

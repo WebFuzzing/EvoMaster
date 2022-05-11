@@ -24,7 +24,6 @@ class OneMaxIndividual(
         addChildren(list)
     }
 
-    override fun getChildren(): List<Gene> = list
 
     override fun copyContent(): Individual {
 

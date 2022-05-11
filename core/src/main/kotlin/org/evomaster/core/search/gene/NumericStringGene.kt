@@ -40,7 +40,6 @@ class NumericStringGene(
                 scale : Int? = null) : this(name, minLength, BigDecimalGene(name, value, min, max, minInclusive, maxInclusive, floatingPointMode, precision?:if (scale == 0) 20 else 15, scale))
 
 
-    override fun getChildren(): List<Gene> = mutableListOf(number)
 
     override fun copyContent(): Gene {
         return NumericStringGene(name, minLength, number.copyContent())

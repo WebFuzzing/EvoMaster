@@ -32,8 +32,6 @@ class SqlMacAddrGene(
         val log: Logger = LoggerFactory.getLogger(SqlMacAddrGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = octets.toMutableList()
-
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         octets.forEach { it.randomize(randomness, forceNewValue, allGenes) }
     }

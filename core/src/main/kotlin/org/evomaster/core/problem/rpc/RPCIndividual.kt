@@ -24,7 +24,7 @@ class RPCIndividual(
         dbInitialization: MutableList<DbAction> = mutableListOf(),
         trackOperator: TrackOperator? = null,
         index : Int = -1
-) : ApiWsIndividual(dbInitialization, trackOperator, index, actions) {
+) : ApiWsIndividual(dbInitialization, trackOperator, index, actions.plus(dbInitialization)) {
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
@@ -56,9 +56,6 @@ class RPCIndividual(
         return DbActionUtils.verifyActions(seeInitializingActions())
     }
 
-    override fun getChildren(): List<StructuralElement> {
-        return seeInitializingActions().plus(actions)
-    }
 
     /**
      * add an action (ie, [action]) into [actions] at [position]

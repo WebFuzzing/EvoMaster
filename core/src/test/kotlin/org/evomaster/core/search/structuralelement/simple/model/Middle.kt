@@ -8,7 +8,4 @@ class Middle(val data: Int, val leaves : MutableList<Leaf>) : StructuralElement(
         return Middle(data, leaves.map { it.copyContent() }.toMutableList())
     }
 
-    override fun getChildren(): MutableList<Leaf> {
-        return leaves
-    }
 }

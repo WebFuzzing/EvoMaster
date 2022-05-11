@@ -20,7 +20,6 @@ class SqlPointGene(
         val log: Logger = LoggerFactory.getLogger(SqlPointGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(x, y)
 
     override fun copyContent(): Gene = SqlPointGene(
         name,

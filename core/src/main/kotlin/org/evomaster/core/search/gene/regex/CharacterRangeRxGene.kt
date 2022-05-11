@@ -49,7 +49,6 @@ class CharacterRangeRxGene(
      */
     val ranges = ranges.map { Pair(min(it.first.code,it.second.code).toChar(), max(it.first.code, it.second.code).toChar()) }
 
-    override fun getChildren(): List<Gene> = listOf()
 
     override fun isMutable(): Boolean {
         return ranges.size > 1 || ranges[0].let { it.first != it.second }

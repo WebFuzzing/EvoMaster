@@ -25,7 +25,6 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
             name,
             objectGene = this.objectGene.copyContent() as ObjectGene)
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(objectGene)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         objectGene.randomize(randomness, forceNewValue, allGenes)

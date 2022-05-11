@@ -53,8 +53,8 @@ abstract class Gene(
          * TODO also should be Gene, as why a Gene would have a child that is not a Gene??? do
          * we have cases for this?
          */
-        children: List<out StructuralElement>
-) : StructuralElement(children){
+        children: List<Gene> //TODO likely put it to Mutable
+) : StructuralElement(children.toMutableList()){
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
@@ -65,6 +65,11 @@ abstract class Gene(
             throw IllegalArgumentException("Empty name for Gene")
         }
     }
+
+    override  val children : MutableList<Gene>
+        get() = super.children as MutableList<Gene>
+
+    final override fun getViewOfChildren() : List<Gene> = children
 
     /**
      * Make a copy of this gene.
@@ -345,11 +350,17 @@ abstract class Gene(
 
     /**
      * Genes might have other genes inside (eg, think of array).
+     * But these are only the ones in "child-parent" hierarchy.
+     * There might be cases like "template" genes inside, those will NOT be returned.
+     *
      * @param excludePredicate is used to configure which genes you do not want to show genes inside.
      *      For instance, an excludePredicate is {gene : Gene -> (gene is TimeGene)}, then when flatView of a Gene including TimeGene,
      *      the genes inside e.g., hour: IntegerGene will be not viewed, but TimeGene will be viewed.
      * @return a recursive list of all nested genes, "this" included
      */
+
+    //TODO could this be final, implemented as recursion on children? likely yes
+
     open fun flatView(excludePredicate: (Gene) -> Boolean = {false}): List<Gene>{
         return listOf(this)
     }
@@ -362,6 +373,8 @@ abstract class Gene(
 
 
     /**
+     * TODO is this necessary considering children and flatView???
+     *
      * @return internal genes
      */
     abstract fun innerGene() : List<Gene>
