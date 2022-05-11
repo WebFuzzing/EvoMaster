@@ -124,7 +124,13 @@ public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
 
     private boolean checkImpactOfxyz(EvaluatedIndividual<RestIndividual> ind){
 
+        // skip call to get swagger
+        if (ind.getIndividual().seeActions().stream().noneMatch(a-> a.getName().startsWith("/api")))
+            return true;
+
+
         Set<Integer> targets = new HashSet<>();
+
         Map<Integer, Double> ximpacts = extract(ind, "x");
         Map<Integer, Double> yimpacts = extract(ind, "y");
         Map<Integer, Double> zimpacts = extract(ind, "z");

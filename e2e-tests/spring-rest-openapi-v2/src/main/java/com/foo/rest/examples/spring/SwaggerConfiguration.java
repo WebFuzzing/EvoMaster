@@ -18,11 +18,6 @@ public class SwaggerConfiguration {
                 .apiInfo(apiInfo())
                 .select()
                 .paths(regex("/api/.*"))
-                /*
-                    skip the default error path
-                    this is to fix an assertion on swagger on /error for TaintInvalidEMTest
-                 */
-                .paths(regex("/error.*").negate())
                 .build()
                 .ignoredParameterTypes(WebRequest.class, Authentication.class);
     }
