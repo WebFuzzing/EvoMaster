@@ -119,7 +119,10 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             adHocInitialIndividuals.addAll(seededTestCases.map { createIndividual(it) })
         }
 
-
+        /*
+            TODO
+            such excluded actions might be executed at end of the search
+         */
         getExcludedActions().forEach {
             adHocInitialIndividuals.add(createIndividual(mutableListOf(it)))
         }
@@ -130,7 +133,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      * a list of actions which could be cloned and mutated,
      * but not part of action clusters to sample in the search
      */
-    fun getExcludedActions() : List<RestCallAction>{
+    open fun getExcludedActions() : List<RestCallAction>{
         val addCallAction = addCallToSwagger() ?: return listOf()
         return listOf(addCallAction)
     }
