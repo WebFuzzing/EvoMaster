@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory
  * @property initMode configurable option to init resource with additional info, e.g., related tables
  * @property employNLP specified whether to employ natural language parser
  */
-class RestResourceNode(
+open class RestResourceNode(
         val path : RestPath,
         val actions: MutableList<RestCallAction> = mutableListOf(),
         val initMode : InitMode,
@@ -577,7 +577,7 @@ class RestResourceNode(
      *  during the search, params of the Rest Action might be updated,
      *  this method is to update [actions] in this node based on the updated [action]
      */
-    fun updateActionsWithAdditionalParams(action: RestCallAction){
+    open fun updateActionsWithAdditionalParams(action: RestCallAction){
         val org = actions.find {  it.verb == action.verb }
         org?:throw IllegalStateException("cannot find the action (${action.getName()}) in the node $path")
         if (action.parameters.size > (org as RestCallAction).parameters.size){
@@ -786,7 +786,7 @@ class RestResourceNode(
      * @return params in a [RestResourceCalls] that are not bounded with POST actions if there exist based on the template [actionTemplate]
      *
      */
-    fun getPossiblyBoundParams(actionTemplate: String, withSql : Boolean) : List<ParamInfo>{
+    open fun getPossiblyBoundParams(actionTemplate: String, withSql : Boolean) : List<ParamInfo>{
         val actions = RestResourceTemplateHandler.parseTemplate(actionTemplate)
         Lazy.assert {
             actions.isNotEmpty()
