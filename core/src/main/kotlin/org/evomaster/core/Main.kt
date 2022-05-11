@@ -510,7 +510,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-
+            //TODO: enable splitting for csharp. Currently not enabled due to an error while running generated tests in multiple classes (error in starting the SUT)
             if (config.problemType == EMConfig.ProblemType.REST && config.outputFormat!=OutputFormat.CSHARP_XUNIT) {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
@@ -547,7 +547,7 @@ class Main {
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
-
+            //TODO: enable splitting for csharp. Currently not enabled due to an error while running generated tests in multiple classes (error in starting the SUT)
             if (config.problemType == EMConfig.ProblemType.REST && config.outputFormat!=OutputFormat.CSHARP_XUNIT) {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
