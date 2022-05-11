@@ -25,7 +25,8 @@ public class RestResourceSamplerSeedTestTest extends ResourceMIOHWTestBase {
         Injector injector = init(args);
 
         ResourceSampler sampler = injector.getInstance(ResourceSampler.class);
-        assertEquals(13, sampler.getSizeOfAdHocInitialIndividuals());
+        // add extra call to get swagger,
+        assertEquals(13 + 1, sampler.getSizeOfAdHocInitialIndividuals());
 
         sampler.getNotExecutedAdHocInitialIndividuals().forEach(s-> s.getResourceCalls().forEach(r-> assertNotNull(r.getResourceNode())));
 
@@ -39,7 +40,7 @@ public class RestResourceSamplerSeedTestTest extends ResourceMIOHWTestBase {
         Injector injector = init(args);
 
         ResourceSampler sampler = injector.getInstance(ResourceSampler.class);
-        assertEquals(12, sampler.getSizeOfAdHocInitialIndividuals());
+        assertEquals(12 + 1, sampler.getSizeOfAdHocInitialIndividuals());
         sampler.getNotExecutedAdHocInitialIndividuals().forEach(s-> s.getResourceCalls().forEach(r-> assertNotNull(r.getResourceNode())));
     }
 
