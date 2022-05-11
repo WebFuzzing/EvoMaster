@@ -7,6 +7,8 @@ class ExternalServiceInfo(
         val remoteHostname: String,
         val remotePort: Int) {
 
+    private lateinit var wireMockServer : WireMockServer
+
     init {
         if (remoteHostname.isBlank()) {
             throw IllegalArgumentException("Remote hostname can not be blank")
@@ -14,6 +16,13 @@ class ExternalServiceInfo(
         if (protocol.isBlank()) {
             throw IllegalArgumentException("Protocol can not be blank")
         }
+    }
+
+    fun assignWireMockServer(wm: WireMockServer) {
+        wireMockServer = wm
+    }
+    fun getWireMockServer() : WireMockServer {
+        return wireMockServer
     }
 
     override fun equals(other: Any?): Boolean {
