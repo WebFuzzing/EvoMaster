@@ -13,7 +13,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 /**
  * Immutable class
  */
-class PatternCharacterBlock(
+class PatternCharacterBlockGene(
         name: String,
         val stringBlock: String
 ) : RxAtom, SimpleGene(name) {
@@ -25,7 +25,7 @@ class PatternCharacterBlock(
     override fun getChildren(): List<Gene> = listOf()
 
     override fun copyContent(): Gene {
-        return PatternCharacterBlock(name, stringBlock)
+        return PatternCharacterBlockGene(name, stringBlock)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -41,7 +41,7 @@ class PatternCharacterBlock(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is PatternCharacterBlock) {
+        if (other !is PatternCharacterBlockGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
@@ -52,7 +52,7 @@ class PatternCharacterBlock(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is PatternCharacterBlock) {
+        if (other !is PatternCharacterBlockGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.stringBlock == other.stringBlock

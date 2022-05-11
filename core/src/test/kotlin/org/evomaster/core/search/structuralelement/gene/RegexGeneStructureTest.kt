@@ -73,7 +73,7 @@ class RegexGeneStructureTest : GeneStructuralElementBaseTest() {
         root.disjunctions.apply {
             assertEquals(1, disjunctions.size)
             disjunctions.first().apply {
-                assertTrue(terms[0] is PatternCharacterBlock) //f
+                assertTrue(terms[0] is PatternCharacterBlockGene) //f
                 assertEquals(0, terms[0].getChildren().size)
                 assertTrue(terms[1] is QuantifierRxGene) //o
                 assertEquals(3, terms[1].getChildren().size) // template + o, o

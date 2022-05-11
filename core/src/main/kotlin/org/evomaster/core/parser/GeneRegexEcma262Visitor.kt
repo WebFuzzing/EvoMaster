@@ -159,7 +159,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
-            val gene = PatternCharacterBlock("block", block)
+            val gene = PatternCharacterBlockGene("block", block)
 
             return VisitResult(gene)
         }

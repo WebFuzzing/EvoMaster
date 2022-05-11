@@ -96,7 +96,7 @@ object GeneSamplerForTests {
             CharacterRangeRxGene::class -> sampleCharacterRangeRxGene(rand) as T
             DisjunctionRxGene::class -> sampleDisjunctionRxGene(rand) as T
             DisjunctionListRxGene::class -> sampleDisjunctionListRxGene(rand) as T
-            PatternCharacterBlock::class -> samplePatternCharacterBlock(rand) as T
+            PatternCharacterBlockGene::class -> samplePatternCharacterBlock(rand) as T
             QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
             RegexGene::class -> sampleRegexGene(rand) as T
 
@@ -127,8 +127,8 @@ object GeneSamplerForTests {
         )
     }
 
-    fun samplePatternCharacterBlock(rand: Randomness) : PatternCharacterBlock{
-        return PatternCharacterBlock(name="rand PatternCharacterBlock", stringBlock = rand.nextWordString())
+    fun samplePatternCharacterBlock(rand: Randomness) : PatternCharacterBlockGene{
+        return PatternCharacterBlockGene(name="rand PatternCharacterBlock", stringBlock = rand.nextWordString())
     }
 
     fun sampleDisjunctionListRxGene(rand: Randomness) : DisjunctionListRxGene{

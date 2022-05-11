@@ -27,7 +27,7 @@ class DoubleGene(name: String,
                   * specified scale
                   */
                  scale: Int? = null
-) : FloatingPointNumber<Double>(name, value,
+) : FloatingPointNumberGene<Double>(name, value,
     min = if (precision != null && scale != null) (-NumberCalculationUtil.upperBound(precision, scale)).toDouble().run { if (min== null || this > min) this else min } else min,
     max = if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).toDouble().run { if (max == null || this < max) this else max } else max,
     minInclusive = minInclusive, maxInclusive = maxInclusive, precision = precision, scale = scale) {

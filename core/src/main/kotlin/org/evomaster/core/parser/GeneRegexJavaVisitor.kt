@@ -162,7 +162,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
             val name = if(block.isBlank()) "blankBlock" else block
 
-            val gene = PatternCharacterBlock(name, block)
+            val gene = PatternCharacterBlockGene(name, block)
 
             return VisitResult(gene)
         }
@@ -171,7 +171,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
-            val gene = PatternCharacterBlock("block", block)
+            val gene = PatternCharacterBlockGene("block", block)
 
             return VisitResult(gene)
         }

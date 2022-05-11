@@ -7,12 +7,10 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.RoundingMode
 
 
 class FloatGene(name: String,
@@ -29,7 +27,7 @@ class FloatGene(name: String,
                  * specified scale
                  */
                 scale: Int? = null
-) : FloatingPointNumber<Float>(name, value,
+) : FloatingPointNumberGene<Float>(name, value,
     min = if (precision != null && scale != null) (-NumberCalculationUtil.upperBound(precision, scale)).toFloat().run { if (min== null || this > min) this else min } else min,
     max = if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).toFloat().run { if (max == null || this < max) this else max } else max,
     minInclusive, maxInclusive, precision, scale) {

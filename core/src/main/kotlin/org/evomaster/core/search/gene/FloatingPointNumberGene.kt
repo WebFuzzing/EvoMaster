@@ -5,7 +5,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import java.math.RoundingMode
 
-abstract class FloatingPointNumber<T:Number>(
+abstract class FloatingPointNumberGene<T:Number>(
     name: String,
     value: T?,
     min: T? = null,

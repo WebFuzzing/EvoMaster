@@ -119,13 +119,13 @@ object NumberMutatorUtils {
     }
 
     private fun modifyValue(randomness: Randomness, value: Double, delta: Double, maxRange: Long, specifiedJumpDelta: Int, precisionChangeable: Boolean): Double{
-        val strategies = FloatingPointNumber.ModifyStrategy.values().filter{
-            precisionChangeable || it != FloatingPointNumber.ModifyStrategy.REDUCE_PRECISION
+        val strategies = FloatingPointNumberGene.ModifyStrategy.values().filter{
+            precisionChangeable || it != FloatingPointNumberGene.ModifyStrategy.REDUCE_PRECISION
         }
         return when(randomness.choose(strategies)){
-            FloatingPointNumber.ModifyStrategy.SMALL_CHANGE-> value + min(1, maxRange) * delta
-            FloatingPointNumber.ModifyStrategy.LARGE_JUMP -> value + specifiedJumpDelta * delta
-            FloatingPointNumber.ModifyStrategy.REDUCE_PRECISION -> BigDecimal(value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
+            FloatingPointNumberGene.ModifyStrategy.SMALL_CHANGE-> value + min(1, maxRange) * delta
+            FloatingPointNumberGene.ModifyStrategy.LARGE_JUMP -> value + specifiedJumpDelta * delta
+            FloatingPointNumberGene.ModifyStrategy.REDUCE_PRECISION -> BigDecimal(value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
         }
     }
 

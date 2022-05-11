@@ -57,7 +57,7 @@ class BigDecimalGene(
      */
     scale : Int? = null
 
-) : FloatingPointNumber<BigDecimal>(name, value,
+) : FloatingPointNumberGene<BigDecimal>(name, value,
     min = if (precision != null && scale != null) (-upperBound(precision, scale)).run { if (min== null || this > min) this else min } else min,
     max = if (precision != null && scale != null) upperBound(precision, scale).run { if (max == null || this < max) this else max } else max,
     minInclusive, maxInclusive, precision, scale){

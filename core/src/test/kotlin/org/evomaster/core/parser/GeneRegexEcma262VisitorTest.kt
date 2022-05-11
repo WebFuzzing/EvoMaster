@@ -1,12 +1,10 @@
 package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.CharacterClassEscapeRxGene
-import org.evomaster.core.search.gene.regex.PatternCharacterBlock
+import org.evomaster.core.search.gene.regex.PatternCharacterBlockGene
 import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.util.regex.Pattern
 
 open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
 
@@ -25,7 +23,7 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         val regex = "a"
         val gene = checkSameAsJava(regex)
 
-        assertTrue(gene.flatView().any { it is PatternCharacterBlock })
+        assertTrue(gene.flatView().any { it is PatternCharacterBlockGene })
     }
 
     @Test
@@ -34,7 +32,7 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         val regex = "abc"
         val gene = checkSameAsJava(regex)
 
-        assertTrue(gene.flatView().any { it is PatternCharacterBlock })
+        assertTrue(gene.flatView().any { it is PatternCharacterBlockGene })
     }
 
     @Test
@@ -43,7 +41,7 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         val regex = "1"
         val gene = checkSameAsJava(regex)
 
-        assertTrue(gene.flatView().any { it is PatternCharacterBlock })
+        assertTrue(gene.flatView().any { it is PatternCharacterBlockGene })
     }
 
     @Test
@@ -52,7 +50,7 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         val regex = "123"
         val gene = checkSameAsJava(regex)
 
-        assertTrue(gene.flatView().any { it is PatternCharacterBlock })
+        assertTrue(gene.flatView().any { it is PatternCharacterBlockGene })
     }
 
     @Test
@@ -61,7 +59,7 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         val regex = "abc123"
         val gene = checkSameAsJava(regex)
 
-        assertTrue(gene.flatView().any { it is PatternCharacterBlock })
+        assertTrue(gene.flatView().any { it is PatternCharacterBlockGene })
     }
 
 
@@ -71,7 +69,7 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         val regex = "B123"
         val gene = checkSameAsJava(regex)
 
-        assertTrue(gene.flatView().any { it is PatternCharacterBlock })
+        assertTrue(gene.flatView().any { it is PatternCharacterBlockGene })
     }
 
     @Test
@@ -80,7 +78,7 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         val regex = "ABCD"
         val gene = checkSameAsJava(regex)
 
-        assertTrue(gene.flatView().any { it is PatternCharacterBlock })
+        assertTrue(gene.flatView().any { it is PatternCharacterBlockGene })
     }
 
 
