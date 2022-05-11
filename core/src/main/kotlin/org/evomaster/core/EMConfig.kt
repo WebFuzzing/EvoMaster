@@ -1629,7 +1629,7 @@ class EMConfig {
             "`null` represents to employ the setting specified on the EM driver side")
     var employSmartDbClean : Boolean? = null
 
-    
+
     @Cfg("Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs.")
     var addPreDefinedTests : Boolean = true
 
@@ -1673,6 +1673,27 @@ class EMConfig {
             " Note that this only impact the generated output test cases.")
     var javaCommand = "java"
 
+    enum class ExternalServiceIPSelectionStrategy {
+        /**
+         * Default will assign 127.0.0.2
+         */
+        DEFAULT,
+
+        /**
+         * User provided IP address
+         */
+        USER,
+
+        /**
+         * Random IP address will be generated within the loopback range
+         */
+        RANDOM
+    }
+    @Cfg("Specify a method to select the first external service spoof IP address.")
+    var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.DEFAULT
+
+    @Cfg("User provided external service IP.")
+    var externalServiceIP : String? = null
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {

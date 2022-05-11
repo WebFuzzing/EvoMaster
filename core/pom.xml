@@ -173,11 +173,15 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- WireMock for External Services -->
+        <!-- Dependencies for External Services -->
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>dns-cache-manipulator</artifactId>
         </dependency>
     </dependencies>
 
