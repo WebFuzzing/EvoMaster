@@ -11,6 +11,7 @@ import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -510,7 +511,7 @@ class Main {
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
 
-            if (config.problemType == EMConfig.ProblemType.REST) {
+            if (config.problemType == EMConfig.ProblemType.REST && config.outputFormat!=OutputFormat.CSHARP_XUNIT) {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
@@ -547,7 +548,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-            if (config.problemType == EMConfig.ProblemType.REST) {
+            if (config.problemType == EMConfig.ProblemType.REST && config.outputFormat!=OutputFormat.CSHARP_XUNIT) {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
