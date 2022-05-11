@@ -145,6 +145,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      */
     private fun addCallToSwagger() : RestCallAction?{
 
+        if (configuration.blackBox && !configuration.bbExperiments) {
+            return if (configuration.bbSwaggerUrl.startsWith("http", true)){
+                 RestCallAction("Call to Swagger", HttpVerb.GET, RestPath(configuration.bbSwaggerUrl), mutableListOf())
+            } else
+                null
+        }
+
+
         val base = infoDto.baseUrlOfSUT
         val openapi = infoDto.restProblem.openApiUrl
 
