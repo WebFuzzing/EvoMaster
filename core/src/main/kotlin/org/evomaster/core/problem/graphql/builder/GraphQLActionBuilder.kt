@@ -129,6 +129,8 @@ object GraphQLActionBuilder {
 
         /*
       In some cases object gene (optional or not) with all fields as cycle object gene (optional or not) are generated.
+      Also, in some cases (ex: in AnigList) object gene (optional or not) with all fields as tuples gene with all their last elements
+      as kind of Limit gene are generated.
       So we need to deactivate it by looking into its ancestors (e.g., Optional set to false, Array set length to 0)
        */
         handleAllCyclesAndLimitInObjectFields(params)
@@ -139,16 +141,15 @@ object GraphQLActionBuilder {
 
     }
 
-    private fun handleAllCyclesAndLimitInObjectFields(//fun A
+    private fun handleAllCyclesAndLimitInObjectFields(
         params: MutableList<Param>
     ) {
         params.map { it.gene }.forEach {
-
             when {
                 it is ObjectGene -> it.flatView().forEach { g ->
-                    if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesAndLimitInObjectFields(g.gene) else if (g is ObjectGene) handleAllCyclesAndLimitInObjectFields(
-                        g
-                    )
+                    if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesAndLimitInObjectFields(g.gene)
+                         else if (g is ObjectGene) handleAllCyclesAndLimitInObjectFields(
+                        g)
                 }
                 it is OptionalGene && it.gene is ObjectGene -> it.flatView().forEach { g ->
                     if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesAndLimitInObjectFields(g.gene) else if (g is ObjectGene) handleAllCyclesAndLimitInObjectFields(
@@ -175,17 +176,34 @@ object GraphQLActionBuilder {
     }
 
     fun handleAllCyclesAndLimitInObjectFields(gene: ObjectGene) {
-
         if (gene.fields.all {
-                ((it is OptionalGene && it.gene is CycleObjectGene) ||
-                        (it is CycleObjectGene)) ||  ((it is OptionalGene && it.gene is LimitObjectGene) ||
-                        (it is LimitObjectGene))
+                ((it is CycleObjectGene)) ||
+                        (it is OptionalGene && it.gene is CycleObjectGene) ||
+                        (it is LimitObjectGene) ||
+                        ((it is OptionalGene && it.gene is LimitObjectGene) ||
+                         /*
+                         The Object gene contains: All fields as tuples, need to check if theirs last elements are kind of limit gene.
+                         If it is the case, need to prevent selection on them
+                         */
+                         (it is TupleGene && it.lastElementTreatedSpecially && isLastContainsAllLimitGenes(it))||
+                         (it is OptionalGene && it.gene is TupleGene && it.gene.lastElementTreatedSpecially && isLastContainsAllLimitGenes(it.gene)))
 
             }) {
             GeneUtils.tryToPreventSelection(gene)
         }
     }
 
+    /*
+    Check if the last element in the tuple (the return) either is:
+    optional limit gene, optional Object with all fields as limit gene or optional Object with all fields as Optional limit gene
+     */
+    private fun isLastContainsAllLimitGenes(tuple: TupleGene): Boolean {
+        val lastElement= tuple.elements.last()
+        return (lastElement is OptionalGene && lastElement is LimitObjectGene)||
+                (lastElement is OptionalGene && lastElement.gene is ObjectGene && lastElement.gene.fields.all { it is LimitObjectGene}
+                )||(lastElement is OptionalGene && lastElement.gene is ObjectGene && lastElement.gene.fields.all { it is OptionalGene && it.gene is LimitObjectGene}
+                )
+    }
 
     private fun extractParams(
         state: TempState,
