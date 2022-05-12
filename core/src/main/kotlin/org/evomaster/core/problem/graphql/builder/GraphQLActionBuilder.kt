@@ -181,6 +181,7 @@ object GraphQLActionBuilder {
                         (it is OptionalGene && it.gene is CycleObjectGene) ||
                         (it is LimitObjectGene) ||
                         ((it is OptionalGene && it.gene is LimitObjectGene) ||
+                         ((it is OptionalGene && it.gene is LimitObjectGene)||(it is OptionalGene && it.gene is ObjectGene && it.gene.fields.all { it is OptionalGene && it.gene is LimitObjectGene }))||
                          /*
                          The Object gene contains: All fields as tuples, need to check if theirs last elements are kind of limit gene.
                          If it is the case, need to prevent selection on them
