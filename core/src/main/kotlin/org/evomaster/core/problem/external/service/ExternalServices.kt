@@ -10,6 +10,8 @@ import org.evomaster.core.problem.external.service.ExternalServiceUtils.generate
 import org.evomaster.core.problem.external.service.ExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.external.service.ExternalServiceUtils.nextIPAddress
 
+import com.github.tomakehurst.wiremock.client.WireMock.*
+
 class ExternalServices {
     /**
      * This will hold the information about the external service
@@ -33,10 +35,11 @@ class ExternalServices {
      */
     fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
         // TODO: The below code intentionally commented out
-//        val ip = getIP()
-//        val wm : WireMockServer = initWireMockServer(ip)
-//        updateDNSCache(externalServiceInfo.remoteHostname, ip)
-//        externalServiceInfo.assignWireMockServer(wm)
+        val ip = getIP()
+        lastIPAddress = ip
+        val wm : WireMockServer = initWireMockServer(ip)
+        updateDNSCache(externalServiceInfo.remoteHostname, ip)
+        externalServiceInfo.assignWireMockServer(wm)
         externalServiceInfos.add(externalServiceInfo)
     }
 
@@ -52,7 +55,6 @@ class ExternalServices {
         }
 
         if (isAddressAvailable(nextAddress, WIREMOCK_PORT)) {
-            lastIPAddress = nextAddress
             return nextAddress
         }
         return getNextAvailableAddress(nextAddress)
@@ -76,17 +78,31 @@ class ExternalServices {
     }
 
     private fun getIP() : String {
-        if (config.externalServiceIPSelectionStrategy == EMConfig.ExternalServiceIPSelectionStrategy.USER && config.externalServiceIP == null) {
-            throw Exception("externalServiceIP is not provided")
-        }
-
-        return when (config.externalServiceIPSelectionStrategy) {
-            EMConfig.ExternalServiceIPSelectionStrategy.DEFAULT -> getNextAvailableAddress("127.0.0.2")
-            EMConfig.ExternalServiceIPSelectionStrategy.USER -> config.externalServiceIP.toString()
+        val ip: String
+        when (config.externalServiceIPSelectionStrategy) {
+            EMConfig.ExternalServiceIPSelectionStrategy.RANDOM -> {
+                ip = if (externalServiceInfos.size > 0) {
+                    getNextAvailableAddress(lastIPAddress)
+                } else {
+                    generateRandomAvailableAddress()
+                }
+            }
+            EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
+                ip = if (externalServiceInfos.size > 0) {
+                    getNextAvailableAddress(lastIPAddress)
+                } else {
+                    config.externalServiceIP
+                }
+            }
             else -> {
-                generateRandomAvailableAddress()
+                ip = if (externalServiceInfos.size > 0) {
+                    getNextAvailableAddress(lastIPAddress)
+                } else {
+                    getNextAvailableAddress("127.0.0.1")
+                }
             }
         }
+        return ip
     }
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
@@ -98,13 +114,21 @@ class ExternalServices {
                 .port(WIREMOCK_PORT)
                 .extensions(ResponseTemplateTransformer(false)))
         wm.start()
+
+        // to prevent from the 404 when no matching stub below stub is added
+        wm.stubFor(get(urlMatching("/.*"))
+            .atPriority(2)
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withBody("Not found!!")))
+
         return wm
     }
 
     /**
      * Update the DNS cache with a different IP address for a given host to enable spoofing.
      */
-    fun updateDNSCache(host : String, address : String) {
+    private fun updateDNSCache(host : String, address : String) {
         DnsCacheManipulator.setDnsCache(host, address)
     }
 
@@ -116,6 +140,6 @@ class ExternalServices {
     }
 
     companion object {
-        private const val WIREMOCK_PORT : Int = 8000
+        private const val WIREMOCK_PORT : Int = 9000
     }
 }

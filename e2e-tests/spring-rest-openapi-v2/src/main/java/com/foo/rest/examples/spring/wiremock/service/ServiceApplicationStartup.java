@@ -19,6 +19,7 @@ public class ServiceApplicationStartup implements ApplicationListener<Applicatio
         try {
             URL url = new URL("http://baz.bar:8080/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(500); // added to reduce time during testing
             connection.setRequestProperty("accept", "application/json");
 
             InputStream responseStream = connection.getInputStream();

@@ -6,7 +6,6 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.google.inject.Injector;
-import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.external.service.ExternalServiceInfo;
 import org.evomaster.core.problem.external.service.ExternalServices;
@@ -16,7 +15,6 @@ import org.evomaster.core.problem.rest.service.RestResourceFitness;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -43,7 +41,7 @@ public class ExternalServiceEMTest extends SpringTestBase {
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
         DnsCacheManipulator.setDnsCache("baz.bar", "127.0.0.2");
 
-        wireMockServer = new WireMockServer(new WireMockConfiguration().bindAddress("127.0.0.2").port(8080).extensions(new ResponseTemplateTransformer(false)));
+        wireMockServer = new WireMockServer(new WireMockConfiguration().bindAddress("127.0.0.5").port(8080).extensions(new ResponseTemplateTransformer(false)));
         wireMockServer.start();
 
         /*
