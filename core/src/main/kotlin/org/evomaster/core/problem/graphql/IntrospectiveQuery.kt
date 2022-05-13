@@ -1,15 +1,15 @@
 package org.evomaster.core.problem.graphql
 
-import org.evomaster.core.problem.graphql.schema.SchemaObj
 import org.evomaster.core.remote.SutProblemException
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.LoggerFactory
-import javax.ws.rs.client.Client
-import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.client.Entity
+import java.io.IOException
+import java.io.InputStream
+import javax.ws.rs.client.*
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 
 class IntrospectiveQuery {
@@ -18,19 +18,32 @@ class IntrospectiveQuery {
         private val log = LoggerFactory.getLogger(IntrospectiveQuery::class.java)
     }
 
+    class RedirectFilterWorkAround : ClientResponseFilter {
+        override fun filter(requestContext: ClientRequestContext, responseContext: ClientResponseContext) {
+            if (responseContext.statusInfo.family != Response.Status.Family.REDIRECTION) return
+            val resp: Response = requestContext.client.target(responseContext.location).request().method(requestContext.method)
+            responseContext.entityStream = resp.getEntity() as InputStream
+            responseContext.statusInfo = resp.getStatusInfo()
+            responseContext.status = resp.getStatus()
+        }
+    }
+
     private val clientConfiguration = ClientConfig()
             .property(ClientProperties.CONNECT_TIMEOUT, 30_000)
             .property(ClientProperties.READ_TIMEOUT, 30_000)
             //workaround bug in Jersey client
             .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-            .property(ClientProperties.FOLLOW_REDIRECTS, false)
+            .property(ClientProperties.FOLLOW_REDIRECTS, true)
+
 
 
     /**
      * Client library to make HTTP calls. To get the schema from a GraphQL API, we need to make
      * an HTTP call that has, as body payload, and introspective query
      */
-    private var client: Client = ClientBuilder.newClient(clientConfiguration)
+    private var client: Client = ClientBuilder.newClient(clientConfiguration).apply {
+        register(RedirectFilterWorkAround::class)
+    }
 
 
     fun fetchSchema(

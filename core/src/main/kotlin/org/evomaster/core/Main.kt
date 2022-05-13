@@ -4,6 +4,7 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
+import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
@@ -48,6 +49,12 @@ class Main {
          */
         @JvmStatic
         fun main(args: Array<String>) {
+
+            /*
+                We should make sure we can run EM even on APIs on which certificates
+                are expired / misconfigured
+             */
+            EMTestUtils.disableSslVerification()
 
             try {
 
