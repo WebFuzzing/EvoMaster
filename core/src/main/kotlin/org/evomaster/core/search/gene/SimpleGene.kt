@@ -11,12 +11,23 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
  */
 abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
 
+    private val errorChildMsg = "BUG in EvoMaster: cannot modify children of childless ${this.javaClass}"
 
     override fun addChild(child: StructuralElement) {
-        throw IllegalStateException("BUG in EvoMaster: cannot modify children of childless ${this.javaClass}")
+        throw IllegalStateException(errorChildMsg)
     }
 
-    //TODO delete
+    override fun killAllChildren(){
+        throw IllegalStateException(errorChildMsg)
+    }
+
+    override fun killChild(child: StructuralElement){
+        throw IllegalStateException(errorChildMsg)
+    }
+
+    override fun killChildByIndex(index: Int) : StructuralElement{
+        throw IllegalStateException(errorChildMsg)
+    }
 
     //TODO should it be final? some simple genes seems to use it...
     override fun copyContent(): Gene {

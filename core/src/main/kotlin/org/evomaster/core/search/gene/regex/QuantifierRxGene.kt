@@ -34,7 +34,8 @@ class QuantifierRxGene(
     }
 
 
-    val atoms = mutableListOf<Gene>() //FIXME
+    val atoms : List<Gene>
+        get() {return getViewOfChildren() }
 
     /**
      *  A * quantifier could lead to billions of atom elements.
@@ -69,8 +70,6 @@ class QuantifierRxGene(
              */
             for(i in 0 until min){
                 val a = template.copy() as Gene
-//                a.parent = this
-                atoms.add(a)
                 addChild(a)
             }
         }
@@ -85,11 +84,10 @@ class QuantifierRxGene(
                 min,
                 max
         )
-        copy.atoms.clear()
+        copy.killAllChildren()
+
         this.atoms.forEach {
             val a = it.copyContent()
-//            a.parent = copy
-            copy.atoms.add(a)
             copy.addChild(a)
         }
 
@@ -102,7 +100,7 @@ class QuantifierRxGene(
 
         val length = randomness.nextInt(min, limitedMax)
 
-        atoms.clear()
+        killAllChildren()
 
         if (length == 0) {
             //nothing to do
@@ -112,7 +110,6 @@ class QuantifierRxGene(
         for (i in 0 until length) {
            addNewAtom(randomness, forceNewValue, allGenes)
         }
-        addChildren(atoms)
     }
 
     override fun isMutable(): Boolean {
@@ -161,7 +158,7 @@ class QuantifierRxGene(
 
         if(remove){
             log.trace("Removing atom")
-            atoms.removeAt(randomness.nextInt(length))
+            killChildByIndex(randomness.nextInt(length))
         }
         if(add){
             addNewAtom(randomness, false, listOf())
@@ -172,11 +169,9 @@ class QuantifierRxGene(
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>){
         val base = template.copy()
-//        base.parent = this
         if (base.isMutable()) {
             base.randomize(randomness, forceNewValue, allGenes)
         }
-        atoms.add(base)
         addChild(base)
     }
 
@@ -198,11 +193,9 @@ class QuantifierRxGene(
             }
         } else {
             //different size, so clear and create new copies
-            this.atoms.clear()
+            this.killAllChildren()
             other.atoms.forEach{
                 val a = it.copy()
-//                a.parent = this
-                this.atoms.add(a)
                 this.addChild(a)
             }
         }
@@ -248,11 +241,10 @@ class QuantifierRxGene(
                     result =  r && result
                 }
             }else{
-                this.atoms.clear()
+                this.killAllChildren()
                 gene.atoms.forEach{
                     val a = it.copy()
-//                    a.parent = this
-                    this.atoms.add(a)
+                    this.addChild(a)
                 }
             }
             return result

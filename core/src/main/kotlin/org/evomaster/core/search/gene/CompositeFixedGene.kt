@@ -17,11 +17,23 @@ abstract class CompositeFixedGene(
 
     open fun canBeChildless() = false
 
-    //TODO lock methods on children
+
+    private val errorChildMsg = "BUG in EvoMaster: cannot modify children of fixed ${this.javaClass}"
 
     override fun addChild(child: StructuralElement) {
-        throw IllegalStateException("BUG in EvoMaster: cannot modify children of fixed ${this.javaClass}")
+        throw IllegalStateException(errorChildMsg)
     }
 
-    //TODO delete
+    override fun killAllChildren(){
+        throw IllegalStateException(errorChildMsg)
+    }
+
+    override fun killChild(child: StructuralElement){
+        throw IllegalStateException(errorChildMsg)
+    }
+
+    override fun killChildByIndex(index: Int) : StructuralElement{
+        throw IllegalStateException(errorChildMsg)
+    }
+
 }

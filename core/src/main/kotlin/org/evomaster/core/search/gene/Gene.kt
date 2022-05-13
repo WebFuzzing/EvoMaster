@@ -15,12 +15,13 @@ import org.slf4j.LoggerFactory
 
 
 /**
- * TODO we need 2 new classes in the hierarchy: SimpleGene and ComposedGene
- *
  *
  * A building block representing one part of an Individual.
  * The terms "gene" comes from the evolutionary algorithm literature
  *
+ * When creating a new Gene type, should not extend directly from this class, but rather
+ * from [SimpleGene], [CompositeGene] or [CompositeFixedGene].
+ * There are test cases to impose this property.
  *
  *
  * TO enable adaptive hypermutation

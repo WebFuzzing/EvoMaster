@@ -227,10 +227,10 @@ class GeneTest {
                 .forEach { root ->
                     root.identifyAsRoot()
                     root.randomize(rand, true)
-                    assertTrue(root.isValid())
+                    assertTrue(root.isValid(), "Failed for ${root.javaClass}")
 
                     val copy = root.copy()
-                    assertTrue(copy.isValid())
+                    assertTrue(copy.isValid(), "Failed for ${root.javaClass}")
                 }
     }
 

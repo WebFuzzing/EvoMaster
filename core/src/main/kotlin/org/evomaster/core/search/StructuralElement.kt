@@ -28,7 +28,7 @@ abstract class StructuralElement (
         private set
 
     /**
-     * present whether the element is defined root
+     * present whether the element is defined as a root
      */
     private var isDefinedRoot : Boolean = false
 
@@ -40,21 +40,12 @@ abstract class StructuralElement (
     open fun getViewOfChildren() : List<StructuralElement> = children
 
     private fun initChildren(children : List<StructuralElement>){
-        children.forEach { it.parent = this }
+        children.forEach { it.parent = this; it.isDefinedRoot = false }
     }
 
-    /**
-     * @return children of [this]
-     *
-     * FIXME: this is not related to children in input. confusing, might need to change name
-     */
-//    abstract fun getChildren(): List<out StructuralElement>
 
     /**
      * add a child of the element
-     * Note that the default method is only to build the parent/children relationship
-     *
-     * FIXME: this is setting up the parent-child relationship, not adding to children
      */
     open fun addChild(child: StructuralElement){  //TODO check usage
         child.parent = this
@@ -63,18 +54,30 @@ abstract class StructuralElement (
         (children as MutableList<StructuralElement>).add(child)
     }
 
+    open fun killAllChildren(){
+        children.forEach {
+            it.parent = null; //let's avoid memory leaks
+        }
+        children.clear()
+    }
+
+    open fun killChild(child: StructuralElement){
+        child.parent = null
+        children.remove(child)
+    }
+
+    open fun killChildByIndex(index: Int) : StructuralElement{
+        val child = children.removeAt(index)
+        child.parent = null
+        return  child
+    }
+
     /**
      * add children of the element
-     * Note that the default method is only to build the parent/children relationship
-     *
-     * FIXME see previous comment
      */
     fun addChildren(children : List<StructuralElement>){
         children.forEach { addChild(it) }
     }
-
-    //TODO add method to kill child, ie remove, otherwise memory leak.
-    //TODO possibly called in CollectionGene?
 
 
     /**

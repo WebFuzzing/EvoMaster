@@ -309,7 +309,8 @@ abstract class AbstractParser(
         try {
             val elements = ObjectMapper().readValue(paramValue, Map::class.java)
             if (elements.size > MapGene.MAX_SIZE)
-                gene.maxSize = elements.size
+                log.warn("Issue in seeding, too many elements in map.")
+                //gene.maxSize = elements.size //FIXME needs refactoring
             elements.forEach { (key, value) ->
                 val elementValueGene = gene.template.second.copy()
                 elementValueGene.name = key as String

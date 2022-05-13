@@ -22,15 +22,20 @@ import kotlin.math.min
 class MapGene<K, V>(
         name: String,
         val template: PairGene<K, V>,
-        var maxSize: Int? = null,
-        var minSize: Int? = null,
-        private var elements: MutableList<PairGene<K, V>> = mutableListOf()
+        val maxSize: Int? = null,
+        val minSize: Int? = null,
+        elements: MutableList<PairGene<K, V>> = mutableListOf()
 ) : CollectionGene, CompositeGene(name, elements)
         where K : Gene, V: Gene {
 
     constructor(name : String, key: K, value: V, maxSize: Int? = null, minSize: Int? = null): this(name, PairGene("template", key, value), maxSize, minSize)
 
     private var keyCounter = 0
+
+    private val elements : List<PairGene<K, V>>
+        get() {
+            return getViewOfChildren() as List<PairGene<K, V>>
+        }
 
     init {
 
@@ -52,6 +57,9 @@ class MapGene<K, V>(
         const val MAX_SIZE = 5
     }
 
+    override fun isValid(): Boolean {
+        return (minSize == null || elements.size >= minSize) && (maxSize == null || elements.size <= maxSize)
+    }
 
     override fun copyContent(): Gene {
         return MapGene(name,
@@ -68,8 +76,12 @@ class MapGene<K, V>(
         }
         clearElements()
         // maxSize
-        this.elements = (if (maxSize!=null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
-        addChildren(this.elements)
+        val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
+            other.elements.subList(0, maxSize!!)
+        else other.elements)
+                .map { e -> e.copyContent() as PairGene<K, V> }
+                .toMutableList()
+        addChildren(copy)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -87,7 +99,7 @@ class MapGene<K, V>(
 
         //maybe not so important here to complicate code to enable forceNewValue
 
-        elements.clear()
+        killAllChildren()
         log.trace("Randomizing MapGene")
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         (0 until n).forEach {
@@ -95,7 +107,6 @@ class MapGene<K, V>(
             // if the key of gene exists, the value would be replaced with the latest one
             addElement(gene)
         }
-        //addChildren(elements)
     }
 
     override fun isMutable(): Boolean {
@@ -140,7 +151,7 @@ class MapGene<K, V>(
             addElement(gene)
         } else {
             log.trace("Removing gene in mutation")
-            val removed = elements.removeAt(randomness.nextInt(elements.size))
+            val removed = killChildByIndex(randomness.nextInt(elements.size)) as Gene
             removed.removeThisFromItsBindingGenes()
         }
         return true
@@ -194,7 +205,7 @@ class MapGene<K, V>(
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is MapGene<*,*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             clearElements()
-            elements = gene.elements.mapNotNull { it.copyContent() as? PairGene<K, V> }.toMutableList()
+            val elements = gene.elements.mapNotNull { it.copyContent() as? PairGene<K, V> }.toMutableList()
             addChildren(elements)
             return true
         }
@@ -204,7 +215,7 @@ class MapGene<K, V>(
 
     override fun clearElements() {
         elements.forEach { it.removeThisFromItsBindingGenes() }
-        elements.clear()
+        killAllChildren()
     }
 
     /**
@@ -213,7 +224,7 @@ class MapGene<K, V>(
     fun removeExistingElement(element: PairGene<K, V>){
         //this is a reference heap check, not based on `equalsTo`
         if (elements.contains(element)){
-            elements.remove(element)
+            killChild(element)
             element.removeThisFromItsBindingGenes()
         }else{
             log.warn("the specified element (${if (element.isPrintable()) element.getValueAsPrintableString() else "not printable"})) does not exist in this map")
@@ -231,7 +242,6 @@ class MapGene<K, V>(
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
         }
-        elements.add(element)
         addChild(element)
     }
 
@@ -246,7 +256,6 @@ class MapGene<K, V>(
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
         }
-        elements.add(element)
         addChild(element)
         return true
     }
