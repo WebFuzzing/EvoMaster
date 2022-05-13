@@ -120,14 +120,38 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
 
         /*
-            This is mainly done for the coverage of the generated tests, in case there are targets
-            on the endpoint from which the schema is fetched from.
-            particularly important for NodeJS applications
+            TODO
+            such excluded actions might be executed at end of the search
          */
-        addCallToSwagger()
+        getExcludedActions().forEach {
+            adHocInitialIndividuals.add(createIndividual(mutableListOf(it)))
+        }
+
     }
 
-    private fun addCallToSwagger(){
+    /**
+     * a list of actions which could be cloned and mutated,
+     * but not part of action clusters to sample in the search
+     */
+    open fun getExcludedActions() : List<RestCallAction>{
+        val addCallAction = addCallToSwagger() ?: return listOf()
+        return listOf(addCallAction)
+    }
+
+    /*
+        This is mainly done for the coverage of the generated tests, in case there are targets
+        on the endpoint from which the schema is fetched from.
+        particularly important for NodeJS applications
+     */
+    private fun addCallToSwagger() : RestCallAction?{
+
+        if (configuration.blackBox && !configuration.bbExperiments) {
+            return if (configuration.bbSwaggerUrl.startsWith("http", true)){
+                 RestCallAction("Call to Swagger", HttpVerb.GET, RestPath(configuration.bbSwaggerUrl), mutableListOf())
+            } else
+                null
+        }
+
 
         val base = infoDto.baseUrlOfSUT
         val openapi = infoDto.restProblem.openApiUrl
@@ -137,14 +161,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
                 We only make the call if schema is on same host:port of the API,
                 ie coming from SUT. Otherwise would not be much of the point.
              */
-            return
+            return null
         }
         var path = openapi.substring(base.length)
         if(!path.startsWith("/")) path = "$path/"
 
-        val call = RestCallAction("Call to Swagger", HttpVerb.GET, RestPath(path), mutableListOf())
-        val ind = RestIndividual(mutableListOf(call), SampleType.SMART, mutableListOf())
-        adHocInitialIndividuals.add(ind)
+        return RestCallAction("Call to Swagger", HttpVerb.GET, RestPath(path), mutableListOf())
+//        val ind = RestIndividual(mutableListOf(call), SampleType.SMART, mutableListOf())
+//        adHocInitialIndividuals.add(ind)
     }
 
     /**
