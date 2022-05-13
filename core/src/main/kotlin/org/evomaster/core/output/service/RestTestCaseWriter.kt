@@ -159,7 +159,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 lines.append("${TestSuiteWriter.jsImport}.")
             }
 
-            lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+            if(format.isCsharp()){
+                //TODO: double check this
+                lines.append("${locationVar(call.locationId!!)} + $baseUrlOfSut + \"${call.resolvedPath()}\"")
+            }
+            else{
+                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+            }
 
         } else {
 
@@ -268,8 +274,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                         lines.add("expect($validCheck).toBe(true);")
                     }
                     format.isCsharp() -> {
-                        //TODO
-                        lines.add("Assert.True(IsValidURIorEmpty($location));")
+                        lines.add("Assert.True(Uri.IsWellFormedUriString($location, UriKind.Absolute) || string.IsNullOrEmpty($location));")
                     }
                 }
             } else {
