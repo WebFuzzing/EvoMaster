@@ -37,7 +37,6 @@ object GeneSamplerForTests {
                 }
                 .filter { !it.endsWith("\$Companion") }
                 .filter { !it.contains("$") }
-                .filter { !it.contains(".Sql") } // TODO remove once adding samplers for SQL genes
                 .forEach {
                     //println("Analyzing $it")
                     val c = try {
