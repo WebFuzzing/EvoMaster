@@ -31,7 +31,7 @@ object GraphQLActionBuilder {
     /*
       In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
       */
-    private val mutationQueryConstants = listOf(GqlConst.MUTATION, GqlConst.QUERY, GqlConst.ROOT, GqlConst.QUERY_TYPE)
+    private val mutationQueryConstants = listOf(GqlConst.MUTATION, GqlConst.QUERY, GqlConst.ROOT, GqlConst.QUERY_TYPE, GqlConst.QUERY_ROOT)
 
     /**
      * Cache to avoid rebuilding the same genes again and again.
@@ -93,6 +93,7 @@ object GraphQLActionBuilder {
                 */
             element.typeName.equals(GqlConst.ROOT, true) -> GQMethodType.QUERY
             element.typeName.equals(GqlConst.QUERY_TYPE, true) -> GQMethodType.QUERY
+            element.typeName.equals(GqlConst.QUERY_ROOT, true) -> GQMethodType.QUERY
             element.typeName.equals(GqlConst.MUTATION, true) -> GQMethodType.MUTATION
             else -> {
                 log.warn("GraphQL Entry point: ${element.typeName} is not found.")

@@ -53,6 +53,7 @@ object GqlConst {
     const val QUERY = "query"
     const val QUERY_TYPE = "querytype"
     const val ROOT = "root"
+    const val QUERY_ROOT = "query_root"
     const val MUTATION = "mutation"
 
 
