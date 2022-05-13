@@ -11,6 +11,7 @@ import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -512,8 +513,8 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-
-            if (config.problemType == EMConfig.ProblemType.REST) {
+            //TODO: enable splitting for csharp. Currently not enabled due to an error while running generated tests in multiple classes (error in starting the SUT)
+            if (config.problemType == EMConfig.ProblemType.REST && config.outputFormat!=OutputFormat.CSHARP_XUNIT) {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
@@ -549,8 +550,8 @@ class Main {
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
-
-            if (config.problemType == EMConfig.ProblemType.REST) {
+            //TODO: enable splitting for csharp. Currently not enabled due to an error while running generated tests in multiple classes (error in starting the SUT)
+            if (config.problemType == EMConfig.ProblemType.REST && config.outputFormat!=OutputFormat.CSHARP_XUNIT) {
 
                 val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
