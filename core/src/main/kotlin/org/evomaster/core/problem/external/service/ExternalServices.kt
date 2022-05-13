@@ -44,20 +44,30 @@ class ExternalServices {
     }
 
     /**
-     * Will return the next available IP address for the given ip address
-     * or from the last know IP address used for external service.
+     * Will return the next available IP address from the last know IP address
+     * used for external service.
      */
-    private fun getNextAvailableAddress(address : String?) : String {
-        val nextAddress: String = if (lastIPAddress != "") {
-            nextIPAddress(lastIPAddress)
-        } else {
-            address.toString()
-        }
+    private fun getNextAvailableAddress() : String {
+        val nextAddress: String = nextIPAddress(lastIPAddress)
 
         if (isAddressAvailable(nextAddress, WIREMOCK_PORT)) {
             return nextAddress
+        } else {
+            throw Exception(nextAddress.plus(" is not available for use"))
         }
-        return getNextAvailableAddress(nextAddress)
+    }
+
+    /**
+     * Returns the default IP address for external service initialisation.
+     * If the respective address and port is not available it'll throw an
+     * exception.
+     */
+    private fun getDefaultAddress() : String {
+        if (isAddressAvailable("127.0.0.10", WIREMOCK_PORT)) {
+            return "127.0.0.10"
+        } else {
+            throw Exception("Default loopback address is unavailable for binding")
+        }
     }
 
     /**
@@ -82,23 +92,23 @@ class ExternalServices {
         when (config.externalServiceIPSelectionStrategy) {
             EMConfig.ExternalServiceIPSelectionStrategy.RANDOM -> {
                 ip = if (externalServiceInfos.size > 0) {
-                    getNextAvailableAddress(lastIPAddress)
+                    getNextAvailableAddress()
                 } else {
                     generateRandomAvailableAddress()
                 }
             }
             EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
                 ip = if (externalServiceInfos.size > 0) {
-                    getNextAvailableAddress(lastIPAddress)
+                    getNextAvailableAddress()
                 } else {
                     config.externalServiceIP
                 }
             }
             else -> {
                 ip = if (externalServiceInfos.size > 0) {
-                    getNextAvailableAddress(lastIPAddress)
+                    getNextAvailableAddress()
                 } else {
-                    getNextAvailableAddress("127.0.0.1")
+                    getDefaultAddress()
                 }
             }
         }
@@ -127,9 +137,13 @@ class ExternalServices {
 
     /**
      * Update the DNS cache with a different IP address for a given host to enable spoofing.
+     * If there is an entry already it'll skip from adding to the cache.
      */
     private fun updateDNSCache(host : String, address : String) {
-        DnsCacheManipulator.setDnsCache(host, address)
+        val entry = DnsCacheManipulator.getDnsCache(host)
+        if (entry != null) {
+            DnsCacheManipulator.setDnsCache(host, address)
+        }
     }
 
     /**

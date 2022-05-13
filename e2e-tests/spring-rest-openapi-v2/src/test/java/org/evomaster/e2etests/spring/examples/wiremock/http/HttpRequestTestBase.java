@@ -52,8 +52,6 @@ public class HttpRequestTestBase extends SpringTestBase {
         HttpRequestController httpRequestController = new HttpRequestController();
         EMConfig config = new EMConfig();
         config.setInstrumentMR_NET(true);
-        config.setExternalServiceIP("127.0.0.10");
-        config.setExternalServiceIPSelectionStrategy(EMConfig.ExternalServiceIPSelectionStrategy.USER);
         SpringTestBase.initClass(httpRequestController,config);
     }
 
