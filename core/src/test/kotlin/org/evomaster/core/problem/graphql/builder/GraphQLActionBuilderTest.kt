@@ -1159,4 +1159,15 @@ class GraphQLActionBuilderTest {
         assertTrue((tupleDataSetMetadataList.elements.last() as OptionalGene).gene !is CycleObjectGene)
     }
 
-}
+    @Test
+    fun zoraTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Zora.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(85, actionCluster.size)
+    }
+
+    }
