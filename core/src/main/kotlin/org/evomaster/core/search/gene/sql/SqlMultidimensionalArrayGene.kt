@@ -242,10 +242,7 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(getAllGenes(nestedListOfElements).flatMap { g -> g.flatView(excludePredicate) })
-    }
+
 
 
     /**

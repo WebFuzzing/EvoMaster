@@ -46,10 +46,7 @@ abstract class SqlAbstractGeometricGene(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(p.flatView(excludePredicate)).plus(q.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(p, q)
 

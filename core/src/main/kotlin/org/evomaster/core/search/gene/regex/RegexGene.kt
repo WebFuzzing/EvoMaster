@@ -88,10 +88,7 @@ class RegexGene(
         return this.disjunctions.containsSameValueAs(other.disjunctions)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(disjunctions.flatView(excludePredicate))
-    }
+
 
     /**
      * use mutationweight of [disjunctions]

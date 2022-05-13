@@ -98,9 +98,7 @@ class NumericStringGene(
         return "\"" + number.value.toPlainString() + "\""
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(number.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf()
 

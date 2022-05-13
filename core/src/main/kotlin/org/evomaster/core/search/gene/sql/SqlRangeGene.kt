@@ -150,13 +150,6 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(isLeftClosed)
-                    .plus(left)
-                    .plus(right)
-                    .plus(isRightClosed)
-    }
 
 
     override fun innerGene(): List<Gene> =

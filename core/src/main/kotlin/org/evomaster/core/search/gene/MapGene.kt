@@ -176,10 +176,7 @@ class MapGene<K, V>(
         return isPrintable(template)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
-    }
+
 
     /**
      * 1 is for 'remove' or 'add' element

@@ -80,10 +80,7 @@ class SqlMultiRangeGene<T>(
         return this.rangeGenes.containsSameValueAs(other.rangeGenes)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(rangeGenes.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(rangeGenes)
 

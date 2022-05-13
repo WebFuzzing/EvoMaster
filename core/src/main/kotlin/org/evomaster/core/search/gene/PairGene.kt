@@ -49,10 +49,7 @@ class PairGene<F,S>(
         return "${first.getValueAsPrintableString(targetFormat = targetFormat)}:${second.getValueAsPrintableString(targetFormat = targetFormat)}"
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(listOf(first,second).flatMap { g -> g.flatView(excludePredicate) })
-    }
+
 
     override fun copyValueFrom(other: Gene) {
         if (other !is PairGene<*,*>) {

@@ -84,10 +84,7 @@ class SqlPolygonGene(
         return this.points.containsSameValueAs(other.points)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(points.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(points)
 

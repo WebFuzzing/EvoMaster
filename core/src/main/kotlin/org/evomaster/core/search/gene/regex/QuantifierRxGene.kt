@@ -225,10 +225,7 @@ class QuantifierRxGene(
         return true
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(atoms.flatMap { it.flatView(excludePredicate) })
-    }
+
 
     override fun mutationWeight(): Double {
         return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0

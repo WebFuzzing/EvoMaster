@@ -72,10 +72,7 @@ class SqlPointGene(
                 && this.y.containsSameValueAs(other.y)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(x.flatView(excludePredicate)).plus(y.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(x, y)
 

@@ -111,10 +111,7 @@ class SqlNullable(name: String,
                 this.gene.containsSameValueAs(other.gene)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(gene.flatView(excludePredicate))
-    }
+
 
     override fun mutationWeight(): Double {
         return 1.0 + gene.mutationWeight()

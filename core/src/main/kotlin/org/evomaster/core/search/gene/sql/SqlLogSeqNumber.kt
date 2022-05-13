@@ -123,12 +123,6 @@ class SqlLogSeqNumber(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this)
-                    .plus(leftPart)
-                    .plus(rightPart)
-    }
 
     override fun innerGene(): List<Gene> =
             listOf(leftPart, rightPart)

@@ -345,10 +345,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     private fun closeXml(tagName: String) = "</$tagName>"
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
-    }
+
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 

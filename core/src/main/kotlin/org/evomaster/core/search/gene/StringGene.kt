@@ -621,10 +621,6 @@ class StringGene(
         return this.value == other.value
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(specializationGenes.flatMap { it.flatView(excludePredicate) })
-    }
 
     override fun mutationWeight(): Double {
         return if(specializationGenes.isEmpty()) 1.0 else (specializationGenes.map { it.mutationWeight() }.sum() * PROB_CHANGE_SPEC + 1.0)

@@ -81,10 +81,6 @@ class SqlTextSearchVectorGene(
         return this.textLexeme.containsSameValueAs(other.textLexeme)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(textLexeme.flatView(excludePredicate))
-    }
 
     override fun innerGene(): List<Gene> = listOf(textLexeme)
 

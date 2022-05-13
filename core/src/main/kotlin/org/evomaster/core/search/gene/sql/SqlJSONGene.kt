@@ -81,10 +81,7 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
         return this.objectGene.containsSameValueAs(other.objectGene)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(objectGene.flatView(excludePredicate))
-    }
+
 
     override fun mutationWeight(): Double {
         return objectGene.mutationWeight()

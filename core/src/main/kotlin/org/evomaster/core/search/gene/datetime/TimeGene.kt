@@ -160,12 +160,6 @@ class TimeGene(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(hour.flatView(excludePredicate))
-            .plus(minute.flatView(excludePredicate))
-            .plus(second.flatView(excludePredicate))
-    }
 
     private fun isValidHourRange(gene: IntegerGene): Boolean {
         return gene.min == 0 && gene.max == 23

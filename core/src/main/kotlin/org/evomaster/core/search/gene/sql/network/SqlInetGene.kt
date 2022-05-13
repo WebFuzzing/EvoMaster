@@ -52,15 +52,6 @@ class SqlInetGene(
             .joinToString(".")
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        if (excludePredicate(this))
-            return listOf(this)
-        else {
-            val result = listOf(this)
-            octets.forEach { result.plus(it.flatView(excludePredicate)) }
-            return result
-        }
-    }
 
     override fun innerGene(): List<Gene> = octets.toList()
 

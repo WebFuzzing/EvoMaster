@@ -356,11 +356,9 @@ abstract class Gene(
      *      the genes inside e.g., hour: IntegerGene will be not viewed, but TimeGene will be viewed.
      * @return a recursive list of all nested genes, "this" included
      */
-
-    //TODO could this be final, implemented as recursion on children? likely yes
-
-    open fun flatView(excludePredicate: (Gene) -> Boolean = {false}): List<Gene>{
-        return listOf(this)
+    fun flatView(excludePredicate: (Gene) -> Boolean = {false}): List<Gene>{
+        return if (excludePredicate(this)) listOf(this) else
+            listOf(this).plus(children.flatMap { g -> g.flatView(excludePredicate) })
     }
 
     /**

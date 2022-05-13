@@ -162,10 +162,7 @@ class DisjunctionRxGene(
                 this.extraPostfix == other.extraPostfix
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(terms.flatMap { it.flatView(excludePredicate) })
-    }
+
 
     override fun mutationWeight(): Double {
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()

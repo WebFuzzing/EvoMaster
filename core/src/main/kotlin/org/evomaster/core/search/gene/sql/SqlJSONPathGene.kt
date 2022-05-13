@@ -127,10 +127,7 @@ class SqlJSONPathGene(
         return this.pathExpression.containsSameValueAs(other.pathExpression)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(pathExpression.flatView(excludePredicate))
-    }
+
 
     override fun mutationWeight(): Double {
         return pathExpression.mutationWeight()
