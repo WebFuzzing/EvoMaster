@@ -1170,4 +1170,15 @@ class GraphQLActionBuilderTest {
         assertEquals(85, actionCluster.size)
     }
 
+    @Test
+    fun faunaTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Fauna.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(13, actionCluster.size)
+    }
+
     }
