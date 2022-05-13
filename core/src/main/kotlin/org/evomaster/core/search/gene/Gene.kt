@@ -12,6 +12,7 @@ import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHis
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.evomaster.core.Lazy
 
 
 /**
@@ -20,7 +21,7 @@ import org.slf4j.LoggerFactory
  * The terms "gene" comes from the evolutionary algorithm literature
  *
  * When creating a new Gene type, should not extend directly from this class, but rather
- * from [SimpleGene], [CompositeGene] or [CompositeFixedGene].
+ * from [SimpleGene], [CompositeGene] or [CompositeFixedGene], or any of their subclasses.
  * There are test cases to impose this property.
  *
  *
@@ -59,10 +60,21 @@ abstract class Gene(
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
     }
 
+    var initialized : Boolean = false
+        private set
+
     init{
         if(name.isBlank()){
             throw IllegalArgumentException("Empty name for Gene")
         }
+    }
+
+    /*
+        TODO: make sure to call it not only on mutation, but also on printing out
+     */
+    private fun checkInitialized(){
+        if(! initialized)
+            throw IllegalStateException("Trying to use a gene that is not initialized")
     }
 
     override  val children : MutableList<Gene>
@@ -71,12 +83,31 @@ abstract class Gene(
     final override fun getViewOfChildren() : List<Gene> = children
 
     /**
+     * Initialize this gene with random data, as well as initializing all
+     * of its children, recursively.
+     *
+     * A gene cannot be used (eg, mutated or printed in the phenotype) before it is initialized
+     */
+    fun doInitialize(rand: Randomness){
+        if(initialized){
+            throw IllegalStateException("Gene already initialized")
+        }
+        if(parent == null) {
+            identifyAsRoot()
+        }
+        randomize(rand, false)
+        initialized = true
+        Lazy.assert{isValid()}
+    }
+
+    /**
      * Make a copy of this gene.
      */
     final override fun copy() : Gene{
         val copy = super.copy()
         if (copy !is Gene)
             throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
+        copy.initialized = initialized
         return copy
     }
 
@@ -166,6 +197,8 @@ abstract class Gene(
             enableAdaptiveGeneMutation: Boolean = false,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
     ){
+        checkInitialized()
+
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
         val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){

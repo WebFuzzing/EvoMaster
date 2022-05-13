@@ -225,8 +225,7 @@ class GeneTest {
 
         sample.filter { it.isMutable() }
                 .forEach { root ->
-                    root.identifyAsRoot()
-                    root.randomize(rand, true)
+                    root.doInitialize(rand)
                     assertTrue(root.isValid(), "Failed for ${root.javaClass}")
 
                     val copy = root.copy()
