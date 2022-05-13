@@ -18,6 +18,8 @@ class IntrospectiveQuery {
         private val log = LoggerFactory.getLogger(IntrospectiveQuery::class.java)
     }
 
+
+    //FIXME even with this it does not work when HTTPS to HTTP :(  Jersey sucks
     class RedirectFilterWorkAround : ClientResponseFilter {
         override fun filter(requestContext: ClientRequestContext, responseContext: ClientResponseContext) {
             if (responseContext.statusInfo.family != Response.Status.Family.REDIRECTION) return
