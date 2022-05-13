@@ -38,7 +38,7 @@ class TupleGene(
      */
     val lastElementTreatedSpecially: Boolean = false,
 
-    ) : Gene(name, elements) {
+    ) : CompositeFixedGene(name, elements) {
 
     init {
         if (elements.isEmpty()) {

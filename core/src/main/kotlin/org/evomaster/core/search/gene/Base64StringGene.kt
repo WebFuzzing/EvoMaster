@@ -14,7 +14,7 @@ import java.util.*
 class Base64StringGene(
         name: String,
         val data: StringGene = StringGene("data")
-) : Gene(name, mutableListOf(data)) {
+) : CompositeFixedGene(name, data) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(Base64StringGene::class.java)

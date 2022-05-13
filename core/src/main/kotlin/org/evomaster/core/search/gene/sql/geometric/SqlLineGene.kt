@@ -18,7 +18,7 @@ class SqlLineGene(
         x = FloatGene("x", value = 1.0f),
         y = FloatGene("y", value = 1.0f)
     )
-) : AbstractGeometricGene(name, p, q) {
+) : SqlAbstractGeometricGene(name, p, q) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlLineGene::class.java)

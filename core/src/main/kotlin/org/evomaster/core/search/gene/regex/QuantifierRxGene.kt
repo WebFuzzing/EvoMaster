@@ -33,7 +33,7 @@ class QuantifierRxGene(
     }
 
 
-    val atoms = mutableListOf<Gene>()
+    val atoms = mutableListOf<Gene>() //FIXME
 
     /**
      *  A * quantifier could lead to billions of atom elements.

@@ -9,7 +9,7 @@ class SqlBoxGene(
     name: String,
     p: SqlPointGene = SqlPointGene("p"),
     q: SqlPointGene = SqlPointGene("q")
-) : AbstractGeometricGene(name, p, q) {
+) : SqlAbstractGeometricGene(name, p, q) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBoxGene::class.java)

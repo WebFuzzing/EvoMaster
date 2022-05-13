@@ -18,13 +18,18 @@ import java.net.URLEncoder
 /**
  * @property refType presents the name of reference type of the object
  */
-open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null) : Gene(name, fields.toMutableList()) {
+open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null
+) : CompositeFixedGene(name, fields) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
 
     }
 
+    /*
+        In theory, it is possible to have an object with no fields...
+     */
+    override fun canBeChildless() = true
 
     override fun copyContent(): Gene {
         return ObjectGene(name, fields.map(Gene::copyContent), refType)

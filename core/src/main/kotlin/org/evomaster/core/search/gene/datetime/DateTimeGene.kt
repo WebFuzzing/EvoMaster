@@ -23,7 +23,7 @@ open class DateTimeGene(
     val date: DateGene = DateGene("date"),
     val time: TimeGene = TimeGene("time"),
     val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
-) : ComparableGene, Gene(name, mutableListOf(date, time)) {
+) : ComparableGene, CompositeFixedGene(name, listOf(date, time)) {
 
     enum class DateTimeGeneFormat {
         // YYYY-MM-DDTHH:SS:MM

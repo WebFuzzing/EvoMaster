@@ -58,6 +58,7 @@ abstract class StructuralElement (
      */
     open fun addChild(child: StructuralElement){  //TODO check usage
         child.parent = this
+        child.isDefinedRoot = false
         //TODO re-check proper use of in/out in Kotlin
         (children as MutableList<StructuralElement>).add(child)
     }
@@ -68,7 +69,7 @@ abstract class StructuralElement (
      *
      * FIXME see previous comment
      */
-    open fun addChildren(children : List<StructuralElement>){ //TODO check usage
+    fun addChildren(children : List<StructuralElement>){
         children.forEach { addChild(it) }
     }
 
@@ -104,8 +105,11 @@ abstract class StructuralElement (
      */
     open fun copy() : StructuralElement {
         // except individual, all elements should have a parent
-        if (parent == null && !isDefinedRoot())
-            LoggingUtil.uniqueWarn(log, "${this::class.java} should have a parent but currently it is null")
+        if (parent == null && !isDefinedRoot()) {
+            val msg = "${this::class.java} should have a parent but currently it is null"
+            //LoggingUtil.uniqueWarn(log, msg)
+            throw IllegalStateException(msg)
+        }
         val copy = copyContent()
         copy.postCopy(this)
         return copy

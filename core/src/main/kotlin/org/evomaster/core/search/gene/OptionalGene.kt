@@ -28,7 +28,7 @@ class OptionalGene(name: String,
                     * put them on.
                     */
                    var requestSelection: Boolean = false)
-    : Gene(name, mutableListOf(gene)) {
+    : CompositeFixedGene(name, gene) {
 
 
     companion object{

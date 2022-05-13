@@ -25,7 +25,7 @@ class MapGene<K, V>(
         var maxSize: Int? = null,
         var minSize: Int? = null,
         private var elements: MutableList<PairGene<K, V>> = mutableListOf()
-) : CollectionGene, Gene(name, elements)
+) : CollectionGene, CompositeGene(name, elements)
         where K : Gene, V: Gene {
 
     constructor(name : String, key: K, value: V, maxSize: Int? = null, minSize: Int? = null): this(name, PairGene("template", key, value), maxSize, minSize)

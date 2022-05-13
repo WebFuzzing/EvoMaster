@@ -45,7 +45,7 @@ class StringGene(
          */
         val specializationGenes: MutableList<Gene> = mutableListOf()
 
-) : ComparableGene, Gene(name, specializationGenes) {
+) : ComparableGene, CompositeGene(name, specializationGenes) {
 
     init {
         if (minLength>maxLength) {

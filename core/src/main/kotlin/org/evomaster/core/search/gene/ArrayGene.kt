@@ -40,7 +40,7 @@ class ArrayGene<T>(
          * of the templated, and then mutated/randomized
          */
         var elements: MutableList<T> = mutableListOf()
-) : CollectionGene, Gene(name, elements)
+) : CollectionGene, CompositeGene(name, elements)
         where T : Gene {
 
     init {

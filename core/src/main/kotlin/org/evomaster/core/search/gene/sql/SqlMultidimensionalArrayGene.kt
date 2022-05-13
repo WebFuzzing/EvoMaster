@@ -3,10 +3,7 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
-import org.evomaster.core.search.gene.ArrayGene
-import org.evomaster.core.search.gene.CollectionGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.CollectionImpact
 import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
@@ -60,7 +57,7 @@ class SqlMultidimensionalArrayGene<T>(
          * the length of each dimension is 0).
          */
         private val nestedListOfElements: MutableList<Any> = mutableListOf()
-) : CollectionGene, Gene(name, listOf()/* FIXME */) where T : Gene {
+) : CollectionGene, CompositeFixedGene(name, listOf()) where T : Gene {
 
     init {
         if (numberOfDimensions < 0)

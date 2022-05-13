@@ -28,7 +28,7 @@ class SeededGene<T>(
      * otherwise apply [gene]
      */
     var employSeeded: Boolean = false
-) : Gene(name, mutableListOf(gene, seeded)) where T : ComparableGene, T: Gene{
+) : CompositeFixedGene(name, listOf(gene, seeded)) where T : ComparableGene, T: Gene{
 
     /**
      * we might prevent search to manipulate the [employSeeded]

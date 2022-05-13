@@ -3,22 +3,17 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.StructuralElement
 
 /**
- * A Gene that has internal genes
+ * A Gene that has internal genes.
+ * If number of children is not mutable, ie fixed, then should rather use the subclass [CompositeFixedGene]
  */
 abstract class CompositeGene(
         name: String,
-        children: MutableList<Gene>
-        /*
-            TODO should cases for mutable and non-mutable. override all modification methods.
-            ie, pass as read-only List, and check if mutable. if so, handle it accordingly
-         */
+        children: MutableList<out Gene>
 ) : Gene(name, children){
 
-    init {
-        if(children.isEmpty() && !canBeChildless()){
-            throw IllegalStateException("A composite gene must have at least 1 internal gene")
-        }
-    }
+    constructor(name: String, child: Gene) : this(name, mutableListOf(child))
 
-    open fun canBeChildless() = false
+
+
+
 }

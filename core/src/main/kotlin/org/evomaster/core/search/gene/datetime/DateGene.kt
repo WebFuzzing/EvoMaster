@@ -30,7 +30,7 @@ class DateGene(
     val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
     val onlyValidDates: Boolean = false,
     val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
-) : ComparableGene, Gene(name, mutableListOf(year, month, day)) {
+) : ComparableGene, CompositeFixedGene(name, listOf(year, month, day)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(DateGene::class.java)

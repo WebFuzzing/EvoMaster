@@ -18,7 +18,7 @@ class PairGene<F,S>(
          * whether the [first] is mutable
          */
         val isFirstMutable : Boolean = true //TODO shouldn't be first.isMutable()?
-):Gene(name, listOf(first, second)) where F: Gene, S: Gene{
+):CompositeFixedGene(name, listOf(first, second)) where F: Gene, S: Gene{
 
     companion object{
 

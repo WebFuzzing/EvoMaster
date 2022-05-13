@@ -47,14 +47,12 @@ abstract class Gene(
          */
         var name: String,
         /**
-         * TODO refactor
-         * this is just initializing the parent-child relationship, not setting any child.
-         *
-         * TODO also should be Gene, as why a Gene would have a child that is not a Gene??? do
-         * we have cases for this?
+         * The direct node inside this Gene (excluding templates).
+         * These children might have their own children.
+         * Note that children while have links back to their "parents".
          */
-        children: List<Gene> //TODO likely put it to Mutable
-) : StructuralElement(children.toMutableList()){
+        children: MutableList<out Gene>
+) : StructuralElement(children){
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)

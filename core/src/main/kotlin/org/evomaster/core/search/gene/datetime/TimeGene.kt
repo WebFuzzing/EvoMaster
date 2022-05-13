@@ -25,7 +25,7 @@ class TimeGene(
     val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
     val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
     val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
-) : Comparable<TimeGene>, Gene(name, mutableListOf<Gene>(hour, minute, second)) {
+) : Comparable<TimeGene>, CompositeFixedGene(name, listOf(hour, minute, second)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(TimeGene::class.java)

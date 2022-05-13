@@ -3,11 +3,8 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.io.File
 import kotlin.reflect.full.isSuperclassOf
-import kotlin.reflect.KClass
 
 class GeneTest {
 
@@ -109,7 +106,7 @@ class GeneTest {
         sample.forEach { root ->
             root.identifyAsRoot()
             assertTrue(root.isDefinedRoot())
-            val wholeTree = root.flatView{it != root}
+            val wholeTree = root.flatView().filter { it != root }
 
             val errors = wholeTree.filter { it.isDefinedRoot() }
             if(errors.isNotEmpty()){
@@ -125,7 +122,7 @@ class GeneTest {
 
         sample.forEach { root ->
             root.identifyAsRoot()
-            val wholeTree = root.flatView{it != root}
+            val wholeTree = root.flatView().filter { it != root }
 
             wholeTree.forEach { n ->
                 var p  = n
@@ -144,7 +141,7 @@ class GeneTest {
             root.identifyAsRoot()
             val copy = root.copy()
             assertTrue(copy != root) //TODO what is immutable root? might fail
-            val wholeTree = copy.flatView{it != root}
+            val wholeTree = copy.flatView().filter { it != root }
 
             wholeTree.forEach { n ->
                 var p = n

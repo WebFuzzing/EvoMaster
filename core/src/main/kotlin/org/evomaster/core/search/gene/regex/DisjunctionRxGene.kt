@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
@@ -24,7 +25,7 @@ class DisjunctionRxGene(
         var matchStart: Boolean,
         /** does this disjunction match the end of the string, or could it be at any position? */
         var matchEnd: Boolean
-) : RxAtom, CompositeGene(name, terms.toMutableList()) {
+) : RxAtom, CompositeFixedGene(name, terms) {
 
     init{
         if(terms.any { it !is RxTerm }){

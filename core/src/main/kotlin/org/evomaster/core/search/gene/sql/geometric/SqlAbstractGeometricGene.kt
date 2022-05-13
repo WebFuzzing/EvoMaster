@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
-abstract class AbstractGeometricGene(
+abstract class SqlAbstractGeometricGene(
     name: String,
     protected val p: SqlPointGene,
     protected val q: SqlPointGene,

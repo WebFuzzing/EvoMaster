@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
@@ -18,7 +19,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 class RegexGene(
         name: String,
         val disjunctions: DisjunctionListRxGene
-) : CompositeGene(name, mutableListOf(disjunctions)) {
+) : CompositeFixedGene(name, disjunctions) {
 
     override fun copyContent(): Gene {
         return RegexGene(name, disjunctions.copyContent() as DisjunctionListRxGene)

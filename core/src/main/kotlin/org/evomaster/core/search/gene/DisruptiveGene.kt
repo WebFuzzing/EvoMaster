@@ -15,7 +15,8 @@ import org.slf4j.LoggerFactory
  * A gene that has a major, disruptive impact on the whole chromosome.
  * As such, it should be mutated only with low probability
  */
-class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) : Gene(name, mutableListOf(gene))
+class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
+) : CompositeFixedGene(name, gene)
         where T : Gene {
 
     init {
