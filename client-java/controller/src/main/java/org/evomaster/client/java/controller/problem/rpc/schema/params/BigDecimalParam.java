@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
@@ -65,24 +66,31 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
 
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
-        if (dto.stringValue == null){
-            setValue(null);
-            return;
-        }
+        BigDecimal bd = parseValue(dto.stringValue);
+        setValue(bd);
+    }
 
+    private BigDecimal parseValue(String stringValue){
+        if (stringValue == null)
+            return null;
 
         MathContext mc = null;
         BigDecimal bd = null;
         if (getPrecision() == null)
-            bd = new BigDecimal(dto.stringValue);
+            bd = new BigDecimal(stringValue);
         else {
             mc = new MathContext(getPrecision());
-            bd = new BigDecimal(dto.stringValue, mc);
+            bd = new BigDecimal(stringValue, mc);
         }
 
         if (getScale() != null)
             bd = bd.setScale(getScale(), RoundingMode.HALF_UP);
+        return bd;
+    }
 
+    @Override
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        BigDecimal bd = parseValue(json.toString());
         setValue(bd);
     }
 

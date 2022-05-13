@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
@@ -68,6 +69,23 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
         for (Object e : (Set) instance){
             NamedTypedValue copy = t.copyStructureWithProperties();
             copy.setValueBasedOnInstance(e);
+            values.add(copy);
+        }
+        setValue(values);
+    }
+
+    @Override
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        NamedTypedValue t = getType().getTemplate();
+        // employ linked hash set to avoid flaky tests
+        Set<NamedTypedValue> values = new LinkedHashSet<>();
+
+        assert json instanceof String;
+        Object instance = parseValueWithJson((String) json);
+
+        for (Object e : (Set) instance){
+            NamedTypedValue copy = t.copyStructureWithProperties();
+            copy.setValueBasedOnInstanceOrJson(e);
             values.add(copy);
         }
         setValue(values);
