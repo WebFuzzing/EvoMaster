@@ -10,6 +10,7 @@ import org.evomaster.core.problem.rest.service.ResourceSampler;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -28,7 +29,11 @@ public class ExternalServiceSpoofingEMTest extends SpringTestBase {
         SpringTestBase.initClass(serviceController,config);
     }
 
-    @Test
+    /**
+     * The test is disabled since, encountered some errors within the
+     * existing e2e tests. Will be completed once those sorted.
+     */
+    @Disabled
     public void externalServiceSuccessTest() throws Throwable {
         String[] args = new String[]{
                 "--createTests", "false",
@@ -41,7 +46,7 @@ public class ExternalServiceSpoofingEMTest extends SpringTestBase {
                 "--outputFormat", "JAVA_JUNIT_5",
                 "--outputFolder", "target/em-tests/ExternalServiceEM",
                 "--externalServiceIPSelectionStrategy", "USER",
-                "--externalServiceIP", "127.0.0.5"
+                "--externalServiceIP", "127.0.0.20"
         };
 
         Injector injector = init(Arrays.asList(args));

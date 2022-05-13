@@ -35,11 +35,11 @@ class ExternalServices {
      */
     fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
         // TODO: The below code intentionally commented out
-        val ip = getIP()
-        lastIPAddress = ip
-        val wm : WireMockServer = initWireMockServer(ip)
-        updateDNSCache(externalServiceInfo.remoteHostname, ip)
-        externalServiceInfo.assignWireMockServer(wm)
+//        val ip = getIP()
+//        lastIPAddress = ip
+//        val wm : WireMockServer = initWireMockServer(ip)
+//        updateDNSCache(externalServiceInfo.remoteHostname, ip)
+//        externalServiceInfo.assignWireMockServer(wm)
         externalServiceInfos.add(externalServiceInfo)
     }
 
@@ -140,6 +140,6 @@ class ExternalServices {
     }
 
     companion object {
-        private const val WIREMOCK_PORT : Int = 9000
+        private const val WIREMOCK_PORT : Int = 8080
     }
 }
