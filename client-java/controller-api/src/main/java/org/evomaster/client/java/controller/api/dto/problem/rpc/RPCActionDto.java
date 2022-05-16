@@ -23,6 +23,11 @@ public class RPCActionDto {
     public String clientInfo;
 
     /**
+     * a variable referring to client instance
+     */
+    public String clientVariable;
+
+    /**
      * name of the action
      */
     public String actionName;
@@ -94,6 +99,7 @@ public class RPCActionDto {
         RPCActionDto copy = new RPCActionDto();
         copy.interfaceId = interfaceId;
         copy.clientInfo = clientInfo;
+        copy.controllerVariable = controllerVariable;
         copy.actionName = actionName;
         copy.responseParam = responseParam;
         if (requestParams != null)

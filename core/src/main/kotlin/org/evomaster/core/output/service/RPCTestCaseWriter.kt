@@ -6,7 +6,6 @@ import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
-import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.service.RPCEndpointsHandler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
@@ -199,6 +198,36 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
 
     private fun nSpace(n: Int): String{
         return (0 until n).joinToString("") { " " }
+    }
+
+
+    override fun addExtraInitStatement(lines: Lines) {
+        if (!config.enablePureRPCTestGeneration) return
+
+        val clientVariables = rpcHandler.getClientAndItsVariable()
+        clientVariables.forEach { (t, u)->
+            val getClient = "${TestSuiteWriter.controller}.getRPCClient(${u.second})"
+            when{
+                config.outputFormat.isKotlin()-> lines.add("$t = $getClient as $u")
+                config.outputFormat.isJava() -> lines.add("$t = ($u) $getClient")
+                else -> throw IllegalStateException("NOT SUPPORT for the format : ${config.outputFormat}")
+            }
+            lines.appendSemicolon(format)
+        }
+    }
+
+    override fun addExtraStaticVariables(lines: Lines) {
+        if (!config.enablePureRPCTestGeneration) return
+
+        val clientVariables = rpcHandler.getClientAndItsVariable()
+        clientVariables.forEach { (t, u)->
+            when{
+                config.outputFormat.isKotlin()-> lines.add("private lateinit var $t: ${u.first}")
+                config.outputFormat.isJava() -> lines.add("private final ${u.first} $t")
+                else -> throw IllegalStateException("NOT SUPPORT for the format : ${config.outputFormat}")
+            }
+            lines.appendSemicolon(format)
+        }
     }
 
 }

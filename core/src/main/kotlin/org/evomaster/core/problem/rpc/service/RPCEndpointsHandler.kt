@@ -80,6 +80,7 @@ class RPCEndpointsHandler {
      */
     private val authEndpointCluster = mutableMapOf<Int, RPCActionDto>()
 
+
     /**
      * key is type in the schema
      * value is object gene for it
@@ -218,6 +219,9 @@ class RPCEndpointsHandler {
      * reset [actionCluster] based on interface schemas specified in [problem]
      */
     fun initActionCluster(problem: RPCProblemDto, actionCluster: MutableMap<String, Action>, infoDto: SutInfoDto){
+        val clientVariableMap = problem.schemas.mapIndexed {i, e->
+            e.interfaceId!! to nameClientVariable(i, e.interfaceId.split("\\.").last())
+        }.toMap()
 
         problem.schemas.forEach { i->
             i.types.sortedBy { it.type.depth }
@@ -228,8 +232,9 @@ class RPCEndpointsHandler {
         }
 
         actionCluster.clear()
-        problem.schemas.forEach { i->
+        problem.schemas.forEach{ i->
             i.endpoints.forEach{e->
+                e.clientVariable = clientVariableMap[e.interfaceId]
                 actionSchemaCluster.putIfAbsent(actionName(i.interfaceId, e.actionName), e)
                 val name = actionName(i.interfaceId, e.actionName)
                 if (actionCluster.containsKey(name))
@@ -246,6 +251,7 @@ class RPCEndpointsHandler {
                 Lazy.assert { i.authEndpoints.size == i.authEndpointReferences.size }
                 i.authEndpoints.forEachIndexed { index, e ->
                     //val name = actionName(i.interfaceId, e.actionName)
+                    e.clientVariable = clientVariableMap[e.interfaceId]
                     if (authEndpointCluster.containsKey(index))
                         throw IllegalStateException("auth info at $index exists in the authEndpointCluster")
                     val key = i.authEndpointReferences[index]
@@ -260,6 +266,7 @@ class RPCEndpointsHandler {
                 problem.localAuthEndpoints.size == problem.localAuthEndpointReferences.size
             }
             problem.localAuthEndpoints.forEachIndexed { index, rpcActionDto ->
+                rpcActionDto.clientVariable = clientVariableMap[rpcActionDto.interfaceId]
                 authEndpointCluster[problem.localAuthEndpointReferences[index]] = rpcActionDto
             }
         }
@@ -269,6 +276,8 @@ class RPCEndpointsHandler {
         // report statistic of endpoints
         reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 })
     }
+
+    private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
 
     private fun reportEndpointsStatistics(numSchema: Int, skipped: Int){
         LoggingUtil.getInfoLogger().apply {
@@ -822,4 +831,17 @@ class RPCEndpointsHandler {
         return objType.copy().apply { this.name = param.name }
     }
 
+    /**
+     * @return a list of map of
+     *      key is client variable
+     *      value is client info, client class name to interface class name
+     */
+    fun getClientAndItsVariable() : Map<String, Pair<String, String>>{
+        val map = mutableMapOf<String, Pair<String, String>>()
+        actionSchemaCluster.forEach { (t, u) ->
+            Lazy.assert { u.clientVariable != null && u.clientInfo != null }
+            map.putIfAbsent(u.clientVariable, u.clientInfo to u.interfaceId)
+        }
+        return map
+    }
 }
