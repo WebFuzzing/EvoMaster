@@ -206,10 +206,10 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
 
         val clientVariables = rpcHandler.getClientAndItsVariable()
         clientVariables.forEach { (t, u)->
-            val getClient = "${TestSuiteWriter.controller}.getRPCClient(${u.second})"
+            val getClient = "${TestSuiteWriter.controller}.getRPCClient(\"${u.second}\")"
             when{
-                config.outputFormat.isKotlin()-> lines.add("$t = $getClient as $u")
-                config.outputFormat.isJava() -> lines.add("$t = ($u) $getClient")
+                config.outputFormat.isKotlin()-> lines.add("$t = $getClient as ${handleClientType(u.first)}")
+                config.outputFormat.isJava() -> lines.add("$t = (${handleClientType(u.first)}) $getClient")
                 else -> throw IllegalStateException("NOT SUPPORT for the format : ${config.outputFormat}")
             }
             lines.appendSemicolon(format)
@@ -222,12 +222,19 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
         val clientVariables = rpcHandler.getClientAndItsVariable()
         clientVariables.forEach { (t, u)->
             when{
-                config.outputFormat.isKotlin()-> lines.add("private lateinit var $t: ${u.first}")
-                config.outputFormat.isJava() -> lines.add("private final ${u.first} $t")
+                config.outputFormat.isKotlin()-> lines.add("private lateinit var $t: ${handleClientType(u.first)}")
+                config.outputFormat.isJava() -> lines.add("private static ${handleClientType(u.first)} $t")
                 else -> throw IllegalStateException("NOT SUPPORT for the format : ${config.outputFormat}")
             }
             lines.appendSemicolon(format)
         }
     }
+
+    /*
+        the inner class in java could be represented with $ in string format
+        for instance org.thrift.ncs.client.NcsService$Client,
+        then we need to further handle it
+     */
+    private fun handleClientType(clientType: String) = clientType.replace("\$",".")
 
 }

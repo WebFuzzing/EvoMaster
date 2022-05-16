@@ -525,10 +525,10 @@ class TestSuiteWriter {
                     appendSemicolon(lines)
                 }
             }
-
+            testCaseWriter.addExtraInitStatement(lines)
         }
 
-        testCaseWriter.addExtraInitStatement(lines)
+
 
         if (format.isJavaScript()) {
             lines.append(");")

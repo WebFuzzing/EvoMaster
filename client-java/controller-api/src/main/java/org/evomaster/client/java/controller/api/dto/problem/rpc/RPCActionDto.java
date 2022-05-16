@@ -99,7 +99,7 @@ public class RPCActionDto {
         RPCActionDto copy = new RPCActionDto();
         copy.interfaceId = interfaceId;
         copy.clientInfo = clientInfo;
-        copy.controllerVariable = controllerVariable;
+        copy.clientVariable = clientVariable;
         copy.actionName = actionName;
         copy.responseParam = responseParam;
         if (requestParams != null)

@@ -220,7 +220,7 @@ class RPCEndpointsHandler {
      */
     fun initActionCluster(problem: RPCProblemDto, actionCluster: MutableMap<String, Action>, infoDto: SutInfoDto){
         val clientVariableMap = problem.schemas.mapIndexed {i, e->
-            e.interfaceId!! to nameClientVariable(i, e.interfaceId.split("\\.").last())
+            e.interfaceId!! to nameClientVariable(i, e.interfaceId.split(".").last())
         }.toMap()
 
         problem.schemas.forEach { i->
@@ -277,7 +277,7 @@ class RPCEndpointsHandler {
         reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 })
     }
 
-    private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
+    private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_client${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
 
     private fun reportEndpointsStatistics(numSchema: Int, skipped: Int){
         LoggingUtil.getInfoLogger().apply {
