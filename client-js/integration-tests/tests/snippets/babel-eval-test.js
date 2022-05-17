@@ -551,7 +551,7 @@ test("test array includes with null found", async () => {
     expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_true")).toBe(1);
     expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_false") < 1).toBe(true);
 
-    k = f("bar");
+    k = f('3');
     expect(k).toBe(false);
     expect(ET.getValue("MethodReplacement_at_test.ts_00003_0_BOOLEAN_false")).toBe(1);
 
