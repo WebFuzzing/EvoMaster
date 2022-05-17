@@ -1,4 +1,4 @@
-import DistanceHelper from "../heuristic/DistanceHelper";
+import DistanceHelper, {EqualityAlgorithm} from "../heuristic/DistanceHelper";
 import assert from "assert";
 
 
@@ -7,10 +7,12 @@ export default class CollectionsDistanceUtils {
 
     /**
      * Compute distance of object from each one of the elements in the collection.
-     * But look only up to limit elements.
-     * A negative values means look at all elements
+     * @param c is a collection to compute the distance
+     * @param o is an element to compute its distance in the collection c
+     * @param equalityRule a rule to process equality comparison
+     * @param limit But look only up to limit elements. A negative values means look at all elements
      */
-    public static getHeuristicToIncludes(c: Array<any>, o: any, limit: number = -1): number {
+    public static getHeuristicToIncludes(c: Array<any>, o: any, equalityRule : EqualityAlgorithm, limit: number = -1): number {
         // check c is null?
 
         const result = c.includes(o);
@@ -18,7 +20,7 @@ export default class CollectionsDistanceUtils {
             return 1;
         } else if (c && c.length == 0){
             return DistanceHelper.H_REACHED_BUT_EMPTY;
-        } else if (o == null || o == undefined){
+        } else if (o === null || o === undefined){
             return DistanceHelper.H_NOT_EMPTY;
         } else {
 
@@ -35,7 +37,7 @@ export default class CollectionsDistanceUtils {
                 if (value == null)
                     continue;
 
-                let d = DistanceHelper.getDistance(o, value);
+                let d = DistanceHelper.getDistance(o, value, equalityRule);
                 if (d == Number.MAX_VALUE)
                     continue;
                 let h = DistanceHelper.heuristicFromScaledDistanceWithBase(base, d)

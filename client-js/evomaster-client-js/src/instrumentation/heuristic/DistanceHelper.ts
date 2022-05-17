@@ -1,5 +1,16 @@
 import assert from "assert";
 
+/**
+ * see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness#abstract_equality_strict_equality_and_same_value_in_the_specification
+ */
+export enum EqualityAlgorithm{
+    AbstractEquality, // ==
+    StrictEquality, // ===
+    SameValueZero, // Object.is()
+    SameValue// same with Object.is(), but +0 and -0 are considered equal
+}
+
+
 export default class DistanceHelper {
 
     public static readonly H_REACHED_BUT_NULL = 0.05;
@@ -13,7 +24,6 @@ export default class DistanceHelper {
 
     //2^16=65536, max distance for a char
     public static readonly MAX_CHAR_DISTANCE = 65_536;
-
 
     public static getDistanceToEqualityNumber(a: number, b: number): number {
         if (!Number.isFinite(a) || !Number.isFinite(b)) {
@@ -53,7 +63,13 @@ export default class DistanceHelper {
         return dist;
     }
 
-    public static getDistance(left: any, right: any) : number{
+    /**
+     * compute distance between left and right that is used in collection distance
+     * @param left
+     * @param right
+     * @param equalityRule a rule to decide how to process equality comparison
+     */
+    public static getDistance(left: any, right: any, equalityRule : EqualityAlgorithm) : number{
         // TODO check null?
 
         const ltype = typeof left;
@@ -61,18 +77,40 @@ export default class DistanceHelper {
 
         let d : number;
 
-        if (ltype == "number" && rtype == "number")
-            d = this.getDistanceToEqualityNumber(left, right);
-        else if (ltype == "string" && rtype == "string")
+        if (ltype == "number" && rtype == "number"){
+            d = this.getDistanceToEqualityNumberWithAlgorithm(left, right, equalityRule);
+        } else if (ltype == "string" && rtype == "string")
             d = this.getLeftAlignmentDistance(left, right);
-        else if (ltype == "string" && rtype == "number"){
-            d = this.getLeftAlignmentDistance(left, right.toString());
-        } else if (rtype == "string" && ltype == "number"){
-            d = this.getLeftAlignmentDistance(left.toString(), right);
-        } else
-            d = Number.MAX_VALUE;
+        else {
+            if (equalityRule !== EqualityAlgorithm.AbstractEquality){
+                if (ltype == "string" && rtype == "number"){
+                    d = this.getLeftAlignmentDistance(left, right.toString());
+                } else if (rtype == "string" && ltype == "number"){
+                    d = this.getLeftAlignmentDistance(left.toString(), right);
+                } else
+                    d = Number.MAX_VALUE;
+            }else{
+                d = Number.MAX_VALUE;
+            }
+        }
         return d;
     }
+
+    private static getDistanceToEqualityNumberWithAlgorithm(a: number, b: number, equlity: EqualityAlgorithm): number {
+        // handling NaN
+        if (isNaN(a) || isNaN(b)){
+            if (equlity === EqualityAlgorithm.SameValue || equlity === EqualityAlgorithm.SameValueZero && (isNaN(a) && isNaN(b))) return 0;
+            return Number.MAX_VALUE
+        }
+        // handling +0 and -0
+        if (a === 0 && a === b){
+            // TODO need to check
+            if (equlity === EqualityAlgorithm.SameValue && !Object.is(a, b))
+                return Number.MIN_VALUE;
+        }
+        return this.getDistanceToEqualityNumber(a, b)
+    }
+
 
 
     /**
