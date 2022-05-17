@@ -12,10 +12,13 @@ export default class CollectionsDistanceUtils {
      * @param equalityRule a rule to process equality comparison
      * @param limit But look only up to limit elements. A negative values means look at all elements
      */
-    public static getHeuristicToIncludes(c: Array<any>, o: any, equalityRule : EqualityAlgorithm, limit: number = -1): number {
+    public static getHeuristicToIncludes(c: Array<any>, o: any, equalityRule : EqualityAlgorithm=EqualityAlgorithm.SameValueZero, limit: number = -1): number {
         // check c is null?
 
-        const result = c.includes(o);
+        let result = false;
+        if (equalityRule == EqualityAlgorithm.SameValueZero)
+            result = c.includes(o);
+
         if (result){
             return 1;
         } else if (c && c.length == 0){
@@ -45,7 +48,7 @@ export default class CollectionsDistanceUtils {
                 if (h > max)
                     max = h;
             }
-            assert(max < 1);
+            assert(max <= 1);
             return max;
         }
 

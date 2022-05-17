@@ -82,7 +82,7 @@ export default class DistanceHelper {
         } else if (ltype == "string" && rtype == "string")
             d = this.getLeftAlignmentDistance(left, right);
         else {
-            if (equalityRule !== EqualityAlgorithm.AbstractEquality){
+            if (equalityRule === EqualityAlgorithm.AbstractEquality){
                 if (ltype == "string" && rtype == "number"){
                     d = this.getLeftAlignmentDistance(left, right.toString());
                 } else if (rtype == "string" && ltype == "number"){
@@ -104,9 +104,13 @@ export default class DistanceHelper {
         }
         // handling +0 and -0
         if (a === 0 && a === b){
-            // TODO need to check
+            /*
+                TODO need to check with Andrea
+                currently, we employ `epsilon` to provide h between -0 and +0 for SameValue algorithm
+                might need a bit handling for -0 and +0 in core of evomaster
+             */
             if (equlity === EqualityAlgorithm.SameValue && !Object.is(a, b))
-                return Number.MIN_VALUE;
+                return Number.EPSILON;
         }
         return this.getDistanceToEqualityNumber(a, b)
     }
