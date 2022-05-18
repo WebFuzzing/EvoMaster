@@ -35,11 +35,13 @@ class ExternalServices {
      */
     fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
         // TODO: The below code intentionally commented out
-//        val ip = getIP()
-//        lastIPAddress = ip
-//        val wm : WireMockServer = initWireMockServer(ip)
-//        updateDNSCache(externalServiceInfo.remoteHostname, ip)
-//        externalServiceInfo.assignWireMockServer(wm)
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+            val ip = getIP()
+            lastIPAddress = ip
+            val wm : WireMockServer = initWireMockServer(ip)
+            updateDNSCache(externalServiceInfo.remoteHostname, ip)
+            externalServiceInfo.assignWireMockServer(wm)
+        }
         externalServiceInfos.add(externalServiceInfo)
     }
 

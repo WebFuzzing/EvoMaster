@@ -1675,6 +1675,10 @@ class EMConfig {
 
     enum class ExternalServiceIPSelectionStrategy {
         /**
+         * To disabled external service handling
+         */
+        NONE,
+        /**
          * Default will assign 127.0.0.2
          */
         DEFAULT,
@@ -1691,9 +1695,11 @@ class EMConfig {
     }
 
     @Cfg("Specify a method to select the first external service spoof IP address.")
-    var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.DEFAULT
+    @Experimental
+    var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
 
     @Cfg("User provided external service IP.")
+    @Experimental
     var externalServiceIP : String = "127.0.0.2"
 
     fun timeLimitInSeconds(): Int {
