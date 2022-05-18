@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
@@ -64,12 +65,21 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
         handleConstraintsInCopy(copy);
     }
 
+    private BigInteger parseValue(String stringValue){
+        if (stringValue == null)
+            return null;
+
+        return new BigInteger(stringValue);
+    }
+
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
-        if (dto.stringValue == null)
-            setValue(null);
-        else
-            setValue(new BigInteger(dto.stringValue));
+        setValue(parseValue(dto.stringValue));
+    }
+
+    @Override
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        setValue(parseValue(json.toString()));
     }
 
     @Override

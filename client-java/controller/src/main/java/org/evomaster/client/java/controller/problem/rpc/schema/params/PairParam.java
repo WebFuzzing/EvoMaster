@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PairType;
@@ -57,6 +58,17 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
         NamedTypedValue second = getType().getSecondTemplate().copyStructureWithProperties();
         first.setValueBasedOnInstance(((Map.Entry)instance).getKey());
         second.setValueBasedOnInstance(((Map.Entry)instance).getValue());
+        setValue(new AbstractMap.SimpleEntry(first, second));
+    }
+
+    @Override
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        if (json == null) return;
+        assert json instanceof Map.Entry;
+        NamedTypedValue first = getType().getFirstTemplate().copyStructureWithProperties();
+        NamedTypedValue second = getType().getSecondTemplate().copyStructureWithProperties();
+        first.setValueBasedOnInstanceOrJson(((Map.Entry)json).getKey());
+        second.setValueBasedOnInstanceOrJson(((Map.Entry)json).getValue());
         setValue(new AbstractMap.SimpleEntry(first, second));
     }
 

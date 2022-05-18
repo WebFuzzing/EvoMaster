@@ -31,7 +31,6 @@ import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 import org.evomaster.client.java.controller.problem.rpc.RPCEndpointsBuilder;
 import org.evomaster.client.java.instrumentation.BootTimeObjectiveInfo;
-import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
@@ -566,16 +565,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                 NamedTypedValue p = copy.getRequestParams().get(i);
                                 try {
                                     String stringValue = actionDto.inputParams.get(i);
-                                    if (p instanceof PrimitiveOrWrapperParam){
-                                        ((PrimitiveOrWrapperParam<?>) p).setValueBasedOnStringValue(stringValue);
-                                    } else if (p instanceof StringParam){
-                                        ((StringParam) p).setValue(stringValue);
-                                    } else if (p instanceof ByteBufferParam){
-                                        ((ByteBufferParam) p).setValue(stringValue.getBytes());
-                                    } else {
-                                        Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
-                                        p.setValueBasedOnInstance(value);
-                                    }
+//                                    Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
+                                    p.setValueBasedOnInstanceOrJson(stringValue);
+
                                 } catch (JsonProcessingException e) {
                                     throw new IllegalStateException(
                                             String.format("Seeded Test Error: cannot parse the seeded test %s at the parameter %d with error msg: %s", actionDto, i, e.getMessage()));
