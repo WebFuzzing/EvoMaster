@@ -4,7 +4,7 @@ import ExecutionTracer from "../staticstate/ExecutionTracer";
 import {StringSpecialization} from "../shared/StringSpecialization";
 import {StringSpecializationInfo} from "../shared/StringSpecializationInfo";
 import Truthness from "../heuristic/Truthness";
-import DistanceHelper from "../heuristic/DistanceHelper";
+import DistanceHelper, {EqualityAlgorithm} from "../heuristic/DistanceHelper";
 import {ReplacementType} from "./ReplacementType";
 import CollectionsDistanceUtils from "./CollectionsDistanceUtils";
 
@@ -29,7 +29,7 @@ export default class SquareBracketsHandler{
 
         const objType = typeof object
 
-        if (object == null || object == undefined ||
+        if (object === null || object === undefined ||
             // handle only object type
             objType != "object" ||
             // handle taint analysis for null, undefined, number and string
@@ -61,8 +61,10 @@ export default class SquareBracketsHandler{
         } else{
             /*
                 we might set limit here for squareBrackets, ie, check all properties in the obj
+
+                we allow the abstract equality comparison to compute the distance
              */
-            let d = CollectionsDistanceUtils.getHeuristicToIncludes(keys, property, -1);
+            let d = CollectionsDistanceUtils.getHeuristicToIncludes(keys, property, EqualityAlgorithm.AbstractEquality);
             h = new Truthness(d, 1);
         }
 

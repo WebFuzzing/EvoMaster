@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
@@ -8,7 +9,6 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.CollectionT
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -73,6 +73,25 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
             Object e = Array.get(instance, i);
             NamedTypedValue copy = t.copyStructureWithProperties();
             copy.setValueBasedOnInstance(e);
+            values.add(copy);
+        }
+        setValue(values);
+    }
+
+    @Override
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        NamedTypedValue t = getType().getTemplate();
+        List<NamedTypedValue> values = new ArrayList<>();
+
+        assert json instanceof String;
+
+        Object instance = parseValueWithJson((String) json);
+
+        int length = Array.getLength(instance);
+        for (int i = 0; i < length; i++){
+            Object e = Array.get(instance, i);
+            NamedTypedValue copy = t.copyStructureWithProperties();
+            copy.setValueBasedOnInstanceOrJson(e);
             values.add(copy);
         }
         setValue(values);

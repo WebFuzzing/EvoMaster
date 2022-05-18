@@ -106,10 +106,17 @@ case studies in [EMB](https://github.com/EMResearch/EMB).
 
 * How to [Download and Install EvoMaster on Windows 10](https://youtu.be/uh_XzGxws9o), using its _.msi_ installer. 
  
-<!---
 ### Hiring
 
-Each year we usually have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
+Depending on the year, we might have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
+
+Current positions:
+* 2022: 2 PhD students (ads not out yet)
+* 2023: 2 PhD students and 1 postdoc (ads not out yet)
+
+For questions on these positions, please contact Prof. Andrea Arcuri. 
+
+<!---
 For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
 --->
 

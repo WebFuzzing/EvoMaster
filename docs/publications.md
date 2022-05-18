@@ -10,6 +10,17 @@ To help to replicate previous studies, for most of these papers we also provide 
 This explained in more details [here](replicating_studies.md).
 Also, some of these papers provides full replication packages, which are linked directly in the papers (and not stored in this repository).
 
+
+## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
+
+* M. Zhang, A. Arcuri.
+  *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
+  [[arXiv](https://arxiv.org/abs/2205.05325)]
+  [[Scripts](exp/arxiv_open_problems.py)]
+
+## Peer-Reviewed Publications
+
+
 ### 2022
 
 * A. Belhadi, M. Zhang, A. Arcuri.

@@ -321,4 +321,29 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     public double pDoubleResponse() {
         return 0;
     }
+
+    @Override
+    public String seedcheck(List<Long> longList, List<Integer> integerList, List<BigNumberObj> objList, Map<Integer, String> integerStringMap) {
+        StringBuilder sb = new StringBuilder();
+        if (longList != null){
+            longList.forEach(l-> sb.append(l).append(";"));
+            sb.append(System.lineSeparator());
+        }
+
+        if (integerList != null){
+            integerList.forEach(l-> sb.append(l).append(";"));
+            sb.append(System.lineSeparator());
+        }
+
+        if (objList != null){
+            objList.forEach(l-> sb.append(l.toString()).append(";"));
+            sb.append(System.lineSeparator());
+        }
+
+        if (integerStringMap != null){
+            integerStringMap.forEach((key, value) -> sb.append(key).append(":").append(value).append(";"));
+        }
+
+        return sb.toString();
+    }
 }

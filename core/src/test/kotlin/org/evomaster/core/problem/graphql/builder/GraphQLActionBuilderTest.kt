@@ -729,7 +729,25 @@ class GraphQLActionBuilderTest {
 
         obj.flatView().forEach {
             if (it is ObjectGene)
-                GraphQLActionBuilder.handleAllCyclesInObjectFields(it)
+                GraphQLActionBuilder.handleAllCyclesAndLimitInObjectFields(it)
+        }
+
+        assertTrue(!obj.isActive)
+
+    }
+
+    @Test
+    fun handleAllCyclesXInObjectFieldsTest() {
+
+        val objI = ObjectGene("obj2", listOf(OptionalGene("lim", LimitObjectGene("lim"), isActive = true)))
+
+        val obj = OptionalGene("obj1", ObjectGene("obj1", listOf(objI)), isActive = true)
+
+        assertTrue(obj.isActive)
+
+        obj.flatView().forEach {
+            if (it is ObjectGene)
+                GraphQLActionBuilder.handleAllCyclesAndLimitInObjectFields(it)
         }
 
         assertTrue(!obj.isActive)
