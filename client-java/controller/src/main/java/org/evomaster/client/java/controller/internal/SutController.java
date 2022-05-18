@@ -542,6 +542,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    /**
+     * parse seeded tests for RPC
+     * @return a list of tests, and each test is a list of RCPActionDto
+     */
     public List<List<RPCActionDto>> handleSeededTests(){
 
         if (seedRPCTests() == null || seedRPCTests().isEmpty()) return null;
@@ -670,7 +674,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         handleLocalAuthenticationSetup(endpointSchema.getAuthenticationInfo());
 
         if (dto.responseVariable != null && dto.doGenerateTestScript){
-            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable);
+            responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable,dto.clientVariable);
         }
     }
 
@@ -682,7 +686,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         EndpointSchema endpointSchema = getEndpointSchema(dto);
         if (dto.responseVariable != null && dto.doGenerateTestScript){
             try{
-                responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable);
+                responseDto.testScript = endpointSchema.newInvocationWithJava(dto.responseVariable, dto.controllerVariable,dto.clientVariable);
             }catch (Exception e){
                 SimpleLogger.warn("Fail to generate test script"+e.getMessage());
             }
