@@ -119,20 +119,14 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             adHocInitialIndividuals.addAll(seededTestCases.map { createIndividual(it) })
         }
 
-        /*
-            TODO
-            such excluded actions might be executed at end of the search
-         */
-        getExcludedActions().forEach {
-            adHocInitialIndividuals.add(createIndividual(mutableListOf(it)))
-        }
-
     }
 
-    /**
-     * a list of actions which could be cloned and mutated,
-     * but not part of action clusters to sample in the search
-     */
+
+    override fun getPreDefinedIndividuals() : List<RestIndividual>{
+        val addCallAction = addCallToSwagger() ?: return listOf()
+        return listOf(createIndividual(mutableListOf(addCallAction)))
+    }
+
     open fun getExcludedActions() : List<RestCallAction>{
         val addCallAction = addCallToSwagger() ?: return listOf()
         return listOf(addCallAction)
@@ -145,9 +139,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
      */
     private fun addCallToSwagger() : RestCallAction?{
 
+        val id =  "Call to Swagger"
+
         if (configuration.blackBox && !configuration.bbExperiments) {
             return if (configuration.bbSwaggerUrl.startsWith("http", true)){
-                 RestCallAction("Call to Swagger", HttpVerb.GET, RestPath(configuration.bbSwaggerUrl), mutableListOf())
+                 RestCallAction(id, HttpVerb.GET, RestPath(configuration.bbSwaggerUrl), mutableListOf(), skipOracleChecks = true)
             } else
                 null
         }
@@ -166,9 +162,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         var path = openapi.substring(base.length)
         if(!path.startsWith("/")) path = "$path/"
 
-        return RestCallAction("Call to Swagger", HttpVerb.GET, RestPath(path), mutableListOf())
-//        val ind = RestIndividual(mutableListOf(call), SampleType.SMART, mutableListOf())
-//        adHocInitialIndividuals.add(ind)
+        return RestCallAction(id, HttpVerb.GET, RestPath(path), mutableListOf(), skipOracleChecks = true)
     }
 
     /**

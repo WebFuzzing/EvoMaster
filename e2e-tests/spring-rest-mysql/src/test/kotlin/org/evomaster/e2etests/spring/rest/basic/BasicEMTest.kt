@@ -62,7 +62,7 @@ class BasicEMTest : RestTestBase() {
 
                 TODO need to check once the strategy to execute excluded action is decided,
              */
-//            assertEquals(budget + 1, allSql.size)
+            assertEquals(budget + 1, allSql.size)
             val ignoreInitSql = allSql.none { s->
                 s.contains("INSERT INTO X")
             }

@@ -72,7 +72,17 @@ abstract class SearchAlgorithm<T> where T : Individual {
             }
         }
 
+        handleAfterSearch()
+
         return archive.extractSolution()
+    }
+
+    private fun handleAfterSearch() {
+        for(ind in sampler.getPreDefinedIndividuals()){
+            ff.calculateCoverage(ind)?.run {
+                archive.addIfNeeded(this)
+            }
+        }
     }
 
     private fun needsToSnapshot(): Boolean {

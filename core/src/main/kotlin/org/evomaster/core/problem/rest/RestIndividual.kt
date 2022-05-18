@@ -28,7 +28,6 @@ class RestIndividual(
         val sampleType: SampleType,
         val sampleSpec: SamplerSpecification? = null,
         dbInitialization: MutableList<DbAction> = mutableListOf(),
-
         trackOperator: TrackOperator? = null,
         index : Int = -1
 ): ApiWsIndividual(dbInitialization, trackOperator, index, mutableListOf<StructuralElement>().apply {
