@@ -114,4 +114,11 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
     open fun extractFkTables(tables: Set<String>): Set<String>{
         throw IllegalStateException("FK tables have not been not handled yet")
     }
+
+    /**
+     * Return a list of pre-written individuals that will be added in the final solution.
+     * Those will not be evolved during the search, but still need to compute their fitness,
+     * eg to create valid assertions for them.
+     */
+    open fun getPreDefinedIndividuals() = listOf<T>()
 }

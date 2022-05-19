@@ -45,6 +45,7 @@ open class ResourceSampler : AbstractRestSampler() {
     override fun customizeAdHocInitialIndividuals() {
 
         rm.initResourceNodes(actionCluster, sqlInsertBuilder)
+        rm.initExcludedResourceNode(getExcludedActions())
 
         adHocInitialIndividuals.clear()
 
@@ -218,6 +219,7 @@ open class ResourceSampler : AbstractRestSampler() {
     }
 
     override fun createIndividual(restCalls: MutableList<RestCallAction>): RestIndividual {
+
         val resourceCalls = restCalls.map {
             val node = rm.getResourceNodeFromCluster(it.path.toString())
             RestResourceCalls(

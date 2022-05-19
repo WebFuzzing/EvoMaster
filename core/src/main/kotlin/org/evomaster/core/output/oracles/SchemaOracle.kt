@@ -380,7 +380,9 @@ class SchemaOracle : ImplementedOracle() {
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
-        if (action.action is RestCallAction && action.result is HttpWsCallResult){
+        if (action.action is RestCallAction
+                && action.result is HttpWsCallResult
+                && !(action.action as RestCallAction).skipOracleChecks){
             return generatesExpectation(action.action as RestCallAction, action.result as HttpWsCallResult)
         }
         else return false

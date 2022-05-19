@@ -158,8 +158,10 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
 
                     var needsDot = true
 
-                    val fieldName = if (format.isJavaOrKotlin()) {
+                    val fieldName = if (format.isJava()) {
                         "'${it.key}'"
+                    } else if (format.isKotlin()){
+                        "'${handleDollarSign(it.key)}'"
                     } else if (format.isJavaScript()) {
                         //field name could have any character... need to use [] notation then
                         if (it.key.matches(Regex("^[a-zA-Z][a-zA-Z0-9]*$"))) {
@@ -184,6 +186,13 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
 
                     handleAssertionsOnField(it.value, lines, extendedPath, responseVariableName)
                 }
+    }
+    /*
+        a quick fix on handling dollar sign in assertion
+        TODO, might move to other places to systematically handle the assertions with special symbols
+     */
+    private fun handleDollarSign(text: String): String{
+        return text.replace("\$", "\\\$")
     }
 
     private fun handleAssertionsOnField(value: Any?, lines: Lines, fieldPath: String, responseVariableName: String?) {
