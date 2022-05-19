@@ -97,7 +97,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertTrue(javaCode.get(0).equals("java.lang.String arg0 = \"foo\";"));
 
 
-        List<String> endpointJavaCode = endpoint.newInvocationWithJava("res1","controller");
+        List<String> endpointJavaCode = endpoint.newInvocationWithJava("res1","controller",null);
         assertEquals(5, endpointJavaCode.size());
         assertEquals("java.lang.String res1 = null;", endpointJavaCode.get(0));
         assertEquals("{", endpointJavaCode.get(1));

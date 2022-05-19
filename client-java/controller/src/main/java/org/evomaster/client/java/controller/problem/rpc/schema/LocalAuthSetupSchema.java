@@ -32,7 +32,7 @@ public class LocalAuthSetupSchema extends EndpointSchema{
     }
 
     @Override
-    public List<String> newInvocationWithJava(String responseVarName, String controllerVarName) {
+    public List<String> newInvocationWithJava(String responseVarName, String controllerVarName, String clientVariable) {
         List<String> javaCode = new ArrayList<>();
         javaCode.add("{");
         int indent = 1;

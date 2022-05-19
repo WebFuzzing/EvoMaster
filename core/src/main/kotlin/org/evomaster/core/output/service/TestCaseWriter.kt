@@ -117,6 +117,16 @@ abstract class TestCaseWriter {
 
     protected abstract fun shouldFailIfException(result: ActionResult): Boolean
 
+    /**
+     * add extra static variable that could be specific to a problem
+     */
+    open fun addExtraStaticVariables(lines: Lines) {}
+
+    /**
+     * add extra init statement before all tests are executed (e.g., @BeforeAll for junit)
+     * that could be specific to a problem
+     */
+    open fun addExtraInitStatement(lines: Lines) {}
 
     protected fun addActionInTryCatch(call: Action,
                                       lines: Lines,
