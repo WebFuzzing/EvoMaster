@@ -96,6 +96,7 @@ abstract class Gene(
             identifyAsRoot()
         }
         randomize(rand, false)
+        flatView().forEach{it.initialized = true}
         initialized = true
         Lazy.assert{isValid()}
     }

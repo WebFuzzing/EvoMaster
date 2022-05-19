@@ -29,6 +29,9 @@ abstract class StructuralElement (
 
     /**
      * present whether the element is defined as a root
+     *
+     * TODO needs refactoring
+     * TODO maybe in Gene introduce similar concept of TopGene, whose parent is NOT a Gene
      */
     private var isDefinedRoot : Boolean = false
 
