@@ -44,6 +44,8 @@ class TimeoutEMTest : SpringTestBase() {
 
             args.add("--tcpTimeoutMs")
             args.add("1000")
+            args.add("--addPreDefinedTests")
+            args.add("false")
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
