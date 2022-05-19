@@ -1,10 +1,12 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 /**
- * a list of RPC type supported by evomaster
+ * A list of RPC types supported by EvoMaster
  *
- * with different types, the handling might be different,
- * eg, create instance for input, exception handling and extraction
+ * With different types, the handling might be different,
+ * eg, create instance for input, exception handling and extraction.
+ *
+ * If your type is not listed here, use the default [GENERAL]
  */
 public enum RPCType {
     /**
@@ -16,11 +18,11 @@ public enum RPCType {
     /**
      * thrift
      */
-    THRIFT,
+    THRIFT
 
     /**
      * gRPC
      * TODO, NOT SUPPORT YET
      */
-    gRPC
+    //gRPC
 }
