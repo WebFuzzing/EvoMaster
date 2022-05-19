@@ -25,7 +25,9 @@ class BaseGraphQLApplicationTest{
             val urlGraphql = sutServer + info.endpoint
 
             val iq = IntrospectiveQuery()
-            val schema = iq.fetchSchema(urlGraphql, headers)
+            val headers= listOf<String>()
+                .filter { it.isNotBlank() }
+            val schema = iq.fetchSchema(urlGraphql,headers)
 
             val actionCluster = mutableMapOf<String, Action>()
 
