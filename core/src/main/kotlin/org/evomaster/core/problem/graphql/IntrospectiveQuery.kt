@@ -1,7 +1,12 @@
 package org.evomaster.core.problem.graphql
 
+import org.apache.lucene.util.MapOfSets
+import org.evomaster.client.java.controller.api.dto.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.HeaderDto
 import org.evomaster.core.problem.graphql.schema.SchemaObj
+import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.search.gene.ObjectGene
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -34,10 +39,20 @@ class IntrospectiveQuery {
 
 
     fun fetchSchema(
-            /**
-             * The endpoint URL of where we can query the GraphQL SUT
-             */
-            graphQlEndpoint: String) : String{
+        /**
+         * The endpoint URL of where we can query the GraphQL SUT
+         */
+        graphQlEndpoint: String,
+        headers: List<String>
+    ) : String{
+
+        val headersMap = mutableMapOf<String, String>()
+        headers.forEach {
+            val k = it.indexOf(":")
+            val name = it.substring(0, k)
+            val content = it.substring(k+1)
+            headersMap[name] = content
+        }
 
         /*
             Body payload for the introspective query
@@ -52,13 +67,13 @@ class IntrospectiveQuery {
         val response = try {
             client.target(graphQlEndpoint)
                     .request("application/json")
+                .header(headersMap.keys.elementAt(0),headersMap.values.elementAt(0) )
                     .buildPost(query)
                     .invoke()
         } catch (e: Exception){
             log.error("Failed query to '$graphQlEndpoint' :  $query")
             throw e
         }
-
         //TODO check status code, and any other problem inside GraphQL response
 
         if(response.status != 200){

@@ -54,9 +54,18 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         if(! gqlEndpoint.startsWith("http", true)){
             gqlEndpoint = infoDto.baseUrlOfSUT + gqlEndpoint
         }
+        /*
+                Configuration of the headers
+                */
+        val headers = listOf(config.header0, config.header1, config.header2)
+            .filter { it.isNotBlank() }
+
+        if(headers.isEmpty()){
+            return  //nothing to do
+        }
 
         val iq = IntrospectiveQuery()
-        val schema = iq.fetchSchema(gqlEndpoint)
+        val schema = iq.fetchSchema(gqlEndpoint, headers)
 
         actionCluster.clear()
         //val skip = getEndpointsToSkip(swagger, infoDto) //TODO maybe in future wants to support
@@ -78,8 +87,19 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
     private fun initForBlackBox() {
         val gqlEndpoint = config.bbTargetUrl
 
+        /*
+         Configuration of the headers
+         */
+        val headers = listOf(config.header0, config.header1, config.header2)
+            .filter { it.isNotBlank() }
+
+        if(headers.isEmpty()){
+            return  //nothing to do
+        }
+
+        IntrospectiveQuery().fetchSchema(gqlEndpoint,headers)
         val iq = IntrospectiveQuery()
-        val schema = iq.fetchSchema(gqlEndpoint)
+        val schema = iq.fetchSchema(gqlEndpoint, headers)
 
         addAuthFromConfig()
 
