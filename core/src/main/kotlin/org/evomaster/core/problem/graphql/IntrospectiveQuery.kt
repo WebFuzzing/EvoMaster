@@ -19,7 +19,7 @@ import javax.ws.rs.core.MediaType
 
 class IntrospectiveQuery {
 
-    companion object{
+    companion object {
         private val log = LoggerFactory.getLogger(IntrospectiveQuery::class.java)
     }
 
@@ -39,19 +39,18 @@ class IntrospectiveQuery {
 
 
     fun fetchSchema(
-        /**
-         * The endpoint URL of where we can query the GraphQL SUT
-         */
-        graphQlEndpoint: String,
-        headers: List<String>
-    ) : String{
+            /**
+             * The endpoint URL of where we can query the GraphQL SUT
+             */
+            graphQlEndpoint: String,
+            headers: List<String>
+    ): String {
 
-        val headersMap = mutableMapOf<String, String>()
-        headers.forEach {
+        val list = headers.map {
             val k = it.indexOf(":")
             val name = it.substring(0, k)
-            val content = it.substring(k+1)
-            headersMap[name] = content
+            val content = it.substring(k + 1)
+            Pair(name, content)
         }
 
         /*
@@ -65,18 +64,20 @@ class IntrospectiveQuery {
 
         //TODO check if TCP problems
         val response = try {
-            client.target(graphQlEndpoint)
+            var request = client.target(graphQlEndpoint)
                     .request("application/json")
-                .header(headersMap.keys.elementAt(0),headersMap.values.elementAt(0) )
-                    .buildPost(query)
+
+            for (h in list) {
+                request = request.header(h.first, h.second)
+            }
+            request.buildPost(query)
                     .invoke()
-        } catch (e: Exception){
+        } catch (e: Exception) {
             log.error("Failed query to '$graphQlEndpoint' :  $query")
             throw e
         }
-        //TODO check status code, and any other problem inside GraphQL response
 
-        if(response.status != 200){
+        if (response.status != 200) {
             throw SutProblemException("Failed to retrieve GraphQL schema. Status code: ${response.status}")
         }
 
@@ -84,6 +85,8 @@ class IntrospectiveQuery {
             Extract the body from response as a string
          */
         val body = response.readEntity(String::class.java)
+
+        //TODO parse this body here to see if it has any "errors" field and no "data"
 
         return body
     }

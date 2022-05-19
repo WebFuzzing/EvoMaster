@@ -60,10 +60,6 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         val headers = listOf(config.header0, config.header1, config.header2)
             .filter { it.isNotBlank() }
 
-        if(headers.isEmpty()){
-            return  //nothing to do
-        }
-
         val iq = IntrospectiveQuery()
         val schema = iq.fetchSchema(gqlEndpoint, headers)
 
