@@ -107,11 +107,8 @@ abstract class SpringRestPostgresController(
         return null
     }
 
-    override fun getDbSpecifications(): MutableList<DbSpecification>? = mutableListOf(DbSpecification().apply {
-        connection = sqlConnection
-        dbType = DatabaseType.POSTGRES
-        schemaNames = listOf("public")
-    })
+    override fun getDbSpecifications(): MutableList<DbSpecification>? = mutableListOf(
+            DbSpecification(DatabaseType.POSTGRES,sqlConnection).withSchemas("public"))
 
     override fun getDatabaseDriverName(): String? {
         return "org.postgresql.Driver"

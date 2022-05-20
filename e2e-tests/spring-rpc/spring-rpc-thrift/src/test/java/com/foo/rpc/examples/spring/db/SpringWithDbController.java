@@ -77,10 +77,7 @@ public abstract class SpringWithDbController extends SpringController {
 
     @Override
     public List<DbSpecification> getDbSpecifications() {
-        return Arrays.asList(new DbSpecification(){{
-            dbType = DatabaseType.H2;
-            connection = sqlConnection;
-        }});
+        return Arrays.asList(new DbSpecification(DatabaseType.H2, sqlConnection));
     }
 
 }
