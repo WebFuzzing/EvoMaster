@@ -28,7 +28,10 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
 
     @Override
     public List<DbSpecification> getDbSpecifications() {
-        return Arrays.asList(new DbSpecification(DatabaseType.H2, sqlConnection).withInitSqlScript(initScript));
+        if(initScript != null)
+            return Arrays.asList(new DbSpecification(DatabaseType.H2, sqlConnection).withInitSqlScript(initScript));
+        else
+            return Arrays.asList(new DbSpecification(DatabaseType.H2, sqlConnection));
     }
 
     @Override

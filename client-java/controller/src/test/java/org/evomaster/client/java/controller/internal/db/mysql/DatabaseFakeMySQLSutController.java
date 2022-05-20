@@ -28,8 +28,10 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
 
     @Override
     public List<DbSpecification> getDbSpecifications() {
-        return Arrays.asList( new DbSpecification(DatabaseType.MYSQL,sqlConnection)
-                .withInitSqlScript(initScript).withSchemas("test"));
+        if(initScript != null)
+            return Arrays.asList(new DbSpecification(DatabaseType.MYSQL, sqlConnection).withInitSqlScript(initScript).withSchemas("test"));
+        else
+            return Arrays.asList(new DbSpecification(DatabaseType.MYSQL, sqlConnection).withSchemas("test"));
     }
 
     @Override
