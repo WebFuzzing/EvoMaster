@@ -89,6 +89,9 @@ class ExternalServices {
         return externalServiceInfos
     }
 
+    /**
+     * Default IP address will be a randomly generated IP
+     */
     private fun getIP() : String {
         val ip: String
         when (config.externalServiceIPSelectionStrategy) {
@@ -110,7 +113,7 @@ class ExternalServices {
                 ip = if (externalServiceInfos.size > 0) {
                     getNextAvailableAddress()
                 } else {
-                    getDefaultAddress()
+                    generateRandomAvailableAddress()
                 }
             }
         }

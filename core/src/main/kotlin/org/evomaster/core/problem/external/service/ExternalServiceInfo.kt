@@ -21,9 +21,6 @@ class ExternalServiceInfo(
     fun assignWireMockServer(wm: WireMockServer) {
         wireMockServer = wm
     }
-    fun getWireMockServer() : WireMockServer {
-        return wireMockServer
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
