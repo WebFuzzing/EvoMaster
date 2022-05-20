@@ -467,7 +467,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             Objects.requireNonNull(schemaDto);
             schemaDto.employSmartDbClean = doEmploySmartDbClean();
         } catch (Exception e) {
-            SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage());
+            SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage(), e);
             return null;
         }
 
