@@ -123,10 +123,6 @@ abstract class SpringRestMySqlController (
             DbSpecification(DatabaseType.MYSQL,dbConnection).withSchemas(MYSQL_DB_NAME))
 
 
-    override fun getDatabaseDriverName(): String? {
-        return "com.mysql.cj.jdbc.Driver"
-    }
-
     override fun getPreferredOutputFormat(): SutInfoDto.OutputFormat {
         return SutInfoDto.OutputFormat.KOTLIN_JUNIT_5
     }

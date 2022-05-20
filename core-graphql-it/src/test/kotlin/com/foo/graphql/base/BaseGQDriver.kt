@@ -61,8 +61,5 @@ class BaseGQDriver : EmbeddedSutController(){
         return GraphQlProblem("/graphql")
     }
 
-    override fun getDatabaseDriverName(): String? {
-        return null
-    }
 
 }

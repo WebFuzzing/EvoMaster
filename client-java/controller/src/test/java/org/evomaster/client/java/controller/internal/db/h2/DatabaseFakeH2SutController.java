@@ -35,11 +35,6 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
     }
 
     @Override
-    public String getDatabaseDriverName() {
-        return "org.h2.Driver";
-    }
-
-    @Override
     public ProblemInfo getProblemInfo() {
         return new RestProblem("http://notused", null);
     }

@@ -41,9 +41,7 @@ class BaseExternalDriver : ExternalSutController(){
         return  RestProblem(getBaseURL() + "/v3/api-docs", null)
     }
 
-    override fun getDatabaseDriverName(): String? {
-        return null
-    }
+
 
     override fun getPathToExecutableJar(): String {
         return "target/base.jar"

@@ -110,10 +110,6 @@ abstract class SpringRestPostgresController(
     override fun getDbSpecifications(): MutableList<DbSpecification>? = mutableListOf(
             DbSpecification(DatabaseType.POSTGRES,sqlConnection).withSchemas("public"))
 
-    override fun getDatabaseDriverName(): String? {
-        return "org.postgresql.Driver"
-    }
-
     override fun getPreferredOutputFormat(): SutInfoDto.OutputFormat {
         return SutInfoDto.OutputFormat.KOTLIN_JUNIT_5
     }

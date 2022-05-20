@@ -34,10 +34,7 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
             return Arrays.asList(new DbSpecification(DatabaseType.MYSQL, sqlConnection).withSchemas("test"));
     }
 
-    @Override
-    public String getDatabaseDriverName() {
-        return "com.mysql.cj.jdbc.Driver";
-    }
+
 
     @Override
     public ProblemInfo getProblemInfo() {

@@ -81,10 +81,7 @@ public abstract class SpringController extends EmbeddedSutController {
         return null;
     }
 
-    @Override
-    public String getDatabaseDriverName() {
-        return null;
-    }
+
 
     @Override
     public SutInfoDto.OutputFormat getPreferredOutputFormat() {

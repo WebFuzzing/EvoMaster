@@ -83,8 +83,5 @@ public class SpringWithDbController extends SpringController {
         return Arrays.asList(new DbSpecification(DatabaseType.H2, sqlConnection));
     }
 
-    @Override
-    public String getDatabaseDriverName() {
-        return "org.h2.Driver";
-    }
+
 }

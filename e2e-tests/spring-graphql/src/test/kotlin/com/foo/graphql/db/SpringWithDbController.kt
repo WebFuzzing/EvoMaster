@@ -76,5 +76,5 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
     override fun getDbSpecifications(): MutableList<DbSpecification>? =mutableListOf(
             DbSpecification(DatabaseType.H2,dbconnection))
 
-    override fun getDatabaseDriverName() = "org.h2.Driver"
+
 }

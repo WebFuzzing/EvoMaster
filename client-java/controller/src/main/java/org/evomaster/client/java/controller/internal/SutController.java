@@ -916,9 +916,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * </p>
      *
      * @return {@code null} if the SUT does not use any SQL database
+     * @deprecated this is now set in DbSpecification
      */
     @Deprecated
-    public Connection getConnection(){
+    public final Connection getConnection(){
         throw new IllegalStateException("This deprecated method should never be called");
     }
 
@@ -931,7 +932,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * @deprecated this method is no longer needed
      */
     @Deprecated
-    public String getDatabaseDriverName(){
+    public final String getDatabaseDriverName(){
         throw new IllegalStateException("This deprecated method should never be called");
     }
 
