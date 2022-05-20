@@ -1,12 +1,9 @@
 package org.evomaster.core.problem.graphql
 
-import org.apache.lucene.util.MapOfSets
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.HeaderDto
-import org.evomaster.core.problem.graphql.schema.SchemaObj
-import org.evomaster.core.problem.httpws.service.HttpWsSampler
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.gene.ObjectGene
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -44,7 +41,7 @@ class IntrospectiveQuery {
              */
             graphQlEndpoint: String,
             headers: List<String>
-    ): String {
+    ): String? {
 
         val list = headers.map {
             val k = it.indexOf(":")
@@ -87,6 +84,20 @@ class IntrospectiveQuery {
         val body = response.readEntity(String::class.java)
 
         //TODO parse this body here to see if it has any "errors" field and no "data"
+
+        val jackson = ObjectMapper()
+
+        val node: JsonNode = try {
+            jackson.readTree(body)
+        } catch (e: JsonProcessingException) {
+            return null
+        }
+
+        val withErrors= node.findPath("errors")
+
+       if (!withErrors.isEmpty){
+            throw SutProblemException("Failed to retrieve GraphQL schema: response contains error.")
+       }
 
         return body
     }
