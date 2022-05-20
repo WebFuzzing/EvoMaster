@@ -56,9 +56,12 @@ object GqlConst {
     const val QUERY_ROOT = "query_root"
     const val ROOTQUERY = "rootquery"
     const val ROOTQUERYTYPE = "rootquerytype"
+    const val DOTAQUERY = "dotaquery"
+
     const val MUTATION = "mutation"
     const val ROOTMUTATIONTYPE = "rootmutationtype"
     const val ROOTMUTATION = "rootmutation"
+    const val DOTAMUTATION = "dotamutation"
 
 
 }

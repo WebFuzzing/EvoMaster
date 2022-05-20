@@ -31,7 +31,8 @@ object GraphQLActionBuilder {
     /*
       In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
       */
-    private val mutationQueryConstants = listOf(GqlConst.MUTATION, GqlConst.QUERY, GqlConst.ROOT, GqlConst.QUERY_TYPE, GqlConst.QUERY_ROOT, GqlConst.ROOTQUERYTYPE, GqlConst.ROOTMUTATIONTYPE, GqlConst.ROOTQUERY, GqlConst.ROOTMUTATION)
+    private val mutationQueryConstants = listOf(GqlConst.MUTATION, GqlConst.QUERY, GqlConst.ROOT, GqlConst.QUERY_TYPE, GqlConst.QUERY_ROOT, GqlConst.ROOTQUERYTYPE, GqlConst.ROOTMUTATIONTYPE,
+        GqlConst.ROOTQUERY, GqlConst.ROOTMUTATION, GqlConst.DOTAQUERY, GqlConst.DOTAMUTATION)
 
     /**
      * Cache to avoid rebuilding the same genes again and again.
@@ -97,9 +98,11 @@ object GraphQLActionBuilder {
             element.typeName.equals(GqlConst.QUERY_ROOT, true) -> GQMethodType.QUERY
             element.typeName.equals(GqlConst.ROOTQUERYTYPE, true) -> GQMethodType.QUERY
             element.typeName.equals(GqlConst.ROOTQUERY, true) -> GQMethodType.QUERY
+            element.typeName.equals(GqlConst.DOTAMUTATION, true) -> GQMethodType.QUERY
             element.typeName.equals(GqlConst.MUTATION, true) -> GQMethodType.MUTATION
             element.typeName.equals(GqlConst.ROOTMUTATIONTYPE, true) -> GQMethodType.MUTATION
             element.typeName.equals(GqlConst.ROOTMUTATION, true) -> GQMethodType.MUTATION
+            element.typeName.equals(GqlConst.DOTAMUTATION, true) -> GQMethodType.MUTATION
             else -> {
                 log.warn("GraphQL Entry point: ${element.typeName} is not found.")
                 return
