@@ -17,7 +17,7 @@ class SqlPolygonGene(
             // polygons have at least 2 points
             minSize = 2,
             template = SqlPointGene("p"))
-) : Gene(name, mutableListOf(points)) {
+) : CompositeFixedGene(name, mutableListOf(points)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPolygonGene::class.java)

@@ -12,7 +12,7 @@ abstract class SqlAbstractGeometricGene(
     protected val p: SqlPointGene,
     protected val q: SqlPointGene,
     val doNotAllowSamePoints: Boolean = false
-) : Gene(name, mutableListOf(p, q)) {
+) : CompositeFixedGene(name, mutableListOf(p, q)) {
 
 
 

@@ -48,7 +48,7 @@ class SqlTextSearchQueryGene(
                 minSize = 0
                 ),
 
-) : Gene(name, mutableListOf(queryLexemes)) {
+) : CompositeFixedGene(name, mutableListOf(queryLexemes)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchQueryGene::class.java)

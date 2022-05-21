@@ -2,9 +2,7 @@ package org.evomaster.core.search.gene.sql.network
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -21,7 +19,7 @@ class SqlMacAddrGene(
         numberOfOctets: Int = MACADDR6_SIZE,
         private val octets: List<IntegerGene> = List(numberOfOctets)
         { i -> IntegerGene("b$i", min = 0, max = 255) }
-) : Gene(name, octets.toMutableList()) {
+) : CompositeFixedGene(name, octets.toMutableList()) {
 
     companion object {
 

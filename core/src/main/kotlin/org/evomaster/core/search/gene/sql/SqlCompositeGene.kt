@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -21,7 +22,7 @@ class SqlCompositeGene(
         val fields: List<out Gene>,
         // the name of the composite type
         val compositeTypeName: String? = null
-) : Gene(name, fields.toMutableList()) {
+) : CompositeFixedGene(name, fields.toMutableList()) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlCompositeGene::class.java)

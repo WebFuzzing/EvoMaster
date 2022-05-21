@@ -47,7 +47,7 @@ class SqlLogSeqNumberGene(
                 minInclusive = true,
                 maxInclusive = true),
 
-        ) : Gene(name, mutableListOf(leftPart, rightPart)) {
+        ) : CompositeFixedGene(name, mutableListOf(leftPart, rightPart)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlLogSeqNumberGene::class.java)

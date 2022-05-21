@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ObjectGene
@@ -14,7 +15,9 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name, mutableListOf(objectGene)) {
+class SqlXMLGene(name: String,
+                 val objectGene: ObjectGene = ObjectGene(name, fields = listOf())
+) : CompositeFixedGene(name, mutableListOf(objectGene)) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(SqlXMLGene::class.java)

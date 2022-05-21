@@ -57,7 +57,7 @@ class SqlMultidimensionalArrayGene<T>(
          * the length of each dimension is 0).
          */
         private val nestedListOfElements: MutableList<Any> = mutableListOf()
-) : CollectionGene, CompositeFixedGene(name, listOf()) where T : Gene {
+) : CollectionGene, CompositeGene(name, mutableListOf()) where T : Gene {
 
     init {
         if (numberOfDimensions < 0)

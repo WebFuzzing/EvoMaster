@@ -32,7 +32,7 @@ class SqlRangeGene<T>(
 
         private val isRightClosed: BooleanGene = BooleanGene("isRightClosed")
 
-) : Gene(name, mutableListOf(isLeftClosed, left, right, isRightClosed))
+) : CompositeFixedGene(name, mutableListOf(isLeftClosed, left, right, isRightClosed))
         where T : ComparableGene, T: Gene {
 
     companion object {

@@ -28,7 +28,7 @@ class SqlBitStringGene(
 
         private val booleanArrayGene: ArrayGene<BooleanGene> = ArrayGene(name, template = BooleanGene(name), minSize = minSize, maxSize = maxSize)
 
-) : CollectionGene, Gene(name, mutableListOf( booleanArrayGene)) {
+) : CollectionGene, CompositeGene(name, mutableListOf( booleanArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBitStringGene::class.java)

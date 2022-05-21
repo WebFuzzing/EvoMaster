@@ -27,7 +27,7 @@ class SqlBinaryStringGene(
 
         private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize)
 
-) : CollectionGene, Gene(name, mutableListOf( binaryArrayGene)) {
+) : CollectionGene, CompositeGene(name, mutableListOf( binaryArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBinaryStringGene::class.java)

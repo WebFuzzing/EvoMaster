@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql.time
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.IntegerGene
@@ -20,7 +21,7 @@ class SqlTimeIntervalGene(
                 "hoursMinutesAndSeconds",
                 timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
         )
-) : Gene(name, mutableListOf(days, time)) {
+) : CompositeFixedGene(name, mutableListOf(days, time)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTimeIntervalGene::class.java)

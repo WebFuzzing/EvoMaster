@@ -17,7 +17,7 @@ class SqlPathGene(
                 // paths are lists of at least 2 points
                 minSize = 2,
                 template = SqlPointGene("p"))
-) : Gene(name, mutableListOf(points)) {
+) : CompositeGene(name, mutableListOf(points)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)

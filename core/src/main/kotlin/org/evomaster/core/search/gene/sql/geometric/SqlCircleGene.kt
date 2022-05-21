@@ -15,7 +15,7 @@ class SqlCircleGene(
         val c: SqlPointGene = SqlPointGene(name = "c"),
         // radius cannot be negative
         val r: FloatGene = FloatGene(name = "r", min = 0f, minInclusive = true)
-) : Gene(name, mutableListOf(c, r)) {
+) : CompositeFixedGene(name, mutableListOf(c, r)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlCircleGene::class.java)

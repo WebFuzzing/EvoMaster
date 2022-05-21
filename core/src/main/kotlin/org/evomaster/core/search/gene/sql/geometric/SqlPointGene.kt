@@ -14,7 +14,7 @@ class SqlPointGene(
     name: String,
     val x: FloatGene = FloatGene(name = "x"),
     val y: FloatGene = FloatGene(name = "y")
-) : Gene(name, mutableListOf(x, y)) {
+) : CompositeFixedGene(name, mutableListOf(x, y)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPointGene::class.java)

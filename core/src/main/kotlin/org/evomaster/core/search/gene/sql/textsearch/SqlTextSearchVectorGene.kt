@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
 class SqlTextSearchVectorGene(
         name: String,
         private val textLexeme: StringGene = StringGene(name = "textLexemes")
-) : Gene(name, mutableListOf(textLexeme)) {
+) : CompositeFixedGene(name, mutableListOf(textLexeme)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchVectorGene::class.java)
