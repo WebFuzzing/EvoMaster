@@ -178,7 +178,7 @@ object DbActionUtils {
 
 
     /**
-     * Returns the gene and action index that does not satisfies any Table Constraint of the corresponding
+     * Returns the gene and action index that does not satisfy any Table Constraint of the corresponding
      * table that the action is inserting to.
      * It also returns one of the genes involved in the constraint that is not being
      * satisfied.
@@ -198,7 +198,8 @@ object DbActionUtils {
         }
 
         for (tableConstraint in tableConstraints) {
-            val evaluator = TableConstraintEvaluator(dbActions.subList(0, dbActionIndex - 1))
+            val previousDbActions = if (dbActionIndex==0) listOf() else dbActions.subList(0, dbActionIndex - 1)
+            val evaluator = TableConstraintEvaluator(previousDbActions)
             if (tableConstraint.accept(evaluator, dbAction) == false) {
                 // This constraint is not satisfied, collect all genes related to constraint
                 val geneCollector = TableConstraintGeneCollector()
@@ -215,7 +216,7 @@ object DbActionUtils {
         }
 
         // no problem found
-        return null;
+        return null
 
     }
 
