@@ -30,7 +30,7 @@ class SqlLogSeqNumberGene(
         /**
          * The left part of 32 bits
          */
-        private val leftPart: LongGene = LongGene("leftPart",
+        val leftPart: LongGene = LongGene("leftPart",
                 value = 0,
                 min = 0,
                 max = MAX_VALUE,
@@ -40,7 +40,7 @@ class SqlLogSeqNumberGene(
         /**
          * The right part of 32 bits
          */
-        private val rightPart: LongGene = LongGene("rightPart",
+        val rightPart: LongGene = LongGene("rightPart",
                 value = 0,
                 min = 0,
                 max = MAX_VALUE,

@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory
  */
 class SqlCidrGene(
         name: String,
-        val octets: List<IntegerGene> = List(INET_SIZE)
+        private val octets: List<IntegerGene> = List(INET_SIZE)
         { i -> IntegerGene("b$i", min = 0, max = 255) }
 ) : CompositeFixedGene(name, octets.toMutableList()) {
 

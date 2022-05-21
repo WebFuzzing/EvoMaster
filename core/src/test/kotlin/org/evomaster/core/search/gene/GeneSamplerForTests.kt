@@ -4,6 +4,14 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.search.gene.sql.*
+import org.evomaster.core.search.gene.sql.geometric.*
+import org.evomaster.core.search.gene.sql.network.SqlCidrGene
+import org.evomaster.core.search.gene.sql.network.SqlInetGene
+import org.evomaster.core.search.gene.sql.network.SqlMacAddrGene
+import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
+import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
+import org.evomaster.core.search.gene.sql.time.SqlTimeIntervalGene
 import org.evomaster.core.search.service.Randomness
 import java.io.File
 import java.math.BigDecimal
@@ -99,7 +107,36 @@ object GeneSamplerForTests {
             QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
             RegexGene::class -> sampleRegexGene(rand) as T
 
-            //TODO SQL genes
+            //SQL genes
+            SqlJSONPathGene::class -> sampleSqlJSONPathGene(rand) as T
+            SqlTextSearchVectorGene::class -> sampleSqlTextSearchVectorGene(rand) as T
+            SqlBoxGene::class -> sampleSqlBoxGene(rand) as T
+            SqlPointGene::class -> sampleSqlPointGene(rand) as T
+            SqlForeignKeyGene::class -> sampleSqlForeignKeyGene(rand) as T
+            SqlLogSeqNumberGene::class -> sampleSqlLogSeqNumberGene(rand) as T
+            SqlRangeGene::class -> sampleSqlRangeGene(rand) as T
+            SqlJSONGene::class -> sampleSqlJSONGene(rand) as T
+            SqlTextSearchQueryGene::class -> sampleSqlTextSearchQueryGene(rand) as T
+            SqlPrimaryKeyGene::class -> sampleSqlPrimaryKeyGene(rand) as T
+            SqlNullableGene::class -> sampleSqlNullableGene(rand) as T
+            SqlMultidimensionalArrayGene::class -> sampleSqlMultidimensionalArrayGene(rand) as T
+            SqlMacAddrGene::class -> sampleSqlMacAddrGene(rand) as T
+            SqlInetGene::class -> sampleSqlInetGene(rand) as T
+            SqlCidrGene::class -> sampleSqlCidrGene(rand) as T
+            SqlAutoIncrementGene::class -> sampleSqlAutoIncrementGene(rand) as T
+            SqlPathGene::class -> sampleSqlPathGene(rand) as T
+            SqlLineGene::class -> sampleSqlLineGene(rand) as T
+            SqlPolygonGene::class -> sampleSqlPolygonGene(rand) as T
+            SqlCircleGene::class -> sampleSqlCircleGene(rand) as T
+            SqlLineSegmentGene::class -> sampleSqlLineSegmentGene(rand) as T
+            SqlTimeIntervalGene::class -> sampleSqlTimeIntervalGene(rand) as T
+            SqlCompositeGene::class -> sampleSqlCompositeGene(rand) as T
+            SqlBitStringGene::class -> sampleSqlBitStringGene(rand) as T
+            SqlXMLGene::class -> sampleSqlXMLGene(rand) as T
+            SqlMultiRangeGene::class -> sampleSqlMultiRangeGene(rand) as T
+            SqlBinaryStringGene::class -> sampleSqlBinaryStringGene(rand) as T
+            SqlUUIDGene::class -> sampleSqlUUIDGene(rand) as T
+
 
             else -> throw IllegalStateException("No sampler for $klass")
 
@@ -108,10 +145,170 @@ object GeneSamplerForTests {
         }
     }
 
-    fun sampleRegexGene(rand: Randomness) : RegexGene{
-        return RegexGene(name="rand RegexGene", disjunctions = sampleDisjunctionListRxGene(rand))
+    private fun sampleSqlUUIDGene(rand: Randomness): SqlUUIDGene {
+        return SqlUUIDGene("rand SqlUUIDGene ${rand.nextInt()}")
     }
-    fun sampleQuantifierRxGene(rand: Randomness) : QuantifierRxGene{
+
+    private fun sampleSqlBinaryStringGene(rand: Randomness): SqlBinaryStringGene {
+        val maxSize = rand.nextInt(1, ArrayGene.MAX_SIZE)
+        val minSize = rand.nextInt(0, maxSize)
+        return SqlBinaryStringGene("rand SqlBinaryStringGene",
+                minSize = minSize,
+                maxSize = maxSize)
+    }
+
+    private fun sampleSqlMultiRangeGene(rand: Randomness): SqlMultiRangeGene<*> {
+        return SqlMultiRangeGene("rand SqlMultiRangeGene", template = sampleSqlRangeGene(rand))
+    }
+
+    private fun sampleSqlXMLGene(rand: Randomness): SqlXMLGene {
+        return SqlXMLGene("rand SqlXMLGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlBitStringGene(rand: Randomness): SqlBitStringGene {
+        val maxSize = rand.nextInt(1, ArrayGene.MAX_SIZE)
+        val minSize = rand.nextInt(0, maxSize)
+        return SqlBitStringGene("rand SqlBitStringGene",
+                minSize = minSize,
+                maxSize = maxSize)
+    }
+
+    private fun sampleSqlCompositeGene(rand: Randomness): SqlCompositeGene {
+        val selection = geneClasses.filter { !it.isAbstract }
+
+        val numberOfFields = rand.nextInt(MAX_NUMBER_OF_FIELDS)
+        return SqlCompositeGene(
+                name = "rand SqlCompositeGene",
+                fields = List(numberOfFields) { sample(rand.choose(selection), rand) }
+        )
+    }
+
+    private fun sampleSqlTimeIntervalGene(rand: Randomness): SqlTimeIntervalGene {
+        val timeGeneFormats = listOf(TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT,
+                TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS)
+        val timeGeneFormat = rand.choose(timeGeneFormats)
+        return SqlTimeIntervalGene("rand SqlTimeIntervalGene",
+                time = TimeGene("hoursMinutesAndSeconds", timeGeneFormat = timeGeneFormat))
+    }
+
+    private fun sampleSqlLineSegmentGene(rand: Randomness): SqlLineSegmentGene {
+        return SqlLineSegmentGene("rand SqlLineSegmentGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlCircleGene(rand: Randomness): SqlCircleGene {
+        return SqlCircleGene("rand SqlCircleGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlPolygonGene(rand: Randomness): SqlPolygonGene {
+        return SqlPolygonGene("rand SqlPolygonGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlLineGene(rand: Randomness): SqlLineGene {
+        return SqlLineGene("rand SqlLineGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlPathGene(rand: Randomness): SqlPathGene {
+        return SqlPathGene("rand SqlPathGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlAutoIncrementGene(rand: Randomness): SqlAutoIncrementGene {
+        return SqlAutoIncrementGene("rand SqlAutoIncrementGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlCidrGene(rand: Randomness): SqlCidrGene {
+        return SqlCidrGene("rand SqlCidrGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlInetGene(rand: Randomness): SqlInetGene {
+        return SqlInetGene("rand SqlInetGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlMacAddrGene(rand: Randomness): SqlMacAddrGene {
+        return SqlMacAddrGene("rand SqlMacAddrGene ${rand.nextInt()}",
+                numberOfOctets = rand.nextInt(1, MAX_NUMBER_OF_OCTETS))
+    }
+
+    const val MAX_NUMBER_OF_DIMENSIONS = 5
+    const val MAX_NUMBER_OF_OCTETS = 10
+    const val MAX_NUMBER_OF_FIELDS = 3
+
+    private fun sampleSqlMultidimensionalArrayGene(rand: Randomness): SqlMultidimensionalArrayGene<*> {
+        val selection = geneClasses.filter { !it.isAbstract }
+        return SqlMultidimensionalArrayGene("rand SqlMultidimensionalArrayGene",
+                template = sample(rand.choose(selection), rand),
+                numberOfDimensions = rand.nextInt(MAX_NUMBER_OF_DIMENSIONS))
+    }
+
+    private fun sampleSqlNullableGene(rand: Randomness): SqlNullableGene {
+        val selection = geneClasses.filter { !it.isAbstract }
+        return SqlNullableGene("rand SqlNullableGene",
+                gene = sample(rand.choose(selection), rand))
+    }
+
+    private fun sampleSqlPrimaryKeyGene(rand: Randomness): SqlPrimaryKeyGene {
+        val selection = geneClasses.filter { !it.isAbstract && it.isSubclassOf(ComparableGene::class) }
+
+        return SqlPrimaryKeyGene("rand SqlPrimaryKeyGene",
+                tableName = "rand tableName",
+                gene = sample(rand.choose(selection), rand),
+                uniqueId = rand.nextLong(0, Long.MAX_VALUE))
+    }
+
+    private fun sampleSqlTextSearchQueryGene(rand: Randomness): SqlTextSearchQueryGene {
+        return SqlTextSearchQueryGene("rand SqlTextSearchQueryGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlJSONGene(rand: Randomness): SqlJSONGene {
+        return SqlJSONGene("rand SqlJSONGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlRangeGene(rand: Randomness): SqlRangeGene<*> {
+        val selection = geneClasses.filter { !it.isAbstract && it.isSubclassOf(ComparableGene::class) }
+        val selectedClass = rand.choose(selection)
+        val templateSample = sample(selectedClass, rand)
+        if (templateSample !is ComparableGene) {
+            throw IllegalStateException("${templateSample::class.java} does not implement ComparableGene")
+        }
+        return SqlRangeGene(
+                "rand SqlRangeGene",
+                template = templateSample)
+
+    }
+
+    private fun sampleSqlLogSeqNumberGene(rand: Randomness): SqlLogSeqNumberGene {
+        return SqlLogSeqNumberGene("rand SqlLogSeqNumberGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlForeignKeyGene(rand: Randomness): SqlForeignKeyGene {
+        return SqlForeignKeyGene(sourceColumn = "rand source column",
+                uniqueId = rand.nextLong(min = 0L, max = Long.MAX_VALUE),
+                targetTable = "rand target table",
+                nullable = rand.nextBoolean(),
+                uniqueIdOfPrimaryKey = rand.nextLong())
+    }
+
+    private fun sampleSqlPointGene(rand: Randomness): SqlPointGene {
+        return SqlPointGene("rand SqlPointGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlBoxGene(rand: Randomness): SqlBoxGene {
+        return SqlBoxGene("rand SqlBoxGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlTextSearchVectorGene(rand: Randomness): SqlTextSearchVectorGene {
+        return SqlTextSearchVectorGene("rand SqlTextSearchVectorGene ${rand.nextInt()}")
+
+    }
+
+    private fun sampleSqlJSONPathGene(rand: Randomness): SqlJSONPathGene {
+        return SqlJSONPathGene("rand JSONPathGene ${rand.nextInt()}")
+    }
+
+    fun sampleRegexGene(rand: Randomness): RegexGene {
+        return RegexGene(name = "rand RegexGene", disjunctions = sampleDisjunctionListRxGene(rand))
+    }
+
+    fun sampleQuantifierRxGene(rand: Randomness): QuantifierRxGene {
 
         val selection = geneClasses
                 .filter { !it.isAbstract }
@@ -122,15 +319,15 @@ object GeneSamplerForTests {
                 name = "rand QuantifierRxGene",
                 template = sample(rand.choose(selection), rand),
                 min = min,
-                max = min + rand.nextInt(1,2)
+                max = min + rand.nextInt(1, 2)
         )
     }
 
-    fun samplePatternCharacterBlock(rand: Randomness) : PatternCharacterBlockGene{
-        return PatternCharacterBlockGene(name="rand PatternCharacterBlock", stringBlock = rand.nextWordString())
+    fun samplePatternCharacterBlock(rand: Randomness): PatternCharacterBlockGene {
+        return PatternCharacterBlockGene(name = "rand PatternCharacterBlock", stringBlock = rand.nextWordString())
     }
 
-    fun sampleDisjunctionListRxGene(rand: Randomness) : DisjunctionListRxGene{
+    fun sampleDisjunctionListRxGene(rand: Randomness): DisjunctionListRxGene {
 
         return DisjunctionListRxGene(listOf(
                 sampleDisjunctionRxGene(rand),
@@ -138,51 +335,49 @@ object GeneSamplerForTests {
         ))
     }
 
-    fun sampleDisjunctionRxGene(rand: Randomness) : DisjunctionRxGene{
+    fun sampleDisjunctionRxGene(rand: Randomness): DisjunctionRxGene {
 
         val selection = geneClasses
                 .filter { !it.isAbstract }
                 .filter { it.isSubclassOf(RxTerm::class) }
 
+        val numberOfTerms = rand.nextInt(1, 3)
         return DisjunctionRxGene(
                 name = "rand DisjunctionRxGene",
-                terms = listOf(
-                        sample(rand.choose(selection), rand),
-                        sample(rand.choose(selection), rand),
-                        sample(rand.choose(selection), rand)
-                ),
+                terms = List(numberOfTerms) { sample(rand.choose(selection), rand) },
                 matchStart = rand.nextBoolean(),
                 matchEnd = rand.nextBoolean()
         )
     }
 
-    fun sampleCharacterRangeRxGene(rand: Randomness) : CharacterRangeRxGene{
+    fun sampleCharacterRangeRxGene(rand: Randomness): CharacterRangeRxGene {
         return CharacterRangeRxGene(
                 negated = false, // TODO update once fixed
-                ranges = listOf(Pair('a','z'))
+                ranges = listOf(Pair('a', 'z'))
         )
     }
 
-    fun sampleCharacterClassEscapeRxGene(rand: Randomness) : CharacterClassEscapeRxGene{
+    fun sampleCharacterClassEscapeRxGene(rand: Randomness): CharacterClassEscapeRxGene {
         return CharacterClassEscapeRxGene(type = rand.choose(listOf("w", "W", "d", "D", "s", "S")))
     }
 
-    fun sampleAnyCharacterRxGene(rand: Randomness) : AnyCharacterRxGene{
+    fun sampleAnyCharacterRxGene(rand: Randomness): AnyCharacterRxGene {
         return AnyCharacterRxGene()
     }
 
-    fun sampleTimeGene(rand: Randomness) : TimeGene{
-        return TimeGene(name= "rand TimeGene")
+    fun sampleTimeGene(rand: Randomness): TimeGene {
+        return TimeGene(name = "rand TimeGene")
     }
-    fun sampleDateTimeGene(rand: Randomness) : DateTimeGene{
+
+    fun sampleDateTimeGene(rand: Randomness): DateTimeGene {
         return DateTimeGene("rand DateTimeGene")
     }
 
-    fun sampleDateGene(rand: Randomness) : DateGene{
+    fun sampleDateGene(rand: Randomness): DateGene {
         return DateGene(name = "rand DateGene", onlyValidDates = rand.nextBoolean())
     }
 
-    fun sampleSeededGene(rand: Randomness) : SeededGene<*>{
+    fun sampleSeededGene(rand: Randomness): SeededGene<*> {
 
         //TODO update after refactoring SeededGene with ChoiceGene (to implement)
 
@@ -191,10 +386,10 @@ object GeneSamplerForTests {
                 gene = sampleStringGene(rand),
                 seeded = sampleEnumGene(rand) as EnumGene<StringGene>,
                 employSeeded = rand.nextBoolean()
-                )
+        )
     }
 
-    fun sampleTupleGene(rand: Randomness) : TupleGene{
+    fun sampleTupleGene(rand: Randomness): TupleGene {
 
         val selection = geneClasses.filter { !it.isAbstract }
 
@@ -210,7 +405,7 @@ object GeneSamplerForTests {
         )
     }
 
-    fun samplePairGene(rand: Randomness) : PairGene<*,*>{
+    fun samplePairGene(rand: Randomness): PairGene<*, *> {
 
         val selection = geneClasses.filter { !it.isAbstract }
 
@@ -222,17 +417,17 @@ object GeneSamplerForTests {
         )
     }
 
-    fun sampleOptionalGene(rand: Randomness) : OptionalGene{
+    fun sampleOptionalGene(rand: Randomness): OptionalGene {
 
         val selection = geneClasses.filter { !it.isAbstract }
 
         return OptionalGene(
-                name="rand OptionalGene",
-                gene=sample(rand.choose(selection), rand)
+                name = "rand OptionalGene",
+                gene = sample(rand.choose(selection), rand)
         )
     }
 
-    fun sampleObjectGene(rand: Randomness) : ObjectGene{
+    fun sampleObjectGene(rand: Randomness): ObjectGene {
 
         val selection = geneClasses.filter { !it.isAbstract }
 
@@ -246,44 +441,44 @@ object GeneSamplerForTests {
         )
     }
 
-    fun sampleNumericStringGene(rand: Randomness) : NumericStringGene{
+    fun sampleNumericStringGene(rand: Randomness): NumericStringGene {
         return NumericStringGene(
-                name= "rand NumericStringGene",
+                name = "rand NumericStringGene",
                 minLength = rand.nextInt(2),
                 number = sample(BigDecimalGene::class, rand)
         )
     }
 
-    fun sampleMapGene(rand: Randomness): MapGene<*,*>{
+    fun sampleMapGene(rand: Randomness): MapGene<*, *> {
 
-        val min = rand.nextInt(0,2)
+        val min = rand.nextInt(0, 2)
 
         return MapGene(
                 name = "rand MapGene",
                 minSize = rand.choose(listOf(null, min)),
-                maxSize = rand.choose(listOf(null, min + rand.nextInt(1,3))),
+                maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3))),
                 template = sample(PairGene::class, rand)
         )
     }
 
-    fun sampleLimitObjectGene(rand: Randomness): LimitObjectGene{
-        return LimitObjectGene(name="rand LimitObjectGene")
+    fun sampleLimitObjectGene(rand: Randomness): LimitObjectGene {
+        return LimitObjectGene(name = "rand LimitObjectGene")
     }
 
-    fun sampleImmutableDataHolderGene(rand: Randomness): ImmutableDataHolderGene{
+    fun sampleImmutableDataHolderGene(rand: Randomness): ImmutableDataHolderGene {
         return ImmutableDataHolderGene(
-                name="rand ImmutableDataHolderGene",
+                name = "rand ImmutableDataHolderGene",
                 value = rand.nextWordString(),
                 inQuotes = rand.nextBoolean()
         )
     }
 
-    fun sampleEnumGene(rand: Randomness) : EnumGene<*>{
-        return EnumGene<String>("rand EnumGene", listOf("A","B","C"))
+    fun sampleEnumGene(rand: Randomness): EnumGene<*> {
+        return EnumGene<String>("rand EnumGene ${rand.nextInt()}", listOf("A", "B", "C"))
     }
 
 
-    fun sampleDisruptiveGene(rand: Randomness) : DisruptiveGene<*>{
+    fun sampleDisruptiveGene(rand: Randomness): DisruptiveGene<*> {
         val selection = geneClasses
                 .filter { !it.isAbstract }
                 .filter { it != DisruptiveGene::class }
@@ -292,16 +487,16 @@ object GeneSamplerForTests {
         return DisruptiveGene("rand DisruptiveGene", chosen, 0.5)
     }
 
-    fun sampleCycleObjectGene(rand: Randomness) : CycleObjectGene{
+    fun sampleCycleObjectGene(rand: Randomness): CycleObjectGene {
         return CycleObjectGene("rand CycleObjectGene ${rand.nextInt()}")
     }
 
 
-    fun sampleBooleanGene(rand: Randomness) : BooleanGene{
-        return BooleanGene(name="rand boolean ${rand.nextInt()}")
+    fun sampleBooleanGene(rand: Randomness): BooleanGene {
+        return BooleanGene(name = "rand boolean ${rand.nextInt()}")
     }
 
-    fun sampleDoubleGene(rand: Randomness) : DoubleGene{
+    fun sampleDoubleGene(rand: Randomness): DoubleGene {
         val min = rand.nextDouble()
 
         return DoubleGene(
@@ -311,38 +506,38 @@ object GeneSamplerForTests {
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, rand.nextInt())),
-                scale = rand.choose(listOf(null, rand.nextInt(0,2)))
+                scale = rand.choose(listOf(null, rand.nextInt(0, 2)))
         )
     }
 
 
-    fun sampleIntegerGene(rand: Randomness) : IntegerGene{
+    fun sampleIntegerGene(rand: Randomness): IntegerGene {
         val min = rand.nextInt() / 2
 
         return IntegerGene(
                 name = "rand IntegerGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + rand.nextInt(0,100))),
+                max = rand.choose(listOf(null, min + rand.nextInt(0, 100))),
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, rand.nextInt())),
         )
     }
 
-    fun sampleLongGene(rand: Randomness) : LongGene{
+    fun sampleLongGene(rand: Randomness): LongGene {
         val min = rand.nextLong() / 2
 
         return LongGene(
                 name = "rand LongGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + rand.nextInt(0,100))),
+                max = rand.choose(listOf(null, min + rand.nextInt(0, 100))),
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
-                precision = rand.choose(listOf(null, rand.nextInt(0,2))),
+                precision = rand.choose(listOf(null, rand.nextInt(0, 2))),
         )
     }
 
-    fun sampleFloatGene(rand: Randomness) : FloatGene{
+    fun sampleFloatGene(rand: Randomness): FloatGene {
         val min = rand.nextFloat()
 
         return FloatGene(
@@ -352,37 +547,44 @@ object GeneSamplerForTests {
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, rand.nextInt())),
-                scale = rand.choose(listOf(null, rand.nextInt(0,2)))
+                scale = rand.choose(listOf(null, rand.nextInt(0, 2)))
         )
     }
 
-    fun sampleBigDecimalGene(rand: Randomness) : BigDecimalGene{
+    fun sampleBigDecimalGene(rand: Randomness): BigDecimalGene {
 
         val min = rand.nextLong()
 
         return BigDecimalGene(
-              name = "rand BigDecimalGene ${rand.nextInt()}",
-              min = rand.choose(listOf(null, BigDecimal(min))),
-              max = rand.choose(listOf(null, BigDecimal(min + rand.nextDouble()))),
-              minInclusive = rand.nextBoolean(),
-              maxInclusive = rand.nextBoolean(),
-              floatingPointMode = rand.nextBoolean(),
-              precision = rand.choose(listOf(null, rand.nextInt())),
-              scale = rand.choose(listOf(null, rand.nextInt(0,2)))
+                name = "rand BigDecimalGene ${rand.nextInt()}",
+                min = rand.choose(listOf(null, BigDecimal(min))),
+                max = rand.choose(listOf(null, BigDecimal(min + rand.nextDouble()))),
+                minInclusive = rand.nextBoolean(),
+                maxInclusive = rand.nextBoolean(),
+                floatingPointMode = rand.nextBoolean(),
+                precision = rand.choose(listOf(null, rand.nextInt(0,100))),
+                scale = rand.choose(listOf(null, rand.nextInt(0, 2)))
         )
     }
 
-    fun sampleBigIntegerGene(rand: Randomness) : BigIntegerGene{
+    fun sampleBigIntegerGene(rand: Randomness): BigIntegerGene {
+        val minBigInteger: BigInteger?
+        val maxBigInteger: BigInteger?
 
-        val min = rand.nextLong()
-
+        if (rand.nextBoolean()) {
+            minBigInteger = null
+            maxBigInteger = null
+        } else {
+            minBigInteger = BigInteger.valueOf(rand.nextLong())
+            maxBigInteger = minBigInteger.plus(BigInteger.valueOf(rand.nextLong(0, Long.MAX_VALUE)))
+        }
         return BigIntegerGene(
                 name = "rand BigIntegerGene ${rand.nextInt()}",
-                min = rand.choose(listOf(null, BigInteger.valueOf(min))),
-                max = rand.choose(listOf(null, BigInteger.valueOf(min + rand.nextInt()))),
+                min = minBigInteger,
+                max = maxBigInteger,
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
-                precision = rand.choose(listOf(null, rand.nextInt())),
+                precision = rand.choose(listOf(null, rand.nextInt(0, 100))),
         )
     }
 
@@ -394,7 +596,7 @@ object GeneSamplerForTests {
         return ArrayGene("rand array ${rand.nextInt()}", chosen)
     }
 
-    fun sampleBase64StringGene(rand: Randomness): Base64StringGene{
+    fun sampleBase64StringGene(rand: Randomness): Base64StringGene {
         return Base64StringGene("rand Base64StringGene ${rand.nextInt()}")
     }
 
