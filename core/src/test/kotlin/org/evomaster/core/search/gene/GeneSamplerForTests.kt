@@ -236,7 +236,7 @@ object GeneSamplerForTests {
         val selection = geneClasses.filter { !it.isAbstract }
         return SqlMultidimensionalArrayGene("rand SqlMultidimensionalArrayGene",
                 template = sample(rand.choose(selection), rand),
-                numberOfDimensions = rand.nextInt(MAX_NUMBER_OF_DIMENSIONS))
+                numberOfDimensions = rand.nextInt( MAX_NUMBER_OF_DIMENSIONS))
     }
 
     private fun sampleSqlNullableGene(rand: Randomness): SqlNullableGene {
@@ -553,14 +553,22 @@ object GeneSamplerForTests {
 
     fun sampleBigDecimalGene(rand: Randomness): BigDecimalGene {
 
-        val min = rand.nextLong()
+        val minBigDecimal: BigDecimal?
+        val maxBigDecimal: BigDecimal?
+        if (rand.nextBoolean()) {
+            minBigDecimal = null
+            maxBigDecimal = null
+        } else {
+            minBigDecimal = BigDecimal.valueOf(rand.nextLong())
+            maxBigDecimal = minBigDecimal + BigDecimal.valueOf(rand.nextLong(0,Long.MAX_VALUE))
+        }
 
         return BigDecimalGene(
                 name = "rand BigDecimalGene ${rand.nextInt()}",
-                min = rand.choose(listOf(null, BigDecimal(min))),
-                max = rand.choose(listOf(null, BigDecimal(min + rand.nextDouble()))),
-                minInclusive = rand.nextBoolean(),
-                maxInclusive = rand.nextBoolean(),
+                min = minBigDecimal,
+                max = maxBigDecimal,
+                minInclusive = if (minBigDecimal==null) true else rand.nextBoolean(),
+                maxInclusive = if (maxBigDecimal==null) true else rand.nextBoolean(),
                 floatingPointMode = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, rand.nextInt(0,100))),
                 scale = rand.choose(listOf(null, rand.nextInt(0, 2)))

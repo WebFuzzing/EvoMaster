@@ -75,14 +75,14 @@ class ArrayGene<T>(
     }
 
     override fun copyContent(): Gene {
-        val copy = ArrayGene<T>(name,
+        val copy = ArrayGene(name,
                 template.copyContent() as T,
                 maxSize,
                 minSize,
                 elements.map { e -> e.copyContent() as T }.toMutableList()
         )
         if (copy.children.size!=this.children.size) {
-            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${children.size}) vs. template (${template.getViewOfChildren().size})")
+            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${copy.children.size}) vs. template (${this.children.size})")
         }
         return copy
     }
@@ -123,7 +123,6 @@ class ArrayGene<T>(
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         if(maxSize == 0){
-            //nothing to do
             return
         }
 
@@ -131,13 +130,14 @@ class ArrayGene<T>(
         clearElements()
         log.trace("Randomizing ArrayGene")
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
-        (0 until n).forEach {
+        repeat(n) {
             val gene = template.copy() as T
 //            gene.parent = this
             gene.randomize(randomness, false)
-            elements.add(gene)
             addChild(gene)
         }
+        assert(minSize==null || (minSize!! <= elements.size))
+        assert(maxSize==null || (elements.size <= maxSize!!))
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {

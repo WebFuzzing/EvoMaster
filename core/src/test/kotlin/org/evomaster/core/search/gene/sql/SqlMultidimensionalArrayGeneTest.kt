@@ -586,5 +586,14 @@ class SqlMultidimensionalArrayGeneTest {
 
     }
 
-
+    @Test
+    fun testRandomizeEmptyDimensions() {
+        val gene = SqlMultidimensionalArrayGene(
+                "multidimensionaArray",
+                template = IntegerGene("element"),
+                numberOfDimensions = 0
+        )
+        val rand = Randomness()
+        gene.randomize(rand,false,listOf())
+    }
 }

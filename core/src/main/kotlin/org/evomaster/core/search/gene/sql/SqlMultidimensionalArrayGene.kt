@@ -104,18 +104,21 @@ class SqlMultidimensionalArrayGene<T>(
                 dimensionSizes: List<Int>,
                 template: T
         ): MutableList<Any> {
-            val currentDimensionSize = dimensionSizes.first()
-            val nextDimensionSizes = dimensionSizes.drop(1)
             val nestedListOfNewElements: MutableList<Any> = mutableListOf()
-            repeat(currentDimensionSize) {
-                val element = if (nextDimensionSizes.isEmpty()) {
-                    template.copy()
-                } else {
-                    buildNewElements(nextDimensionSizes, template)
+            if (dimensionSizes.isNotEmpty()) {
+                val currentDimensionSize = dimensionSizes.first()
+                val nextDimensionSizes = dimensionSizes.drop(1)
+                repeat(currentDimensionSize) {
+                    val element = if (nextDimensionSizes.isEmpty()) {
+                        template.copy()
+                    } else {
+                        buildNewElements(nextDimensionSizes, template)
+                    }
+                    nestedListOfNewElements.add(element)
                 }
-                nestedListOfNewElements.add(element)
             }
             return nestedListOfNewElements
+
         }
 
         private fun containsSameValueAs(nestedListOfElements: List<Any>, otherNestedListOfElements: List<Any>): Boolean {
@@ -240,9 +243,6 @@ class SqlMultidimensionalArrayGene<T>(
         }
         return dimensionSizes
     }
-
-
-
 
 
     /**

@@ -18,8 +18,7 @@ class GeneTest {
             This number should not change, unless you explicitly add/remove any gene.
             if so, update this number accordingly
          */
-        assertEquals(40, genes.size)
-        //assertEquals(64, genes.size) //TODO put back once adding SQL to sampler
+        assertEquals(69, genes.size)
     }
 
     @Test
