@@ -7,7 +7,7 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlMultidimensionalArrayGene
-import org.evomaster.core.search.gene.sql.SqlNullable
+import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -162,13 +162,13 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
 
         val nullableArrayColumn = genes[0] as SqlMultidimensionalArrayGene<*>
         assertEquals(1, nullableArrayColumn.numberOfDimensions)
-        assertTrue(nullableArrayColumn.template is SqlNullable)
+        assertTrue(nullableArrayColumn.template is SqlNullableGene)
         assertEquals("\"{}\"", nullableArrayColumn.getValueAsPrintableString())
 
         nullableArrayColumn.replaceElements(dimensionSizes = listOf(1))
 
-        val sqlNullable = nullableArrayColumn.getElement(listOf(0)) as SqlNullable
-        sqlNullable.isPresent = false
+        val sqlNullableGene = nullableArrayColumn.getElement(listOf(0)) as SqlNullableGene
+        sqlNullableGene.isPresent = false
 
         assertEquals("\"{NULL}\"", nullableArrayColumn.getValueAsPrintableString())
 

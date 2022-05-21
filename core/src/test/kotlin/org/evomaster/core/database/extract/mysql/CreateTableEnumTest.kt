@@ -3,7 +3,7 @@ package org.evomaster.core.database.extract.mysql
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.EnumGene
-import org.evomaster.core.search.gene.sql.SqlNullable
+import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -35,8 +35,8 @@ class CreateTableEnumTest : ExtractTestBaseMySQL() {
         val actions = builder.createSqlInsertionAction("shirts", setOf("name", "size"))
 
         val sizeGene = actions[0].seeGenes().find { it.name == "size" }
-        assertTrue(sizeGene is SqlNullable)
-        (sizeGene as SqlNullable).apply {
+        assertTrue(sizeGene is SqlNullableGene)
+        (sizeGene as SqlNullableGene).apply {
             assertTrue(gene is EnumGene<*>)
             assertEquals(5, (gene as EnumGene<*>).values.size)
             assertTrue((gene as EnumGene<*>).values.containsAll(listOf("x-small","small","medium","large","x-large")))

@@ -69,15 +69,15 @@ class SqlJsonGeneStructureTest : GeneStructuralElementBaseTest() {
     }
 }
 
-class SqlNullableStructureTest : GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene = SqlNullable("nullable",IntegerGene("foo", 1))
+class SqlNullableGeneStructureTest : GeneStructuralElementBaseTest() {
+    override fun getCopyFromTemplate(): Gene = SqlNullableGene("nullable",IntegerGene("foo", 1))
 
     override fun assertCopyFrom(base: Gene) {
-        assertTrue(base is SqlNullable)
-        assertEquals(1, ((base as SqlNullable).gene as IntegerGene).value)
+        assertTrue(base is SqlNullableGene)
+        assertEquals(1, ((base as SqlNullableGene).gene as IntegerGene).value)
     }
 
-    override fun getStructuralElement(): SqlNullable = SqlNullable("nullable",IntegerGene("foo", 0))
+    override fun getStructuralElement(): SqlNullableGene = SqlNullableGene("nullable",IntegerGene("foo", 0))
 
     override fun getExpectedChildrenSize(): Int  = 1
 }

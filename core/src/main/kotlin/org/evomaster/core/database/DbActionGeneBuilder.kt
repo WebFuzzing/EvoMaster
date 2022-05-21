@@ -277,7 +277,7 @@ class DbActionGeneBuilder {
                     SqlMultiRangeGene(column.name, template = buildSqlTimestampRangeGene(column))
 
                 ColumnDataType.PG_LSN ->
-                    SqlLogSeqNumber(column.name)
+                    SqlLogSeqNumberGene(column.name)
 
                 ColumnDataType.COMPOSITE_TYPE ->
                     handleCompositeColumn(id, table, column)
@@ -308,7 +308,7 @@ class DbActionGeneBuilder {
 
         if (column.nullable && fk == null) {
             //FKs handle nullability in their own custom way
-            gene = SqlNullable(column.name, gene)
+            gene = SqlNullableGene(column.name, gene)
         }
 
         if (column.dimension > 0) {

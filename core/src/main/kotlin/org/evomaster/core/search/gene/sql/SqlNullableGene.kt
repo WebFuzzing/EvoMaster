@@ -15,9 +15,9 @@ import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
 
 
-class SqlNullable(name: String,
-                  val gene: Gene,
-                  var isPresent: Boolean = true
+class SqlNullableGene(name: String,
+                      val gene: Gene,
+                      var isPresent: Boolean = true
 ) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
     init{
@@ -28,7 +28,7 @@ class SqlNullable(name: String,
     }
 
     companion object{
-        private val log: Logger = LoggerFactory.getLogger(SqlNullable::class.java)
+        private val log: Logger = LoggerFactory.getLogger(SqlNullableGene::class.java)
         private const val ABSENT = 0.1
     }
 
@@ -38,7 +38,7 @@ class SqlNullable(name: String,
     }
 
     override fun copyContent(): Gene {
-        return SqlNullable(name, gene.copyContent(), isPresent)
+        return SqlNullableGene(name, gene.copyContent(), isPresent)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -96,7 +96,7 @@ class SqlNullable(name: String,
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlNullable) {
+        if (other !is SqlNullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.isPresent = other.isPresent
@@ -104,7 +104,7 @@ class SqlNullable(name: String,
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlNullable) {
+        if (other !is SqlNullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.isPresent == other.isPresent &&
@@ -120,7 +120,7 @@ class SqlNullable(name: String,
     override fun innerGene(): List<Gene> = listOf(gene)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlNullable) isPresent = gene.isPresent
+        if (gene is SqlNullableGene) isPresent = gene.isPresent
         return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 }

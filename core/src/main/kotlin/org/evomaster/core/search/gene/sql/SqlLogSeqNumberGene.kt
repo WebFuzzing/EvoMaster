@@ -21,7 +21,7 @@ import kotlin.math.pow
  *  Min value is 0/0
  *  Max value is FFFFFFFF/FFFFFFFF
  */
-class SqlLogSeqNumber(
+class SqlLogSeqNumberGene(
         /**
          * The name of this gene
          */
@@ -50,7 +50,7 @@ class SqlLogSeqNumber(
         ) : Gene(name, mutableListOf(leftPart, rightPart)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(SqlLogSeqNumber::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlLogSeqNumberGene::class.java)
 
         val MAX_VALUE = 2.toDouble().pow(32.toDouble()).toLong() - 1
 
@@ -60,7 +60,7 @@ class SqlLogSeqNumber(
 
 
     override fun copyContent(): Gene {
-        return SqlLogSeqNumber(
+        return SqlLogSeqNumberGene(
                 name = name,
                 leftPart = leftPart.copyContent() as LongGene,
                 rightPart = rightPart.copyContent() as LongGene
@@ -68,7 +68,7 @@ class SqlLogSeqNumber(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlLogSeqNumber) {
+        if (other !is SqlLogSeqNumberGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
@@ -77,7 +77,7 @@ class SqlLogSeqNumber(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlLogSeqNumber) {
+        if (other !is SqlLogSeqNumberGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return leftPart.containsSameValueAs(other.leftPart)
@@ -128,7 +128,7 @@ class SqlLogSeqNumber(
             listOf(leftPart, rightPart)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlLogSeqNumber) {
+        if (gene is SqlLogSeqNumberGene) {
             this.leftPart.bindValueBasedOn(gene.leftPart)
             this.rightPart.bindValueBasedOn(gene.rightPart)
         }

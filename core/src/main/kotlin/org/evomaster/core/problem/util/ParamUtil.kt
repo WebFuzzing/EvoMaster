@@ -7,7 +7,7 @@ import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
-import org.evomaster.core.search.gene.sql.SqlNullable
+import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 
 /**
@@ -276,7 +276,7 @@ class ParamUtil {
                 if (gene.gene is SqlAutoIncrementGene)
                     return gene
                 else return getValueGene(gene.gene)
-            } else if (gene is SqlNullable) {
+            } else if (gene is SqlNullableGene) {
                 return getValueGene(gene.gene)
             }
             return gene

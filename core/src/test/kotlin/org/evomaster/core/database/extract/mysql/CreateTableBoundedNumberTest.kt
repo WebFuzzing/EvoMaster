@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.sql.SqlNullable
+import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -58,8 +58,8 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
             }
 
             val dd = this[1]
-            assertTrue(dd is SqlNullable)
-            (dd as SqlNullable).apply {
+            assertTrue(dd is SqlNullableGene)
+            (dd as SqlNullableGene).apply {
                 assertTrue(this.gene is DoubleGene)
                 assertNull((this.gene as DoubleGene).scale)
             }
