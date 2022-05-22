@@ -8,15 +8,12 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import org.evomaster.core.utils.NumberCalculationUtil
-import org.evomaster.core.utils.NumberCalculationUtil.boundaryDecimal
 import org.evomaster.core.utils.NumberCalculationUtil.getMiddle
 import org.evomaster.core.utils.NumberCalculationUtil.upperBound
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.math.BigInteger
-import kotlin.math.round
 
 /**
  * gene represents bigInteger
@@ -34,16 +31,38 @@ class BigIntegerGene(
     minInclusive : Boolean = true,
     maxInclusive : Boolean = true
 ) : IntegralNumberGene<BigInteger> (name, value,
-    min = if (precision != null ) (-upperBound(precision, 0)).toBigInteger().run { if (min== null || this > min) this else min } else min,
-    max = if (precision != null ) upperBound(precision, 0).toBigInteger().run { if (max == null || this < max) this else max } else max,
+    min = deriveMin(precision, min),
+    max = deriveMax(precision, max),
     precision, minInclusive, maxInclusive) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(BigIntegerGene::class.java)
+        private const val MAX_INTERNAL_PRECISION = 19
 
+        private fun deriveMin(precision: Int?, min: BigInteger?) : BigInteger?{
+            validatePrecision(precision)
+            if (precision == MAX_INTERNAL_PRECISION)
+                return Long.MIN_VALUE.toBigInteger()
+
+            return if (precision != null ) (-upperBound(precision, 0)).toBigInteger().run { if (min== null || this > min) this else min } else min
+        }
+
+        private fun deriveMax(precision: Int?, min: BigInteger?) : BigInteger?{
+            validatePrecision(precision)
+            if (precision == MAX_INTERNAL_PRECISION)
+                return Long.MAX_VALUE.toBigInteger()
+
+            return if (precision != null ) (-upperBound(precision, 0)).toBigInteger().run { if (min== null || this > min) this else min } else min
+        }
+
+        private fun validatePrecision(precision: Int?){
+            if (precision != null && (precision > MAX_INTERNAL_PRECISION || precision <= 0))
+                throw IllegalArgumentException("invalid precision: the precision for BigInteger are $MAX_INTERNAL_PRECISION for max and 1 for min, but $precision is specified")
+        }
     }
 
     init {
+
         if (getMaximum() == getMinimum())
             this.value = getMinimum()
         if (getMaximum() < getMinimum())

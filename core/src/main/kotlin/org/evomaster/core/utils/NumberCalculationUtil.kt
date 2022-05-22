@@ -53,7 +53,11 @@ object NumberCalculationUtil {
      * @return decimal upperbound with specified precision and scale
      */
     fun upperBound(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP) : BigDecimal{
-        if (scale > 0 && size > NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE){
+        if (size > NumberMutatorUtils.MAX_INTEGER_PRECISION){
+            throw IllegalArgumentException("for integer, the max precision is ${NumberMutatorUtils.MAX_INTEGER_PRECISION}, but $size is specified")
+        }
+
+        if (scale > 0 && size > NumberMutatorUtils.MAX_DOUBLE_PRECISION){
             log.warn("there would exist error if the precision is greater than 15 for floating point number")
         }
 
