@@ -47,12 +47,12 @@ class BigIntegerGene(
             return if (precision != null ) (-upperBound(precision, 0)).toBigInteger().run { if (min== null || this > min) this else min } else min
         }
 
-        private fun deriveMax(precision: Int?, min: BigInteger?) : BigInteger?{
+        private fun deriveMax(precision: Int?, max: BigInteger?) : BigInteger?{
             validatePrecision(precision)
             if (precision == MAX_INTERNAL_PRECISION)
                 return Long.MAX_VALUE.toBigInteger()
 
-            return if (precision != null ) (-upperBound(precision, 0)).toBigInteger().run { if (min== null || this > min) this else min } else min
+            return if (precision != null ) upperBound(precision, 0).toBigInteger().run { if (max == null || this < max) this else max } else max
         }
 
         private fun validatePrecision(precision: Int?){
