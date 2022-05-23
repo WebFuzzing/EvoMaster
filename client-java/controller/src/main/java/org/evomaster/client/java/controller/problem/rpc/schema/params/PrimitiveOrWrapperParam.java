@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
@@ -181,6 +182,30 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
         setValueBasedOnStringValue(dto.stringValue);
+    }
+
+    public Object convertValueTo(Object value){
+        Class type = getType().getClazz();
+        String s = value.toString();
+        if (Integer.class.equals(type) || int.class.equals(type)) {
+            return Integer.valueOf(s);
+        }else if (Boolean.class.equals(type) || boolean.class.equals(type)) {
+            return Boolean.valueOf(s);
+        } else if (Double.class.equals(type) || double.class.equals(type)) {
+            return Double.valueOf(s);
+        } else if (Float.class.equals(type) ||  float.class.equals(type)) {
+            return Float.valueOf(s);
+        } else if (Long.class.equals(type) || long.class.equals(type)) {
+            return Long.valueOf(value.toString());
+        }  else if (Character.class.equals(type) || char.class.equals(type)) {
+            assert s.length() == 1;
+            return s.charAt(0);
+        } else if (Byte.class.equals(type) || byte.class.equals(type)) {
+            return Byte.valueOf(s);
+        } else if (Short.class.equals(type) || short.class.equals(type)) {
+            return Short.valueOf(s);
+        }
+        throw new RuntimeException("cannot find the type:"+type);
     }
 
     abstract public void setValueBasedOnStringValue(String stringValue);

@@ -17,6 +17,9 @@ public class HypermutationTestBase extends SpringTestBase {
 
         boolean result = true;
         for (Map<String, GeneImpact> a : ind.getActionGeneImpact()){
+            if (a.values().stream().noneMatch(s-> s.getId().contains(xGeneId)))
+                continue;
+
 
             int x = a.values().stream().filter(s-> s.getId().contains(xGeneId)).findFirst().get().getTimesToManipulate();
             int y = a.values().stream().filter(s-> s.getId().contains(yGeneId)).findFirst().get().getTimesToManipulate();

@@ -3,6 +3,7 @@ package org.evomaster.core.output.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.BlackBoxUtils
@@ -438,6 +439,8 @@ class TestSuiteWriter {
             lines.add("private static readonly HttpClient Client = new HttpClient ();")
         }
 
+        testCaseWriter.addExtraStaticVariables(lines)
+
         if (config.expectationsActive) {
             if (config.outputFormat.isJavaOrKotlin()) {
                 //TODO JS and C#
@@ -522,8 +525,10 @@ class TestSuiteWriter {
                     appendSemicolon(lines)
                 }
             }
-
+            testCaseWriter.addExtraInitStatement(lines)
         }
+
+
 
         if (format.isJavaScript()) {
             lines.append(");")

@@ -118,7 +118,9 @@ class SupportedCodeOracle : ImplementedOracle() {
     override fun selectForClustering(action: EvaluatedAction): Boolean {
         return if (action.result is HttpWsCallResult
                 && action.action is RestCallAction
-                &&this::objectGenerator.isInitialized)
+                &&this::objectGenerator.isInitialized
+                && !(action.action as RestCallAction).skipOracleChecks
+        )
             !supportedCode(action.action as RestCallAction, action.result as HttpWsCallResult)
         else false
     }

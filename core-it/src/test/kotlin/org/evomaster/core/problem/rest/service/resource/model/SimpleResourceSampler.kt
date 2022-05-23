@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service.resource.model
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.RestActionBuilderV3
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.service.ResourceSampler
 import javax.annotation.PostConstruct
 
@@ -26,4 +27,6 @@ class SimpleResourceSampler : ResourceSampler() {
     @PostConstruct
     override fun initialize(){
     }
+
+    override fun getExcludedActions(): List<RestCallAction> = listOf()
 }

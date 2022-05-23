@@ -127,6 +127,9 @@ class ExpectationEMTest : SpringTestBase() {
         val iterations = 1000
 
         val lambda = {args: MutableList<String> ->
+            args.add("--addPreDefinedTests")
+            args.add("false")
+
             setOutputFormat(args, outputFormat)
 
             setExpectations(args, expectationActive)

@@ -6,7 +6,6 @@ import org.evomaster.core.EMConfig.SqlInitResourceStrategy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.resource.*
@@ -46,6 +45,11 @@ class ResourceManageService {
      */
     val cluster: ResourceCluster = ResourceCluster()
 
+    /**
+     * a cluster for resource nodes which are not part of action cluster
+     */
+    private val excludedCluster : MutableMap<String, ExcludedResourceNode> = mutableMapOf()
+
 
     private var sqlInsertBuilder : SqlInsertBuilder? = null
 
@@ -69,6 +73,12 @@ class ResourceManageService {
             dm.deriveDependencyBasedOnSchema(cluster)
     }
 
+    fun initExcludedResourceNode(actions: List<RestCallAction>){
+        actions.groupBy { it.path.toString() }.forEach {g->
+            val path = RestPath(g.key)
+            excludedCluster.putIfAbsent(g.key, ExcludedResourceNode(path, g.value.toMutableList()))
+        }
+    }
 
     /**
      * this function is used to initialized ad-hoc individuals for resource-based individual
@@ -306,7 +316,8 @@ class ResourceManageService {
     /**
      * @return a resource node based on the specified [key]
      */
-    fun getResourceNodeFromCluster(key : String) : RestResourceNode = cluster.getResourceNode(key)?: throw IllegalArgumentException("cannot find the resource with a key $key")
+    fun getResourceNodeFromCluster(key : String) : RestResourceNode =
+        cluster.getResourceNode(key)?: excludedCluster[key]?: throw IllegalArgumentException("cannot find the resource with a key $key")
 
     /**
      * @return table info

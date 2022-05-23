@@ -46,7 +46,8 @@ class RestCallAction(
          */
         var locationId: String? = null,
     val produces: List<String> = listOf(),
-    val responseRefs : MutableMap<String, String> = mutableMapOf()
+    val responseRefs : MutableMap<String, String> = mutableMapOf(),
+    val skipOracleChecks : Boolean = false
 ) : HttpWsAction(auth, parameters) {
 
     /**
@@ -68,7 +69,7 @@ class RestCallAction(
 
     override fun copyContent(): Action {
         val p = parameters.asSequence().map(Param::copyContent).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs)
+        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs, skipOracleChecks)
     }
 
     override fun getName(): String {

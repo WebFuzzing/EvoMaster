@@ -30,7 +30,10 @@ class StatisticsEMTest : SpringTestBase() {
                 "org.foo.StatisticsEM",
                 terminations,
                 1000
-        ){args: List<String> ->
+        ){args: MutableList<String> ->
+
+            args.add("--addPreDefinedTests")
+            args.add("false")
 
             val solution = initAndRun(args)
 

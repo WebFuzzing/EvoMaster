@@ -1,6 +1,7 @@
 import h from "../../../../src/instrumentation/heuristic/HeuristicsForBooleans";
 import CollectionsDistanceUtils from "../../../../src/instrumentation/methodreplacement/CollectionsDistanceUtils";
 import DistanceHelper from "../../../../dist/instrumentation/heuristic/DistanceHelper";
+import {EqualityAlgorithm} from "../../../../src/instrumentation/heuristic/DistanceHelper";
 
 beforeEach(() => {
     h.clearLastEvaluation();
@@ -80,4 +81,54 @@ test("test not find null", ()=>{
     const h = CollectionsDistanceUtils.getHeuristicToIncludes(x, null);
     expect(h).toBeLessThan(1);
     expect(h >= DistanceHelper.H_NOT_NULL).toBeTruthy();
+})
+
+test("test -0 and +0", ()=>{
+    const x : number[] = [-0]
+    let h = CollectionsDistanceUtils.getHeuristicToIncludes(x, +0, EqualityAlgorithm.AbstractEquality);
+    expect(h).toBe(1);
+
+    h = CollectionsDistanceUtils.getHeuristicToIncludes(x, +0, EqualityAlgorithm.StrictEquality);
+    expect(h).toBe(1);
+
+    h = CollectionsDistanceUtils.getHeuristicToIncludes(x, +0, EqualityAlgorithm.SameValueZero);
+    expect(h).toBe(1);
+
+    h = CollectionsDistanceUtils.getHeuristicToIncludes(x, +0, EqualityAlgorithm.SameValue);
+    expect(h).toBeLessThan(1);
+
+    let h1 = CollectionsDistanceUtils.getHeuristicToIncludes(x, 0.1, EqualityAlgorithm.SameValue);
+    expect(h1).toBeLessThan(h);
+})
+
+test("test NaN", ()=>{
+    const x : number[] = [NaN]
+
+    let h = CollectionsDistanceUtils.getHeuristicToIncludes(x, NaN, EqualityAlgorithm.AbstractEquality);
+    expect(h).toBeLessThan(1);
+
+    h = CollectionsDistanceUtils.getHeuristicToIncludes(x, NaN, EqualityAlgorithm.StrictEquality);
+    expect(h).toBeLessThan(1);
+
+    h = CollectionsDistanceUtils.getHeuristicToIncludes(x, NaN, EqualityAlgorithm.SameValueZero);
+    expect(h).toBe(1);
+
+    h = CollectionsDistanceUtils.getHeuristicToIncludes(x, NaN, EqualityAlgorithm.SameValue);
+    expect(h).toBe(1);
+})
+
+test("test NaN as string", ()=>{
+    const x : string[] = [NaN.toString()]
+
+    let h = CollectionsDistanceUtils.getHeuristicToIncludes(x, NaN, EqualityAlgorithm.AbstractEquality);
+    expect(h).toBe(1);
+
+    h = CollectionsDistanceUtils.getHeuristicToIncludes(x, NaN, EqualityAlgorithm.StrictEquality);
+    expect(h).toBeLessThan(1);
+
+    h = CollectionsDistanceUtils.getHeuristicToIncludes(x, NaN, EqualityAlgorithm.SameValueZero);
+    expect(h).toBeLessThan(1);
+
+    h = CollectionsDistanceUtils.getHeuristicToIncludes(x, NaN, EqualityAlgorithm.SameValue);
+    expect(h).toBeLessThan(1);
 })

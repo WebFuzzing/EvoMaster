@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
@@ -14,6 +15,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -144,6 +146,32 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         }
 
         setValue(values);
+    }
+
+    @Override
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        List<NamedTypedValue> values = new ArrayList<>();
+        List<NamedTypedValue> fields = getType().getFields();
+
+        if (isValidInstance(json)){
+            setValueBasedOnInstance(json);
+        }else {
+            /*
+                in jackson, object would be extracted as a map
+             */
+            assert json instanceof Map;
+
+            for (NamedTypedValue f: fields){
+                NamedTypedValue copy = f.copyStructureWithProperties();
+                Object fiv = ((Map)json).get(f.getName());
+                copy.setValueBasedOnInstanceOrJson(fiv);
+
+                values.add(copy);
+            }
+
+            setValue(values);
+        }
+
     }
 
     @Override

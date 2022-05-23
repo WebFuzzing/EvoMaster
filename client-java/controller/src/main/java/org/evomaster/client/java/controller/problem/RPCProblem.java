@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,12 +52,23 @@ public class RPCProblem implements ProblemInfo{
      */
     public final Map<String, List<String>> involveEndpointsByAnnotation;
 
+
+    /**
+     *
+     * @param interfaceClass  an interface with API definition
+     * @param client          an actual client library for the API
+     * @param type            the type of RPC system
+     */
+    public <T,K extends T> RPCProblem(Class<T> interfaceClass, K client, RPCType type){
+        this(new HashMap<String,Object>(){{put(interfaceClass.getName(),client);}},type);
+    }
+
     /**
      *
      * @param mapOfInterfaceAndClient a map of interfaces with their corresponding client
      */
     public RPCProblem(Map<String, Object> mapOfInterfaceAndClient) {
-        this(mapOfInterfaceAndClient, RPCType.THRIFT);
+        this(mapOfInterfaceAndClient, RPCType.GENERAL);
     }
 
     /**

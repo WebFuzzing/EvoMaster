@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.external.service.ExternalServiceInfo
@@ -38,6 +39,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     lateinit var swagger: OpenAPI
         protected set
 
+    private lateinit var infoDto: SutInfoDto
+
     // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
     @Inject
     protected lateinit var externalServices: ExternalServices
@@ -59,7 +62,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             throw SutProblemException("Failed to start the system under test")
         }
 
-        val infoDto = rc.getSutInfo()
+        infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
         val problem = infoDto.restProblem
@@ -115,6 +118,51 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             val seededTestCases = parser.parseTestCases(config.seedTestCasesPath)
             adHocInitialIndividuals.addAll(seededTestCases.map { createIndividual(it) })
         }
+
+    }
+
+
+    override fun getPreDefinedIndividuals() : List<RestIndividual>{
+        val addCallAction = addCallToSwagger() ?: return listOf()
+        return listOf(createIndividual(mutableListOf(addCallAction)))
+    }
+
+    open fun getExcludedActions() : List<RestCallAction>{
+        val addCallAction = addCallToSwagger() ?: return listOf()
+        return listOf(addCallAction)
+    }
+
+    /*
+        This is mainly done for the coverage of the generated tests, in case there are targets
+        on the endpoint from which the schema is fetched from.
+        particularly important for NodeJS applications
+     */
+    private fun addCallToSwagger() : RestCallAction?{
+
+        val id =  "Call to Swagger"
+
+        if (configuration.blackBox && !configuration.bbExperiments) {
+            return if (configuration.bbSwaggerUrl.startsWith("http", true)){
+                 RestCallAction(id, HttpVerb.GET, RestPath(configuration.bbSwaggerUrl), mutableListOf(), skipOracleChecks = true)
+            } else
+                null
+        }
+
+
+        val base = infoDto.baseUrlOfSUT
+        val openapi = infoDto.restProblem.openApiUrl
+
+        if(openapi == null || !openapi.startsWith(base)){
+            /*
+                We only make the call if schema is on same host:port of the API,
+                ie coming from SUT. Otherwise would not be much of the point.
+             */
+            return null
+        }
+        var path = openapi.substring(base.length)
+        if(!path.startsWith("/")) path = "$path/"
+
+        return RestCallAction(id, HttpVerb.GET, RestPath(path), mutableListOf(), skipOracleChecks = true)
     }
 
     /**

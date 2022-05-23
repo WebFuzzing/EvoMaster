@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
@@ -84,6 +85,23 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
     }
 
     @Override
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        if (json == null) return;
+
+        assert json instanceof String;
+        Object instance = parseValueWithJson((String) json);
+
+        PairParam t = getType().getTemplate();
+        List<PairParam> values = new ArrayList<>();
+        for (Object e : ((Map) instance).entrySet()){
+            PairParam copy = (PairParam) t.copyStructureWithProperties();
+            copy.setValueBasedOnInstanceOrJson(e);
+            values.add(copy);
+        }
+        setValue(values);
+    }
+
+    @Override
     public List<String> newInstanceWithJava(boolean isDeclaration, boolean doesIncludeName, String variableName, int indent) {
         String fullName = getType().getTypeNameForInstance();
         List<String> codes = new ArrayList<>();
@@ -113,6 +131,8 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
         CodeJavaGenerator.addCode(codes, "}", indent);
         return codes;
     }
+
+
 
     @Override
     public List<String> newAssertionWithJava(int indent, String responseVarName, int maxAssertionForDataInCollection) {

@@ -6,6 +6,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 
@@ -21,9 +22,7 @@ public class HypermutationController extends SpringController {
 
     @Override
     public ProblemInfo getProblemInfo() {
-        return new RPCProblem(new HashMap<String, Object>() {{
-            put(HypermutationService.Iface.class.getName(), client);
-        }});
+        return new RPCProblem(HypermutationService.Iface.class, client, RPCType.THRIFT);
     }
 
     @Override
