@@ -49,7 +49,10 @@ object GqlConst {
     const val ENUM = "enum"
     const val LIST = "list"
     const val INPUT_OBJECT = "input_object"
-    /**/
+    /*
+    *Those are entry points of GraphQL query and mutation
+    * Queries and mutations names are defined by developers, so they can have different names
+    * eg: query, rootquery ...  */
     const val QUERY = "query"
     const val QUERY_TYPE = "querytype"
     const val ROOT = "root"
