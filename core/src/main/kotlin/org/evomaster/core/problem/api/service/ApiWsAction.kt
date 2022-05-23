@@ -20,6 +20,10 @@ abstract class ApiWsAction(
 ) : Action(parameters){
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-        seeGenes().forEach { it.randomize(randomness, forceNewValue) }
+        seeGenes().forEach {
+            //TODO should refactor name
+            it.doInitialize(randomness)
+        //    it.randomize(randomness, forceNewValue)
+        }
     }
 }

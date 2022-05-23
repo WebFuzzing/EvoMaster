@@ -115,7 +115,8 @@ abstract class StructuralElement (
         if (parent == null && !isDefinedRoot()) {
             val msg = "${this::class.java} should have a parent but currently it is null"
             //LoggingUtil.uniqueWarn(log, msg)
-            throw IllegalStateException(msg)
+            //FIXME we need to discuss in details this invariant
+           // throw IllegalStateException(msg)
         }
         val copy = copyContent()
         copy.postCopy(this)
