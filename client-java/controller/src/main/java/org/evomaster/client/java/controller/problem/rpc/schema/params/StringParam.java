@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
@@ -136,6 +137,12 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     public void setValueBasedOnDto(ParamDto dto) {
         if (dto.stringValue != null)
             setValue(dto.stringValue);
+    }
+
+    @Override
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        assert json instanceof String;
+        setValue((String) json);
     }
 
     @Override

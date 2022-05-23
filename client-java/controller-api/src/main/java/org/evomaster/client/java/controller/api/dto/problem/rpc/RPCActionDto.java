@@ -23,6 +23,28 @@ public class RPCActionDto {
     public String clientInfo;
 
     /**
+     * a variable referring to client instance
+     *
+     * this info would be used in static init declaration referring
+     * to an actual client instance in the generated test
+     * then later, the variable could be used to process rpc function call
+     *
+     * eg, the variable is foo
+     * public class Test{
+     *     private static Client foo;
+     *     ...
+     *     pubic void test(){
+     *         response = foo.bar(request)
+     *     }
+     * }
+     *
+     * TODO
+     * Note that the current test generation is proceeded in the driver
+     * if we move it to core, this info could be removed
+     */
+    public String clientVariable;
+
+    /**
      * name of the action
      */
     public String actionName;
@@ -94,6 +116,7 @@ public class RPCActionDto {
         RPCActionDto copy = new RPCActionDto();
         copy.interfaceId = interfaceId;
         copy.clientInfo = clientInfo;
+        copy.clientVariable = clientVariable;
         copy.actionName = actionName;
         copy.responseParam = responseParam;
         if (requestParams != null)

@@ -4,7 +4,6 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
-import org.evomaster.client.java.controller.problem.rpc.schema.params.PrimitiveOrWrapperParam;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 import java.util.ArrayList;
@@ -189,9 +188,10 @@ public class EndpointSchema {
     /**
      * process to generate java code to invoke this request
      * @param responseVarName specifies a variable name representing a response of this endpoint
+     * @param clientVariable
      * @return code to send the request and set the response if exists
      */
-    public List<String> newInvocationWithJava(String responseVarName, String controllerVarName){
+    public List<String> newInvocationWithJava(String responseVarName, String controllerVarName, String clientVariable){
         List<String> javaCode = new ArrayList<>();
         if (response != null){
             boolean isPrimitive = (response.getType() instanceof PrimitiveOrWrapperType) && !((PrimitiveOrWrapperType)response.getType()).isWrapper;
@@ -203,7 +203,10 @@ public class EndpointSchema {
             javaCode.addAll(param.newInstanceWithJava(indent));
         }
         String paramVars = requestParams.stream().map(NamedTypedValue::getName).collect(Collectors.joining(","));
-        String client = CodeJavaGenerator.castToType(clientTypeName, CodeJavaGenerator.getGetClientMethod(controllerVarName,"\""+interfaceName+"\""));
+        String client = clientVariable;
+        if (client == null)
+            client = CodeJavaGenerator.castToType(clientTypeName, CodeJavaGenerator.getGetClientMethod(controllerVarName,"\""+interfaceName+"\""));
+        assert client != null;
 
         CodeJavaGenerator.addCode(
                 javaCode,

@@ -2,8 +2,12 @@ package org.evomaster.client.java.controller.problem.rpc.invocation;
 
 import com.thrift.example.artificial.*;
 import io.restassured.RestAssured;
+import io.restassured.common.mapper.TypeRef;
+import io.restassured.path.json.JsonPath;
+import io.restassured.response.ResponseBodyExtractionOptions;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
+import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
@@ -32,6 +36,7 @@ public class RPCSutControllerTest {
     public final static FakeSutController rpcController = new FakeSutController();
 
     private static List<RPCInterfaceSchemaDto> interfaceSchemas;
+    private static List<List<RPCActionDto>> seededTestDtos;
 
     @BeforeAll
     public static void initClass() {
@@ -44,20 +49,22 @@ public class RPCSutControllerTest {
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
 
-        interfaceSchemas = given()
+        RPCProblemDto dto = given()
                 .accept(Formats.JSON_V1)
                 .get("/infoSUT")
                 .then()
                 .statusCode(200)
                 .body("data.isSutRunning", is(false))
-                .extract().body().jsonPath().getList("data.rpcProblem.schemas.", RPCInterfaceSchemaDto.class);
+                .extract().body().jsonPath().getObject("data.rpcProblem.", RPCProblemDto.class);
+
+        interfaceSchemas = dto.schemas;
+        seededTestDtos = dto.seededTestDtos;
     }
 
     @AfterAll
     public static void tearDown() {
         rpcController.stopSut();
     }
-
 
 
     @Test
@@ -84,6 +91,32 @@ public class RPCSutControllerTest {
 
         assertTrue(types.contains(BigNumberObj.class.getName()));
 
+    }
+
+
+    @Test
+    public void testSeedcheck(){
+
+        assertEquals(1, seededTestDtos.size());
+        assertEquals(1, seededTestDtos.get(0).size());
+
+        RPCActionDto test_1 = seededTestDtos.get(0).get(0);
+        RPCActionDto dto = test_1.copy();
+
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        dto.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        String expectedResponse = "1;2;3;" + System.lineSeparator()+
+                "1;2;3;" + System.lineSeparator()+
+                "BigNumberObj{bdPositiveFloat=10.12, bdNegativeFloat=-10.12, bdPositiveOrZeroFloat=0.00, bdNegativeOrZeroFloat=-2.16, biPositive=10, biPositiveOrZero=0, biNegative=-10, biNegativeOrZero=-2};" + System.lineSeparator()+
+                "1:1;2:2;";
+        assertEquals(expectedResponse, responseDto.rpcResponse.stringValue);
     }
 
     @Test

@@ -1614,6 +1614,10 @@ class EMConfig {
             "`null` represents to employ the setting specified on the EM driver side")
     var employSmartDbClean : Boolean? = null
 
+    
+    @Cfg("Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs.")
+    var addPreDefinedTests : Boolean = true
+    
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds

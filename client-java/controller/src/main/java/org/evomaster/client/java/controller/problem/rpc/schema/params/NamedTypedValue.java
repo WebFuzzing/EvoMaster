@@ -1,7 +1,10 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
+import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
 
 import java.util.ArrayList;
@@ -15,6 +18,8 @@ import java.util.stream.Collectors;
 public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
     public final static String NOT_NULL_MARK_OBJ_DATE = "{}";
+
+    private final static ObjectMapper objectMaper = new ObjectMapper();
 
     /**
      * name of the instance, eg param name
@@ -195,6 +200,30 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
             setValueBasedOnValidInstance(instance);
         else
             throw new IllegalStateException("class of the instance ("+ instance.getClass().getName() +") does not conform with this param: "+getType().getFullTypeName());
+    }
+
+    /**
+     * set value based on json
+     * @param json contains value info with json format
+     */
+    public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException{
+        Object instance = null;
+        if (!isValidInstance(json)){
+            if (json instanceof String)
+                instance = parseValueWithJson((String) json);
+            else if (PrimitiveOrWrapperType.isPrimitiveOrTypes(json.getClass())){
+                instance = ((PrimitiveOrWrapperParam)this).convertValueTo(json);
+            } else
+                throw new RuntimeException("Fail to extract value from json for "+ getType().getFullTypeName());
+        }else
+            instance = json;
+
+
+        setValueBasedOnInstance(instance);
+    }
+
+    public Object parseValueWithJson(String json) throws JsonProcessingException {
+        return objectMaper.readValue(json, getType().getClazz());
     }
 
     /**

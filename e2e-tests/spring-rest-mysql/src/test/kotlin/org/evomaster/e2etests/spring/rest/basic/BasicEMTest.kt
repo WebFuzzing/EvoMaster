@@ -54,6 +54,14 @@ class BasicEMTest : RestTestBase() {
              */
             val allSql = Files.readAllLines(Paths.get(saveExecutedSQLToFile))
             // 100 actions + 1 header
+            /*
+                if the excluded action such as call to get swagger is included,
+                thus not every action leads to sql execution
+                the test would fail.
+                currently simply remove the assertion for size
+
+                TODO need to check once the strategy to execute excluded action is decided,
+             */
             assertEquals(budget + 1, allSql.size)
             val ignoreInitSql = allSql.none { s->
                 s.contains("INSERT INTO X")

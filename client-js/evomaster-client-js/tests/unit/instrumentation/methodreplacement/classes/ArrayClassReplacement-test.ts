@@ -10,17 +10,36 @@ const id = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate"
 
 test("Test Array includes", () => {
 
-    const arrays_string = ["foo", 1, 2, 3, null, undefined]
+    const arrays_string = ["foo", 1, 2, 3, null, undefined, -0, NaN]
 
     let ok = ArrayClassReplacement.includes(id, arrays_string, "foo")
     expect(ok).toBe(true);
 
-    ok = ArrayClassReplacement.includes(id, arrays_string, null)
+    ok = ArrayClassReplacement.includes(id, arrays_string, "foo", 0)
+    expect(ok).toBe(true);
+
+    ok = ArrayClassReplacement.includes(id, arrays_string, null, 4)
     expect(ok).toBe(true);
 
     ok = ArrayClassReplacement.includes(id, arrays_string, undefined)
     expect(ok).toBe(true);
 
-    const wrong = ArrayClassReplacement.includes(id, arrays_string, "bar");
+    ok = ArrayClassReplacement.includes(id, arrays_string, undefined, -3)
+    expect(ok).toBe(true);
+
+    ok = ArrayClassReplacement.includes(id, arrays_string, +0)
+    expect(ok).toBe(true);
+
+    ok = ArrayClassReplacement.includes(id, arrays_string, NaN)
+    expect(ok).toBe(true);
+
+    let wrong = ArrayClassReplacement.includes(id, arrays_string, "bar");
     expect(wrong).toBe(false);
+
+    wrong = ArrayClassReplacement.includes(id, arrays_string, "foo", 1);
+    expect(wrong).toBe(false);
+
+    wrong = ArrayClassReplacement.includes(id, arrays_string, null, 5);
+    expect(wrong).toBe(false);
+
 });
