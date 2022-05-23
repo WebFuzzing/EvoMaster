@@ -18,6 +18,9 @@ class ExternalServices {
      * calls inside the SUT. Information will be passed to the core
      * through AdditionalInfoDto and will be captured under
      * AbstractRestFitness and AbstractRestSample for further use.
+     *
+     * TODO: This is not the final implementation need to refactor but
+     * the concept is working.
      */
 
     /**
@@ -95,6 +98,8 @@ class ExternalServices {
     private fun getIP() : String {
         val ip: String
         when (config.externalServiceIPSelectionStrategy) {
+            // Although the default address will be a random, this
+            // option allows selecting explicitly
             EMConfig.ExternalServiceIPSelectionStrategy.RANDOM -> {
                 ip = if (externalServiceInfos.size > 0) {
                     getNextAvailableAddress()

@@ -7,6 +7,7 @@ class ExternalServiceInfo(
         val remoteHostname: String,
         val remotePort: Int) {
 
+    // TODO: Need to refactor
     private lateinit var wireMockServer : WireMockServer
 
     init {
