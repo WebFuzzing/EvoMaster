@@ -90,13 +90,13 @@ class IntrospectiveQuery {
         val node: JsonNode = try {
             jackson.readTree(body)
         } catch (e: JsonProcessingException) {
-            return null
+            throw SutProblemException(e.printStackTrace().toString())
         }
 
         val withErrors= node.findPath("errors")
 
        if (!withErrors.isEmpty){
-            throw SutProblemException("Failed to retrieve GraphQL schema: response contains error.")
+            throw SutProblemException("Failed to retrieve GraphQL schema. Response contains error: $body .")
        }
 
         return body
