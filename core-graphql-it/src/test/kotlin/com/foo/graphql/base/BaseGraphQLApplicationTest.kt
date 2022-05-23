@@ -31,7 +31,9 @@ class BaseGraphQLApplicationTest{
 
             val actionCluster = mutableMapOf<String, Action>()
 
-            GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+            if (schema != null) {
+                GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+            }
 
             assertEquals(1, actionCluster.size)
             val all = actionCluster.get("all")  as GraphQLAction
