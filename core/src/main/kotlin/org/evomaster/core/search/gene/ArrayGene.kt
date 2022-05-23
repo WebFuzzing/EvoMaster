@@ -254,7 +254,7 @@ class ArrayGene<T>(
     fun addElement(element: T){
         checkConstraintsForAdd()
 
-        elements.add(element)
+        //elements.add(element)
         addChild(element)
     }
 

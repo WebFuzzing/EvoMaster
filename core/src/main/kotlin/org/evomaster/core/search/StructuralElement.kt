@@ -92,11 +92,13 @@ abstract class StructuralElement (
      * After this method is called, need to call [postCopy] to setup to
      * relationship. This will be handled in [copy]
      */
+    //TODO protected?
     abstract fun copyContent(): StructuralElement
 
     /**
      * post-handling on the copy based on its [template]
      */
+    //TODO protected?
     open fun postCopy(template : StructuralElement){
         if (children.size != template.children.size)
             throw IllegalStateException("copy and its template have different size of children, e.g., copy (${children.size}) vs. template (${template.children.size})")

@@ -19,17 +19,22 @@ class OneMaxIndividual(
 
     init {
         (0 until n).forEach {
-            list.add(EnumGene<Double>("$it", listOf(0.0, 0.25, 0.5, 0.75, 1.0), 0))
+            val gene = EnumGene<Double>("$it", listOf(0.0, 0.25, 0.5, 0.75, 1.0), 0)
+            list.add(gene)
         }
         addChildren(list)
     }
 
+    fun initialize(rand: Randomness){
+        list.forEach{it.doInitialize(rand)}
+    }
 
     override fun copyContent(): Individual {
 
         val copy = OneMaxIndividual(n, trackOperator)
         (0 until n).forEach {
-            copy.list[it].index = this.list[it].index
+            copy.list[it].copyValueFrom(this.list[it])
+            copy.list[it].markAllAsInitialized()
         }
         return copy
     }

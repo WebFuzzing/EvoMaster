@@ -96,9 +96,14 @@ abstract class Gene(
             identifyAsRoot()
         }
         randomize(rand, false)
+        markAllAsInitialized()
+        Lazy.assert{isValid()}
+    }
+
+    //TODO needed for copies. check if can be refactored, eg if copyContent enforce the copy of initialized
+    fun markAllAsInitialized(){
         flatView().forEach{it.initialized = true}
         initialized = true
-        Lazy.assert{isValid()}
     }
 
     /**

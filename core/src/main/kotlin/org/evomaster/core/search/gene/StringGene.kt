@@ -588,7 +588,6 @@ class StringGene(
 
         this.specializationGenes.clear()
         this.specializationGenes.addAll(other.specializationGenes.map { it.copy() })
-        addChildren(this.specializationGenes)
 
         this.tainted = other.tainted
 
