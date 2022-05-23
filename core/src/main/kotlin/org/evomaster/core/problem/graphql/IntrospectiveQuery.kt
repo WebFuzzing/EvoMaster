@@ -74,14 +74,16 @@ class IntrospectiveQuery {
             throw e
         }
 
-        if (response.status != 200) {
-            throw SutProblemException("Failed to retrieve GraphQL schema. Status code: ${response.status}")
-        }
-
         /*
-            Extract the body from response as a string
-         */
+           Extract the body from response as a string
+        */
         val body = response.readEntity(String::class.java)
+
+        if (response.status != 200) {
+            throw SutProblemException("Failed to retrieve GraphQL schema." +
+                    " Status code: ${response.status}." +
+                    " Response: $body")
+        }
 
         val jackson = ObjectMapper()
 
