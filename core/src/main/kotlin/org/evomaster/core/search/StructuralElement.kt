@@ -103,6 +103,7 @@ abstract class StructuralElement (
         children.indices.forEach {
             children[it].postCopy(template.children[it])
         }
+        isDefinedRoot = template.isDefinedRoot()
     }
 
     /**

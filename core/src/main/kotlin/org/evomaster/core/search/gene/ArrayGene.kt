@@ -45,6 +45,7 @@ class ArrayGene<T>(
 
     init {
         if(template is CycleObjectGene){
+            minSize = 0
             maxSize = 0
             clearElements()
         }
