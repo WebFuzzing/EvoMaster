@@ -25,7 +25,7 @@ class IntrospectiveQuery {
             .property(ClientProperties.READ_TIMEOUT, 30_000)
             //workaround bug in Jersey client
             .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-            .property(ClientProperties.FOLLOW_REDIRECTS, false)
+            .property(ClientProperties.FOLLOW_REDIRECTS, true)
 
 
     /**
@@ -83,14 +83,12 @@ class IntrospectiveQuery {
          */
         val body = response.readEntity(String::class.java)
 
-        //TODO parse this body here to see if it has any "errors" field and no "data"
-
         val jackson = ObjectMapper()
 
         val node: JsonNode = try {
             jackson.readTree(body)
         } catch (e: JsonProcessingException) {
-            throw SutProblemException(e.printStackTrace().toString())
+            throw SutProblemException("Failed to parse GraphQL schema as a JSON object: ${e.message}")
         }
 
         val withErrors= node.findPath("errors")
