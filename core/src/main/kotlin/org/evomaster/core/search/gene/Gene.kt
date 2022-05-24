@@ -114,6 +114,7 @@ abstract class Gene(
         if (copy !is Gene)
             throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
         copy.initialized = initialized
+        copy.flatView().forEach{it.initialized = initialized}
         return copy
     }
 

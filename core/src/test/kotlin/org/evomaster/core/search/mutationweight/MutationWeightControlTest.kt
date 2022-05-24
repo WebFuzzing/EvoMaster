@@ -106,7 +106,9 @@ class MutationWeightControlTest {
         time.newActionEvaluation(5)
 
         val individual = GeneWeightTestSchema.newRestIndividual("POST:/gw/efoo")
+        individual.doInitialize(randomness)
         val obj = individual.seeGenes(Individual.GeneFilter.NO_SQL).find { it is ObjectGene }
+
 
         assertNotNull(obj)
 

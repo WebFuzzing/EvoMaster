@@ -224,14 +224,27 @@ class GeneTest {
 
         sample.filter { it.isMutable() }
                 .forEach { root ->
+                    checkInvariants(root)
                     root.doInitialize(rand)
-                    assertTrue(root.isValid(), "Failed for ${root.javaClass}")
+                    checkInvariants(root)
 
                     val copy = root.copy()
-                    assertTrue(copy.isValid(), "Failed for ${root.javaClass}")
+                    checkInvariants(copy);
                 }
     }
 
+
+    private fun checkInvariants(gene: Gene){
+
+        val msg = "Failed invariant for ${gene.javaClass}"
+
+        assertTrue(gene.isValid(), msg)
+
+        val initialized = gene.initialized
+        assertTrue(gene.flatView().all { it.initialized == initialized }, msg)
+
+        assertEquals(1, gene.flatView().map { it.getRoot() }.toSet().size)
+    }
 
     //TODO for each *Gene, sample random instances, and verify properties
 }

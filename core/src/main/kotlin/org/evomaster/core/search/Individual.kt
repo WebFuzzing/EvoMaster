@@ -91,6 +91,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return seeActions()
     }
 
+    fun doInitialize(randomness: Randomness){
+        seeActions().forEach { it.doInitialize(randomness) }
+    }
+
     /**
      * Return a view of all the "actions" defined in this individual.
      * Note: each action could be composed by 0 or more genes

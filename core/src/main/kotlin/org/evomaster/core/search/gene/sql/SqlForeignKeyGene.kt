@@ -64,12 +64,17 @@ class SqlForeignKeyGene(
                 .toSet()
 
         if (pks.isEmpty()) {
-            if (!nullable) {
-                throw IllegalStateException("Trying to bind a non-nullable FK, but no valid PK is found")
-            } else {
+            /*
+                FIXME: we cannot crash here.
+                TODO We need new method / post-processing when we have intra-action dependencies
+                eg, enforceIntraActionDependencies()
+             */
+//            if (!nullable) {
+//                throw IllegalStateException("Trying to bind a non-nullable FK, but no valid PK is found")
+//            } else {
                 uniqueIdOfPrimaryKey = -1
                 return
-            }
+//            }
         }
 
         /*
