@@ -62,10 +62,6 @@ public class SutControllerTest {
             return null;
         }
 
-        @Override
-        public String getDatabaseDriverName() {
-            return null;
-        }
 
         @Override
         public ProblemInfo getProblemInfo() {

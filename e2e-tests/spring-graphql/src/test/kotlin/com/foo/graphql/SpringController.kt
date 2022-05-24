@@ -69,7 +69,5 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
         return "http://localhost:$sutPort"
     }
 
-    override fun getDatabaseDriverName(): String? {
-        return null
-    }
+
 }
