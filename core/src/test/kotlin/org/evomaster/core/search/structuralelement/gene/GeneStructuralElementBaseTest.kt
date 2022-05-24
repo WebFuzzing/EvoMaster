@@ -54,13 +54,16 @@ abstract class GeneStructuralElementBaseTest : StructuralElementBaseTest() {
         val base = getStructuralElement()
         assertTrue(base is Gene)
         if (base is Gene){
-            if (throwExceptionInRandomnessTest())
-                assertThrows<Exception> { base.randomize(randomness, true, listOf()) }
-            else{
+            /*
+                We no longer crash in randomize, due intra-action constraints
+             */
+           // if (throwExceptionInRandomnessTest())
+             //   assertThrows<Exception> { base.randomize(randomness, true, listOf()) }
+       //     else{
                 base.randomize(randomness, true, listOf())
                 assertChildren(base, expectedChildrenSizeAfterRandomness())
                 additionalAssertionsAfterRandomness(base)
-            }
+         //   }
         }
     }
 

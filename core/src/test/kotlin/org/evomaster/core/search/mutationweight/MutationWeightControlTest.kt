@@ -129,8 +129,15 @@ class MutationWeightControlTest {
         /*
               30 fields for einfoObj, it is unlikely to select a specific field at the first attempt, eg, 5th field
          */
-        val result = selectField(einfoObj!!, 5, 1, SubsetGeneSelectionStrategy.DEFAULT)
-        assertFalse(result)
+        var counter = 0
+        repeat(100){
+            val result = selectField(einfoObj!!, 4, 1, SubsetGeneSelectionStrategy.DEFAULT)
+            if(result) counter++
+        //assertFalse(result)
+        }
+        //should be selected very seldom
+        assertTrue(counter > 0)
+        assertTrue(counter < 10)
     }
 
     private fun selectField(obj: ObjectGene, indexOfField : Int, times : Int, selectionStrategy: SubsetGeneSelectionStrategy) : Boolean{

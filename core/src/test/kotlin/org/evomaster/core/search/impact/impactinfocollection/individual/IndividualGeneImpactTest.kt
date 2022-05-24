@@ -223,6 +223,7 @@ class IndividualGeneImpactTest {
                     true,mutatedIndex
                 )
                 ind2.actions.removeAt(mutatedIndex)
+                ind2.killChildByIndex(mutatedIndex)
 
             }else{
                 val action = IndAction.getIndAction(1).first()
@@ -234,6 +235,7 @@ class IndividualGeneImpactTest {
                 )
 
                 ind2.actions.add(mutatedIndex, action)
+                ind2.addChild(action)
             }
 
             mutatedGeneSpecification.setMutatedIndividual(ind2)
@@ -301,7 +303,8 @@ class IndividualGeneImpactTest {
             }
         }
         override fun copyContent(): Individual {
-            return Ind(actions.map { it.copyContent() as IndAction }.toMutableList())
+            return Ind(actions.map { it.copy() as IndAction }.toMutableList(),
+                    initialization.map { it.copy() as IndAction }.toMutableList())
         }
 
         override fun seeGenes(filter: GeneFilter): List<out Gene> {

@@ -16,6 +16,9 @@ abstract class StructuralElement (
     protected open val children : MutableList<out StructuralElement> = mutableListOf()
 ) {
 
+    //FIXME this workaround does not seem to work, see ProcessMonitorTest
+    //constructor() : this(mutableListOf()) //issues with Kotlin compiler
+
     companion object{
         private val log = LoggerFactory.getLogger(StructuralElement::class.java)
     }

@@ -73,7 +73,7 @@ class UpdateForBodyParamStructureTest : StructuralElementBaseTest() {
             listOf(IntegerGene("f1"), DoubleGene("f2"), LongGene("f3"))),
         EnumGene("contentType", listOf("application/json"))))
 
-    override fun getExpectedChildrenSize(): Int =1
+    override fun getExpectedChildrenSize(): Int = 2
 
     @Test
     fun testChildType(){

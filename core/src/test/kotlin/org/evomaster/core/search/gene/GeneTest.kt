@@ -224,7 +224,6 @@ class GeneTest {
 
         sample.filter { it.isMutable() }
                 .forEach { root ->
-                    checkInvariants(root)
                     root.doInitialize(rand)
                     checkInvariants(root)
 
@@ -245,6 +244,8 @@ class GeneTest {
 
         assertEquals(1, gene.flatView().map { it.getRoot() }.toSet().size)
     }
+
+
 
     //TODO for each *Gene, sample random instances, and verify properties
 }
