@@ -51,6 +51,7 @@ class BodyParam(gene: Gene,
         }
 
         contenTypeGene = EnumGene(typeGene.name, options, typeGene.index)
+        if(typeGene.initialized) contenTypeGene.markAllAsInitialized()
         addChild(contenTypeGene)
     }
 
