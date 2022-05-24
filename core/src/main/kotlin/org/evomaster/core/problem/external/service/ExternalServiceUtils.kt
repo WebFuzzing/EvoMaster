@@ -31,6 +31,10 @@ object ExternalServiceUtils {
         if (tokens[0].toInt() != 127) {
             throw Exception("Next available IP address is out of usable range")
         }
+        // In the loopback address range 127.0.0.0/8, 127.255.255.255 will be the broadcast
+        // address. 127.0.0.1 is skipped because the default loopback address and used in
+        // other services commonly. 127.0.0.0 skipped because is the network address with
+        // the mask 255.0.0.0 describes the whole loopback addresses.
         val reservedIPAddresses = arrayOf("127.0.0.0", "127.255.255.255", "127.0.0.1")
         if (reservedIPAddresses.contains(ip)) {
             ip = nextIPAddress(ip)
@@ -40,6 +44,11 @@ object ExternalServiceUtils {
 
     /**
      * This will generate random IP address for loopback range.
+     *
+     * Note: there is a chance for randomly generated IP address from different
+     * execution to end-up closer to each other. Although the likelihood is low, but
+     * can happen. As the result when creating the next IP address from the last used,
+     * there will be negligible amount of small impact on the speed of the execution.
      */
     fun generateRandomIPAddress() : String {
         val (p1, p2, p3) = Triple(
@@ -64,20 +73,17 @@ object ExternalServiceUtils {
             socket.connect(InetSocketAddress(address, port), 1000)
             false
         } catch (e: ConnectException) {
-            println(e.message)
             true
         } catch (e: SocketTimeoutException) {
-            println(e.message)
             true
         } catch (e: IOException) {
-            println(e.message)
             true
         } finally {
             if (socket != null) {
                 try {
                     socket.close()
                 } catch (e: IOException) {
-                    println(e.message)
+                    println(address + ": " + e.message)
                 }
             }
         }
