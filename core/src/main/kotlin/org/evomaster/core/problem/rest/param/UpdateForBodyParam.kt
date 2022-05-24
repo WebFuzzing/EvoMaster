@@ -11,9 +11,13 @@ import org.evomaster.core.search.gene.Gene
  * However, we CANNOT modify the phenotype of the individual after evaluation :(
  * So we add info to modify the individual at its next mutation
  *
- * Note that the children of UpdateForBodyParam is [body] (BodyParam) not [gene] as other types of Param
  */
-class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body.gene) {
+class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body.seeGenes().toMutableList()) {
+
+    /*
+        TODO check if issue after refactoring. Previously it was:
+        "Note that the children of UpdateForBodyParam is [body] (BodyParam) not [gene] as other types of Param"
+     */
 
     override fun copyContent(): Param {
         return UpdateForBodyParam(body.copyContent() as BodyParam)

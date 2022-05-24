@@ -7,8 +7,7 @@ import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class BodyParamStructureTest : StructuralElementBaseTest() {
@@ -79,6 +78,9 @@ class UpdateForBodyParamStructureTest : StructuralElementBaseTest() {
     @Test
     fun testChildType(){
         val update = getStructuralElement()
-        assertTrue(update.getViewOfChildren().first() is BodyParam)
+        assertNotNull(update.body)
+        //due to refactoring. TODO need to check for side-effects
+        assertFalse(update.getViewOfChildren().first() is BodyParam)
+        //assertTrue(update.getViewOfChildren().first() is BodyParam)
     }
 }
