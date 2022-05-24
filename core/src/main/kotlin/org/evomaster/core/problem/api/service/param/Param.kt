@@ -4,10 +4,8 @@ import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
 
-abstract class Param(val name: String, val gene : Gene, children: List<StructuralElement>
-) : StructuralElement(mutableListOf(gene)){ //TODO check where children is used
+abstract class Param(val name: String, val gene : Gene) : StructuralElement(mutableListOf(gene)){ //TODO check where children is used
 
-    constructor(name: String, gene: Gene): this(name, gene, listOf(gene))
 
     init{
         if (name.isBlank()){
@@ -23,7 +21,7 @@ abstract class Param(val name: String, val gene : Gene, children: List<Structura
     }
 
 
-    open fun seeGenes() =  listOf<Gene>(gene)
+    open fun seeGenes() =  listOf(gene)
 
     override fun copyContent(): Param {
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")

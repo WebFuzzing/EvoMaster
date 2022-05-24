@@ -11,7 +11,7 @@ class PrimitiveTypeMatchSampler: Sampler<PrimitiveTypeMatchIndividual>() {
 
     override fun sampleAtRandom(): PrimitiveTypeMatchIndividual {
         val gene = template?.gene?.copy() ?: throw IllegalArgumentException("")
-        gene.randomize(randomness, forceNewValue = true)
+        gene.doInitialize(randomness)
         return PrimitiveTypeMatchIndividual(gene)
     }
 }

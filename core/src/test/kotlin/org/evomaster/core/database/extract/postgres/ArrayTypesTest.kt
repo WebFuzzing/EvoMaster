@@ -9,11 +9,13 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlMultidimensionalArrayGene
 import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 /**
  * Created by jgaleotti on 07-May-19.
  */
+@Disabled
 class ArrayTypesTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/postgres_array_types.sql"

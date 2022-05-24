@@ -30,7 +30,7 @@ class CharacterClassEscapeRxGeneTest {
             val gene = CharacterClassEscapeRxGene("d")
             val apc = AdaptiveParameterControl()
             val mwc = MutationWeightControl()
-            gene.randomize(randomness, forceNewValue = true, allGenes = listOf())
+            gene.doInitialize(randomness)
             gene.standardMutation(randomness, apc = apc, mwc = mwc, allGenes = listOf(), internalGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT)
             assertTrue(gene.value.toInt() >= 0, "invalid digit value: " + gene.value)
             assertTrue(gene.value.toInt() <= 90, "invalid digit value: " + gene.value)

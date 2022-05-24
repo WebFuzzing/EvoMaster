@@ -76,9 +76,9 @@ class RegexGeneStructureTest : GeneStructuralElementBaseTest() {
                 assertTrue(terms[0] is PatternCharacterBlockGene) //f
                 assertEquals(0, terms[0].getViewOfChildren().size)
                 assertTrue(terms[1] is QuantifierRxGene) //o
-                assertEquals(3, terms[1].getViewOfChildren().size) // template + o, o
+                assertEquals(2, terms[1].getViewOfChildren().size)
                 assertTrue(terms[2] is QuantifierRxGene) // \d
-                assertEquals(1, terms[2].getViewOfChildren().size) // template + no atom
+                assertEquals(0, terms[2].getViewOfChildren().size) // no atom
             }
         }
     }

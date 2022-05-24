@@ -13,7 +13,7 @@ import org.evomaster.core.search.gene.Gene
  *
  * Note that the children of UpdateForBodyParam is [body] (BodyParam) not [gene] as other types of Param
  */
-class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body.gene, listOf(body)) {
+class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body.gene) {
 
     override fun copyContent(): Param {
         return UpdateForBodyParam(body.copyContent() as BodyParam)
