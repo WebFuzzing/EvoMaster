@@ -1,9 +1,13 @@
 package org.evomaster.core.problem.external.service
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.*
 
 object ExternalServiceUtils {
+
+    private val log: Logger = LoggerFactory.getLogger(ExternalServiceUtils::class.java)
 
     /**
      * This method provides the next IP address from the given value for
@@ -83,7 +87,7 @@ object ExternalServiceUtils {
                 try {
                     socket.close()
                 } catch (e: IOException) {
-                    println(address + ": " + e.message)
+                    log.warn(address + ": " + e.message)
                 }
             }
         }
