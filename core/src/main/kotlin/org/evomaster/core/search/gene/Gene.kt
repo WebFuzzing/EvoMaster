@@ -558,12 +558,16 @@ abstract class Gene(
     override fun postCopy(template: StructuralElement) {
         //rebuild the binding genes
         val root = getRoot()
-        val postBinding = (template as Gene).bindingGenes.map {b->
-            val found = root.find(b)
-            found as? Gene?:throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
+        if(root is Individual) {
+            //TODO double-check this
+            val postBinding = (template as Gene).bindingGenes.map { b ->
+                val found = root.find(b)
+                found as? Gene
+                        ?: throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
+            }
+            bindingGenes.clear()
+            bindingGenes.addAll(postBinding)
         }
-        bindingGenes.clear()
-        bindingGenes.addAll(postBinding)
 
         super.postCopy(template)
     }

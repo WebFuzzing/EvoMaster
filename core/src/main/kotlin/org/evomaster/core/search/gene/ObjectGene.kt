@@ -39,7 +39,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         if (other !is ObjectGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        for (i in 0 until fields.size) {
+        for (i in fields.indices) {
             this.fields[i].copyValueFrom(other.fields[i])
         }
     }
