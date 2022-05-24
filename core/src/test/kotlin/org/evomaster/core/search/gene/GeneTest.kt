@@ -67,6 +67,7 @@ class GeneTest {
          */
         val rand = Randomness()
         for (i in 0..100) {
+            rand.updateSeed(i.toLong())
             val s = GeneSamplerForTests.sample(StringGene::class, rand)
             s.randomize(rand, true, listOf())
             assertTrue(s.isValid())
@@ -103,10 +104,11 @@ class GeneTest {
                 .map { GeneSamplerForTests.sample(it, Randomness()) }
     }
 
-    @Test
-    fun testRoot() {
+    @ParameterizedTest
+    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10])
+    fun testRoot(seed: Long) {
 
-        val sample = getSample(123)
+        val sample = getSample(seed)
 
         sample.forEach { root ->
             root.identifyAsRoot()
@@ -121,9 +123,10 @@ class GeneTest {
         }
     }
 
-    @Test
-    fun testParent() {
-        val sample = getSample(321)
+    @ParameterizedTest
+    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10])
+    fun testParent(seed: Long) {
+        val sample = getSample(seed)
 
         sample.forEach { root ->
             root.identifyAsRoot()
@@ -139,9 +142,9 @@ class GeneTest {
         }
     }
 
-    @Test
-    fun testParentRandomized() {
-        val seed = 45328L
+    @ParameterizedTest
+    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10])
+    fun testParentRandomized(seed: Long) {
         val rand = Randomness()
         rand.updateSeed(seed)
         val sample = getSample(seed)
@@ -165,10 +168,10 @@ class GeneTest {
     }
 
 
-    @Test
-    fun testParentWhenCopyRandomized() {
+    @ParameterizedTest
+    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10])
+    fun testParentWhenCopyRandomized(seed: Long) {
 
-        val seed = 25778L
         val rand = Randomness()
         rand.updateSeed(seed)
         val sample = getSample(seed)
@@ -193,10 +196,11 @@ class GeneTest {
                 }
     }
 
-    @Test
-    fun testParentWhenCopy() {
+    @ParameterizedTest
+    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10])
+    fun testParentWhenCopy(seed: Long) {
 
-        val sample = getSample(321)
+        val sample = getSample(seed)
 
         sample.forEach { root ->
             root.identifyAsRoot()
