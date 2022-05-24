@@ -20,7 +20,7 @@ class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body
      */
 
     override fun copyContent(): Param {
-        return UpdateForBodyParam(body.copyContent() as BodyParam)
+        return UpdateForBodyParam(body.copy() as BodyParam)
     }
 
 

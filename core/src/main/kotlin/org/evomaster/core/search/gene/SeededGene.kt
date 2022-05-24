@@ -61,7 +61,7 @@ class SeededGene<T>(
     }
 
     override fun copyContent(): SeededGene<T> {
-        val copy = SeededGene(name, gene.copyContent() as T, seeded.copyContent() as EnumGene<T>, employSeeded)
+        val copy = SeededGene(name, gene.copy() as T, seeded.copyContent() as EnumGene<T>, employSeeded)
         copy.isEmploySeededMutable = this.isEmploySeededMutable
         return copy
     }

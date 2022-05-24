@@ -23,7 +23,7 @@ class SqlAutoIncrementGeneStructureTest : GeneStructuralElementBaseTest() {
 
 class SqlForeignKeyGeneStructureTest : GeneStructuralElementBaseTest() {
 
-    override fun throwExceptionInRandomnessTest(): Boolean = true
+    override fun throwExceptionInRandomnessTest(): Boolean = false
 
     override fun getCopyFromTemplate(): Gene = SqlForeignKeyGene("id",1L, "table", false, 1L)
 

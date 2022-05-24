@@ -56,10 +56,10 @@ class RestIndividual(
 
     override fun copyContent(): Individual {
         return RestIndividual(
-                resourceCalls.map { it.copyContent() }.toMutableList(),
+                resourceCalls.map { it.copy() }.toMutableList(),
                 sampleType,
                 sampleSpec?.copy(),
-                seeInitializingActions().map { d -> d.copyContent() as DbAction } as MutableList<DbAction>,
+                seeInitializingActions().map { d -> d.copy() as DbAction } as MutableList<DbAction>,
                 trackOperator,
                 index
         )

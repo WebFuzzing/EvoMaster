@@ -33,7 +33,7 @@ class SqlTextSearchVectorGene(
 
     override fun copyContent(): Gene = SqlTextSearchVectorGene(
             name,
-            textLexeme.copyContent() as StringGene
+            textLexeme.copy() as StringGene
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

@@ -36,7 +36,7 @@ class SqlJSONPathGene(
 
     override fun copyContent(): Gene = SqlJSONPathGene(
         name,
-        pathExpression = this.pathExpression.copyContent() as StringGene
+        pathExpression = this.pathExpression.copy() as StringGene
     )
 
 

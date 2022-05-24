@@ -25,7 +25,7 @@ class SqlPolygonGene(
 
     override fun copyContent(): Gene = SqlPolygonGene(
         name,
-        points.copyContent() as ArrayGene<SqlPointGene>
+        points.copy() as ArrayGene<SqlPointGene>
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

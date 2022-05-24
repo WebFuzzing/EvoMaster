@@ -107,7 +107,7 @@ class SqlBitStringGene(
 
     override fun getDefaultMaxSize() = booleanArrayGene.getDefaultMaxSize()
 
-    override fun copyContent() = SqlBitStringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copyContent() as ArrayGene<BooleanGene>)
+    override fun copyContent() = SqlBitStringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copy() as ArrayGene<BooleanGene>)
 
     override fun mutate(
             randomness: Randomness,

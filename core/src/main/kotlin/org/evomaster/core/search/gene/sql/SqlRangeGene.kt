@@ -26,9 +26,9 @@ class SqlRangeGene<T>(
 
         private val isLeftClosed: BooleanGene = BooleanGene("isLeftClosed"),
 
-        private val left: T = template.copyContent() as T,
+        private val left: T = template.copy() as T,
 
-        private val right: T = template.copyContent() as T,
+        private val right: T = template.copy() as T,
 
         private val isRightClosed: BooleanGene = BooleanGene("isRightClosed")
 
@@ -66,11 +66,11 @@ class SqlRangeGene<T>(
     override fun copyContent(): Gene {
         return SqlRangeGene<T>(
                 name = name,
-                template = template.copyContent() as T,
-                isLeftClosed = isLeftClosed.copyContent() as BooleanGene,
-                left = left.copyContent() as T,
-                right = right.copyContent() as T,
-                isRightClosed = isRightClosed.copyContent() as BooleanGene
+                template = template.copy() as T,
+                isLeftClosed = isLeftClosed.copy() as BooleanGene,
+                left = left.copy() as T,
+                right = right.copy() as T,
+                isRightClosed = isRightClosed.copy() as BooleanGene
         )
     }
 

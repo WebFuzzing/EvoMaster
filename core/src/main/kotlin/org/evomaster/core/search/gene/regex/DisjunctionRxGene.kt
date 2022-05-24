@@ -56,7 +56,7 @@ class DisjunctionRxGene(
     override fun canBeChildless() = true
 
     override fun copyContent(): Gene {
-        val copy = DisjunctionRxGene(name, terms.map { it.copyContent() as Gene }, matchStart, matchEnd)
+        val copy = DisjunctionRxGene(name, terms.map { it.copy() as Gene }, matchStart, matchEnd)
         copy.extraPrefix = this.extraPrefix
         copy.extraPostfix = this.extraPostfix
         return copy

@@ -29,8 +29,8 @@ class SqlTimeIntervalGene(
 
     override fun copyContent(): Gene = SqlTimeIntervalGene(
             name,
-            days.copyContent() as IntegerGene,
-            time.copyContent() as TimeGene
+            days.copy() as IntegerGene,
+            time.copy() as TimeGene
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

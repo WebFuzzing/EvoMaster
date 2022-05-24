@@ -250,6 +250,6 @@ class TupleGene(
     }
 
     override fun copyContent(): Gene {
-        return TupleGene(name, elements.map(Gene::copyContent), lastElementTreatedSpecially)
+        return TupleGene(name, elements.map(Gene::copy), lastElementTreatedSpecially)
     }
 }

@@ -50,7 +50,7 @@ open class RPCCallAction(
 
     override fun copyContent(): RPCCallAction {
         val p = parameters.asSequence().map(Param::copyContent).toMutableList()
-        return RPCCallAction(id, p, responseTemplate?.copyContent(), response?.copyContent(), auth)
+        return RPCCallAction(id, p, responseTemplate?.copy() as RPCParam, response?.copy() as RPCParam, auth)
     }
 
     /**

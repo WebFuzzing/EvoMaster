@@ -97,6 +97,6 @@ class SqlInetGene(
         return result
     }
 
-    override fun copyContent() = SqlInetGene(name, octets.map { it.copyContent() as IntegerGene }.toList())
+    override fun copyContent() = SqlInetGene(name, octets.map { it.copy() as IntegerGene }.toList())
 
 }

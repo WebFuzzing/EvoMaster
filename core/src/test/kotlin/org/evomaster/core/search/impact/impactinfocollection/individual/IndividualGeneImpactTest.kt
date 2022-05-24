@@ -340,7 +340,10 @@ class IndividualGeneImpactTest {
         companion object{
             fun getIndAction(size: Int = 1): List<IndAction>{
                 if(size < 1) throw IllegalArgumentException("size should be at least 1, but $size")
-                return (0 until size).map { IndAction(listOf(StringGene("index1","index1"), StringGene("index2", "index2")))}
+                return (0 until size).map {
+                    IndAction(listOf(StringGene("index1","index1"),
+                            StringGene("index2", "index2")))
+                            .apply { doInitialize(Randomness().apply { updateSeed(42) }) }}
             }
 
             fun getSeqIndAction(size : Int) : List<IndAction>{
@@ -380,7 +383,7 @@ class IndividualGeneImpactTest {
         }
 
         override fun copyContent(): Action {
-            return IndAction(genes.map { it.copyContent() })
+            return IndAction(genes.map { it.copy() })
         }
 
         override fun shouldCountForFitnessEvaluations(): Boolean = true

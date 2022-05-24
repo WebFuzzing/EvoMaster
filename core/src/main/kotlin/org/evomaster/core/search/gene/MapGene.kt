@@ -63,10 +63,10 @@ class MapGene<K, V>(
 
     override fun copyContent(): Gene {
         return MapGene(name,
-                template.copyContent() as PairGene<K, V>,
+                template.copy() as PairGene<K, V>,
                 maxSize,
                 minSize,
-                elements.map { e -> e.copyContent() as PairGene<K, V> }.toMutableList()
+                elements.map { e -> e.copy() as PairGene<K, V> }.toMutableList()
         )
     }
 
@@ -79,7 +79,7 @@ class MapGene<K, V>(
         val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
             other.elements.subList(0, maxSize!!)
         else other.elements)
-                .map { e -> e.copyContent() as PairGene<K, V> }
+                .map { e -> e.copy() as PairGene<K, V> }
                 .toMutableList()
         addChildren(copy)
     }
@@ -205,7 +205,7 @@ class MapGene<K, V>(
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is MapGene<*,*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             clearElements()
-            val elements = gene.elements.mapNotNull { it.copyContent() as? PairGene<K, V> }.toMutableList()
+            val elements = gene.elements.mapNotNull { it.copy() as? PairGene<K, V> }.toMutableList()
             addChildren(elements)
             return true
         }

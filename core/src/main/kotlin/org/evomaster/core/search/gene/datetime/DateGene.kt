@@ -53,9 +53,9 @@ class DateGene(
 
     override fun copyContent(): Gene = DateGene(
         name,
-        year.copyContent() as IntegerGene,
-        month.copyContent() as IntegerGene,
-        day.copyContent() as IntegerGene,
+        year.copy() as IntegerGene,
+        month.copy() as IntegerGene,
+        day.copy() as IntegerGene,
         dateGeneFormat = this.dateGeneFormat,
         onlyValidDates = this.onlyValidDates
     )

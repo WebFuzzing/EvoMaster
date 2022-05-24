@@ -87,15 +87,23 @@ abstract class Gene(
      * of its children, recursively.
      *
      * A gene cannot be used (eg, mutated or printed in the phenotype) before it is initialized
+     *
+     * if [rand] is provided, the gene will be randomized. this should always be provided, unless
+     * you are building tests directly
      */
-    fun doInitialize(rand: Randomness){
+    fun doInitialize(rand: Randomness? = null){
         if(initialized){
             throw IllegalStateException("Gene already initialized")
         }
         if(parent == null) {
             identifyAsRoot()
         }
-        randomize(rand, false)
+        if(rand != null) {
+            randomize(rand, false)
+        } else {
+            //this should happen only in the tests
+            log.warn("Initializing gene ${this.javaClass} without randomization")
+        }
         markAllAsInitialized()
         Lazy.assert{isValid()}
     }

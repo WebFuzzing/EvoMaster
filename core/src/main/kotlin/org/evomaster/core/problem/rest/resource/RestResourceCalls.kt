@@ -101,8 +101,8 @@ class RestResourceCalls(
         val copy = RestResourceCalls(
             template,
             node,
-            actions.map { a -> a.copyContent() as RestCallAction}.toMutableList(),
-            dbActions.map { db-> db.copyContent() as DbAction }.toMutableList(),
+            actions.map { a -> a.copy() as RestCallAction}.toMutableList(),
+            dbActions.map { db-> db.copy() as DbAction }.toMutableList(),
             withBinding = false
         )
 

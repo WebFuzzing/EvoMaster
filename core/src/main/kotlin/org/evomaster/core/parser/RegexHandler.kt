@@ -55,7 +55,7 @@ object RegexHandler {
     fun createGeneForEcma262(regex: String): RegexGene {
 
         if(cacheEcma262.contains(regex)){
-            return cacheEcma262[regex]!!.copyContent() as RegexGene
+            return cacheEcma262[regex]!!.copy() as RegexGene
         }
 
         val stream = CharStreams.fromString(regex)
@@ -69,7 +69,7 @@ object RegexHandler {
         val res = GeneRegexEcma262Visitor().visit(pattern)
 
         val gene= res.genes.first() as RegexGene
-        cacheEcma262[regex] = gene.copyContent() as RegexGene
+        cacheEcma262[regex] = gene.copy() as RegexGene
         return gene
     }
 

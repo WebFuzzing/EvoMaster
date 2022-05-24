@@ -98,7 +98,7 @@ class SqlCompositeGene(
         return false
     }
 
-    override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copyContent() }.toList(), this.compositeTypeName)
+    override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copy() }.toList(), this.compositeTypeName)
 
     /**
      * Dummy mutation for composite genes

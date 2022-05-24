@@ -58,9 +58,9 @@ class TimeGene(
 
     override fun copyContent(): Gene = TimeGene(
         name,
-        hour.copyContent() as IntegerGene,
-        minute.copyContent() as IntegerGene,
-        second.copyContent() as IntegerGene,
+        hour.copy() as IntegerGene,
+        minute.copy() as IntegerGene,
+        second.copy() as IntegerGene,
         timeGeneFormat = this.timeGeneFormat
     )
 

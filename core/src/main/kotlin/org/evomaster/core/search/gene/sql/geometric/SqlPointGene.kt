@@ -23,8 +23,8 @@ class SqlPointGene(
 
     override fun copyContent(): Gene = SqlPointGene(
         name,
-        x.copyContent(),
-        y.copyContent()
+        x.copy() as FloatGene,
+        y.copy() as FloatGene
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

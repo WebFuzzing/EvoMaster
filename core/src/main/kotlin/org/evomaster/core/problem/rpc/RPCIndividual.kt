@@ -83,8 +83,8 @@ class RPCIndividual(
 
     override fun copyContent(): Individual {
         return RPCIndividual(
-            actions.map { it.copyContent() }.toMutableList(),
-            seeInitializingActions().map { it.copyContent() as DbAction }.toMutableList(),
+            actions.map { it.copy() as RPCCallAction}.toMutableList(),
+            seeInitializingActions().map { it.copy() as DbAction }.toMutableList(),
             trackOperator,
             index
         )

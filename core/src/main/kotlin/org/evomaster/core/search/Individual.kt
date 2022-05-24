@@ -62,6 +62,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return copy
     }
 
+    fun isInitialized() : Boolean{
+        return seeGenes().all { it.initialized }
+    }
+
     override fun copyContent(): Individual {
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
@@ -91,8 +95,18 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return seeActions()
     }
 
-    fun doInitialize(randomness: Randomness){
-        seeActions().forEach { it.doInitialize(randomness) }
+    open fun doInitialize(randomness: Randomness? = null){
+        //TODO refactor with seeAllActions
+
+//        sequence<Action> {
+//            seeInitializingActions()
+//            seeActions()
+//            seeDbActions()
+//        }.toSet().forEach { it.doInitialize(randomness) }
+
+        seeInitializingActions().plus(seeActions()).plus(seeDbActions())
+                .toSet()
+        .forEach { it.doInitialize(randomness) }
     }
 
     /**

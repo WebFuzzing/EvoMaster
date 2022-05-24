@@ -62,8 +62,8 @@ class SqlLogSeqNumberGene(
     override fun copyContent(): Gene {
         return SqlLogSeqNumberGene(
                 name = name,
-                leftPart = leftPart.copyContent() as LongGene,
-                rightPart = rightPart.copyContent() as LongGene
+                leftPart = leftPart.copy() as LongGene,
+                rightPart = rightPart.copy() as LongGene
         )
     }
 

@@ -34,10 +34,10 @@ class SqlMultiRangeGeneTest {
                 template = SqlRangeGene("int4range",
                         template = IntegerGene("int4")))
 
-        val rangeGene0 = multirangeGene.template.copyContent() as SqlRangeGene<IntegerGene>
+        val rangeGene0 = multirangeGene.template.copy() as SqlRangeGene<IntegerGene>
         multirangeGene.rangeGenes.addElement(rangeGene0)
 
-        val rangeGene1 = multirangeGene.template.copyContent() as SqlRangeGene<IntegerGene>
+        val rangeGene1 = multirangeGene.template.copy() as SqlRangeGene<IntegerGene>
         multirangeGene.rangeGenes.addElement(rangeGene1)
 
         assertEquals("\"{[ 0 , 0 ], [ 0 , 0 ]}\"", multirangeGene.getValueAsPrintableString())
@@ -49,10 +49,10 @@ class SqlMultiRangeGeneTest {
                 template = SqlRangeGene("range",
                         template = DateGene("date")))
 
-        val rangeGene0 = multirangeGene.template.copyContent() as SqlRangeGene<DateGene>
+        val rangeGene0 = multirangeGene.template.copy() as SqlRangeGene<DateGene>
         multirangeGene.rangeGenes.addElement(rangeGene0)
 
-        val rangeGene1 = multirangeGene.template.copyContent() as SqlRangeGene<DateGene>
+        val rangeGene1 = multirangeGene.template.copy() as SqlRangeGene<DateGene>
         multirangeGene.rangeGenes.addElement(rangeGene1)
 
         assertEquals("\"{[ 2016-03-12 , 2016-03-12 ], [ 2016-03-12 , 2016-03-12 ]}\"", multirangeGene.getValueAsPrintableString())

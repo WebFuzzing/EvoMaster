@@ -37,6 +37,10 @@ open class PrimitiveTypeMatchIndividual (
         fun stringTemplate() = PrimitiveTypeMatchIndividual(StringGene(name()))
     }
 
+    override fun doInitialize(randomness: Randomness?) {
+        gene.doInitialize(randomness)
+    }
+
     override fun seeActions(): List<out Action> = listOf()
 
     override fun verifyInitializationActions(): Boolean {

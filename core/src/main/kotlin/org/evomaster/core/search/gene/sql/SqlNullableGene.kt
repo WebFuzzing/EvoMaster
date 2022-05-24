@@ -38,7 +38,7 @@ class SqlNullableGene(name: String,
     }
 
     override fun copyContent(): Gene {
-        return SqlNullableGene(name, gene.copyContent(), isPresent)
+        return SqlNullableGene(name, gene.copy(), isPresent)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

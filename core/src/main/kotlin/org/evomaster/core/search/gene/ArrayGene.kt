@@ -77,10 +77,10 @@ class ArrayGene<T>(
 
     override fun copyContent(): Gene {
         val copy = ArrayGene(name,
-                template.copyContent() as T,
+                template.copy() as T,
                 maxSize,
                 minSize,
-                elements.map { e -> e.copyContent() as T }.toMutableList()
+                elements.map { e -> e.copy() as T }.toMutableList()
         )
         if (copy.children.size!=this.children.size) {
             throw IllegalStateException("copy and its template have different size of children, e.g., copy (${copy.children.size}) vs. template (${this.children.size})")
@@ -95,7 +95,7 @@ class ArrayGene<T>(
 
         clearElements()
         // check maxSize
-        this.elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copyContent() as T }.toMutableList()
+        this.elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
         // build parents for [element]
         addChildren(this.elements)
     }
@@ -222,7 +222,7 @@ class ArrayGene<T>(
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             clearElements()
-            elements = gene.elements.mapNotNull { it.copyContent() as? T}.toMutableList()
+            elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
             addChildren(elements)
             return true
         }

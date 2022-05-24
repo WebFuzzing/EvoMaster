@@ -495,7 +495,7 @@ class RPCEndpointsHandler {
                         }else
                             this
                     }.forEach { p->
-                        val copy = template.copyContent()
+                        val copy = template.copy()
                         // TODO need to handle cycle object gene in responses
                         if (copy !is CycleObjectGene){
                             setGeneBasedOnParamDto(copy, p)
@@ -512,7 +512,7 @@ class RPCEndpointsHandler {
                         }else
                             this
                     }.forEach { p->
-                        val copy = template.copyContent()
+                        val copy = template.copy()
                         setGeneBasedOnParamDto(copy, p)
                         valueGene.addElement(copy)
                     }

@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
 import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -117,7 +118,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                     // check response
                     if (response.rpcResponse !=null){
                         Lazy.assert { action.responseTemplate != null }
-                        val responseParam = action.responseTemplate!!.copyContent()
+                        val responseParam = action.responseTemplate!!.copy() as RPCParam
                         rpcHandler.setGeneBasedOnParamDto(responseParam.gene, response.rpcResponse)
                         action.response = responseParam
 

@@ -80,14 +80,14 @@ class QuantifierRxGene(
 
         val copy = QuantifierRxGene(
                 name,
-                template.copyContent(),
+                template.copy(),
                 min,
                 max
         )
         copy.killAllChildren()
 
         this.atoms.forEach {
-            val a = it.copyContent()
+            val a = it.copy()
             copy.addChild(a)
         }
 

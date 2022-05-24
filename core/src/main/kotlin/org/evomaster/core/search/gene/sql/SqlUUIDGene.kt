@@ -29,8 +29,8 @@ class SqlUUIDGene(
 
     override fun copyContent(): Gene = SqlUUIDGene(
             name,
-            mostSigBits.copyContent() as LongGene,
-            leastSigBits.copyContent() as LongGene
+            mostSigBits.copy() as LongGene,
+            leastSigBits.copy() as LongGene
     )
 
     companion object{

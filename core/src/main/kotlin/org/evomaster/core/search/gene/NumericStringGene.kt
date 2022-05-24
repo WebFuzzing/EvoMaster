@@ -42,7 +42,7 @@ class NumericStringGene(
 
 
     override fun copyContent(): Gene {
-        return NumericStringGene(name, minLength, number.copyContent())
+        return NumericStringGene(name, minLength, number.copy() as BigDecimalGene)
     }
 
     override fun isMutable(): Boolean {

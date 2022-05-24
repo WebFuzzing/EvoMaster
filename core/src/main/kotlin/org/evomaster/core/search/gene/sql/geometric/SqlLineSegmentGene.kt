@@ -17,8 +17,8 @@ class SqlLineSegmentGene(
 
     override fun copyContent(): Gene = SqlLineSegmentGene(
         name,
-        p.copyContent() as SqlPointGene,
-        q.copyContent() as SqlPointGene
+        p.copy() as SqlPointGene,
+        q.copy() as SqlPointGene
     )
 
     override fun copyValueFrom(other: Gene) {

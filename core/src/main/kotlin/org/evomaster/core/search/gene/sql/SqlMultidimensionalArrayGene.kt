@@ -520,7 +520,7 @@ class SqlMultidimensionalArrayGene<T>(
     override fun copyContent() : Gene{
 
         val copy =   SqlMultidimensionalArrayGene(name = name,
-                template = template.copyContent(),
+                template = template.copy(),
                 numberOfDimensions = numberOfDimensions,
                 maxDimensionSize = maxDimensionSize,
                 //TODO
@@ -528,7 +528,7 @@ class SqlMultidimensionalArrayGene<T>(
         )
 
         if(children.isNotEmpty()){
-            copy.addChild(this.children[0].copyContent())
+            copy.addChild(this.children[0].copy())
         }
 
         return copy

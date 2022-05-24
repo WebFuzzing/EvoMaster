@@ -24,8 +24,8 @@ class SqlCircleGene(
 
     override fun copyContent(): Gene = SqlCircleGene(
             name,
-            c.copyContent() as SqlPointGene,
-            r.copyContent()
+            c.copy() as SqlPointGene,
+            r.copy() as FloatGene
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

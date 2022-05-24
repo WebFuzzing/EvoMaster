@@ -89,7 +89,7 @@ class ResourceManageService {
         //GET, PATCH, DELETE
         sortedResources.forEach { ar->
             ar.actions.filter { it.verb != HttpVerb.POST && it.verb != HttpVerb.PUT }.forEach {a->
-                val call = ar.sampleOneAction(a.copyContent() as RestCallAction, randomness)
+                val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 call.seeActions(ActionFilter.NO_SQL).forEach { ra->
                     if(ra is RestCallAction) ra.auth = auth
                 }
@@ -100,7 +100,7 @@ class ResourceManageService {
         //all POST with one post action
         sortedResources.forEach { ar->
             ar.actions.filter { it.verb == HttpVerb.POST}.forEach { a->
-                val call = ar.sampleOneAction(a.copyContent() as RestCallAction, randomness)
+                val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 (call.seeActions(ActionFilter.NO_SQL) as List<RestCallAction>).forEach { it.auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }
@@ -118,7 +118,7 @@ class ResourceManageService {
         //PUT
         sortedResources.forEach { ar->
             ar.actions.filter { it.verb == HttpVerb.PUT }.forEach {a->
-                val call = ar.sampleOneAction(a.copyContent() as RestCallAction, randomness)
+                val call = ar.sampleOneAction(a.copy() as RestCallAction, randomness)
                 call.seeActions(ActionFilter.NO_SQL).forEach { (it as RestCallAction).auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }

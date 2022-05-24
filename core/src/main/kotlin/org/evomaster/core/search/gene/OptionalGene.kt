@@ -49,7 +49,7 @@ class OptionalGene(name: String,
     }
 
     override fun copyContent(): Gene {
-        val copy = OptionalGene(name, gene.copyContent(), isActive, requestSelection)
+        val copy = OptionalGene(name, gene.copy(), isActive, requestSelection)
         copy.selectable = this.selectable
         return copy
     }

@@ -9,7 +9,7 @@ import org.evomaster.core.search.service.Randomness
 class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = genes) {
 
     override fun copyContent(): Individual {
-        return BindingIndividual(genes.map { it.copyContent() }.toMutableList())
+        return BindingIndividual(genes.map { it.copy() }.toMutableList())
     }
 
 

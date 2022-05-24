@@ -56,7 +56,7 @@ class BodyParam(gene: Gene,
 
 
     override fun copyContent(): Param {
-        return BodyParam(gene.copyContent(), contenTypeGene.copyContent() as EnumGene<String>)
+        return BodyParam(gene.copy(), contenTypeGene.copy() as EnumGene<String>)
     }
 
     override fun seeGenes() = listOf(gene, contenTypeGene)

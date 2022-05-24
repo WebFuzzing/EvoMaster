@@ -35,7 +35,7 @@ class SqlMultiRangeGene<T>(
     }
 
     override fun copyContent(): Gene {
-        val copyOfRangeGenes = rangeGenes.copyContent() as ArrayGene<SqlRangeGene<T>>
+        val copyOfRangeGenes = rangeGenes.copy() as ArrayGene<SqlRangeGene<T>>
         return SqlMultiRangeGene(
                 name,
                 template = copyOfRangeGenes.template,

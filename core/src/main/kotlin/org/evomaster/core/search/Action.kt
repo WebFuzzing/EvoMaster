@@ -43,7 +43,7 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
         forceNewValue: Boolean,
         all: List<Action> = listOf())
 
-    fun doInitialize(randomness: Randomness){
+    fun doInitialize(randomness: Randomness ? = null){
         seeGenes().forEach { it.doInitialize(randomness) }
     }
 

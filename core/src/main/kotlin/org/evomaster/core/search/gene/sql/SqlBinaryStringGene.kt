@@ -104,7 +104,7 @@ class SqlBinaryStringGene(
 
     override fun getDefaultMaxSize() = binaryArrayGene.getDefaultMaxSize()
 
-    override fun copyContent() = SqlBinaryStringGene(name, minSize = minSize, maxSize = maxSize, binaryArrayGene.copyContent() as ArrayGene<IntegerGene>)
+    override fun copyContent() = SqlBinaryStringGene(name, minSize = minSize, maxSize = maxSize, binaryArrayGene.copy() as ArrayGene<IntegerGene>)
 
     override fun mutate(
             randomness: Randomness,

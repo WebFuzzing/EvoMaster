@@ -27,7 +27,7 @@ class SqlJSONGene(name: String,
 
     override fun copyContent(): Gene = SqlJSONGene(
             name,
-            objectGene = this.objectGene.copyContent() as ObjectGene)
+            objectGene = this.objectGene.copy() as ObjectGene)
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

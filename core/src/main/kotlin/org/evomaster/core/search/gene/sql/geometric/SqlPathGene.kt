@@ -26,7 +26,7 @@ class SqlPathGene(
 
     override fun copyContent(): Gene = SqlPathGene(
             name,
-            points.copyContent() as ArrayGene<SqlPointGene>
+            points.copy() as ArrayGene<SqlPointGene>
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

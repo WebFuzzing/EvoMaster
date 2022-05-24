@@ -32,7 +32,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     override fun canBeChildless() = true
 
     override fun copyContent(): Gene {
-        return ObjectGene(name, fields.map(Gene::copyContent), refType)
+        return ObjectGene(name, fields.map(Gene::copy), refType)
     }
 
     override fun copyValueFrom(other: Gene) {

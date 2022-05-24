@@ -22,7 +22,7 @@ class RegexGene(
 ) : CompositeFixedGene(name, disjunctions) {
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copyContent() as DisjunctionListRxGene)
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

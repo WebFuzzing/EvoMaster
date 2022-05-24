@@ -100,7 +100,7 @@ class DbAction(
     }
 
     override fun copyContent(): Action {
-        return DbAction(table, selectedColumns, id, genes.map(Gene::copyContent), representExistingData)
+        return DbAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {

@@ -61,7 +61,7 @@ class SqlTextSearchQueryGene(
 
     override fun copyContent(): Gene = SqlTextSearchQueryGene(
             name,
-            queryLexemes.copyContent() as ArrayGene<StringGene>
+            queryLexemes.copy() as ArrayGene<StringGene>
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

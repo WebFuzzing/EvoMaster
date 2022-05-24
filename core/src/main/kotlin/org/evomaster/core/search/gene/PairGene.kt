@@ -79,7 +79,7 @@ class PairGene<F,S>(
 
 
     override fun copyContent(): Gene {
-        return PairGene(name, first.copyContent(), second.copyContent(), isFirstMutable)
+        return PairGene(name, first.copy(), second.copyContent(), isFirstMutable)
     }
 
     override fun isMutable(): Boolean {

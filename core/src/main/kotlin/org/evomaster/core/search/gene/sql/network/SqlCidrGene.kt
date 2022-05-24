@@ -114,5 +114,5 @@ class SqlCidrGene(
         return result
     }
 
-    override fun copyContent() = SqlCidrGene(name, octets.map { it.copyContent() as IntegerGene }.toList())
+    override fun copyContent() = SqlCidrGene(name, octets.map { it.copy() as IntegerGene }.toList())
 }

@@ -21,7 +21,7 @@ class Base64StringGene(
     }
 
 
-    override fun copyContent(): Gene = Base64StringGene(name, data.copyContent() as StringGene)
+    override fun copyContent(): Gene = Base64StringGene(name, data.copy() as StringGene)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         data.randomize(randomness, forceNewValue)

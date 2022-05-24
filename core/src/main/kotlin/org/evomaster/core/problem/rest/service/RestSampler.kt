@@ -46,9 +46,8 @@ class RestSampler : AbstractRestSampler(){
 
     private fun sampleRandomCallAction(noAuthP: Double): RestCallAction {
         val action = randomness.choose(actionCluster.filter { a -> a.value is RestCallAction }).copy() as RestCallAction
-        randomizeActionGenes(action)
+        action.doInitialize(randomness)
         action.auth = getRandomAuth(noAuthP)
-
         return action
     }
 
@@ -331,7 +330,7 @@ class RestSampler : AbstractRestSampler(){
 
     fun createActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
         val res = template.copy() as RestCallAction
-        randomizeActionGenes(res)
+        res.doInitialize(randomness)
         res.auth = target.auth
         res.bindToSamePathResolution(target)
 
@@ -405,7 +404,7 @@ class RestSampler : AbstractRestSampler(){
                 .forEach { a ->
                     val copy = a.value.copy() as RestCallAction
                     copy.auth = auth
-                    randomizeActionGenes(copy)
+                    copy.doInitialize(randomness)
                     val ind = createIndividual(mutableListOf(copy))
                     adHocInitialIndividuals.add(ind)
                 }

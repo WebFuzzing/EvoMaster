@@ -43,8 +43,8 @@ open class DateTimeGene(
 
     override fun copyContent(): Gene = DateTimeGene(
         name,
-        date.copyContent() as DateGene,
-        time.copyContent() as TimeGene,
+        date.copy() as DateGene,
+        time.copy() as TimeGene,
         dateTimeGeneFormat = this.dateTimeGeneFormat
     )
 

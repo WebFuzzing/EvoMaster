@@ -107,7 +107,7 @@ class StringGene(
     var bindingIds = mutableSetOf<String>()
 
     override fun copyContent(): Gene {
-        val copy = StringGene(name, value, minLength, maxLength, invalidChars, this.specializationGenes.map { g -> g.copyContent() }.toMutableList())
+        val copy = StringGene(name, value, minLength, maxLength, invalidChars, this.specializationGenes.map { g -> g.copy() }.toMutableList())
                 .also {
                     it.specializations.addAll(this.specializations)
                     it.validChar = this.validChar

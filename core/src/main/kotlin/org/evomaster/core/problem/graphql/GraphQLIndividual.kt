@@ -19,9 +19,9 @@ class GraphQLIndividual(
     override fun copyContent(): Individual {
 
         return GraphQLIndividual(
-                actions.map { it.copyContent() as GraphQLAction}.toMutableList(),
+                actions.map { it.copy() as GraphQLAction}.toMutableList(),
                 sampleType,
-                seeInitializingActions().map { it.copyContent() as DbAction } as MutableList<DbAction>
+                seeInitializingActions().map { it.copy() as DbAction } as MutableList<DbAction>
         )
 
     }

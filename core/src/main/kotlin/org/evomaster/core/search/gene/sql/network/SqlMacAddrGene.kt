@@ -115,5 +115,5 @@ class SqlMacAddrGene(
 
     fun size() = octets.size
 
-    override fun copyContent() = SqlMacAddrGene(name, numberOfOctets = octets.size, octets.map { it.copyContent() as IntegerGene }.toList())
+    override fun copyContent() = SqlMacAddrGene(name, numberOfOctets = octets.size, octets.map { it.copy() as IntegerGene }.toList())
 }
