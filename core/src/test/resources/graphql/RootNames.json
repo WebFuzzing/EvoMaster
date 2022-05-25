@@ -4,7 +4,7 @@
       "queryType": {
         "name": "foo"
       },
-      "mutationType": null,
+      "mutationType": {"name": "foom"},
       "types": [
         {
           "kind": "SCALAR",
@@ -56,7 +56,33 @@
           "possibleTypes": null
         },
 
+        {
+          "kind": "OBJECT",
+          "name": "fooM",
+          "fields": [
+            {
+              "name": "addOwner",
+              "args": [
+              ],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "AddOwnerPayload",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
 
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
 
 
         {

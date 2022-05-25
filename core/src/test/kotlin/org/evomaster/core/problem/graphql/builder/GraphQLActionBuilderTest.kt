@@ -1189,7 +1189,7 @@ class GraphQLActionBuilderTest {
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
-        assertEquals(1, actionCluster.size)
+        assertEquals(2, actionCluster.size)
     }
 
     }
