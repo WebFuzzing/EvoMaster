@@ -47,9 +47,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     var populationOrigin : String? = null
 
-    init {
-        identifyAsRoot()
-    }
 
     /**
      * Make a deep copy of this individual

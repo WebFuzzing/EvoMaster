@@ -58,10 +58,6 @@ class ArrayGene<T>(
             throw IllegalArgumentException(
                 "ArrayGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
-
-        // might not check min size in constructor
-
-        template.identifyAsRoot()
     }
 
     companion object{

@@ -104,24 +104,6 @@ class GeneTest {
                 .map { GeneSamplerForTests.sample(it, rand) }
     }
 
-    @ParameterizedTest
-    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10])
-    fun testRoot(seed: Long) {
-
-        val sample = getSample(seed)
-
-        sample.forEach { root ->
-            root.identifyAsRoot()
-            assertTrue(root.isDefinedRoot())
-            val wholeTree = root.flatView().filter { it != root }
-
-            val errors = wholeTree.filter { it.isDefinedRoot() }
-            if (errors.isNotEmpty()) {
-                println("Extra roots for $root: $errors")
-            }
-            assertEquals(0, errors.size)
-        }
-    }
 
     @ParameterizedTest
     @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10])
@@ -129,7 +111,6 @@ class GeneTest {
         val sample = getSample(seed)
 
         sample.forEach { root ->
-            root.identifyAsRoot()
             val wholeTree = root.flatView().filter { it != root }
 
             wholeTree.forEach { n ->
@@ -151,7 +132,6 @@ class GeneTest {
 
         sample.filter { it.isMutable() }
                 .forEach { root ->
-                    root.identifyAsRoot()
                     root.randomize(rand, true)
                     assertTrue(root.isValid())
 
@@ -178,7 +158,6 @@ class GeneTest {
 
         sample.filter { it.isMutable() }
                 .forEach { root ->
-                    root.identifyAsRoot()
                     root.randomize(rand, true)
                     assertTrue(root.isValid())
 
@@ -203,7 +182,6 @@ class GeneTest {
         val sample = getSample(seed)
 
         sample.forEach { root ->
-            root.identifyAsRoot()
             val copy = root.copy()
             assertTrue(copy != root) //TODO what is immutable root? might fail
             val wholeTree = copy.flatView().filter { it != root }

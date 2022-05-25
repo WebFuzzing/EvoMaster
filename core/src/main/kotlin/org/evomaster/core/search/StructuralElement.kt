@@ -29,13 +29,7 @@ abstract class StructuralElement (
     var parent : StructuralElement? = null
         private set
 
-    /**
-     * present whether the element is defined as a root
-     *
-     * TODO needs refactoring
-     * TODO maybe in Gene introduce similar concept of TopGene, whose parent is NOT a Gene
-     */
-    private var isDefinedRoot : Boolean = false
+
 
     init {
         initChildren(children)
@@ -45,7 +39,7 @@ abstract class StructuralElement (
     open fun getViewOfChildren() : List<StructuralElement> = children
 
     private fun initChildren(children : List<StructuralElement>){
-        children.forEach { it.parent = this; it.isDefinedRoot = false }
+        children.forEach { it.parent = this; }
     }
 
 
@@ -54,7 +48,6 @@ abstract class StructuralElement (
      */
     open fun addChild(child: StructuralElement){  //TODO check usage
         child.parent = this
-        child.isDefinedRoot = false
         //TODO re-check proper use of in/out in Kotlin
         (children as MutableList<StructuralElement>).add(child)
     }
@@ -107,7 +100,6 @@ abstract class StructuralElement (
         children.indices.forEach {
             children[it].postCopy(original.children[it])
         }
-        isDefinedRoot = original.isDefinedRoot()
     }
 
     /**
@@ -115,13 +107,6 @@ abstract class StructuralElement (
      * @return a new Copyable based on [this]
      */
     open fun copy() : StructuralElement {
-        // except individual, all elements should have a parent
-        if (parent == null && !isDefinedRoot()) {
-            val msg = "${this::class.java} should have a parent but currently it is null"
-            //LoggingUtil.uniqueWarn(log, msg)
-            //FIXME we need to discuss in details this invariant
-           // throw IllegalStateException(msg)
-        }
         val copy = copyContent()
         copy.postCopy(this)
         return copy
@@ -200,17 +185,4 @@ abstract class StructuralElement (
             parent!!.traverseBackIndex(back)
         }
     }
-
-    /**
-     * clarify if the element is root as defined
-     */
-    fun isDefinedRoot() = isDefinedRoot
-
-    /**
-     * identify the element as root
-     */
-    fun identifyAsRoot(){
-        isDefinedRoot = true
-    }
-
 }

@@ -63,8 +63,6 @@ class SqlMultidimensionalArrayGene<T>(
     init {
         if (numberOfDimensions < 1)
             throw IllegalArgumentException("Invalid number of dimensions $numberOfDimensions")
-
-        template.identifyAsRoot()
     }
 
     /*

@@ -48,8 +48,6 @@ class MapGene<K, V>(
             throw IllegalArgumentException(
                 "MapGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
-
-        template.identifyAsRoot()
     }
 
     companion object{

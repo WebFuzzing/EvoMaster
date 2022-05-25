@@ -13,7 +13,7 @@ abstract class StructuralElementBaseTest {
     abstract fun getExpectedChildrenSize() : Int
 
     fun getStructuralElementAndIdentifyAsRoot() : StructuralElement{
-        return getStructuralElement().apply { identifyAsRoot() }
+        return getStructuralElement()//.apply { identifyAsRoot() }
     }
 
     @Test

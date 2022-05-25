@@ -59,6 +59,7 @@ abstract class Gene(
 
     /*
         TODO Major refactoring still to do:
+        - collections
         - mutation of gene (including hypermutation)
         - impact of genes
         - validity / robustness testing
@@ -119,9 +120,6 @@ abstract class Gene(
     fun doInitialize(rand: Randomness? = null){
         if(initialized){
             throw IllegalStateException("Gene already initialized")
-        }
-        if(parent == null) {
-            identifyAsRoot()
         }
         if(rand != null) {
             randomize(rand, false)

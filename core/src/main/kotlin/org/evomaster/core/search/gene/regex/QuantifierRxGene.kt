@@ -25,7 +25,6 @@ class QuantifierRxGene(
         if(template !is RxAtom){
             throw IllegalArgumentException("Template must be a RxAtom")
         }
-        template.identifyAsRoot()
     }
 
     companion object {

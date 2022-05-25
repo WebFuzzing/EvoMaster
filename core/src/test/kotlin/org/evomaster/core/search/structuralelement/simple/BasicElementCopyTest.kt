@@ -49,8 +49,6 @@ class BasicElementCopyTest {
         leafB1.binding.add(leafA1)
 
         val root = Root(3.0, mutableListOf(middleA, middleB))
-        root.identifyAsRoot()
-
         val copy = root.copy()
 
         assertTrue(copy is Root)
