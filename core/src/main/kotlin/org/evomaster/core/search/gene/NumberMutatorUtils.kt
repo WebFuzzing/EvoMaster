@@ -16,9 +16,14 @@ import kotlin.math.pow
 object NumberMutatorUtils {
 
     /**
+     * digits allow in the number
+     */
+    const val MAX_PRECISION = 308
+
+    /**
      * 19 with Long.MAX
      */
-    const val MAX_INTEGER_PRECISION = 308
+    const val MAX_LONG_PRECISION = 19
 
     /**
      * with, IEEE 754

@@ -52,9 +52,9 @@ object NumberCalculationUtil {
     /**
      * @return decimal upperbound with specified precision and scale
      */
-    fun upperBound(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP) : BigDecimal{
-        if (size > NumberMutatorUtils.MAX_INTEGER_PRECISION){
-            throw IllegalArgumentException("for integer, the max precision is ${NumberMutatorUtils.MAX_INTEGER_PRECISION}, but $size is specified")
+    fun upperBound(size: Int, scale: Int, roundingMode: RoundingMode= RoundingMode.HALF_UP, maxValue: Number? = null) : BigDecimal{
+        if (size > NumberMutatorUtils.MAX_PRECISION){
+            throw IllegalArgumentException("for number, the max precision is ${NumberMutatorUtils.MAX_PRECISION}, but $size is specified")
         }
 
         if (scale > 0 && size > NumberMutatorUtils.MAX_DOUBLE_PRECISION){
@@ -65,7 +65,10 @@ object NumberCalculationUtil {
         val fraction = (10.0).pow(scale)
         val boundary = integral.div(fraction)
 
-        return valueWithPrecisionAndScale(boundary, scale, roundingMode)
+        val value = valueWithPrecisionAndScale(boundary, scale, roundingMode)
+        if (maxValue != null && BigDecimal(maxValue.toString()) < value)
+            return BigDecimal(maxValue.toString())
+        return value
     }
 
     /**

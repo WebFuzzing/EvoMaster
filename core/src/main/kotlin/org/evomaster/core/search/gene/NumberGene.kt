@@ -55,6 +55,12 @@ abstract class NumberGene<T : Number>(name: String,
             this.value = getDefaultValue()
         else
             this.value = value
+
+        if (precision != null && precision <= 0)
+            throw IllegalArgumentException("precision must be positive number")
+
+        if (scale != null && scale < 0)
+            throw IllegalArgumentException("scale must be zero or positive number")
     }
 
     fun throwMinMaxException(){

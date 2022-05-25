@@ -21,8 +21,8 @@ class LongGene(
         minInclusive : Boolean = true,
         maxInclusive : Boolean = true
 ) : IntegralNumberGene<Long>(name, value,
-    min = if (precision != null) (-NumberCalculationUtil.upperBound(precision, 0)).toLong().run { if (min== null || this > min) this else min } else min,
-    max = if (precision != null) NumberCalculationUtil.upperBound(precision, 0).toLong().run { if (max == null || this < max) this else max } else max,
+    min = if (precision != null) (-NumberCalculationUtil.upperBound(precision, 0, maxValue = Long.MAX_VALUE)).toLong().run { if (min== null || this > min) this else min } else min,
+    max = if (precision != null) NumberCalculationUtil.upperBound(precision, 0, maxValue = Long.MAX_VALUE).toLong().run { if (max == null || this < max) this else max } else max,
     precision, minInclusive, maxInclusive) {
 
     companion object{
