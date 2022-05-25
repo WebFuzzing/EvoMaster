@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -59,7 +60,7 @@ public class DbExistingDataController extends SpringWithDbController {
     public List<DbSpecification> getDbSpecifications() {
         List<DbSpecification> spec = super.getDbSpecifications();
         if (spec !=null && !spec.isEmpty())
-            spec.get(0).initSqlScript = "INSERT INTO EXISTING_DATA_ENTITYX (ID, NAME) VALUES (42, 'Foo')";
+            return Arrays.asList(spec.get(0).withInitSqlScript("INSERT INTO EXISTING_DATA_ENTITYX (ID, NAME) VALUES (42, 'Foo')"));
         return spec;
     }
 }

@@ -83,10 +83,6 @@ public class SFController extends EmbeddedSutController {
         return null;
     }
 
-    @Override
-    public String getDatabaseDriverName() {
-        return null;
-    }
 
     @Override
     public ProblemInfo getProblemInfo() {

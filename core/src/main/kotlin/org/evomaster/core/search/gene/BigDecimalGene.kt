@@ -71,6 +71,7 @@ class BigDecimalGene(
         private const val PROBABILITY_CHANGE_MODE = 0.05
 
         private val DEFAULT_ROUNDING_MODE : RoundingMode = RoundingMode.HALF_UP
+
     }
 
     /**
@@ -82,8 +83,12 @@ class BigDecimalGene(
         private set
 
     init {
-        if (precision != null && precision < 0)
-            throw IllegalArgumentException("invalid precision: a negative number for the precision is not allowed")
+        if (precision != null){
+            if (precision <= 0)
+                throw IllegalArgumentException("invalid precision: a negative number or 0 for the precision is not allowed")
+            if (precision > NumberMutatorUtils.MAX_INTEGER_PRECISION)
+                throw IllegalArgumentException("invalid precision: the max is ${NumberMutatorUtils.MAX_INTEGER_PRECISION}, but $precision is specified")
+        }
 
         if (scale!= null){
             if (scale < 0)

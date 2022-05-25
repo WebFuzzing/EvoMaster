@@ -235,6 +235,8 @@ class Main {
         @JvmStatic
         fun init(args: Array<String>): Injector {
 
+            LoggingUtil.getInfoLogger().info("Initializing...")
+
             val base = BaseModule(args)
             val config = base.getEMConfig()
 
