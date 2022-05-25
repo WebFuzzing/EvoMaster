@@ -62,6 +62,8 @@ abstract class FloatingPointNumberGene<T:Number>(
      *      2) precision if it is specified
      */
     override fun isValid(): Boolean {
-        return super.isValid() && (scale == null || !value.toString().contains(".") || value.toString().split(".")[1].length <= scale)
+        return super.isValid() && (scale == null
+                || !value.toString().contains(".")
+                || (if (scale == 0) value.toString().split(".")[1].toDouble() == 0.0 else value.toString().split(".")[1].length <= scale))
     }
 }
