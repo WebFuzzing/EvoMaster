@@ -27,7 +27,7 @@ class SqlBinaryStringGene(
 
         private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize)
 
-) : CollectionGene, CompositeGene(name, mutableListOf( binaryArrayGene)) {
+) :  CompositeGene(name, mutableListOf( binaryArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBinaryStringGene::class.java)
@@ -82,27 +82,6 @@ class SqlBinaryStringGene(
         LoggingUtil.uniqueWarn(log, "cannot bind SqlBitstringGene with ${gene::class.java.simpleName}")
         return false
     }
-
-
-    override fun clearElements() {
-        return binaryArrayGene.clearElements()
-    }
-
-    override fun isEmpty() = binaryArrayGene.isEmpty()
-
-    override fun getMaxSizeOrDefault() = binaryArrayGene.getMaxSizeOrDefault()
-
-    override fun getSpecifiedMaxSize() = binaryArrayGene.getSpecifiedMaxSize()
-
-    override fun getMinSizeOrDefault() = binaryArrayGene.getMinSizeOrDefault()
-
-    override fun getSpecifiedMinSize() = binaryArrayGene.getSpecifiedMinSize()
-
-    override fun getSizeOfElements(filterMutable: Boolean) = binaryArrayGene.getSizeOfElements(filterMutable)
-
-    override fun getGeneName() = name
-
-    override fun getDefaultMaxSize() = binaryArrayGene.getDefaultMaxSize()
 
     override fun copyContent() = SqlBinaryStringGene(name, minSize = minSize, maxSize = maxSize, binaryArrayGene.copy() as ArrayGene<IntegerGene>)
 

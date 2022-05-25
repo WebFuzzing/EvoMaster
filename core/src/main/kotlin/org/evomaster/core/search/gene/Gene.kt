@@ -60,9 +60,11 @@ abstract class Gene(
     /*
         TODO Major refactoring still to do:
         - collections
-        - mutation of gene (including hypermutation)
+        - mutation of gene (including hypermutation and innerGene)
         - impact of genes
         - validity / robustness testing
+
+        - for binding, we ll need tests on Individual
      */
 
     companion object{
@@ -80,7 +82,9 @@ abstract class Gene(
      * The type can be different, eg strings vs numbers, but still consistent.
      *
      * WARNING: genes are mutable, but here we check for references. this implies
-     * NO gene can overridde hashcode
+     * NO gene can overridde hashcode.
+     *
+     * If A is bound to B, then as well B is bound to A.
      */
     private val bindingGenes: MutableSet<Gene> = mutableSetOf()
 

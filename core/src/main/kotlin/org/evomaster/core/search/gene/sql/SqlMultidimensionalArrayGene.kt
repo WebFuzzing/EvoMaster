@@ -1,8 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.CollectionImpact
 import org.evomaster.core.search.impact.impactinfocollection.Impact
@@ -58,7 +56,7 @@ class SqlMultidimensionalArrayGene<T>(
          */
         // private val nestedListOfElements: MutableList<Any> = mutableListOf()
         //val flattenedArrays : MutableList<ArrayGene<T>> = mutableListOf()
-) : CollectionGene, CompositeGene(name, mutableListOf()) where T : Gene {
+) :  CompositeGene(name, mutableListOf()) where T : Gene {
 
     init {
         if (numberOfDimensions < 1)
@@ -378,7 +376,7 @@ class SqlMultidimensionalArrayGene<T>(
             )
 
         // remove old elements (remove from its binding genes if needed)
-        clearElements()
+        killAllChildren()
         // build new elements using template with the internal representation
         val newElements = buildNewElements(dimensionSizes, template)
         // store new freshly created elements
@@ -397,50 +395,9 @@ class SqlMultidimensionalArrayGene<T>(
 //    /**
 //     * Remove all elements (and clear genes from its binding genes if needed)
 //     */
-    override fun clearElements() {
-        killAllChildren() //TODO double check this
-    }
 
-    override fun isEmpty() = children.isEmpty()
 
-    override fun getSizeOfElements(filterMutable: Boolean): Int {
-//        val genes = getAllGenes(nestedListOfElements)
-//        if (!filterMutable)
-//            return genes.size
-//        else
-//            return genes.count { it.isMutable() }
-        return flatView().asSequence()
-                .filter { !filterMutable || it.isMutable() }
-                .filterIsInstance<ArrayGene<*>>()
-                .filter { it.template !is ArrayGene<*> }
-                .map { it.elements.size }
-                .sum()
-    }
 
-    override fun getGeneName() = name
-
-    override fun getSpecifiedMinSize() = DEFAULT_MIN_SIZE
-
-    override fun getMinSizeOrDefault() = DEFAULT_MIN_SIZE
-
-    /**
-     * For example, a multidimensional array built with 3 dimensions
-     * has a default max size of 3 * ArrayGene.MAX_SIZE,
-     * independently of the maxDimensionSize passed to the constructor.
-     */
-    override fun getDefaultMaxSize() = numberOfDimensions * ArrayGene.MAX_SIZE
-
-    /**
-     * For example, a multidimensional array built with 3 and a
-     * maxDimensionalSize of 10 has a specified max size of 3 * 10
-     */
-    override fun getSpecifiedMaxSize() = numberOfDimensions * maxDimensionSize
-
-    /**
-     * Returns the maxDimensionalSize * numberOfDimensions
-     * By default, maxDimensionalSize is equal to ArrayGene.MAX_SIZE.
-     */
-    override fun getMaxSizeOrDefault() = getSpecifiedMaxSize()
 
     /**
      * 1 is for 'remove' or 'add' element.
@@ -499,16 +456,7 @@ class SqlMultidimensionalArrayGene<T>(
 //        return if (randomness.nextBoolean(p)) listOf() else mutableGenes
     }
 
-    /**
-     * an impact-based probability fo modifying size/dimensions of the multidimensional array
-     */
-    override fun probabilityToModifySize(selectionStrategy: SubsetGeneSelectionStrategy, impact: Impact?): Double {
-        if (selectionStrategy != SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT) return defaultProbabilityToModifySize()
-        impact ?: return defaultProbabilityToModifySize()
-        if (impact !is CollectionImpact) return defaultProbabilityToModifySize()
 
-        return if (impact.recentImprovementOnSize()) defaultProbabilityToModifySize() * timesProbToModifySize() else defaultProbabilityToModifySize()
-    }
 
     /**
      * Same value as ArrayGene.timesProbToModifySize()

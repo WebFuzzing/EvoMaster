@@ -72,7 +72,7 @@ class MapGene<K, V>(
         if (other !is MapGene<*,*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        clearElements()
+        killAllChildren()
         // maxSize
         val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
             other.elements.subList(0, maxSize!!)
@@ -202,7 +202,7 @@ class MapGene<K, V>(
      */
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is MapGene<*,*> && gene.template::class.java.simpleName == template::class.java.simpleName){
-            clearElements()
+            killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? PairGene<K, V> }.toMutableList()
             addChildren(elements)
             return true
@@ -211,10 +211,6 @@ class MapGene<K, V>(
         return false
     }
 
-    override fun clearElements() {
-        elements.forEach { it.removeThisFromItsBindingGenes() }
-        killAllChildren()
-    }
 
     /**
      * remove an existing element [element] (key to value) from [elements]

@@ -52,6 +52,7 @@ abstract class StructuralElement (
         (children as MutableList<StructuralElement>).add(child)
     }
 
+    //https://preview.redd.it/hg27vjl7x0241.jpg?auto=webp&s=d3c8b5d2cfbf12a05715271e0cf7f1c26e962827
     open fun killAllChildren(){
         children.forEach {
             it.parent = null; //let's avoid memory leaks

@@ -28,7 +28,7 @@ class SqlBitStringGene(
 
         private val booleanArrayGene: ArrayGene<BooleanGene> = ArrayGene(name, template = BooleanGene(name), minSize = minSize, maxSize = maxSize)
 
-) : CollectionGene, CompositeGene(name, mutableListOf( booleanArrayGene)) {
+) :  CompositeGene(name, mutableListOf( booleanArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBitStringGene::class.java)
@@ -86,26 +86,6 @@ class SqlBitStringGene(
     }
 
 
-
-    override fun clearElements() {
-        return booleanArrayGene.clearElements()
-    }
-
-    override fun isEmpty() = booleanArrayGene.isEmpty()
-
-    override fun getMaxSizeOrDefault() = booleanArrayGene.getMaxSizeOrDefault()
-
-    override fun getSpecifiedMaxSize() = booleanArrayGene.getSpecifiedMaxSize()
-
-    override fun getMinSizeOrDefault() = booleanArrayGene.getMinSizeOrDefault()
-
-    override fun getSpecifiedMinSize() = booleanArrayGene.getSpecifiedMinSize()
-
-    override fun getSizeOfElements(filterMutable: Boolean) = booleanArrayGene.getSizeOfElements(filterMutable)
-
-    override fun getGeneName() = name
-
-    override fun getDefaultMaxSize() = booleanArrayGene.getDefaultMaxSize()
 
     override fun copyContent() = SqlBitStringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copy() as ArrayGene<BooleanGene>)
 

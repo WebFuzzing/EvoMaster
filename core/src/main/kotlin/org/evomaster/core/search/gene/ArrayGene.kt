@@ -47,7 +47,7 @@ class ArrayGene<T>(
         if(template is CycleObjectGene){
             minSize = 0
             maxSize = 0
-            clearElements()
+            killAllChildren()
         }
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
@@ -68,7 +68,7 @@ class ArrayGene<T>(
 
     fun forceToOnlyEmpty(){
         maxSize = 0
-        clearElements()
+        killAllChildren()
     }
 
     override fun copyContent(): Gene {
@@ -89,7 +89,7 @@ class ArrayGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        clearElements()
+        killAllChildren()
         // check maxSize
         this.elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
         // build parents for [element]
@@ -124,7 +124,7 @@ class ArrayGene<T>(
         }
 
         //maybe not so important here to complicate code to enable forceNewValue
-        clearElements()
+        killAllChildren()
         log.trace("Randomizing ArrayGene")
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         repeat(n) {
@@ -218,18 +218,13 @@ class ArrayGene<T>(
      */
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
-            clearElements()
+            killAllChildren()
             elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
             addChildren(elements)
             return true
         }
         LoggingUtil.uniqueWarn(log, "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}")
         return false
-    }
-
-    override fun clearElements() {
-        elements.forEach { it.removeThisFromItsBindingGenes() }
-        elements.clear()
     }
 
     /**

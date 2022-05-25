@@ -249,8 +249,7 @@ abstract class AbstractParser(
 
         var res = true
 
-        //gene.elements.clear()
-        gene.clearElements()
+        gene.killAllChildren()
 
         val elements = try {
             ObjectMapper().readValue(paramValue, ArrayList::class.java)
@@ -303,8 +302,7 @@ abstract class AbstractParser(
 
         var res = true
 
-//        gene.elements.clear()
-        gene.clearElements()
+        gene.killAllChildren()
 
         try {
             val elements = ObjectMapper().readValue(paramValue, Map::class.java)
