@@ -133,8 +133,9 @@ class ArrayGene<T>(
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         repeat(n) {
             val gene = template.copy() as T
-//            gene.parent = this
-            gene.randomize(randomness, false)
+            if(gene.isMutable()) {
+                gene.randomize(randomness, false)
+            }
             addChild(gene)
         }
         assert(minSize==null || (minSize!! <= elements.size))

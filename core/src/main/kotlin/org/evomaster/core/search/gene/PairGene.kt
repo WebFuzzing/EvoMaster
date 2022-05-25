@@ -41,8 +41,12 @@ class PairGene<F,S>(
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        first.randomize(randomness, forceNewValue, allGenes)
-        second.randomize(randomness, forceNewValue, allGenes)
+        if(first.isMutable()) {
+            first.randomize(randomness, forceNewValue, allGenes)
+        }
+        if(second.isMutable()) {
+            second.randomize(randomness, forceNewValue, allGenes)
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {

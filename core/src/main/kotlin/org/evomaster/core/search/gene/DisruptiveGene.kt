@@ -73,7 +73,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
         return gene.getValueAsRawString()
     }
 
-    override fun isMutable() = probability > 0
+    override fun isMutable() = probability > 0 && gene.isMutable()
 
     override fun copyValueFrom(other: Gene) {
         if (other !is DisruptiveGene<*>) {

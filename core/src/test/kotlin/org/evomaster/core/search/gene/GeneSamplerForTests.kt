@@ -179,7 +179,7 @@ object GeneSamplerForTests {
     private fun sampleSqlCompositeGene(rand: Randomness): SqlCompositeGene {
         val selection = geneClasses.filter { !it.isAbstract }
 
-        val numberOfFields = rand.nextInt(MAX_NUMBER_OF_FIELDS)
+        val numberOfFields = rand.nextInt(1,MAX_NUMBER_OF_FIELDS)
         return SqlCompositeGene(
                 name = "rand SqlCompositeGene",
                 fields = List(numberOfFields) { sample(rand.choose(selection), rand) }
@@ -239,7 +239,7 @@ object GeneSamplerForTests {
         val selection = geneClasses.filter { !it.isAbstract }
         return SqlMultidimensionalArrayGene("rand SqlMultidimensionalArrayGene",
                 template = sample(rand.choose(selection), rand),
-                numberOfDimensions = rand.nextInt( MAX_NUMBER_OF_DIMENSIONS))
+                numberOfDimensions = rand.nextInt(1, MAX_NUMBER_OF_DIMENSIONS))
     }
 
     private fun sampleSqlNullableGene(rand: Randomness): SqlNullableGene {

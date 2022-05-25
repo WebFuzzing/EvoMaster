@@ -48,7 +48,8 @@ class SqlNullableGene(name: String,
         else
             randomness.nextBoolean(ABSENT)
 
-        gene.randomize(randomness, forceNewValue, allGenes)
+        if(gene.isMutable())
+            gene.randomize(randomness, forceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
