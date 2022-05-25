@@ -11,6 +11,8 @@ import org.evomaster.core.problem.external.service.ExternalServiceUtils.isAddres
 import org.evomaster.core.problem.external.service.ExternalServiceUtils.nextIPAddress
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class ExternalServices {
     /**
@@ -23,6 +25,10 @@ class ExternalServices {
      * the concept is working.
      */
 
+    companion object {
+        private const val WIREMOCK_PORT : Int = 8080
+    }
+
     /**
      * Contains the information about each external calls made
      */
@@ -32,6 +38,8 @@ class ExternalServices {
 
     @Inject
     private lateinit var config : EMConfig
+
+    private val log: Logger = LoggerFactory.getLogger(ExternalServiceUtils::class.java)
 
     /**
      * This will allow adding ExternalServiceInfo to the Collection
@@ -58,7 +66,7 @@ class ExternalServices {
         if (isAddressAvailable(nextAddress, WIREMOCK_PORT)) {
             return nextAddress
         } else {
-            throw Exception(nextAddress.plus(" is not available for use"))
+            throw IllegalStateException(nextAddress.plus(" is not available for use"))
         }
     }
 
@@ -68,8 +76,8 @@ class ExternalServices {
      * exception.
      */
     private fun getDefaultAddress() : String {
-        if (isAddressAvailable("127.0.0.10", WIREMOCK_PORT)) {
-            return "127.0.0.10"
+        if (isAddressAvailable("127.0.0.2", WIREMOCK_PORT)) {
+            return "127.0.0.2"
         } else {
             throw Exception("Default loopback address is unavailable for binding")
         }
@@ -151,8 +159,10 @@ class ExternalServices {
      */
     private fun updateDNSCache(host : String, address : String) {
         val entry = DnsCacheManipulator.getDnsCache(host)
-        if (entry != null) {
+        if (entry == null) {
             DnsCacheManipulator.setDnsCache(host, address)
+        } else {
+            log.warn("$host already has a DNS cache entry.")
         }
     }
 
@@ -161,9 +171,5 @@ class ExternalServices {
      */
     fun cleanDNSCache() {
         DnsCacheManipulator.clearDnsCache()
-    }
-
-    companion object {
-        private const val WIREMOCK_PORT : Int = 8080
     }
 }

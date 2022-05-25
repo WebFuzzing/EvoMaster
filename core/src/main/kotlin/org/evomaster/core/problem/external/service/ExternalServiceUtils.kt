@@ -33,7 +33,7 @@ object ExternalServiceUtils {
         }
         var ip = String.format("%s.%s.%s.%s", tokens[0], tokens[1], tokens[2], tokens[3])
         if (tokens[0].toInt() != 127) {
-            throw Exception("Next available IP address is out of usable range")
+            throw IllegalStateException("Next available IP address is out of usable range")
         }
         // In the loopback address range 127.0.0.0/8, 127.255.255.255 will be the broadcast
         // address. 127.0.0.1 is skipped because the default loopback address and used in

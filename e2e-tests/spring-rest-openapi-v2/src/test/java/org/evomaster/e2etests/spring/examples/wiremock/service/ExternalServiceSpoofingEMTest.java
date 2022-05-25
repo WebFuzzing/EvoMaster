@@ -45,7 +45,7 @@ public class ExternalServiceSpoofingEMTest extends SpringTestBase {
                 "--outputFormat", "JAVA_JUNIT_5",
                 "--outputFolder", "target/em-tests/ExternalServiceEM",
                 "--externalServiceIPSelectionStrategy", "USER",
-                "--externalServiceIP", "127.0.0.20"
+                "--externalServiceIP", "127.0.0.2"
         };
 
         Injector injector = init(Arrays.asList(args));
