@@ -133,7 +133,7 @@ class BigDecimalGene(
         }
     }
 
-    override fun mutate(
+    override fun shallowMutate(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
@@ -151,7 +151,7 @@ class BigDecimalGene(
         if (isFloatingPointMutable && !floatingPointMode && !withinLongRange())
             floatingPointMode = true
 
-        val mutated = super.mutate(
+        val mutated = super.shallowMutate(
             randomness,
             apc,
             mwc,

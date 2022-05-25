@@ -59,7 +59,6 @@ abstract class Gene(
 
     /*
         TODO Major refactoring still to do:
-        - collections
         - mutation of gene (including hypermutation and innerGene)
         - impact of genes
         - validity / robustness testing
@@ -246,13 +245,12 @@ abstract class Gene(
 
 
     /**
-     *   TODO this method is always needed to be called before the Gene is usable.
-     *   there is no comment here, but I remember writing something like this...
-     *   if so, must be called at least once, or should throw an exception.
      *
      *   TODO Or must we guarantee validity of constraints in constructor???
      *
      *   Randomize the content of this gene.
+     *
+     *   TODO shall we guarantee validity here at randomization?
      *
      *   @param randomness the source of non-determinism
      *   @param forceNewValue whether we should force the change of value. When we do mutation,
@@ -274,7 +272,7 @@ abstract class Gene(
      * 1) there might exist multiple internal genes i.e.,[candidatesInternalGenes].
      *  In this case, we first apply [selectSubset] to select a subset of internal genes.
      *  then apply mutation on each of the selected genes.
-     * 2) When there is no need to do further selection, we apply [mutate] on the current gene.
+     * 2) When there is no need to do further selection, we apply [shallowMutate] on the current gene.
      *
      *   @param randomness the source of non-determinism
      *   @param apc parameter control
@@ -300,7 +298,7 @@ abstract class Gene(
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
         val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
-            val mutated = mutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val mutated = shallowMutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             if (!mutated)
                 throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
@@ -327,14 +325,17 @@ abstract class Gene(
 
     /**
      * @return a list of internal gene to be selected for mutation, eg, weight-based or adaptive weight-based gene selection
-     * note that if return an empty list, [mutate] will be applied to mutate this gene
+     * note that if return an empty list, [shallowMutate] will be applied to mutate this gene
      *
      * For instance, see [ArrayGene.candidatesInternalGenes], with a probability, it returns an empty list.
-     * the empty list means (see [ArrayGene.mutate]) that the mutation is applied to change the size of this array gene.
+     * the empty list means (see [ArrayGene.shallowMutate]) that the mutation is applied to change the size of this array gene.
      *
      * A default implementation for "simple" genes would be to return "listOf<Gene>()"
+     *
+     * Note that the current gene must never be returned in this method
+     * TODO add test for it
      */
-    abstract fun candidatesInternalGenes(randomness: Randomness,
+    protected abstract fun candidatesInternalGenes(randomness: Randomness,
                                          apc: AdaptiveParameterControl,
                                          //TODO remove deprecated
                                          allGenes: List<Gene>,
@@ -343,6 +344,23 @@ abstract class Gene(
                                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene>
 
+
+    /**
+     * How we are going to use impact info on selecting the given subset of internal genes
+     *
+     * @param randomness
+     * @param internalGenes is a set of candidates to be selected
+     * @param mwc is mutation weight controller which can be used to select genes with given weights
+     * @param additionalGeneMutationInfo contains impact info of [this] gene
+     * @return a subset of [internalGenes] with corresponding impact info
+     */
+    open fun adaptiveSelectSubset(randomness: Randomness,
+                                  internalGenes: List<Gene>,
+                                  mwc: MutationWeightControl,
+                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
+    }
 
     /**
      * @return a subset of internal genes to apply mutations
@@ -378,30 +396,20 @@ abstract class Gene(
         }
     }
 
-    /**
-     * @param randomness
-     * @param internalGenes is a set of candidates to be selected
-     * @param mwc is mutation weight controller which can be used to select genes with given weights
-     * @param additionalGeneMutationInfo contains impact info of [this] gene
-     * @return a subset of [internalGenes] with corresponding impact info
-     */
-    open fun adaptiveSelectSubset(randomness: Randomness,
-                                  internalGenes: List<Gene>,
-                                  mwc: MutationWeightControl,
-                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-        throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
-    }
+
 
     /**
-     * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty
+     * mutate the current gene (and NONE of its children directly, if any) if there is no need to apply selection,
+     * i.e., when [candidatesInternalGenes] is empty.
+     * Note though that this method might add/remove children
      */
-    open fun mutate(randomness: Randomness,
-                    apc: AdaptiveParameterControl,
-                    mwc: MutationWeightControl,
-                    allGenes: List<Gene> = listOf(),
-                    selectionStrategy: SubsetGeneSelectionStrategy,
-                    enableAdaptiveGeneMutation: Boolean,
-                    additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    protected open fun shallowMutate(randomness: Randomness,
+                           apc: AdaptiveParameterControl,
+                           mwc: MutationWeightControl,
+                           allGenes: List<Gene> = listOf(),
+                           selectionStrategy: SubsetGeneSelectionStrategy,
+                           enableAdaptiveGeneMutation: Boolean,
+                           additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
             if (additionalGeneMutationInfo.hasHistory()){

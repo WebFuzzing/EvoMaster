@@ -103,7 +103,7 @@ class SqlCompositeGene(
     /**
      * Dummy mutation for composite genes
      */
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

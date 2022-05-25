@@ -8,13 +8,11 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.utils.NumberCalculationUtil
 import org.evomaster.core.utils.NumberCalculationUtil.upperBound
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.BigInteger
 import kotlin.math.max
 import kotlin.math.min
 
@@ -67,7 +65,7 @@ class IntegerGene(
         value = randomness.randomizeBoundedIntAndLong(value.toLong(), getMinimum().toLong(), getMaximum().toLong(), forceNewValue).toInt()
     }
 
-    override fun mutate(
+    override fun shallowMutate(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
@@ -77,7 +75,7 @@ class IntegerGene(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
 
-        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        val mutated = super.shallowMutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (mutated) return true
 
         //check maximum range. no point in having a delta greater than such range

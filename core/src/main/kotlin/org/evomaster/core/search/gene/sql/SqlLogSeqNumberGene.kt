@@ -140,7 +140,7 @@ class SqlLogSeqNumberGene(
     }
 
 
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

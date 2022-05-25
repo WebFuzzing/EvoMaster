@@ -94,7 +94,7 @@ class EnumGene<T : Comparable<T>>(
         index = k
     }
 
-    override fun mutate(
+    override fun shallowMutate(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,

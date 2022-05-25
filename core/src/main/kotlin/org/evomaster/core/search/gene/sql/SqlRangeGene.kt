@@ -170,7 +170,7 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

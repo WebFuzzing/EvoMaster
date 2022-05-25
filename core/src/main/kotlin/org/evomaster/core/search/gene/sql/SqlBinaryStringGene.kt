@@ -85,7 +85,7 @@ class SqlBinaryStringGene(
 
     override fun copyContent() = SqlBinaryStringGene(name, minSize = minSize, maxSize = maxSize, binaryArrayGene.copy() as ArrayGene<IntegerGene>)
 
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

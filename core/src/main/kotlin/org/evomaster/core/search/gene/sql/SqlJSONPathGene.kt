@@ -74,7 +74,7 @@ class SqlJSONPathGene(
         throw IllegalArgumentException("impact is null or not SqlJsonGeneImpact")
     }
 
-    override fun mutate(
+    override fun shallowMutate(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
