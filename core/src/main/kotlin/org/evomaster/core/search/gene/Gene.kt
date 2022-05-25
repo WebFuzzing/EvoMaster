@@ -136,6 +136,53 @@ abstract class Gene(
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
+    override fun postCopy(template: StructuralElement) {
+        //rebuild the binding genes
+        val root = getRoot()
+        if(root is Individual) {
+            //TODO double-check this
+            val postBinding = (template as Gene).bindingGenes.map { b ->
+                val found = root.find(b)
+                found as? Gene
+                        ?: throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
+            }
+            bindingGenes.clear()
+            bindingGenes.addAll(postBinding)
+        }
+
+        super.postCopy(template)
+    }
+
+    /**
+     * there might be a need to repair gene based on some constraints, e.g., DateGene and TimeGene
+     */
+    open fun repair(){
+        //do nothing
+    }
+
+    /**
+     * @return whether the gene is valid
+     *  based on any specialized rule for different types of genes if there exist
+     *
+     * Note that the method is only used for debugging and testing purposes.
+     *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
+     *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
+     */
+    open fun isValid() = true
+
+    /**
+     * mutated gene should pass the check if needed, eg, DateGene
+     *
+     * In some cases, we must have genes with 'valid' values.
+     * For example, a date with month 42 would be invalid.
+     * On the one hand, it can still be useful for robustness testing
+     * to provide such invalid values in a HTTP call. On the other hand,
+     * it would be pointless to try to add it directly into a database,
+     * as that SQL command would simply fail without any SUT code involved.
+     */
+    open fun mutationCheck() : Boolean = true
+
+
     /*
         TODO shall we remove to default function implementation? to make sure new
         genes are forced to set them up, and not forget about them?
@@ -241,17 +288,6 @@ abstract class Gene(
         syncBindingGenesBasedOnThis()
     }
 
-    /**
-     * mutated gene should pass the check if needed, eg, DateGene
-     *
-     * In some cases, we must have genes with 'valid' values.
-     * For example, a date with month 42 would be invalid.
-     * On the one hand, it can still be useful for robustness testing
-     * to provide such invalid values in a HTTP call. On the other hand,
-     * it would be pointless to try to add it directly into a database,
-     * as that SQL command would simply fail without any SUT code involved.
-     */
-    open fun mutationCheck() : Boolean = true
 
     /**
      * @return a list of internal gene to be selected for mutation, eg, weight-based or adaptive weight-based gene selection
@@ -555,38 +591,6 @@ abstract class Gene(
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
 
 
-    override fun postCopy(template: StructuralElement) {
-        //rebuild the binding genes
-        val root = getRoot()
-        if(root is Individual) {
-            //TODO double-check this
-            val postBinding = (template as Gene).bindingGenes.map { b ->
-                val found = root.find(b)
-                found as? Gene
-                        ?: throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
-            }
-            bindingGenes.clear()
-            bindingGenes.addAll(postBinding)
-        }
 
-        super.postCopy(template)
-    }
-
-    /**
-     * there might be a need to repair gene based on some constraints, e.g., DateGene and TimeGene
-     */
-    open fun repair(){
-        //do nothing
-    }
-
-    /**
-     * @return whether the gene is valid
-     *  based on any specialized rule for different types of genes if there exist
-     *
-     * Note that the method is only used for debugging and testing purposes.
-     *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
-     *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
-     */
-    open fun isValid() = true
 }
 
