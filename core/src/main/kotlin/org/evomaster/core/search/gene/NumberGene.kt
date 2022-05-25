@@ -61,6 +61,9 @@ abstract class NumberGene<T : Number>(name: String,
 
         if (scale != null && scale < 0)
             throw IllegalArgumentException("scale must be zero or positive number")
+
+        if (getMaximum().toDouble() < getMinimum().toDouble())
+            throwMinMaxException()
     }
 
     fun throwMinMaxException(){

@@ -32,8 +32,7 @@ class LongGene(
     init {
         if (getMaximum() == getMinimum())
             this.value = getMinimum()
-        if (getMaximum() < getMinimum())
-            throwMinMaxException()
+
     }
 
     override fun copyContent(): Gene {

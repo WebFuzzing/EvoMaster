@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.NumberMutatorUtils.getFormattedValue
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -28,8 +29,8 @@ class DoubleGene(name: String,
                   */
                  scale: Int? = null
 ) : FloatingPointNumberGene<Double>(name, value,
-    min = if (precision != null && scale != null) (-NumberCalculationUtil.upperBound(precision, scale)).toDouble().run { if (min== null || this > min) this else min } else min,
-    max = if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).toDouble().run { if (max == null || this < max) this else max } else max,
+    min = (if (precision != null && scale != null) (-NumberCalculationUtil.upperBound(precision, scale)).toDouble().run { if (min== null || this > min) this else min } else min)?.run { getFormattedValue(this, scale) },
+    max = (if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).toDouble().run { if (max == null || this < max) this else max } else max)?.run { getFormattedValue(this, scale) },
     minInclusive = minInclusive, maxInclusive = maxInclusive, precision = precision, scale = scale) {
 
     companion object{

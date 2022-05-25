@@ -38,8 +38,6 @@ class IntegerGene(
     init {
         if (getMaximum() == getMinimum())
             this.value = getMinimum()
-        if (getMaximum() < getMinimum())
-            throwMinMaxException()
     }
 
     companion object {

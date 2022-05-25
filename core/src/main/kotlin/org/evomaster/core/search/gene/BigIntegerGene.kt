@@ -65,8 +65,7 @@ class BigIntegerGene(
 
         if (getMaximum() == getMinimum())
             this.value = getMinimum()
-        if (getMaximum() < getMinimum())
-            throwMinMaxException()
+
     }
 
     override fun copyContent(): BigIntegerGene = BigIntegerGene(name, value, min, max, precision, minInclusive, maxInclusive)

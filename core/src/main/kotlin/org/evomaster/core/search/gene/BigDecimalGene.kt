@@ -86,7 +86,7 @@ class BigDecimalGene(
         if (precision != null){
             if (precision <= 0)
                 throw IllegalArgumentException("invalid precision: a negative number or 0 for the precision is not allowed")
-            if (precision > NumberMutatorUtils.MAX_LONG_PRECISION)
+            if (precision > NumberMutatorUtils.MAX_PRECISION)
                 throw IllegalArgumentException("invalid precision: the max is ${NumberMutatorUtils.MAX_PRECISION}, but $precision is specified")
         }
 
