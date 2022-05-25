@@ -354,13 +354,22 @@ abstract class Gene(
      * @param additionalGeneMutationInfo contains impact info of [this] gene
      * @return a subset of [internalGenes] with corresponding impact info
      */
-    open fun adaptiveSelectSubset(randomness: Randomness,
+    //TODO abstract
+    protected open fun adaptiveSelectSubset(randomness: Randomness,
                                   internalGenes: List<Gene>,
                                   mwc: MutationWeightControl,
                                   additionalGeneMutationInfo: AdditionalGeneMutationInfo
     ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
     }
+
+    /**
+     * TODO is this necessary considering children and flatView???
+     * TODO need documentation if we keep it
+     *
+     * @return internal genes
+     */
+    abstract fun innerGene() : List<Gene>
 
     /**
      * @return a subset of internal genes to apply mutations
@@ -497,12 +506,7 @@ abstract class Gene(
     abstract fun containsSameValueAs(other: Gene): Boolean
 
 
-    /**
-     * TODO is this necessary considering children and flatView???
-     *
-     * @return internal genes
-     */
-    abstract fun innerGene() : List<Gene>
+
 
     /**
      * evaluate whether [this] and [gene] belong to one evolution during search

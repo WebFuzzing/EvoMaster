@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
@@ -43,5 +44,13 @@ abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
                                 additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene>{
         return listOf()
+    }
+
+    final override fun adaptiveSelectSubset(randomness: Randomness,
+                                            internalGenes: List<Gene>,
+                                            mwc: MutationWeightControl,
+                                            additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
     }
 }
