@@ -16,6 +16,7 @@ import org.evomaster.core.search.service.Randomness
 import java.io.File
 import java.math.BigDecimal
 import java.math.BigInteger
+import kotlin.math.abs
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSuperclassOf
@@ -505,7 +506,7 @@ object GeneSamplerForTests {
                 max = rand.choose(listOf(null, min + rand.nextDouble())),
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
-                precision = rand.choose(listOf(null, rand.nextInt())),
+                precision = rand.choose(listOf(null, rand.nextInt(0,10))),
                 scale = rand.choose(listOf(null, rand.nextInt(0, 2)))
         )
     }
@@ -520,7 +521,7 @@ object GeneSamplerForTests {
                 max = rand.choose(listOf(null, min + rand.nextInt(0, 100))),
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
-                precision = rand.choose(listOf(null, rand.nextInt())),
+                precision = rand.choose(listOf(null, rand.nextInt(0, 2))),
         )
     }
 
@@ -530,7 +531,7 @@ object GeneSamplerForTests {
         return LongGene(
                 name = "rand LongGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + rand.nextInt(0, 100))),
+                max = rand.choose(listOf(null, min + rand.nextInt(2, 100))),
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, rand.nextInt(0, 2))),
@@ -543,7 +544,7 @@ object GeneSamplerForTests {
         return FloatGene(
                 name = "rand FloatGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + rand.nextFloat())),
+                max = rand.choose(listOf(null, min + 2 + abs(rand.nextFloat()))),
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, rand.nextInt())),
@@ -559,8 +560,8 @@ object GeneSamplerForTests {
             minBigDecimal = null
             maxBigDecimal = null
         } else {
-            minBigDecimal = BigDecimal.valueOf(rand.nextLong())
-            maxBigDecimal = minBigDecimal + BigDecimal.valueOf(rand.nextLong(0,Long.MAX_VALUE))
+            minBigDecimal = BigDecimal.valueOf(rand.nextLong() / 2 )
+            maxBigDecimal = minBigDecimal + BigDecimal.valueOf(rand.nextLong(0,Long.MAX_VALUE) / 2)
         }
 
         return BigDecimalGene(
@@ -570,7 +571,7 @@ object GeneSamplerForTests {
                 minInclusive = if (minBigDecimal==null) true else rand.nextBoolean(),
                 maxInclusive = if (maxBigDecimal==null) true else rand.nextBoolean(),
                 floatingPointMode = rand.nextBoolean(),
-                precision = rand.choose(listOf(null, rand.nextInt(0,100))),
+                precision = rand.choose(listOf(null, rand.nextInt(1,5))),
                 scale = rand.choose(listOf(null, rand.nextInt(0, 2)))
         )
     }
@@ -583,8 +584,8 @@ object GeneSamplerForTests {
             minBigInteger = null
             maxBigInteger = null
         } else {
-            minBigInteger = BigInteger.valueOf(rand.nextLong())
-            maxBigInteger = minBigInteger.plus(BigInteger.valueOf(rand.nextLong(0, Long.MAX_VALUE)))
+            minBigInteger = BigInteger.valueOf(rand.nextLong() / 2)
+            maxBigInteger = minBigInteger.plus(BigInteger.valueOf(rand.nextLong(0, Long.MAX_VALUE) / 2 ))
         }
         return BigIntegerGene(
                 name = "rand BigIntegerGene ${rand.nextInt()}",
@@ -592,7 +593,7 @@ object GeneSamplerForTests {
                 max = maxBigInteger,
                 minInclusive = rand.nextBoolean(),
                 maxInclusive = rand.nextBoolean(),
-                precision = rand.choose(listOf(null, rand.nextInt(0, 100))),
+                precision = rand.choose(listOf(null, rand.nextInt(0, 10))),
         )
     }
 

@@ -57,7 +57,11 @@ abstract class NumberGene<T : Number>(name: String,
             this.value = value
     }
 
-
+    fun throwMinMaxException(){
+        val x = if(minInclusive) "inclusive" else "exclusive"
+        val y = if(maxInclusive) "inclusive" else "exclusive"
+        throw IllegalArgumentException("max must be greater than min but $y max is $max and $x min is $min")
+    }
 
     open fun isRangeSpecified() = min != null || max != null
 

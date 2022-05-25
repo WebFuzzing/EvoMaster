@@ -66,7 +66,7 @@ class BigIntegerGene(
         if (getMaximum() == getMinimum())
             this.value = getMinimum()
         if (getMaximum() < getMinimum())
-            throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+            throwMinMaxException()
     }
 
     override fun copyContent(): BigIntegerGene = BigIntegerGene(name, value, min, max, precision, minInclusive, maxInclusive)

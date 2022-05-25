@@ -101,7 +101,7 @@ class GeneTest {
 
         return genes
                 .filter { !it.isAbstract }
-                .map { GeneSamplerForTests.sample(it, Randomness()) }
+                .map { GeneSamplerForTests.sample(it, rand) }
     }
 
     @ParameterizedTest
