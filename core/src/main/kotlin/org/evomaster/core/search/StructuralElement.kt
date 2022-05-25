@@ -1,6 +1,5 @@
 package org.evomaster.core.search
 
-import org.evomaster.core.logging.LoggingUtil
 import org.slf4j.LoggerFactory
 
 /**
@@ -96,19 +95,19 @@ abstract class StructuralElement (
      * relationship. This will be handled in [copy]
      */
     //TODO protected?
-    abstract fun copyContent(): StructuralElement
+    protected abstract fun copyContent(): StructuralElement
 
     /**
-     * post-handling on the copy based on its [template]
+     * post-handling on the copy based on its [original] version
      */
     //TODO protected?
-    open fun postCopy(template : StructuralElement){
-        if (children.size != template.children.size)
-            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${children.size}) vs. template (${template.children.size})")
+    protected open fun postCopy(original : StructuralElement){
+        if (children.size != original.children.size)
+            throw IllegalStateException("copy has different size of children compared to original, e.g., copy (${children.size}) vs. original (${original.children.size})")
         children.indices.forEach {
-            children[it].postCopy(template.children[it])
+            children[it].postCopy(original.children[it])
         }
-        isDefinedRoot = template.isDefinedRoot()
+        isDefinedRoot = original.isDefinedRoot()
     }
 
     /**

@@ -22,7 +22,7 @@ class SqlMultiRangeGeneTest {
                 template = SqlRangeGene("int4range",
                         template = IntegerGene("int4")))
 
-        val rangeGene = multirangeGene.template.copyContent() as SqlRangeGene<IntegerGene>
+        val rangeGene = multirangeGene.template.copy() as SqlRangeGene<IntegerGene>
         multirangeGene.rangeGenes.addElement(rangeGene)
 
         assertEquals("\"{[ 0 , 0 ]}\"", multirangeGene.getValueAsPrintableString())

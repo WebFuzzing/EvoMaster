@@ -239,7 +239,7 @@ open class RestResourceNode(
                 posts[0]
             }
             else -> null
-        }?.copyContent() as? RestCallAction
+        }?.copy() as? RestCallAction
 
         if(post != null){
             postCreation.actions.add(0, post)
@@ -261,7 +261,7 @@ open class RestResourceNode(
     }
 
     private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
-        val post = chooseClosestAncestor(path, listOf(HttpVerb.POST))?.copyContent() as? RestCallAction
+        val post = chooseClosestAncestor(path, listOf(HttpVerb.POST))?.copy() as? RestCallAction
         if(post != null){
             postCreationChain.actions.add(0, post)
             if (post.path.hasVariablePathParameters() &&
@@ -341,14 +341,14 @@ open class RestResourceNode(
      */
     fun sampleOneAction(verb : HttpVerb? = null, randomness: Randomness) : RestResourceCalls{
         val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions)
-        return sampleOneAction(al!!.copyContent() as RestCallAction, randomness)
+        return sampleOneAction(al!!.copy() as RestCallAction, randomness)
     }
 
     /**
      * sample a rest resource call with given [action]
      */
     fun sampleOneAction(action : RestCallAction, randomness: Randomness) : RestResourceCalls{
-        val copy = action.copyContent() as RestCallAction
+        val copy = action.copy() as RestCallAction
         copy.doInitialize(randomness)
 
         val template = templates[copy.verb.toString()]
@@ -511,7 +511,7 @@ open class RestResourceNode(
 
 
     private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
-        val action = (getActionByHttpVerb(actions, verb)?:throw IllegalStateException("cannot get $verb action in the resource $path")).copyContent() as RestCallAction
+        val action = (getActionByHttpVerb(actions, verb)?:throw IllegalStateException("cannot get $verb action in the resource $path")).copy() as RestCallAction
         action.randomize(randomness, false)
         return action
     }

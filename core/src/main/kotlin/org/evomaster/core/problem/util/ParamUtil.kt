@@ -91,7 +91,7 @@ class ParamUtil {
          * @return whether [geneA] and [geneB] have same value.
          */
         fun compareGenesWithValue(geneA: Gene, geneB: Gene): Boolean {
-            val geneAWithGeneBType = geneB.copyContent()
+            val geneAWithGeneBType = geneB.copy()
             geneAWithGeneBType.bindValueBasedOn(geneA)
             return when (geneB) {
                 is StringGene -> geneB.value == (geneAWithGeneBType as StringGene).value

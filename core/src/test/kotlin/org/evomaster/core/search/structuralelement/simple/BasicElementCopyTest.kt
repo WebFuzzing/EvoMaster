@@ -34,7 +34,6 @@ class BasicElementCopyTest {
         assertTrue(backpath.containsAll(listOf(0,3)))
     }
 
-    @Disabled  //TODO fix, see Gene.postCopy
     @Test
     fun testCopy(){
         val leafA1 = Leaf("A1")

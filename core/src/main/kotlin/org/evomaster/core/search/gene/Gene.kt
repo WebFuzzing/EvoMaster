@@ -13,6 +13,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.RootElement
 
 
 /**
@@ -56,6 +57,13 @@ abstract class Gene(
         children: MutableList<out Gene>
 ) : StructuralElement(children){
 
+    /*
+        TODO Major refactoring still to do:
+        - mutation of gene (including hypermutation)
+        - impact of genes
+        - validity / robustness testing
+     */
+
     companion object{
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
     }
@@ -63,10 +71,27 @@ abstract class Gene(
     var initialized : Boolean = false
         private set
 
+    /**
+     * In the scope of [Individual] and not genes in isolation.
+     * The current gene could be "bound" to other genes.
+     * This means that, if this gene is modified, then ALL the other
+     * bound gene must be updated as well.
+     * The type can be different, eg strings vs numbers, but still consistent.
+     *
+     * WARNING: genes are mutable, but here we check for references. this implies
+     * NO gene can overridde hashcode
+     */
+    private val bindingGenes: MutableSet<Gene> = mutableSetOf()
+
     init{
         if(name.isBlank()){
             throw IllegalArgumentException("Empty name for Gene")
         }
+    }
+
+    override fun hashCode(): Int {
+        //Otherwise bindingGenes will not work
+        return super.hashCode()
     }
 
     /*
@@ -136,21 +161,30 @@ abstract class Gene(
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
-    override fun postCopy(template: StructuralElement) {
+    override fun postCopy(original: StructuralElement) {
         //rebuild the binding genes
         val root = getRoot()
-        if(root is Individual) {
-            //TODO double-check this
-            val postBinding = (template as Gene).bindingGenes.map { b ->
+        if(root is RootElement) {
+            /*
+                a gene can refer to other genes outside of its tree.
+                when we make a copy we need to make sure that we refer to the new gene in the copied
+                individual, not the original individual.
+                so, this is applied only  when the root is an individual, otherswise skipped, because
+                would not be able to find those genes anyway
+             */
+            val postBinding = (original as Gene).bindingGenes.map { b ->
                 val found = root.find(b)
                 found as? Gene
                         ?: throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
             }
             bindingGenes.clear()
             bindingGenes.addAll(postBinding)
+        } else {
+            assert(bindingGenes.isEmpty())
         }
 
-        super.postCopy(template)
+
+        super.postCopy(original)
     }
 
     /**
@@ -468,7 +502,7 @@ abstract class Gene(
 
     //========================= handing binding genes ===================================
 
-    private val bindingGenes: MutableSet<Gene> = mutableSetOf()
+
 
     /**
      * rebuild the binding relationship of [this] gene based on [copiedGene] which exists in [copiedIndividual]
@@ -585,7 +619,8 @@ abstract class Gene(
 
 
     /**
-     * bind value of [this] gene based on [gene]
+     * bind value of [this] gene based on [gene].
+     * The type of genes can be different.
      * @return whether the binding performs successfully
      */
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
