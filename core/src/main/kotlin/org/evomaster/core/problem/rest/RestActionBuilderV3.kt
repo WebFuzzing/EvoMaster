@@ -568,7 +568,7 @@ object RestActionBuilderV3 {
         //TODO allOf, anyOf, oneOf and not
 
         if (fields.isEmpty()) {
-            log.warn("No fields for object definition: $name")
+            LoggingUtil.uniqueWarn(log,"No fields for object definition: $name")
             // here, the first of pairgene should not be mutable
             return MapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
         }
@@ -587,12 +587,19 @@ object RestActionBuilderV3 {
                                           history: Deque<String> = ArrayDeque()
     ): Gene {
 
+        /*
+            The problem in caching objects is that their tree can depend on where they are mounted.
+            For example, assume A->B  will not work (ie cycle) if mounted under another object that has
+            B as ancestor, eg, D->C->B->X->A.
+            An easy case in which this cannot happen is when the target object is a root, ie used directly
+            in a parameter and not inside other objects. In such cases, we can cache it.
+         */
         val isRoot = history.isEmpty()
 
         /*
             We need to avoid cycles like A.B.A...
             From root to leaves, how many repeated object should appear on a path?
-            Maybe this should be config to experiment with.
+            TODO Maybe this should be config to experiment with.
             Anyway, it is a problem in scout-api
          */
         val cycleDepth = 1
@@ -603,6 +610,14 @@ object RestActionBuilderV3 {
 
         if (isRoot && refCache.containsKey(reference)) {
             return refCache[reference]!!.copy()
+        }
+
+        /*
+            TODO This could be customized in EMConfig
+         */
+        val depthLimit = 5
+        if(history.size == depthLimit){
+            return LimitObjectGene("Object-depth limit reached for: $reference")
         }
 
         try {
@@ -628,6 +643,7 @@ object RestActionBuilderV3 {
 
         if(isRoot) {
             GeneUtils.preventCycles(gene)
+            GeneUtils.preventLimit(gene)
             refCache[reference] = gene
         }
 

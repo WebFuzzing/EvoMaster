@@ -81,6 +81,9 @@ class RestActionBuilderV3Test{
 
         assertEquals(expectedNumberOfActions, actions.size)
 
+        //should not crash
+        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf())
+
         return actions
     }
 
@@ -404,6 +407,16 @@ class RestActionBuilderV3Test{
         checkNumResource(map, listOf(), 5, 0)
     }
 
+
+    @Test
+    fun testK0() {
+        loadAndAssertActions("/swagger/others/k0.json", 20)
+    }
+
+    @Test
+    fun testK1() {
+        loadAndAssertActions("/swagger/others/k1.json", 53)
+    }
 
     @Test
     fun testBranches() {
