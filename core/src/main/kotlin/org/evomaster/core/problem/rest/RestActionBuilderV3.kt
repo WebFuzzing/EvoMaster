@@ -449,7 +449,7 @@ object RestActionBuilderV3 {
             "date" -> return DateGene(name)
             "date-time" -> return DateTimeGene(name)
             else -> if (format != null) {
-                log.warn("Unhandled format '$format'")
+                LoggingUtil.uniqueWarn(log, "Unhandled format '$format'")
             }
         }
 
