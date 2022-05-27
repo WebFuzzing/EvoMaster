@@ -352,7 +352,7 @@ internal class RestPathTest{
 
     @Test
     fun testGivenUrl(){
-        val base = "http://localhost:12625/"
+        val base = "http://localhost:12625"
         val path = "/v2/api-docs?group=1ocDashboardsApi&foo=42"
         val action = RestActionBuilderV3.buildActionBasedOnUrl(base,"call to swagger", HttpVerb.GET, "$base$path", true)
 
