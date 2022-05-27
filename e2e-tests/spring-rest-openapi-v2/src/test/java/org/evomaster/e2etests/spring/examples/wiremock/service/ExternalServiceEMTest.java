@@ -8,7 +8,7 @@ import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemp
 import com.google.inject.Injector;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.external.service.ExternalServiceInfo;
-import org.evomaster.core.problem.external.service.ExternalServices;
+import org.evomaster.core.problem.external.service.ExternalServiceHandler;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
@@ -101,19 +101,19 @@ public class ExternalServiceEMTest extends SpringTestBase {
 
         Injector injector = init(Arrays.asList(args));
 
-        ExternalServices externalServices = injector.getInstance(ExternalServices.class);
+        ExternalServiceHandler externalServiceHandler = injector.getInstance(ExternalServiceHandler.class);
 
         RestResourceFitness restResourceFitness = injector.getInstance(RestResourceFitness.class);
         ResourceSampler resourceSampler = injector.getInstance(ResourceSampler.class);
         RestIndividual restIndividual = resourceSampler.sample();
 
         // asserts whether the call made during the start-up is captured
-        assertEquals(1, externalServices.getExternalServices().size(), externalServices.getExternalServices().stream().map(ExternalServiceInfo::getRemoteHostname).collect(Collectors.joining(",")));
-        assertEquals("baz.bar", externalServices.getExternalServices().get(0).getRemoteHostname());
+        assertEquals(1, externalServiceHandler.getExternalServices().size(), externalServiceHandler.getExternalServices().stream().map(ExternalServiceInfo::getRemoteHostname).collect(Collectors.joining(",")));
+        assertEquals("baz.bar", externalServiceHandler.getExternalServices().get(0).getRemoteHostname());
         restResourceFitness.calculateCoverage(restIndividual, Collections.emptySet());
 
         // assertion after the execution
-        assertEquals(2, externalServices.getExternalServices().size());
+        assertEquals(2, externalServiceHandler.getExternalServices().size());
 
     }
 }

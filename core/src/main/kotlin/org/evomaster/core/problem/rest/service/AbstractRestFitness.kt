@@ -7,7 +7,7 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.ExternalServiceInfo
-import org.evomaster.core.problem.external.service.ExternalServices
+import org.evomaster.core.problem.external.service.ExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
@@ -37,7 +37,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     @Inject
-    protected lateinit var externalServices: ExternalServices
+    protected lateinit var externalServiceHandler: ExternalServiceHandler
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -630,7 +630,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     private fun handleExternalServiceInfo(infoDto: List<AdditionalInfoDto>) {
         infoDto.forEach { info ->
             info.externalServices.forEach { es ->
-                externalServices.addExternalService(ExternalServiceInfo(es.protocol, es.remoteHostname, es.remotePort))
+                externalServiceHandler.addExternalService(ExternalServiceInfo(es.protocol, es.remoteHostname, es.remotePort))
             }
         }
     }

@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.external.service
 
+import com.google.inject.Inject
+import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
@@ -8,6 +10,9 @@ import java.net.*
 object ExternalServiceUtils {
 
     private val log: Logger = LoggerFactory.getLogger(ExternalServiceUtils::class.java)
+
+    @Inject
+    lateinit var randomness: Randomness
 
     /**
      * This method provides the next IP address from the given value for
@@ -19,6 +24,10 @@ object ExternalServiceUtils {
         if (tokens.size != 4) {
             throw IllegalArgumentException("Invalid IP address format")
         } else {
+            if (tokens[0].toInt() != 127) {
+                throw IllegalStateException("Next available IP address is out of usable range")
+            }
+
             for ( i in tokens.size - 1 downTo 0) {
                 var part = tokens[i].toInt()
                 if (part < 255) {
@@ -32,18 +41,24 @@ object ExternalServiceUtils {
             }
         }
         var ip = String.format("%s.%s.%s.%s", tokens[0], tokens[1], tokens[2], tokens[3])
-        if (tokens[0].toInt() != 127) {
-            throw IllegalStateException("Next available IP address is out of usable range")
-        }
-        // In the loopback address range 127.0.0.0/8, 127.255.255.255 will be the broadcast
-        // address. 127.0.0.1 is skipped because the default loopback address and used in
-        // other services commonly. 127.0.0.0 skipped because is the network address with
-        // the mask 255.0.0.0 describes the whole loopback addresses.
-        val reservedIPAddresses = arrayOf("127.0.0.0", "127.255.255.255", "127.0.0.1")
-        if (reservedIPAddresses.contains(ip)) {
+        if (isReservedIP(ip)) {
             ip = nextIPAddress(ip)
         }
         return ip
+    }
+
+    /**
+     * In the loopback address range 127.0.0.0/8, 127.255.255.255 will be the broadcast
+     * address. 127.0.0.1 is skipped because the default loopback address and used in
+     * other services commonly. 127.0.0.0 skipped because is the network address with
+     * the mask 255.0.0.0 describes the whole loopback addresses.
+     */
+    private fun isReservedIP(ip: String) : Boolean {
+        val reservedIPAddresses = arrayOf("127.0.0.0", "127.255.255.255", "127.0.0.1")
+        if (reservedIPAddresses.contains(ip)) {
+            return true
+        }
+        return false
     }
 
     /**
@@ -56,11 +71,16 @@ object ExternalServiceUtils {
      */
     fun generateRandomIPAddress() : String {
         val (p1, p2, p3) = Triple(
-            (0..255).shuffled().first(),
-            (0..255).shuffled().first(),
-            (0..254).shuffled().first(),
+            randomness.randomIPBit(),
+            randomness.randomIPBit(),
+            randomness.randomIPBit(),
         )
-        return String.format("127.%s.%s.%s", p1, p2, p3)
+        var ip = String.format("127.%s.%s.%s", p1, p2, p3)
+
+        if (isReservedIP(ip)) {
+            ip = generateRandomIPAddress()
+        }
+        return ip
     }
 
     /**

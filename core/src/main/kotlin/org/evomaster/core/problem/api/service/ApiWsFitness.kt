@@ -13,7 +13,6 @@ import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.external.service.ExternalServices
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
@@ -30,7 +29,6 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
-import javax.annotation.PostConstruct
 import javax.ws.rs.core.Response
 
 /**

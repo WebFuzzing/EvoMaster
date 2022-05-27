@@ -14,7 +14,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class ExternalServices {
+class ExternalServiceHandler {
     /**
      * This will hold the information about the external service
      * calls inside the SUT. Information will be passed to the core
@@ -34,6 +34,8 @@ class ExternalServices {
      */
     private val externalServiceInfos: MutableList<ExternalServiceInfo> = mutableListOf()
 
+    private val externalServices: MutableList<ExternalService> = mutableListOf()
+
     private var lastIPAddress : String = ""
 
     @Inject
@@ -45,13 +47,13 @@ class ExternalServices {
      * This will allow adding ExternalServiceInfo to the Collection
      */
     fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
-        // TODO: The below code intentionally commented out
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             val ip = getIP()
             lastIPAddress = ip
             val wm : WireMockServer = initWireMockServer(ip)
             updateDNSCache(externalServiceInfo.remoteHostname, ip)
-            externalServiceInfo.assignWireMockServer(wm)
+//            externalServiceInfo.assignWireMockServer(wm)
+            externalServices.add(ExternalService(externalServiceInfo, wm))
         }
         externalServiceInfos.add(externalServiceInfo)
     }
@@ -151,6 +153,12 @@ class ExternalServices {
                 .withBody("Not found!!")))
 
         return wm
+    }
+
+    private fun stopWireMockServers() {
+        externalServices.forEach {
+            it.stopWireMockServer()
+        }
     }
 
     /**
