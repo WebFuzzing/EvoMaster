@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foo.rest.examples.spring.constant.ConstantController;
 import com.foo.rest.examples.spring.constant.ConstantResponseDto;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
+import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestCallResult;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -57,6 +58,9 @@ public class BlackBoxConstantEMTest extends SpringTestBase {
         Solution<RestIndividual> solution = initAndRun(args);
 
         assertTrue(solution.getIndividuals().size() >= 1);
+
+        // call swagger is executed successfully
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/v2/api-docs","");
 
         compile(outputFolder);
     }
