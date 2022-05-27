@@ -18,16 +18,14 @@ object ExternalServiceUtils {
      * This method provides the next IP address from the given value for
      * loopback range. If generated IP address is not in the range, this
      * will throw an Exception.
+     *
+     *
      */
     fun nextIPAddress(address: String) : String {
         val tokens = address.split(".").toMutableList()
         if (tokens.size != 4) {
             throw IllegalArgumentException("Invalid IP address format")
         } else {
-            if (tokens[0].toInt() != 127) {
-                throw IllegalStateException("Next available IP address is out of usable range")
-            }
-
             for ( i in tokens.size - 1 downTo 0) {
                 var part = tokens[i].toInt()
                 if (part < 255) {
@@ -39,6 +37,9 @@ object ExternalServiceUtils {
                     break
                 }
             }
+        }
+        if (tokens[0].toInt() != 127) {
+            throw IllegalStateException("Next available IP address is out of usable range")
         }
         var ip = String.format("%s.%s.%s.%s", tokens[0], tokens[1], tokens[2], tokens[3])
         if (isReservedIP(ip)) {
@@ -68,6 +69,9 @@ object ExternalServiceUtils {
      * execution to end-up closer to each other. Although the likelihood is low, but
      * can happen. As the result when creating the next IP address from the last used,
      * there will be negligible amount of small impact on the speed of the execution.
+     *
+     * In case if the generated IP address is under the reserved range, program will
+     * try to regenerate a new IP instead throwing an exception.
      */
     fun generateRandomIPAddress() : String {
         val (p1, p2, p3) = Triple(
