@@ -1,13 +1,10 @@
 package org.evomaster.core.problem.external.service
 
-import com.github.tomakehurst.wiremock.WireMockServer
 
 class ExternalServiceInfo(
         val protocol: String,
         val remoteHostname: String,
         val remotePort: Int) {
-
-    private lateinit var wireMockServer : WireMockServer
 
     init {
         if (remoteHostname.isBlank()) {
@@ -16,13 +13,6 @@ class ExternalServiceInfo(
         if (protocol.isBlank()) {
             throw IllegalArgumentException("Protocol can not be blank")
         }
-    }
-
-    fun assignWireMockServer(wm: WireMockServer) {
-        wireMockServer = wm
-    }
-    fun getWireMockServer() : WireMockServer {
-        return wireMockServer
     }
 
     override fun equals(other: Any?): Boolean {
