@@ -4,7 +4,9 @@
       "queryType": {
         "name": "foo"
       },
-      "mutationType": {"name": "foom"},
+      "mutationType": {
+        "name": "foom"
+      },
       "types": [
         {
           "kind": "SCALAR",
@@ -33,7 +35,6 @@
           "enumValues": null,
           "possibleTypes": null
         },
-
         {
           "kind": "OBJECT",
           "name": "foo",
@@ -55,7 +56,6 @@
           "enumValues": null,
           "possibleTypes": null
         },
-
         {
           "kind": "OBJECT",
           "name": "fooM",
@@ -76,15 +76,12 @@
               "isDeprecated": false,
               "deprecationReason": null
             }
-
           ],
           "inputFields": null,
           "interfaces": [],
           "enumValues": null,
           "possibleTypes": null
         },
-
-
         {
           "kind": "OBJECT",
           "name": "__Directive",

@@ -208,6 +208,8 @@ object GraphQLUtils {
      * graph: a map with the name of the node as a key and its fields and edges as values,
      * history: used in the cycles management,
      * objectFieldsHistory: a set used in the management of already constructed nodes
+
+     * TODO Remove isRoot(), and extract the names directly from the schema
      */
     fun constructGraph(
             state: TempState,
