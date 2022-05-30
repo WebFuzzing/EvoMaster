@@ -10,6 +10,7 @@ import org.evomaster.core.problem.external.service.ExternalServiceInfo
 import org.evomaster.core.problem.external.service.ExternalServices
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.remote.SutProblemException
@@ -143,11 +144,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         if (configuration.blackBox && !configuration.bbExperiments) {
             return if (configuration.bbSwaggerUrl.startsWith("http", true)){
-                 RestCallAction(id, HttpVerb.GET, RestPath(configuration.bbSwaggerUrl), mutableListOf(), skipOracleChecks = true)
+//                RestCallAction(id, HttpVerb.GET, RestPath(configuration.bbSwaggerUrl), mutableListOf(), skipOracleChecks = true)
+                buildActionBasedOnUrl(BlackBoxUtils.targetUrl(config,this), id, HttpVerb.GET, configuration.bbSwaggerUrl, true)
             } else
                 null
         }
-
 
         val base = infoDto.baseUrlOfSUT
         val openapi = infoDto.restProblem.openApiUrl

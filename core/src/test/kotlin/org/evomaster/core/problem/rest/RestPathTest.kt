@@ -7,6 +7,9 @@ import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import java.net.URI
 
 internal class RestPathTest{
 
@@ -347,5 +350,31 @@ internal class RestPathTest{
         assertEquals("x", keyValues?.get("firsParam"))
         assertEquals("2", keyValues?.get("anotherParam"))
         assertEquals("z", keyValues?.get("thirdParam"))
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [
+        "/v2/api-docs?group=1ocDashboardsApi&foo=42",
+        "/v2/api-docs?group="
+    ])
+    fun testGivenUrl(path: String){
+        val base = "http://localhost:12625"
+        val action = RestActionBuilderV3.buildActionBasedOnUrl(base,"call to swagger", HttpVerb.GET, "$base$path", true)
+
+        assertNotNull(action)
+        assertEquals(path, action!!.resolvedPath())
+
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [
+        "/v2/api-docs?group",
+        "/v2/api-docs?group=1ocDashboardsApi&foo=42#sec"
+    ])
+    fun testNotFullySupportUrl(path: String){
+        val base = "http://localhost:12625"
+        val action = RestActionBuilderV3.buildActionBasedOnUrl(base,"call to swagger", HttpVerb.GET, "$base$path", true)
+
+        assertNull(action)
     }
 }
