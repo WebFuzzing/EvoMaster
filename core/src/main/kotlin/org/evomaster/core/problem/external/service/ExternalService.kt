@@ -4,7 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 
 class ExternalService (
     val externalServiceInfo: ExternalServiceInfo,
-    val wireMockServer: WireMockServer
+    private val wireMockServer: WireMockServer
         ) {
 
     fun stopWireMockServer() {

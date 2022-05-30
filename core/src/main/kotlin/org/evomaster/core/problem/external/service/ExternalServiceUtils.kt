@@ -17,7 +17,7 @@ object ExternalServiceUtils {
     /**
      * This method provides the next IP address from the given value for
      * loopback range. If generated IP address is not in the range, this
-     * will throw an Exception.
+     * will throw an IllegalArgumentException.
      *
      *
      */
@@ -82,8 +82,11 @@ object ExternalServiceUtils {
         var ip = String.format("127.%s.%s.%s", p1, p2, p3)
 
         if (isReservedIP(ip)) {
-            ip = generateRandomIPAddress()
+            while (isReservedIP(ip)) {
+                ip = generateRandomIPAddress()
+            }
         }
+
         return ip
     }
 

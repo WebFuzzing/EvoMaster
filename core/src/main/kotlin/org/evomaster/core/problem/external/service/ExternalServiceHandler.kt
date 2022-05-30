@@ -51,8 +51,8 @@ class ExternalServiceHandler {
             val ip = getIP()
             lastIPAddress = ip
             val wm : WireMockServer = initWireMockServer(ip)
-            updateDNSCache(externalServiceInfo.remoteHostname, ip)
-//            externalServiceInfo.assignWireMockServer(wm)
+            // Should be moved under JUnit tests
+            bindDNSCache(externalServiceInfo.remoteHostname, ip)
             externalServices.add(ExternalService(externalServiceInfo, wm))
         }
         externalServiceInfos.add(externalServiceInfo)
@@ -164,8 +164,10 @@ class ExternalServiceHandler {
     /**
      * Update the DNS cache with a different IP address for a given host to enable spoofing.
      * If there is an entry already it'll skip from adding to the cache.
+     *
+     * TODO: Need to refactor
      */
-    private fun updateDNSCache(host : String, address : String) {
+    private fun bindDNSCache(host : String, address : String) {
         val entry = DnsCacheManipulator.getDnsCache(host)
         if (entry == null) {
             DnsCacheManipulator.setDnsCache(host, address)
@@ -176,6 +178,8 @@ class ExternalServiceHandler {
 
     /**
      * Clean up the DNS cache
+     *
+     * TODO: Need to refactor
      */
     fun cleanDNSCache() {
         DnsCacheManipulator.clearDnsCache()

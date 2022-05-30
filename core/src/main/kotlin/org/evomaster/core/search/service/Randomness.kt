@@ -454,7 +454,7 @@ class Randomness {
     }
 
     fun randomIPBit() : Int {
-        val k = (0..255).shuffled().first()
+        val k = random.nextInt( 255)
         log.trace("Random IP bit: {}", k)
         return k
     }
