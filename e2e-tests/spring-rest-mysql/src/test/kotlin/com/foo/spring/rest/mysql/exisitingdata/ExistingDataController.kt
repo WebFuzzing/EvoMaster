@@ -17,7 +17,7 @@ class ExistingDataController : SpringRestMySqlController(ExistingDataApp::class.
     override fun getDbSpecifications(): MutableList<DbSpecification>? {
         val spec = super.getDbSpecifications()
         if (spec != null && spec.isNotEmpty())
-            spec[0].initSqlScript = "INSERT INTO X (id) VALUES (42);"
+            return mutableListOf(spec[0].withInitSqlScript("INSERT INTO X (id) VALUES (42);"))
         return spec
     }
 }

@@ -59,9 +59,6 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
         return null
     }
 
-    override fun getDatabaseDriverName(): String? {
-        return null
-    }
 
     override fun getPreferredOutputFormat(): SutInfoDto.OutputFormat {
         return SutInfoDto.OutputFormat.KOTLIN_JUNIT_5

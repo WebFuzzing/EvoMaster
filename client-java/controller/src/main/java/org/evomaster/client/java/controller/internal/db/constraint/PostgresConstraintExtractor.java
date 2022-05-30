@@ -101,12 +101,21 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
                                 break;
                             case CONSTRAINT_TYPE_UNIQUE:
                                 /**
-                                 * column pg_constraint.conkey is an array of int2 elements (i.e. smallint type)
+                                 * column pg_constraint.conkey is an array of int2 elements (i.e. smallint type).
+                                 * however on some versions it is cast as Integer[]
                                  */
-                                Short[] shortArray = (Short[]) constraintKeyArray.getArray();
-                                Integer[] uniqueColumnIds = Arrays.stream(shortArray)
+                                Object array = constraintKeyArray.getArray();
+                                Integer[] uniqueColumnIds;
+                                if(array instanceof Short[]) {
+                                    Short[] shortArray = (Short[]) array;
+                                    uniqueColumnIds = Arrays.stream(shortArray)
                                             .map(Short::intValue)
                                             .toArray(Integer[]::new);
+                                } else if(array instanceof Integer[]){
+                                    uniqueColumnIds = (Integer[]) array;
+                                } else {
+                                    throw new IllegalStateException("Expected numeric array but got " + array.getClass());
+                                }
                                 constraint = getDbTableUniqueConstraint(connectionToPostgres, tableSchema, tableName, uniqueColumnIds);
                                 constraints.add(constraint);
                                 break;

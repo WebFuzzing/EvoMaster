@@ -1,0 +1,2019 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Api Documentation",
+    "version": "1.0",
+    "title": "Api Documentation",
+    "termsOfService": "urn:tos",
+    "contact": {},
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "comment-files-controller",
+      "description": "Comment Files Controller"
+    },
+    {
+      "name": "comments-rest-controller",
+      "description": "Comments Rest Controller"
+    },
+    {
+      "name": "editor-controller",
+      "description": "Editor Controller"
+    },
+    {
+      "name": "J-controller",
+      "description": "J Controller"
+    }
+  ],
+  "paths": {
+    "/editor/v1/comment/{type}/{date}-{seq}/listAllExpressionsWithComment": {
+      "get": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "getAllExprsWithCommentFromWork",
+        "operationId": "getAllExprsWithCommentFromWorkUsingGET",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ResponseEntity"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}": {
+      "get": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "getCommentAsXml",
+        "operationId": "getCommentAsXmlUsingGET",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/CommentForEditorDto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "post": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "createCopyOfMostRecentOrEmptyDraft",
+        "operationId": "createCopyOfMostRecentOrEmptyDraftUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "editor",
+            "in": "query",
+            "description": "editor",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      },
+      "put": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "overwriteDraftComment",
+        "operationId": "overwriteDraftCommentUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "commentXml",
+            "description": "commentXml",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "editor",
+            "in": "query",
+            "description": "editor",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}/commentsMeta": {
+      "get": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "getCommentsMeta",
+        "operationId": "getCommentsMetaUsingGET",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ExprFragmentMetaDto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}/copy": {
+      "post": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "createDraftCommentAsCopyOfMostRecentWithSameExprDatePublished",
+        "operationId": "createDraftCommentAsCopyOfMostRecentWithSameExprDatePublishedUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "editor",
+            "in": "query",
+            "description": "editor",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}/injectLinks": {
+      "post": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "injectLinksInComment",
+        "operationId": "injectLinksInCommentUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "editor",
+            "in": "query",
+            "description": "editor",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "injectCommentBody",
+            "in": "query",
+            "description": "injectCommentBody",
+            "required": false,
+            "type": "boolean",
+            "default": true
+          },
+          {
+            "name": "injectCuratedSources",
+            "in": "query",
+            "description": "injectCuratedSources",
+            "required": true,
+            "type": "boolean"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ResponseEntity"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}/injectLinksCancel": {
+      "post": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "cancelInjectLinksJob",
+        "operationId": "cancelInjectLinksJobUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ResponseEntity"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}/injectLinksResults": {
+      "get": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "getInjectLinksResults",
+        "operationId": "getInjectLinksResultsUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ResponseEntity"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}/injectLinksStatus": {
+      "get": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "getInjectLinksStatus",
+        "operationId": "getInjectLinksStatusUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ResponseEntity"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}/overwriteLastReviewed": {
+      "post": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "overwriteLastReviewedDateOfComment",
+        "operationId": "overwriteLastReviewedDateOfCommentUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "editor",
+            "in": "query",
+            "description": "editor",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentIds",
+            "in": "query",
+            "description": "fragmentIds",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "lastReviewed",
+            "in": "query",
+            "description": "lastReviewed",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ResponseEntity"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}/publish": {
+      "post": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "publishDraftComment",
+        "operationId": "publishDraftCommentUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "editor",
+            "in": "query",
+            "description": "editor",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ResponseEntity"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/editor/v1/comment/{type}/{date}-{seq}/{inForceAt}/untilExprAsXml": {
+      "get": {
+        "tags": [
+          "editor-controller"
+        ],
+        "summary": "getDraftOrLatestPublishedCommentUntilExprDateAsXml",
+        "operationId": "getDraftOrLatestPublishedCommentUntilExprDateAsXmlUsingGET",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "includeDraft",
+            "in": "query",
+            "description": "includeDraft",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/CommentForEditorDto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/files/{type}/{date}-{seq}/{fragmentId}/{fileName}.{fileExtension}": {
+      "get": {
+        "tags": [
+          "comment-files-controller"
+        ],
+        "summary": "getFileAsResponseEntity",
+        "operationId": "getFileAsResponseEntityUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fileExtension",
+            "in": "path",
+            "description": "fileExtension",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fileName",
+            "in": "path",
+            "description": "fileName",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "path",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string",
+              "format": "byte"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/public/v1/comment/{type}/{date}-{seq}/json": {
+      "get": {
+        "tags": [
+          "J-controller"
+        ],
+        "summary": "getWorkCommentAsJsonWithHtml",
+        "operationId": "getWorkCommentAsJsonWithHtmlUsingGET",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/WrapWorkRequestAndResponseDto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/public/v1/comment/{type}/{date}-{seq}/listAllFragmentsWithComment": {
+      "get": {
+        "tags": [
+          "J-controller"
+        ],
+        "summary": "getAllFragmentsWithCommentFromWork",
+        "operationId": "getAllFragmentsWithCommentFromWorkUsingGET",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "includeDraft",
+            "in": "query",
+            "description": "includeDraft",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/WorkWithFragmentsDto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/public/v1/comment/{type}/{date}-{seq}/{inForceAt}/curatedSources": {
+      "get": {
+        "tags": [
+          "J-controller"
+        ],
+        "summary": "getCuratedSourcesAsHtmlUntilExpr",
+        "operationId": "getCuratedSourcesAsHtmlUntilExprUsingGET",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/public/v1/comment/{type}/{date}-{seq}/{inForceAt}/json": {
+      "get": {
+        "tags": [
+          "J-controller"
+        ],
+        "summary": "getExprCommentAsJsonWithHtml",
+        "operationId": "getExprCommentAsJsonWithHtmlUsingGET",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "fragmentId",
+            "in": "query",
+            "description": "fragmentId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/WrapExprRequestAndResponseDto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/public/v1/comment/{type}/{date}-{seq}/{inForceAt}/listAllFragmentsWithComment": {
+      "get": {
+        "tags": [
+          "J-controller"
+        ],
+        "summary": "getAllFragmentsWithCommentFromExpr",
+        "operationId": "getAllFragmentsWithCommentFromExprUsingGET",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "inForceAt",
+            "in": "path",
+            "description": "inForceAt",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "includeDraft",
+            "in": "query",
+            "description": "includeDraft",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "description": "type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ExprWithFragmentsDto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/rest/v0/comments": {
+      "get": {
+        "tags": [
+          "comments-rest-controller"
+        ],
+        "summary": "list",
+        "operationId": "listUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "onlyLatestPublishedPerFragmentPerExpression",
+            "in": "query",
+            "description": "onlyLatestPublishedPerFragmentPerExpression",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "paged",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "sort.sorted",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "sort.unsorted",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "unpaged",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/PagedResources«Comment»"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "definitions": {
+    "ActExprId": {
+      "type": "object",
+      "required": [
+        "date",
+        "inForceAt",
+        "seq",
+        "type"
+      ],
+      "properties": {
+        "base": {
+          "type": "string"
+        },
+        "countryCode": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "inForceAt": {
+          "type": "string"
+        },
+        "languageCode": {
+          "type": "string"
+        },
+        "seq": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "title": "ActExprId"
+    },
+    "ActWorkId": {
+      "type": "object",
+      "required": [
+        "date",
+        "seq",
+        "type"
+      ],
+      "properties": {
+        "base": {
+          "type": "string"
+        },
+        "countryCode": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "seq": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "title": "ActWorkId"
+    },
+    "Comment": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "exprDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "fragmentId": {
+          "type": "string"
+        },
+        "publishedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string"
+        },
+        "workId": {
+          "type": "string"
+        }
+      },
+      "title": "Comment"
+    },
+    "CommentForEditorDto": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "documentId": {
+          "$ref": "#/definitions/ActExprId"
+        },
+        "fragmentId": {
+          "type": "string"
+        },
+        "isPublished": {
+          "type": "boolean"
+        },
+        "lastUpdatedAt": {
+          "type": "string"
+        },
+        "lastUpdatedBy": {
+          "type": "string"
+        },
+        "publishedAt": {
+          "type": "string"
+        }
+      },
+      "title": "CommentForEditorDto"
+    },
+    "CommentForJDto": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/definitions/CommentIdDto"
+        },
+        "metadata": {
+          "$ref": "#/definitions/CommentMetadataDto"
+        },
+        "precedents": {
+          "type": "string"
+        }
+      },
+      "title": "CommentForJDto"
+    },
+    "CommentIdDto": {
+      "type": "object",
+      "properties": {
+        "exprId": {
+          "$ref": "#/definitions/ActExprId"
+        },
+        "fragmentId": {
+          "type": "string"
+        },
+        "isPublished": {
+          "type": "boolean"
+        },
+        "publishedAt": {
+          "type": "string"
+        }
+      },
+      "title": "CommentIdDto"
+    },
+    "CommentMetadataDto": {
+      "type": "object",
+      "properties": {
+        "appliesFrom": {
+          "type": "string"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "changeRemark": {
+          "type": "string"
+        },
+        "lastReviewed": {
+          "type": "string"
+        }
+      },
+      "title": "CommentMetadataDto"
+    },
+    "DraftCommentMetaDto": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "lastUpdatedAt": {
+          "type": "string"
+        },
+        "lastUpdatedBy": {
+          "type": "string"
+        },
+        "numChars": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "DraftCommentMetaDto"
+    },
+    "ExprFragmentMetaDto": {
+      "type": "object",
+      "properties": {
+        "exprId": {
+          "$ref": "#/definitions/ActExprId"
+        },
+        "fragments": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/FragmentMetaDto"
+          }
+        }
+      },
+      "title": "ExprFragmentMetaDto"
+    },
+    "ExprWithFragmentsDto": {
+      "type": "object",
+      "properties": {
+        "actExprId": {
+          "$ref": "#/definitions/ActExprId"
+        },
+        "fragmentsWithComment": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "ExprWithFragmentsDto"
+    },
+    "FragmentMetaDto": {
+      "type": "object",
+      "properties": {
+        "draft": {
+          "$ref": "#/definitions/DraftCommentMetaDto"
+        },
+        "published": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PublishedCommentMetaDto"
+          }
+        }
+      },
+      "title": "FragmentMetaDto"
+    },
+    "Link": {
+      "type": "object",
+      "properties": {
+        "deprecation": {
+          "type": "string",
+          "xml": {
+            "name": "deprecation",
+            "attribute": true,
+            "wrapped": false
+          }
+        },
+        "href": {
+          "type": "string",
+          "xml": {
+            "name": "href",
+            "attribute": true,
+            "wrapped": false
+          }
+        },
+        "hreflang": {
+          "type": "string",
+          "xml": {
+            "name": "hreflang",
+            "attribute": true,
+            "wrapped": false
+          }
+        },
+        "media": {
+          "type": "string",
+          "xml": {
+            "name": "media",
+            "attribute": true,
+            "wrapped": false
+          }
+        },
+        "rel": {
+          "type": "string",
+          "xml": {
+            "name": "rel",
+            "attribute": true,
+            "wrapped": false
+          }
+        },
+        "templated": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string",
+          "xml": {
+            "name": "title",
+            "attribute": true,
+            "wrapped": false
+          }
+        },
+        "type": {
+          "type": "string",
+          "xml": {
+            "name": "type",
+            "attribute": true,
+            "wrapped": false
+          }
+        }
+      },
+      "title": "Link",
+      "xml": {
+        "name": "link",
+        "namespace": "http://www.w3.org/2005/Atom",
+        "attribute": false,
+        "wrapped": false
+      }
+    },
+    "PageMetadata": {
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "integer",
+          "format": "int64",
+          "xml": {
+            "name": "number",
+            "attribute": true,
+            "wrapped": false
+          }
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64",
+          "xml": {
+            "name": "size",
+            "attribute": true,
+            "wrapped": false
+          }
+        },
+        "totalElements": {
+          "type": "integer",
+          "format": "int64",
+          "xml": {
+            "name": "totalElements",
+            "attribute": true,
+            "wrapped": false
+          }
+        },
+        "totalPages": {
+          "type": "integer",
+          "format": "int64",
+          "xml": {
+            "name": "totalPages",
+            "attribute": true,
+            "wrapped": false
+          }
+        }
+      },
+      "title": "PageMetadata"
+    },
+    "PagedResources«Comment»": {
+      "type": "object",
+      "properties": {
+        "_embedded": {
+          "type": "array",
+          "xml": {
+            "name": "embedded",
+            "attribute": false,
+            "wrapped": true
+          },
+          "items": {
+            "$ref": "#/definitions/Comment"
+          }
+        },
+        "_links": {
+          "type": "array",
+          "xml": {
+            "name": "link",
+            "attribute": false,
+            "wrapped": false
+          },
+          "items": {
+            "$ref": "#/definitions/Link"
+          }
+        },
+        "page": {
+          "$ref": "#/definitions/PageMetadata"
+        }
+      },
+      "title": "PagedResources«Comment»",
+      "xml": {
+        "name": "pagedEntities",
+        "attribute": false,
+        "wrapped": false
+      }
+    },
+    "PublishedCommentMetaDto": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "lastUpdatedAt": {
+          "type": "string"
+        },
+        "lastUpdatedBy": {
+          "type": "string"
+        },
+        "numChars": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "publishedAt": {
+          "type": "string"
+        }
+      },
+      "title": "PublishedCommentMetaDto"
+    },
+    "ResponseEntity": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object"
+        },
+        "statusCode": {
+          "type": "string",
+          "enum": [
+            "100",
+            "101",
+            "102",
+            "103",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205",
+            "206",
+            "207",
+            "208",
+            "226",
+            "300",
+            "301",
+            "302",
+            "303",
+            "304",
+            "305",
+            "307",
+            "308",
+            "400",
+            "401",
+            "402",
+            "403",
+            "404",
+            "405",
+            "406",
+            "407",
+            "408",
+            "409",
+            "410",
+            "411",
+            "412",
+            "413",
+            "414",
+            "415",
+            "416",
+            "417",
+            "418",
+            "419",
+            "420",
+            "421",
+            "422",
+            "423",
+            "424",
+            "426",
+            "428",
+            "429",
+            "431",
+            "451",
+            "500",
+            "501",
+            "502",
+            "503",
+            "504",
+            "505",
+            "506",
+            "507",
+            "508",
+            "509",
+            "510",
+            "511"
+          ]
+        },
+        "statusCodeValue": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "ResponseEntity"
+    },
+    "WorkWithFragmentsDto": {
+      "type": "object",
+      "properties": {
+        "fragmentsWithComment": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "workId": {
+          "$ref": "#/definitions/ActWorkId"
+        }
+      },
+      "title": "WorkWithFragmentsDto"
+    },
+    "WrapExprRequestAndResponseDto": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "$ref": "#/definitions/CommentForJDto"
+        },
+        "request": {
+          "$ref": "#/definitions/ActExprId"
+        }
+      },
+      "title": "WrapExprRequestAndResponseDto"
+    },
+    "WrapWorkRequestAndResponseDto": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "$ref": "#/definitions/CommentForJDto"
+        },
+        "request": {
+          "$ref": "#/definitions/ActWorkId"
+        }
+      },
+      "title": "WrapWorkRequestAndResponseDto"
+    }
+  }
+}

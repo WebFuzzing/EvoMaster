@@ -53,9 +53,7 @@ class RemoteControllerTest {
             return null
         }
 
-        override fun getDatabaseDriverName(): String? {
-            return null
-        }
+
 
         override fun getProblemInfo(): ProblemInfo {
             return RestProblem(FAKE_SWAGGER, null)
