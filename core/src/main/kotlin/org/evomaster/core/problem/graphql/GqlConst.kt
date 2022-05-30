@@ -49,11 +49,12 @@ object GqlConst {
     const val ENUM = "enum"
     const val LIST = "list"
     const val INPUT_OBJECT = "input_object"
-    /**/
+    /*
+    *Those are entry points of GraphQL query and mutation
+    * Todo Currently, they are used to calculate statistic from the graph. Need to be generalised.
+     */
     const val QUERY = "query"
     const val QUERY_TYPE = "querytype"
     const val ROOT = "root"
     const val MUTATION = "mutation"
-
-
 }
