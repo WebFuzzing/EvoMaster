@@ -51,20 +51,10 @@ object GqlConst {
     const val INPUT_OBJECT = "input_object"
     /*
     *Those are entry points of GraphQL query and mutation
-    * Queries and mutations names are defined by developers, so they can have different names
-    * eg: query, rootquery ...  */
+    * Todo Currently, they are used to calculate statistic from the graph. Need to be generalised.
+     */
     const val QUERY = "query"
     const val QUERY_TYPE = "querytype"
     const val ROOT = "root"
-    const val QUERY_ROOT = "query_root"
-    const val ROOTQUERY = "rootquery"
-    const val ROOTQUERYTYPE = "rootquerytype"
-    const val DOTAQUERY = "dotaquery"
-
     const val MUTATION = "mutation"
-    const val ROOTMUTATIONTYPE = "rootmutationtype"
-    const val ROOTMUTATION = "rootmutation"
-    const val DOTAMUTATION = "dotamutation"
-
-
 }
