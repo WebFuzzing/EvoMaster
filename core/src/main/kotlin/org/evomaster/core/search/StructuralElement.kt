@@ -9,9 +9,6 @@ import org.slf4j.LoggerFactory
  * @property parent its parent
  */
 abstract class StructuralElement (
-        /*
-            TODO check if needed a function to return copy
-         */
     protected open val children : MutableList<out StructuralElement> = mutableListOf()
 ) {
 
@@ -95,10 +92,10 @@ abstract class StructuralElement (
         if(position1 > children.size || position2 > children.size)
             throw IllegalArgumentException("position is out of range of list")
         if(position1 == position2)
-            throw IllegalArgumentException("It is not necessary to swap two same position on the resource call list")
+            throw IllegalArgumentException("It is not necessary to swap two same positions")
         val first = children[position1]
-        children[position1] = children[position2]
-        children[position2] = first
+        (children as MutableList<StructuralElement>)[position1] = children[position2]
+        (children as MutableList<StructuralElement>)[position2] = first
     }
 
     /**

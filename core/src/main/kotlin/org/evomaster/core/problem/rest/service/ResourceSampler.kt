@@ -225,7 +225,8 @@ open class ResourceSampler : AbstractRestSampler() {
             RestResourceCalls(
                     template = node.getTemplate(it.verb.toString()),
                     node = node,
-                    actions = mutableListOf(it)
+                    actions = mutableListOf(it),
+                    dbActions = listOf()
             )
         }.toMutableList()
         return RestIndividual(

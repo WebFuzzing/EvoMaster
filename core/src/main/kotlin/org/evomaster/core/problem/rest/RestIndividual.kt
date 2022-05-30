@@ -31,6 +31,7 @@ class RestIndividual(
         trackOperator: TrackOperator? = null,
         index : Int = -1
 ): ApiWsIndividual(dbInitialization, trackOperator, index, mutableListOf<StructuralElement>().apply {
+  //FIXME
     addAll(dbInitialization); addAll(resourceCalls)
 }) {
 
@@ -45,7 +46,7 @@ class RestIndividual(
             trackOperator: TrackOperator? = null,
             index : Int = Traceable.DEFAULT_INDEX) :
             this(
-                    actions.map { RestResourceCalls(actions= mutableListOf(it as RestCallAction)) }.toMutableList(),
+                    actions.map {RestResourceCalls(actions= listOf(it as RestCallAction), dbActions = listOf())}.toMutableList(),
                     sampleType,
                     null,
                     dbInitialization,

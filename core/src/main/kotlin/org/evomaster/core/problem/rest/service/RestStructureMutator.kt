@@ -141,7 +141,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
                 POSTs
              */
             //ind.seeActions().add(idx, post)
-            ind.addResourceCall(idx, RestResourceCalls(actions = mutableListOf(post)))
+            ind.addResourceCall(idx, RestResourceCalls(actions = mutableListOf(post), dbActions = listOf()))
         }
     }
 
@@ -160,7 +160,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
             )
 
             //ind.seeActions().add(sampledAction)
-            ind.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(sampledAction)))
+            ind.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(sampledAction), dbActions = listOf()))
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             return
@@ -192,7 +192,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
             val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
             val chosen = randomness.nextInt(ind.seeActions().size)
             //ind.seeActions().add(chosen, sampledAction)
-            ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction)))
+            ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction), dbActions = listOf()))
 
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(

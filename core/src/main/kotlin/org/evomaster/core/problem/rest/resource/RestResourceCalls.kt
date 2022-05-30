@@ -30,10 +30,13 @@ import org.slf4j.LoggerFactory
 class RestResourceCalls(
     val template: CallsTemplate? = null,
     val node: RestResourceNode? = null,
-    private val actions: MutableList<RestCallAction>,
-    private val dbActions: MutableList<DbAction> = mutableListOf(),
+    children: MutableList<out Action>,
     withBinding: Boolean = false
-): StructuralElement(mutableListOf<StructuralElement>().apply { addAll(dbActions); addAll(actions) }){
+): StructuralElement(children){
+
+    constructor(template: CallsTemplate? = null, node: RestResourceNode? = null, actions: List<RestCallAction>,
+                dbActions: List<DbAction>, withBinding: Boolean = false) :
+            this(template, node,mutableListOf<Action>().apply { addAll(dbActions); addAll(actions) }, withBinding)
 
     companion object{
         private val  log : Logger = LoggerFactory.getLogger(RestResourceCalls::class.java)
@@ -43,6 +46,12 @@ class RestResourceCalls(
         if (withBinding)
             buildBindingGene()
     }
+
+    private val actions : List<RestCallAction>
+        get() {return children.filterIsInstance<RestCallAction>() }
+
+    private val dbActions : List<DbAction>
+        get() {return children.filterIsInstance<DbAction>()}
 
     /**
      * build gene binding among rest actions, ie, [actions]
@@ -101,8 +110,7 @@ class RestResourceCalls(
         val copy = RestResourceCalls(
             template,
             node,
-            actions.map { a -> a.copy() as RestCallAction}.toMutableList(),
-            dbActions.map { db-> db.copy() as DbAction }.toMutableList(),
+            children.map { it.copy() as Action}.toMutableList(),
             withBinding = false
         )
 
@@ -145,23 +153,12 @@ class RestResourceCalls(
         return seeActions(filter).size
     }
 
-    fun addDbAction(position : Int = -1, actions: List<DbAction>){
-        if (position == -1) dbActions.addAll(actions)
-        else{
-            dbActions.addAll(position, actions)
-        }
-        addChildren(actions)
-    }
-
     /**
      * reset dbactions with [actions]
      */
     fun resetDbAction(actions: List<DbAction>){
-        dbActions.clear()
-        dbActions.addAll(actions)
         killChildren { it is DbAction }
         addChildren(actions)
-
         (getRoot() as? RestIndividual)?.cleanBrokenBindingReference()
     }
 
@@ -175,7 +172,6 @@ class RestResourceCalls(
 
     private fun removeDbActions(remove: List<DbAction>){
         val removedGenes = remove.flatMap { it.seeGenes() }.flatMap { it.flatView() }
-        dbActions.removeAll(remove)
         killChildren(remove)
         (dbActions.plus(actions).flatMap { it.seeGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }.forEach {
             it.cleanRemovedGenes(removedGenes)
@@ -186,7 +182,8 @@ class RestResourceCalls(
      * @return the mutable SQL genes and they do not bind with any of Rest Actions
      *
      * */
-    private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
+    private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode()
+            .getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
 
 
     /**
@@ -330,7 +327,6 @@ class RestResourceCalls(
         }
 
         if (this.dbActions.isNotEmpty()) throw IllegalStateException("dbactions of this RestResourceCall is not empty")
-        this.dbActions.addAll(dbActions)
         addChildren(dbActions)
 
         bindRestActionBasedOnDbActions(dbActions, cluster, forceBindParamBasedOnDB, dbRemovedDueToRepair)
