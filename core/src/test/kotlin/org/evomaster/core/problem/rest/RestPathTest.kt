@@ -375,9 +375,6 @@ internal class RestPathTest{
         val base = "http://localhost:12625"
         val action = RestActionBuilderV3.buildActionBasedOnUrl(base,"call to swagger", HttpVerb.GET, "$base$path", true)
 
-        assertNotEquals(path, action?.resolvedPath())
-
+        assertNull(action)
     }
-
-
 }

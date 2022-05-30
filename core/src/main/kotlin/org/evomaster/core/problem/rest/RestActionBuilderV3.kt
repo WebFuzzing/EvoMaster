@@ -793,12 +793,15 @@ object RestActionBuilderV3 {
         // if the url does not start with baseUrl (i.e., not from SUT), then there might be no point to execute this rest action
         if (!url.startsWith(baseUrl)) return null
 
+        // TODO might need to support fragment
+        if (url.contains("#")){
+            log.warn("fragment in url ($url) does not support yet")
+            return null
+        }
+
         val uri = URI(url)
 //        Lazy.assert { "${uri.scheme}://${uri.host}:${uri.port}" == baseUrl }
 
-        // TODO might need to support fragment
-        if (url.contains("#"))
-            log.warn("A url ($url) contains `#` that might not be handled properly")
         val path = RestPath("${uri.scheme}://${uri.host}:${uri.port}${uri.path}".removePrefix(baseUrl.removeSuffix("/")))
         val query : MutableList<Param> = uri.query?.split("&")?.map { q->
             val keyValue = q.split("=")
