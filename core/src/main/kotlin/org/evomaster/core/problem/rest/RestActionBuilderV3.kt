@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
@@ -782,6 +783,41 @@ object RestActionBuilderV3 {
             ""
         }
         return basePath
+    }
+
+    /**
+     * build a rest action based on the given [url]
+     */
+    fun buildActionBasedOnUrl(baseUrl: String, id : String, verb: HttpVerb, url: String, skipOracleChecks : Boolean) : RestCallAction?{
+
+        // if the url does not start with baseUrl (i.e., not from SUT), then there might be no point to execute this rest action
+        if (!url.startsWith(baseUrl)) return null
+
+        // TODO might need to support fragment
+        if (url.contains("#")){
+            log.warn("fragment in url ($url) does not support yet")
+            return null
+        }
+
+        val uri = URI(url)
+//        Lazy.assert { "${uri.scheme}://${uri.host}:${uri.port}" == baseUrl }
+
+        val path = RestPath("${uri.scheme}://${uri.host}:${uri.port}${uri.path}".removePrefix(baseUrl.removeSuffix("/")))
+        val query : MutableList<Param> = uri.query?.split("&")?.map { q->
+            val keyValue = q.split("=")
+            if (keyValue.size == 2)
+                QueryParam(keyValue[0], StringGene(keyValue[0], keyValue[1]))
+            else {
+                /*
+                    key-value pair is not restricted for query
+                    eg, /v2/api-docs?foo is considered as valid
+                    see https://datatracker.ietf.org/doc/html/rfc3986#section-3.4
+                 */
+                log.warn("Do not support the get a RestAction with the url $url")
+                return null
+            }
+        }?.toMutableList()?: mutableListOf()
+        return RestCallAction(id, verb, path, query, skipOracleChecks= skipOracleChecks)
     }
 
 }
