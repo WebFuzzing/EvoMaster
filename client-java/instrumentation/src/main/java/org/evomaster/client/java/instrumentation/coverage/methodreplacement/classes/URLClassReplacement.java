@@ -42,10 +42,10 @@ public class URLClassReplacement implements MethodReplacementClass {
 
             // Unless the port number is specified, the default will be -1.
             // Which indicates that the port should be assigned according to the
-            // protocol. Since URLConnection openConnection is an abstract, this
+            // protocol. Since the URLConnection openConnection is an abstract, this
             // assignment will be handled under the respective implementation.
             // Here it's manually handled assuming these default will never change. :)
-            if (port <= -1) {
+            if (port == -1) {
                 switch (protocol) {
                     case "https":
                         port = 443;
