@@ -36,4 +36,11 @@ abstract class CompositeFixedGene(
         throw IllegalStateException(errorChildMsg)
     }
 
+    override fun killChildren(predicate: (StructuralElement) -> Boolean){
+        throw IllegalStateException(errorChildMsg)
+    }
+
+    override fun killChildren(toKill: List<out StructuralElement>){
+        throw IllegalStateException(errorChildMsg)
+    }
 }

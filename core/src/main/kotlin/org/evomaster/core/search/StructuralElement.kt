@@ -60,6 +60,19 @@ abstract class StructuralElement (
         children.clear()
     }
 
+    open fun killChildren(predicate: (StructuralElement) -> Boolean){
+        val toRemove = children.filter(predicate)
+        for(child in toRemove){
+            killChild(child)
+        }
+    }
+
+    open fun killChildren(toKill: List<out StructuralElement>){
+        for(child in toKill){
+            killChild(child)
+        }
+    }
+
     open fun killChild(child: StructuralElement){
         child.parent = null
         children.remove(child)
@@ -78,6 +91,15 @@ abstract class StructuralElement (
         children.forEach { addChild(it) }
     }
 
+    fun swapChildren(position1: Int, position2: Int){
+        if(position1 > children.size || position2 > children.size)
+            throw IllegalArgumentException("position is out of range of list")
+        if(position1 == position2)
+            throw IllegalArgumentException("It is not necessary to swap two same position on the resource call list")
+        val first = children[position1]
+        children[position1] = children[position2]
+        children[position2] = first
+    }
 
     /**
      * make a deep copy on the content
@@ -88,13 +110,11 @@ abstract class StructuralElement (
      * After this method is called, need to call [postCopy] to setup to
      * relationship. This will be handled in [copy]
      */
-    //TODO protected?
     protected abstract fun copyContent(): StructuralElement
 
     /**
      * post-handling on the copy based on its [original] version
      */
-    //TODO protected?
     protected open fun postCopy(original : StructuralElement){
         if (children.size != original.children.size)
             throw IllegalStateException("copy has different size of children compared to original, e.g., copy (${children.size}) vs. original (${original.children.size})")

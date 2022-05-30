@@ -30,6 +30,15 @@ abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
         throw IllegalStateException(errorChildMsg)
     }
 
+    override fun killChildren(predicate: (StructuralElement) -> Boolean){
+        throw IllegalStateException(errorChildMsg)
+    }
+
+    override fun killChildren(toKill: List<out StructuralElement>){
+        throw IllegalStateException(errorChildMsg)
+    }
+
+
     //TODO should it be final? some simple genes seems to use it...
     override fun copyContent(): Gene {
         throw IllegalStateException("Bug in ${this::class.java.simpleName}: copyContent() must not be called on a SimpleGene")

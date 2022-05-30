@@ -221,12 +221,14 @@ class RestIndividual(
             throw IllegalArgumentException("position is out of range of list")
         val removed = resourceCalls.removeAt(position)
         removed.removeThisFromItsBindingGenes()
+        killChild(removed)
     }
 
     fun removeResourceCall(remove: List<RestResourceCalls>) {
         if(!resourceCalls.containsAll(remove))
             throw IllegalArgumentException("specified rest calls are not part of this individual")
         resourceCalls.removeAll(remove)
+        killChildren(remove)
         remove.forEach { it.removeThisFromItsBindingGenes() }
     }
 
@@ -266,6 +268,7 @@ class RestIndividual(
         val first = resourceCalls[position1]
         resourceCalls[position1] = resourceCalls[position2]
         resourceCalls[position2] = first
+        swapChildren(position1,position2)
     }
 
     fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions(ALL).map {

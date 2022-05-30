@@ -159,6 +159,7 @@ class RestResourceCalls(
     fun resetDbAction(actions: List<DbAction>){
         dbActions.clear()
         dbActions.addAll(actions)
+        killChildren { it is DbAction }
         addChildren(actions)
 
         (getRoot() as? RestIndividual)?.cleanBrokenBindingReference()
@@ -175,6 +176,7 @@ class RestResourceCalls(
     private fun removeDbActions(remove: List<DbAction>){
         val removedGenes = remove.flatMap { it.seeGenes() }.flatMap { it.flatView() }
         dbActions.removeAll(remove)
+        killChildren(remove)
         (dbActions.plus(actions).flatMap { it.seeGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }.forEach {
             it.cleanRemovedGenes(removedGenes)
         }
