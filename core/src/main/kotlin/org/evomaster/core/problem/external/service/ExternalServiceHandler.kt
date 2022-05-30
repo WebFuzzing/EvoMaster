@@ -48,9 +48,9 @@ class ExternalServiceHandler {
      */
     fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            val ip = getIP()
+            val ip = getIP(externalServiceInfo.remotePort)
             lastIPAddress = ip
-            val wm : WireMockServer = initWireMockServer(ip)
+            val wm : WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
             // Should be moved under JUnit tests
             bindDNSCache(externalServiceInfo.remoteHostname, ip)
             externalServices.add(ExternalService(externalServiceInfo, wm))
@@ -62,10 +62,10 @@ class ExternalServiceHandler {
      * Will return the next available IP address from the last know IP address
      * used for external service.
      */
-    private fun getNextAvailableAddress() : String {
+    private fun getNextAvailableAddress(port: Int) : String {
         val nextAddress: String = nextIPAddress(lastIPAddress)
 
-        if (isAddressAvailable(nextAddress, WIREMOCK_PORT)) {
+        if (isAddressAvailable(nextAddress, port)) {
             return nextAddress
         } else {
             throw IllegalStateException(nextAddress.plus(" is not available for use"))
@@ -77,8 +77,8 @@ class ExternalServiceHandler {
      * If the respective address and port is not available it'll throw an
      * exception.
      */
-    private fun getDefaultAddress() : String {
-        if (isAddressAvailable("127.0.0.2", WIREMOCK_PORT)) {
+    private fun getDefaultAddress(port: Int) : String {
+        if (isAddressAvailable("127.0.0.2", port)) {
             return "127.0.0.2"
         } else {
             throw Exception("Default loopback address is unavailable for binding")
@@ -90,12 +90,12 @@ class ExternalServiceHandler {
      * while checking the availability. If not available will
      * generate a new one.
      */
-    private fun generateRandomAvailableAddress() : String {
+    private fun generateRandomAvailableAddress(port: Int) : String {
         val ip = generateRandomIPAddress()
-        if (isAddressAvailable(ip, WIREMOCK_PORT)) {
+        if (isAddressAvailable(ip, port)) {
             return ip
         }
-        return generateRandomAvailableAddress()
+        return generateRandomAvailableAddress(port)
     }
 
     fun getExternalServices() : List<ExternalServiceInfo> {
@@ -105,30 +105,30 @@ class ExternalServiceHandler {
     /**
      * Default IP address will be a randomly generated IP
      */
-    private fun getIP() : String {
+    private fun getIP(port: Int) : String {
         val ip: String
         when (config.externalServiceIPSelectionStrategy) {
             // Although the default address will be a random, this
             // option allows selecting explicitly
             EMConfig.ExternalServiceIPSelectionStrategy.RANDOM -> {
                 ip = if (externalServiceInfos.size > 0) {
-                    getNextAvailableAddress()
+                    getNextAvailableAddress(port)
                 } else {
-                    generateRandomAvailableAddress()
+                    generateRandomAvailableAddress(port)
                 }
             }
             EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
                 ip = if (externalServiceInfos.size > 0) {
-                    getNextAvailableAddress()
+                    getNextAvailableAddress(port)
                 } else {
                     config.externalServiceIP
                 }
             }
             else -> {
                 ip = if (externalServiceInfos.size > 0) {
-                    getNextAvailableAddress()
+                    getNextAvailableAddress(port)
                 } else {
-                    generateRandomAvailableAddress()
+                    generateRandomAvailableAddress(port)
                 }
             }
         }
@@ -137,7 +137,7 @@ class ExternalServiceHandler {
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
      */
-    private fun initWireMockServer(address: String): WireMockServer {
+    private fun initWireMockServer(address: String, port: Int): WireMockServer {
         val wm = WireMockServer(
             WireMockConfiguration()
                 .bindAddress(address)
@@ -176,12 +176,4 @@ class ExternalServiceHandler {
         }
     }
 
-    /**
-     * Clean up the DNS cache
-     *
-     * TODO: Need to refactor
-     */
-    fun cleanDNSCache() {
-        DnsCacheManipulator.clearDnsCache()
-    }
 }

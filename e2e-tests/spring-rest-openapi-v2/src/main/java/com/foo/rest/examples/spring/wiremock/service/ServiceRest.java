@@ -26,7 +26,8 @@ public class ServiceRest {
         StringsResponseDto stringsResponseDto = new StringsResponseDto();
 
         try {
-            URL url = new URL("http://foo.bar:8080/api/echo/foo");
+            // Port changed to test the default port scenario respective to the protocol
+            URL url = new URL("http://foo.bar/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
 

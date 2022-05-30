@@ -17,7 +17,8 @@ public class ServiceApplicationStartup implements ApplicationListener<Applicatio
     @Override
     public void onApplicationEvent(final ApplicationReadyEvent applicationReadyEvent) {
         try {
-            URL url = new URL("http://baz.bar:8080/api/echo/foo");
+            // Port changed to test the default port scenario respective to the protocol
+            URL url = new URL("https://baz.bar/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(500); // added to reduce time during testing
             connection.setRequestProperty("accept", "application/json");
