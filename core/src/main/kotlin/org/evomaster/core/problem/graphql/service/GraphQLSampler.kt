@@ -54,14 +54,21 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         if(! gqlEndpoint.startsWith("http", true)){
             gqlEndpoint = infoDto.baseUrlOfSUT + gqlEndpoint
         }
+        /*
+                Configuration of the headers
+                */
+        val headers = listOf(config.header0, config.header1, config.header2)
+            .filter { it.isNotBlank() }
 
         val iq = IntrospectiveQuery()
-        val schema = iq.fetchSchema(gqlEndpoint)
+        val schema = iq.fetchSchema(gqlEndpoint, headers)
 
         actionCluster.clear()
         //val skip = getEndpointsToSkip(swagger, infoDto) //TODO maybe in future wants to support
 
-        GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster, config.treeDepth)
+        if (schema != null) {
+            GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster, config.treeDepth)
+        }
 
         setupAuthentication(infoDto)
 
@@ -78,14 +85,23 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
     private fun initForBlackBox() {
         val gqlEndpoint = config.bbTargetUrl
 
+        /*
+         Configuration of the headers
+         */
+        val headers = listOf(config.header0, config.header1, config.header2)
+            .filter { it.isNotBlank() }
+
+        IntrospectiveQuery().fetchSchema(gqlEndpoint,headers)
         val iq = IntrospectiveQuery()
-        val schema = iq.fetchSchema(gqlEndpoint)
+        val schema = iq.fetchSchema(gqlEndpoint, headers)
 
         addAuthFromConfig()
 
         actionCluster.clear()
 
-        GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster, config.treeDepth)
+        if (schema != null) {
+            GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster, config.treeDepth)
+        }
     }
 
 
