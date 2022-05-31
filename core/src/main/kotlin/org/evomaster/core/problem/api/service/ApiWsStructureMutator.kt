@@ -115,7 +115,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
                     New action should be before existing one, but still after the
                     initializing ones
                  */
-//                val position = sampler.existingSqlData.size
+                //TODO check position after new changes in handling of children
                 val position = ind.seeInitializingActions().indexOfLast { it is DbAction && it.representExistingData } + 1
                 ind.addInitializingActions(position, insertions)
 

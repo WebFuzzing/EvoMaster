@@ -24,7 +24,7 @@ class RPCIndividual(
         dbInitialization: MutableList<DbAction> = mutableListOf(),
         trackOperator: TrackOperator? = null,
         index : Int = -1
-) : ApiWsIndividual(dbInitialization, trackOperator, index, actions.plus(dbInitialization)) {
+) : ApiWsIndividual(trackOperator, index, actions.plus(dbInitialization)) {
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {

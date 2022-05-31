@@ -49,6 +49,24 @@ abstract class StructuralElement (
         (children as MutableList<StructuralElement>).add(child)
     }
 
+    open fun addChild(position: Int, child: StructuralElement){  //TODO check usage
+        child.parent = this
+        //TODO re-check proper use of in/out in Kotlin
+        (children as MutableList<StructuralElement>).add(position, child)
+    }
+
+    /**
+     * add children of the element
+     */
+    fun addChildren(children : List<StructuralElement>){
+        children.forEach { addChild(it) }
+    }
+
+    open fun addChildren(position: Int, list : List<StructuralElement>){
+        list.forEach { it.parent = this }
+        (children as MutableList<StructuralElement>).addAll(position, list)
+    }
+
     //https://preview.redd.it/hg27vjl7x0241.jpg?auto=webp&s=d3c8b5d2cfbf12a05715271e0cf7f1c26e962827
     open fun killAllChildren(){
         children.forEach {
@@ -81,12 +99,7 @@ abstract class StructuralElement (
         return  child
     }
 
-    /**
-     * add children of the element
-     */
-    fun addChildren(children : List<StructuralElement>){
-        children.forEach { addChild(it) }
-    }
+
 
     fun swapChildren(position1: Int, position2: Int){
         if(position1 > children.size || position2 > children.size)

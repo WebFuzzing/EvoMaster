@@ -56,6 +56,8 @@ abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
             ?: throw IllegalStateException("No DB schema is available")
 
         DbActionUtils.randomizeDbActionGenes(actions, randomness)
+        //FIXME need proper handling of intra-gene constraints
+        actions.forEach { it.seeGenes().forEach { g -> g.markAllAsInitialized() } }
 
         if (log.isTraceEnabled){
             log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,

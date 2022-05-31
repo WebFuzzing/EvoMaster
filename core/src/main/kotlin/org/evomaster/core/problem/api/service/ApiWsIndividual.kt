@@ -15,10 +15,7 @@ import org.slf4j.LoggerFactory
  * the abstract individual for API based SUT, such as REST, GraphQL, RPC
  */
 abstract class ApiWsIndividual (
-    /**
-     * a list of db actions for its Initialization
-     */
-    private val dbInitialization: MutableList<DbAction> = mutableListOf(),
+
     /**
      * a tracked operator to manipulate the individual (nullable)
      */
@@ -37,6 +34,12 @@ abstract class ApiWsIndividual (
     companion object{
         private val log : Logger = LoggerFactory.getLogger(ApiWsIndividual::class.java)
     }
+
+    /**
+     * a list of db actions for its Initialization
+     */
+    private val dbInitialization: List<DbAction>
+        get() {return children.filterIsInstance<DbAction>()}
 
     override fun seeInitializingActions(): List<DbAction> {
         return dbInitialization
@@ -74,16 +77,15 @@ abstract class ApiWsIndividual (
      * if [position] = -1, append the [actions] at the end
      */
     fun addInitializingActions(position: Int=-1, actions: List<DbAction>){
-        if (position == -1)  dbInitialization.addAll(actions)
+        if (position == -1)  addChildren(actions)
         else{
-            dbInitialization.addAll(position, actions)
+            addChildren(position, actions)
         }
         addChildren(actions)
     }
 
     private fun resetInitializingActions(actions: List<DbAction>){
-        dbInitialization.clear()
-        dbInitialization.addAll(actions)
+        killChildren { it is DbAction }
         addChildren(actions)
     }
 
@@ -91,7 +93,7 @@ abstract class ApiWsIndividual (
      * remove specified dbactions i.e., [actions] from [dbInitialization]
      */
     fun removeInitDbActions(actions: List<DbAction>) {
-        dbInitialization.removeAll(actions)
+        killChildren { it is DbAction }
     }
 
     /**

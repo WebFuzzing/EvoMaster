@@ -521,6 +521,7 @@ class SqlInsertBuilder(
                 list.add(action)
             }
         }
+        list.forEach { it.doInitialize() }
 
         return list
     }

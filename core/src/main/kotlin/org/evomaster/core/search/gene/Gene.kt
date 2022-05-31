@@ -118,7 +118,8 @@ abstract class Gene(
      * A gene cannot be used (eg, mutated or printed in the phenotype) before it is initialized
      *
      * if [rand] is provided, the gene will be randomized. this should always be provided, unless
-     * you are building tests directly
+     * you are building tests directly. Otherwise, the default values might not be within the given
+     * constraints (if any). For example, a default 0 int would fail a constraint min=42
      */
     fun doInitialize(rand: Randomness? = null){
         if(initialized){
@@ -126,9 +127,6 @@ abstract class Gene(
         }
         if(rand != null) {
             randomize(rand, false)
-        } else {
-            //this should happen only in the tests
-            log.warn("Initializing gene ${this.javaClass} without randomization")
         }
         markAllAsInitialized()
         Lazy.assert{isValid()}

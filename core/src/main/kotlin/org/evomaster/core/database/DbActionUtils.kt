@@ -62,12 +62,6 @@ object DbActionUtils {
             references to each other (eg Foreign Keys)
          */
 
-//        val all = actions.flatMap { it.seeGenes() }
-//        all.asSequence()
-//                .filter { it.isMutable() }
-//                .forEach {
-//                    it.randomize(randomness, false, all)
-//                }
         actions.forEach {
             it.randomize(randomness, false, actions)
         }

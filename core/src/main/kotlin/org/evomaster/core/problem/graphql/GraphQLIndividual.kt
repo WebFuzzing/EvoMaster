@@ -14,7 +14,7 @@ class GraphQLIndividual(
         private val actions: MutableList<GraphQLAction>,
         val sampleType: SampleType,
         dbInitialization: MutableList<DbAction> = mutableListOf()
-) : ApiWsIndividual(dbInitialization= dbInitialization, children = dbInitialization.plus(actions)) {
+) : ApiWsIndividual(children = dbInitialization.plus(actions)) {
 
     override fun copyContent(): Individual {
 
