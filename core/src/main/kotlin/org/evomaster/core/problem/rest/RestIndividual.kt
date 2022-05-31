@@ -218,15 +218,29 @@ class RestIndividual(
      */
     fun getResourceCalls() : List<RestResourceCalls> = children.filterIsInstance<RestResourceCalls>()
 
+    /**
+     * return all the resource calls in this individual, with their index in the children list
+     */
+    fun getIndexedResourceCalls() : Map<Int,RestResourceCalls>{
+        val m  = mutableMapOf<Int, RestResourceCalls>()
+        for(i in children.indices){
+            val child = children[i]
+            if(child !is RestResourceCalls){
+                continue
+            }
+            m[i] = child
+        }
+        return m
+    }
 
     /****************************** manipulate resource call in an individual *******************************************/
     /**
      * remove the resource at [position]
      */
     fun removeResourceCall(position : Int) {
-        if(position >= getResourceCalls().size)
+        if(!getIndexedResourceCalls().keys.contains(position))
             throw IllegalArgumentException("position is out of range of list")
-        val removed = killChildByIndex(position) as Gene
+        val removed = killChildByIndex(position) as RestResourceCalls
         removed.removeThisFromItsBindingGenes()
     }
 
@@ -244,7 +258,7 @@ class RestIndividual(
         if (position == -1){
             addChild(restCalls)
         }else{
-            if(position > getResourceCalls().size)
+            if(position > children.size)
                 throw IllegalArgumentException("position is out of range of list")
             addChild(position, restCalls)
         }
@@ -254,7 +268,7 @@ class RestIndividual(
      * replace the resourceCall at [position] with [resourceCalls]
      */
     fun replaceResourceCall(position: Int, restCalls: RestResourceCalls){
-        if(position > getResourceCalls().size)
+        if(!getIndexedResourceCalls().keys.contains(position))
             throw IllegalArgumentException("position is out of range of list")
 
         removeResourceCall(position)
@@ -265,18 +279,21 @@ class RestIndividual(
      * switch the resourceCall at [position1] and the resourceCall at [position2]
      */
     fun swapResourceCall(position1: Int, position2: Int){
-        if(position1 > getResourceCalls().size || position2 > getResourceCalls().size)
+        val valid = getIndexedResourceCalls().keys
+        if(!valid.contains(position1) || !valid.contains(position2))
             throw IllegalArgumentException("position is out of range of list")
         if(position1 == position2)
             throw IllegalArgumentException("It is not necessary to swap two same position on the resource call list")
         swapChildren(position1,position2)
     }
 
-    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int) = getResourceCalls()[resourcePosition].seeActions(ALL).map {
+    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int)
+    = getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).map {
         seeActions(actionFilter).indexOf(it)
     }
 
     private fun validateSwap(first : Int, second : Int) : Boolean{
+        //TODO need update, although currently not in use
         val position = getResourceCalls()[first].shouldBefore.map { r ->
             getResourceCalls().indexOfFirst { it.getResourceNodeKey() == r }
         }
@@ -325,9 +342,9 @@ class RestIndividual(
      * @return possible swap positions of calls in this individual
      */
     fun extractSwapCandidates(): Map<Int, Set<Int>>{
-        return getResourceCalls().mapIndexed { index, _ ->
-            val range = handleSwapCandidates(this, index)
-            index to range
+        return getIndexedResourceCalls().map {
+            val range = handleSwapCandidates(this, it.key)
+            it.key to range
         }.filterNot { it.second.isEmpty() }.toMap()
     }
 
@@ -337,19 +354,23 @@ class RestIndividual(
     }
 
     private fun handleSwapTo(ind: RestIndividual, indexToSwap: Int): Set<Int>{
-        val before =  ind.getResourceCalls()[indexToSwap].shouldBefore.map { t->
-            ind.getResourceCalls().indexOfFirst { f->
-                f.getResourceNodeKey() == t
-            }
-        }.filter { it >=0 }.minOrNull()?:ind.getResourceCalls().size
 
-        val after = ind.getResourceCalls()[indexToSwap].depends.map { t->
-            ind.getResourceCalls().indexOfFirst { f->
-                f.getResourceNodeKey() == t
-            }
-        }.filter { it >=0 }.maxOrNull()?:0
+        val indexed = ind.getIndexedResourceCalls()
+        val toSwap = indexed[indexToSwap]!!
+
+        val before : Int =  toSwap.shouldBefore.map { t->
+            indexed.filter { it.value.getResourceNodeKey() == t }
+                    .minByOrNull { it.key }?.key ?: indexed.keys.maxOrNull()!! + 1
+        }.minOrNull() ?: indexed.keys.maxOrNull()!! + 1
+
+
+        val after : Int = toSwap.depends.map { t->
+            indexed.filter { it.value.getResourceNodeKey() == t }
+                    .maxByOrNull { it.key }?.key ?: 0
+        }.maxOrNull() ?: 0
+
 
         if (after >= before) return emptySet()
-        return (after until before).filter { it != indexToSwap }.toSet()
+        return indexed.keys.filter { it >= after && it < before && it != indexToSwap }.toSet()
     }
 }

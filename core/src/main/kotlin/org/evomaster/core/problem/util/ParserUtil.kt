@@ -179,7 +179,7 @@ object ParserUtil {
     }
 
 
-    private fun parseActionTokensByParam(params : MutableList<Param>, map : MutableMap<String, ActionRToken>){
+    private fun parseActionTokensByParam(params : List<Param>, map : MutableMap<String, ActionRToken>){
         params.filter {p-> p is BodyParam || p is PathParam || p is QueryParam}.forEach {p->
             handleParam(p, map)
         }

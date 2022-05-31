@@ -132,7 +132,11 @@ abstract class Gene(
         Lazy.assert{isValid()}
     }
 
-    //TODO needed for copies. check if can be refactored, eg if copyContent enforce the copy of initialized
+    /*
+        TODO needed for copies. check if can be refactored, eg if copyContent enforce the copy of initialized
+
+        will need to be removed / made private, and refactor all its callers
+     */
     fun markAllAsInitialized(){
         flatView().forEach{it.initialized = true}
         initialized = true

@@ -16,8 +16,15 @@ abstract class ApiWsAction(
     /**
      * a list of param could be manipulated by evomaster
      */
-    val parameters: MutableList<Param>
+    parameters: List<Param>
 ) : Action(parameters){
+
+    val parameters : List<Param>
+        get() { return children as List<Param>}
+
+    fun addParam(param: Param){
+        addChild(param)
+    }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
         seeGenes().forEach {

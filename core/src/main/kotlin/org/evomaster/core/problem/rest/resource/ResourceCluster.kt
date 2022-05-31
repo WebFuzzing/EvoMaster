@@ -180,7 +180,8 @@ class ResourceCluster {
                     }
                 } else{
                     sqlInsertBuilder.createSqlInsertionAction(t.name).also {
-                        it.forEach { a-> a.randomize(randomness,false, it) }
+                        //FIXME need refactoring after getting rid of allGenes
+                        it.forEach { a-> a.randomize(randomness,false, it); a.doInitialize() }
                     }
                 }
                 if (action != null){

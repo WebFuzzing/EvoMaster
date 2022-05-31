@@ -44,12 +44,16 @@ abstract class StructuralElement (
      * add a child of the element
      */
     open fun addChild(child: StructuralElement){  //TODO check usage
+        if(children.contains(child)){
+            throw IllegalArgumentException("Child already present")
+        }
         child.parent = this
         //TODO re-check proper use of in/out in Kotlin
         (children as MutableList<StructuralElement>).add(child)
     }
 
     open fun addChild(position: Int, child: StructuralElement){  //TODO check usage
+        if(children.contains(child)) throw IllegalArgumentException("Child already present")
         child.parent = this
         //TODO re-check proper use of in/out in Kotlin
         (children as MutableList<StructuralElement>).add(position, child)
@@ -63,6 +67,9 @@ abstract class StructuralElement (
     }
 
     open fun addChildren(position: Int, list : List<StructuralElement>){
+        for(child in list){
+            if(children.contains(child)) throw IllegalArgumentException("Child already present")
+        }
         list.forEach { it.parent = this }
         (children as MutableList<StructuralElement>).addAll(position, list)
     }

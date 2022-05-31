@@ -81,7 +81,6 @@ abstract class ApiWsIndividual (
         else{
             addChildren(position, actions)
         }
-        addChildren(actions)
     }
 
     private fun resetInitializingActions(actions: List<DbAction>){

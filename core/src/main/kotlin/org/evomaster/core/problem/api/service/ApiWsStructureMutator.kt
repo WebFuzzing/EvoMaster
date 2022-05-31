@@ -250,6 +250,9 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         }
 
         DbActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
+        //FIXME refactoring
+        list.flatten().forEach { it.seeGenes().forEach { g -> g.markAllAsInitialized() } }
+        //FIXME broken elements are not removed from list
         DbActionUtils.repairBrokenDbActionsList(list.flatten().toMutableList(), randomness)
         return list
     }

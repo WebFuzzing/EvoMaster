@@ -20,6 +20,8 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
     /**
      * Return a view of the genes in the action.
      * Those are the actual instances, and not copies.
+     *
+     * TODO clarify if these are top-level (i guess?) or not
      */
     abstract fun seeGenes() : List<out Gene>
 
@@ -45,6 +47,10 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
 
     fun doInitialize(randomness: Randomness ? = null){
         seeGenes().forEach { it.doInitialize(randomness) }
+    }
+
+    fun isInitialized() : Boolean{
+        return seeGenes().all { it.initialized }
     }
 
     /**

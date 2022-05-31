@@ -43,9 +43,9 @@ class StringGene(
         /**
          * specialization based on taint analysis
          */
-        val specializationGenes: MutableList<Gene> = mutableListOf()
+        specializationGenes: List<Gene> = listOf()
 
-) : ComparableGene, CompositeGene(name, specializationGenes) {
+) : ComparableGene, CompositeGene(name, specializationGenes.toMutableList()) {
 
     init {
         if (minLength>maxLength) {
@@ -105,6 +105,10 @@ class StringGene(
      * and we would need to find their intersection.
      */
     var bindingIds = mutableSetOf<String>()
+
+    //right now, all children are specializations
+    val specializationGenes: List<Gene>
+        get() {return children}
 
     override fun copyContent(): Gene {
         val copy = StringGene(name, value, minLength, maxLength, invalidChars, this.specializationGenes.map { g -> g.copy() }.toMutableList())
@@ -455,10 +459,8 @@ class StringGene(
             selectionUpdatedSinceLastMutation = true
             toAddGenes.forEach {
                 it.randomize(randomness, false, listOf())
-//                it.parent = this
             }
             log.trace("in total added specification size: {}", toAddGenes.size)
-            specializationGenes.addAll(toAddGenes)
             addChildren(toAddGenes)
 
             specializations.addAll(toAddSpecs)

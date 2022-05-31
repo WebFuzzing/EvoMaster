@@ -329,8 +329,13 @@ class RestSampler : AbstractRestSampler(){
     }
 
     fun createActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
+
         val res = template.copy() as RestCallAction
-        res.doInitialize(randomness)
+        if(res.isInitialized()){
+            res.seeGenes().forEach { it.randomize(randomness, false) }
+        } else {
+            res.doInitialize(randomness)
+        }
         res.auth = target.auth
         res.bindToSamePathResolution(target)
 

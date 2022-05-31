@@ -653,11 +653,11 @@ class RPCEndpointsHandler {
 
                         // String could have bigDecimal or bigInteger as part of specification if any number related constraint property is specified
                         if (param.precision != null || param.scale != null){
-                            specializationGenes.add(BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
+                            addChild(BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
                                 precision = param.precision, scale = param.scale, minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
                         } else if (param.minValue != null || param.maxValue != null){
                             // only max or min, we recognize it as biginteger
-                            specializationGenes.add(BigIntegerGene(param.name, min=param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
+                            addChild(BigIntegerGene(param.name, min=param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
                                 minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
                         }
                     }
@@ -670,7 +670,7 @@ class RPCEndpointsHandler {
                                 otherwise put the regex as part of specialization
                              */
                             if ((strGene as? StringGene)?.specializationGenes?.isNotEmpty() == true){
-                                strGene.specializationGenes.add(regex)
+                                strGene.addChild(regex)
                             }else
                                 strGene = regex
                         } catch (e: Exception) {

@@ -91,7 +91,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     }
                     .forEach {
                         val gene = StringGene(it).apply { randomize(randomness, false, listOf()) }
-                        action.parameters.add(HeaderParam(it, OptionalGene(it, gene, false, requestSelection = true)))
+                        action.addParam(HeaderParam(it, OptionalGene(it, gene, false, requestSelection = true)))
                     }
 
             info.queryParameters
@@ -100,7 +100,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     }
                     .forEach {
                         val gene = StringGene(it).apply { randomize(randomness, false, listOf()) }
-                        action.parameters.add(QueryParam(it, OptionalGene(it, gene, false, requestSelection = true)))
+                        action.addParam(QueryParam(it, OptionalGene(it, gene, false, requestSelection = true)))
                     }
 
             if(result.getStatusCode() == 415){
@@ -124,7 +124,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
                     val update = UpdateForBodyParam(body)
 
-                    action.parameters.add(update)
+                    action.addParam(update)
                 }
             }
 
@@ -161,7 +161,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
                 val body = BodyParam(obj, EnumGene("contentType", listOf("application/json")))
                 val update = UpdateForBodyParam(body)
-                action.parameters.add(update)
+                action.addParam(update)
             }
         }
     }
