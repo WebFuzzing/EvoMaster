@@ -124,6 +124,21 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     VARBINARY("VARBINARY"),
 
+
+    /**
+     * https://dev.mysql.com/doc/refman/8.0/en/binary-varbinary.html
+     */
+    BINARY("BINARY"),
+
+    /**
+     * The FLOAT type represents approximates numeric data values.
+     * https://dev.mysql.com/doc/refman/8.0/en/floating-point-types.html
+     * MySQL also supports this optional precision specification, but the precision
+     * value in FLOAT(p) is used only to determine storage size.
+     * A precision from 0 to 23 results in a 4-byte single-precision FLOAT column.
+     * A precision from 24 to 53 results in an 8-byte double-precision DOUBLE column.
+     */
+    FLOAT("FLOAT"),
     /**
      *  The DOUBLE type represents approximate numeric data values.
      *  MySQL uses eight bytes for double-precision values.

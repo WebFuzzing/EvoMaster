@@ -120,14 +120,16 @@ class DbActionGeneBuilder {
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
-                ColumnDataType.TIMETZ, ColumnDataType.TIME ->
-                    TimeGene(column.name)
+                ColumnDataType.TIME,
+                ColumnDataType.TIMETZ ->
+                    buildSqlTimeGene(column)
 
 
                 /**
                  * TIMESTAMP is assumed to be a Date field
                  */
-                ColumnDataType.TIMESTAMP, ColumnDataType.TIMESTAMPTZ ->
+                ColumnDataType.TIMESTAMP,
+                ColumnDataType.TIMESTAMPTZ ->
                     handleTimestampColumn(column)
 
                 /**
@@ -148,9 +150,6 @@ class DbActionGeneBuilder {
                 ColumnDataType.YEAR ->
                     handleYearColumn(column)
 
-                //column.type.equals("VARBINARY", ignoreCase = true) ->
-                //handleVarBinary(it)
-
                 /**
                  * Could be any kind of binary data... so let's just use a string,
                  * which also simplifies when needing generate the test files
@@ -158,10 +157,18 @@ class DbActionGeneBuilder {
                 ColumnDataType.BLOB ->
                     handleBLOBColumn(column)
 
+                ColumnDataType.BINARY ->
+                    handleMySqlBinaryColumn(column)
+
+                ColumnDataType.VARBINARY ->
+                    handleMySqlVarBinaryColumn(column)
+
+
                 ColumnDataType.BYTEA ->
-                    handleBinaryStringColumn(column)
+                    handlePostgresBinaryStringColumn(column)
 
 
+                ColumnDataType.FLOAT,
                 ColumnDataType.REAL,
                 ColumnDataType.FLOAT4 ->
                     handleFloatColumn(column, MIN_FLOAT4_VALUE, MAX_FLOAT4_VALUE)
@@ -320,7 +327,7 @@ class DbActionGeneBuilder {
     }
 
     private fun buildSqlTimestampRangeGene(column: Column) =
-            SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
+            SqlRangeGene(column.name, template = buildSqlTimestampGene("bound", databaseType = column.databaseType))
 
     private fun buildSqlDateRangeGene(column: Column) =
             SqlRangeGene(column.name, template = DateGene("bound"))
@@ -421,12 +428,37 @@ class DbActionGeneBuilder {
         }
     }
 
-    private fun handleBinaryStringColumn(column: Column): Gene {
+    private fun handleMySqlBinaryColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings)
         } else {
-            SqlBinaryStringGene(name = column.name)
+            SqlBinaryStringGene(name = column.name,
+                    minSize = column.size,
+                    maxSize = column.size,
+                    databaseType = column.databaseType)
+        }
+    }
+
+    private fun handleMySqlVarBinaryColumn(column: Column): Gene {
+        return if (column.enumValuesAsStrings != null) {
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings)
+        } else {
+            SqlBinaryStringGene(name = column.name,
+                    minSize = 0,
+                    maxSize = column.size,
+                    databaseType = column.databaseType)
+        }
+    }
+
+    private fun handlePostgresBinaryStringColumn(column: Column): Gene {
+        return if (column.enumValuesAsStrings != null) {
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings)
+        } else {
+            SqlBinaryStringGene(name = column.name,
+                    databaseType = column.databaseType)
         }
     }
 
@@ -561,12 +593,40 @@ class DbActionGeneBuilder {
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
-    fun buildSqlTimestampGene(name: String): DateTimeGene {
+    private fun buildSqlTimeGene(column: Column): TimeGene {
+        val timeGeneFormat = when (column.databaseType) {
+            DatabaseType.MYSQL -> TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
+            DatabaseType.POSTGRES -> TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+            else -> TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+        }
+
+        return TimeGene(
+                column.name,
+                hour = IntegerGene("hour", 0, 0, 23),
+                minute = IntegerGene("minute", 0, 0, 59),
+                second = IntegerGene("second", 0, 0, 59),
+                timeGeneFormat = timeGeneFormat
+        )
+    }
+
+    fun buildSqlTimestampGene(name: String, databaseType: DatabaseType = DatabaseType.H2): DateTimeGene {
+        val minYear: Int
+        val maxYear: Int
+        when (databaseType) {
+            DatabaseType.MYSQL -> {
+                minYear = 1970
+                maxYear = 2037
+            }
+            else -> {
+                minYear = 1900
+                maxYear = 2100
+            }
+        }
         return DateTimeGene(
                 name = name,
                 date = DateGene(
                         "date",
-                        year = IntegerGene("year", 2016, 1900, 2100),
+                        year = IntegerGene("year", 2016,  minYear, maxYear),
                         month = IntegerGene("month", 3, 1, 12),
                         day = IntegerGene("day", 12, 1, 31),
                         onlyValidDates = true
@@ -586,7 +646,7 @@ class DbActionGeneBuilder {
         if (column.enumValuesAsStrings != null) {
             throw RuntimeException("Unsupported enum in TIMESTAMP. Please implement")
         } else {
-            return buildSqlTimestampGene(column.name)
+            return buildSqlTimestampGene(column.name, databaseType = column.databaseType)
         }
     }
 
@@ -693,7 +753,6 @@ class DbActionGeneBuilder {
         return if (column.enumValuesAsStrings != null) {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toBoolean() })
-
         } else {
             BooleanGene(column.name)
         }

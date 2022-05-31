@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
@@ -25,7 +26,9 @@ class SqlBinaryStringGene(
 
         val maxSize: Int = ArrayGene.MAX_SIZE,
 
-        private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize)
+        private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize),
+
+        val databaseType: DatabaseType = DatabaseType.POSTGRES
 
 ) : CollectionGene, Gene(name, binaryArrayGene.getAllElements()) {
 
@@ -33,6 +36,7 @@ class SqlBinaryStringGene(
         val log: Logger = LoggerFactory.getLogger(SqlBinaryStringGene::class.java)
 
         const val EMPTY_STR = ""
+
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -43,12 +47,14 @@ class SqlBinaryStringGene(
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return buildString {
-            append("\"\\x")
-            append(binaryArrayGene.getChildren().map { g ->
-                toHex2(g.value)
-            }.joinToString(EMPTY_STR))
-            append("\"")
+        val hexString = binaryArrayGene.getChildren().map { g ->
+            toHex2(g.value)
+        }.joinToString(EMPTY_STR)
+
+        return when (databaseType) {
+            DatabaseType.MYSQL -> "X${GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER}${hexString}${GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER}"
+            DatabaseType.POSTGRES -> "\"\\x${hexString}\""
+            else -> throw IllegalArgumentException("getValueAsPrintableString() not supported for ${databaseType}")
         }
     }
 
@@ -102,7 +108,11 @@ class SqlBinaryStringGene(
 
     override fun getDefaultMaxSize() = binaryArrayGene.getDefaultMaxSize()
 
-    override fun copyContent() = SqlBinaryStringGene(name, minSize = minSize, maxSize = maxSize, binaryArrayGene.copyContent() as ArrayGene<IntegerGene>)
+    override fun copyContent() = SqlBinaryStringGene(name,
+            minSize = minSize,
+            maxSize = maxSize,
+            binaryArrayGene.copyContent() as ArrayGene<IntegerGene>,
+            databaseType=databaseType)
 
     override fun mutate(
             randomness: Randomness,
