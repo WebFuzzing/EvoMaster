@@ -75,4 +75,19 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
     public SutController getSutController() {
         return new DatabaseFakeMySQLSutController(connection);
     }
+
+    @Test
+    public void testCaseSensitivityOfExtractor() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE TableNot(intColumn INT)");
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertNotNull(schema);
+
+        TableDto table = schema.tables.get(0);
+        assertEquals("intColumn",table.columns.get(0).name);
+        assertEquals("TableNot", table.name);
+
+    }
+
 }
