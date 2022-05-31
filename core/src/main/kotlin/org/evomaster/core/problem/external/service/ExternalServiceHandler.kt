@@ -25,9 +25,6 @@ class ExternalServiceHandler {
      * the concept is working.
      */
 
-    companion object {
-        private const val WIREMOCK_PORT : Int = 8080
-    }
 
     /**
      * Contains the information about each external calls made
@@ -37,6 +34,8 @@ class ExternalServiceHandler {
     private val externalServices: MutableList<ExternalService> = mutableListOf()
 
     private var lastIPAddress : String = ""
+
+    private val externalServiceMapping: HashMap<String, String> = HashMap<String, String>()
 
     @Inject
     private lateinit var config : EMConfig
@@ -53,9 +52,14 @@ class ExternalServiceHandler {
             val wm : WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
             // Should be moved under JUnit tests
             bindDNSCache(externalServiceInfo.remoteHostname, ip)
+            externalServiceMapping[externalServiceInfo.remoteHostname] = ip
             externalServices.add(ExternalService(externalServiceInfo, wm))
         }
         externalServiceInfos.add(externalServiceInfo)
+    }
+
+    fun getExternalServiceMappings() : Map<String, String> {
+        return externalServiceMapping
     }
 
     /**
@@ -138,10 +142,11 @@ class ExternalServiceHandler {
      * Will initialise WireMock instance on a given IP address for a given port.
      */
     private fun initWireMockServer(address: String, port: Int): WireMockServer {
+        // TODO: Port need to be changed to the remote service port
         val wm = WireMockServer(
             WireMockConfiguration()
                 .bindAddress(address)
-                .port(WIREMOCK_PORT)
+                .port(8080)
                 .extensions(ResponseTemplateTransformer(false)))
         wm.start()
 

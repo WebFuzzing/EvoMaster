@@ -253,7 +253,7 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
     /**
      * @return dto of an action based on specified [action] and [index]
      */
-    protected fun getActionDto(action: Action, index: Int): ActionDto {
+    protected open fun getActionDto(action: Action, index: Int): ActionDto {
         return ActionDto().apply {
             this.index = index
             //for now, we only include specialized regex
