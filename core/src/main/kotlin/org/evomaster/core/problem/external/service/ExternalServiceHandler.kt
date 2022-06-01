@@ -49,7 +49,7 @@ class ExternalServiceHandler {
      * This will allow adding ExternalServiceInfo to the Collection.
      *
      * If there is a WireMock instance is available for the hostname,
-     * it'll be skipped from creating a new one.
+     * it will be skipped from creating a new one.
      */
     fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
@@ -156,7 +156,7 @@ class ExternalServiceHandler {
         val wm = WireMockServer(
             WireMockConfiguration()
                 .bindAddress(address)
-                .port(port)
+                .port(8080)
                 .extensions(ResponseTemplateTransformer(false)))
         wm.start()
 
