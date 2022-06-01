@@ -148,7 +148,7 @@ class ExternalServiceHandler {
         val wm = WireMockServer(
             WireMockConfiguration()
                 .bindAddress(address)
-                .port(port)
+                .port(8080)
                 .extensions(ResponseTemplateTransformer(false)))
         wm.start()
 
