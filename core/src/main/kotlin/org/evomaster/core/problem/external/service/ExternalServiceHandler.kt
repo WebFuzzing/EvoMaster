@@ -145,10 +145,11 @@ class ExternalServiceHandler {
      */
     private fun initWireMockServer(address: String, port: Int): WireMockServer {
         // TODO: Port need to be changed to the remote service port
+        // In CI also using remote ports as 80 and 443 fails
         val wm = WireMockServer(
             WireMockConfiguration()
                 .bindAddress(address)
-                .port(port)
+                .port(8080)
                 .extensions(ResponseTemplateTransformer(false)))
         wm.start()
 
