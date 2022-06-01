@@ -15,6 +15,7 @@ import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -45,6 +46,10 @@ class RestResourceCalls(
     init {
         if (withBinding)
             buildBindingGene()
+    }
+
+    fun doInitialize(randomness: Randomness? = null){
+        children.filterIsInstance<Action>().forEach { it.doInitialize(randomness) }
     }
 
     private val actions : List<RestCallAction>
