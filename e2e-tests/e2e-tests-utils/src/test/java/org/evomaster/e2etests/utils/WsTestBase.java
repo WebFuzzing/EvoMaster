@@ -97,6 +97,12 @@ public abstract class WsTestBase {
         });
 
         SimpleLogger.setThreshold(SimpleLogger.Level.DEBUG);
+
+        /*
+            TODO need to fix, see
+            https://trello.com/c/vNLJCMx8/739-investigate-the-flaky-rpc-dbdirectintemtest
+         */
+        ObjectiveRecorder.reset(true);
     }
 
 
