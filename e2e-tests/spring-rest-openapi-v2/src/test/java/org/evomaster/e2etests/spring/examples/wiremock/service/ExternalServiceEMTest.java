@@ -109,7 +109,7 @@ public class ExternalServiceEMTest extends SpringTestBase {
 
         // asserts whether the call made during the start-up is captured
         assertEquals(1, externalServiceHandler.getExternalServices().size(), externalServiceHandler.getExternalServices().stream().map(ExternalServiceInfo::getRemoteHostname).collect(Collectors.joining(",")));
-        assertEquals("baz.bar", externalServiceHandler.getExternalServices().get(0).getRemoteHostname());
+        assertEquals("foobarbazz.com", externalServiceHandler.getExternalServices().get(0).getRemoteHostname());
         restResourceFitness.calculateCoverage(restIndividual, Collections.emptySet());
 
         // assertion after the execution
