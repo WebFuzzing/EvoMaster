@@ -25,12 +25,4 @@ abstract class ApiWsAction(
     fun addParam(param: Param){
         addChild(param)
     }
-
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-        seeGenes().forEach {
-            //TODO should refactor name
-            it.doInitialize(randomness)
-        //    it.randomize(randomness, forceNewValue)
-        }
-    }
 }

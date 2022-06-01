@@ -107,15 +107,6 @@ class DbAction(
         return false
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-        val allGenes = all.flatMap { it.seeGenes() }
-        seeGenes().asSequence()
-            .filter { it.isMutable() }
-            .forEach {
-                it.randomize(randomness, false, allGenes)
-            }
-    }
-
     fun geInsertionId(): Long {
         return this.id
     }

@@ -388,9 +388,5 @@ class IndividualGeneImpactTest {
 
         override fun shouldCountForFitnessEvaluations(): Boolean = true
 
-        override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-            seeGenes().forEach { it.randomize(randomness, forceNewValue) }
-        }
-
     }
 }

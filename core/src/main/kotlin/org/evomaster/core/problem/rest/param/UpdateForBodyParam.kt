@@ -25,7 +25,7 @@ class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body
 
 
     override fun seeGenes(): List<Gene> {
-        return listOf()
+        return body.seeGenes()
     }
 }
 

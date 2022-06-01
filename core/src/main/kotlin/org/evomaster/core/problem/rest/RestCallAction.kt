@@ -202,11 +202,8 @@ class RestCallAction(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-        // random genes
-        super.randomize(randomness, forceNewValue, all)
+    override fun postRandomizedChecks(){
         // binding params in this action, e.g., path param with body param if there exists
         BindingBuilder.bindParamsInRestAction(this)
-
     }
 }

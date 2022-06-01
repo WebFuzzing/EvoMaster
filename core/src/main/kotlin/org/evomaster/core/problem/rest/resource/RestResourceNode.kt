@@ -511,8 +511,14 @@ open class RestResourceNode(
 
 
     private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
-        val action = (getActionByHttpVerb(actions, verb)?:throw IllegalStateException("cannot get $verb action in the resource $path")).copy() as RestCallAction
-        action.randomize(randomness, false)
+        val action = (getActionByHttpVerb(actions, verb)
+                ?:throw IllegalStateException("cannot get $verb action in the resource $path"))
+                .copy() as RestCallAction
+
+        if(action.isInitialized())
+            action.randomize(randomness, false)
+        else
+            action.doInitialize(randomness)
         return action
     }
 
@@ -580,7 +586,7 @@ open class RestResourceNode(
     open fun updateActionsWithAdditionalParams(action: RestCallAction){
         val org = actions.find {  it.verb == action.verb }
         org?:throw IllegalStateException("cannot find the action (${action.getName()}) in the node $path")
-        if (action.parameters.size > (org as RestCallAction).parameters.size){
+        if (action.parameters.size > org.parameters.size){
             originalActions.add(org)
             actions.remove(org)
             actions.add(action)

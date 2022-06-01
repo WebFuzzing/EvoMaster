@@ -63,7 +63,7 @@ object DbActionUtils {
          */
 
         actions.forEach {
-            it.randomize(randomness, false, actions)
+            it.randomize(randomness, false, actions.flatMap { a -> a.seeGenes()})
         }
 
         Lazy.assert { verifyForeignKeys(actions) }
