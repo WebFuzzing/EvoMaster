@@ -35,7 +35,10 @@ class ExternalServiceHandler {
 
     private var lastIPAddress : String = ""
 
-    private val externalServiceMapping: HashMap<String, String> = HashMap<String, String>()
+    /**
+     * Contains hostname against to WireMock instance mapping
+     */
+    private val externalServiceMapping: MutableMap<String, String> = mutableMapOf()
 
     @Inject
     private lateinit var config : EMConfig
@@ -43,17 +46,24 @@ class ExternalServiceHandler {
     private val log: Logger = LoggerFactory.getLogger(ExternalServiceUtils::class.java)
 
     /**
-     * This will allow adding ExternalServiceInfo to the Collection
+     * This will allow adding ExternalServiceInfo to the Collection.
+     *
+     * If there is a WireMock instance is available for the hostname,
+     * it'll be skipped from creating a new one.
      */
     fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            val ip = getIP(externalServiceInfo.remotePort)
-            lastIPAddress = ip
-            val wm : WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
-            // Should be moved under JUnit tests
-            bindDNSCache(externalServiceInfo.remoteHostname, ip)
-            externalServiceMapping[externalServiceInfo.remoteHostname] = ip
-            externalServices.add(ExternalService(externalServiceInfo, wm))
+            if (!externalServiceMapping.containsKey(externalServiceInfo.remoteHostname)) {
+                val ip = getIP(externalServiceInfo.remotePort)
+                lastIPAddress = ip
+                val wm : WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
+
+                // TODO: Should be moved under JUnit tests
+                bindDNSCache(externalServiceInfo.remoteHostname, ip)
+
+                externalServices.add(ExternalService(externalServiceInfo, wm))
+                externalServiceMapping[externalServiceInfo.remoteHostname] = ip
+            }
         }
         externalServiceInfos.add(externalServiceInfo)
     }

@@ -837,7 +837,6 @@ class EMConfig {
     @Min(0.0)
     var endNumberOfMutations = 10
 
-
     enum class StoppingCriterion {
         TIME,
         FITNESS_EVALUATIONS
@@ -1507,9 +1506,6 @@ class EMConfig {
     @Experimental
     @Cfg("Specify a format to organize the covered targets by the search")
     var coveredTargetSortedBy = SortCoveredTargetBy.NAME
-
-
-
 
     enum class SortCoveredTargetBy {
         /**
