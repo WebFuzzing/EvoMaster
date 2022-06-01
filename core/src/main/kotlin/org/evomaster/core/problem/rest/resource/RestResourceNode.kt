@@ -349,7 +349,11 @@ open class RestResourceNode(
      */
     fun sampleOneAction(action : RestCallAction, randomness: Randomness) : RestResourceCalls{
         val copy = action.copy() as RestCallAction
-        copy.doInitialize(randomness)
+        if(copy.isInitialized()){
+            copy.randomize(randomness,false)
+        } else {
+            copy.doInitialize(randomness)
+        }
 
         val template = templates[copy.verb.toString()]
                 ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${this.path}")
