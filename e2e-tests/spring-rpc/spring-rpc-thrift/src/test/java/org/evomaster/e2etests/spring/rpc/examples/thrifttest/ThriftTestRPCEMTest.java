@@ -5,6 +5,7 @@ import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.rpc.examples.SpringRPCTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,6 +19,7 @@ public class ThriftTestRPCEMTest extends SpringRPCTestBase {
         SpringRPCTestBase.initClass(controller);
     }
 
+    @Disabled
     @Test
     public void testRunEM() throws Throwable {
 
@@ -25,16 +27,16 @@ public class ThriftTestRPCEMTest extends SpringRPCTestBase {
             just for basic check
             but it has some problems on kotlin compile, and it is flaky
          */
-//        runTestHandlingFlakyAndCompilation(
-//                "ThriftTestRPCEM",
-//                "org.foo.ThriftTestRPCEM",
-//                100,
-//                (args) -> {
-//
-//                    Solution<RPCIndividual> solution = initAndRun(args);
-//
-//                    assertTrue(solution.getIndividuals().size() >= 1);
-//
-//                });
+        runTestHandlingFlakyAndCompilation(
+                "ThriftTestRPCEM",
+                "org.foo.ThriftTestRPCEM",
+                100,
+                (args) -> {
+
+                    Solution<RPCIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() >= 1);
+
+                });
     }
 }
