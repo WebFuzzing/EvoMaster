@@ -66,7 +66,8 @@ object GeneUtils {
         var n = 0
         for (i in 0 until maxIndex) {
             n = i + 1
-            if (intpow2[i] > range) {
+            // n instead of i ?
+            if (intpow2[n] > range) {
                 break
             }
         }

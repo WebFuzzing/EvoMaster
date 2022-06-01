@@ -6,6 +6,7 @@ import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
 import java.math.BigDecimal
 import java.math.RoundingMode
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 
@@ -171,7 +172,7 @@ object NumberMutatorUtils {
     fun mutateLong(value: Long, min: Long?, max: Long?, randomness: Randomness, apc: AdaptiveParameterControl): Long {
 
         //choose an i for 2^i modification
-        val delta = GeneUtils.getDelta(randomness, apc, longDeltaRange(min, max))
+        val delta = GeneUtils.getDelta(randomness, apc, max(longDeltaRange(min, value), longDeltaRange(value, max)))
 
         return mutateLong(value, min, max, delta, randomness)
     }
