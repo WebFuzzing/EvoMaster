@@ -11,6 +11,7 @@ import org.evomaster.core.problem.external.service.ExternalServiceUtils.isAddres
 import org.evomaster.core.problem.external.service.ExternalServiceUtils.nextIPAddress
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
+import org.evomaster.core.problem.external.service.ExternalServiceUtils.isReservedIP
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -87,19 +88,6 @@ class ExternalServiceHandler {
     }
 
     /**
-     * Returns the default IP address for external service initialisation.
-     * If the respective address and port is not available it'll throw an
-     * exception.
-     */
-    private fun getDefaultAddress(port: Int) : String {
-        if (isAddressAvailable("127.0.0.2", port)) {
-            return "127.0.0.2"
-        } else {
-            throw Exception("Default loopback address is unavailable for binding")
-        }
-    }
-
-    /**
      * Will generate random IP address within the loopback range
      * while checking the availability. If not available will
      * generate a new one.
@@ -135,7 +123,11 @@ class ExternalServiceHandler {
                 ip = if (externalServiceInfos.size > 0) {
                     getNextAvailableAddress(port)
                 } else {
-                    config.externalServiceIP
+                    if (!isReservedIP(config.externalServiceIP)) {
+                        config.externalServiceIP
+                    } else {
+                        throw IllegalStateException("Can not use reserved IP address")
+                    }
                 }
             }
             else -> {
@@ -168,12 +160,6 @@ class ExternalServiceHandler {
                 .withBody("Not found!!")))
 
         return wm
-    }
-
-    private fun stopWireMockServers() {
-        externalServices.forEach {
-            it.stopWireMockServer()
-        }
     }
 
     /**

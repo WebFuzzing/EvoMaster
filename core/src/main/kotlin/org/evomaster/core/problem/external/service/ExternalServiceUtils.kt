@@ -42,7 +42,7 @@ object ExternalServiceUtils {
         }
         var ip = String.format("%s.%s.%s.%s", tokens[0], tokens[1], tokens[2], tokens[3])
         if (isReservedIP(ip)) {
-            ip = nextIPAddress(ip)
+            throw IllegalStateException("Next IP is a reserved address")
         }
         return ip
     }
@@ -53,7 +53,7 @@ object ExternalServiceUtils {
      * other services commonly. 127.0.0.0 skipped because is the network address with
      * the mask 255.0.0.0 describes the whole loopback addresses.
      */
-    private fun isReservedIP(ip: String) : Boolean {
+    fun isReservedIP(ip: String) : Boolean {
         val reservedIPAddresses = arrayOf("127.0.0.0", "127.255.255.255", "127.0.0.1")
         if (reservedIPAddresses.contains(ip)) {
             return true
@@ -78,7 +78,9 @@ object ExternalServiceUtils {
         var ip = String.format("127.%s.%s.%s", p1, p2, p3)
 
         if (isReservedIP(ip)) {
-            ip = generateRandomIPAddress()
+            while(isReservedIP(ip)) {
+                ip = generateRandomIPAddress()
+            }
         }
         return ip
     }

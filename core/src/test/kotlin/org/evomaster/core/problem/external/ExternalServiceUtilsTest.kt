@@ -20,14 +20,14 @@ class ExternalServiceUtilsTest {
         assertEquals("127.1.100.2", nextIPAddress("127.1.100.1"))
         assertEquals("127.10.10.3", nextIPAddress("127.10.10.2"))
 
-        // Expected to skip the localhost address
-        assertEquals("127.0.0.2", nextIPAddress("127.0.0.0"))
-
-        assertNotEquals("127.0.0.1", nextIPAddress("127.0.0.0"))
         assertNotEquals("127.30.255.1", nextIPAddress("127.30.254.255"))
 
         // When the IP address go out of range should throw an exception
-        assertThrows(Exception::class.java) {
+        assertThrows(IllegalStateException::class.java) {
+            nextIPAddress("127.0.0.0")
+        }
+        // When the IP address go out of range should throw an exception
+        assertThrows(IllegalStateException::class.java) {
             nextIPAddress("127.255.255.254")
         }
 
