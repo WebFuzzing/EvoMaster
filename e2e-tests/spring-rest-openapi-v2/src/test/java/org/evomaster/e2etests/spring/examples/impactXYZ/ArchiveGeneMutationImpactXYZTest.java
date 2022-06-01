@@ -16,6 +16,8 @@ public class ArchiveGeneMutationImpactXYZTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        defaultSeed = 0;
+
         runTestHandlingFlakyAndCompilation(
                 "TestAGM",
                 "org.impactxyz.TestAGM",
