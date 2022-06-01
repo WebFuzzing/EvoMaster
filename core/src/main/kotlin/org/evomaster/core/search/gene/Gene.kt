@@ -61,7 +61,7 @@ abstract class Gene(
         TODO Major refactoring still to do:
         - mutation of gene (including hypermutation and innerGene)
         - impact of genes
-        - validity / robustness testing
+        - validity / robustness testing (will need new ChoiceGene)
 
         - for binding, we ll need tests on Individual
      */
@@ -84,6 +84,17 @@ abstract class Gene(
      * NO gene can overridde hashcode.
      *
      * If A is bound to B, then as well B is bound to A.
+     * If [this] is A, then binding genes will contain only B, and the binding genes of B
+     * will contain [this] A.
+     *
+     * If A bound (->) B, and B->C, then C->A.
+     * If [this] is A, then [this] as binding genes will contain B
+     * but not "necessary" C... ???
+     * TODO will need to be clarified and tested on all conditions
+     *
+     * A gene X is never bound to itself.
+     *
+     * In other words, this relationship is symmetric, transitive but not reflexive
      */
     private val bindingGenes: MutableSet<Gene> = mutableSetOf()
 
@@ -182,6 +193,7 @@ abstract class Gene(
             }
             bindingGenes.clear()
             bindingGenes.addAll(postBinding)
+            Lazy.assert { !bindingGenes.contains(this) }
         } else {
             assert(bindingGenes.isEmpty())
         }
@@ -381,6 +393,11 @@ abstract class Gene(
      * TODO is this necessary considering children and flatView???
      * TODO need documentation if we keep it
      *
+     *  likely not needed fo binding
+     *  TODO check if really needed for impact, as string specialization can be mutated.
+     *  if so, can get rid of it, and use children
+     *  TODO need to go through implementation of Impact before changing this
+     *
      * @return internal genes
      */
     abstract fun innerGene() : List<Gene>
@@ -530,7 +547,8 @@ abstract class Gene(
 
     //========================= handing binding genes ===================================
 
-
+    //TODO make sure all public methods keep the gene in a valid state.
+    //TODO go through all these methods
 
     /**
      * rebuild the binding relationship of [this] gene based on [copiedGene] which exists in [copiedIndividual]
@@ -545,6 +563,7 @@ abstract class Gene(
         }
 
         bindingGenes.addAll(list)
+        Lazy.assert { !bindingGenes.contains(this) }
     }
 
     /**
@@ -560,31 +579,55 @@ abstract class Gene(
             b.syncBindingGenesBasedOnThis(all)
         }
 
+        //TODO likely innegerGene() can be replaced with children
         innerGene().filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
     }
 
     /**
-     * get all binding genes of [this]
+     * get all binding genes of [this], transitively,
+     * as well as for any internal gene which is bound
+     *
+     * TODO this is not necessary if transitive relations have been sync,
+     * because could use bindingGenes directly
      */
-    private fun getBindingGenes(all : MutableSet<Gene>){
+    private fun computeTransitiveBindingGenes(all : MutableSet<Gene>){
         if (bindingGenes.isEmpty()) return
-        all.add(this)
-        bindingGenes.filterNot { all.contains(it) }.forEach { b->
+        all.add(this) //adding current
+
+        bindingGenes.filterNot { all.contains(it) }
+                //all other genes that are bound to this and are NOT in all
+                .forEach { b->
             all.add(b)
-            b.getBindingGenes(all)
+            b.computeTransitiveBindingGenes(all)
         }
-        innerGene().filterNot { all.contains(it) }.forEach { it.getBindingGenes(all) }
+        /*
+            TODO if [this] is bound, can any of its children be bound??? likely not
+            TODO likey can replace innerGene() with children
+         */
+        innerGene().filterNot { all.contains(it) }.forEach { it.computeTransitiveBindingGenes(all) }
     }
 
     /**
-     * remove [this] from its binding genes
+     * remove [this] from its binding genes, and also make
+     * sure that any children will lose their bindings
+     *
+     * For example, if [this] is an Object K with no binding, but
+     * with two fields X and Y that are bound, all genes we lose their
+     * binding to X and Y
+     *
+     * TODO possibly rename, see next TODO
      */
     fun removeThisFromItsBindingGenes(){
         val all = mutableSetOf<Gene>()
-        getBindingGenes(all)
+
+        //TODO can we remove a gene that is not in sync? if not, we can look at bindingGenes directly
+        computeTransitiveBindingGenes(all)
         all.forEach { b->
+            //FIXME this is a bug, removing to K, but not X and Y, isn'it?
             b.removeBindingGene(this)
         }
+        //TODO should we do this???
+        //bindingGenes.clear()
     }
 
     /**
@@ -618,6 +661,7 @@ abstract class Gene(
      */
     fun addBindingGene(gene: Gene) {
         bindingGenes.add(gene)
+        Lazy.assert { !bindingGenes.contains(this) }
     }
 
     /**
@@ -638,6 +682,7 @@ abstract class Gene(
     fun resetBinding(genes: Set<Gene>) {
         bindingGenes.clear()
         bindingGenes.addAll(genes)
+        Lazy.assert { !bindingGenes.contains(this) }
     }
 
     /**
