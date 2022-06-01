@@ -130,7 +130,13 @@ abstract class Gene(
      *
      * if [rand] is provided, the gene will be randomized. this should always be provided, unless
      * you are building tests directly. Otherwise, the default values might not be within the given
-     * constraints (if any). For example, a default 0 int would fail a constraint min=42
+     * constraints (if any). For example, a default 0 int would fail a constraint min=42.
+     *
+     * If a gene is already initialized, this will fail.
+     * The reasoning is to avoid building manual tests (eg via seeding) and randomize them
+     * by mistake by doing a second doInitialize call.
+     * On the other hand, randomize a gene twice (or more) by mistake at initialization is not
+     * a huge deal, apart from wasted CPU cycles.
      */
     fun doInitialize(rand: Randomness? = null){
         if(initialized){
