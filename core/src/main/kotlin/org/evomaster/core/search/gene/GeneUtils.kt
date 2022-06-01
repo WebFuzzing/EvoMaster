@@ -64,7 +64,7 @@ object GeneUtils {
         val maxIndex = apc.getExploratoryValue(start, end)
 
         var n = 0
-        for (i in 0 until maxIndex) {
+        for (i in 0 until maxIndex - 1) {
             n = i + 1
             // n instead of i ?
             if (intpow2[n] > range) {
