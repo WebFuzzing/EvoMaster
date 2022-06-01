@@ -42,7 +42,11 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
 
     open fun postRandomizedChecks(){}
 
+    /**
+     * Randomize all genes in this action. It assumes the genes have already been initialized before
+     */
     fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Gene> = listOf()) {
+        org.evomaster.core.Lazy.assert { isInitialized() }
         seeGenes()
                 .filter { it.isMutable() }
                 .forEach {
@@ -51,6 +55,9 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
         postRandomizedChecks()
     }
 
+    /**
+     * Initialize all the genes in this action
+     */
     fun doInitialize(randomness: Randomness? = null) {
         seeGenes().forEach { it.doInitialize(randomness) }
         postRandomizedChecks()
