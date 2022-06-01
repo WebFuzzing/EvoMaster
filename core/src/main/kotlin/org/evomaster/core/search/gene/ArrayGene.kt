@@ -260,8 +260,6 @@ class ArrayGene<T>(
     fun addElement(element: Gene) : Boolean{
         element as? T ?: return false
         checkConstraintsForAdd()
-
-        elements.add(element)
         addChild(element)
         return true
     }
