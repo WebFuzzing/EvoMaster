@@ -407,6 +407,12 @@ class TestSuiteWriter {
         }
     }
 
+    private fun getJaCoCoInit() : String{
+        if(config.jaCoCoLocation.isNotBlank()){
+            return ".setJaCoCo(\"${config.jaCoCoLocation}\",\"${config.jaCoCoOutputFile}\")"
+        }
+        return ""
+    }
 
     private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines) {
 
@@ -415,7 +421,9 @@ class TestSuiteWriter {
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
-                lines.add("private static final SutHandler $controller = new $controllerName($executable);")
+                lines.add("private static final SutHandler $controller = new $controllerName($executable)")
+                lines.append(getJaCoCoInit())
+                lines.append(";")
                 lines.add("private static String $baseUrlOfSut;")
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
@@ -423,6 +431,7 @@ class TestSuiteWriter {
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
+                lines.append(getJaCoCoInit())
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")

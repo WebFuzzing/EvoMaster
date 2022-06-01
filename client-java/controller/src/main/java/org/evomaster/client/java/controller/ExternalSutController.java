@@ -51,13 +51,30 @@ public abstract class ExternalSutController extends SutController {
      */
     private volatile String javaCommand = "java";
 
+    /**
+     * Path on filesystem of where JaCoCo jar file is located
+     */
+    private volatile String jaCoCoLocation = "";
+
+    /**
+     * Destination file for JaCoCo
+     */
+    private volatile String jaCoCoOutputFile = "";
+
+
+    public final ExternalSutController setJaCoCo(String jaCoCoLocation, String jaCoCoOutputFile){
+        this.jaCoCoLocation = jaCoCoLocation;
+        this.jaCoCoOutputFile = jaCoCoOutputFile;
+        return this;
+    }
+
     public int getWaitingSecondsForIncomingConnection() {
         return 20_000;
     }
 
     @Override
     public final void setupForGeneratedTest(){
-        //TODO how to handle P6Spy here??? We don't want the spy.log files
+        //In the past, we configured P6Spy here
     }
 
     public final void setInstrumentation(boolean instrumentation) {
@@ -198,6 +215,10 @@ public abstract class ExternalSutController extends SutController {
         }
         if (command.stream().noneMatch(s -> s.startsWith("-Xms"))) {
             command.add("-Xms1G");
+        }
+
+        if(!jaCoCoLocation.isEmpty() && !jaCoCoOutputFile.isEmpty()){
+            command.add("-javaagent:"+jaCoCoLocation+"=destfile="+jaCoCoOutputFile+",append=false,dumponexit=true");
         }
 
         command.add("-jar");

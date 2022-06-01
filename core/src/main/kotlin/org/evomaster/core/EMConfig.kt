@@ -345,6 +345,11 @@ class EMConfig {
         if (enablePureRPCTestGeneration && outputFormat != OutputFormat.DEFAULT && !outputFormat.isJava()){
             throw IllegalArgumentException("when generating pure RPC tests, outputFormat only supports JAVA now")
         }
+
+        if((jaCoCoLocation.isBlank() && jaCoCoOutputFile.isNotBlank()) ||
+                (jaCoCoLocation.isNotBlank() && jaCoCoOutputFile.isBlank())){
+            throw IllegalArgumentException("JaCoCo location and output options must be both set or both left empty")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1617,7 +1622,24 @@ class EMConfig {
     
     @Cfg("Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs.")
     var addPreDefinedTests : Boolean = true
-    
+
+
+    @Experimental
+    @FilePath
+    @Regex("(.*jacoco.*\\.jar)|(^$)")
+    @Cfg("Path on filesystem of where JaCoCo jar file is located." +
+            " Option meaningful only for External Drivers for JVM." +
+            " If left empty, it is not used.")
+    var jaCoCoLocation = ""
+
+    @Experimental
+    @FilePath
+    @Regex("(.*jacoco.*\\.jar)|(^$)")
+    @Cfg(" Destination file for JaCoCo." +
+            " Option meaningful only for External Drivers for JVM." +
+            " If left empty, it is not used.")
+    var jaCoCoOutputFile = ""
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
