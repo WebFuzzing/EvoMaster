@@ -28,11 +28,6 @@ object GraphQLActionBuilder {
      */
     private val idGenerator = AtomicInteger()
 
-    /*
-      In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
-      */
-    private val mutationQueryConstants = listOf(GqlConst.MUTATION, GqlConst.QUERY, GqlConst.ROOT, GqlConst.QUERY_TYPE)
-
     /**
      * Cache to avoid rebuilding the same genes again and again.
      *
@@ -69,9 +64,10 @@ object GraphQLActionBuilder {
 
         if (schemaObj.data.__schema.queryType != null || schemaObj.data.__schema.mutationType != null) {
             for (element in state.tables) {
-
-                if (mutationQueryConstants.contains(element.typeName.lowercase())) {
-                    handleOperation(state, actionCluster, treeDepth, element)
+                if (schemaObj.data.__schema.queryType?.name?.toLowerCase() == element.typeName.lowercase()) {
+                    handleOperation(state, actionCluster, treeDepth, element, GQMethodType.QUERY)
+                } else if (schemaObj.data.__schema.mutationType?.name?.toLowerCase() == element.typeName.lowercase()) {
+                    handleOperation(state, actionCluster, treeDepth, element, GQMethodType.MUTATION)
                 }
             }
         } else {
@@ -84,21 +80,9 @@ object GraphQLActionBuilder {
         state: TempState,
         actionCluster: MutableMap<String, Action>,
         treeDepth: Int,
-        element: Table
+        element: Table,
+        type: GQMethodType
     ) {
-        val type = when {
-            element.typeName.equals(GqlConst.QUERY, true) -> GQMethodType.QUERY
-            /*
-               In some schemas, "Root" and "QueryType" types define the entry point of the GraphQL query.
-                */
-            element.typeName.equals(GqlConst.ROOT, true) -> GQMethodType.QUERY
-            element.typeName.equals(GqlConst.QUERY_TYPE, true) -> GQMethodType.QUERY
-            element.typeName.equals(GqlConst.MUTATION, true) -> GQMethodType.MUTATION
-            else -> {
-                log.warn("GraphQL Entry point: ${element.typeName} is not found.")
-                return
-            }
-        }
 
         val actionId = "${element.fieldName}${idGenerator.incrementAndGet()}"
 
@@ -148,8 +132,9 @@ object GraphQLActionBuilder {
             when {
                 it is ObjectGene -> it.flatView().forEach { g ->
                     if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesAndLimitInObjectFields(g.gene)
-                         else if (g is ObjectGene) handleAllCyclesAndLimitInObjectFields(
-                        g)
+                    else if (g is ObjectGene) handleAllCyclesAndLimitInObjectFields(
+                        g
+                    )
                 }
                 it is OptionalGene && it.gene is ObjectGene -> it.flatView().forEach { g ->
                     if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesAndLimitInObjectFields(g.gene) else if (g is ObjectGene) handleAllCyclesAndLimitInObjectFields(
@@ -181,13 +166,15 @@ object GraphQLActionBuilder {
                         (it is OptionalGene && it.gene is CycleObjectGene) ||
                         (it is LimitObjectGene) ||
                         ((it is OptionalGene && it.gene is LimitObjectGene) ||
-                         ((it is OptionalGene && it.gene is LimitObjectGene)||(it is OptionalGene && it.gene is ObjectGene && it.gene.fields.all { it is OptionalGene && it.gene is LimitObjectGene }))||
-                         /*
-                         The Object gene contains: All fields as tuples, need to check if theirs last elements are kind of limit gene.
-                         If it is the case, need to prevent selection on them
-                         */
-                         (it is TupleGene && it.lastElementTreatedSpecially && isLastContainsAllLimitGenes(it))||
-                         (it is OptionalGene && it.gene is TupleGene && it.gene.lastElementTreatedSpecially && isLastContainsAllLimitGenes(it.gene)))
+                                ((it is OptionalGene && it.gene is LimitObjectGene) || (it is OptionalGene && it.gene is ObjectGene && it.gene.fields.all { it is OptionalGene && it.gene is LimitObjectGene })) ||
+                                /*
+                                The Object gene contains: All fields as tuples, need to check if theirs last elements are kind of limit gene.
+                                If it is the case, need to prevent selection on them
+                                */
+                                (it is TupleGene && it.lastElementTreatedSpecially && isLastContainsAllLimitGenes(it)) ||
+                                (it is OptionalGene && it.gene is TupleGene && it.gene.lastElementTreatedSpecially && isLastContainsAllLimitGenes(
+                                    it.gene
+                                )))
 
             }) {
             GeneUtils.tryToPreventSelection(gene)
@@ -199,10 +186,10 @@ object GraphQLActionBuilder {
     optional limit gene, optional Object with all fields as limit gene or optional Object with all fields as Optional limit gene
      */
     private fun isLastContainsAllLimitGenes(tuple: TupleGene): Boolean {
-        val lastElement= tuple.elements.last()
-        return (lastElement is OptionalGene && lastElement is LimitObjectGene)||
-                (lastElement is OptionalGene && lastElement.gene is ObjectGene && lastElement.gene.fields.all { it is LimitObjectGene}
-                )||(lastElement is OptionalGene && lastElement.gene is ObjectGene && lastElement.gene.fields.all { it is OptionalGene && it.gene is LimitObjectGene}
+        val lastElement = tuple.elements.last()
+        return (lastElement is OptionalGene && lastElement is LimitObjectGene) ||
+                (lastElement is OptionalGene && lastElement.gene is ObjectGene && lastElement.gene.fields.all { it is LimitObjectGene }
+                        ) || (lastElement is OptionalGene && lastElement.gene is ObjectGene && lastElement.gene.fields.all { it is OptionalGene && it.gene is LimitObjectGene }
                 )
     }
 

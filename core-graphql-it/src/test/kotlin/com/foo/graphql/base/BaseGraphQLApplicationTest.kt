@@ -25,11 +25,15 @@ class BaseGraphQLApplicationTest{
             val urlGraphql = sutServer + info.endpoint
 
             val iq = IntrospectiveQuery()
-            val schema = iq.fetchSchema(urlGraphql)
+            val headers= listOf<String>()
+                .filter { it.isNotBlank() }
+            val schema = iq.fetchSchema(urlGraphql,headers)
 
             val actionCluster = mutableMapOf<String, Action>()
 
-            GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+            if (schema != null) {
+                GraphQLActionBuilder.addActionsFromSchema(schema, actionCluster)
+            }
 
             assertEquals(1, actionCluster.size)
             val all = actionCluster.get("all")  as GraphQLAction
