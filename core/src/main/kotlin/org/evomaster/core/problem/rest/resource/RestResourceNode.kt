@@ -345,7 +345,8 @@ open class RestResourceNode(
     }
 
     /**
-     * sample a rest resource call with given [action]
+     * sample a rest resource call with given [action].
+     * The return action is initialized
      */
     fun sampleOneAction(action : RestCallAction, randomness: Randomness) : RestResourceCalls{
         val copy = action.copy() as RestCallAction
@@ -509,6 +510,9 @@ open class RestResourceNode(
             results.drop(removeFirst)
             status = ResourceStatus.NOT_ENOUGH_LENGTH
         }
+
+        //TODO unsure about this one
+        results.forEach { if(!it.isInitialized()) it.doInitialize(randomness) }
 
         return RestResourceCalls(templates[template]!!, this, results, withBinding= true).apply { this.status = status }
     }
