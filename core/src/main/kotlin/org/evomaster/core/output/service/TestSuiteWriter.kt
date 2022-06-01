@@ -488,6 +488,7 @@ class TestSuiteWriter {
                         addStatement("baseUrlOfSut = await $controller.startSut()", lines)
                     }
                     config.outputFormat.isJavaOrKotlin() -> {
+                        addStatement("EMTestUtils.disableSslVerification()",lines)
                         addStatement("$controller.setupForGeneratedTest()", lines)
                         addStatement("baseUrlOfSut = $controller.startSut()", lines)
                         /*

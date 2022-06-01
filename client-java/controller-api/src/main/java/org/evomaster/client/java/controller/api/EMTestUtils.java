@@ -131,7 +131,9 @@ public class EMTestUtils {
     }
 
     /*
-        This code is taken from
+        The idea here is that, even if SSL certificates are expired, we should still be able to fuzz a web application
+
+        This code is taken and adapted from
         https://stackoverflow.com/questions/19540289/how-to-fix-the-java-security-cert-certificateexception-no-subject-alternative
      */
     public static void disableSslVerification() {
@@ -163,10 +165,9 @@ public class EMTestUtils {
 
             // Install the all-trusting host verifier
             HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            //this is not so important if it fails
+            System.out.println("Failed to disable SSL");
         }
     }
 }

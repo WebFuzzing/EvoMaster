@@ -18,18 +18,6 @@ class IntrospectiveQuery {
         private val log = LoggerFactory.getLogger(IntrospectiveQuery::class.java)
     }
 
-
-    //FIXME even with this it does not work when HTTPS to HTTP :(  Jersey sucks
-    class RedirectFilterWorkAround : ClientResponseFilter {
-        override fun filter(requestContext: ClientRequestContext, responseContext: ClientResponseContext) {
-            if (responseContext.statusInfo.family != Response.Status.Family.REDIRECTION) return
-            val resp: Response = requestContext.client.target(responseContext.location).request().method(requestContext.method)
-            responseContext.entityStream = resp.getEntity() as InputStream
-            responseContext.statusInfo = resp.getStatusInfo()
-            responseContext.status = resp.getStatus()
-        }
-    }
-
     private val clientConfiguration = ClientConfig()
             .property(ClientProperties.CONNECT_TIMEOUT, 30_000)
             .property(ClientProperties.READ_TIMEOUT, 30_000)
@@ -43,9 +31,7 @@ class IntrospectiveQuery {
      * Client library to make HTTP calls. To get the schema from a GraphQL API, we need to make
      * an HTTP call that has, as body payload, and introspective query
      */
-    private var client: Client = ClientBuilder.newClient(clientConfiguration).apply {
-        register(RedirectFilterWorkAround::class)
-    }
+    private var client: Client = ClientBuilder.newClient(clientConfiguration)
 
 
     fun fetchSchema(
