@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.problem.graphql.GraphQLAction
 import org.slf4j.LoggerFactory
 
 /**
@@ -34,6 +35,22 @@ abstract class StructuralElement (
 
 
     open fun getViewOfChildren() : List<StructuralElement> = children
+
+    /**
+     * Return a map from index in the children array to child value.
+     * Only the children of type [klass] are included
+     */
+     fun <T> getIndexedChildren(klass: Class<T>): Map<Int, T>{
+        val m  = mutableMapOf<Int, T>()
+        for(i in children.indices){
+            val child = children[i]
+            if(!klass.isAssignableFrom(child.javaClass)){
+                continue
+            }
+            m[i] = child as T
+        }
+        return m
+    }
 
     private fun initChildren(children : List<StructuralElement>){
         children.forEach { it.parent = this; }

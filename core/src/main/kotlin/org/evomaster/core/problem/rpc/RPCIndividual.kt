@@ -58,17 +58,7 @@ class RPCIndividual(
         return children.filterIsInstance<RPCCallAction>()
     }
 
-     fun seeIndexedRPCCalls() : Map<Int, RPCCallAction>{
-        val m  = mutableMapOf<Int, RPCCallAction>()
-        for(i in children.indices){
-            val child = children[i]
-            if(child !is RPCCallAction){
-                continue
-            }
-            m[i] = child
-        }
-        return m
-    }
+     fun seeIndexedRPCCalls() : Map<Int, RPCCallAction> = getIndexedChildren(RPCCallAction::class.java)
 
     override fun verifyInitializationActions(): Boolean {
         return DbActionUtils.verifyActions(seeInitializingActions())

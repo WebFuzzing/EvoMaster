@@ -221,17 +221,7 @@ class RestIndividual(
     /**
      * return all the resource calls in this individual, with their index in the children list
      */
-    fun getIndexedResourceCalls() : Map<Int,RestResourceCalls>{
-        val m  = mutableMapOf<Int, RestResourceCalls>()
-        for(i in children.indices){
-            val child = children[i]
-            if(child !is RestResourceCalls){
-                continue
-            }
-            m[i] = child
-        }
-        return m
-    }
+    fun getIndexedResourceCalls() : Map<Int,RestResourceCalls> = getIndexedChildren(RestResourceCalls::class.java)
 
     /****************************** manipulate resource call in an individual *******************************************/
     /**

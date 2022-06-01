@@ -4,24 +4,30 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 
 class GraphQLIndividual(
-        private val actions: MutableList<GraphQLAction>,
         val sampleType: SampleType,
-        dbInitialization: MutableList<DbAction> = mutableListOf()
-) : ApiWsIndividual(children = dbInitialization.plus(actions)) {
+        allActions : MutableList<StructuralElement>
+) : ApiWsIndividual(children = allActions) {
+
+
+    constructor(actions: MutableList<GraphQLAction>,
+                sampleType: SampleType,
+                dbInitialization: MutableList<DbAction> = mutableListOf()
+    ) : this(sampleType, dbInitialization.plus(actions).toMutableList())
 
     override fun copyContent(): Individual {
 
         return GraphQLIndividual(
-                actions.map { it.copy() as GraphQLAction}.toMutableList(),
                 sampleType,
-                seeInitializingActions().map { it.copy() as DbAction } as MutableList<DbAction>
+                children.map { it.copy() }.toMutableList()
         )
 
     }
@@ -39,14 +45,17 @@ class GraphQLIndividual(
     }
 
     override fun seeActions(): List<GraphQLAction> {
-        return actions
+        return children.filterIsInstance<GraphQLAction>()
     }
+
+    fun getIndexedCalls(): Map<Int,GraphQLAction> = getIndexedChildren(GraphQLAction::class.java)
+
 
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when(filter){
-            ActionFilter.ALL -> seeInitializingActions().plus(actions)
+            ActionFilter.ALL -> children as List<Action>
             ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
-            ActionFilter.NO_INIT, ActionFilter.NO_SQL -> actions
+            ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
         }
     }
 
@@ -54,27 +63,17 @@ class GraphQLIndividual(
         return DbActionUtils.verifyActions(seeInitializingActions())
     }
 
-
-    override fun copy(copyFilter: TraceableElementCopyFilter): GraphQLIndividual {
-        val copy = copy() as GraphQLIndividual
-        when(copyFilter){
-            TraceableElementCopyFilter.NONE-> {}
-            TraceableElementCopyFilter.WITH_TRACK, TraceableElementCopyFilter.DEEP_TRACK  ->{
-                copy.wrapWithTracking(null, tracking!!.copy())
-            }else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
-        }
-        return copy
-    }
+    //TODO refactor to make sure all problem types use same/similar code with checks on indices
 
     fun addGQLAction(position: Int = -1, action: GraphQLAction){
-        if (position == -1) actions.add(action)
+        if (position == -1) addChild(action)
         else{
-            actions.add(position, action)
+            addChild(position, action)
         }
     }
 
     fun removeGQLActionAt(position: Int){
-        actions.removeAt(position)
+        killChildByIndex(position)
     }
 
 }
