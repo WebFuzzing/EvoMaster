@@ -2,8 +2,6 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.impactinfocollection.CollectionImpact
-import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -253,13 +251,13 @@ class SqlMultidimensionalArrayGene<T>(
      * Randomizes the whole multidimensional array by removing all dimensions, and then
      * creating new sizes for each dimension, and new gene elements from the template.
      */
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         // get the size of each dimension
         val dimensionSizes: MutableList<Int> = buildNewDimensionSizes(randomness)
         killAllChildren()
         val child = buildNewElements(dimensionSizes, template.copy())
         addChild(child)
-        child.randomize(randomness, forceNewValue, allGenes)
+        child.randomize(randomness, tryToForceNewValue, allGenes)
 
 //        replaceElements(dimensionSizes)
         // randomize fresh elements

@@ -86,11 +86,11 @@ class SqlLogSeqNumberGene(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         log.trace("Randomizing ${this::class.java.simpleName}")
         val genes: List<Gene> = listOf(leftPart, rightPart)
         val index = randomness.nextInt(genes.size)
-        genes[index].randomize(randomness, forceNewValue, allGenes)
+        genes[index].randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     /**

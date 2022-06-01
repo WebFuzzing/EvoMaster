@@ -27,9 +27,9 @@ class SqlPointGene(
         y.copy() as FloatGene
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        x.randomize(randomness, forceNewValue, allGenes)
-        y.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        x.randomize(randomness, tryToForceNewValue, allGenes)
+        y.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(

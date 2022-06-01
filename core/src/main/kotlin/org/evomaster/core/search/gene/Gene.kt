@@ -204,8 +204,15 @@ abstract class Gene(
      * Note that the method is only used for debugging and testing purposes.
      *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
      *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
+     *
+     * Validity is based only internal constraints. if those constraints lead to meanignless data (eg
+     * a date object with month index 42), it would still be "valid"
+     *
+     * FIXME remove default =true, to force implementation
      */
     open fun isValid() = true
+
+    //TODO add distinction between isLocallyValid and isGloballyValid, eg, when we have intr-gene constraints
 
     /**
      * mutated gene should pass the check if needed, eg, DateGene
@@ -216,7 +223,11 @@ abstract class Gene(
      * to provide such invalid values in a HTTP call. On the other hand,
      * it would be pointless to try to add it directly into a database,
      * as that SQL command would simply fail without any SUT code involved.
+     *
+     * FIXME This will be removed once we refactor how we do Robustness Testing using
+     * ChoiceGene
      */
+    @Deprecated("will be removed")
     open fun mutationCheck() : Boolean = true
 
 
@@ -248,15 +259,16 @@ abstract class Gene(
 
     /**
      *
-     *   TODO Or must we guarantee validity of constraints in constructor???
-     *
      *   Randomize the content of this gene.
+     *   After a gene is randomized, it MUST be valid.
      *
-     *   TODO shall we guarantee validity here at randomization?
+     *   TODO shall we guarantee validity here at randomization? YES, but need to see how to implement it,
+     *   or maybe better we do it in the tests
      *
      *   @param randomness the source of non-determinism
-     *   @param forceNewValue whether we should force the change of value. When we do mutation,
-     *          it could otherwise happen that a value is replace with itself
+     *   @param tryToForceNewValue whether we should force the change of value. When we do mutation,
+     *          it could otherwise happen that a value is replace with itself.
+     *          This is not 100% enforced, it is more like a "strong recommendation"
      *
      *   TODO likely deprecated, because we can traverse the tree upward now
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
@@ -264,7 +276,7 @@ abstract class Gene(
      */
     abstract fun randomize(
             randomness: Randomness,
-            forceNewValue: Boolean,
+            tryToForceNewValue: Boolean,
             allGenes: List<Gene> = listOf())
 
     /**

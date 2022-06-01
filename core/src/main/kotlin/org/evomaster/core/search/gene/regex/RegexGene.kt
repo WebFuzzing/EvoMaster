@@ -1,9 +1,7 @@
 package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.CompositeFixedGene
-import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
@@ -25,8 +23,8 @@ class RegexGene(
         return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        disjunctions.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        disjunctions.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun isMutable(): Boolean {

@@ -28,9 +28,9 @@ class SqlCircleGene(
             r.copy() as FloatGene
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        c.randomize(randomness, forceNewValue, allGenes)
-        r.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        c.randomize(randomness, tryToForceNewValue, allGenes)
+        r.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(

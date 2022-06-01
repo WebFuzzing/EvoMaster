@@ -60,11 +60,11 @@ class DateGene(
         onlyValidDates = this.onlyValidDates
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         do {
-            year.randomize(randomness, forceNewValue, allGenes)
-            month.randomize(randomness, forceNewValue, allGenes)
-            day.randomize(randomness, forceNewValue, allGenes)
+            year.randomize(randomness, tryToForceNewValue, allGenes)
+            month.randomize(randomness, tryToForceNewValue, allGenes)
+            day.randomize(randomness, tryToForceNewValue, allGenes)
         } while (onlyValidDates && !isValidDate())
     }
 

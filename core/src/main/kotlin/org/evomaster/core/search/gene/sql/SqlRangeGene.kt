@@ -96,10 +96,10 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         log.trace("Randomizing SqlRangeGene")
         listOf(isRightClosed, left, right, isRightClosed)
-                .forEach { it.randomize(randomness, forceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
         repairGeneIfNeeded()
     }
 

@@ -16,9 +16,9 @@ abstract class SqlAbstractGeometricGene(
 
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        p.randomize(randomness, forceNewValue, allGenes)
-        q.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        p.randomize(randomness, tryToForceNewValue, allGenes)
+        q.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(

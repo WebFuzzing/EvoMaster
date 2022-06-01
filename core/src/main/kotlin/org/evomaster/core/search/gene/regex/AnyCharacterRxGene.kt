@@ -26,7 +26,7 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         //TODO properly... this is just a tmp hack
         value = randomness.nextWordChar()
     }
@@ -57,7 +57,6 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
         return this.value == other.value
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when(gene){

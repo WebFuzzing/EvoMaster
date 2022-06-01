@@ -26,7 +26,7 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
 
     override fun copyContent(): Gene = CycleObjectGene(name)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         //nothing to do
     }
 

@@ -33,7 +33,7 @@ class SqlTimeIntervalGene(
             time.copy() as TimeGene
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         /**
          * If forceNewValue==true both date and time
          * get a new value, but it only might need
@@ -42,8 +42,8 @@ class SqlTimeIntervalGene(
          * Shouldn't this method decide randomly if
          * date, time or both get a new value?
          */
-        days.randomize(randomness, forceNewValue, allGenes)
-        time.randomize(randomness, forceNewValue, allGenes)
+        days.randomize(randomness, tryToForceNewValue, allGenes)
+        time.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(

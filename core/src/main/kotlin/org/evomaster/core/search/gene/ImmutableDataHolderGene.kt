@@ -32,7 +32,7 @@ class ImmutableDataHolderGene(
 
     override fun isPrintable() = true
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         throw IllegalStateException("Not supposed to modify an immutable gene")
     }
 
@@ -57,7 +57,6 @@ class ImmutableDataHolderGene(
 
     override fun mutationWeight(): Double = 0.0
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing

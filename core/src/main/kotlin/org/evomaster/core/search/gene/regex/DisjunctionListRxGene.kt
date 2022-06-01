@@ -2,9 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.CompositeFixedGene
-import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionListRxGeneImpact
@@ -39,13 +37,13 @@ class DisjunctionListRxGene(
         return disjunctions.size > 1 || disjunctions.any { it.isMutable() }
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         /*
             randomize content of all disjunctions
             (since standardMutation can be invoked on another term)
          */
-        disjunctions.forEach {  it.randomize(randomness,forceNewValue,allGenes) }
+        disjunctions.forEach {  it.randomize(randomness,tryToForceNewValue,allGenes) }
 
         /**
          * randomly choose a new disjunction term

@@ -14,7 +14,7 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
         return SqlAutoIncrementGene(name)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
 
@@ -53,7 +53,6 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
 
     override fun mutationWeight(): Double = 0.0
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing, cannot bind with others

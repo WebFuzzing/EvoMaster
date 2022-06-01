@@ -28,8 +28,8 @@ class SqlPolygonGene(
         points.copy() as ArrayGene<SqlPointGene>
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        points.randomize(randomness, tryToForceNewValue, allGenes)
         /*
          *  A geometric polygon must be always a non-empty list
          */

@@ -161,7 +161,7 @@ class TupleGene(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         elements.filter { it.isMutable() }.forEach {
             it.randomize(randomness, false)
         }

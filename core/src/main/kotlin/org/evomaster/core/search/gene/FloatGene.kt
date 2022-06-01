@@ -38,7 +38,7 @@ class FloatGene(name: String,
 
     override fun copyContent() = FloatGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         val rand = NumberMutatorUtils.randomizeDouble(getMinimum().toDouble(), getMaximum().toDouble(), scale, randomness)
         value = getFormattedValue(rand.toFloat())
     }
@@ -72,7 +72,6 @@ class FloatGene(name: String,
         }
         return this.value == other.value
     }
-    override fun innerGene(): List<Gene> = listOf()
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

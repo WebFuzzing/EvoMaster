@@ -78,9 +78,9 @@ class BigIntegerGene(
         return value.compareTo(other.value)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
-        val longValue = NumberMutatorUtils.randomizeLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, forceNewValue)
+        val longValue = NumberMutatorUtils.randomizeLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, tryToForceNewValue)
         setValueWithLong(longValue)
     }
 
@@ -126,7 +126,6 @@ class BigIntegerGene(
         return this.value.compareTo(other.value) == 0
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when(gene){

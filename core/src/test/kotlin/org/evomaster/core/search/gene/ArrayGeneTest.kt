@@ -18,7 +18,7 @@ class ArrayGeneTest {
         val gene = ArrayGene("array", minSize = 1, maxSize =10, template=BooleanGene("boolean"))
         assertEquals(0, gene.getViewOfChildren().size)
         val randomness = Randomness()
-        gene.randomize(randomness, forceNewValue = true, listOf())
+        gene.randomize(randomness, tryToForceNewValue = true, listOf())
         assertTrue(gene.getViewOfChildren().isNotEmpty())
     }
 

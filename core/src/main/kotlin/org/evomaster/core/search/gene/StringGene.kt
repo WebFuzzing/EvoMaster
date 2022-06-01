@@ -138,7 +138,7 @@ class StringGene(
         return true
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         /*
             TODO weirdly we did not do taint on sampling!!! we must do it, and evaluate it

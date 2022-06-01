@@ -2,7 +2,6 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
@@ -95,7 +94,7 @@ class QuantifierRxGene(
 
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         val length = randomness.nextInt(min, limitedMax)
 
@@ -107,7 +106,7 @@ class QuantifierRxGene(
         }
 
         for (i in 0 until length) {
-           addNewAtom(randomness, forceNewValue, allGenes)
+           addNewAtom(randomness, tryToForceNewValue, allGenes)
         }
     }
 

@@ -51,7 +51,7 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun copyContent() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         gene.randomize(randomness, false, allGenes)
     }
 

@@ -64,14 +64,14 @@ class SqlTextSearchQueryGene(
             queryLexemes.copy() as ArrayGene<StringGene>
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        queryLexemes.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        queryLexemes.randomize(randomness, tryToForceNewValue, allGenes)
         /*
          *  A geometric polygon must be always a non-empty list
          */
         if (queryLexemes.getAllElements().isEmpty()) {
             val stringGene = StringGene("lexeme")
-            stringGene.randomize(randomness, forceNewValue, allGenes)
+            stringGene.randomize(randomness, tryToForceNewValue, allGenes)
             queryLexemes.addElement(stringGene)
         }
     }

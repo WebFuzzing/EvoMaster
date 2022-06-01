@@ -19,7 +19,7 @@ class LimitObjectGene(name: String) : ObjectGene(name, listOf()) {
 
     override fun copyContent(): Gene = LimitObjectGene(name)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         //nothing to do
     }
 

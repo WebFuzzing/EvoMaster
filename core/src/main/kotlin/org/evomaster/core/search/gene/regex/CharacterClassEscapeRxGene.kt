@@ -42,7 +42,7 @@ class CharacterClassEscapeRxGene(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         val previous = value
 
@@ -58,8 +58,8 @@ class CharacterClassEscapeRxGene(
                 throw IllegalStateException("Type '\\$type' not supported yet")
         }.toString()
 
-        if(forceNewValue && previous == value){
-            randomize(randomness, forceNewValue, allGenes)
+        if(tryToForceNewValue && previous == value){
+            randomize(randomness, tryToForceNewValue, allGenes)
         }
     }
 
@@ -97,7 +97,6 @@ class CharacterClassEscapeRxGene(
         return this.value == other.value
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is CharacterClassEscapeRxGene){

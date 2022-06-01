@@ -2,7 +2,6 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.SeededGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -44,9 +43,9 @@ class SeededGene<T>(
         isEmploySeededMutable = false
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         if (isEmploySeededMutable){
-            if (forceNewValue) {
+            if (tryToForceNewValue) {
                 employSeeded = !employSeeded
                 return
             } else if (randomness.nextBoolean()){
@@ -55,9 +54,9 @@ class SeededGene<T>(
         }
 
         if (!employSeeded)
-            gene.randomize(randomness, forceNewValue, allGenes)
+            gene.randomize(randomness, tryToForceNewValue, allGenes)
         else
-            seeded.randomize(randomness, forceNewValue, allGenes)
+            seeded.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun copyContent(): SeededGene<T> {

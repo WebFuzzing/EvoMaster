@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.SimpleGene
@@ -51,7 +50,7 @@ class SqlForeignKeyGene(
 
     override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         //All the ids of previous PKs for the target table
         val pks = allGenes.asSequence()
@@ -85,7 +84,7 @@ class SqlForeignKeyGene(
                 //only one possible option
                 pks.first()
             } else {
-                if (!forceNewValue) {
+                if (!tryToForceNewValue) {
                     randomness.choose(pks)
                 } else {
                     randomness.choose(pks.filter { it != uniqueIdOfPrimaryKey })
@@ -104,7 +103,7 @@ class SqlForeignKeyGene(
             //currently bound, but with certain probability we set it to NULL
             -1
         } else {
-            if (!forceNewValue || pks.size == 1) {
+            if (!tryToForceNewValue || pks.size == 1) {
                 randomness.choose(pks)
             } else {
                 randomness.choose(pks.filter { it != uniqueIdOfPrimaryKey })
@@ -197,7 +196,6 @@ class SqlForeignKeyGene(
     fun hasValidUniqueIdOfPrimaryKey() = uniqueIdOfPrimaryKey >= 0 ||
             (nullable && uniqueIdOfPrimaryKey == -1L)
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing

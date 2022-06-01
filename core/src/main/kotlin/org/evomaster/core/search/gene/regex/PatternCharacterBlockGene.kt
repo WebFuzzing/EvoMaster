@@ -27,7 +27,7 @@ class PatternCharacterBlockGene(
         return PatternCharacterBlockGene(name, stringBlock)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
     }
 
@@ -57,7 +57,6 @@ class PatternCharacterBlockGene(
         return this.stringBlock == other.stringBlock
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing

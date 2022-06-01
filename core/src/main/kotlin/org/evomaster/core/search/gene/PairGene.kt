@@ -40,12 +40,12 @@ class PairGene<F,S>(
 
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         if(first.isMutable()) {
-            first.randomize(randomness, forceNewValue, allGenes)
+            first.randomize(randomness, tryToForceNewValue, allGenes)
         }
         if(second.isMutable()) {
-            second.randomize(randomness, forceNewValue, allGenes)
+            second.randomize(randomness, tryToForceNewValue, allGenes)
         }
     }
 

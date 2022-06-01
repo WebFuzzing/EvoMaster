@@ -29,8 +29,8 @@ class SqlXMLGene(name: String,
             objectGene = this.objectGene.copy() as ObjectGene)
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        objectGene.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        objectGene.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
 

@@ -60,7 +60,7 @@ class CharacterRangeRxGene(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         /*
             TODO current is very simple, biased implementation.
@@ -126,7 +126,6 @@ class CharacterRangeRxGene(
         return this.value == other.value
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is CharacterRangeRxGene){

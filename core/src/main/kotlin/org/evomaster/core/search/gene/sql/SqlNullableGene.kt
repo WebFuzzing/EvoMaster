@@ -41,15 +41,15 @@ class SqlNullableGene(name: String,
         return SqlNullableGene(name, gene.copy(), isPresent)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
-        isPresent = if (!isPresent && forceNewValue)
+        isPresent = if (!isPresent && tryToForceNewValue)
             true
         else
             randomness.nextBoolean(ABSENT)
 
         if(gene.isMutable())
-            gene.randomize(randomness, forceNewValue, allGenes)
+            gene.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {

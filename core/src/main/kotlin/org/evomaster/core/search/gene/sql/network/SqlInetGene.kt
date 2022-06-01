@@ -21,8 +21,8 @@ class SqlInetGene(
         val log: Logger = LoggerFactory.getLogger(SqlInetGene::class.java)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        octets.forEach { it.randomize(randomness, forceNewValue, allGenes) }
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        octets.forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
     }
 
     override fun candidatesInternalGenes(

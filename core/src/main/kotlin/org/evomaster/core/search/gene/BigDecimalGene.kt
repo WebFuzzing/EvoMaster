@@ -118,7 +118,7 @@ class BigDecimalGene(
         return value.compareTo(other.value)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         if (isFloatingPointMutable && randomness.nextBoolean()){
             floatingPointMode = randomness.nextBoolean()
@@ -128,7 +128,7 @@ class BigDecimalGene(
             val dValue = randomizeDouble(getMinUsedInSearch(), getMaxUsedInSearch(), scale, randomness)
             setValueWithDouble(dValue)
         }else{
-            val longValue = randomizeLong(value.toLong(), getMinUsedInSearch().toLong(), getMaxUsedInSearch().toLong(), randomness, forceNewValue)
+            val longValue = randomizeLong(value.toLong(), getMinUsedInSearch().toLong(), getMaxUsedInSearch().toLong(), randomness, tryToForceNewValue)
             setValueWithLong(longValue)
         }
     }
@@ -193,7 +193,6 @@ class BigDecimalGene(
         return this.value.compareTo(other.value) == 0
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         val bd = when(gene){
