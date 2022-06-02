@@ -488,7 +488,7 @@ public abstract class ExternalSutController extends SutController {
     private void dumpJaCoCo(){
         try {
             Process dump = Runtime.getRuntime().exec(new String[]{
-                    "java", "-jar", jaCoCoCliLocation, "--destfile", jaCoCoOutputFile, "--port", ""+jaCoCoPort});
+                    "java", "-jar", jaCoCoCliLocation, "dump", "--destfile", jaCoCoOutputFile, "--port", ""+jaCoCoPort});
 
             dump.waitFor(5, TimeUnit.SECONDS);
             if(dump.exitValue() > 0){
