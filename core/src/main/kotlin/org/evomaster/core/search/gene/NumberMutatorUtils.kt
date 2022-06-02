@@ -94,7 +94,10 @@ object NumberMutatorUtils {
 
         val range = maxRange?:getDeltaRange(gaussianDelta, smin, smax, value)
 
-        var res = modifyValue(randomness, value.toDouble(), delta = gaussianDelta, maxRange = range, specifiedJumpDelta = GeneUtils.getDelta(randomness, apc, range),scale == null)
+        // the jumpDelta is at least 1
+        val jumpDelta = GeneUtils.getDelta(randomness, apc, max(range, 1))
+
+        var res = modifyValue(randomness, value.toDouble(), delta = gaussianDelta, maxRange = range, specifiedJumpDelta = jumpDelta,scale == null)
 
         if (scale != null && getFormattedValue(value, scale) == getFormattedValue(res, scale)){
             res += (if (gaussianDelta>0) 1.0 else -1.0).times(getDecimalEpsilon(scale, value).toDouble())
