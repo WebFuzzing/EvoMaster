@@ -15,16 +15,17 @@ public class Action implements Serializable {
      * This info can be used for different kinds of taint analysis, eg
      * to check how such values are used in the SUT
      */
-    private Set<String> inputVariables;
+    private final Set<String> inputVariables;
 
     /**
      * A map of hostname and WireMock IP to mock external service calls.
      */
-    private Map<String, String> externalServiceMapping;
+    private final Map<String, String> externalServiceMapping;
 
-    public Action(int index, Collection<String> inputVariables) {
+    public Action(int index, Collection<String> inputVariables, Map<String, String> externalServiceMapping) {
         this.index = index;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
+        this.externalServiceMapping = externalServiceMapping;
     }
 
     public int getIndex() {

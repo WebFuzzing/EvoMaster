@@ -524,5 +524,16 @@ public class ExecutionTracer {
             ObjectiveRecorder.registerExternalServiceInfoAtSutStartupTime(hostInfo);
     }
 
+    /**
+     * Return the WireMock IP if there is a mapping for the hostname. If there is
+     * no mapping NULL will be returned
+     */
+    public static String getExternalMapping(String hostname) {
+//        if (externalServiceMapping.containsKey(hostname)) {
+            return externalServiceMapping.get(hostname);
+//        }
+//        return "";
+    }
+
 
 }

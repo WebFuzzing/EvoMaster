@@ -37,6 +37,7 @@ public class URLClassReplacement implements MethodReplacementClass {
           Add the external service hostname to the ExecutionTracer
           */
         if (caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) {
+            String s = ExecutionTracer.getExternalMapping(caller.getHost());
             int port = caller.getPort();
             String protocol = caller.getProtocol();
 
