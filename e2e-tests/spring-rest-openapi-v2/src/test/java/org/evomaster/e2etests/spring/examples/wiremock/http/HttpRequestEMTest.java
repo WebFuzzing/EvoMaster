@@ -4,11 +4,14 @@ package org.evomaster.e2etests.spring.examples.wiremock.http;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 
 public class HttpRequestEMTest extends HttpRequestTestBase {
 
-    @Test
+    /**
+     * TODO: Test is disabled. WireMock is handled by core now.
+     */
+    @Disabled
     public void testRunEM() throws Throwable {
         runTestHandlingFlakyAndCompilation(
                 "HttpRequestEM",

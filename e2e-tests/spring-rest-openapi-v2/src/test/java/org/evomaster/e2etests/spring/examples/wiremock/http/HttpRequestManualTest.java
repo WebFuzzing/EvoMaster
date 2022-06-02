@@ -9,7 +9,7 @@ import static org.hamcrest.core.Is.is;
 
 public class HttpRequestManualTest extends HttpRequestTestBase {
 
-    @Test
+    @Disabled
     public void testURLConnection() {
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/external/url")
@@ -18,7 +18,7 @@ public class HttpRequestManualTest extends HttpRequestTestBase {
                 .body("valid", is(true));
     }
 
-    @Test
+    @Disabled
     public void testURLConnectionWithQuery() {
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/external/url/withQuery")
