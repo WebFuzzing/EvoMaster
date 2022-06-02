@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ExternalServiceSpoofingEMTest extends SpringTestBase {
+public class ExternalServiceMockingEMTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {

@@ -529,10 +529,11 @@ public class ExecutionTracer {
      * no mapping NULL will be returned
      */
     public static String getExternalMapping(String hostname) {
-//        if (externalServiceMapping.containsKey(hostname)) {
-            return externalServiceMapping.get(hostname);
-//        }
-//        return "";
+        return externalServiceMapping.get(hostname);
+    }
+
+    public static boolean hasExternalMapping(String hostname) {
+        return externalServiceMapping.containsKey(hostname);
     }
 
 

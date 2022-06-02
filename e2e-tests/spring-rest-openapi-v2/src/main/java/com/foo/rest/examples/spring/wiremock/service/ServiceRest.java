@@ -46,36 +46,6 @@ public class ServiceRest {
         }
 
         return stringsResponseDto;
-
-    }   @RequestMapping(
-            value = "/external2",
-            method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
-    )
-    public StringsResponseDto dummyExternalCall1() {
-        StringsResponseDto stringsResponseDto = new StringsResponseDto();
-
-        try {
-            // Port changed to test the default port scenario respective to the protocol
-            URL url = new URL("http://foo.bar/api/echo/foo");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestProperty("accept", "application/json");
-
-            InputStream responseStream = connection.getInputStream();
-            ObjectMapper mapper = new ObjectMapper();
-            MockApiResponse result = mapper.readValue(responseStream, MockApiResponse.class);
-
-            if (result.message.equals("foo")) {
-                stringsResponseDto.valid = true;
-            } else {
-                stringsResponseDto.valid = false;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            stringsResponseDto.valid = false;
-        }
-
-        return stringsResponseDto;
-
     }
+
 }

@@ -60,7 +60,7 @@ class ExternalServiceHandler {
                 val wm : WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
 
                 // TODO: Should be moved under JUnit tests
-                bindDNSCache(externalServiceInfo.remoteHostname, ip)
+                // bindDNSCache(externalServiceInfo.remoteHostname, ip)
 
                 externalServices.add(ExternalService(externalServiceInfo, wm))
                 externalServiceMapping[externalServiceInfo.remoteHostname] = ip
@@ -158,7 +158,7 @@ class ExternalServiceHandler {
             .atPriority(2)
             .willReturn(aResponse()
                 .withStatus(200)
-                .withBody("Not found!!")))
+                .withBody("{\"message\": \"Fake endpoint.\"}")))
 
         return wm
     }

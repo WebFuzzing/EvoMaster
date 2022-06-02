@@ -10,6 +10,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.Objects;
 
 public class URLClassReplacement implements MethodReplacementClass {
@@ -37,7 +38,6 @@ public class URLClassReplacement implements MethodReplacementClass {
           Add the external service hostname to the ExecutionTracer
           */
         if (caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) {
-            String s = ExecutionTracer.getExternalMapping(caller.getHost());
             int port = caller.getPort();
             String protocol = caller.getProtocol();
 
@@ -58,6 +58,15 @@ public class URLClassReplacement implements MethodReplacementClass {
             }
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(protocol, caller.getHost(), port);
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+
+            if (ExecutionTracer.hasExternalMapping(caller.getHost())) {
+                String ip  = ExecutionTracer.getExternalMapping(caller.getHost());
+                String url = "http://" + ip + ":8080" + caller.getPath();
+                URL newURL = new URL(url);
+                return newURL.openConnection();
+            } else {
+                throw new UnknownHostException("There is WireMock initiated for this hostname");
+            }
         }
 
         return caller.openConnection();
