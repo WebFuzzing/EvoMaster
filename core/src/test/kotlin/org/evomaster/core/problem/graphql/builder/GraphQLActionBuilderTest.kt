@@ -1159,4 +1159,26 @@ class GraphQLActionBuilderTest {
         assertTrue((tupleDataSetMetadataList.elements.last() as OptionalGene).gene !is CycleObjectGene)
     }
 
+    @Test
+    fun gitHubTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitHub.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(19, actionCluster.size)
+    }
+
+    @Test
+    fun gitHub2Test() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitHub2.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(19, actionCluster.size)
+    }
+
 }
