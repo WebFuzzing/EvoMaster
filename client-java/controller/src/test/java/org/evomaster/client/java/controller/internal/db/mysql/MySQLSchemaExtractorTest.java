@@ -90,4 +90,53 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
 
     }
 
+    @Test
+    public void testExtractSpatialTypes() throws Exception {
+
+        String sql = "CREATE TABLE spatialdatatypes(intcolumn INT NOT NULL, \n" +
+                "  pointcolumn POINT NOT NULL,\n" +
+                "  linestringcolumn LINESTRING NOT NULL,\n" +
+                "  polygoncolumn POLYGON NOT NULL,\n" +
+                "  geometrycolumn GEOMETRY NOT NULL,\n" +
+                "  multipointcolumn MULTIPOINT NOT NULL,\n" +
+                "  multilinestringcolumn MULTILINESTRING NOT NULL,\n" +
+                "  multipolygoncolumn MULTIPOLYGON NOT NULL,\n" +
+                "  geometrycollectioncolumn GEOMETRYCOLLECTION NOT NULL)";
+
+        SqlScriptRunner.execCommand(getConnection(), sql);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertNotNull(schema);
+
+        TableDto table = schema.tables.get(0);
+        assertEquals("intcolumn",table.columns.get(0).name);
+        assertEquals("INT",table.columns.get(0).type);
+
+        assertEquals("pointcolumn",table.columns.get(1).name);
+        assertEquals("POINT",table.columns.get(1).type);
+
+        assertEquals("linestringcolumn",table.columns.get(2).name);
+        assertEquals("LINESTRING",table.columns.get(2).type);
+
+        assertEquals("polygoncolumn",table.columns.get(3).name);
+        assertEquals("POLYGON",table.columns.get(3).type);
+
+        assertEquals("geometrycolumn",table.columns.get(4).name);
+        assertEquals("GEOMETRY",table.columns.get(4).type);
+
+        assertEquals("multipointcolumn",table.columns.get(5).name);
+        assertEquals("MULTIPOINT",table.columns.get(5).type);
+
+        assertEquals("multilinestringcolumn",table.columns.get(6).name);
+        assertEquals("MULTILINESTRING",table.columns.get(6).type);
+
+        assertEquals("multipolygoncolumn",table.columns.get(7).name);
+        assertEquals("MULTIPOLYGON",table.columns.get(7).type);
+
+        assertEquals("geometrycollectioncolumn",table.columns.get(8).name);
+        assertEquals("GEOMCOLLECTION",table.columns.get(8).type);
+
+    }
+
+
 }
