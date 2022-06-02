@@ -1639,7 +1639,6 @@ class EMConfig {
 
     @Experimental
     @FilePath(true)
-    @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg(" Destination file for JaCoCo." +
             " Option meaningful only for External Drivers for JVM." +
             " If left empty, it is not used.")

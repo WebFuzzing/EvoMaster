@@ -409,7 +409,9 @@ class TestSuiteWriter {
 
     private fun getJaCoCoInit() : String{
         if(config.jaCoCoLocation.isNotBlank()){
-            return ".setJaCoCo(\"${config.jaCoCoLocation}\",\"${config.jaCoCoOutputFile}\")"
+            val jar = config.jaCoCoLocation.replace("\\","\\\\")
+            val exec = config.jaCoCoOutputFile.replace("\\","\\\\")
+            return ".setJaCoCo(\"$jar\",\"${exec}\")"
         }
         return ""
     }
