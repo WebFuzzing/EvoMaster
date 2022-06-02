@@ -4,6 +4,7 @@ import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
+import org.apache.xpath.operations.Bool
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.logging.LoggingUtil
@@ -418,19 +419,23 @@ class EMConfig {
         }
 
         m.annotations.find { it is FilePath }?.also{
-            val path = try{
-                Paths.get(parameterValue).toAbsolutePath()
-            } catch(e: InvalidPathException){
-                throw IllegalArgumentException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
-            }
+            val fp = it as FilePath
+            if(!fp.canBeBlank || parameterValue.isNotBlank()) {
 
-            if(Files.exists(path) && ! Files.isWritable(path)){
-                throw IllegalArgumentException("Parameter '${m.name}' refers to a file that already" +
-                        " exists, but that cannot be written/replace to: $path")
-            }
-            if(Files.exists(path) && Files.isDirectory(path)){
-                throw IllegalArgumentException("Parameter '${m.name}' refers to a file that is instead an" +
-                        " existing folder: $path")
+                val path = try {
+                    Paths.get(parameterValue).toAbsolutePath()
+                } catch (e: InvalidPathException) {
+                    throw IllegalArgumentException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
+                }
+
+                if (Files.exists(path) && !Files.isWritable(path)) {
+                    throw IllegalArgumentException("Parameter '${m.name}' refers to a file that already" +
+                            " exists, but that cannot be written/replace to: $path")
+                }
+                if (Files.exists(path) && Files.isDirectory(path)) {
+                    throw IllegalArgumentException("Parameter '${m.name}' refers to a file that is instead an" +
+                            " existing folder: $path")
+                }
             }
         }
     }
@@ -591,7 +596,7 @@ class EMConfig {
 
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
-    annotation class FilePath
+    annotation class FilePath(val canBeBlank : Boolean = false)
 
 //------------------------------------------------------------------------
 //--- properties
@@ -1625,7 +1630,7 @@ class EMConfig {
 
 
     @Experimental
-    @FilePath
+    @FilePath(true)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg("Path on filesystem of where JaCoCo jar file is located." +
             " Option meaningful only for External Drivers for JVM." +
@@ -1633,7 +1638,7 @@ class EMConfig {
     var jaCoCoLocation = ""
 
     @Experimental
-    @FilePath
+    @FilePath(true)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
     @Cfg(" Destination file for JaCoCo." +
             " Option meaningful only for External Drivers for JVM." +
