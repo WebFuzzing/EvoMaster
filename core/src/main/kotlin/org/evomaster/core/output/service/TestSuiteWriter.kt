@@ -419,7 +419,8 @@ class TestSuiteWriter {
 
     private fun getJavaCommand() : String{
         if(config.javaCommand != "java"){
-            return ".setJavaCommand(\"${config.javaCommand}\")"
+            val java = config.javaCommand.replace("\\","\\\\")
+            return ".setJavaCommand(\"$java\")"
         }
         return ""
     }
