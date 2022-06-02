@@ -4,7 +4,6 @@ import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
-import org.apache.xpath.operations.Bool
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
 import org.evomaster.core.logging.LoggingUtil
@@ -39,6 +38,8 @@ class EMConfig {
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         private const val headerRegex = "(.+:.+)|(^$)"
+
+        private const val maxTcpPort = 65535.0
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -347,9 +348,11 @@ class EMConfig {
             throw IllegalArgumentException("when generating pure RPC tests, outputFormat only supports JAVA now")
         }
 
-        if((jaCoCoLocation.isBlank() && jaCoCoOutputFile.isNotBlank()) ||
-                (jaCoCoLocation.isNotBlank() && jaCoCoOutputFile.isBlank())){
-            throw IllegalArgumentException("JaCoCo location and output options must be both set or both left empty")
+        val jaCoCo_on = jaCoCoAgentLocation.isNotBlank() && jaCoCoCliLocation.isNotBlank() && jaCoCoOutputFile.isNotBlank()
+        val jaCoCo_off = jaCoCoAgentLocation.isBlank() && jaCoCoCliLocation.isBlank() && jaCoCoOutputFile.isBlank()
+
+        if(!jaCoCo_on && ! jaCoCo_off){
+            throw IllegalArgumentException("JaCoCo location for agent/cli and output options must be all set or all left empty")
         }
     }
 
@@ -612,6 +615,8 @@ class EMConfig {
 
     //----- "Important" options, sorted by priority --------------
 
+
+
     val defaultMaxTime = "60s"
 
     @Important(1.0)
@@ -806,7 +811,7 @@ class EMConfig {
 
     @Cfg("TCP port of where the SUT REST controller is listening on")
     @Min(0.0)
-    @Max(65535.0)
+    @Max(maxTcpPort)
     var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
 
     @Cfg("Host name or IP address of where the SUT REST controller is listening on")
@@ -1632,17 +1637,42 @@ class EMConfig {
     @Experimental
     @FilePath(true)
     @Regex("(.*jacoco.*\\.jar)|(^$)")
-    @Cfg("Path on filesystem of where JaCoCo jar file is located." +
+    @Cfg("Path on filesystem of where JaCoCo Agent jar file is located." +
             " Option meaningful only for External Drivers for JVM." +
-            " If left empty, it is not used.")
-    var jaCoCoLocation = ""
+            " If left empty, it is not used." +
+            " Note that this only impact the generated output test cases.")
+    var jaCoCoAgentLocation = ""
+
+    @Experimental
+    @FilePath(true)
+    @Regex("(.*jacoco.*\\.jar)|(^$)")
+    @Cfg("Path on filesystem of where JaCoCo CLI jar file is located." +
+            " Option meaningful only for External Drivers for JVM." +
+            " If left empty, it is not used." +
+            " Note that this only impact the generated output test cases.")
+    var jaCoCoCliLocation = ""
 
     @Experimental
     @FilePath(true)
     @Cfg(" Destination file for JaCoCo." +
             " Option meaningful only for External Drivers for JVM." +
-            " If left empty, it is not used.")
+            " If left empty, it is not used." +
+            " Note that this only impact the generated output test cases.")
     var jaCoCoOutputFile = ""
+
+    @Experimental
+    @Min(0.0) @Max(maxTcpPort)
+    @Cfg("Port used by JaCoCo to export coverage reports")
+    var jaCoCoPort = 8899
+
+    @Experimental
+    @FilePath
+    @Cfg("Command for 'java' used in the External Drivers." +
+            " Useful for when there are different JDK installed on same machine without the need" +
+            " to update JAVA_HOME." +
+            " Note that this only impact the generated output test cases.")
+    var javaCommand = "java"
+
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
