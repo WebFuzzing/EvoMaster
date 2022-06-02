@@ -61,6 +61,11 @@ object GeneUtils {
         start: Int = intpow2.size,
         end: Int = 10
     ): Int {
+
+        if (range < 1){
+            throw IllegalArgumentException("cannot generate delta which is less than 1")
+        }
+
         val maxIndex = apc.getExploratoryValue(start, end)
 
         var n = 0
