@@ -26,9 +26,9 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                 "org.bar.ExternalServiceMockingEMTest",
                 500,
                 (args) -> {
-
+                    // IP set to 127.0.0.10 to confirm the test failure
                     args.add("--externalServiceIPSelectionStrategy");
-                    args.add("USER");
+                    args.add("RANDOM");
                     args.add("--externalServiceIP");
                     args.add("127.0.0.10");
 
