@@ -64,7 +64,10 @@ class LongMutationUpdate(direction: Boolean, min: Long, max: Long, updateTimes :
 
     override fun candidatesBoundary(): Long {
         val range = try {
-            Math.subtractExact(preferMax, preferMin)
+            if (preferMin != preferMax)
+                Math.subtractExact(preferMax, preferMin)
+            else
+                Math.subtractExact(max, min)
         }catch (e : ArithmeticException){
             return  Long.MAX_VALUE
         }
