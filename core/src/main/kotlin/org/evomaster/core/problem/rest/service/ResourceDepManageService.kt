@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.resource.ExcludedResourceNode
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.dependency.MutualResourcesRelations
@@ -96,6 +97,9 @@ class ResourceDepManageService {
 
     private fun updateParamInfo(action: RestCallAction, tables: Map<String, Table>) {
         val r = rm.getResourceNodeFromCluster(action.path.toString())
+        // skip resource if it is ExcludedResourceNode
+        if (r is ExcludedResourceNode) return
+
         val additionalInfo = r.updateAdditionalParams(action)
         if (!additionalInfo.isNullOrEmpty()) {
             SimpleDeriveResourceBinding.deriveParamsToTable(additionalInfo, r, allTables = tables)
