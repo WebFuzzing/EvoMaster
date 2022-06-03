@@ -12,7 +12,7 @@ object ExternalServiceUtils {
     private val log: Logger = LoggerFactory.getLogger(ExternalServiceUtils::class.java)
 
     @Inject
-    lateinit var randomness: Randomness
+    private lateinit var randomness: Randomness
 
     /**
      * This method provides the next IP address from the given value for
