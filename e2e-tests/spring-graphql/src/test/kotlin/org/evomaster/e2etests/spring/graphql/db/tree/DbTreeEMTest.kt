@@ -22,8 +22,6 @@ class DbTreeEMTest : SpringTestBase() {
     @Test
     fun testEM(){
 
-        defaultSeed = 0
-
         runTestHandlingFlakyAndCompilation(
             "GQL_DbTreeEM",
             "org.foo.graphql.DbTreeEM",

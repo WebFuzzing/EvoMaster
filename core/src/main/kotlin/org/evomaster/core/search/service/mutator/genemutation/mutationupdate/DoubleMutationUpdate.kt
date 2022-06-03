@@ -44,7 +44,8 @@ class DoubleMutationUpdate(direction: Boolean,
     }
 
     override fun candidatesBoundary(): Double {
-        val result = NumberCalculationUtil.calculateIncrement(max= preferMax, min=preferMin)
+        val result = if (preferMin != preferMax) NumberCalculationUtil.calculateIncrement(max= preferMax, min=preferMin)
+                    else NumberCalculationUtil.calculateIncrement(max =max, min=min)
 
         return result.also {
             if (it < 0) throw IllegalStateException("preferMax < preferMin: $preferMax, $preferMin")
