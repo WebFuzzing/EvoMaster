@@ -28,7 +28,7 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
 
 
     @GetMapping(path = ["/integerdatatypes"])
-    open fun getIntegerDataTypes() : ResponseEntity<Any> {
+    fun getIntegerDataTypes() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from integerdatatypes where integercolumn>0")
         val res = query.resultList
@@ -40,7 +40,7 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
 
 
     @GetMapping(path = ["/floatingpointtypes"])
-    open fun getFloatingPointTypes() : ResponseEntity<Any> {
+    fun getFloatingPointTypes() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from floatingpointtypes where integercolumn>0")
         val res = query.resultList
@@ -51,7 +51,7 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
     }
 
     @GetMapping(path = ["/bitdatatype"])
-    open fun getBitDataType() : ResponseEntity<Any> {
+    fun getBitDataType() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from bitdatatype where integercolumn>0")
         val res = query.resultList
@@ -62,7 +62,7 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
     }
 
     @GetMapping(path = ["/booleandatatypes"])
-    open fun getBooleanDataTypes() : ResponseEntity<Any> {
+    fun getBooleanDataTypes() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from booleandatatypes where integercolumn>0")
         val res = query.resultList
@@ -73,7 +73,7 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
     }
 
     @GetMapping(path = ["/serialdatatype"])
-    open fun getSerialDataType() : ResponseEntity<Any> {
+    fun getSerialDataType() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from serialdatatype where integercolumn>0")
         val res = query.resultList
@@ -84,7 +84,7 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
     }
 
     @GetMapping(path = ["/dateandtimetypes"])
-    open fun getDateAndTimeTypes() : ResponseEntity<Any> {
+    fun getDateAndTimeTypes() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from dateandtimetypes where integercolumn>0")
         val res = query.resultList
@@ -95,7 +95,7 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
     }
 
     @GetMapping(path = ["/stringdatatypes"])
-    open fun getStringDataTypes() : ResponseEntity<Any> {
+    fun getStringDataTypes() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from stringdatatypes where integercolumn>0")
         val res = query.resultList
@@ -105,10 +105,32 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-//    @GetMapping(path = ["/fixedpointtypes"])
-    open fun getFixedPointTypes() : ResponseEntity<Any> {
+    @GetMapping(path = ["/fixedpointtypes"])
+    fun getFixedPointTypes() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from fixedpointtypes where integercolumn>0")
+        val res = query.resultList
+
+        val status = if(res.isEmpty()) 400 else 200
+
+        return ResponseEntity.status(status).build()
+    }
+
+//    @GetMapping(path = ["/jsondatatypes"])
+    fun getJsonDataTypes() : ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select (1) from jsondatatypes where integercolumn>0")
+        val res = query.resultList
+
+        val status = if(res.isEmpty()) 400 else 200
+
+        return ResponseEntity.status(status).build()
+    }
+
+//    @GetMapping(path = ["/spatialdatatypes"])
+    fun getSpatialDataTypes() : ResponseEntity<Any> {
+
+        val query = em.createNativeQuery("select (1) from spatialdatatypes where integercolumn>0")
         val res = query.resultList
 
         val status = if(res.isEmpty()) 400 else 200

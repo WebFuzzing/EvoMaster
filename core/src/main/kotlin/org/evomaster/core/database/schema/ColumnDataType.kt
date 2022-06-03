@@ -8,11 +8,7 @@ package org.evomaster.core.database.schema
  */
 enum class ColumnDataType(dataTypeName: String) {
 
-    /*
-        TODO
-        Spatial Data Types
-        https://dev.mysql.com/doc/refman/8.0/en/spatial-types.html
-     */
+
 
     /**
      * TODO
@@ -245,6 +241,7 @@ enum class ColumnDataType(dataTypeName: String) {
     // https://www.postgresql.org/docs/14/datatype-datetime.html
     INTERVAL("INTERVAL"),
 
+    // POSTGRES
     // https://www.postgresql.org/docs/14/datatype-geometric.html
     POINT("POINT"),
     LINE("LINE"),
@@ -253,6 +250,15 @@ enum class ColumnDataType(dataTypeName: String) {
     PATH("PATH"),
     POLYGON("POLYGON"),
     CIRCLE("CIRCLE"),
+
+    // MySql
+    // https://dev.mysql.com/doc/refman/8.0/en/spatial-types.html
+    LINESTRING("LINESTRING"),
+    MULTIPOINT("MULTIPOINT"),
+    MULTILINESTRING("MULTILINESTRING"),
+    MULTIPOLYGON("MULTIPOLYGON"),
+    GEOMETRY("GEOMETRY"),
+    GEOMCOLLECTION("GEOMCOLLECTION"),
 
     // https://www.postgresql.org/docs/14/datatype-net-types.html
     CIDR("CIDR"),

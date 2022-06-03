@@ -52,8 +52,14 @@ class MySqlDataTypesEMTest : RestTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/stringdatatypes",null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/stringdatatypes",null)
 
-//            assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/fixedpointtypes",null)
-//            assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/fixedpointtypes",null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/fixedpointtypes",null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/fixedpointtypes",null)
+
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/jsondatatypes",null)
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/jsondatatypes",null)
+//
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/spatialdatatypes",null)
+//            assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/spatialdatatypes",null)
 
         }
     }
