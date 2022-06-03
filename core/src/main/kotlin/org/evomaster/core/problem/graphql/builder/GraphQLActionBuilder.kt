@@ -619,6 +619,11 @@ object GraphQLActionBuilder {
 
                     var accum = initAccum + 1
                     if (checkDepthIsOK(accum, treeDepth)) {
+                        val id = "$accum:${element.uniqueId}"
+                        val gene = depthBasedCache[id]
+                        if (gene != null) {
+                            gene.copy()
+                        } else {
                         //will contain basic interface fields, and had as name the methode name
                         var interfaceBaseOptObjGene = createObjectGene(
                             state, history, accum, treeDepth, element
@@ -648,10 +653,13 @@ object GraphQLActionBuilder {
                         )
                         history.removeLast()
                         //will return a single optional object gene with optional basic interface fields and optional additional interface fields
-                        OptionalGene(
+                            val g =OptionalGene(
                             element.fieldName + GqlConst.INTERFACE_TAG,
                             ObjectGene(element.fieldName + GqlConst.INTERFACE_TAG, interfaceAdditionalOptObjGene)
                         )
+                            depthBasedCache[id] = g
+                            g
+                        }
                     } else {
                         history.removeLast()
                         OptionalGene(element.fieldName, LimitObjectGene(element.fieldName))
@@ -905,19 +913,24 @@ object GraphQLActionBuilder {
 
         val fields: MutableList<Gene> = mutableListOf()
 
-        var accum = accum
-        val initAccum =
-            accum // needed since we restore the accumulator each time we construct one object defining the interface
-
         for (elementInInterfaceTypes in element.interfaceTypes) {//Browse all additional objects in the interface
-            accum += 1
+            val accum=accum+1
             if (checkDepthIsOK(accum, maxNumberOfGenes)) {
                 history.addLast(elementInInterfaceTypes)
-                val copy = element.copy(
-                    typeName = elementInInterfaceTypes,
-                    fieldName = elementInInterfaceTypes
-                )
-                var objGeneTemplate = createObjectGene(state, history, accum, maxNumberOfGenes, copy)
+                //todo need better id for the interfaces
+                val id = "$accum:${element.uniqueId}.${elementInInterfaceTypes}"
+                val gene = depthBasedCache[id]
+                var objGeneTemplate = if (gene != null) {
+                    gene.copy() as ObjectGene
+                } else {
+                    val copy = element.copy(
+                        typeName = elementInInterfaceTypes,
+                        fieldName = elementInInterfaceTypes
+                    )
+                    val g = createObjectGene(state, history, accum, maxNumberOfGenes, copy)
+                    depthBasedCache[id] = g
+                    g
+                }
 
                 history.removeLast()
 
@@ -934,7 +947,7 @@ object GraphQLActionBuilder {
                     )
                 )
             }
-            accum = initAccum
+
         }
 
         return fields
