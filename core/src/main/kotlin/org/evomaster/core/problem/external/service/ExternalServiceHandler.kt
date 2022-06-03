@@ -171,7 +171,7 @@ class ExternalServiceHandler {
      * Update the DNS cache with a different IP address for a given host to enable spoofing.
      * If there is an entry already it'll skip from adding to the cache.
      *
-     * TODO: Need to refactor
+     * TODO: Can be removed now, once the all possible scenarios are tested
      */
     private fun bindDNSCache(host : String, address : String) {
         val entry = DnsCacheManipulator.getDnsCache(host)
