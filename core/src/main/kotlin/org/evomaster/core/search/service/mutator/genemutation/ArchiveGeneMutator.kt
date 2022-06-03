@@ -218,15 +218,6 @@ class ArchiveGeneMutator{
 
         val p = randomness.nextDouble()
         val pOfLen = apc.getExploratoryValue(0.6, 0.2)
-        val pLength = lenMutationUpdate.random(
-                apc = apc,
-                randomness = randomness,
-                current = gene.value.length.toLong(),
-                probOfMiddle = probOfMiddle(lenMutationUpdate),
-                start = 6,
-                end = 3,
-                minimalTimeForUpdate = 2
-        )
 
         val anyCharToMutate = charsMutationUpdate.filterIndexed {
             index, longMutationUpdate -> !longMutationUpdate.isReached(gene.value[index].toLong()) }.isNotEmpty() && charsMutationUpdate.isNotEmpty()
@@ -237,9 +228,20 @@ class ArchiveGeneMutator{
             return true
         }
 
-        if (lenMutationUpdate.isReached(gene.value.length.toLong()) || (p < (1.0 - pOfLen) && anyCharToMutate && gene.value.isNotBlank())){
+        if (lenMutationUpdate.isReached(gene.value.length.toLong()) || !lenMutationUpdate.isUpdatable() || (p < (1.0 - pOfLen) && anyCharToMutate && gene.value.isNotBlank())){
             return mutateChars(charsMutationUpdate, gene)
         }
+
+        val pLength = lenMutationUpdate.random(
+            apc = apc,
+            randomness = randomness,
+            current = gene.value.length.toLong(),
+            probOfMiddle = probOfMiddle(lenMutationUpdate),
+            start = 6,
+            end = 3,
+            minimalTimeForUpdate = 2
+        )
+
         val append = pLength.toInt() > gene.value.length || (pLength.toInt() == gene.value.length && p < 1.0 - pOfLen/2.0)
         if (append){
             gene.value += randomness.nextWordChar() //(0 until (pLength.toInt() - gene.value.length)).map {randomness.nextWordChar()}.joinToString("")

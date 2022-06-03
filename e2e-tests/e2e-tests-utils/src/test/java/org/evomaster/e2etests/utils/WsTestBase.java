@@ -22,6 +22,7 @@ import org.evomaster.core.problem.api.service.ApiWsIndividual;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
@@ -97,6 +98,18 @@ public abstract class WsTestBase {
         });
 
         SimpleLogger.setThreshold(SimpleLogger.Level.DEBUG);
+
+    }
+
+    @AfterEach
+    public void clean(){
+        /*
+            clean boot-time targets achieved during executing generated tests
+            thus, it would have a side effect, ie, the boot-time targets would be
+            correctly collect only by the first test, unless we stop the sut after
+            each test.
+         */
+        ObjectiveRecorder.reset(true);
     }
 
 

@@ -39,6 +39,8 @@ class EMConfig {
 
         private const val headerRegex = "(.+:.+)|(^$)"
 
+        private const val maxTcpPort = 65535.0
+
         fun validateOptions(args: Array<String>): OptionParser {
 
             val config = EMConfig()
@@ -345,6 +347,13 @@ class EMConfig {
         if (enablePureRPCTestGeneration && outputFormat != OutputFormat.DEFAULT && !outputFormat.isJava()){
             throw IllegalArgumentException("when generating pure RPC tests, outputFormat only supports JAVA now")
         }
+
+        val jaCoCo_on = jaCoCoAgentLocation.isNotBlank() && jaCoCoCliLocation.isNotBlank() && jaCoCoOutputFile.isNotBlank()
+        val jaCoCo_off = jaCoCoAgentLocation.isBlank() && jaCoCoCliLocation.isBlank() && jaCoCoOutputFile.isBlank()
+
+        if(!jaCoCo_on && ! jaCoCo_off){
+            throw IllegalArgumentException("JaCoCo location for agent/cli and output options must be all set or all left empty")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -413,19 +422,23 @@ class EMConfig {
         }
 
         m.annotations.find { it is FilePath }?.also{
-            val path = try{
-                Paths.get(parameterValue).toAbsolutePath()
-            } catch(e: InvalidPathException){
-                throw IllegalArgumentException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
-            }
+            val fp = it as FilePath
+            if(!fp.canBeBlank || parameterValue.isNotBlank()) {
 
-            if(Files.exists(path) && ! Files.isWritable(path)){
-                throw IllegalArgumentException("Parameter '${m.name}' refers to a file that already" +
-                        " exists, but that cannot be written/replace to: $path")
-            }
-            if(Files.exists(path) && Files.isDirectory(path)){
-                throw IllegalArgumentException("Parameter '${m.name}' refers to a file that is instead an" +
-                        " existing folder: $path")
+                val path = try {
+                    Paths.get(parameterValue).toAbsolutePath()
+                } catch (e: InvalidPathException) {
+                    throw IllegalArgumentException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
+                }
+
+                if (Files.exists(path) && !Files.isWritable(path)) {
+                    throw IllegalArgumentException("Parameter '${m.name}' refers to a file that already" +
+                            " exists, but that cannot be written/replace to: $path")
+                }
+                if (Files.exists(path) && Files.isDirectory(path)) {
+                    throw IllegalArgumentException("Parameter '${m.name}' refers to a file that is instead an" +
+                            " existing folder: $path")
+                }
             }
         }
     }
@@ -586,7 +599,7 @@ class EMConfig {
 
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
-    annotation class FilePath
+    annotation class FilePath(val canBeBlank : Boolean = false)
 
 //------------------------------------------------------------------------
 //--- properties
@@ -601,6 +614,8 @@ class EMConfig {
      */
 
     //----- "Important" options, sorted by priority --------------
+
+
 
     val defaultMaxTime = "60s"
 
@@ -796,7 +811,7 @@ class EMConfig {
 
     @Cfg("TCP port of where the SUT REST controller is listening on")
     @Min(0.0)
-    @Max(65535.0)
+    @Max(maxTcpPort)
     var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
 
     @Cfg("Host name or IP address of where the SUT REST controller is listening on")
@@ -1617,7 +1632,48 @@ class EMConfig {
     
     @Cfg("Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs.")
     var addPreDefinedTests : Boolean = true
-    
+
+
+    @Experimental
+    @FilePath(true)
+    @Regex("(.*jacoco.*\\.jar)|(^$)")
+    @Cfg("Path on filesystem of where JaCoCo Agent jar file is located." +
+            " Option meaningful only for External Drivers for JVM." +
+            " If left empty, it is not used." +
+            " Note that this only impact the generated output test cases.")
+    var jaCoCoAgentLocation = ""
+
+    @Experimental
+    @FilePath(true)
+    @Regex("(.*jacoco.*\\.jar)|(^$)")
+    @Cfg("Path on filesystem of where JaCoCo CLI jar file is located." +
+            " Option meaningful only for External Drivers for JVM." +
+            " If left empty, it is not used." +
+            " Note that this only impact the generated output test cases.")
+    var jaCoCoCliLocation = ""
+
+    @Experimental
+    @FilePath(true)
+    @Cfg(" Destination file for JaCoCo." +
+            " Option meaningful only for External Drivers for JVM." +
+            " If left empty, it is not used." +
+            " Note that this only impact the generated output test cases.")
+    var jaCoCoOutputFile = ""
+
+    @Experimental
+    @Min(0.0) @Max(maxTcpPort)
+    @Cfg("Port used by JaCoCo to export coverage reports")
+    var jaCoCoPort = 8899
+
+    @Experimental
+    @FilePath
+    @Cfg("Command for 'java' used in the External Drivers." +
+            " Useful for when there are different JDK installed on same machine without the need" +
+            " to update JAVA_HOME." +
+            " Note that this only impact the generated output test cases.")
+    var javaCommand = "java"
+
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds

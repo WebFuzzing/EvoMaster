@@ -23,6 +23,8 @@ public class CustomizationWithSeedEMTest extends SpringRPCTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        defaultSeed = 0;
+
         runTestHandlingFlakyAndCompilation(
                 "CustomizationWithSeedEM",
                 "org.bar.CustomizationWithSeedEM",

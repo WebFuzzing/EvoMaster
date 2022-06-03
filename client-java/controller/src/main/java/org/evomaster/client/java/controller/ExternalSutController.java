@@ -51,13 +51,41 @@ public abstract class ExternalSutController extends SutController {
      */
     private volatile String javaCommand = "java";
 
+    /**
+     * Path on filesystem of where JaCoCo Agent jar file is located
+     */
+    private volatile String jaCoCoAgentLocation = "";
+
+    /**
+     * Path on filesystem of where JaCoCo CLI jar file is located
+     */
+    private volatile String jaCoCoCliLocation = "";
+
+    /**
+     * Destination file for JaCoCo
+     */
+    private volatile String jaCoCoOutputFile = "";
+
+    /**
+     * Port of JaCoCo agent server
+     */
+    private volatile int jaCoCoPort = 0;
+
+    public final ExternalSutController setJaCoCo(String jaCoCoAgentLocation, String jaCoCoCliLocation, String jaCoCoOutputFile, int port){
+        this.jaCoCoAgentLocation = jaCoCoAgentLocation;
+        this.jaCoCoCliLocation = jaCoCoCliLocation;
+        this.jaCoCoOutputFile = jaCoCoOutputFile;
+        this.jaCoCoPort = port;
+        return this;
+    }
+
     public int getWaitingSecondsForIncomingConnection() {
         return 20_000;
     }
 
     @Override
     public final void setupForGeneratedTest(){
-        //TODO how to handle P6Spy here??? We don't want the spy.log files
+        //In the past, we configured P6Spy here
     }
 
     public final void setInstrumentation(boolean instrumentation) {
@@ -131,11 +159,12 @@ public abstract class ExternalSutController extends SutController {
 
     //-------------------------------------------------------------
 
-    public final void setJavaCommand(String command){
+    public final ExternalSutController setJavaCommand(String command){
         if(command==null || command.isEmpty()){
             throw new IllegalArgumentException("Empty java command");
         }
         javaCommand = command;
+        return this;
     }
 
     @Override
@@ -198,6 +227,12 @@ public abstract class ExternalSutController extends SutController {
         }
         if (command.stream().noneMatch(s -> s.startsWith("-Xms"))) {
             command.add("-Xms1G");
+        }
+
+        if(isUsingJaCoCo()){
+            //command.add("-javaagent:"+jaCoCoLocation+"=destfile="+jaCoCoOutputFile+",append=false,dumponexit=true");
+            command.add("-javaagent:"+ jaCoCoAgentLocation +"=output=tcpserver,port="+jaCoCoPort+",append=false,dumponexit=true");
+            //tcpserver
         }
 
         command.add("-jar");
@@ -401,6 +436,10 @@ public abstract class ExternalSutController extends SutController {
 
     //-----------------------------------------
 
+    private boolean isUsingJaCoCo(){
+        return !jaCoCoAgentLocation.isEmpty() && !jaCoCoOutputFile.isEmpty() && !jaCoCoCliLocation.isEmpty();
+    }
+
     private void checkInstrumentation() {
         if (!isInstrumentationActivated()) {
             throw new IllegalStateException("Instrumentation is not active");
@@ -427,6 +466,11 @@ public abstract class ExternalSutController extends SutController {
         }
 
         if (process != null) {
+            if(isUsingJaCoCo()){
+                dumpJaCoCo();
+                //attemptGracefulShutdown(process);
+            }
+
             process.destroy();
             try {
                 //be sure streamers are closed, otherwise process might hang on Windows
@@ -438,6 +482,62 @@ public abstract class ExternalSutController extends SutController {
             }
 
             process = null;
+        }
+    }
+
+    private void dumpJaCoCo(){
+        try {
+            Process dump = Runtime.getRuntime().exec(new String[]{
+                    "java", "-jar", jaCoCoCliLocation, "dump", "--destfile", jaCoCoOutputFile, "--port", ""+jaCoCoPort});
+
+            dump.waitFor(5, TimeUnit.SECONDS);
+            if(dump.exitValue() > 0){
+                SimpleLogger.error("Failed to dump JaCoCo report");
+            }
+        } catch (Exception e){
+            SimpleLogger.error("Failed to dump JaCoCo report", e);
+        }
+    }
+
+    /*
+        Unfortunately this does NOT work on Windows :(
+        TODO likely remove this function
+     */
+    private void attemptGracefulShutdown(Process process){
+
+        //https://github.com/apache/nifi/blob/master/nifi-bootstrap/src/main/java/org/apache/nifi/bootstrap/util/OSUtils.java
+        // also needs jna-platform in pom
+        long pid = 42l; // TODO OSUtils.getProcessId(process);
+        String killCommand = "kill -n 2 " + pid; //SIGINT
+
+        boolean ok = false;
+        String os = System.getProperty("os.name");
+        try {
+            Process killer;
+            if (os.toLowerCase().contains("window")) {
+                String path = System.getenv("PROGRAMFILES");
+                path += "\\Git\\git-bash.exe";
+                killer = Runtime.getRuntime().exec(new String[]{path, "-c", killCommand});
+            } else {
+                killer = Runtime.getRuntime().exec(killCommand);
+            }
+            killer.waitFor(3, TimeUnit.SECONDS);
+            if(killer.exitValue() > 0){
+                SimpleLogger.error("Failed to SIGINT the SUT");
+                return;
+            }
+            ok = true;
+        }catch (Exception e){
+            SimpleLogger.error("Failed to SIGINT the SUT", e);
+            return;
+        }
+
+        if(ok) {
+            try {
+                process.waitFor(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
