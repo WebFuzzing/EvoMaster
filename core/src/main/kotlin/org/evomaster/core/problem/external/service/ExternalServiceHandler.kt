@@ -12,6 +12,7 @@ import org.evomaster.core.problem.external.service.ExternalServiceUtils.nextIPAd
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.evomaster.core.problem.external.service.ExternalServiceUtils.isReservedIP
+import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -40,6 +41,9 @@ class ExternalServiceHandler {
      * Contains hostname against to WireMock instance mapping
      */
     private val externalServiceMapping: MutableMap<String, String> = mutableMapOf()
+
+    @Inject
+    private lateinit var randomness: Randomness
 
     @Inject
     private lateinit var config : EMConfig
@@ -93,7 +97,7 @@ class ExternalServiceHandler {
      * generate a new one.
      */
     private fun generateRandomAvailableAddress(port: Int) : String {
-        val ip = generateRandomIPAddress()
+        val ip = generateRandomIPAddress(randomness)
         if (isAddressAvailable(ip, port)) {
             return ip
         }

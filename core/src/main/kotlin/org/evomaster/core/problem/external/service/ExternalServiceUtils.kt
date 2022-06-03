@@ -11,9 +11,6 @@ object ExternalServiceUtils {
 
     private val log: Logger = LoggerFactory.getLogger(ExternalServiceUtils::class.java)
 
-    @Inject
-    private lateinit var randomness: Randomness
-
     /**
      * This method provides the next IP address from the given value for
      * loopback range. If generated IP address is not in the range, this
@@ -69,7 +66,7 @@ object ExternalServiceUtils {
      * can happen. As the result when creating the next IP address from the last used,
      * there will be negligible amount of small impact on the speed of the execution.
      */
-    fun generateRandomIPAddress() : String {
+    fun generateRandomIPAddress(randomness: Randomness) : String {
         val (p1, p2, p3) = Triple(
             randomness.randomIPBit(),
             randomness.randomIPBit(),
@@ -79,7 +76,7 @@ object ExternalServiceUtils {
 
         if (isReservedIP(ip)) {
             while(isReservedIP(ip)) {
-                ip = generateRandomIPAddress()
+                ip = generateRandomIPAddress(randomness)
             }
         }
         return ip
