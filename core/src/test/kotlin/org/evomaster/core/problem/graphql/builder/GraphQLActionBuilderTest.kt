@@ -1192,7 +1192,7 @@ class GraphQLActionBuilderTest {
         assertEquals(2, actionCluster.size)
     }
 
-    
+    @Disabled
     @Test
     fun gitHubTest() {
         val actionCluster = mutableMapOf<String, Action>()
