@@ -82,6 +82,8 @@ abstract class MutationBoundaryUpdate<T> (
         if (randomness.nextBoolean(0.8)) return changes.last()
         return randomness.choose(changes)
     }
+
+    fun isUpdatable() : Boolean = max.toDouble() > min.toDouble()
 }
 
 

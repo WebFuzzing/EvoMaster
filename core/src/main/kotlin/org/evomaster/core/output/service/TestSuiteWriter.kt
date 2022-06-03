@@ -3,7 +3,6 @@ package org.evomaster.core.output.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.BlackBoxUtils
@@ -407,6 +406,24 @@ class TestSuiteWriter {
         }
     }
 
+    private fun getJaCoCoInit() : String{
+        if(config.jaCoCoAgentLocation.isNotBlank()){
+            val agent = config.jaCoCoAgentLocation.replace("\\","\\\\")
+            val cli = config.jaCoCoCliLocation.replace("\\","\\\\")
+            val exec = config.jaCoCoOutputFile.replace("\\","\\\\")
+            val port = config.jaCoCoPort
+            return ".setJaCoCo(\"$agent\",\"$cli\",\"${exec}\",$port)"
+        }
+        return ""
+    }
+
+    private fun getJavaCommand() : String{
+        if(config.javaCommand != "java"){
+            val java = config.javaCommand.replace("\\","\\\\")
+            return ".setJavaCommand(\"$java\")"
+        }
+        return ""
+    }
 
     private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines) {
 
@@ -415,7 +432,10 @@ class TestSuiteWriter {
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
-                lines.add("private static final SutHandler $controller = new $controllerName($executable);")
+                lines.add("private static final SutHandler $controller = new $controllerName($executable)")
+                lines.append(getJaCoCoInit())
+                lines.append(getJavaCommand())
+                lines.append(";")
                 lines.add("private static String $baseUrlOfSut;")
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
@@ -423,6 +443,8 @@ class TestSuiteWriter {
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
+                lines.append(getJaCoCoInit())
+                lines.append(getJavaCommand())
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")

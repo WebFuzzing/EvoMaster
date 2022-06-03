@@ -343,6 +343,11 @@
                 <artifactId>jgrapht</artifactId>
                 <version>${jgrapht.version}</version>
             </dependency>
+<!--            <dependency> &lt;!&ndash; Needed for Process handling in Windows for JDK 8&ndash;&gt;-->
+<!--                <groupId>net.java.dev.jna</groupId>-->
+<!--                <artifactId>jna-platform</artifactId>-->
+<!--                <version>5.11.0</version>-->
+<!--            </dependency>-->
             <!-- Logging -->
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -354,6 +359,7 @@
                 <artifactId>logback-classic</artifactId>
                 <version>1.2.3</version>
             </dependency>
+
 
 
             <!-- Jetty -->
