@@ -808,7 +808,7 @@ object RestActionBuilderV3 {
                     eg, /v2/api-docs?foo is considered as valid
                     see https://datatracker.ietf.org/doc/html/rfc3986#section-3.4
                  */
-                log.warn("Currently noy supporting a GET RestAction with the url '$url' ," +
+                log.warn("Currently not supporting a GET RestAction with the url '$url' ," +
                         " as all query parameters should be in the form key=value")
                 return null
             }
