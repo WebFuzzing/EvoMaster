@@ -144,7 +144,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         if (configuration.blackBox && !configuration.bbExperiments) {
             return if (configuration.bbSwaggerUrl.startsWith("http", true)){
-//                RestCallAction(id, HttpVerb.GET, RestPath(configuration.bbSwaggerUrl), mutableListOf(), skipOracleChecks = true)
                 buildActionBasedOnUrl(BlackBoxUtils.targetUrl(config,this), id, HttpVerb.GET, configuration.bbSwaggerUrl, true)
             } else
                 null
@@ -160,10 +159,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
              */
             return null
         }
-        var path = openapi.substring(base.length)
-        if(!path.startsWith("/")) path = "$path/"
 
-        return RestCallAction(id, HttpVerb.GET, RestPath(path), mutableListOf(), skipOracleChecks = true)
+        return buildActionBasedOnUrl(base, id, HttpVerb.GET, openapi, true)
     }
 
     /**

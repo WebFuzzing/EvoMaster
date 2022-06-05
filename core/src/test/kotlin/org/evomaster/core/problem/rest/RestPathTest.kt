@@ -366,10 +366,20 @@ internal class RestPathTest{
 
     }
 
+    @Test
+    fun testFragmentInURL(){
+        val base = "http://localhost:12625"
+        val path = "/v3/foo"
+        val fragment = "#hello"
+        val action = RestActionBuilderV3.buildActionBasedOnUrl(base,"call to swagger", HttpVerb.GET, "$base$path$fragment", true)
+        assertNotNull(action)
+        assertEquals(path, action!!.resolvedPath())
+    }
+
     @ParameterizedTest
     @ValueSource(strings = [
         "/v2/api-docs?group",
-        "/v2/api-docs?group=1ocDashboardsApi&foo=42#sec"
+        "/v2/api-docs?group=1ocDashboardsApi&=42#sec"
     ])
     fun testNotFullySupportUrl(path: String){
         val base = "http://localhost:12625"
