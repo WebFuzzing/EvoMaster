@@ -793,19 +793,14 @@ object RestActionBuilderV3 {
         // if the url does not start with baseUrl (i.e., not from SUT), then there might be no point to execute this rest action
         if (!url.startsWith(baseUrl)) return null
 
-        // TODO might need to support fragment
-        if (url.contains("#")){
-            log.warn("fragment in url ($url) does not support yet")
-            return null
-        }
-
-        val uri = URI(url)
+        // fragments # are ignored when making HTTP calls
+        val uri = URI(url.replaceAfter("#","").removeSuffix("#"))
 //        Lazy.assert { "${uri.scheme}://${uri.host}:${uri.port}" == baseUrl }
 
         val path = RestPath("${uri.scheme}://${uri.host}:${uri.port}${uri.path}".removePrefix(baseUrl.removeSuffix("/")))
         val query : MutableList<Param> = uri.query?.split("&")?.map { q->
             val keyValue = q.split("=")
-            if (keyValue.size == 2)
+            if (keyValue.size == 2 && keyValue[0].isNotBlank())
                 QueryParam(keyValue[0], StringGene(keyValue[0], keyValue[1]))
             else {
                 /*
@@ -813,7 +808,8 @@ object RestActionBuilderV3 {
                     eg, /v2/api-docs?foo is considered as valid
                     see https://datatracker.ietf.org/doc/html/rfc3986#section-3.4
                  */
-                log.warn("Do not support the get a RestAction with the url $url")
+                log.warn("Currently not supporting a GET RestAction with the url '$url' ," +
+                        " as all query parameters should be in the form key=value")
                 return null
             }
         }?.toMutableList()?: mutableListOf()
