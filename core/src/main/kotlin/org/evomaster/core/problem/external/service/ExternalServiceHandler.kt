@@ -128,7 +128,11 @@ class ExternalServiceHandler {
                     getNextAvailableAddress(port)
                 } else {
                     if (!isReservedIP(config.externalServiceIP)) {
-                        config.externalServiceIP
+                        if (isAddressAvailable(config.externalServiceIP, port)) {
+                            config.externalServiceIP
+                        } else {
+                            throw IllegalStateException("Provided IP address is not available")
+                        }
                     } else {
                         throw IllegalStateException("Can not use reserved IP address")
                     }

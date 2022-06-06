@@ -32,9 +32,9 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     // TODO: When running parallel tests it's always good select
                     // Random as strategy.
                     args.add("--externalServiceIPSelectionStrategy");
-                    args.add("RANDOM");
+                    args.add("USER");
                     args.add("--externalServiceIP");
-                    args.add("127.0.0.5");
+                    args.add("127.0.0.2");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
