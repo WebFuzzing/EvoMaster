@@ -9,6 +9,10 @@ import static org.hamcrest.core.Is.is;
 
 public class HttpRequestManualTest extends HttpRequestTestBase {
 
+    /**
+     * TODO: Can be removed
+     */
+
     @Disabled
     public void testURLConnection() {
         given().accept(ContentType.JSON)

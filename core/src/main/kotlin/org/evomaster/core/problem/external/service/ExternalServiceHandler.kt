@@ -27,7 +27,6 @@ class ExternalServiceHandler {
      * the concept is working.
      */
 
-
     /**
      * Contains the information about each external calls made
      */
@@ -110,6 +109,9 @@ class ExternalServiceHandler {
 
     /**
      * Default IP address will be a randomly generated IP
+     *
+     * If user provided IP address isn't available on the port
+     * IllegalStateException will be thrown.
      */
     private fun getIP(port: Int) : String {
         val ip: String
@@ -131,10 +133,10 @@ class ExternalServiceHandler {
                         if (isAddressAvailable(config.externalServiceIP, port)) {
                             config.externalServiceIP
                         } else {
-                            throw IllegalStateException("Provided IP address is not available")
+                            throw IllegalStateException("User provided IP address is not available")
                         }
                     } else {
-                        throw IllegalStateException("Can not use reserved IP address")
+                        throw IllegalStateException("Can not use a reserved IP address")
                     }
                 }
             }
@@ -157,7 +159,7 @@ class ExternalServiceHandler {
         val wm = WireMockServer(
             WireMockConfiguration()
                 .bindAddress(address)
-                .port(8080)
+                .port(port)
                 .extensions(ResponseTemplateTransformer(false)))
         wm.start()
 

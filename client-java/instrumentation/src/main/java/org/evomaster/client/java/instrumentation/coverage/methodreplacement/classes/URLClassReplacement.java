@@ -61,7 +61,10 @@ public class URLClassReplacement implements MethodReplacementClass {
 
             if (ExecutionTracer.hasExternalMapping(caller.getHost())) {
                 String ip  = ExecutionTracer.getExternalMapping(caller.getHost());
-                String url = "http://" + ip + ":8080" + caller.getPath();
+
+                // Usage of ports below 1024 require root privileges to run
+                String url = "http://" + ip + ":" + caller.getPort() + caller.getPath();
+
                 URL newURL = new URL(url);
                 return newURL.openConnection();
             } else {

@@ -85,8 +85,13 @@ object ExternalServiceUtils {
     /**
      * Method will check whether the given IP address and port are available
      * for use by creating a Socket.
+     *
+     * Code will try to connect to the given port on the specified IP. If the
+     * connection succeed the given destination is not available.
+     *
      * Connection timeout, connection refused are considered as available,
      * while successful connection as unavailable.
+     *
      * True if connection available, false if not.
      */
     fun isAddressAvailable(address: String, port: Int) : Boolean {

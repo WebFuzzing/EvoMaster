@@ -18,7 +18,7 @@ public class ServiceApplicationStartup implements ApplicationListener<Applicatio
     public void onApplicationEvent(final ApplicationReadyEvent applicationReadyEvent) {
         try {
             // Port changed to test the default port scenario respective to the protocol
-            URL url = new URL("https://foobarbazz.com/api/echo/foo");
+            URL url = new URL("https://foobarbazz.com:3000/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(500); // added to reduce time during testing
             connection.setRequestProperty("accept", "application/json");
