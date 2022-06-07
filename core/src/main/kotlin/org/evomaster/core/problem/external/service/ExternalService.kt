@@ -7,6 +7,7 @@ class ExternalService (
     private val wireMockServer: WireMockServer
         ) {
 
+
     fun stopWireMockServer() {
         wireMockServer.stop()
     }

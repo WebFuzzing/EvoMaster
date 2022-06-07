@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.external.service
 
-import com.google.inject.Inject
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

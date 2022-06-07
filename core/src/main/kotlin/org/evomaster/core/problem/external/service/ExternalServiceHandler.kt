@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.external.service
 
-import com.alibaba.dcm.DnsCacheManipulator
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
@@ -13,8 +12,6 @@ import org.evomaster.core.problem.external.service.ExternalServiceUtils.nextIPAd
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.evomaster.core.problem.external.service.ExternalServiceUtils.isReservedIP
 import org.evomaster.core.search.service.Randomness
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 class ExternalServiceHandler {
     /**
