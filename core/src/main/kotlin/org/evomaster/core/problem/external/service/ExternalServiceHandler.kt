@@ -47,8 +47,6 @@ class ExternalServiceHandler {
     @Inject
     private lateinit var config : EMConfig
 
-    private val log: Logger = LoggerFactory.getLogger(ExternalServiceUtils::class.java)
-
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
      *
@@ -61,9 +59,6 @@ class ExternalServiceHandler {
                 val ip = getIP(externalServiceInfo.remotePort)
                 lastIPAddress = ip
                 val wm : WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
-
-                // TODO: Should be moved under JUnit tests
-                // bindDNSCache(externalServiceInfo.remoteHostname, ip)
 
                 externalServices.add(ExternalService(externalServiceInfo, wm))
                 externalServiceMapping[externalServiceInfo.remoteHostname] = ip
@@ -171,21 +166,6 @@ class ExternalServiceHandler {
                 .withBody("{\"message\": \"Fake endpoint.\"}")))
 
         return wm
-    }
-
-    /**
-     * Update the DNS cache with a different IP address for a given host to enable spoofing.
-     * If there is an entry already it'll skip from adding to the cache.
-     *
-     * TODO: Can be removed now, once the all possible scenarios are tested
-     */
-    private fun bindDNSCache(host : String, address : String) {
-        val entry = DnsCacheManipulator.getDnsCache(host)
-        if (entry == null) {
-            DnsCacheManipulator.setDnsCache(host, address)
-        } else {
-            log.warn("$host already has a DNS cache entry.")
-        }
     }
 
 }
