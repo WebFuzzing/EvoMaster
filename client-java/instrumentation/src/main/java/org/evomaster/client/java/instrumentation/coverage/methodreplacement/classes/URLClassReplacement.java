@@ -68,7 +68,7 @@ public class URLClassReplacement implements MethodReplacementClass {
                 URL newURL = new URL(url);
                 return newURL.openConnection();
             } else {
-                throw new UnknownHostException("There is WireMock initiated for this hostname");
+                throw new UnknownHostException("There is no WireMock initiated for this hostname");
             }
         }
 
