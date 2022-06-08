@@ -157,7 +157,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             instance = parseValueWithJson((String) json);
 
         if (isValidInstance(instance)){
-            setValueBasedOnInstance(json);
+            setValueBasedOnInstance(instance);
         } else {
             List<NamedTypedValue> values = new ArrayList<>();
             List<NamedTypedValue> fields = getType().getFields();
@@ -170,7 +170,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
             for (NamedTypedValue f: fields){
                 NamedTypedValue copy = f.copyStructureWithProperties();
-                Object fiv = ((Map)json).get(f.getName());
+                Object fiv = ((Map)instance).get(f.getName());
                 copy.setValueBasedOnInstanceOrJson(fiv);
 
                 values.add(copy);
