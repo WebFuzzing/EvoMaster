@@ -2,7 +2,6 @@ package com.foo.rest.examples.spring.wiremock.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foo.rest.examples.spring.strings.StringsResponseDto;
-import com.foo.rest.examples.spring.wiremock.http.MockApiResponse;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,7 +25,9 @@ public class ServiceRest {
         StringsResponseDto stringsResponseDto = new StringsResponseDto();
 
         try {
-            URL url = new URL("http://foo.bar:8080/api/echo/foo");
+            // To bind WireMock in port 80 and 443 require root privileges
+            // To avoid that port set to 3000 for e2etest
+            URL url = new URL("http://foo.bar:3000/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
 
@@ -45,6 +46,6 @@ public class ServiceRest {
         }
 
         return stringsResponseDto;
-
     }
+
 }

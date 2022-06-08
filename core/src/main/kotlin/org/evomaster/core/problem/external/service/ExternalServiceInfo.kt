@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.external.service
 
+
 class ExternalServiceInfo(
         val protocol: String,
         val remoteHostname: String,

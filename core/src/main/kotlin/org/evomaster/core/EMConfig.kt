@@ -837,7 +837,6 @@ class EMConfig {
     @Min(0.0)
     var endNumberOfMutations = 10
 
-
     enum class StoppingCriterion {
         TIME,
         FITNESS_EVALUATIONS
@@ -1508,9 +1507,6 @@ class EMConfig {
     @Cfg("Specify a format to organize the covered targets by the search")
     var coveredTargetSortedBy = SortCoveredTargetBy.NAME
 
-
-
-
     enum class SortCoveredTargetBy {
         /**
          * sorted by ids of targets alphabetically
@@ -1629,7 +1625,7 @@ class EMConfig {
             "`null` represents to employ the setting specified on the EM driver side")
     var employSmartDbClean : Boolean? = null
 
-    
+
     @Cfg("Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs.")
     var addPreDefinedTests : Boolean = true
 
@@ -1673,6 +1669,35 @@ class EMConfig {
             " Note that this only impact the generated output test cases.")
     var javaCommand = "java"
 
+    enum class ExternalServiceIPSelectionStrategy {
+        /**
+         * To disabled external service handling
+         */
+        NONE,
+        /**
+         * Default will assign 127.0.0.2
+         */
+        DEFAULT,
+
+        /**
+         * User provided IP address
+         */
+        USER,
+
+        /**
+         * Random IP address will be generated within the loopback range
+         */
+        RANDOM
+    }
+
+    @Cfg("Specify a method to select the first external service spoof IP address.")
+    @Experimental
+    var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
+
+    @Cfg("User provided external service IP.")
+    @Experimental
+    @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
+    var externalServiceIP : String = "127.0.0.2"
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {

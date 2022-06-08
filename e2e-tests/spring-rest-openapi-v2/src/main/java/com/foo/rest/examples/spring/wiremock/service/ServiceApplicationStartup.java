@@ -1,7 +1,6 @@
 package com.foo.rest.examples.spring.wiremock.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.foo.rest.examples.spring.wiremock.http.MockApiResponse;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
@@ -17,8 +16,11 @@ public class ServiceApplicationStartup implements ApplicationListener<Applicatio
     @Override
     public void onApplicationEvent(final ApplicationReadyEvent applicationReadyEvent) {
         try {
-            URL url = new URL("http://baz.bar:8080/api/echo/foo");
+            // To bind WireMock in port 80 and 443 require root privileges
+            // To avoid that port set to 3000 for e2etest
+            URL url = new URL("https://foobarbazz.com:3000/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(500); // added to reduce time during testing
             connection.setRequestProperty("accept", "application/json");
 
             InputStream responseStream = connection.getInputStream();
