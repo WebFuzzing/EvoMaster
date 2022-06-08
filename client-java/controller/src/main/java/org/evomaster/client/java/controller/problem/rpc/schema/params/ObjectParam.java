@@ -155,11 +155,17 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
         if (isValidInstance(json)){
             setValueBasedOnInstance(json);
-        }else {
+        } else {
+
+            Object instance = json;
+
+            if (json instanceof String)
+                instance = parseValueWithJson((String) json);
             /*
                 in jackson, object would be extracted as a map
              */
-            assert json instanceof Map;
+            if (!(instance instanceof Map))
+                throw new RuntimeException("cannot parse the map param "+getName()+ " with the type"+json.getClass().getName());
 
             for (NamedTypedValue f: fields){
                 NamedTypedValue copy = f.copyStructureWithProperties();
