@@ -31,22 +31,17 @@ class ExternalServiceHandler {
     private lateinit var config : EMConfig
 
     /**
-     * Contains the information about each external calls made
+     * Contains the information about external services as map.
+     *
+     * Mapped against to hostname with ExternalService.
      */
-    private val externalServiceInfos: MutableList<ExternalServiceInfo> = mutableListOf()
-
-    private val externalServices: MutableList<ExternalService> = mutableListOf()
+    private val externalServices: MutableMap<String, ExternalService> = mutableMapOf()
 
     /**
      * Contains last used loopback address for reference when creating
      * a new address
      */
     private var lastIPAddress : String = ""
-
-    /**
-     * Contains hostname against to WireMock instance mapping
-     */
-    private val externalServiceMapping: MutableMap<String, String> = mutableMapOf()
 
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
@@ -56,20 +51,18 @@ class ExternalServiceHandler {
      */
     fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (!externalServiceMapping.containsKey(externalServiceInfo.remoteHostname)) {
+            if (!externalServices.containsKey(externalServiceInfo.remoteHostname)) {
                 val ip = getIP(externalServiceInfo.remotePort)
                 lastIPAddress = ip
                 val wm : WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
 
-                externalServices.add(ExternalService(externalServiceInfo, wm))
-                externalServiceMapping[externalServiceInfo.remoteHostname] = ip
+                externalServices[externalServiceInfo.remoteHostname] = ExternalService(externalServiceInfo, wm)
             }
         }
-        externalServiceInfos.add(externalServiceInfo)
     }
 
     fun getExternalServiceMappings() : Map<String, String> {
-        return externalServiceMapping
+        return externalServices.mapValues { it.value.getWireMockAddress() }
     }
 
     /**
@@ -99,8 +92,8 @@ class ExternalServiceHandler {
         return generateRandomAvailableAddress(port)
     }
 
-    fun getExternalServices() : List<ExternalServiceInfo> {
-        return externalServiceInfos
+    fun getExternalServices() : Map<String, ExternalService> {
+        return externalServices
     }
 
     /**
@@ -115,14 +108,14 @@ class ExternalServiceHandler {
             // Although the default address will be a random, this
             // option allows selecting explicitly
             EMConfig.ExternalServiceIPSelectionStrategy.RANDOM -> {
-                ip = if (externalServiceInfos.size > 0) {
+                ip = if (externalServices.size > 0) {
                     getNextAvailableAddress(port)
                 } else {
                     generateRandomAvailableAddress(port)
                 }
             }
             EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
-                ip = if (externalServiceInfos.size > 0) {
+                ip = if (externalServices.size > 0) {
                     getNextAvailableAddress(port)
                 } else {
                     if (!isReservedIP(config.externalServiceIP)) {
@@ -137,7 +130,7 @@ class ExternalServiceHandler {
                 }
             }
             else -> {
-                ip = if (externalServiceInfos.size > 0) {
+                ip = if (externalServices.size > 0) {
                     getNextAvailableAddress(port)
                 } else {
                     generateRandomAvailableAddress(port)

@@ -7,6 +7,12 @@ class ExternalService (
     private val wireMockServer: WireMockServer
         ) {
 
+    /**
+     * Return the IP address of WireMock instance
+     */
+    fun getWireMockAddress() : String {
+        return wireMockServer.options.bindAddress()
+    }
 
     fun stopWireMockServer() {
         wireMockServer.stop()

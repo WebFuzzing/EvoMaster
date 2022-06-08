@@ -3,7 +3,6 @@ package org.evomaster.e2etests.spring.examples.wiremock.service;
 import com.foo.rest.examples.spring.wiremock.service.ServiceController;
 import com.google.inject.Injector;
 import org.evomaster.core.EMConfig;
-import org.evomaster.core.problem.external.service.ExternalServiceInfo;
 import org.evomaster.core.problem.external.service.ExternalServiceHandler;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
@@ -14,9 +13,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ExternalServiceMockingEMTest extends SpringTestBase {
 
@@ -57,8 +56,8 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
         RestIndividual restIndividual = resourceSampler.sample();
 
         // asserts whether the call made during the start-up is captured
-        assertEquals(1, externalServiceHandler.getExternalServices().size(), externalServiceHandler.getExternalServices().stream().map(ExternalServiceInfo::getRemoteHostname).collect(Collectors.joining(",")));
-        assertEquals("foobarbazz.com", externalServiceHandler.getExternalServices().get(0).getRemoteHostname());
+        assertEquals(1, externalServiceHandler.getExternalServices().size(), externalServiceHandler.getExternalServiceMappings().size());
+        assertTrue( externalServiceHandler.getExternalServices().containsKey("foobarbazz.com"));
         restResourceFitness.calculateCoverage(restIndividual, Collections.emptySet());
 
         // assertion after the execution

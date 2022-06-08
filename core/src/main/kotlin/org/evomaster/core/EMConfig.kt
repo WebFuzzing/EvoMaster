@@ -1696,7 +1696,7 @@ class EMConfig {
 
     @Cfg("User provided external service IP.")
     @Experimental
-    @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2{0-4][0-9]|[01]?[0-9][0-9]?)\$")
+    @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
     var externalServiceIP : String = "127.0.0.2"
 
     fun timeLimitInSeconds(): Int {
