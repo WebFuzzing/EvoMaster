@@ -150,22 +150,23 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
-        List<NamedTypedValue> values = new ArrayList<>();
-        List<NamedTypedValue> fields = getType().getFields();
 
-        if (isValidInstance(json)){
+        Object instance = json;
+
+        if (json instanceof String)
+            instance = parseValueWithJson((String) json);
+
+        if (isValidInstance(instance)){
             setValueBasedOnInstance(json);
         } else {
+            List<NamedTypedValue> values = new ArrayList<>();
+            List<NamedTypedValue> fields = getType().getFields();
 
-            Object instance = json;
-
-            if (json instanceof String)
-                instance = parseValueWithJson((String) json);
             /*
                 in jackson, object would be extracted as a map
              */
             if (!(instance instanceof Map))
-                throw new RuntimeException("cannot parse the map param "+getName()+ " with the type"+json.getClass().getName());
+                throw new RuntimeException("cannot parse the map param "+getName()+ " with the type" + instance.getClass().getName());
 
             for (NamedTypedValue f: fields){
                 NamedTypedValue copy = f.copyStructureWithProperties();
