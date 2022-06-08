@@ -1,7 +1,6 @@
 package com.foo.rest.examples.spring.wiremock.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.foo.rest.examples.spring.wiremock.http.MockApiResponse;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;

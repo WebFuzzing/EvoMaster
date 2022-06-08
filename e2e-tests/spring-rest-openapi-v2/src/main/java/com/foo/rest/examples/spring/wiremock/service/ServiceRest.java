@@ -2,7 +2,6 @@ package com.foo.rest.examples.spring.wiremock.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foo.rest.examples.spring.strings.StringsResponseDto;
-import com.foo.rest.examples.spring.wiremock.http.MockApiResponse;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
