@@ -24,6 +24,12 @@ class ExternalServiceHandler {
      * the concept is working.
      */
 
+    @Inject
+    private lateinit var randomness: Randomness
+
+    @Inject
+    private lateinit var config : EMConfig
+
     /**
      * Contains the information about each external calls made
      */
@@ -31,18 +37,16 @@ class ExternalServiceHandler {
 
     private val externalServices: MutableList<ExternalService> = mutableListOf()
 
+    /**
+     * Contains last used loopback address for reference when creating
+     * a new address
+     */
     private var lastIPAddress : String = ""
 
     /**
      * Contains hostname against to WireMock instance mapping
      */
     private val externalServiceMapping: MutableMap<String, String> = mutableMapOf()
-
-    @Inject
-    private lateinit var randomness: Randomness
-
-    @Inject
-    private lateinit var config : EMConfig
 
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
@@ -156,6 +160,7 @@ class ExternalServiceHandler {
         wm.start()
 
         // to prevent from the 404 when no matching stub below stub is added
+        // TODO: Need to decide what should be the default behaviour
         wm.stubFor(get(urlMatching("/.*"))
             .atPriority(2)
             .willReturn(aResponse()

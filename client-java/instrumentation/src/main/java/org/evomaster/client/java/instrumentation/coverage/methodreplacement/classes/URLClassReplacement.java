@@ -59,6 +59,7 @@ public class URLClassReplacement implements MethodReplacementClass {
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(protocol, caller.getHost(), port);
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
+            // TODO: The following logic needs to be changed in future
             if (ExecutionTracer.hasExternalMapping(caller.getHost())) {
                 String ip  = ExecutionTracer.getExternalMapping(caller.getHost());
 

@@ -99,12 +99,11 @@ object ExternalServiceUtils {
             socket = Socket()
             socket.connect(InetSocketAddress(address, port), 1000)
             false
-        } catch (e: ConnectException) {
-            true
-        } catch (e: SocketTimeoutException) {
-            true
-        } catch (e: IOException) {
-            true
+        } catch (e: Exception) {
+            when (e) {
+                is ConnectException, is SocketTimeoutException, is IOException -> { true }
+                else -> { throw e }
+            }
         } finally {
             if (socket != null) {
                 try {

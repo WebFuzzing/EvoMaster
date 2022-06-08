@@ -25,7 +25,7 @@ public class Action implements Serializable {
     public Action(int index, Collection<String> inputVariables, Map<String, String> externalServiceMapping) {
         this.index = index;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
-        this.externalServiceMapping = externalServiceMapping;
+        this.externalServiceMapping = Collections.unmodifiableMap(new HashMap<>(externalServiceMapping));
     }
 
     public int getIndex() {
