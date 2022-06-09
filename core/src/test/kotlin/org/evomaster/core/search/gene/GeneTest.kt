@@ -133,7 +133,7 @@ class GeneTest {
         sample.filter { it.isMutable() }
                 .forEach { root ->
                     root.randomize(rand, true)
-                    assertTrue(root.isValid())
+                    assertTrue(root.isValid(), "Not valid root: ${root.javaClass}")
 
                     val wholeTree = root.flatView().filter { it != root }
 
@@ -142,7 +142,7 @@ class GeneTest {
                         while (p.parent != null) {
                             p = p.parent as Gene
                         }
-                        assertEquals(root, p)
+                        assertEquals(root, p, "Gene pointing to wrong root: ${root.javaClass}")
                     }
                 }
     }
@@ -159,7 +159,7 @@ class GeneTest {
         sample.filter { it.isMutable() }
                 .forEach { root ->
                     root.randomize(rand, true)
-                    assertTrue(root.isValid())
+                    assertTrue(root.isValid(), "Not valid root: ${root.javaClass}")
 
                     val copy = root.copy()
                     assertTrue(copy != root) //TODO what is immutable root? might fail
@@ -170,7 +170,7 @@ class GeneTest {
                         while (p.parent != null) {
                             p = p.parent as Gene
                         }
-                        assertEquals(copy, p)
+                        assertEquals(copy, p, "Gene pointing to wrong root: ${root.javaClass}")
                     }
                 }
     }
@@ -183,7 +183,7 @@ class GeneTest {
 
         sample.forEach { root ->
             val copy = root.copy()
-            assertTrue(copy != root) //TODO what is immutable root? might fail
+            assertTrue(copy != root, "Copy is the same ref: ${root.javaClass}") //TODO what is immutable root? might fail
             val wholeTree = copy.flatView().filter { it != root }
 
             wholeTree.forEach { n ->
@@ -191,7 +191,7 @@ class GeneTest {
                 while (p.parent != null) {
                     p = p.parent as Gene
                 }
-                assertEquals(copy, p)
+                assertEquals(copy, p, "Gene pointing to wrong root: ${root.javaClass}")
             }
         }
     }
@@ -224,7 +224,7 @@ class GeneTest {
         val initialized = gene.initialized
         assertTrue(gene.flatView().all { it.initialized == initialized }, msg)
 
-        assertEquals(1, gene.flatView().map { it.getRoot() }.toSet().size)
+        assertEquals(1, gene.flatView().map { it.getRoot() }.toSet().size, msg)
     }
 
 
