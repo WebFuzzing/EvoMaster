@@ -7,6 +7,7 @@ import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Sampler
@@ -45,6 +46,7 @@ class RPCModule : AbstractModule(){
                 .to(object : TypeLiteral<Archive<RPCIndividual>>() {})
 
         bind(RemoteController::class.java)
+                .to(RemoteControllerImplementation::class.java)
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<RPCIndividual>>() {})
