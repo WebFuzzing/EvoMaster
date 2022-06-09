@@ -1,10 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by arcuri82 on 16-Sep-19.
@@ -18,11 +15,17 @@ public class Action implements Serializable {
      * This info can be used for different kinds of taint analysis, eg
      * to check how such values are used in the SUT
      */
-    private Set<String> inputVariables;
+    private final Set<String> inputVariables;
 
-    public Action(int index, Collection<String> inputVariables) {
+    /**
+     * A map of hostname and WireMock IP to mock external service calls.
+     */
+    private final Map<String, String> externalServiceMapping;
+
+    public Action(int index, Collection<String> inputVariables, Map<String, String> externalServiceMapping) {
         this.index = index;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
+        this.externalServiceMapping = Collections.unmodifiableMap(new HashMap<>(externalServiceMapping));
     }
 
     public int getIndex() {
@@ -32,4 +35,6 @@ public class Action implements Serializable {
     public Set<String> getInputVariables() {
         return inputVariables;
     }
+
+    public Map<String, String> getExternalServiceMapping() { return externalServiceMapping; }
 }

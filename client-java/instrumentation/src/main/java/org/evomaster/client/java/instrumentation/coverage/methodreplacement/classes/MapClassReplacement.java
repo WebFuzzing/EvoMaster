@@ -72,12 +72,27 @@ public class MapClassReplacement implements MethodReplacementClass {
             expensive...
 
             NOTE: due to changes in ReplacementList, this does not seem a problem
-            anymore. See comments in that class.
+            anymore, due to how we handle subclasses. See comments in that class.
          */
         //Collection keyCollection = new HashSet(c.keySet());
         Collection keyCollection = c.keySet();
 
         CollectionsDistanceUtils.evaluateTaint(keyCollection, o);
+
+        /*
+            Even if we skip instrumenting subclass calls, we still have issues.
+            For example, in Guava Maps, contains() is implemented as
+            map().containsKey()
+            which still leads to infinite recursion, due to map() returning
+            a reference to Map, and also due to the keyset be a non-JDK subclass as well.
+            So, we still need to look at the actual concrete class, and not just the ref.
+
+            Skipping it is not so great, but is there any alternative?
+            However, if still can evaluate taint, then should not be a big problem
+         */
+        if(!keyCollection.getClass().getName().startsWith("java.util")){
+            return c.containsKey(o);
+        }
 
         boolean result = keyCollection.contains(o);
 

@@ -64,6 +64,11 @@ public class ExecutionTracer {
     private static Set<String> inputVariables = new HashSet<>();
 
     /**
+     * A map of external service hostname and WireMock IP mapping information
+     */
+    private static Map<String, String> externalServiceMapping = new HashMap<>();
+
+    /**
      * Besides code coverage, there might be other events that we want to
      * keep track during test execution.
      * We keep track of it separately for each action
@@ -140,6 +145,10 @@ public class ExecutionTracer {
 
             if (action.getInputVariables() != null && !action.getInputVariables().isEmpty()) {
                 inputVariables = action.getInputVariables();
+            }
+
+            if (action.getIndex() == 0) {
+                externalServiceMapping = action.getExternalServiceMapping();
             }
         }
     }
@@ -513,6 +522,18 @@ public class ExecutionTracer {
         // here, we only register external info into ObjectiveRecorder if it occurs during the startup
         if (!executingAction)
             ObjectiveRecorder.registerExternalServiceInfoAtSutStartupTime(hostInfo);
+    }
+
+    /**
+     * Return the WireMock IP if there is a mapping for the hostname. If there is
+     * no mapping NULL will be returned
+     */
+    public static String getExternalMapping(String hostname) {
+        return externalServiceMapping.get(hostname);
+    }
+
+    public static boolean hasExternalMapping(String hostname) {
+        return externalServiceMapping.containsKey(hostname);
     }
 
 

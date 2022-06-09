@@ -225,6 +225,10 @@ class BigDecimalGene(
         setValueWithDecimal(BigDecimal(longValue.toString()), precision, scale)
     }
 
+    fun setValueWithString(value: String){
+        setValueWithDecimal(BigDecimal(value), precision, scale)
+    }
+
     private fun getRoundingMode() = DEFAULT_ROUNDING_MODE
 
     private fun setValueWithDecimal(bd: BigDecimal, precision: Int?, scale: Int?){

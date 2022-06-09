@@ -2,12 +2,13 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
+import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.ExternalServiceInfo
-import org.evomaster.core.problem.external.service.ExternalServices
+import org.evomaster.core.problem.external.service.ExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
@@ -17,6 +18,7 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
@@ -37,7 +39,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     @Inject
-    protected lateinit var externalServices: ExternalServices
+    protected lateinit var externalServiceHandler: ExternalServiceHandler
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -632,8 +634,17 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     private fun handleExternalServiceInfo(infoDto: List<AdditionalInfoDto>) {
         infoDto.forEach { info ->
             info.externalServices.forEach { es ->
-                externalServices.addExternalService(ExternalServiceInfo(es.protocol, es.remoteHostname, es.remotePort))
+                externalServiceHandler.addExternalService(ExternalServiceInfo(es.protocol, es.remoteHostname, es.remotePort))
             }
         }
+    }
+
+    override fun getActionDto(action: Action, index: Int) : ActionDto {
+        val actionDto = super.getActionDto(action, index)
+        // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
+        if (index == 0) {
+            actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
+        }
+        return actionDto
     }
 }

@@ -460,6 +460,9 @@ class RPCEndpointsHandler {
                 is FloatGene -> valueGene.value = dto.stringValue.toFloat()
                 is BooleanGene -> valueGene.value = dto.stringValue.toBoolean()
                 is StringGene -> valueGene.value = dto.stringValue
+                is BigDecimalGene -> valueGene.setValueWithString(dto.stringValue)
+                is BigIntegerGene -> valueGene.setValueWithString(dto.stringValue)
+                is NumericStringGene -> valueGene.number.setValueWithString(dto.stringValue)
                 is RegexGene -> {
                     // TODO set value based on RegexGene
                 }
@@ -570,7 +573,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.P_CHAR,
             RPCSupportedDataType.CHAR,
             RPCSupportedDataType.STRING,
-            RPCSupportedDataType.BYTEBUFFER -> valueGene is StringGene || (valueGene is RegexGene && dto.pattern != null)
+            RPCSupportedDataType.BYTEBUFFER -> valueGene is StringGene || (valueGene is RegexGene && dto.pattern != null) || valueGene is NumericStringGene
             RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> valueGene is DoubleGene
             RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> valueGene is FloatGene
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> valueGene is LongGene
