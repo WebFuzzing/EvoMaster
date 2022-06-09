@@ -50,8 +50,21 @@ public class SubclassExmInstrumentedTest {
 
         String result = instance.exe();
 
-        assertEquals("foobar", result);
+        assertEquals("foobar456", result);
 
         assertEquals(2, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+    }
+
+    @Test
+    public void testNoCrash() throws Exception{
+
+        assertEquals(0, ExecutionTracer.exposeAdditionalInfoList().get(0).getStringSpecializationsView().size());
+
+        SubclassExm instance = getInstance();
+
+        String result = instance.guavaMap();
+        assertEquals("ok", result);
+
+        assertEquals(1, ExecutionTracer.exposeAdditionalInfoList().get(0).getStringSpecializationsView().size());
     }
 }
