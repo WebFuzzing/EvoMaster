@@ -291,6 +291,8 @@ abstract class Gene(
      *   TODO likely deprecated, because we can traverse the tree upward now
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
+     *
+     *   TODO also pass AdaptiveParameterControl here
      */
     abstract fun randomize(
             randomness: Randomness,
