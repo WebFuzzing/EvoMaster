@@ -1,10 +1,12 @@
 package org.evomaster.core.search.gene
 
+import com.mysql.cj.result.BigDecimalValueFactory
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.MathContext
 
 class NumberGeneTest {
 
@@ -315,5 +317,15 @@ class NumberGeneTest {
         assertNotNull(bi.max)
         assertNotNull(bi.min)
     }
+
+    @Test
+    fun testBigDecimalSetValueWithDouble(){
+        val bdGene = BigDecimalGene(name = "bdGene", min = BigDecimal("-2190982811087044603"), max = BigDecimal("-1447602971353231867"), precision = 21, scale = 2)
+        val value = -1.62352851568738509E+18
+        bdGene.setValueWithDouble(value)
+        assertEquals(value, bdGene.value.toDouble())
+    }
+
+
 
 }
