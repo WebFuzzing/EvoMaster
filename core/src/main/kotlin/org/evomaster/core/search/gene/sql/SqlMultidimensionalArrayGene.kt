@@ -54,7 +54,7 @@ class SqlMultidimensionalArrayGene<T>(
          */
         // private val nestedListOfElements: MutableList<Any> = mutableListOf()
         //val flattenedArrays : MutableList<ArrayGene<T>> = mutableListOf()
-) :  CompositeGene(name, mutableListOf()) where T : Gene {
+) : CompositeGene(name, mutableListOf()) where T : Gene {
 
     init {
         if (numberOfDimensions < 1)
@@ -138,7 +138,7 @@ class SqlMultidimensionalArrayGene<T>(
 //                }
 //            }
 //            return nestedListOfNewElements
- //       }
+        //       }
 
 //        private fun containsSameValueAs(nestedListOfElements: List<Any>, otherNestedListOfElements: List<Any>): Boolean {
 //            if (nestedListOfElements.size != otherNestedListOfElements.size)
@@ -213,7 +213,7 @@ class SqlMultidimensionalArrayGene<T>(
             current = current.elements[dimensionIndexes[it]] as ArrayGene<*>
         }
         checkIndexWithinRange(dimensionIndexes.last(), current.elements.indices)
-        return current.elements[dimensionIndexes.last()]  as T
+        return current.elements[dimensionIndexes.last()] as T
 
 
 //        var currentNestedListOfElements = nestedListOfElements
@@ -233,6 +233,10 @@ class SqlMultidimensionalArrayGene<T>(
      * getDimensionSize(1) returns 3
      */
     fun getDimensionSize(dimensionIndex: Int): Int {
+        if (dimensionIndex >= this.numberOfDimensions) {
+            throw IndexOutOfBoundsException("Cannot get dimension size of dimension ${dimensionIndex} for an array of ${numberOfDimensions} dimensions")
+        }
+
         var current = children[0] as ArrayGene<*>
         if (current.elements.isEmpty()) {
             checkIndexWithinRange(dimensionIndex, IntRange(0, numberOfDimensions - 1))
@@ -267,15 +271,22 @@ class SqlMultidimensionalArrayGene<T>(
     /**
      * Creates a new list of randomized dimension sizes.
      * The total number of dimensions is equal to numberOfDimensions, and
-     * no dimension is greater than maxDimensionSize, or less than 1.
+     * no dimension is greater than maxDimensionSize.
+     * If the array is unidimensional, the dimensionSize could be 0, otherwise
+     * is always greater than 0.
      */
     private fun buildNewDimensionSizes(randomness: Randomness): MutableList<Int> {
-        val dimensionSizes: MutableList<Int> = mutableListOf()
-        repeat(numberOfDimensions) {
-            val dimensionSize = randomness.nextInt(1, maxDimensionSize)
-            dimensionSizes.add(dimensionSize)
+        if (numberOfDimensions == 1) {
+            val dimensionSize = randomness.nextInt(0, maxDimensionSize)
+            return mutableListOf(dimensionSize)
+        } else {
+            val dimensionSizes: MutableList<Int> = mutableListOf()
+            repeat(numberOfDimensions) {
+                val dimensionSize = randomness.nextInt(1, maxDimensionSize)
+                dimensionSizes.add(dimensionSize)
+            }
+            return dimensionSizes
         }
-        return dimensionSizes
     }
 
 
@@ -340,7 +351,7 @@ class SqlMultidimensionalArrayGene<T>(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\"{${this.children[0].getValueAsPrintableString( previousGenes, mode, targetFormat, extraCheck)}}\""
+        return "\"{${this.children[0].getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)}}\""
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -358,7 +369,7 @@ class SqlMultidimensionalArrayGene<T>(
         this.children[0].copyValueFrom(other.getViewOfChildren()[0])
     }
 
-    fun replaceElements(
+    private fun replaceElements(
             dimensionSizes: List<Int>
     ) {
         // check the number of dimensions is correct
@@ -383,8 +394,8 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
     /**
-//     * Add all elements (adding them to the structured gene)
-//     */
+    //     * Add all elements (adding them to the structured gene)
+    //     */
 //    private fun addAllElements(newElements: List<Any>) {
 //        nestedListOfElements.addAll(newElements)
 //        addChildren(getAllGenes(nestedListOfElements))
@@ -395,8 +406,6 @@ class SqlMultidimensionalArrayGene<T>(
 //     */
 
 
-
-
     /**
      * 1 is for 'remove' or 'add' element.
      * The mutationWeight is computed on all elements in the same way
@@ -404,7 +413,7 @@ class SqlMultidimensionalArrayGene<T>(
      */
     override fun mutationWeight(): Double {
         return 1.0 //TODO
-    //return 1.0 + getAllGenes(this.nestedListOfElements).sumOf { it.mutationWeight() }
+        //return 1.0 + getAllGenes(this.nestedListOfElements).sumOf { it.mutationWeight() }
     }
 
 
@@ -455,15 +464,15 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
 
-
     /**
      * Same value as ArrayGene.timesProbToModifySize()
      */
     private fun timesProbToModifySize(): Int = 3
 
-    override fun copyContent() : Gene{
+    override fun copyContent(): Gene {
 
-        val copy =   SqlMultidimensionalArrayGene(name = name,
+        val copy = SqlMultidimensionalArrayGene(
+                name = name,
                 template = template.copy(),
                 numberOfDimensions = numberOfDimensions,
                 maxDimensionSize = maxDimensionSize,
@@ -471,12 +480,13 @@ class SqlMultidimensionalArrayGene<T>(
                 //        nestedListOfElements = copyValueFrom(nestedListOfElements).toMutableList()
         )
 
-        if(children.isNotEmpty()){
+        if (children.isNotEmpty()) {
             copy.addChild(this.children[0].copy())
         }
 
         return copy
     }
+
     override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
