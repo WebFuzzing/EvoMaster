@@ -22,7 +22,7 @@ public class ThriftExceptionRPCController extends SpringController {
 
     @Override
     public ProblemInfo getProblemInfo() {
-        return new RPCProblem(ThriftExceptionService.Iface.class, client, RPCType.THRIFT);
+        return new RPCProblem(ThriftExceptionService.Iface.class, client, RPCType.GENERAL);
     }
 
     @Override
