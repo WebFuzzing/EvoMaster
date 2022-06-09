@@ -3,11 +3,10 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.external.service.ExternalServiceInfo
-import org.evomaster.core.problem.external.service.ExternalServices
+import org.evomaster.core.problem.external.service.ExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
@@ -44,7 +43,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
     @Inject
-    protected lateinit var externalServices: ExternalServices
+    protected lateinit var externalServiceHandler: ExternalServiceHandler
 
     @PostConstruct
     open fun initialize() {
@@ -266,7 +265,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     private fun initExternalServiceInfo(info: SutInfoDto) {
         if (info.bootTimeInfoDto?.externalServicesDto != null) {
             info.bootTimeInfoDto.externalServicesDto.forEach {
-                externalServices.addExternalService(ExternalServiceInfo(
+                externalServiceHandler.addExternalService(ExternalServiceInfo(
                         it.protocol,
                         it.remoteHostname,
                         it.remotePort
@@ -275,7 +274,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
     }
 
-    fun getExternalServicesInfo(): ExternalServices {
-        return externalServices
+    fun getExternalServicesInfo(): ExternalServiceHandler {
+        return externalServiceHandler
     }
 }

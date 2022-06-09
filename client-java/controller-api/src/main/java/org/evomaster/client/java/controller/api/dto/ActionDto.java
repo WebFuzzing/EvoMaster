@@ -3,7 +3,9 @@ package org.evomaster.client.java.controller.api.dto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by arcuri82 on 16-Sep-19.
@@ -29,4 +31,10 @@ public class ActionDto {
      * note that this is only used when handling RPC problem
      */
     public RPCActionDto rpcCall;
+
+    /**
+     * Mapping of external service hostname to internal WireMock
+     * instance addresses.
+     */
+    public Map<String, String> externalServiceMapping = new HashMap<>();
 }
