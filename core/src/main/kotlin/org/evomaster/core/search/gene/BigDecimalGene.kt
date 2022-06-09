@@ -238,8 +238,10 @@ class BigDecimalGene(
             else bd.setScale(scale, getRoundingMode())
         } else{
             val context = MathContext(precision, getRoundingMode())
-            if (scale == null) bd.round(context)
-            else BigDecimal(bd.unscaledValue(), scale, context)
+            bd.round(context).run {
+                if (scale != null) this.setScale(scale)
+                else this
+            }
         }
     }
 
