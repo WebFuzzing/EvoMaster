@@ -48,6 +48,12 @@ public class RPCExceptionHandler {
             exceptionInfoDto = handleExceptionNameAndMessage(exceptionToHandle);
 
             handled = handleDefinedException(exceptionToHandle, endpointSchema, type, exceptionInfoDto);
+
+            // Thrift exception
+            if (isFromTException(e)){
+                handled = handleThrift(exceptionToHandle, endpointSchema, exceptionInfoDto) || handled;
+            }
+
             if (handled) {
                 dto.exceptionInfoDto = exceptionInfoDto;
                 dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
@@ -58,10 +64,7 @@ public class RPCExceptionHandler {
             throw new RuntimeException("ERROR: fail to handle defined exception for "+type+" with error msg:"+ ex);
         }
 
-        // Thrift
-        if (isFromTException(e)){
-            handled = handleThrift(exceptionToHandle, endpointSchema, exceptionInfoDto);
-        }
+
         // handling defined exception for each RPC
 //        switch (type){
 //            case THRIFT: handled = handleThrift(exceptionToHandle, endpointSchema, exceptionInfoDto); break;
@@ -69,9 +72,7 @@ public class RPCExceptionHandler {
 //            default: throw new RuntimeException("ERROR: NOT SUPPORT exception handling for "+type);
 //        }
 
-        if (!handled) {
-            handleUnexpectedException(exceptionToHandle, exceptionInfoDto);
-        }
+        handleUnexpectedException(exceptionToHandle, exceptionInfoDto);
 
         dto.exceptionInfoDto = exceptionInfoDto;
 
