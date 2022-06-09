@@ -126,4 +126,7 @@ abstract class NumberGene<T : Number>(name: String,
      */
     abstract fun getZero() : T
 
+    override fun toString(): String {
+        return "${this.javaClass.simpleName}: $value [$minInclusive $min, $maxInclusive $max] [s=$scale,p=$precision]"
+    }
 }

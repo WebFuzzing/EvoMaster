@@ -508,12 +508,16 @@ object GeneSamplerForTests {
         val least = getMinPrecision(min)
         val precision = max(min(least + rand.nextInt(0, 10), 308), least) + (scale?:0)
 
+        val minInclusive = rand.nextBoolean()
+        val maxInclusive = rand.nextBoolean()
+        val delta : Double = if(!minInclusive || !maxInclusive) 2.0 else 0.0
+
         return DoubleGene(
                 name = "rand DoubleGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + rand.nextDouble())),
-                minInclusive = rand.nextBoolean(),
-                maxInclusive = rand.nextBoolean(),
+                max = rand.choose(listOf(null, min + delta + rand.nextDouble())),
+                minInclusive = minInclusive,
+                maxInclusive = maxInclusive,
                 precision = rand.choose(listOf(null, precision)),
                 scale = scale
         )
@@ -526,12 +530,17 @@ object GeneSamplerForTests {
         val least = getMinPrecision(min)
         val precision = max(min(least + rand.nextInt(0, 2), 8), least)
 
+        val minInclusive = rand.nextBoolean()
+        val maxInclusive = rand.nextBoolean()
+        val delta = if(!minInclusive || !maxInclusive) 2 else 0
+
+
         return IntegerGene(
                 name = "rand IntegerGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + rand.nextInt(0, 100))),
-                minInclusive = rand.nextBoolean(),
-                maxInclusive = rand.nextBoolean(),
+                max = rand.choose(listOf(null, min + delta + rand.nextInt(0, 100))),
+                minInclusive = minInclusive,
+                maxInclusive = maxInclusive,
                 precision = rand.choose(listOf(null, precision)),
         )
     }

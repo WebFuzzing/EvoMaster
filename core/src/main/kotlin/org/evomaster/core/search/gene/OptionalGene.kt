@@ -83,10 +83,12 @@ class OptionalGene(name: String,
 
         if (!tryToForceNewValue) {
             isActive = randomness.nextBoolean()
-            gene.randomize(randomness, false, allGenes)
+            if(gene.isMutable()) {
+                gene.randomize(randomness, false, allGenes)
+            }
         } else {
 
-            if (randomness.nextBoolean()) {
+            if (randomness.nextBoolean() || !gene.isMutable()) {
                 isActive = !isActive
             } else {
                 gene.randomize(randomness, true, allGenes)

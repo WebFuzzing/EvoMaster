@@ -66,6 +66,7 @@ class GeneTest {
             if sampler is working fine
          */
         val rand = Randomness()
+        rand.updateSeed(42)
         for (i in 0..100) {
             rand.updateSeed(i.toLong())
             val s = GeneSamplerForTests.sample(StringGene::class, rand)
@@ -83,7 +84,7 @@ class GeneTest {
                 .filter { !it.isAbstract }
                 .filter {
                     try {
-                        GeneSamplerForTests.sample(it, Randomness()); false
+                        GeneSamplerForTests.sample(it, Randomness().apply { updateSeed(42) }); false
                     } catch (e: Exception) {
                         true
                     }
@@ -124,7 +125,7 @@ class GeneTest {
     }
 
     @ParameterizedTest
-    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10])
+    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20])
     fun testParentRandomized(seed: Long) {
         val rand = Randomness()
         rand.updateSeed(seed)
@@ -133,7 +134,7 @@ class GeneTest {
         sample.filter { it.isMutable() }
                 .forEach { root ->
                     root.randomize(rand, true)
-                    assertTrue(root.isValid(), "Not valid root: ${root.javaClass}")
+                    assertTrue(root.isValid(), "Not valid root: ${root.javaClass}. $root")
 
                     val wholeTree = root.flatView().filter { it != root }
 
@@ -197,7 +198,7 @@ class GeneTest {
     }
 
     @ParameterizedTest
-    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10])
+    @ValueSource(longs = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20])
     fun testRandomized(seed: Long){
 
         val rand = Randomness()
