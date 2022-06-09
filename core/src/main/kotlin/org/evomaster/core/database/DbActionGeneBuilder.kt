@@ -194,7 +194,7 @@ class DbActionGeneBuilder {
                     SqlJSONGene(column.name)
 
                 /**
-                 * Postgres XML column type
+                 * PostgreSQL XML column type
                  */
                 ColumnDataType.XML ->
                     SqlXMLGene(column.name)
@@ -211,24 +211,47 @@ class DbActionGeneBuilder {
                 ColumnDataType.INTERVAL ->
                     SqlTimeIntervalGene(column.name)
 
+                /*
+                 * MySQL and PostgreSQL Point column data type
+                 */
                 ColumnDataType.POINT ->
-                    SqlPointGene(column.name)
+                    SqlPointGene(column.name, databaseType=column.databaseType)
 
+                /*
+                 * PostgreSQL LINE Column data type
+                 */
                 ColumnDataType.LINE ->
                     SqlLineGene(column.name)
 
+                /*
+                 * PostgreSQL LSEG (line segment) column data type
+                 */
                 ColumnDataType.LSEG ->
                     SqlLineSegmentGene(column.name)
 
+                /*
+                 * PostgreSQL BOX column data type
+                 */
                 ColumnDataType.BOX ->
                     SqlBoxGene(column.name)
 
+                /*
+                 * MySQL LINESTRING and PostgreSQL PATH
+                 * column data types
+                 */
+                ColumnDataType.LINESTRING,
                 ColumnDataType.PATH ->
-                    SqlPathGene(column.name)
+                    SqlPathGene(column.name, databaseType = column.databaseType)
 
+                /* MySQL and PostgreSQL POLYGON
+                 * column data type
+                 */
                 ColumnDataType.POLYGON ->
-                    SqlPolygonGene(column.name)
+                    buildSqlPolygonGene(column)
 
+                /*
+                 * PostgreSQL CIRCLE column data type
+                 */
                 ColumnDataType.CIRCLE ->
                     SqlCircleGene(column.name)
 
@@ -325,6 +348,25 @@ class DbActionGeneBuilder {
 
         return gene
     }
+
+    private fun buildSqlPolygonGene(column: Column): SqlPolygonGene {
+        return when (column.databaseType) {
+            /*
+             * TODO: Uncomment this option when the [isValid()]
+             * method is ensured after each mutation of the
+             * children of the SqlPolygonGene.
+             */
+//            DatabaseType.MYSQL -> {
+//                SqlPolygonGene(column.name, minLengthOfPolygonRing=3, onlyNonIntersectingPolygons = true, databaseType = column.databaseType)
+//            }
+            DatabaseType.POSTGRES -> {
+                return SqlPolygonGene(column.name, minLengthOfPolygonRing=2, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
+
+            }
+            else -> {throw IllegalArgumentException("Must define minLengthOfPolygonRing for database ${column.databaseType}")}
+        }
+    }
+
 
     private fun buildSqlTimestampRangeGene(column: Column) =
             SqlRangeGene(column.name, template = buildSqlTimestampGene("bound", databaseType = column.databaseType))

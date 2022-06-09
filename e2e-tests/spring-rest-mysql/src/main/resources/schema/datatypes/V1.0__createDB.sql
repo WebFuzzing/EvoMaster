@@ -95,16 +95,13 @@ CREATE TABLE spatialdatatypes (
   integercolumn INTEGER NOT NULL,
 
   pointcolumn POINT NOT NULL,
-  polygoncolumn POLYGON NOT NULL/*,
-
-  linestringcolumn LINESTRING NOT NULL,
+  linestringcolumn LINESTRING NOT NULL/*,
+  polygoncolumn POLYGON NOT NULL,
   multipointcolumn MULTIPOINT NOT NULL,
   multilinestringcolumn MULTILINESTRING NOT NULL,
   multipolygoncolumn MULTIPOLYGON NOT NULL,
   geometrycolumn GEOMETRY NOT NULL,
   geometrycollectioncolumn GEOMETRYCOLLECTION NOT NULL*/
-
-
 );
 
 

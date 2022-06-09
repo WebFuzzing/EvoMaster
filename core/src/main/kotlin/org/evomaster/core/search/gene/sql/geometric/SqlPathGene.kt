@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql.geometric
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -12,11 +13,12 @@ import org.slf4j.LoggerFactory
 
 class SqlPathGene(
         name: String,
+        val databaseType: DatabaseType = DatabaseType.POSTGRES,
         val points: ArrayGene<SqlPointGene> = ArrayGene(
                 name = "points",
                 // paths are lists of at least 2 points
                 minSize = 2,
-                template = SqlPointGene("p"))
+                template = SqlPointGene("p", databaseType=databaseType))
 ) : Gene(name, mutableListOf(points)) {
 
     companion object {
@@ -28,7 +30,8 @@ class SqlPathGene(
 
     override fun copyContent(): Gene = SqlPathGene(
             name,
-            points.copyContent() as ArrayGene<SqlPointGene>
+            points = points.copyContent() as ArrayGene<SqlPointGene>,
+            databaseType = this.databaseType
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -52,11 +55,17 @@ class SqlPathGene(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\" ( ${
-            points.getAllElements()
-                    .map { it.getValueAsRawString() }
-                    .joinToString(" , ")
-        } ) \""
+        return when (databaseType) {
+            DatabaseType.POSTGRES -> {"\" ( ${
+                points.getAllElements().joinToString(" , ") { it.getValueAsRawString() }
+            } ) \""}
+            DatabaseType.MYSQL -> {
+                "LINESTRING(${points.getAllElements()
+                        .joinToString(" , ")
+                        { it.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck) }})"
+            }
+            else -> { throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")}
+        }
     }
 
     override fun getValueAsRawString(): String {

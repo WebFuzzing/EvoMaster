@@ -14,12 +14,12 @@ import javax.persistence.EntityManager
 @EnableSwagger2
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api/mysql"])
-open class MySqlDataTypesApp : SwaggerConfiguration() {
+open class MySQLDataTypesApp : SwaggerConfiguration() {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(MySqlDataTypesApp::class.java, *args)
+            SpringApplication.run(MySQLDataTypesApp::class.java, *args)
         }
     }
 
@@ -116,7 +116,7 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-//    @GetMapping(path = ["/jsondatatypes"])
+    @GetMapping(path = ["/jsondatatypes"])
     fun getJsonDataTypes() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from jsondatatypes where integercolumn>0")
@@ -127,7 +127,7 @@ open class MySqlDataTypesApp : SwaggerConfiguration() {
         return ResponseEntity.status(status).build()
     }
 
-//    @GetMapping(path = ["/spatialdatatypes"])
+    @GetMapping(path = ["/spatialdatatypes"])
     fun getSpatialDataTypes() : ResponseEntity<Any> {
 
         val query = em.createNativeQuery("select (1) from spatialdatatypes where integercolumn>0")

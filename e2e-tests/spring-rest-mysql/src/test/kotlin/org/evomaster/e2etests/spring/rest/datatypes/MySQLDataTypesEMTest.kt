@@ -1,19 +1,19 @@
 package org.evomaster.e2etests.spring.rest.datatypes
 
-import com.foo.spring.rest.mysql.datatypes.MySqlDataTypesController
+import com.foo.spring.rest.mysql.datatypes.MySQLDataTypesController
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class MySqlDataTypesEMTest : RestTestBase() {
+class MySQLDataTypesEMTest : RestTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun initClass() {
-            initClass(MySqlDataTypesController())
+            initClass(MySQLDataTypesController())
         }
     }
 
@@ -23,9 +23,12 @@ class MySqlDataTypesEMTest : RestTestBase() {
         val budget = 200
         runTestHandlingFlakyAndCompilation(
                 "DataTypesEM",
-                "org.bar.mysql.MySqlDataTypesEM",
+                "org.bar.mysql.MySQLDataTypesEM",
                 budget
         ) { args ->
+
+            args.add("--enableWeightBasedMutationRateSelectionForGene")
+            args.add("false")
 
             val solution = initAndRun(args)
 
@@ -55,11 +58,11 @@ class MySqlDataTypesEMTest : RestTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/fixedpointtypes",null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/fixedpointtypes",null)
 
-//            assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/jsondatatypes",null)
-//            assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/jsondatatypes",null)
-//
-//            assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/spatialdatatypes",null)
-//            assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/spatialdatatypes",null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/jsondatatypes",null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/jsondatatypes",null)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400,"/api/mysql/spatialdatatypes",null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200,"/api/mysql/spatialdatatypes",null)
 
         }
     }
