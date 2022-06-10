@@ -112,7 +112,7 @@ class SqlMultidimensionalArrayGene<T>(
 
             if (dimensionSizes.size == 1) {
                 val s = dimensionSizes[0]
-                return ArrayGene("[$s]", template.copy(), maxSize = s, minSize = s)
+                return ArrayGene("[$s]", template.copy(), maxSize = s, minSize = s, openingTag = "{", closingTag = "}", separatorTag = ",")
             }
 
             val currentDimensionSize = dimensionSizes.first()
@@ -120,7 +120,7 @@ class SqlMultidimensionalArrayGene<T>(
             val array = buildNewElements(nextDimensionSizes, template)
 
             return ArrayGene("[$currentDimensionSize]${array.name}", array,
-                    maxSize = currentDimensionSize, minSize = currentDimensionSize)
+                    maxSize = currentDimensionSize, minSize = currentDimensionSize, openingTag = "{", closingTag = "}", separatorTag = ",")
         }
 
 
@@ -351,7 +351,7 @@ class SqlMultidimensionalArrayGene<T>(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\"{${this.children[0].getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)}}\""
+        return "\"${this.children[0].getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)}\""
     }
 
     override fun copyValueFrom(other: Gene) {
