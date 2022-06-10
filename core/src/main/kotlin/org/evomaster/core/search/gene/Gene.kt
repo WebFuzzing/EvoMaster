@@ -14,6 +14,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
 import org.evomaster.core.search.RootElement
+import org.evomaster.core.search.service.SearchGlobalState
 
 
 /**
@@ -148,6 +149,22 @@ abstract class Gene(
         markAllAsInitialized()
         Lazy.assert{isValid()}
     }
+
+    fun doGlobalInitialize(){
+        if(!initialized){
+            throw IllegalStateException("The gene was not locally initialized")
+        }
+        val ind = getRoot()
+        if(ind !is Individual){
+            throw IllegalStateException("The gene is not mounted inside an individual")
+        }
+        if(ind.searchGlobalState == null){
+            throw IllegalStateException("Search Global State was not setup for the individual")
+        }
+        applyGlobalUpdates()
+    }
+
+    protected open fun applyGlobalUpdates(){}
 
     /*
         TODO needed for copies. check if can be refactored, eg if copyContent enforce the copy of initialized
@@ -298,6 +315,14 @@ abstract class Gene(
             randomness: Randomness,
             tryToForceNewValue: Boolean,
             allGenes: List<Gene> = listOf())
+
+
+    fun getSearchGlobalState() : SearchGlobalState? {
+
+        val root = getRoot()
+        if(root is Individual) return root.searchGlobalState
+        return null
+    }
 
     /**
      * A mutation is just a small change.

@@ -140,18 +140,20 @@ class StringGene(
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
-        /*
-            TODO weirdly we did not do taint on sampling!!! we must do it, and evaluate it
-
-        if(!tainted){
-            redoTaint()
-        }
-         */
-
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
         repair()
         selectedSpecialization = -1
         handleBinding(allGenes)
+    }
+
+    override fun applyGlobalUpdates() {
+        assert(!tainted)
+
+        //check if starting directly with a tainted value
+        val state = getSearchGlobalState()!! //cannot be null when this method is called
+        if(state.config.taintOnSampling){
+            redoTaint(state.apc, state.randomness, listOf())
+        }
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {

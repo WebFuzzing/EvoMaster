@@ -71,6 +71,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return copy
     }
 
+    fun doGlobalInitialize(){
+        seeGenes().forEach { it.doGlobalInitialize() }
+    }
+
     fun isInitialized() : Boolean{
         return seeGenes().all { it.initialized }
     }

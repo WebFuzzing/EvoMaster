@@ -1493,6 +1493,10 @@ class EMConfig {
     @Probability
     var baseTaintAnalysisProbability = 0.9
 
+    @Experimental
+    @Cfg("Whether input tracking is used on sampling time, besides mutation time")
+    var taintOnSampling = false
+
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
 
