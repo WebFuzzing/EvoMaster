@@ -29,6 +29,9 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
 
     override fun configure() {
 
+        bind(SearchGlobalState::class.java)
+                .asEagerSingleton()
+
         bind(SearchTimeController::class.java)
                 .asEagerSingleton()
 

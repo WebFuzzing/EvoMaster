@@ -78,6 +78,7 @@ open class ResourceSampler : AbstractRestSampler() {
 
         val ind = RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
+        ind.searchGlobalState = searchGlobalState
         return ind
     }
 
@@ -108,7 +109,9 @@ open class ResourceSampler : AbstractRestSampler() {
 
         val method = ssc.getSampleStrategy()
 
-        return sampleWithMethodAndDependencyOption(method, withDependency)?:sampleAtRandom()
+        val ind =  sampleWithMethodAndDependencyOption(method, withDependency)?:sampleAtRandom()
+        ind.searchGlobalState = searchGlobalState
+        return ind
     }
 
 
@@ -229,10 +232,12 @@ open class ResourceSampler : AbstractRestSampler() {
                     dbActions = listOf()
             )
         }.toMutableList()
-        return RestIndividual(
+        val ind =  RestIndividual(
                 resourceCalls=resourceCalls,
                 sampleType = SampleType.SMART_RESOURCE,
                 trackOperator = if (config.trackingEnabled()) this else null,
                 index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
+        ind.searchGlobalState = searchGlobalState
+        return ind
     }
 }
