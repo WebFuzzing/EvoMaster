@@ -72,6 +72,9 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     fun doGlobalInitialize(){
+
+        //TODO make sure that seeded individual get skipped here
+
         seeGenes().forEach { it.doGlobalInitialize() }
     }
 

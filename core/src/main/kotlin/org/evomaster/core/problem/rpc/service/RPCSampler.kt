@@ -99,7 +99,10 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
     override fun sampleAtRandom(): RPCIndividual {
         val len = randomness.nextInt(1, config.maxTestSize)
         val actions = (0 until len).map { sampleRandomAction(0.05)}
-        return createRPCIndividual(actions.toMutableList())
+        val ind = createRPCIndividual(actions.toMutableList())
+        ind.searchGlobalState = searchGlobalState
+        ind.doGlobalInitialize()
+        return ind
     }
 
     /*
@@ -114,6 +117,11 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
 
         if (config.seedTestCases && infoDto.rpcProblem?.seededTestDtos?.isNotEmpty() == true){
             adHocInitialIndividuals.addAll(rpcHandler.handledSeededTests(infoDto.rpcProblem.seededTestDtos))
+        }
+
+        adHocInitialIndividuals.forEach {
+            it.searchGlobalState = searchGlobalState
+            it.doGlobalInitialize()
         }
     }
 
