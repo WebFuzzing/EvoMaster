@@ -136,9 +136,9 @@ class SqlMultidimensionalArrayGeneTest {
         assertThrows<IndexOutOfBoundsException> {
             gene.getElement(listOf(-1))
         }
-        val elem0 = gene.getElement(listOf(0))
-        val elem1 = gene.getElement(listOf(1))
-        val elem2 = gene.getElement(listOf(2))
+        gene.getElement(listOf(0))
+        gene.getElement(listOf(1))
+        gene.getElement(listOf(2))
         assertThrows<IndexOutOfBoundsException> {
             gene.getElement(listOf(3))
         }
@@ -322,7 +322,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(1)).value = 2
         gene.getElement(listOf(2)).value = 3
 
-        assertEquals("\"{1, 2, 3}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{1,2,3}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 
@@ -336,7 +336,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(1, 0)).value = 3
         gene.getElement(listOf(1, 1)).value = 4
 
-        assertEquals("\"{{1, 2}, {3, 4}}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{{1,2},{3,4}}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 
@@ -346,7 +346,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(0, 0)).value = 1
         gene.getElement(listOf(0, 1)).value = 2
         gene.getElement(listOf(0, 2)).value = 3
-        assertEquals("\"{{1, 2, 3}}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{{1,2,3}}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 
@@ -356,7 +356,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(0, 0)).value = 1
         gene.getElement(listOf(1, 0)).value = 2
         gene.getElement(listOf(2, 0)).value = 3
-        assertEquals("\"{{1}, {2}, {3}}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{{1},{2},{3}}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 
@@ -381,7 +381,7 @@ class SqlMultidimensionalArrayGeneTest {
 
         gene.getElement(listOf(0)).value = "Hello"
         gene.getElement(listOf(1)).value = "World"
-        assertEquals("\"{\"Hello\", \"World\"}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{\"Hello\",\"World\"}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 

@@ -72,6 +72,7 @@ class SqlMultidimensionalArrayGene<T>(
             }
         }
 
+
         /**
          * Recursively creates the internal representation
          * of the multidimensional array. The argument is
@@ -79,28 +80,20 @@ class SqlMultidimensionalArrayGene<T>(
          */
         private fun <T : Gene> buildNewElements(
                 dimensionSizes: List<Int>,
-                template: T
+                elementTemplate: T
         ): ArrayGene<*> {
+            val s = dimensionSizes[0]
             return if (dimensionSizes.size == 1) {
                 // leaf ArrayGene case
-                val s = dimensionSizes[0]
-                return ArrayGene("[$s]", template.copy(), maxSize = s, minSize = s, openingTag = "{", closingTag = "}", separatorTag = ",")
-            }
-
-            val currentDimensionSize = dimensionSizes.first()
-            val nextDimensionSizes = dimensionSizes.drop(1)
-            val array = buildNewElements(nextDimensionSizes, template)
-
-            return ArrayGene("[$currentDimensionSize]${array.name}", array,
-                    maxSize = currentDimensionSize, minSize = currentDimensionSize, openingTag = "{", closingTag = "}", separatorTag = ",")
-                ArrayGene("[$s]", template.copy(), maxSize = s, minSize = s)
+                ArrayGene("[$s]", elementTemplate.copy(), maxSize = s, minSize = s, openingTag = "{", closingTag = "}", separatorTag = ",")
             } else {
                 // nested/inner ArrayGene case
                 val currentDimensionSize = dimensionSizes.first()
                 val nextDimensionSizes = dimensionSizes.drop(1)
-                val templateArrayGene = buildNewElements(nextDimensionSizes, template)
-                ArrayGene("[$currentDimensionSize]${templateArrayGene.name}", templateArrayGene,
-                        maxSize = currentDimensionSize, minSize = currentDimensionSize)
+                val arrayTemplate = buildNewElements(nextDimensionSizes, elementTemplate)
+
+                ArrayGene("[$currentDimensionSize]${arrayTemplate.name}", arrayTemplate,
+                        maxSize = currentDimensionSize, minSize = currentDimensionSize, openingTag = "{", closingTag = "}", separatorTag = ",")
             }
         }
     }
@@ -134,25 +127,6 @@ class SqlMultidimensionalArrayGene<T>(
         return current.elements[dimensionIndexes.last()] as T
     }
 
-    private fun getValueAsPrintableString(currentArrayGene: ArrayGene<*>,
-                                          currentDimensionIndex: Int,
-                                          previousGenes: List<Gene>,
-                                          mode: GeneUtils.EscapeMode?,
-                                          targetFormat: OutputFormat?,
-                                          extraCheck: Boolean
-    ): String {
-        return if (currentDimensionIndex == numberOfDimensions - 1) {
-            // case of leaf ArrayGene
-            "{" + currentArrayGene.getViewOfChildren()
-                    .joinToString { it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) } + "}"
-        } else {
-            // case of inner, nested ArrayGene
-            "{" + currentArrayGene.getViewOfChildren()
-                    .joinToString { getValueAsPrintableString(it as ArrayGene<*>, currentDimensionIndex + 1, previousGenes, mode, targetFormat, extraCheck) } + "}"
-        }
-    }
-
-
     private fun isValid(currentArrayGene: ArrayGene<*>, currentDimensionIndex: Int): Boolean {
         return if (!currentArrayGene.isValid())
             false
@@ -180,7 +154,7 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
     /**
-     *  Requires the multidimensional array to be initalized
+     *  Requires the multidimensional array to be initialized
      */
     private fun getArray(): ArrayGene<*> {
         assert(initialized)
@@ -335,7 +309,6 @@ class SqlMultidimensionalArrayGene<T>(
         return 1.0 //TODO
         //return 1.0 + getAllGenes(this.nestedListOfElements).sumOf { it.mutationWeight() }
     }
-
 
     /**
      * The function adaptiveSelectSubset() behaves as ArrayGene.adaptiveSelectSubset()
