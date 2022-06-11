@@ -8,6 +8,7 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.external.service.ExternalServiceHandler
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.Mutator
@@ -39,6 +40,7 @@ class RestModule : AbstractModule(){
                 .to(object : TypeLiteral<Archive<RestIndividual>>() {})
 
         bind(RemoteController::class.java)
+                .to(RemoteControllerImplementation::class.java)
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})

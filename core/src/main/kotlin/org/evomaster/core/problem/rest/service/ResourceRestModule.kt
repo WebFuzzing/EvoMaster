@@ -8,6 +8,7 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.external.service.ExternalServiceHandler
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Sampler
@@ -16,9 +17,20 @@ import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.mutator.StructureMutator
 
 
-class ResourceRestModule : AbstractModule(){
+class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModule(){
 
     override fun configure() {
+
+        if(bindRemote){
+            /*
+                Governator does not seem to have a way to override bindings for testing :(
+                so we do it manually
+             */
+            bind(RemoteController::class.java)
+                    .to(RemoteControllerImplementation::class.java)
+                    .asEagerSingleton()
+        }
+
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
                 .to(ResourceSampler::class.java)
                 .asEagerSingleton()
@@ -46,9 +58,6 @@ class ResourceRestModule : AbstractModule(){
 
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RestIndividual>>() {})
-
-        bind(RemoteController::class.java)
-                .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
                 .to(ResourceRestMutator::class.java)

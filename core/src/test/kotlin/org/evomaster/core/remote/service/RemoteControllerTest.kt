@@ -75,7 +75,7 @@ class RemoteControllerTest {
         driver.controllerPort = 0 //ephemeral
         driver.startTheControllerServer()
 
-        remote = RemoteController("localhost", driver.controllerServerPort, false, false)
+        remote = RemoteControllerImplementation("localhost", driver.controllerServerPort, false, false)
     }
 
     @AfterEach
