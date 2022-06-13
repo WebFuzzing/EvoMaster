@@ -75,6 +75,8 @@ object GeneSamplerForTests {
             /*
                 Note that here we do NOT randomize the values of genes, but rather
                 the (fixed) constraints
+
+                when genes need input genes, we sample those at random as well
              */
             ArrayGene::class -> sampleArrayGene(rand) as T
             Base64StringGene::class -> sampleBase64StringGene(rand) as T
@@ -140,11 +142,7 @@ object GeneSamplerForTests {
             SqlBinaryStringGene::class -> sampleSqlBinaryStringGene(rand) as T
             SqlUUIDGene::class -> sampleSqlUUIDGene(rand) as T
 
-
             else -> throw IllegalStateException("No sampler for $klass")
-
-            //TODO need for all Genes
-            // when genes need input genes, we sample those at random as well
         }
     }
 
@@ -343,6 +341,9 @@ object GeneSamplerForTests {
         val selection = geneClasses
                 .filter { !it.isAbstract }
                 .filter { it.isSubclassOf(RxTerm::class) }
+                //let's avoid huge trees...
+                .filter { (it.java != DisjunctionListRxGene::class.java && it.java != DisjunctionRxGene::class.java)
+                        || rand.nextBoolean() }
 
         val numberOfTerms = rand.nextInt(1, 3)
         return DisjunctionRxGene(

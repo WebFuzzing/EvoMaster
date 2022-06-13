@@ -344,9 +344,12 @@ class SqlMultidimensionalArrayGene<T>(
 
 
     override fun copyContent(): Gene {
-        if (!initialized) {
-            throw IllegalStateException("Cannot call to copyContent() from an uninitialized multidimensional array")
-        }
+        /*
+            TODO Not sure about this. Even if we want to put this constraint, then should be in Gene
+         */
+//        if (!initialized) {
+//            throw IllegalStateException("Cannot call to copyContent() from an uninitialized multidimensional array")
+//        }
 
         val copy = SqlMultidimensionalArrayGene(
                 name = name,
