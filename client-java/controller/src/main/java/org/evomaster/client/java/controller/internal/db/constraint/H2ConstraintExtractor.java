@@ -3,6 +3,8 @@ package org.evomaster.client.java.controller.internal.db.constraint;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.db.QueryResult;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -24,6 +26,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
     public static final String PRIMARY_KEY = "PRIMARY_KEY";
     public static final String PRIMARY_KEY_BLANK = "PRIMARY KEY";
     public static final String CHECK = "CHECK";
+    public static final String CHECK_CONSTRAINT = "CHECK_CONSTRAINT";
 
     /**
      * Expects the schema explained in
@@ -93,7 +96,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
                             case PRIMARY_KEY:
                             case PRIMARY_KEY_BLANK:
                             case REFERENTIAL:
-                                /**
+                                /*
                                  * This type of constraint is already handled by
                                  * JDBC Metadata
                                  **/
@@ -115,6 +118,23 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
     }
 
     /**
+     * Returns the version of the H2 database.
+     * Some possible values are "2.1.212", "1.4.200"
+     * @param connectionToH2 the connection to the H2 database
+     * @return the version of the H2 database
+     * @throws SQLException if the H2Version() function is not implemented
+     */
+    private String getVersion(Connection connectionToH2) throws SQLException {
+        try (Statement statement = connectionToH2.createStatement()) {
+            final String query = "SELECT H2Version();";
+            try (ResultSet columns = statement.executeQuery(query)) {
+                columns.next();
+                return columns.getString("H2Version()");
+            }
+        }
+    }
+
+    /**
      * For each table in the schema DTO, this method appends
      * the constraints that are originated in the CREATE TABLE commands
      * for those particular tables.
@@ -126,6 +146,15 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      * @throws SQLException if the connection to the database fails
      */
     private List<DbTableConstraint> extractColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
+        String h2Version = getVersion(connectionToH2);
+        if (!h2Version.startsWith("1.") && !h2Version.startsWith("0.")) {
+            /*
+             * Since version 2.xx, INFORMATION_SCHEMA.COLUMNS.CHECK_CONSTRAINT was removed.
+             * https://github.com/h2database/h2database/issues/2286#issuecomment-560286207
+             */
+            return new ArrayList<>();
+        }
+
         String tableSchema = schemaDto.name;
         List<DbTableConstraint> columnConstraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
@@ -133,11 +162,12 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
 
             try (Statement statement = connectionToH2.createStatement()) {
 
+
                 final String query = String.format("Select * From INFORMATION_SCHEMA.COLUMNS where COLUMNS.TABLE_SCHEMA='%s' and COLUMNS.TABLE_NAME='%s' ", tableSchema, tableName);
 
                 try (ResultSet columns = statement.executeQuery(query)) {
                     while (columns.next()) {
-                        String sqlCheckExpression = columns.getString("CHECK_CONSTRAINT");
+                        String sqlCheckExpression = columns.getString(CHECK_CONSTRAINT);
                         if (sqlCheckExpression != null && !sqlCheckExpression.equals("")) {
                             DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
                             columnConstraints.add(constraint);
