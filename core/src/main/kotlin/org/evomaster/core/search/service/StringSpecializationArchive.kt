@@ -10,7 +10,9 @@ class StringSpecializationArchive {
 
     /**
      * How often a string specialization has been seen / added.
-     * Recall that [StringSpecializationInfo] is immutable
+     * Recall that [StringSpecializationInfo] is immutable.
+     *
+     * Missing keys are assumed to have value 0.
      */
     private val occurrences : MutableMap<StringSpecializationInfo, Int> = mutableMapOf()
 
@@ -23,12 +25,18 @@ class StringSpecializationArchive {
     private val specializationsForVariable : MutableMap<String, MutableSet<StringSpecializationInfo>> = mutableMapOf()
 
 
+    fun updateStats(name: String, info: StringSpecializationInfo){
+        updateStats(name, listOf(info))
+    }
+
     fun updateStats(name: String, specs : Collection<StringSpecializationInfo>){
         for(info in specs){
             occurrences.compute(info){ _,v -> v?.plus(1) ?: 0}
             specializationsForVariable.compute(name){_,v -> v?.apply {add(info)} ?: mutableSetOf() }
         }
     }
+
+    fun hasInfoFor(name: String) = specializationsForVariable.containsKey(name)
 
     fun chooseSpecialization(name: String, rand: Randomness) : StringSpecializationInfo? {
 
@@ -40,7 +48,6 @@ class StringSpecializationArchive {
         //the more occurrences, the least chances to be chosen
         val probabilities = specs.associateWith { 1.0 / (1.0 + occurrences[it]!!) }
 
-        //TODO
-        return rand.choose(probabilities)
+        return rand.chooseByProbability(probabilities)
     }
 }

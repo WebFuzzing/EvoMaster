@@ -354,6 +354,10 @@ class EMConfig {
         if(!jaCoCo_on && ! jaCoCo_off){
             throw IllegalArgumentException("JaCoCo location for agent/cli and output options must be all set or all left empty")
         }
+
+        if(!taintOnSampling && useGlobalTaintInfoProbability > 0){
+            throw IllegalArgumentException("Need to activate taintOnSampling to use global taint info")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1496,6 +1500,11 @@ class EMConfig {
     @Experimental
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
     var taintOnSampling = false
+
+    @Probability
+    @Experimental
+    @Cfg("When sampling new individual, check whether to use already existing info on tainted values")
+    var useGlobalTaintInfoProbability = 0.0
 
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
