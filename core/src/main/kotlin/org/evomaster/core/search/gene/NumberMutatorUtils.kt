@@ -261,7 +261,14 @@ object NumberMutatorUtils {
         return getFormattedValue(rand, scale)
     }
 
-
+    /**
+     * handle the min and max in constructor of number gene
+     * @param value is the specified value if it has
+     * @param isMin is for configuring min (true) or max (false)
+     * @param precision is the specified precision if it exists
+     * @param scale is the specified scale if it exists
+     * @param example is used to represent the data type in case [value] is null
+     */
     fun <N: Number> handleMinMaxInConstructor(value: N?, isMin: Boolean, precision: Int?, scale: Int?, example: N) : N?{
         if ((precision == null || scale == null) && value == null) return null
         val bound  = if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).run {
