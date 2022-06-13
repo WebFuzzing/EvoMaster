@@ -363,4 +363,8 @@ class RestIndividual(
         if (after >= before) return emptySet()
         return indexed.keys.filter { it >= after && it < before && it != indexToSwap }.toSet()
     }
+
+    override fun getInsertTableNames(): List<String> {
+        return seeDbActions().filterNot { it.representExistingData }.map { it.table.name }
+    }
 }
