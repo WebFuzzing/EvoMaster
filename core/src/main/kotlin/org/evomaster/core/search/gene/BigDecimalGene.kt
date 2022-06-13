@@ -364,7 +364,7 @@ class BigDecimalGene(
 
     private fun withinLongRange() : Boolean = value <= MAX_IN_LONG && value >= MIN_IN_LONG
 
-    private fun rangeWithinLongRange() : Boolean = getMaximum() > MIN_IN_LONG || getMinimum() < MAX_IN_LONG
+    private fun rangeWithinLongRange() : Boolean = !(getMaximum() < MIN_IN_LONG || getMinimum() > MAX_IN_LONG)
 
     override fun getDefaultValue(): BigDecimal {
         val df = super.getDefaultValue()
