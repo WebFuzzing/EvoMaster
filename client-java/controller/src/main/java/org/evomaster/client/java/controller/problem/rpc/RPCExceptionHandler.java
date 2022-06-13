@@ -48,6 +48,12 @@ public class RPCExceptionHandler {
             exceptionInfoDto = handleExceptionNameAndMessage(exceptionToHandle);
 
             handled = handleDefinedException(exceptionToHandle, endpointSchema, type, exceptionInfoDto);
+
+            // Thrift exception
+            if (isFromTException(e)){
+                handled = handleThrift(exceptionToHandle, endpointSchema, exceptionInfoDto) || handled;
+            }
+
             if (handled) {
                 dto.exceptionInfoDto = exceptionInfoDto;
                 dto.exceptionInfoDto.isCauseOfUndeclaredThrowable = isCause;
@@ -58,15 +64,15 @@ public class RPCExceptionHandler {
             throw new RuntimeException("ERROR: fail to handle defined exception for "+type+" with error msg:"+ ex);
         }
 
+
         // handling defined exception for each RPC
-        switch (type){
-            case THRIFT: handled = handleThrift(exceptionToHandle, endpointSchema, exceptionInfoDto); break;
-            case GENERAL: break; // do nothing
-            default: throw new RuntimeException("ERROR: NOT SUPPORT exception handling for "+type);
-        }
-        if (!handled) {
-            handleUnexpectedException(exceptionToHandle, exceptionInfoDto);
-        }
+//        switch (type){
+//            case THRIFT: handled = handleThrift(exceptionToHandle, endpointSchema, exceptionInfoDto); break;
+//            case GENERAL: break; // do nothing
+//            default: throw new RuntimeException("ERROR: NOT SUPPORT exception handling for "+type);
+//        }
+
+        handleUnexpectedException(exceptionToHandle, exceptionInfoDto);
 
         dto.exceptionInfoDto = exceptionInfoDto;
 
@@ -77,6 +83,14 @@ public class RPCExceptionHandler {
 
         dto.type = RPCExceptionType.UNEXPECTED_EXCEPTION;
 
+    }
+
+    private static boolean isFromTException(Object e){
+        try {
+            return Class.forName(THRIFT_EXCEPTION_ROOT).isAssignableFrom(e.getClass());
+        } catch (ClassNotFoundException ex) {
+            return false;
+        }
     }
 
     private static RPCExceptionInfoDto handleExceptionNameAndMessage(Object e){
@@ -130,7 +144,7 @@ public class RPCExceptionHandler {
         for (NamedTypedValue p : endpointSchema.getExceptions()){
             String type = p.getType().getFullTypeNameWithGenericType();
             // skip to handle root TException here
-            if (rpcType == RPCType.THRIFT && type.equals(THRIFT_EXCEPTION_ROOT))
+            if (type.equals(THRIFT_EXCEPTION_ROOT))
                 continue;
             if (isInstanceOf(e, type)){
                 p.setValueBasedOnInstance(e);

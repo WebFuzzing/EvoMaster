@@ -1,5 +1,7 @@
 package com.thrift.example.artificial;
 
+import org.apache.thrift.TException;
+
 import javax.validation.constraints.NotNull;
 import java.util.Date;
 import java.util.List;
@@ -94,5 +96,7 @@ public interface RPCInterfaceExample {
     double pDoubleResponse();
 
     String seedcheck(List<Long> longList, List<Integer> integerList, List<BigNumberObj> objList, Map<Integer, String> integerStringMap);
+
+    boolean throwTException(int type) throws Exception;
 
 }

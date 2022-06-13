@@ -655,7 +655,7 @@ public class RPCEndpointsBuilder {
     }
 
     private static void getAllFields(Class<?> clazz, List<Field> fieldList, RPCType type){
-        if (type == RPCType.THRIFT && isNativeThriftDto(clazz)){
+        if (isNativeThriftDto(clazz)){
             getFieldForNativeThriftDto(clazz, fieldList);
             return;
         }
@@ -893,7 +893,7 @@ public class RPCEndpointsBuilder {
     }
 
     private static void handleNativeRPCConstraints(Class<?> clazz, List<NamedTypedValue> fields, RPCType type){
-        if (type == RPCType.THRIFT && isNativeThriftDto(clazz)){
+        if (isNativeThriftDto(clazz)){
             try {
                 Field metaMap_field = clazz.getDeclaredField(NATIVE_THRIFT_FIELD_SCHEMA);
                 if (isMetaMap(metaMap_field))

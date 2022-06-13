@@ -35,7 +35,7 @@ public class AuthLocalSetupController extends SpringController {
             put(AuthSetupService.Iface.class.getName(), client);
         }}, new HashMap<String, List<String>>(){{
             put(AuthSetupService.Iface.class.getName(), Arrays.asList("login", "logout"));
-        }}, null, null, null, RPCType.THRIFT);
+        }}, null, null, null, RPCType.GENERAL);
     }
 
     @Override
