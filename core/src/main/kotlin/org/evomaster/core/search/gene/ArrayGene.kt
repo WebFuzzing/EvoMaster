@@ -39,7 +39,10 @@ class ArrayGene<T>(
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
          */
-        var elements: MutableList<T> = mutableListOf()
+        var elements: MutableList<T> = mutableListOf(),
+        private val openingTag : String = "[",
+        private val closingTag : String = "]",
+        private val separatorTag : String = ", "
 ) : CollectionGene, CompositeGene(name, elements)
         where T : Gene {
 
@@ -76,7 +79,10 @@ class ArrayGene<T>(
                 template.copy() as T,
                 maxSize,
                 minSize,
-                elements.map { e -> e.copy() as T }.toMutableList()
+                elements.map { e -> e.copy() as T }.toMutableList(),
+                openingTag = openingTag,
+                closingTag = closingTag,
+                separatorTag = separatorTag
         )
         if (copy.children.size!=this.children.size) {
             throw IllegalStateException("copy and its template have different size of children, e.g., copy (${copy.children.size}) vs. template (${this.children.size})")
@@ -184,7 +190,7 @@ class ArrayGene<T>(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return "[" +
+        return openingTag +
                 elements.map { g ->
                     if (GeneUtils.isGraphQLModes(mode)) {
                         if (g is EnumGene<*> || (g is OptionalGene && g.gene is EnumGene<*>))
@@ -195,8 +201,8 @@ class ArrayGene<T>(
                     } else {
                         g.getValueAsPrintableString(previousGenes, mode, targetFormat)
                     }
-                }.joinToString(", ") +
-                "]"
+                }.joinToString(separatorTag) +
+                closingTag
     }
 
 

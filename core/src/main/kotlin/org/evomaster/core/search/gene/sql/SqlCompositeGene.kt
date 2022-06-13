@@ -50,7 +50,7 @@ class SqlCompositeGene(
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "ROW(${
-            fields
+            fields.filter { it.isPrintable() }
                     .map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
                     .joinToString { replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(it) }
         })"
