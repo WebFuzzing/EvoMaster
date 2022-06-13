@@ -16,6 +16,7 @@ import org.evomaster.core.search.service.Randomness
 import java.io.File
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.RoundingMode
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -514,14 +515,22 @@ object GeneSamplerForTests {
         val scale : Int? = rand.choose(listOf(null, rand.nextInt(0, 2)))
 
         // if scale is 0, to distinguish min and max
-        val min = rand.nextDouble() * (if (scale == 0) 10 else 1)
+        val min = rand.nextDouble().run {
+            // format min based on scale with 50%
+            if (rand.nextBoolean())
+                NumberMutatorUtils.getFormattedValue(this, scale, RoundingMode.UP)
+            else
+                this
+        }
 
         val least = getMinPrecision(min)
         val precision = max(min(least + rand.nextInt(0, 10), 308), least) + (scale?:0)
 
         val minInclusive = rand.nextBoolean()
         val maxInclusive = rand.nextBoolean()
-        val delta : Double = if(!minInclusive || !maxInclusive) 2.0 else 0.0
+
+        val actualScale = getScale(min)
+        val delta : Double = (if(!minInclusive || !maxInclusive) 2.0 else 0.0).run { if (scale!= null && actualScale > scale) this+2.0 else this }
 
         return DoubleGene(
                 name = "rand DoubleGene ${rand.nextInt()}",
@@ -543,7 +552,8 @@ object GeneSamplerForTests {
 
         val minInclusive = rand.nextBoolean()
         val maxInclusive = rand.nextBoolean()
-        val delta = if(!minInclusive || !maxInclusive) 2 else 0
+        val delta = if (!minInclusive && !maxInclusive) 3 // consider randomize with new value, we might employ delta 3 instead of 2
+                    else if(!minInclusive || !maxInclusive) 2 else 0
 
 
         return IntegerGene(
@@ -562,29 +572,48 @@ object GeneSamplerForTests {
         val least = getMinPrecision(min)
         val precision = max(min(least + rand.nextInt(0, 2), 10), least)
 
+
+        val minInclusive = rand.nextBoolean()
+        val maxInclusive = rand.nextBoolean()
+        val minDelta = if (!minInclusive && !maxInclusive) 3 else 2
+
         return LongGene(
                 name = "rand LongGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + rand.nextInt(2, 100))),
-                minInclusive = rand.nextBoolean(),
-                maxInclusive = rand.nextBoolean(),
+                max = rand.choose(listOf(null, min + rand.nextInt(minDelta, 100))),
+                minInclusive = minInclusive,
+                maxInclusive = maxInclusive,
                 precision = rand.choose(listOf(null, precision)),
         )
     }
 
     fun sampleFloatGene(rand: Randomness): FloatGene {
-        val min = rand.nextFloat()
+        val scale : Int? = rand.choose(listOf(null, rand.nextInt(0, 2)))
+
+        val min = rand.nextFloat().run {
+            // format min based on scale with 50%
+            if (rand.nextBoolean())
+                NumberMutatorUtils.getFormattedValue(this, scale, RoundingMode.UP)
+            else
+                this
+        }
 
         val least = getMinPrecision(min)
-        val scale : Int? = rand.choose(listOf(null, rand.nextInt(0, 2)))
+
         val precision = max(min(least + rand.nextInt(0, 2), 12), least) + (scale?:0)
+
+        val minInclusive = rand.nextBoolean()
+        val maxInclusive = rand.nextBoolean()
+
+        val actualScale = getScale(min)
+        val delta : Float = (if(!minInclusive || !maxInclusive) 2.0f else 0.0f).run { if (scale!= null && actualScale > scale) this+2.0f else this }
 
         return FloatGene(
                 name = "rand FloatGene ${rand.nextInt()}",
                 min = rand.choose(listOf(null, min)),
-                max = rand.choose(listOf(null, min + 2 + abs(rand.nextFloat()))),
-                minInclusive = rand.nextBoolean(),
-                maxInclusive = rand.nextBoolean(),
+                max = rand.choose(listOf(null, min + delta + abs(rand.nextFloat()))),
+                minInclusive = minInclusive,
+                maxInclusive = maxInclusive,
                 precision = rand.choose(listOf(null, precision)),
                 scale = scale
         )
@@ -592,27 +621,35 @@ object GeneSamplerForTests {
 
     fun sampleBigDecimalGene(rand: Randomness): BigDecimalGene {
 
+        val scale : Int? = rand.choose(listOf(null, rand.nextInt(0, 2)))
+
+        val minInclusive = rand.nextBoolean()
+        val maxInclusive = rand.nextBoolean()
+
         val minBigDecimal: BigDecimal?
         val maxBigDecimal: BigDecimal?
         if (rand.nextBoolean()) {
             minBigDecimal = null
             maxBigDecimal = null
         } else {
-            minBigDecimal = BigDecimal.valueOf(rand.nextLong() / 2 )
+            val min = rand.nextLong() / 2
+            minBigDecimal = BigDecimal.valueOf(min)
+
+            val minDelta : Long = if (!minInclusive && !maxInclusive) 3 else 2
             val addition =  if (minBigDecimal.toDouble() >= 0) BigDecimal.valueOf(Long.MAX_VALUE).subtract(minBigDecimal).toLong() else Long.MAX_VALUE
-            maxBigDecimal = minBigDecimal + BigDecimal.valueOf(rand.nextLong(0,addition) / 2)
+            maxBigDecimal = minBigDecimal + BigDecimal.valueOf(max(minDelta, rand.nextLong(0,addition) / 2))
         }
 
         val least = if (minBigDecimal != null) getMinPrecision(minBigDecimal) else rand.nextInt(1, 5)
-        val scale : Int? = rand.choose(listOf(null, rand.nextInt(0, 2)))
+
         val precision = max(min(least + rand.nextInt(0, 2), 12), least) + (scale?:0)
 
         return BigDecimalGene(
                 name = "rand BigDecimalGene ${rand.nextInt()}",
                 min = minBigDecimal,
                 max = maxBigDecimal,
-                minInclusive = if (minBigDecimal==null) true else rand.nextBoolean(),
-                maxInclusive = if (maxBigDecimal==null) true else rand.nextBoolean(),
+                minInclusive = if (minBigDecimal==null) true else minInclusive,
+                maxInclusive = if (maxBigDecimal==null) true else maxInclusive,
                 floatingPointMode = rand.nextBoolean(),
                 precision = rand.choose(listOf(null, precision)),
                 scale = scale
@@ -623,12 +660,16 @@ object GeneSamplerForTests {
         val minBigInteger: BigInteger?
         val maxBigInteger: BigInteger?
 
+        val minInclusive = rand.nextBoolean()
+        val maxInclusive = rand.nextBoolean()
+        val minDelta = if (!minInclusive && !maxInclusive) 3L else 2L
+
         if (rand.nextBoolean()) {
             minBigInteger = null
             maxBigInteger = null
         } else {
             minBigInteger = BigInteger.valueOf(rand.nextLong() / 2)
-            maxBigInteger = minBigInteger.plus(BigInteger.valueOf(rand.nextLong(0, Long.MAX_VALUE) / 2 ))
+            maxBigInteger = minBigInteger.plus(BigInteger.valueOf(max(minDelta, rand.nextLong(0, Long.MAX_VALUE) / 2 )))
         }
 
         val least = if (minBigInteger != null) getMinPrecision(minBigInteger) else rand.nextInt(1, 5)
@@ -638,8 +679,8 @@ object GeneSamplerForTests {
                 name = "rand BigIntegerGene ${rand.nextInt()}",
                 min = minBigInteger,
                 max = maxBigInteger,
-                minInclusive = rand.nextBoolean(),
-                maxInclusive = rand.nextBoolean(),
+                minInclusive = minInclusive,
+                maxInclusive = maxInclusive,
                 precision = rand.choose(listOf(null, precision)),
         )
     }
@@ -666,6 +707,13 @@ object GeneSamplerForTests {
 
     private fun getMinPrecision(value : Number) : Int{
         return value.toString().split(".")[0].replace("-","").length
+    }
+
+    private fun getScale(value: Number): Int{
+        return value.toString().run {
+            if (!contains(".")) 0
+            else split(".")[1].length
+        }
     }
 
 }

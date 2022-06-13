@@ -1,12 +1,11 @@
 package org.evomaster.core.search.gene
 
-import com.mysql.cj.result.BigDecimalValueFactory
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.BigInteger
-import java.math.MathContext
+import java.math.RoundingMode
 
 class NumberGeneTest {
 
@@ -326,6 +325,20 @@ class NumberGeneTest {
         assertEquals(value, bdGene.value.toDouble())
     }
 
+    @Test
+    fun testMinMaxConfiguration(){
+        val floatGene = FloatGene("fg", min = 0.02f, max = 1.2f,scale = 0)
+        assertEquals(1f, floatGene.min)
+        assertEquals(1f, floatGene.max)
 
+
+
+    }
+
+    @Test
+    fun testRoundMode(){
+        val x = BigDecimal.valueOf(99.99).setScale(2, RoundingMode.DOWN)
+        println(x.toPlainString())
+    }
 
 }
