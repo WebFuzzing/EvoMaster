@@ -197,7 +197,7 @@ SUTS = [
     Sut("restcountries", 2, JDK_8),
     Sut("languagetool", 3, JDK_8),
     Sut("ocvn-rest", 1, JDK_8),
-    Sut("gestaohospital", 1, JDK_8),
+    Sut("gestaohospital-rest", 1, JDK_8),
     Sut("cwa-verification", 1, JDK_11),
     # GRAPHQL JVM
     # Sut("petclinic", 1, JDK_8),
