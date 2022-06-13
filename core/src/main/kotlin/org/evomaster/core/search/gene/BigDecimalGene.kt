@@ -145,11 +145,7 @@ class BigDecimalGene(
             val dValue = randomizeDouble(getMinUsedInSearch().toDouble(), getMaxUsedInSearch().toDouble(), scale, randomness)
             setValueWithDouble(dValue)
         }else{
-            val longValue = randomizeLong(
-                value.toLong(),
-                getMinUsedInSearch().run { if (this < MIN_IN_LONG) MIN_IN_LONG else this }.toLong(),
-                getMaxUsedInSearch().run { if (this > MAX_IN_LONG) MAX_IN_LONG else this  }.toLong(),
-                randomness, tryToForceNewValue)
+            val longValue = randomizeLong(value.toLong(), getMinUsedInSearchAsLong(), getMaxUsedInSearchAsLong(), randomness, tryToForceNewValue)
             setValueWithLong(longValue)
         }
     }
@@ -186,7 +182,7 @@ class BigDecimalGene(
         if (floatingPointMode){
             setValueWithDouble(mutateFloatingPointNumber(randomness, apc = apc, value = value.toDouble(), smin = getMinUsedInSearch().toDouble(), smax = getMaxUsedInSearch().toDouble(), scale=scale))
         }else{
-            setValueWithLong(mutateLong(value = value.toLong(), min=getMinUsedInSearch().toLong(), max = getMaxUsedInSearch().toLong(), apc = apc, randomness = randomness))
+            setValueWithLong(mutateLong(value = value.toLong(), min=getMinUsedInSearchAsLong(), max = getMaxUsedInSearchAsLong(), apc = apc, randomness = randomness))
         }
         return true
     }
@@ -265,6 +261,25 @@ class BigDecimalGene(
         }
     }
 
+    private fun getMaxUsedInSearchAsLong() : Long{
+        val maxInSearch = getMaxUsedInSearch()
+        if (maxInSearch > MAX_IN_LONG) return MAX_IN_LONG.toLong()
+        return maxInSearch.toLong()
+    }
+
+    private fun getMinUsedInSearchAsLong() : Long{
+        val minInSearch = getMinUsedInSearch()
+        /*
+            there is no out of range exception in data type conversion in big decimal
+            eg,
+                BigDecimal.valueOf(-Double.MAX_VALUE).toLong() -> 0
+                BigDecimal.valueOf(Double.MAX_VALUE).toLong() -> 0
+            then before converting the value to long, handle it within long value range
+         */
+        if (minInSearch < MIN_IN_LONG) return MIN_IN_LONG.toLong()
+        return  minInSearch.toLong()
+    }
+
     private fun getMinUsedInSearch() : BigDecimal {
         if (min != null && min >= MAX_IN_FLOATINGPOINT)
             throw IllegalStateException("not support yet: minimum value is greater than Double.MAX")
@@ -284,6 +299,11 @@ class BigDecimalGene(
         return getFormattedValue(lowerBound, scale)
     }
 
+    /*
+        converting a long whose length is more 15 to double would lead to precision loss
+        eg, (9223372036854774807L).toDouble().toLong() -> 9223372036854774784
+        then try to get rid of data type conversion in handling decimal
+     */
     private fun getMaxUsedInSearch() : BigDecimal {
 
         if (max != null && max <= MIN_IN_FLOATINGPOINT)
@@ -336,7 +356,7 @@ class BigDecimalGene(
         val r = if (!isFloatingPointMutable && !floatingPointMode)
                     withinLongRange()
                 else
-                    value <= BigDecimal.valueOf(Double.MAX_VALUE) && value >= BigDecimal.valueOf(-Double.MAX_VALUE)
+                    value <= MAX_IN_FLOATINGPOINT && value >= MIN_IN_FLOATINGPOINT
         if (!r)
             LoggingUtil.uniqueWarn(log, "value of BigDecimal exceeds the range of mutation")
         return r

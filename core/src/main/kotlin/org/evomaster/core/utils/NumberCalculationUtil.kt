@@ -82,8 +82,17 @@ object NumberCalculationUtil {
         return try {
             if (scale == null)
                 BigDecimal(value)
-            else
+            else{
+                /*
+                    BigDecimal(99.99).setScale(2, RoundingMode.DOWN) -> 99.98
+                    BigDecimal("99.99").setScale(2, RoundingMode.DOWN) -> 99.99
+                    BigDecimal.valueOf(99.99).setScale(2, RoundingMode.DOWN) -> 99.99
+
+                    then try to handle the value with string format
+                */
                 BigDecimal(value).setScale(scale, roundingMode)
+            }
+
         }catch (e: NumberFormatException){
             log.warn("fail to get value ($value) with the specified prevision ($scale)")
             throw e
