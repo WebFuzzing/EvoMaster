@@ -4,6 +4,7 @@ import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import kotlin.reflect.full.isSuperclassOf
@@ -212,6 +213,17 @@ class GeneTest {
 
                     val copy = root.copy()
                     checkInvariants(copy);
+
+                    //TODO we need to handle Globally Valid before we can check this
+//                    if(root.isPrintable()) {
+//                        val x = root.getValueAsRawString()
+//                        val y = copy.getValueAsRawString()
+//                        assertEquals(x, y)
+//                    } else {
+//                        assertThrows<Exception> ("Should throw exception when trying to print ${root.javaClass}"){
+//                            root.getValueAsRawString()
+//                        }
+//                    }
                 }
     }
 

@@ -99,7 +99,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
         val includedFields = fields.filter {
             it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
-        }
+        } .filter { it.isPrintable() }
 
         //by default, return in JSON format
         if (mode == null || mode == GeneUtils.EscapeMode.JSON) {

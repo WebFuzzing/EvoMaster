@@ -156,6 +156,11 @@ class MapGene<K, V>(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+
+        if(!isPrintable()){
+            throw IllegalStateException("Trying to print a Map with unprintable template")
+        }
+
         return "{" +
                 elements.filter { f ->
                     isPrintable(f)

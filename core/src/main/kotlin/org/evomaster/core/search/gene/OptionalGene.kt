@@ -161,4 +161,7 @@ class OptionalGene(name: String,
         return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 
+    override fun isPrintable(): Boolean {
+        return gene.isPrintable()
+    }
 }
