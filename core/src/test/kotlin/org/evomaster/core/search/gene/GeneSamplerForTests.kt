@@ -233,8 +233,17 @@ object GeneSamplerForTests {
     const val MAX_NUMBER_OF_OCTETS = 10
     const val MAX_NUMBER_OF_FIELDS = 3
 
+    private fun selectionForArrayTemplate() : List<KClass<out Gene>>{
+        return geneClasses
+                .filter { !it.isAbstract }
+                .filter { it.java != CycleObjectGene::class.java && it.java !== LimitObjectGene::class.java}
+        // TODO might filter out some more genes here
+    }
+
     private fun sampleSqlMultidimensionalArrayGene(rand: Randomness): SqlMultidimensionalArrayGene<*> {
-        val selection = geneClasses.filter { !it.isAbstract }
+
+        val selection = selectionForArrayTemplate()
+
         return SqlMultidimensionalArrayGene("rand SqlMultidimensionalArrayGene",
                 template = sample(rand.choose(selection), rand),
                 numberOfDimensions = rand.nextInt(1, MAX_NUMBER_OF_DIMENSIONS))
@@ -636,7 +645,7 @@ object GeneSamplerForTests {
 
     fun sampleArrayGene(rand: Randomness): ArrayGene<*> {
 
-        val selection = geneClasses.filter { !it.isAbstract } // TODO might filter out some more genes here
+        val selection = selectionForArrayTemplate()
         val chosen = sample(rand.choose(selection), rand)
 
         return ArrayGene("rand array ${rand.nextInt()}", chosen)
