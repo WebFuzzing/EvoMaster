@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
 import java.io.File
 
 
@@ -45,6 +47,7 @@ class SamplerVerifierTest {
         sampler.sample() //should not crash
     }
 
+    @Execution(ExecutionMode.CONCURRENT)
     @TestFactory
     fun testSamplingFromAllSchemasUnderResources(): Collection<DynamicTest> {
 
@@ -54,7 +57,7 @@ class SamplerVerifierTest {
     }
 
     private fun scanForSchemas() : List<String>{
-        val relativePath = "../core/src/test/resources/swagger"
+        val relativePath = "./src/test/resources/APIs_guru"
         val target = File(relativePath)
         if (!target.exists()) {
             throw IllegalStateException("Swagger resource folder does not exist: ${target.absolutePath}")
@@ -65,7 +68,8 @@ class SamplerVerifierTest {
                 .filter { !it.name.endsWith("features_service_null.json") } //issue with parser
                 .map {
                     val s = it.path.replace("\\", "/")
-                            .replace(relativePath, "swagger")
+                            //.replace(relativePath, "swagger")
+                            .replace(relativePath, "APIs_guru")
                     s
                 }.toList()
     }
@@ -82,6 +86,10 @@ class SamplerVerifierTest {
         val injector = getInjector(sutInfo, controllerInfo, listOf("--seed","42"))
 
         val sampler = injector.getInstance(ResourceSampler::class.java)
+
+        if(sampler.numberOfDistinctActions() == 0){
+            throw IllegalStateException("No actions for schema")
+        }
 
         for(i in 0..iterations) {
             val ind = sampler.sample()
