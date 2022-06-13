@@ -65,19 +65,23 @@ object NumberCalculationUtil {
         val fraction = (10.0).pow(scale)
         val boundary = integral.div(fraction)
 
-        val value = valueWithPrecisionAndScale(boundary, scale, roundingMode)
+        val value = valueWithPrecisionAndScale(boundary.toString(), scale, roundingMode)
         if (maxValue != null && BigDecimal(maxValue.toString()) < value)
             return BigDecimal(maxValue.toString())
         return value
     }
 
+    fun  valueWithPrecisionAndScale(value: Double, scale: Int?, roundingMode: RoundingMode = RoundingMode.HALF_UP) : BigDecimal {
+        return valueWithPrecisionAndScale(value.toString(), scale, roundingMode)
+    }
+
     /**
      * @return decimal for double with the specified scale
      */
-    fun valueWithPrecisionAndScale(value: Double, scale: Int?, roundingMode: RoundingMode = RoundingMode.HALF_UP) : BigDecimal {
+    fun valueWithPrecisionAndScale(value: String, scale: Int?, roundingMode: RoundingMode = RoundingMode.HALF_UP) : BigDecimal {
         return try {
             if (scale == null)
-                BigDecimal.valueOf(value)
+                BigDecimal(value)
             else
                 BigDecimal(value).setScale(scale, roundingMode)
         }catch (e: NumberFormatException){
@@ -91,6 +95,6 @@ object NumberCalculationUtil {
      */
     fun <T: Number> getMiddle(min: T, max : T, scale: Int?) : BigDecimal{
         val m = min.toDouble()/2.0  + max.toDouble()/2.0
-        return valueWithPrecisionAndScale(m, scale)
+        return valueWithPrecisionAndScale(m.toString(), scale)
     }
 }

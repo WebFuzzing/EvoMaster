@@ -1,8 +1,10 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.NumberMutatorUtils.getFormattedValue
+import org.evomaster.core.search.gene.NumberMutatorUtils.handleMinMaxInConstructor
 import org.evomaster.core.search.gene.NumberMutatorUtils.mutateFloatingPointNumber
 import org.evomaster.core.search.gene.NumberMutatorUtils.mutateLong
 import org.evomaster.core.search.gene.NumberMutatorUtils.randomizeDouble
@@ -58,8 +60,8 @@ class BigDecimalGene(
     scale : Int? = null
 
 ) : FloatingPointNumberGene<BigDecimal>(name, value,
-    min = if (precision != null && scale != null) (-upperBound(precision, scale)).run { if (min== null || this > min) this else min } else min,
-    max = if (precision != null && scale != null) upperBound(precision, scale).run { if (max == null || this < max) this else max } else max,
+    min = handleMinMaxInConstructor(value = min, isMin = true, precision = precision, scale = scale, example = BigDecimal.ZERO),
+    max = handleMinMaxInConstructor(value = max, isMin = false, precision = precision, scale = scale, example = BigDecimal.ZERO),
     minInclusive, maxInclusive, precision, scale){
 
     companion object{
@@ -125,7 +127,7 @@ class BigDecimalGene(
         }
 
         if (floatingPointMode){
-            val dValue = randomizeDouble(getMinUsedInSearch(), getMaxUsedInSearch(), scale, randomness)
+            val dValue = randomizeDouble(getMinUsedInSearch().toDouble(), getMaxUsedInSearch().toDouble(), scale, randomness)
             setValueWithDouble(dValue)
         }else{
             val longValue = randomizeLong(value.toLong(), getMinUsedInSearch().toLong(), getMaxUsedInSearch().toLong(), randomness, tryToForceNewValue)
@@ -163,7 +165,7 @@ class BigDecimalGene(
         if (mutated) return true
 
         if (floatingPointMode){
-            setValueWithDouble(mutateFloatingPointNumber(randomness, apc = apc, value = value.toDouble(), smin = getMinUsedInSearch(), smax = getMaxUsedInSearch(), scale=scale))
+            setValueWithDouble(mutateFloatingPointNumber(randomness, apc = apc, value = value.toDouble(), smin = getMinUsedInSearch().toDouble(), smax = getMaxUsedInSearch().toDouble(), scale=scale))
         }else{
             setValueWithLong(mutateLong(value = value.toLong(), min=getMinUsedInSearch().toLong(), max = getMaxUsedInSearch().toLong(), apc = apc, randomness = randomness))
         }
@@ -244,51 +246,53 @@ class BigDecimalGene(
         }
     }
 
-    private fun getMinUsedInSearch() : Double {
+    private fun getMinUsedInSearch() : BigDecimal {
         if (min != null && min >= BigDecimal.valueOf(Double.MAX_VALUE))
             throw IllegalStateException("not support yet: minimum value is greater than Double.MAX")
         if (minInclusive)
-            return getFormattedValue(max(-Double.MAX_VALUE, min?.toDouble()?:-Double.MAX_VALUE), scale)
+            return getFormattedValue(BigDecimal.valueOf(max(-Double.MAX_VALUE, min?.toDouble()?:-Double.MAX_VALUE)), scale)
 
         if (min == null)
             log.warn("there is no minimum value specified, but minInclusive is false for gene $name")
 
         val lowerBound = if (min == null || BigDecimal.valueOf(-Double.MAX_VALUE) > min ){
-            -Double.MAX_VALUE
+            BigDecimal.valueOf(-Double.MAX_VALUE)
         }else if (min.toDouble() == -Double.MAX_VALUE){
-            -NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE
+            BigDecimal.valueOf(-NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE)
         } else
-            (min + getMinimalDelta()).toDouble()
+            (min + getMinimalDelta())
 
-    return getFormattedValue(lowerBound, scale)
+        return getFormattedValue(lowerBound, scale)
     }
 
-    private fun getMaxUsedInSearch() : Double {
+    private fun getMaxUsedInSearch() : BigDecimal {
+
         if (max != null && max <= BigDecimal.valueOf(-Double.MAX_VALUE))
             throw IllegalStateException("not support yet: max value is less than -Double.MAX")
 
         if (maxInclusive)
-            return getFormattedValue(min(Double.MAX_VALUE, max?.toDouble()?:Double.MAX_VALUE), scale)
+            return getFormattedValue(BigDecimal.valueOf(min(Double.MAX_VALUE, max?.toDouble()?:Double.MAX_VALUE)), scale)
 
         if (max == null)
             log.warn("there is no maximum value specified, but maxInclusive is false for gene $name")
 
         val upperBound = if (max == null || BigDecimal.valueOf(Double.MAX_VALUE) < max ){
-            Double.MAX_VALUE
+            BigDecimal.valueOf(Double.MAX_VALUE)
         }else if (max.toDouble() == Double.MAX_VALUE){
-            NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE
+            BigDecimal.valueOf(NumberMutatorUtils.MAX_DOUBLE_EXCLUSIVE)
         } else
-            (max - getMinimalDelta()).toDouble()
+            (max - getMinimalDelta())
 
         return getFormattedValue(upperBound, scale)
     }
 
+
     override fun getMinimum(): BigDecimal {
-        return valueWithPrecisionAndScale(getMinUsedInSearch(), scale)
+        return valueWithPrecisionAndScale(getMinUsedInSearch().toString(), scale)
     }
 
     override fun getMaximum(): BigDecimal {
-        return valueWithPrecisionAndScale(getMaxUsedInSearch(), scale)
+        return valueWithPrecisionAndScale(getMaxUsedInSearch().toString(), scale)
     }
 
     override fun isValid(): Boolean {
