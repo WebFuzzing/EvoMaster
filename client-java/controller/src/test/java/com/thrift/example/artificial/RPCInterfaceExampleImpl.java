@@ -1,5 +1,10 @@
 package com.thrift.example.artificial;
 
+import org.apache.thrift.TApplicationException;
+import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TProtocolException;
+import org.apache.thrift.transport.TTransportException;
+
 import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -345,5 +350,20 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public boolean throwTException(int type) throws Exception {
+        if (type == 0)
+            throw new TException("Base-TException");
+        if (type == 1)
+            throw new TApplicationException(TApplicationException.INTERNAL_ERROR, "TAPP-internal");
+        if (type == 2)
+            throw new TApplicationException(TApplicationException.PROTOCOL_ERROR, "TAPP-protocol");
+        if (type == 3)
+            throw new TProtocolException("TProtocol");
+        if (type == 4)
+            throw new TTransportException("TTransport");
+        throw new Exception("general");
     }
 }

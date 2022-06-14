@@ -5,6 +5,10 @@ import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ResponseBodyExtractionOptions;
+import org.apache.thrift.TApplicationException;
+import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TProtocolException;
+import org.apache.thrift.transport.TTransportException;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
@@ -12,6 +16,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -220,6 +225,69 @@ public class RPCSutControllerTest {
                 "assertEquals(\"42.42\", res1.get(\"foo\").getBigDecimalValue());";
 
         assertEquals(expectedAssertions, String.join("\n", responseDto.assertionScript));
+    }
+
+    @Test
+    public void testThriftException(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("throwTException")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        dto.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "0";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("Base-TException", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.CUSTOMIZED_EXCEPTION, responseDto.exceptionInfoDto.type);
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "1";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TApplicationException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("TAPP-internal", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.APP_INTERNAL_ERROR, responseDto.exceptionInfoDto.type);
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "2";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TApplicationException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("TAPP-protocol", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.APP_PROTOCOL_ERROR, responseDto.exceptionInfoDto.type);
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "3";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TProtocolException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("TProtocol", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.PROTO_UNKNOWN, responseDto.exceptionInfoDto.type);
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "4";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TTransportException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("TTransport", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.TRANS_UNKNOWN, responseDto.exceptionInfoDto.type);
+
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "-1";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(Exception.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("general", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.CUSTOMIZED_EXCEPTION, responseDto.exceptionInfoDto.type);
     }
 
     @Test

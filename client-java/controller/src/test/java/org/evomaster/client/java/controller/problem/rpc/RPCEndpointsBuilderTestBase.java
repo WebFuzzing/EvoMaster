@@ -42,7 +42,7 @@ public abstract class RPCEndpointsBuilderTestBase {
     public List<AuthenticationDto> getAuthInfo(){return null;}
 
     public RPCType getRPCType(){
-        return RPCType.THRIFT;
+        return RPCType.GENERAL;
     }
 
     public EndpointSchema getOneEndpoint(String name){
