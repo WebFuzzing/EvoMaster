@@ -10,6 +10,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.Objects;
 
 public class URLClassReplacement implements MethodReplacementClass {
@@ -37,8 +38,39 @@ public class URLClassReplacement implements MethodReplacementClass {
           Add the external service hostname to the ExecutionTracer
           */
         if (caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) {
-            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(caller.getProtocol(), caller.getHost(), caller.getPort());
+            int port = caller.getPort();
+            String protocol = caller.getProtocol();
+
+            // Unless the port number is specified, the default will be -1.
+            // Which indicates that the port should be assigned according to the
+            // protocol. Since the URLConnection openConnection is an abstract, this
+            // assignment will be handled under the respective implementation.
+            // Here it's manually handled assuming these default will never change. :)
+            if (port == -1) {
+                switch (protocol) {
+                    case "https":
+                        port = 443;
+                        break;
+                    case "http":
+                        port = 80;
+                        break;
+                }
+            }
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(protocol, caller.getHost(), port);
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+
+            // TODO: The following logic needs to be changed in future
+            if (ExecutionTracer.hasExternalMapping(caller.getHost())) {
+                String ip  = ExecutionTracer.getExternalMapping(caller.getHost());
+
+                // Usage of ports below 1024 require root privileges to run
+                String url = "http://" + ip + ":" + caller.getPort() + caller.getPath();
+
+                URL newURL = new URL(url);
+                return newURL.openConnection();
+            } else {
+                throw new UnknownHostException("There is no WireMock initiated for this hostname");
+            }
         }
 
         return caller.openConnection();

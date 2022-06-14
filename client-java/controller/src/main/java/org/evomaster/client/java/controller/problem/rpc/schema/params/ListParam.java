@@ -79,14 +79,19 @@ public class ListParam extends CollectionParam<List<NamedTypedValue>>{
         NamedTypedValue t = getType().getTemplate();
         List<NamedTypedValue> values = new ArrayList<>();
 
-        assert json instanceof String;
-        Object instance = parseValueWithJson((String) json);
-        for (Object e : (List) instance){
-            NamedTypedValue copy = t.copyStructureWithProperties();
-            copy.setValueBasedOnInstanceOrJson(e);
-            values.add(copy);
-        }
-        setValue(values);
+        if (json instanceof String){
+            Object instance = parseValueWithJson((String) json);
+            for (Object e : (List) instance){
+                NamedTypedValue copy = t.copyStructureWithProperties();
+                copy.setValueBasedOnInstanceOrJson(e);
+                values.add(copy);
+            }
+            setValue(values);
+        } else if (isValidInstance(json)){
+            setValueBasedOnValidInstance(json);
+        } else
+            throw new RuntimeException("cannot parse List param "+getName()+" with the type "+json.getClass().getName());
+
     }
 
     @Override
