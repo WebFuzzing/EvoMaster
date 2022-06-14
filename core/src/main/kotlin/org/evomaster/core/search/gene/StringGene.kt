@@ -152,7 +152,16 @@ class StringGene(
         //check if starting directly with a tainted value
         val state = getSearchGlobalState()!! //cannot be null when this method is called
         if(state.config.taintOnSampling){
-            redoTaint(state.apc, state.randomness, listOf())
+
+            if(state.spa.hasInfoFor(name) && state.randomness.nextDouble() < state.config.useGlobalTaintInfoProbability){
+                val spec = state.spa.chooseSpecialization(name, state.randomness)!!
+                assert(specializations.size == 0)
+                addSpecializations("", listOf(spec),state.randomness, false)
+                assert(specializationGenes.size == 1)
+                selectedSpecialization = specializationGenes.lastIndex
+            } else {
+                redoTaint(state.apc, state.randomness, listOf())
+            }
         }
     }
 
@@ -371,7 +380,15 @@ class StringGene(
         }
     }
 
-    fun addSpecializations(key: String, specs: Collection<StringSpecializationInfo>, randomness: Randomness) {
+    fun addSpecializations(
+            /**
+             * TODO what whas this? does not seem to be used
+             */
+            key: String,
+            specs: Collection<StringSpecializationInfo>,
+            randomness: Randomness,
+            updateGlobalInfo: Boolean = true
+    ) {
 
         val toAddSpecs = specs
                 //don't add the same specialization twice
@@ -460,7 +477,8 @@ class StringGene(
         if (toAddGenes.size > 0) {
             selectionUpdatedSinceLastMutation = true
             toAddGenes.forEach {
-                it.randomize(randomness, false, listOf())
+                //it.randomize(randomness, false, listOf())
+                it.doInitialize(randomness)
             }
             log.trace("in total added specification size: {}", toAddGenes.size)
             addChildren(toAddGenes)
@@ -475,6 +493,11 @@ class StringGene(
              */
             val ids = toAddSpecs.filter { it.stringSpecialization == EQUAL }.map { it.value }
             bindingIds.addAll(ids)
+        }
+
+        if(updateGlobalInfo) {
+            val state = getSearchGlobalState()!! //cannot be null when this method is called
+            state.spa.updateStats(name, toAddSpecs)
         }
     }
 

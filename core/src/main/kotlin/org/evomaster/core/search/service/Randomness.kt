@@ -337,10 +337,10 @@ class Randomness {
      * Note: as [K] is used as a key, make sure that [equals] and [hashCode]
      * are well defined for it (eg, no problem if it is a [Int] or a [String])
      */
-    fun <K> chooseByProbability(map: Map<K, Float>): K {
+    fun <K> chooseByProbability(map: Map<K, Double>): K {
 
-        val randFl = random.nextFloat() * map.values.sum()
-        var temp = 0.toFloat()
+        val randFl = random.nextDouble() * map.values.sum()
+        var temp = 0.0
         var found = map.keys.first()
 
         for ((k, v) in map) {

@@ -33,4 +33,6 @@ class SearchGlobalState {
     lateinit var apc: AdaptiveParameterControl
         private set
 
+    @Inject
+    lateinit var spa: StringSpecializationArchive
 }

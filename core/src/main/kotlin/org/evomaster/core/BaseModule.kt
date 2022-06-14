@@ -32,6 +32,9 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
         bind(SearchGlobalState::class.java)
                 .asEagerSingleton()
 
+        bind(StringSpecializationArchive::class.java)
+                .asEagerSingleton()
+
         bind(SearchTimeController::class.java)
                 .asEagerSingleton()
 
