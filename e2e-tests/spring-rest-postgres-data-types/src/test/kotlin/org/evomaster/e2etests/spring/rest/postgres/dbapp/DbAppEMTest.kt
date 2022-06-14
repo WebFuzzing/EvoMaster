@@ -21,7 +21,6 @@ class DbAppEMTest : SpringRestPostgresTestBase() {
         }
     }
 
-    @Disabled("See SqlBinaryString")
     @Test
     fun testRunEM() {
 

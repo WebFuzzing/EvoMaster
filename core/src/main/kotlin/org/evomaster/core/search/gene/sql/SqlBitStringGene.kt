@@ -27,7 +27,7 @@ class SqlBitStringGene(
 
         private val booleanArrayGene: ArrayGene<BooleanGene> = ArrayGene(name, template = BooleanGene(name), minSize = minSize, maxSize = maxSize)
 
-) :  CompositeGene(name, mutableListOf( booleanArrayGene)) {
+) :  CompositeFixedGene(name, mutableListOf( booleanArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBitStringGene::class.java)
@@ -44,7 +44,7 @@ class SqlBitStringGene(
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        TODO("Not yet implemented")
+       return listOf(booleanArrayGene)
     }
 
 

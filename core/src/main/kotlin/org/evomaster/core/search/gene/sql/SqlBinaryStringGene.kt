@@ -26,7 +26,7 @@ class SqlBinaryStringGene(
 
         private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize)
 
-) :  CompositeGene(name, mutableListOf( binaryArrayGene)) {
+) :  CompositeFixedGene(name, mutableListOf( binaryArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBinaryStringGene::class.java)
@@ -39,8 +39,7 @@ class SqlBinaryStringGene(
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        //once implemented, put back DbAppEMTest
-        TODO("Not yet implemented")
+        return listOf(binaryArrayGene)
     }
 
     private fun toHex2(value: Int) = value.toString(16).padStart(2, '0')
