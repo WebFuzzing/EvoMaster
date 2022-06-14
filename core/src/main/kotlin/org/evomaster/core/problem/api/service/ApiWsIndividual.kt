@@ -98,7 +98,7 @@ abstract class ApiWsIndividual (
     /**
      * @return a list table names which are used to insert data directly
      */
-    fun getInsertTableNames(): List<String>{
+    open fun getInsertTableNames(): List<String>{
         return dbInitialization.filterNot { it.representExistingData }.map { it.table.name }
     }
 }

@@ -8,7 +8,9 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlMultidimensionalArrayGene
 import org.evomaster.core.search.gene.sql.SqlNullableGene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
@@ -19,6 +21,14 @@ import org.junit.jupiter.api.Test
 class ArrayTypesTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/postgres_array_types.sql"
+
+    private val rand = Randomness()
+
+    @BeforeEach
+    fun initRand() {
+        rand.updateSeed(42)
+    }
+
 
     @Test
     fun testExtractionOfArrayTypes() {
@@ -113,14 +123,20 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         assertEquals(3, spaceColumn.numberOfDimensions)
         assertEquals("\"{}\"", spaceColumn.getValueAsPrintableString())
 
-        arrayColumn.replaceElements(dimensionSizes = listOf(3))
-        (arrayColumn.getElement(listOf(0)) as IntegerGene).value = 1
-        (arrayColumn.getElement(listOf(1)) as IntegerGene).value = 2
-        (arrayColumn.getElement(listOf(2)) as IntegerGene).value = 3
+        arrayColumn.doInitialize(rand)
+        do {
+            arrayColumn.randomize(rand,tryToForceNewValue = false)
+        } while (arrayColumn.getDimensionSize( 0 )!=3)
+        assertEquals(3, arrayColumn.getDimensionSize(0))
+
+        arrayColumn.getElement(listOf(0)).value = 1
+        arrayColumn.getElement(listOf(1)).value = 2
+        arrayColumn.getElement(listOf(2)).value = 3
 
         assertEquals("\"{1,2,3}\"", arrayColumn.getValueAsPrintableString())
 
     }
+
 
     @Test
     fun testInsertValuesOfArrayGenes() {
@@ -167,7 +183,10 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         assertTrue(nullableArrayColumn.template is SqlNullableGene)
         assertEquals("\"{}\"", nullableArrayColumn.getValueAsPrintableString())
 
-        nullableArrayColumn.replaceElements(dimensionSizes = listOf(1))
+        nullableArrayColumn.doInitialize(rand)
+        do {
+            nullableArrayColumn.randomize(rand,tryToForceNewValue = false)
+        } while (nullableArrayColumn.getDimensionSize(0)!=1)
 
         val sqlNullableGene = nullableArrayColumn.getElement(listOf(0)) as SqlNullableGene
         sqlNullableGene.isPresent = false
@@ -201,7 +220,10 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         assertTrue(stringArrayColumn.template is StringGene)
         assertEquals("\"{}\"", stringArrayColumn.getValueAsPrintableString())
 
-        stringArrayColumn.replaceElements(dimensionSizes = listOf(1))
+        stringArrayColumn.doInitialize(rand)
+        do {
+            stringArrayColumn.randomize(rand,tryToForceNewValue = false)
+        } while (stringArrayColumn.getDimensionSize(0)!=1)
 
         val stringGene = stringArrayColumn.getElement(listOf(0)) as StringGene
         stringGene.value = "Hello World"
@@ -234,7 +256,10 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         assertTrue(stringArrayColumn.template is StringGene)
         assertEquals("\"{}\"", stringArrayColumn.getValueAsPrintableString())
 
-        stringArrayColumn.replaceElements(dimensionSizes = listOf(1))
+        stringArrayColumn.doInitialize(rand)
+        do {
+            stringArrayColumn.randomize(rand,tryToForceNewValue = false)
+        } while (stringArrayColumn.getDimensionSize(0)!=1)
 
         val stringGene = stringArrayColumn.getElement(listOf(0)) as StringGene
         stringGene.value = "Hello\"World"
@@ -268,7 +293,10 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         assertTrue(stringArrayColumn.template is StringGene)
         assertEquals("\"{}\"", stringArrayColumn.getValueAsPrintableString())
 
-        stringArrayColumn.replaceElements(dimensionSizes = listOf(1))
+        stringArrayColumn.doInitialize(rand)
+        do {
+            stringArrayColumn.randomize(rand,tryToForceNewValue = false)
+        } while (stringArrayColumn.getDimensionSize(0)!=1)
 
         val stringGene = stringArrayColumn.getElement(listOf(0)) as StringGene
         stringGene.value = "Hello'World"

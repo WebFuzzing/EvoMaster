@@ -33,4 +33,8 @@ class LimitObjectGene(name: String) : ObjectGene(name, listOf()) {
     }
 
     override fun innerGene(): List<Gene> = listOf()
+
+    override fun isPrintable(): Boolean {
+        return false
+    }
 }
