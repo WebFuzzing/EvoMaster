@@ -15,14 +15,15 @@ import org.evomaster.core.problem.rest.service.ResourceRestModule
 import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.DynamicTest
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestFactory
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import java.io.File
+import java.time.Duration
+import java.time.temporal.TemporalUnit
+import java.util.concurrent.TimeUnit
 
 
 class SamplerVerifierTest {
@@ -47,12 +48,17 @@ class SamplerVerifierTest {
         sampler.sample() //should not crash
     }
 
-    @Execution(ExecutionMode.CONCURRENT)
+    //@Timeout(10, unit = TimeUnit.SECONDS) // this timeout is not working
+   // @Execution(ExecutionMode.CONCURRENT) //issues with shared caches
     @TestFactory
     fun testSamplingFromAllSchemasUnderResources(): Collection<DynamicTest> {
 
-        return scanForSchemas().map {
-            DynamicTest.dynamicTest(it) { runInvariantCheck(it, 1000)}
+        return scanForSchemas().sorted().map {
+            DynamicTest.dynamicTest(it) {
+                assertTimeoutPreemptively(Duration.ofSeconds(5)) {
+                    runInvariantCheck(it, 100)
+                }
+            }
         }.toList()
     }
 
