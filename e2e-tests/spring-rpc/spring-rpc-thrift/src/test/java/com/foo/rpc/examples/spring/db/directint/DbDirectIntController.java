@@ -22,7 +22,7 @@ public class DbDirectIntController extends SpringWithDbController {
 
     @Override
     public ProblemInfo getProblemInfo() {
-        return new RPCProblem(DbDirectIntService.Iface.class, client, RPCType.THRIFT);
+        return new RPCProblem(DbDirectIntService.Iface.class, client, RPCType.GENERAL);
     }
 
     @Override

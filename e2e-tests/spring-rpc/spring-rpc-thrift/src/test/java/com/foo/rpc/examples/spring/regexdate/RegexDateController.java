@@ -22,7 +22,7 @@ public class RegexDateController extends SpringController {
 
     @Override
     public ProblemInfo getProblemInfo() {
-        return new RPCProblem(RegexDateService.Iface.class, client, RPCType.THRIFT);
+        return new RPCProblem(RegexDateService.Iface.class, client, RPCType.GENERAL);
     }
 
     @Override
