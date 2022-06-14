@@ -329,14 +329,6 @@ class NumberGeneTest {
 
 
     @Test
-    fun testBigDecimalSetValueWithDouble(){
-        val bdGene = BigDecimalGene(name = "bdGene", min = BigDecimal("-2190982811087044603"), max = BigDecimal("-1447602971353231867"), precision = 21, scale = 2)
-        val value = -1.62352851568738509E+18
-        bdGene.setValueWithDouble(value)
-        assertEquals(value, bdGene.value.toDouble())
-    }
-
-    @Test
     fun testMinMaxConfiguration(){
         val floatGene = FloatGene("fg", min = 0.02f, max = 1.2f,scale = 0)
         assertEquals(1f, floatGene.min)
