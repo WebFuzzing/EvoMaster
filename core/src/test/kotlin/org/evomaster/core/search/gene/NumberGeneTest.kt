@@ -1,12 +1,10 @@
 package org.evomaster.core.search.gene
 
-import com.mysql.cj.result.BigDecimalValueFactory
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.BigInteger
-import java.math.MathContext
 
 class NumberGeneTest {
 
@@ -326,6 +324,31 @@ class NumberGeneTest {
         assertEquals(value, bdGene.value.toDouble())
     }
 
+    @Test
+    fun testMinMaxConfiguration(){
+        val floatGene = FloatGene("fg", min = 0.02f, max = 1.2f,scale = 0)
+        assertEquals(1f, floatGene.min)
+        assertEquals(1f, floatGene.max)
+    }
 
+    @Test
+    fun testBigDecimalNotInLongRange(){
+        val ming_minbd = BigDecimal.valueOf(Long.MAX_VALUE * 100.0)
+        val ming_maxbd = BigDecimal.valueOf(Double.MAX_VALUE)
+        val ming_bd = BigDecimalGene("ming_bd", min = ming_minbd, max = ming_maxbd, scale = 0)
+        assertTrue(ming_bd.floatingPointMode)
+        assertFalse(ming_bd.isFloatingPointMutable)
+        assertEquals(ming_maxbd.setScale(0), ming_bd.max)
+        assertEquals(ming_minbd.setScale(0), ming_bd.min)
+
+
+        val maxl_maxbd = BigDecimal.valueOf(Long.MIN_VALUE * 100.0)
+        val maxl_minbd = BigDecimal.valueOf(-Double.MAX_VALUE)
+        val maxl_bd = BigDecimalGene("maxl_bd", min = maxl_minbd, max = maxl_maxbd, scale = 0)
+        assertTrue(maxl_bd.floatingPointMode)
+        assertFalse(maxl_bd.isFloatingPointMutable)
+        assertEquals(maxl_maxbd.setScale(0), maxl_bd.max)
+        assertEquals(maxl_minbd.setScale(0), maxl_bd.min)
+    }
 
 }
