@@ -9,10 +9,13 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MapClassReplacement implements MethodReplacementClass {
 
     private static final Method linearCostContainsKey;
+
+    private static final Map<Class<? extends Map>, Boolean> cacheIsLinearCost = new ConcurrentHashMap<>();
 
     static {
         try {
@@ -21,6 +24,21 @@ public class MapClassReplacement implements MethodReplacementClass {
             //should never happen...
             throw new RuntimeException(e);
         }
+    }
+
+    private static boolean hasLinearCost(Class<? extends Map> klass){
+        Boolean isLinear = cacheIsLinearCost.get(klass);
+        if(isLinear == null){
+            try {
+                Method m = klass.getMethod("containsKey",Object.class);
+                isLinear = m.equals(linearCostContainsKey);
+            } catch (NoSuchMethodException e) {
+                isLinear = false;
+            }
+            cacheIsLinearCost.put(klass, isLinear);
+            return isLinear;
+        }
+        return isLinear;
     }
 
     @Override
@@ -117,9 +135,8 @@ public class MapClassReplacement implements MethodReplacementClass {
 
         if(! (map instanceof IdentityHashMap)) {
             try {
-                Method m = map.getClass().getMethod("containsKey",Object.class);
-                if(! m.equals(linearCostContainsKey)) {
-                    //check Map.containsKey is not from AbstractMap, which is O(n). Case for Kotlin's ZipEntryMap
+                //check Map.containsKey is not from AbstractMap, which is O(n). Case for Kotlin's ZipEntryMap
+                if(! hasLinearCost(map.getClass())) {
                     containsKey(map, key, idTemplate);
                 }
             } catch (Exception e) {
