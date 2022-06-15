@@ -435,7 +435,9 @@ def createJobHead(port, sut, timeoutMinutes):
     if sut.platform == JDK_8 or sut.platform == JDK_11:
         params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart) + " " + getJavaCommand(sut)
 
-        jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
+        # Note: this is for the process of the Driver. The Xmx settings of the SUTs will need to be specified directly
+        #       in the Java/Kotlin code of the External Driver, under getJVMParameters(), if the default is not enough.
+        jvm = " -Xms1G -Xmx2G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
         JAVA = getJavaCommand(sut)
         command = JAVA + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
 
