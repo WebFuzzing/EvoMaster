@@ -17,13 +17,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate {
 
     default String getInitSqlScript() {
-        return String.join("\n", Arrays.asList("INSERT INTO Bar (id, value) VALUES (0, 0);", "INSERT INTO Foo (id, value, bar_id) VALUES (0, 0, 0);"));
+        return String.join("\n", Arrays.asList("INSERT INTO Bar (id, valueColumn) VALUES (0, 0);", "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0);"));
     }
 
     @Test
-    public default void testAccessedFkClean() throws Exception {
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, value INT)", true);
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, value INT, bar_id INT, " +
+    default void testAccessedFkClean() throws Exception {
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
                 "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
@@ -65,7 +65,7 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
             assertEquals(1, res.seeRows().size());
 
             // table is accessed with INSERT
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (1, 1);", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (1, 1);", true);
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
             assertEquals(1, res.seeRows().size());
 

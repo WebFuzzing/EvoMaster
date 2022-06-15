@@ -15,7 +15,7 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
 
 
     @Test
-    public default void testAccessedClean() throws Exception {
+    default void testAccessedClean() throws Exception {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", true);
 
@@ -73,13 +73,13 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
 
 
     @Test
-    public default void testFkClean() throws Exception {
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, value INT)", true);
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, value INT, bar_id INT, " +
+    default void testFkClean() throws Exception {
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
                 "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
 
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (0, 0)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (0, 0, 0)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", true);
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
@@ -117,7 +117,7 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
             assertEquals(1, res.seeRows().size());
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (1, 1, 0);", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, 1, 0);", true);
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
             assertEquals(2, res.seeRows().size());
 
@@ -144,13 +144,13 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
 
 
     @Test
-    public default void testAccessedFkClean() throws Exception {
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, value INT)", true);
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, value INT, bar_id INT, " +
+    default void testAccessedFkClean() throws Exception {
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
                 "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
 
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (0, 0)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (0, 0, 0)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", true);
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
@@ -188,7 +188,7 @@ public interface SmartDbCleanTest extends DatabaseTestTemplate {
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
             assertEquals(1, res.seeRows().size());
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (1, 1);", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (1, 1);", true);
             res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
             assertEquals(1, res.seeRows().size());
 
