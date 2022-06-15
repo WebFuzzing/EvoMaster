@@ -36,9 +36,9 @@ class SqlPolygonGene(
         databaseType = databaseType
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         do {
-            points.randomize(randomness, forceNewValue, allGenes)
+            points.randomize(randomness, tryToForceNewValue, allGenes)
         } while (!isValid())
     }
 
@@ -72,14 +72,14 @@ class SqlPolygonGene(
                 }
 
                 val cut = Line2D.linesIntersect(
-                        points.getViewOfChildren()[i].x.value.toDouble(),
-                        points.getViewOfChildren()[i].y.value.toDouble(),
-                        points.getViewOfChildren()[i + 1].x.value.toDouble(),
-                        points.getViewOfChildren()[i + 1].y.value.toDouble(),
-                        points.getViewOfChildren()[j].x.value.toDouble(),
-                        points.getViewOfChildren()[j].y.value.toDouble(),
-                        points.getViewOfChildren()[(j + 1) % len].x.value.toDouble(),
-                        points.getViewOfChildren()[(j + 1) % len].y.value.toDouble())
+                        points.getAllElements()[i].x.value.toDouble(),
+                        points.getAllElements()[i].y.value.toDouble(),
+                        points.getAllElements()[i + 1].x.value.toDouble(),
+                        points.getAllElements()[i + 1].y.value.toDouble(),
+                        points.getAllElements()[j].x.value.toDouble(),
+                        points.getAllElements()[j].y.value.toDouble(),
+                        points.getAllElements()[(j + 1) % len].x.value.toDouble(),
+                        points.getAllElements()[(j + 1) % len].y.value.toDouble())
 
                 if (cut) {
                     return false
