@@ -1,5 +1,7 @@
 package org.evomaster.core.search.gene.sql.geometric
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -13,7 +15,8 @@ import org.slf4j.LoggerFactory
 class SqlPointGene(
     name: String,
     val x: FloatGene = FloatGene(name = "x"),
-    val y: FloatGene = FloatGene(name = "y")
+    val y: FloatGene = FloatGene(name = "y"),
+    val databaseType: DatabaseType = DatabaseType.POSTGRES
 ) : CompositeFixedGene(name, mutableListOf(x, y)) {
 
     companion object {
@@ -24,7 +27,8 @@ class SqlPointGene(
     override fun copyContent(): Gene = SqlPointGene(
         name,
         x.copy() as FloatGene,
-        y.copy() as FloatGene
+        y.copy() as FloatGene,
+        databaseType = databaseType
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
@@ -49,7 +53,10 @@ class SqlPointGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return "\" (${x.getValueAsRawString()} , ${y.getValueAsRawString()}) \""
+        return when (databaseType)  {
+            DatabaseType.MYSQL -> "POINT(${x.getValueAsPrintableString()},${y.getValueAsPrintableString()})"
+            DatabaseType.POSTGRES -> "\" (${x.getValueAsRawString()} , ${y.getValueAsRawString()}) \""
+            else -> throw IllegalArgumentException("SqlPointGene.getValueAsPrintableString is not supported for databasetype: ${databaseType}")}
     }
 
     override fun getValueAsRawString(): String {
