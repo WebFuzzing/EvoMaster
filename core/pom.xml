@@ -183,6 +183,13 @@
             <groupId>com.alibaba</groupId>
             <artifactId>dns-cache-manipulator</artifactId>
         </dependency>
+
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mockserver</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 

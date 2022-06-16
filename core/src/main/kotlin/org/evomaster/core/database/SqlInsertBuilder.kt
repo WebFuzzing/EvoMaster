@@ -362,7 +362,7 @@ class SqlInsertBuilder(
 
     fun isTable(tableName: String) = tables[tableName.uppercase()] != null || tables[tableName.lowercase()] != null
 
-    private fun getTable(tableName: String): Table {
+    fun getTable(tableName: String): Table {
         return tables[tableName]
                 ?: tables[tableName.uppercase()]
                 ?: tables[tableName.lowercase()]

@@ -18,6 +18,7 @@ import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
@@ -30,43 +31,65 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.Table
-import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.service.ResourceManageService
-import org.evomaster.core.problem.rest.service.ResourceRestModule
-import org.evomaster.core.problem.rest.service.ResourceRestMutator
-import org.evomaster.core.problem.rest.service.ResourceSampler
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.algorithms.MioAlgorithm
+import org.evomaster.core.search.matchproblem.PrimitiveTypeMatchIndividual
+import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.junit.ClassRule
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import org.testcontainers.containers.MockServerContainer
+import org.testcontainers.utility.DockerImageName
 import java.sql.Connection
 import java.sql.DriverManager
 import java.util.stream.Stream
 import kotlin.math.max
+import kotlin.math.min
 
 
 class RestIndividualResourceTest {
 
-    private var randomness : Randomness = Randomness()
     private lateinit var sampler : ResourceSampler
     private lateinit var mutator : ResourceRestMutator
     private lateinit var rm : ResourceManageService
+    private lateinit var ff : RestResourceFitness
+    private lateinit var archive : Archive<RestIndividual>
+    private lateinit var searchTimeController: SearchTimeController
 
     private lateinit var config : EMConfig
     private lateinit var cluster : ResourceCluster
-    private var sqlInsertBuilder : SqlInsertBuilder? = null
+
 
     companion object {
         private lateinit var connection: Connection
+        var randomness : Randomness = Randomness()
+        var sqlInsertBuilder : SqlInsertBuilder? = null
+
+        private val MOCKSERVER_IMAGE = DockerImageName.parse(
+            "jamesdbloom/mockserver:mockserver-5.5.4"
+        )
+        private val mockServer: MockServerContainer = MockServerContainer(MOCKSERVER_IMAGE)
+        lateinit var sutAddress: String
 
         @BeforeAll
         @JvmStatic
         fun initClass() {
             connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "")
+            mockServer.start()
+            sutAddress = "http://${mockServer.host}:${mockServer.serverPort}"
         }
 
 
@@ -75,6 +98,11 @@ class RestIndividualResourceTest {
             val budget = arrayOf(10, 100, 1000)
             val range = (1..30)
             return range.map {r-> budget.map { Arguments.of(it, r) } }.flatten().stream()
+        }
+
+        @AfterAll
+        fun clean(){
+            mockServer.close()
         }
     }
 
@@ -115,6 +143,7 @@ class RestIndividualResourceTest {
                         restProblem = RestProblemDto().apply {
                             openApiSchema = openAPI
                             defaultOutputFormat = SutInfoDto.OutputFormat.KOTLIN_JUNIT_4
+                            baseUrlOfSUT = sutAddress
                         }
                         sqlSchemaDto = schema
                     },
@@ -129,8 +158,14 @@ class RestIndividualResourceTest {
         mutator = injector.getInstance(ResourceRestMutator::class.java)
         sqlInsertBuilder = sampler.sqlInsertBuilder
         rm = injector.getInstance(ResourceManageService::class.java)
+        ff = injector.getInstance(RestResourceFitness::class.java)
+        archive = injector.getInstance(Key.get(
+            object : TypeLiteral<Archive<RestIndividual>>() {}))
         cluster = rm.cluster
+        searchTimeController = injector.getInstance(SearchTimeController::class.java)
 
+        config.useTimeInFeedbackSampling = false
+        config.seed = 42
 
     }
 
@@ -275,6 +310,34 @@ class RestIndividualResourceTest {
                 }
             }
         }
+    }
+
+    @Disabled // not finish
+    @ParameterizedTest
+    @MethodSource("getBudgetAndNumOfResource")
+    fun testMutatedIndividual(iteration: Int, numResource: Int){
+        initResourceNode(numResource, 5)
+        config.maxActionEvaluations = iteration
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+
+        val ind = sampler.sample()
+        var eval = ff.calculateCoverage(ind)
+        assertNotNull(eval)
+
+        var evalution = 1
+        do{
+            evalution ++
+            val mutated = mutator.mutateAndSave(1, eval!!, archive)
+            mutated.tracking.apply {
+                assertNotNull(this)
+                assertEquals(min(evalution, config.maxLengthOfTraces), this!!.history.size)
+                assertNotNull(this.history.last().evaluatedResult)
+                assertEquals(EvaluatedMutation.BETTER_THAN,this.history.last().evaluatedResult)
+            }
+
+
+            eval = mutated
+        }while (searchTimeController.shouldContinueSearch())
     }
 
     private fun openApiSchema(spec: List<ResourceSpec>) : String {
@@ -465,6 +528,20 @@ class RestIndividualResourceTest {
     class FakeRemoteController(val sutInfoDto: SutInfoDto?,
                                val controllerInfoDto: ControllerInfoDto?) : RemoteController{
 
+        private var executedActionCounter = 0
+        private var targetIdCounter = 0
+
+        private fun resetExecutedActionCounter(){
+            executedActionCounter = 0
+        }
+        private fun executeAction(){
+            executedActionCounter++
+        }
+
+        private fun newEvaluation(){
+            targetIdCounter++
+        }
+
         override fun getSutInfo(): SutInfoDto? {
             return sutInfoDto
         }
@@ -489,11 +566,35 @@ class RestIndividualResourceTest {
         }
 
         override fun startANewSearch(): Boolean {
+            resetExecutedActionCounter()
             return true
         }
 
         override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean): TestResultsDto? {
-            return null
+            assertNotNull(sqlInsertBuilder)
+            newEvaluation()
+            val result = TestResultsDto().apply {
+                targets = listOf(TargetInfoDto().apply {
+                    id = targetIdCounter
+                    value = 1.0
+                    actionIndex = randomness.nextInt(executedActionCounter)
+                })
+                additionalInfoList = (0 until executedActionCounter).map { AdditionalInfoDto() }
+                extraHeuristics = (0 until executedActionCounter).map {
+                    ExtraHeuristicsDto().apply {
+                        if (randomness.nextBoolean()){
+                            databaseExecutionDto = ExecutionDto().apply {
+                                val table = randomness.choose( sqlInsertBuilder!!.getTableNames())
+                                val failed = randomness.choose(sqlInsertBuilder!!.getTable(table).columns.map { it.name })
+                                failedWhere = mapOf(table to setOf(failed))
+                            }
+                        }
+                    }
+                }
+            }
+
+            resetExecutedActionCounter()
+            return result
         }
 
         override fun executeNewRPCActionAndGetResponse(actionDto: ActionDto): ActionResponseDto? {
@@ -501,6 +602,7 @@ class RestIndividualResourceTest {
         }
 
         override fun registerNewAction(actionDto: ActionDto): Boolean {
+            executeAction()
             return true
         }
 
