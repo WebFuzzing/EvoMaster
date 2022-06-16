@@ -24,6 +24,8 @@ class SqlInsertBuilderTest {
 
         private lateinit var connection: Connection
 
+        const val H2_MAX_VARCHAR_LENGTH = 1000000000
+
         @BeforeAll
         @JvmStatic
         fun initClass() {
@@ -135,7 +137,12 @@ class SqlInsertBuilderTest {
 
         val z = genes.find { it.name.equals("Z", ignoreCase = true) } as StringGene
         assertEquals(0, z.minLength)
-        assertEquals(Int.MAX_VALUE, z.maxLength)
+        /**
+         * http://www.h2database.com/html/datatypes.html?highlight=constraint&search=constraint#character_varying_type
+         * The allowed length is from 1 to 1,000,000,000 characters. The length is a size constraint; only
+         * the actual data is persisted. Length, if any, should be specified in characters
+         */
+        assertEquals(H2_MAX_VARCHAR_LENGTH, z.maxLength)
     }
 
 
@@ -929,7 +936,7 @@ class SqlInsertBuilderTest {
             builder.createSqlInsertionAction("FOO", setOf("status"))
             fail<Any>()
         } catch (ex: RuntimeException) {
-
+            // do nothing
         }
     }
 
@@ -976,7 +983,7 @@ class SqlInsertBuilderTest {
             builder.createSqlInsertionAction("FOO", setOf("f_id"))
             fail<Any>()
         } catch (ex: IllegalArgumentException) {
-
+            // do nothing
         }
     }
 

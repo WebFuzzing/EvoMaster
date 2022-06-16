@@ -29,6 +29,8 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
     private static final String COLUMN_NAME = "COLUMN_NAME";
     private static final String CONSTRAINT_SCHEMA = "CONSTRAINT_SCHEMA";
     private static final String CONSTRAINT_NAME = "CONSTRAINT_NAME";
+    public static final String VERSION_0_PREFIX = "0.";
+    public static final String VERSION_1_PREFIX = "1.";
 
     /**
      * Expects the schema explained in
@@ -61,7 +63,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
     }
 
     private boolean isVersion2OrHigher(String h2DatabaseVersion) {
-        return !h2DatabaseVersion.startsWith("0.") && !h2DatabaseVersion.startsWith("1.");
+        return !h2DatabaseVersion.startsWith(VERSION_0_PREFIX) && !h2DatabaseVersion.startsWith(VERSION_1_PREFIX);
     }
 
     private List<DbTableConstraint> extractColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto, String h2DatabaseVersion) throws SQLException {

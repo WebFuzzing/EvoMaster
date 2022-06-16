@@ -587,7 +587,7 @@
             <dependency>
                 <groupId>com.github.jsqlparser</groupId>
                 <artifactId>jsqlparser</artifactId>
-                <version>4.2</version>
+                <version>4.4</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
