@@ -220,8 +220,14 @@ class RestIndividual(
 
     /**
      * return all the resource calls in this individual, with their index in the children list
+     * @param isRelative indicates whether to return the relative index by only considering a list of resource calls
      */
-    fun getIndexedResourceCalls() : Map<Int,RestResourceCalls> = getIndexedChildren(RestResourceCalls::class.java)
+    fun getIndexedResourceCalls(isRelative: Boolean = true) : Map<Int,RestResourceCalls> = getIndexedChildren(RestResourceCalls::class.java).run {
+        if (isRelative)
+            this.map { it.key - getFirstIndexOfRestResourceCalls() to it.value }.toMap()
+        else
+            this
+    }
 
     /****************************** manipulate resource call in an individual *******************************************/
     /**
@@ -230,7 +236,7 @@ class RestIndividual(
     fun removeResourceCall(position : Int) {
         if(!getIndexedResourceCalls().keys.contains(position))
             throw IllegalArgumentException("position is out of range of list")
-        val removed = killChildByIndex(position) as RestResourceCalls
+        val removed = killChildByIndex(getFirstIndexOfRestResourceCalls() + position) as RestResourceCalls
         removed.removeThisFromItsBindingGenes()
     }
 
@@ -250,9 +256,11 @@ class RestIndividual(
         }else{
             if(position > children.size)
                 throw IllegalArgumentException("position is out of range of list")
-            addChild(position, restCalls)
+            addChild(getFirstIndexOfRestResourceCalls() + position, restCalls)
         }
     }
+
+    private fun getFirstIndexOfRestResourceCalls() = children.indexOfFirst { it is RestResourceCalls }
 
     /**
      * replace the resourceCall at [position] with [resourceCalls]
@@ -274,7 +282,7 @@ class RestIndividual(
             throw IllegalArgumentException("position is out of range of list")
         if(position1 == position2)
             throw IllegalArgumentException("It is not necessary to swap two same position on the resource call list")
-        swapChildren(position1,position2)
+        swapChildren(getFirstIndexOfRestResourceCalls() + position1, getFirstIndexOfRestResourceCalls() + position2)
     }
 
     fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int)

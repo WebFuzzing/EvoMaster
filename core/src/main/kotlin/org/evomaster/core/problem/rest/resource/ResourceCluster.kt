@@ -74,6 +74,12 @@ class ResourceCluster {
         resourceCluster.values.forEach{it.init()}
     }
 
+    fun reset(){
+        resourceCluster.clear()
+        dataInDB.clear()
+        tables.clear()
+    }
+
 
     /**
      * derive related table for each resource node
