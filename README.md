@@ -128,6 +128,8 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 
 ### Documentation
 
+If you are trying to use _EvoMaster_, but the instructions in this documentation are not enough to get you started, or they are too unclear, then it means it is a _bug_ in the documentation, which then would need to be clarified and updated. In such cases, please create a new [issue](https://github.com/EMResearch/EvoMaster/issues).  
+
 * [Example of generated tests](docs/example.md)
 * [Download and Install EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
