@@ -31,16 +31,26 @@ building on decades of research in the field of [Search-Based Software Testing](
 
 __Key features__:
 
-* At the moment, _EvoMaster_ targets RESTful APIs compiled to 
-  JVM (e.g., Java and Kotlin). We support JDK __8__ and the major LTS versions after that (currently JDK __17__). Might work on other JVM versions, but we provide __NO__ support for it.
+* _Web APIs_: At the moment, _EvoMaster_ can generate test cases for RESTful and GraphQL APIs. 
 
-* We provide installers for the main operating systems: Windows (`.msi`), 
+* _Blackbox_ testing mode: can run on any API (regardless of its programming language, e.g., Python and Go).
+   However, results for blackbox testing will be worse than whitebox testing (e.g., due to lack of code analysis).
+
+* _Whitebox_ testing mode: can be used for APIs compiled to 
+  JVM (e.g., Java and Kotlin). _EvoMaster_ analyses the bytecode of the tested applications, and uses
+  several heuristics such as _testability transformations_ and _taint analysis_ to be able to generate
+  more effective test cases. We support JDK __8__ and the major LTS versions after that (currently JDK __17__). Might work on other JVM versions, but we provide __NO__ support for it. 
+   Note: there is initial support for other languages as well, like for example JavaScript/TypeScript, but they are not in a stable, feature-complete state yet. 
+
+* _Installation_: we provide installers for the main operating systems: Windows (`.msi`), 
   OSX (`.dmg`) and Linux (`.deb`). We also provide an uber-fat JAR file.
 
-* The REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
+* _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results.   
+
+* _Schema_: REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
   format (either _v2_ or _v3_).
 
-* The tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin.
+* _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin. There is initial support for other formats. For complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md).
 
 * _Fault detection_: _EvoMaster_ can generate tests cases that reveal faults/bugs in the tested applications.
   Different heuristics are employed, like checking for 500 status codes and mismatches from the API schemas. 
@@ -49,38 +59,32 @@ __Key features__:
   This means that the generated tests can be used for _regression testing_ (e.g., added to the Git repository
   of the application, and run with any build tool such as Maven and Gradle). 
 
-* Advanced _whitebox_ heuristics: _EvoMaster_ analyses the bytecode of the tested applications, and uses
-  several heuristics such as _testability transformations_ and _taint analysis_ to be able to generate 
-  more effective test cases. 
-
-* SQL handling: _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
+  
+* _SQL handling_: _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
   such information to generate higher code coverage test cases. Furthermore, it can generate data directly
   into the databases, and have such initialization automatically added in the generated tests. 
   At the moment, _EvoMaster_ supports _Postgres_, _MySQL_ and _H2_  databases.  
 
-* _Blackbox_ testing mode: can run on any API (regardless of its programming language), 
-  as long as an OpenAPI schema is provided. However, results will be worse than whitebox testing (e.g., due
-  to lack of bytecode analysis).
 
 * _Authentication_: we support auth based on authentication headers and cookies. 
 
 __Known limitations__:
 
-* To be used for _whitebox_ testing, users need to write a [driver manually](docs/write_driver.md).
+* _Driver_: to be used for _whitebox_ testing, users need to write a [driver manually](docs/write_driver.md).
   We recommend to try _blackbox_ mode first (should just need a few minutes to get it up and running) to get
   an idea of what _EvoMaster_ can do for you.  
 
-* Execution time: to get good results, you might need to run the search for several hours. 
+* _Execution time_: to get good results, you might need to run the search for several hours. 
   We recommend to first try the search for 10 minutes, just to get an idea of what type of tests can be generated.
   But, then, you should run _EvoMaster_ for something like between 1 and 24 hours (the longer the better, but
   it is unlikely to get better results after 24 hours).
   
-* External services (e.g., other RESTful APIs): currently there is no support for them (e.g., to automatically mock them).
+* _External services_: (e.g., other RESTful APIs) currently there is no support for them (e.g., to automatically mock them).
   It is work in progress.
   
-* NoSQL databases (e.g., MongoDB): currently no support. It is work in progress. 
+* _NoSQL databases_: (e.g., MongoDB) currently no support. It is work in progress. 
 
-* Failing tests: the tests generated by _EvoMaster_ should all pass, and not fail, even when they detect a fault.
+* _Failing tests_: the tests generated by _EvoMaster_ should all pass, and not fail, even when they detect a fault.
   In those cases, comments/test-names would point out that a test is revealing a possible fault, while still passing.
   However, in some cases the generated tests might fail. This is due to the so called _flaky_ tests, e.g., when
   a test has assertions based on the time clock (e.g., dates and timestamps). 
@@ -127,7 +131,7 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 * [Example of generated tests](docs/example.md)
 * [Download and Install EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
-* [Console options](docs/options.md)
+* [Command-Line Interface (CLI) options](docs/options.md)
 * [OpenApi/Swagger Schema](docs/openapi.md)
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
