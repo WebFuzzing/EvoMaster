@@ -16,6 +16,7 @@ import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
 
 /**
  *
@@ -260,7 +261,7 @@ class RestIndividual(
         }
     }
 
-    private fun getFirstIndexOfRestResourceCalls() = children.indexOfFirst { it is RestResourceCalls }
+    private fun getFirstIndexOfRestResourceCalls() = max(0, children.indexOfFirst { it is RestResourceCalls })
 
     /**
      * replace the resourceCall at [position] with [resourceCalls]
@@ -356,10 +357,10 @@ class RestIndividual(
         val indexed = ind.getIndexedResourceCalls()
         val toSwap = indexed[indexToSwap]!!
 
-        val before : Int =  toSwap.shouldBefore.map { t->
+        val before : Int = toSwap.shouldBefore.map { t ->
             indexed.filter { it.value.getResourceNodeKey() == t }
-                    .minByOrNull { it.key }?.key ?: indexed.keys.maxOrNull()!! + 1
-        }.minOrNull() ?: indexed.keys.maxOrNull()!! + 1
+                .minByOrNull { it.key }?.key ?: (indexed.keys.maxOrNull()!! + 1)
+        }.minOrNull() ?: (indexed.keys.maxOrNull()!! + 1)
 
 
         val after : Int = toSwap.depends.map { t->
