@@ -473,7 +473,7 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
         } else if (regExpMatchOperator.getRightExpression() instanceof Function) {
             Function function = (Function) regExpMatchOperator.getRightExpression();
-            if (function.getName().equals("similar_escape")) {
+            if (!function.getName().equals("similar_escape")) {
                 throw new IllegalArgumentException("Unsupported regular expression match " + regExpMatchOperator);
             }
             function.getParameters().accept(this);
