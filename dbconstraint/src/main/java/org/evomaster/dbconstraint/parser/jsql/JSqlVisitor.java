@@ -19,6 +19,9 @@ import java.util.List;
 
 public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
+    private static final String SIMILAR_TO = "similar_to";
+    private static final String SIMILAR_ESCAPE = "similar_escape";
+
     private final Deque<SqlCondition> stack = new ArrayDeque<>();
 
     @Override
@@ -473,7 +476,7 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
         } else if (regExpMatchOperator.getRightExpression() instanceof Function) {
             Function function = (Function) regExpMatchOperator.getRightExpression();
-            if (!function.getName().equals("similar_escape")) {
+            if (!function.getName().equals(SIMILAR_TO) && !function.getName().equals(SIMILAR_ESCAPE)) {
                 throw new IllegalArgumentException("Unsupported regular expression match " + regExpMatchOperator);
             }
             function.getParameters().accept(this);
