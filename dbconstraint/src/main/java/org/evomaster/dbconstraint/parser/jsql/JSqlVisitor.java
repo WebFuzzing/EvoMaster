@@ -21,6 +21,7 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
     private static final String SIMILAR_TO = "similar_to";
     private static final String SIMILAR_ESCAPE = "similar_escape";
+    private static final String SIMILAR_TO_ESCAPE = "similar_to_escape";
 
     private final Deque<SqlCondition> stack = new ArrayDeque<>();
 
@@ -476,7 +477,7 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
         } else if (regExpMatchOperator.getRightExpression() instanceof Function) {
             Function function = (Function) regExpMatchOperator.getRightExpression();
-            if (!function.getName().equals(SIMILAR_TO) && !function.getName().equals(SIMILAR_ESCAPE)) {
+            if (!function.getName().equals(SIMILAR_TO) && !function.getName().equals(SIMILAR_ESCAPE) && !function.getName().equals(SIMILAR_TO_ESCAPE)) {
                 throw new IllegalArgumentException("Unsupported regular expression match " + regExpMatchOperator);
             }
             function.getParameters().accept(this);
