@@ -12,6 +12,8 @@ import java.util.stream.IntStream;
 public class SchemaExtractor {
 
 
+    public static final String GEOMETRY = "GEOMETRY";
+
     public static boolean validate(DbSchemaDto schema) throws IllegalArgumentException {
 
         /*
@@ -184,12 +186,12 @@ public class SchemaExtractor {
             tables = md.getTables(null, schemaDto.name, null, new String[]{"TABLE"});
             if (tables.next()) {
                 do {
-                    handleTableEntry(schemaDto, md, tables, tableNames);
+                    handleTableEntry(connection, schemaDto, md, tables, tableNames);
                 } while (tables.next());
             }
         } else {
             do {
-                handleTableEntry(schemaDto, md, tables, tableNames);
+                handleTableEntry(connection, schemaDto, md, tables, tableNames);
             } while (tables.next());
         }
         tables.close();
@@ -493,7 +495,7 @@ public class SchemaExtractor {
         }
     }
 
-    private static void handleTableEntry(DbSchemaDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableNames) throws SQLException {
+    private static void handleTableEntry(Connection connection, DbSchemaDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableNames) throws SQLException {
         TableDto tableDto = new TableDto();
         schemaDto.tables.add(tableDto);
         tableDto.name = tables.getString("TABLE_NAME");
@@ -553,7 +555,32 @@ public class SchemaExtractor {
                     String[] attrs = typeAsString.split(" ");
                     if (attrs.length == 0)
                         throw new IllegalStateException("missing type info of the column");
-                    columnDto.type = attrs[0];
+
+                    if (attrs[0].equalsIgnoreCase(GEOMETRY)) {
+                        /*
+                         * In MYSQL, the TYPE_NAME column of the JDBC table metadata returns the GEOMETRY data type,
+                         * which is the supertype of all geometry data. In order to know the specific geometric data
+                         * type of a column, it is required to query the [INFORMATION_SCHEMA.COLUMNS] table for the
+                         * corresponding [DATA_TYPE] column value.
+                         */
+                        String sqlQuery = String.format("SELECT DATA_TYPE, table_schema from INFORMATION_SCHEMA.COLUMNS where\n" +
+                                " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", schemaDto.name, tableDto.name, columnDto.name);
+                        try (Statement statement = connection.createStatement()) {
+                            ResultSet rs = statement.executeQuery(sqlQuery);
+                            if (rs.next()) {
+                                String dataType = rs.getString("DATA_TYPE");
+                                /*
+                                 * uppercase to enforce case insensitivity.
+                                 */
+                                columnDto.type = dataType.toUpperCase();
+                            } else {
+                                columnDto.type = GEOMETRY;
+                            }
+                        }
+                    } else {
+                        columnDto.type = attrs[0];
+                    }
+
                     columnDto.isUnsigned = attrs.length > 1 && IntStream
                             .range(1, attrs.length).anyMatch(i -> attrs[i].equalsIgnoreCase("UNSIGNED"));
                     columnDto.nullable = columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
@@ -569,6 +596,7 @@ public class SchemaExtractor {
                         if (columnDto.scale < 0)
                             columnDto.scale = 0;
                     }
+
 
                     break;
                 case POSTGRES:

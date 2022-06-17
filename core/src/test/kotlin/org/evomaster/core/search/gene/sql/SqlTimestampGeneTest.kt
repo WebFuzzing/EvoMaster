@@ -9,7 +9,9 @@ import java.time.format.DateTimeFormatter
 
 class SqlTimestampGeneTest {
 
-    private val DATE_TIME_FORMAT_PATTERN = "yyyy-MM-dd HH:mm:ss"
+    companion object {
+        const val DATE_TIME_FORMAT_PATTERN = "yyyy-MM-dd HH:mm:ss"
+    }
 
     @Test
     fun testValidLocalDateTime() {
