@@ -80,6 +80,7 @@ class SQLGenerator{
                 ColumnDataType.CHAR,
                 ColumnDataType.CHARACTER,
                 ColumnDataType.CHARACTER_LARGE_OBJECT,
+                ColumnDataType.CHARACTER_VARYING,
                 ColumnDataType.VARCHAR -> equalCondition(col.name, "\'$value\'")
                 else -> {
                     ""

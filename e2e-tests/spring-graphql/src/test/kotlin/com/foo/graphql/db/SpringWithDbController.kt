@@ -8,7 +8,6 @@ import org.springframework.boot.SpringApplication
 import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Connection
 import java.sql.SQLException
-import java.util.*
 
 
 abstract class SpringWithDbController(applicationClass: Class<*>) : SpringController(applicationClass) {
@@ -36,7 +35,12 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
         ctx = SpringApplication.run(applicationClass,
             "--server.port=0",
             "--graphql.tools.schema-location-pattern=**/${schemaName()}",
-            "--spring.datasource.url=jdbc:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;",
+            /*
+             * MODE=LEGACY is added since H2Dialect does not work properly with H2 2.0.202
+             * MODE=LEGACY can be removed when Spring-boot is upgraded to 2.6.4
+             * https://github.com/hibernate/hibernate-orm/pull/4524
+             */
+            "--spring.datasource.url=jdbc:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;MODE=LEGACY",
             "--spring.jpa.database-platform=" + H2Dialect::class.java.name,
             "--spring.datasource.username=sa",
             "--spring.datasource.password",
