@@ -136,7 +136,12 @@ public class DbCleaner {
     }
 
     public static void clearDatabase(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean, DatabaseType type, boolean doResetSequence) {
-        clearDatabase(getDefaultRetries(type), connection, getSchemaName(schemaName, type), tableToSkip, tableToClean, type, false, doResetSequence, false);
+        /*
+         * Enable the restarting of Identity fields only if sequences are to be restarted
+         * and the database type is H2
+         */
+        boolean restartIdentityWhenTruncating = doResetSequence && type.equals(DatabaseType.H2);
+        clearDatabase(getDefaultRetries(type), connection, getSchemaName(schemaName, type), tableToSkip, tableToClean, type, false, doResetSequence, restartIdentityWhenTruncating);
     }
 
     public static void dropDatabaseTables(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type) {
