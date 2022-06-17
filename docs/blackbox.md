@@ -1,5 +1,7 @@
 # Black-Box Testing
 
+## RESTful APIs
+
 Informally, in *Black-Box Testing* of a RESTful API, we generate test cases without
 knowing the internal details of the API.
 Still, we need to know the schema of the API to determine which endpoints can be called,
@@ -82,6 +84,17 @@ public class EvoMasterTest {
                 .body("'numSpecs'", numberMatches(2869.0));
     }
 }
+```
+
+## GraphQL APIs
+
+Black-box fuzzing of GraphQL APIs uses the same options as for RESTful APIs.
+One difference is that `--bbTargetUrl` is used to specify the entry point of the GraphQL API.
+Another difference is that we must specify the `--problemType` to be `GRAPHQL`, as the default is `REST`.
+An example on GitLab's API is:
+
+```
+evomaster.exe  --problemType GRAPHQL --bbTargetUrl https://gitlab.com/api/graphql --blackBox true --outputFormat JAVA_JUNIT_4 --maxTime 30s --ratePerMinute 60
 ```
 
 
