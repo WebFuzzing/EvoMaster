@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
-import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestIndividual
@@ -14,12 +13,13 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import kotlin.math.min
 
-
+@Disabled
 class RestIndividualResourceTest : RestIndividualTestBase(){
 
     private lateinit var sampler : ResourceSampler
