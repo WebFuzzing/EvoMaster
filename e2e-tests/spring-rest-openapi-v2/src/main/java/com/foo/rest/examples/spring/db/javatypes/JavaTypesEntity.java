@@ -66,8 +66,10 @@ public class JavaTypesEntity {
     @NotNull
     private final String shortString;
 
+    private static final int H2_MAX_LENGTH_VARCHAR = 1000000000;
+
     @NotNull
-    @Column(length = Integer.MAX_VALUE)
+    @Column(length = H2_MAX_LENGTH_VARCHAR)
     private final String longString;
 
     @NotNull

@@ -345,6 +345,6 @@ enum class ColumnDataType(dataTypeName: String) {
             single type
          */
         return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TIMESTAMPTZ) || equals(TEXT)
-                || equals(UUID) || equals(CHARACTER) || equals(CHARACTER_LARGE_OBJECT)
+                || equals(UUID) || equals(CHARACTER) || equals(CHARACTER_LARGE_OBJECT) || equals(CHARACTER_VARYING)
      }
 }

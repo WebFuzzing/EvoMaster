@@ -10,7 +10,7 @@ public class RpR {
   public RpR(Long id_var, String name_var, int value_var, Long rdId_var) {
     this.id = id_var;
     this.name = name_var;
-    this.value = value_var;
+    this.valueInt = value_var;
     this.rdId = rdId_var;
   }
 
@@ -21,7 +21,7 @@ public class RpR {
   public String name;
 
   @ApiModelProperty(required = true)
-  public int value;
+  public int valueInt;
 
   @ApiModelProperty(required = true)
   public Long rdId;

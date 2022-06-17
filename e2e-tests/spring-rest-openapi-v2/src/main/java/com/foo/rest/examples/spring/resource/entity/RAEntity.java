@@ -12,12 +12,12 @@ public class RAEntity {
   public RAEntity(Long id_var, String name_var, int value_var) {
     this.id = id_var;
     this.name = name_var;
-    this.value = value_var;
+    this.valueInt = value_var;
   }
 
   @Id @NotNull private Long id;
   @NotNull private String name;
-  @NotNull private int value;
+  @NotNull private int valueInt;
 
   public void setId(Long id) {
     this.id = id;
@@ -35,19 +35,19 @@ public class RAEntity {
     return this.name;
   }
 
-  public void setValue(int value) {
-    this.value = value;
+  public void setValue(int valueInt) {
+    this.valueInt = valueInt;
   }
 
   public int getValue() {
-    return this.value;
+    return this.valueInt;
   }
 
   public RA getDto() {
     RA dto = new RA();
     dto.id = this.getId();
     dto.name = this.getName();
-    dto.value = this.getValue();
+    dto.valueInt = this.getValue();
     return dto;
   }
 }

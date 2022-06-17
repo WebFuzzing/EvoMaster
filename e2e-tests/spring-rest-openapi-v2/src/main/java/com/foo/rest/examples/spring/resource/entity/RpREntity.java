@@ -12,13 +12,13 @@ public class RpREntity {
   public RpREntity(Long id_var, String name_var, int value_var, RdEntity rd_var) {
     this.id = id_var;
     this.name = name_var;
-    this.value = value_var;
+    this.valueInt = value_var;
     this.rd = rd_var;
   }
 
   @Id @NotNull private Long id;
   @NotNull private String name;
-  @NotNull private int value;
+  @NotNull private int valueInt;
   @NotNull @OneToOne private RdEntity rd;
 
   public void setId(Long id) {
@@ -37,12 +37,12 @@ public class RpREntity {
     return this.name;
   }
 
-  public void setValue(int value) {
-    this.value = value;
+  public void setValue(int valueInt) {
+    this.valueInt = valueInt;
   }
 
   public int getValue() {
-    return this.value;
+    return this.valueInt;
   }
 
   public void setRd(RdEntity rd) {
@@ -57,7 +57,7 @@ public class RpREntity {
     RpR dto = new RpR();
     dto.id = this.getId();
     dto.name = this.getName();
-    dto.value = this.getValue();
+    dto.valueInt = this.getValue();
     dto.rdId = this.getRd().getId();
     return dto;
   }

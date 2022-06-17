@@ -10,7 +10,7 @@ public class Rd {
   public Rd(Long id_var, String name_var, int value_var) {
     this.id = id_var;
     this.name = name_var;
-    this.value = value_var;
+    this.valueInt = value_var;
   }
 
   @ApiModelProperty(required = true)
@@ -20,6 +20,6 @@ public class Rd {
   public String name;
 
   @ApiModelProperty(required = true)
-  public int value;
+  public int valueInt;
 }
 
