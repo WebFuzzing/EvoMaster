@@ -1,7 +1,9 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -24,35 +26,35 @@ class SqlBinaryStringGene(
 
         val maxSize: Int = ArrayGene.MAX_SIZE,
 
-        private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize)
+        private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize),
 
-) :  CompositeGene(name, mutableListOf( binaryArrayGene)) {
+        val databaseType: DatabaseType = DatabaseType.POSTGRES
+
+) : CollectionGene, Gene(name, binaryArrayGene.getAllElements()) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBinaryStringGene::class.java)
 
         const val EMPTY_STR = ""
+
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        binaryArrayGene.randomize(randomness, tryToForceNewValue, allGenes)
-    }
-
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        TODO("Not yet implemented")
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        binaryArrayGene.randomize(randomness, forceNewValue, allGenes)
     }
 
     private fun toHex2(value: Int) = value.toString(16).padStart(2, '0')
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return buildString {
-            append("\"\\x")
-            append(binaryArrayGene.getViewOfChildren()
-                    .map { g ->
-                toHex2((g as IntegerGene).value)
-            }.joinToString(EMPTY_STR))
-            append("\"")
+        val hexString = binaryArrayGene.getChildren().map { g ->
+            toHex2(g.value)
+        }.joinToString(EMPTY_STR)
+
+        return when (databaseType) {
+            DatabaseType.MYSQL -> "X${GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER}${hexString}${GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER}"
+            DatabaseType.POSTGRES -> "\"\\x${hexString}\""
+            else -> throw IllegalArgumentException("getValueAsPrintableString() not supported for ${databaseType}")
         }
     }
 
@@ -82,9 +84,37 @@ class SqlBinaryStringGene(
         return false
     }
 
-    override fun copyContent() = SqlBinaryStringGene(name, minSize = minSize, maxSize = maxSize, binaryArrayGene.copy() as ArrayGene<IntegerGene>)
+    override fun getChildren(): List<out StructuralElement> {
+        return binaryArrayGene.getChildren()
+    }
 
-    override fun shallowMutate(
+    override fun clearElements() {
+        return binaryArrayGene.clearElements()
+    }
+
+    override fun isEmpty() = binaryArrayGene.isEmpty()
+
+    override fun getMaxSizeOrDefault() = binaryArrayGene.getMaxSizeOrDefault()
+
+    override fun getSpecifiedMaxSize() = binaryArrayGene.getSpecifiedMaxSize()
+
+    override fun getMinSizeOrDefault() = binaryArrayGene.getMinSizeOrDefault()
+
+    override fun getSpecifiedMinSize() = binaryArrayGene.getSpecifiedMinSize()
+
+    override fun getSizeOfElements(filterMutable: Boolean) = binaryArrayGene.getSizeOfElements(filterMutable)
+
+    override fun getGeneName() = name
+
+    override fun getDefaultMaxSize() = binaryArrayGene.getDefaultMaxSize()
+
+    override fun copyContent() = SqlBinaryStringGene(name,
+            minSize = minSize,
+            maxSize = maxSize,
+            binaryArrayGene.copyContent() as ArrayGene<IntegerGene>,
+            databaseType=databaseType)
+
+    override fun mutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

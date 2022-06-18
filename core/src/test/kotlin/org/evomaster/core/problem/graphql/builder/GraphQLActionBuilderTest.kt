@@ -9,6 +9,7 @@ import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import java.lang.Integer.max
 
 
 class GraphQLActionBuilderTest {
@@ -761,7 +762,7 @@ class GraphQLActionBuilderTest {
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/abstract2.json").readText()
 
         val config = EMConfig()
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, max(config.treeDepth,5))
         assertEquals(2, actionCluster.size)
 
         val a = actionCluster["a"] as GraphQLAction
@@ -1193,4 +1194,16 @@ class GraphQLActionBuilderTest {
         assertEquals(2, actionCluster.size)
     }
 
+    //@Disabled
+    @Test
+    fun gitHubTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitHub.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(204, actionCluster.size)
     }
+
+}
