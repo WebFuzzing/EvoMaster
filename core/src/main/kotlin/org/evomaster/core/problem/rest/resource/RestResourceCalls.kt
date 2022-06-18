@@ -332,7 +332,8 @@ class RestResourceCalls(
         }
 
         if (this.dbActions.isNotEmpty()) throw IllegalStateException("dbactions of this RestResourceCall is not empty")
-        addChildren(dbActions)
+        // db action should add in the front of rest actions
+        addChildren(0, dbActions)
 
         bindRestActionBasedOnDbActions(dbActions, cluster, forceBindParamBasedOnDB, dbRemovedDueToRepair)
 

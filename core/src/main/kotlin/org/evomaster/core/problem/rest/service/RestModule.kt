@@ -15,9 +15,19 @@ import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StructureMutator
 
 
-class RestModule : AbstractModule(){
+class RestModule(private val bindRemote : Boolean = true) : AbstractModule(){
 
     override fun configure() {
+
+        /*
+            as [ResourceRestModule]
+         */
+        if (bindRemote){
+            bind(RemoteController::class.java)
+                .to(RemoteControllerImplementation::class.java)
+                .asEagerSingleton()
+        }
+
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
                 .to(RestSampler::class.java)
                 .asEagerSingleton()
@@ -39,9 +49,7 @@ class RestModule : AbstractModule(){
         bind(object : TypeLiteral<Archive<*>>() {})
                 .to(object : TypeLiteral<Archive<RestIndividual>>() {})
 
-        bind(RemoteController::class.java)
-                .to(RemoteControllerImplementation::class.java)
-                .asEagerSingleton()
+
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
                 .to(object : TypeLiteral<StandardMutator<RestIndividual>>(){})
