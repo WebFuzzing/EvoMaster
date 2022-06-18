@@ -3,7 +3,6 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -30,7 +29,7 @@ class SqlBinaryStringGene(
 
         val databaseType: DatabaseType = DatabaseType.POSTGRES
 
-) : CollectionGene, Gene(name, binaryArrayGene.getAllElements()) {
+) :  CompositeFixedGene(name, mutableListOf( binaryArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBinaryStringGene::class.java)
@@ -39,16 +38,20 @@ class SqlBinaryStringGene(
 
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        binaryArrayGene.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        binaryArrayGene.randomize(randomness, tryToForceNewValue, allGenes)
+    }
+
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+        return listOf(binaryArrayGene)
     }
 
     private fun toHex2(value: Int) = value.toString(16).padStart(2, '0')
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        val hexString = binaryArrayGene.getChildren().map { g ->
-            toHex2(g.value)
+        val hexString = binaryArrayGene.getViewOfChildren().map { g ->
+            toHex2((g as IntegerGene).value)
         }.joinToString(EMPTY_STR)
 
         return when (databaseType) {
@@ -84,37 +87,13 @@ class SqlBinaryStringGene(
         return false
     }
 
-    override fun getChildren(): List<out StructuralElement> {
-        return binaryArrayGene.getChildren()
-    }
-
-    override fun clearElements() {
-        return binaryArrayGene.clearElements()
-    }
-
-    override fun isEmpty() = binaryArrayGene.isEmpty()
-
-    override fun getMaxSizeOrDefault() = binaryArrayGene.getMaxSizeOrDefault()
-
-    override fun getSpecifiedMaxSize() = binaryArrayGene.getSpecifiedMaxSize()
-
-    override fun getMinSizeOrDefault() = binaryArrayGene.getMinSizeOrDefault()
-
-    override fun getSpecifiedMinSize() = binaryArrayGene.getSpecifiedMinSize()
-
-    override fun getSizeOfElements(filterMutable: Boolean) = binaryArrayGene.getSizeOfElements(filterMutable)
-
-    override fun getGeneName() = name
-
-    override fun getDefaultMaxSize() = binaryArrayGene.getDefaultMaxSize()
-
     override fun copyContent() = SqlBinaryStringGene(name,
             minSize = minSize,
             maxSize = maxSize,
-            binaryArrayGene.copyContent() as ArrayGene<IntegerGene>,
+            binaryArrayGene.copy() as ArrayGene<IntegerGene>,
             databaseType=databaseType)
 
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

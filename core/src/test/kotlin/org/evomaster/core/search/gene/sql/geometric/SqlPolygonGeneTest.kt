@@ -14,7 +14,7 @@ class SqlPolygonGeneTest {
         val rand = Randomness()
         gene.randomize(rand, false)
         assertTrue(gene.isValid())
-        assertTrue(gene.points.getChildren().size >= 3)
+        assertTrue(gene.points.getViewOfChildren().size >= 3)
     }
 
     @Test
@@ -23,7 +23,7 @@ class SqlPolygonGeneTest {
         val rand = Randomness()
         gene.randomize(rand, false)
         assertTrue(gene.isValid())
-        assertTrue(gene.points.getChildren().size >= 6)
+        assertTrue(gene.points.getViewOfChildren().size >= 6)
     }
 
     @Test

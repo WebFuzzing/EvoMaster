@@ -13,33 +13,32 @@ import org.slf4j.LoggerFactory
 import java.awt.geom.Line2D
 
 class SqlPolygonGene(
-        name: String,
-        val databaseType: DatabaseType = DatabaseType.POSTGRES,
-        val minLengthOfPolygonRing: Int = 2,
-        val onlyNonIntersectingPolygons: Boolean = false,
-        val points: ArrayGene<SqlPointGene> = ArrayGene(
-                name = "points",
-                // polygons have at least 2 points
-                minSize = minLengthOfPolygonRing,
-                template = SqlPointGene("p", databaseType = databaseType))
-) : Gene(name, mutableListOf(points)) {
+    name: String,
+    val databaseType: DatabaseType = DatabaseType.POSTGRES,
+    val minLengthOfPolygonRing: Int = 2,
+    val onlyNonIntersectingPolygons: Boolean = false,
+    val points: ArrayGene<SqlPointGene> = ArrayGene(
+            name = "points",
+            // polygons have at least 2 points
+            minSize = minLengthOfPolygonRing,
+            template = SqlPointGene("p", databaseType = databaseType))
+) : CompositeFixedGene(name, mutableListOf(points)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPolygonGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(points)
-
     override fun copyContent(): Gene = SqlPolygonGene(
-            name,
-            minLengthOfPolygonRing = minLengthOfPolygonRing,
-            points = points.copyContent() as ArrayGene<SqlPointGene>,
-            databaseType = databaseType
+        name,
+        minLengthOfPolygonRing = minLengthOfPolygonRing,
+        onlyNonIntersectingPolygons = onlyNonIntersectingPolygons,
+        points = points.copy() as ArrayGene<SqlPointGene>,
+        databaseType = databaseType
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         do {
-            points.randomize(randomness, forceNewValue, allGenes)
+            points.randomize(randomness, tryToForceNewValue, allGenes)
         } while (!isValid())
     }
 
@@ -53,12 +52,12 @@ class SqlPolygonGene(
         if (!onlyNonIntersectingPolygons)
             return true
 
-        val len = points.getChildren().size
+        val len = points.getViewOfChildren().size
 
         /*
          * No cross-over if len < 4
          */
-        if (points.getChildren().size < 4) {
+        if (len < 4) {
             return true
         }
 
@@ -73,14 +72,14 @@ class SqlPolygonGene(
                 }
 
                 val cut = Line2D.linesIntersect(
-                        points.getChildren()[i].x.value.toDouble(),
-                        points.getChildren()[i].y.value.toDouble(),
-                        points.getChildren()[i + 1].x.value.toDouble(),
-                        points.getChildren()[i + 1].y.value.toDouble(),
-                        points.getChildren()[j].x.value.toDouble(),
-                        points.getChildren()[j].y.value.toDouble(),
-                        points.getChildren()[(j + 1) % len].x.value.toDouble(),
-                        points.getChildren()[(j + 1) % len].y.value.toDouble())
+                        points.getAllElements()[i].x.value.toDouble(),
+                        points.getAllElements()[i].y.value.toDouble(),
+                        points.getAllElements()[i + 1].x.value.toDouble(),
+                        points.getAllElements()[i + 1].y.value.toDouble(),
+                        points.getAllElements()[j].x.value.toDouble(),
+                        points.getAllElements()[j].y.value.toDouble(),
+                        points.getAllElements()[(j + 1) % len].x.value.toDouble(),
+                        points.getAllElements()[(j + 1) % len].y.value.toDouble())
 
                 if (cut) {
                     return false
@@ -139,8 +138,8 @@ class SqlPolygonGene(
     override fun getValueAsRawString(): String {
         return "( ${
             points.getAllElements()
-                    .map { it.getValueAsRawString() }
-                    .joinToString(" , ")
+                .map { it.getValueAsRawString() }
+                .joinToString(" , ")
         } ) "
     }
 
@@ -158,10 +157,7 @@ class SqlPolygonGene(
         return this.points.containsSameValueAs(other.points)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(points.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(points)
 

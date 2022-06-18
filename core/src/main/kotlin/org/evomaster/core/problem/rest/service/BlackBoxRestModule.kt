@@ -7,6 +7,7 @@ import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Sampler
@@ -39,6 +40,7 @@ class BlackBoxRestModule(
 
         if(usingRemoteController) {
             bind(RemoteController::class.java)
+                    .to(RemoteControllerImplementation::class.java)
                     .asEagerSingleton()
         }
 

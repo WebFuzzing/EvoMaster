@@ -19,23 +19,20 @@ class SqlPathGene(
                 // paths are lists of at least 2 points
                 minSize = 2,
                 template = SqlPointGene("p", databaseType=databaseType))
-) : Gene(name, mutableListOf(points)) {
+) : CompositeGene(name, mutableListOf(points)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
     }
 
-
-    override fun getChildren(): MutableList<Gene> = mutableListOf(points)
-
     override fun copyContent(): Gene = SqlPathGene(
             name,
-            points = points.copyContent() as ArrayGene<SqlPointGene>,
+            points = points.copy() as ArrayGene<SqlPointGene>,
             databaseType = this.databaseType
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        points.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -90,10 +87,7 @@ class SqlPathGene(
         return this.points.containsSameValueAs(other.points)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(points.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(points)
 

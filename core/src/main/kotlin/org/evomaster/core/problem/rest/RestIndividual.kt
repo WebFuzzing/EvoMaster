@@ -16,6 +16,7 @@ import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
 
 /**
  *
@@ -220,8 +221,14 @@ class RestIndividual(
 
     /**
      * return all the resource calls in this individual, with their index in the children list
+     * @param isRelative indicates whether to return the relative index by only considering a list of resource calls
      */
-    fun getIndexedResourceCalls() : Map<Int,RestResourceCalls> = getIndexedChildren(RestResourceCalls::class.java)
+    fun getIndexedResourceCalls(isRelative: Boolean = true) : Map<Int,RestResourceCalls> = getIndexedChildren(RestResourceCalls::class.java).run {
+        if (isRelative)
+            this.map { it.key - getFirstIndexOfRestResourceCalls() to it.value }.toMap()
+        else
+            this
+    }
 
     /****************************** manipulate resource call in an individual *******************************************/
     /**
@@ -230,7 +237,7 @@ class RestIndividual(
     fun removeResourceCall(position : Int) {
         if(!getIndexedResourceCalls().keys.contains(position))
             throw IllegalArgumentException("position is out of range of list")
-        val removed = killChildByIndex(position) as RestResourceCalls
+        val removed = killChildByIndex(getFirstIndexOfRestResourceCalls() + position) as RestResourceCalls
         removed.removeThisFromItsBindingGenes()
     }
 
@@ -250,9 +257,11 @@ class RestIndividual(
         }else{
             if(position > children.size)
                 throw IllegalArgumentException("position is out of range of list")
-            addChild(position, restCalls)
+            addChild(getFirstIndexOfRestResourceCalls() + position, restCalls)
         }
     }
+
+    private fun getFirstIndexOfRestResourceCalls() = max(0, max(children.indexOfLast { it is DbAction }+1, children.indexOfFirst { it is RestResourceCalls }))
 
     /**
      * replace the resourceCall at [position] with [resourceCalls]
@@ -274,7 +283,7 @@ class RestIndividual(
             throw IllegalArgumentException("position is out of range of list")
         if(position1 == position2)
             throw IllegalArgumentException("It is not necessary to swap two same position on the resource call list")
-        swapChildren(position1,position2)
+        swapChildren(getFirstIndexOfRestResourceCalls() + position1, getFirstIndexOfRestResourceCalls() + position2)
     }
 
     fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int)
@@ -348,10 +357,10 @@ class RestIndividual(
         val indexed = ind.getIndexedResourceCalls()
         val toSwap = indexed[indexToSwap]!!
 
-        val before : Int =  toSwap.shouldBefore.map { t->
+        val before : Int = toSwap.shouldBefore.map { t ->
             indexed.filter { it.value.getResourceNodeKey() == t }
-                    .minByOrNull { it.key }?.key ?: indexed.keys.maxOrNull()!! + 1
-        }.minOrNull() ?: indexed.keys.maxOrNull()!! + 1
+                .minByOrNull { it.key }?.key ?: (indexed.keys.maxOrNull()!! + 1)
+        }.minOrNull() ?: (indexed.keys.maxOrNull()!! + 1)
 
 
         val after : Int = toSwap.depends.map { t->
@@ -364,9 +373,6 @@ class RestIndividual(
         return indexed.keys.filter { it >= after && it < before && it != indexToSwap }.toSet()
     }
 
-    override fun getInsertTableNames(): List<String> {
-        return seeDbActions().filterNot { it.representExistingData }.map { it.table.name }
-    }
 
     override fun getInsertTableNames(): List<String> {
         return seeDbActions().filterNot { it.representExistingData }.map { it.table.name }

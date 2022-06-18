@@ -366,7 +366,7 @@ class SqlInsertBuilder(
      */
     fun isTable(tableName: String) = tables.keys.any { it.equals(tableName, ignoreCase = true) }
 
-    private fun getTable(tableName: String): Table {
+    fun getTable(tableName: String): Table {
         /**
          * SQL is not case sensitivity, table/column must ignore case sensitivity.
          */

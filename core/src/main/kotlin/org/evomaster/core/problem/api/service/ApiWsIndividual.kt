@@ -10,6 +10,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
 
 /**
  * the abstract individual for API based SUT, such as REST, GraphQL, RPC
@@ -72,27 +73,30 @@ abstract class ApiWsIndividual (
         return super.hasAnyAction() || dbInitialization.isNotEmpty()
     }
 
+    private fun getLastIndexOfDbActionToAdd(): Int = children.indexOfLast { it is DbAction } + 1
+
     /**
      * add [actions] at [position]
      * if [position] = -1, append the [actions] at the end
      */
     fun addInitializingActions(position: Int=-1, actions: List<DbAction>){
-        if (position == -1)  addChildren(actions)
-        else{
+        if (position == -1)  {
+            addChildren(getLastIndexOfDbActionToAdd(), actions)
+        } else{
             addChildren(position, actions)
         }
     }
 
     private fun resetInitializingActions(actions: List<DbAction>){
         killChildren { it is DbAction }
-        addChildren(actions)
+        addChildren(getLastIndexOfDbActionToAdd(), actions)
     }
 
     /**
      * remove specified dbactions i.e., [actions] from [dbInitialization]
      */
     fun removeInitDbActions(actions: List<DbAction>) {
-        killChildren { it is DbAction }
+        killChildren { it is DbAction && actions.contains(it)}
     }
 
     /**
