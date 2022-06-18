@@ -31,7 +31,7 @@ building on decades of research in the field of [Search-Based Software Testing](
 
 __Key features__:
 
-* _Web APIs_: At the moment, _EvoMaster_ can generate test cases for RESTful and GraphQL APIs. 
+* _Web APIs_: At the moment, _EvoMaster_ can generate test cases for __REST__ and __GraphQL__ APIs. 
 
 * _Blackbox_ testing mode: can run on any API (regardless of its programming language, e.g., Python and Go).
    However, results for blackbox testing will be worse than whitebox testing (e.g., due to lack of code analysis).
@@ -55,7 +55,7 @@ __Key features__:
 * _Fault detection_: _EvoMaster_ can generate tests cases that reveal faults/bugs in the tested applications.
   Different heuristics are employed, like checking for 500 status codes and mismatches from the API schemas. 
 
-* Self-contained tests: the generated tests do start/stop the application, binding to an ephemeral port.
+* _Self-contained tests_: the generated tests do start/stop the application, binding to an ephemeral port.
   This means that the generated tests can be used for _regression testing_ (e.g., added to the Git repository
   of the application, and run with any build tool such as Maven and Gradle). 
 
@@ -127,6 +127,8 @@ For more details on current vacancies, see our group page at [AISE Lab](https://
 
 
 ### Documentation
+
+If you are trying to use _EvoMaster_, but the instructions in this documentation are not enough to get you started, or they are too unclear, then it means it is a _bug_ in the documentation, which then would need to be clarified and updated. In such cases, please create a new [issue](https://github.com/EMResearch/EvoMaster/issues).  
 
 * [Example of generated tests](docs/example.md)
 * [Download and Install EvoMaster](docs/download.md)
