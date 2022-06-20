@@ -386,7 +386,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             var addPos : Int? = null
             if(pair.first != null){
                 val pos = ind.getResourceCalls().indexOf(pair.first!!)
-                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true, randomness = randomness)
                 addPos = randomness.nextInt(0, pos)
             }
             if (addPos == null) addPos = randomness.nextInt(0, ind.getResourceCalls().size)
@@ -449,7 +449,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             call =  rm.handleAddResource(ind, max)
         }else{
             if(pair.first != null){
-                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true, randomness = randomness)
             }
         }
 

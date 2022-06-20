@@ -242,7 +242,7 @@ class ResourceManageService {
         }
 
         if(bindWith != null){
-            call.bindWithOtherRestResourceCalls(bindWith, cluster,true)
+            call.bindWithOtherRestResourceCalls(bindWith, cluster,true, randomness = randomness)
         }
     }
 

@@ -17,6 +17,7 @@ import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.service.Randomness
 import org.slf4j.LoggerFactory
 
 /**
@@ -30,8 +31,8 @@ object BindingBuilder {
      * bind value within a rest action [restAction], e.g., PathParam with BodyParam
      * @param doBuildBindingGene specifies whether to build the binding gene
      */
-    fun bindParamsInRestAction(restAction: RestCallAction, doBuildBindingGene: Boolean = false){
-        val pairs = buildBindingPairsInRestAction(restAction)
+    fun bindParamsInRestAction(restAction: RestCallAction, doBuildBindingGene: Boolean = false, randomness: Randomness?){
+        val pairs = buildBindingPairsInRestAction(restAction, randomness)
         pairs.forEach {
             val ok = it.first.bindValueBasedOn(it.second)
             if (ok && doBuildBindingGene){
@@ -44,19 +45,19 @@ object BindingBuilder {
     /**
      * @return a list of pairs of genes to be bound within a [restAction]
      */
-    fun buildBindingPairsInRestAction(restAction: RestCallAction): List<Pair<Gene, Gene>>{
+    fun buildBindingPairsInRestAction(restAction: RestCallAction, randomness: Randomness?): List<Pair<Gene, Gene>>{
         val pair = mutableListOf<Pair<Gene, Gene>>()
         val params = restAction.parameters
         val path = restAction.path
 
         if(ParamUtil.existBodyParam(params)){
             params.filterIsInstance<BodyParam>().forEach { bp->
-                pair.addAll(buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true))
+                pair.addAll(buildBindBetweenParams(bp, path, path, params.filter { p -> p !is BodyParam }, true, randomness = randomness))
             }
         }
         params.forEach { p->
             params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.also {sp->
-                pair.addAll(buildBindBetweenParams(sp, path, path, mutableListOf(p)))
+                pair.addAll(buildBindBetweenParams(sp, path, path, mutableListOf(p), randomness = randomness))
             }
         }
         return pair
@@ -70,8 +71,8 @@ object BindingBuilder {
      * @param sourcePath is the source path of the rest action which contains [params]
      * @param doBuildBindingGene specified whether to build binding genes
      */
-    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doBuildBindingGene: Boolean = false): Boolean{
-        val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, false)
+    fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doBuildBindingGene: Boolean = false, randomness: Randomness?): Boolean{
+        val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, false, randomness)
         pairs.forEach { p->
             val ok = p.first.bindValueBasedOn(p.second)
             if (ok && doBuildBindingGene){
@@ -115,9 +116,9 @@ object BindingBuilder {
      * @param sourcePath of the [params]
      * @param params are used to bind with [target]
      */
-    fun buildBindBetweenParams(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doContain : Boolean = false) : List<Pair<Gene, Gene>>{
+    fun buildBindBetweenParams(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doContain : Boolean = false, randomness: Randomness?) : List<Pair<Gene, Gene>>{
         return when(target){
-            is BodyParam -> buildBindBodyParam(target, targetPath, sourcePath, params, doContain)
+            is BodyParam -> buildBindBodyParam(target, targetPath, sourcePath, params, doContain, randomness)
             is PathParam -> buildBindPathParm(target, targetPath, sourcePath, params, doContain)
             is QueryParam -> buildBindQueryParm(target, targetPath, sourcePath, params, doContain)
             is FormParam -> buildBindFormParam(target, params)?.run { listOf(this) }?: listOf()
@@ -158,7 +159,7 @@ object BindingBuilder {
         return emptyList()
     }
 
-    private fun buildBindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean) : List<Pair<Gene, Gene>>{
+    private fun buildBindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean, randomness: Randomness?) : List<Pair<Gene, Gene>>{
         if(ParamUtil.numOfBodyParam(params) != params.size ){
             return params.filter { p -> p !is BodyParam }
                 .flatMap {ip->
@@ -178,15 +179,15 @@ object BindingBuilder {
                 return listOf(Pair(field, pValueGene))
             }
 
-            return buildBindObjectGeneWithObjectGene(valueGene, pValueGene)
+            return buildBindObjectGeneWithObjectGene(valueGene, pValueGene, randomness)
         }
         return emptyList()
     }
 
-    private fun buildBindObjectGeneWithObjectGene(b : ObjectGene, g : ObjectGene) : List<Pair<Gene, Gene>>{
+    private fun buildBindObjectGeneWithObjectGene(b : ObjectGene, g : ObjectGene, randomness: Randomness?) : List<Pair<Gene, Gene>>{
         val map = mutableListOf<Pair<Gene, Gene>>()
         b.fields.forEach { f->
-            val bound = f !is OptionalGene || f.isActive || (Math.random() < 0.5)
+            val bound = f !is OptionalGene || f.isActive || (randomness == null || randomness.nextBoolean(0.5))//(Math.random() < 0.5)
             if (bound){
                 val mf = ParamUtil.getValueGene(f)
                 val mName = ParamUtil.modifyFieldName(b, mf)
@@ -197,7 +198,7 @@ object BindingBuilder {
                 }
                 if(found != null){
                     if (found is ObjectGene)
-                        map.addAll(buildBindObjectGeneWithObjectGene(mf as ObjectGene, found))
+                        map.addAll(buildBindObjectGeneWithObjectGene(mf as ObjectGene, found, randomness))
                     else{
                         // FIXME, binding point
                         val vg = ParamUtil.getValueGene(found)

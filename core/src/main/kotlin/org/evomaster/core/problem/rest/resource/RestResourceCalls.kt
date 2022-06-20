@@ -26,26 +26,30 @@ import org.slf4j.LoggerFactory
  * @property actions is a sequence of actions in the [RestResourceCalls] that follows [template]
  * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
  * @param withBinding specifies whether to build binding between rest genes
+ * @param randomness is required when [withBinding] is true
  *
  */
 class RestResourceCalls(
     val template: CallsTemplate? = null,
     val node: RestResourceNode? = null,
     children: MutableList<out Action>,
-    withBinding: Boolean = false
+    withBinding: Boolean = false,
+    randomness: Randomness? = null
 ): StructuralElement(children){
 
     constructor(template: CallsTemplate? = null, node: RestResourceNode? = null, actions: List<RestCallAction>,
-                dbActions: List<DbAction>, withBinding: Boolean = false) :
-            this(template, node,mutableListOf<Action>().apply { addAll(dbActions); addAll(actions) }, withBinding)
+                dbActions: List<DbAction>, withBinding: Boolean = false, randomness: Randomness? = null) :
+            this(template, node,mutableListOf<Action>().apply { addAll(dbActions); addAll(actions) }, withBinding, randomness)
 
     companion object{
         private val  log : Logger = LoggerFactory.getLogger(RestResourceCalls::class.java)
     }
 
     init {
-        if (withBinding)
-            buildBindingGene()
+        if (withBinding){
+            Lazy.assert { randomness != null }
+            buildBindingGene(randomness)
+        }
     }
 
     fun doInitialize(randomness: Randomness? = null){
@@ -67,10 +71,10 @@ class RestResourceCalls(
      *     3, GET /A/{a}/B/{b}
      * (0-2) actions bind values based on the action at 3
      */
-    private fun buildBindingGene(){
+    private fun buildBindingGene(randomness: Randomness?){
         if (actions.size == 1) return
         (0 until actions.size-1).forEach {
-            actions[it].bindBasedOn(actions.last())
+            actions[it].bindBasedOn(actions.last(), randomness)
         }
     }
 
@@ -116,7 +120,7 @@ class RestResourceCalls(
             template,
             node,
             children.map { it.copy() as Action}.toMutableList(),
-            withBinding = false
+            withBinding = false, randomness = null
         )
 
         copy.isDeletable = isDeletable
@@ -198,7 +202,7 @@ class RestResourceCalls(
      *      e.g., for resource C, table C is created, in addition, A and B are also created since B refers to them,
      *      in this case, if the following handling is related to A and B, we do not further create A and B once [doRemoveDuplicatedTable] is true
      */
-    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, cluster: ResourceCluster, doRemoveDuplicatedTable: Boolean){
+    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, cluster: ResourceCluster, doRemoveDuplicatedTable: Boolean, randomness: Randomness?){
         // handling [this.dbActions]
         if (this.dbActions.isNotEmpty() && doRemoveDuplicatedTable){
             removeDuplicatedDbActions(relatedResourceCalls, cluster, doRemoveDuplicatedTable)
@@ -209,7 +213,7 @@ class RestResourceCalls(
             relatedResourceCalls.forEach { call->
                 call.seeActions(ActionFilter.NO_SQL).forEach { previous->
                     if (previous is RestCallAction){
-                        val dependent = current.bindBasedOn(previous)
+                        val dependent = current.bindBasedOn(previous, randomness = randomness)
                         if (dependent){
                             setDependentCall(call)
                         }
@@ -362,13 +366,13 @@ class RestResourceCalls(
     /**
      * build the binding between [this] with other [restResourceCalls]
      */
-    fun bindRestActionsWith(restResourceCalls: RestResourceCalls){
+    fun bindRestActionsWith(restResourceCalls: RestResourceCalls, randomness: Randomness?){
         if (restResourceCalls.getResourceNode().path != getResourceNode().path)
             throw IllegalArgumentException("target to bind refers to a different resource node, i.e., target (${restResourceCalls.getResourceNode().path}) vs. this (${getResourceNode().path})")
         val params = restResourceCalls.actions.flatMap { it.parameters }
         actions.forEach { ac ->
             if(ac.parameters.isNotEmpty()){
-                ac.bindBasedOn(ac.path, params)
+                ac.bindBasedOn(ac.path, params, randomness)
             }
         }
     }
