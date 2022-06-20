@@ -38,11 +38,11 @@ class BindingBuilderTest {
         assertNotNull(action)
         action!!.randomize(randomness, false)
 
-        val pairs = BindingBuilder.buildBindingPairsInRestAction(action)
+        val pairs = BindingBuilder.buildBindingPairsInRestAction(action, randomness)
         assertEquals(1, pairs.size)
         assertEquals(setOf("id","rfooId"), setOf(pairs.first().first.name, pairs.first().second.name))
 
-        BindingBuilder.bindParamsInRestAction(action, true)
+        BindingBuilder.bindParamsInRestAction(action, true, randomness)
         val patchRfooId = ((action.parameters.find { it is PathParam } as? PathParam)?.gene as? DisruptiveGene<*>)?.gene as? LongGene
         assertNotNull(patchRfooId)
         val patchBody = (action.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene
@@ -70,7 +70,7 @@ class BindingBuilderTest {
         assertNotNull(postXyz)
         postXyz!!.randomize(randomness, false)
         // build binding
-        postXyz.bindBasedOn(getXyz)
+        postXyz.bindBasedOn(getXyz, randomness)
         val postBodyXyzId = ((postXyz.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == "id" } as LongGene
         assertNotNull(postBodyXyzId)
         assertTrue(postBodyXyzId.isBoundWith(getXyzId!!))
@@ -95,7 +95,7 @@ class BindingBuilderTest {
         val postBar = (actionCluster.getValue("POST:/v3/api/rfoo/{rfooId}/rbar") as? RestCallAction)?.copy() as? RestCallAction
         assertNotNull(postBar)
         postBar!!.randomize(randomness, false)
-        postBar.bindBasedOn(getXyz)
+        postBar.bindBasedOn(getXyz, randomness)
         val postBodyBarId = ((postBar.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == "id" } as? LongGene
         assertNotNull(postBodyBarId)
         assertTrue(postBodyBarId!!.isBoundWith(getXyzBarId))
@@ -113,7 +113,7 @@ class BindingBuilderTest {
         val postFoo = (actionCluster.getValue("POST:/v3/api/rfoo") as? RestCallAction)?.copy() as? RestCallAction
         assertNotNull(postFoo)
         postFoo!!.randomize(randomness, false)
-        postFoo.bindBasedOn(getXyz)
+        postFoo.bindBasedOn(getXyz, randomness)
 
         val postBodyFooId = ((postFoo.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == "id" } as? LongGene
         assertNotNull(postBodyFooId)
