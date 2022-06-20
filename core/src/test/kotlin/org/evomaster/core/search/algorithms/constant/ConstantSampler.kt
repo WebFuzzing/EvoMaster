@@ -10,9 +10,9 @@ class ConstantSampler : Sampler<ConstantIndividual>() {
 
     override fun sampleAtRandom(): ConstantIndividual{
         val gene = IntegerGene("value", 0, 0, 1000)
-        //gene.randomize(randomness, false)
         gene.doInitialize(randomness)
         val ind = ConstantIndividual(gene)
+        ind.searchGlobalState = searchGlobalState
         return ind
     }
 }

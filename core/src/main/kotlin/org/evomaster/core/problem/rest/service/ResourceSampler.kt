@@ -110,7 +110,8 @@ open class ResourceSampler : AbstractRestSampler() {
 
             val method = ssc.getSampleStrategy()
 
-            sampleWithMethodAndDependencyOption(method, withDependency) ?: sampleAtRandom()
+            sampleWithMethodAndDependencyOption(method, withDependency)
+                    ?: return sampleAtRandom()
         }
         ind.searchGlobalState = searchGlobalState
         ind.doGlobalInitialize()
