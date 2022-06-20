@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.util
 
+import com.google.common.annotations.VisibleForTesting
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
@@ -26,6 +27,24 @@ import org.slf4j.LoggerFactory
 object BindingBuilder {
 
     private val log = LoggerFactory.getLogger(BindingBuilder::class.java)
+
+    /**
+     * a probability of binding a field of object gene
+     *
+     * note that
+     * there might be no need to bind all fields between two ObjectGenes
+     * eg, POST-PUT with body param, no need to bind every field between the two body payloads
+     *
+     * this static variable is only changeable for testing purpose
+     * see [setProbabilityOfBindingObject]
+     *
+     */
+    private var PROBABILITY_BINDING_OBJECT = 0.5
+
+    @VisibleForTesting
+    internal fun setProbabilityOfBindingObject(probability: Double){
+        PROBABILITY_BINDING_OBJECT = probability
+    }
 
     /**
      * bind value within a rest action [restAction], e.g., PathParam with BodyParam
@@ -187,7 +206,7 @@ object BindingBuilder {
     private fun buildBindObjectGeneWithObjectGene(b : ObjectGene, g : ObjectGene, randomness: Randomness?) : List<Pair<Gene, Gene>>{
         val map = mutableListOf<Pair<Gene, Gene>>()
         b.fields.forEach { f->
-            val bound = f !is OptionalGene || f.isActive || (randomness == null || randomness.nextBoolean(0.5))//(Math.random() < 0.5)
+            val bound = f !is OptionalGene || f.isActive || (randomness == null || randomness.nextBoolean(PROBABILITY_BINDING_OBJECT))//(Math.random() < 0.5)
             if (bound){
                 val mf = ParamUtil.getValueGene(f)
                 val mName = ParamUtil.modifyFieldName(b, mf)
@@ -304,9 +323,11 @@ object BindingBuilder {
                     val param = restAction.parameters.find { p -> restNode.getParamId(restAction.parameters, p)
                         .equals(pToGene.paramId, ignoreCase = true) }
                     if(param!= null){
-                        if (pToGene.isElementOfParam) {
-                            if (param is BodyParam && param.gene is ObjectGene) {
-                                param.gene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
+                        if (pToGene.isElementOfParam && param is BodyParam) {
+
+                            val objGene = ParamUtil.getValueGene(param.gene)
+                            if (objGene is ObjectGene){
+                                objGene.fields.find { f -> f.name == pToGene.targetToBind }?.let { paramGene ->
                                     map.add(buildBindingParamsWithDbAction(columngene, paramGene, forceBindParamBasedOnDB || dbAction.representExistingData))
                                 }
                             }
