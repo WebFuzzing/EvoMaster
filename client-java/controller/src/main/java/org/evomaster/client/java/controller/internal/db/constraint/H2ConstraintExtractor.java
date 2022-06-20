@@ -31,6 +31,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
     private static final String CONSTRAINT_NAME = "CONSTRAINT_NAME";
     public static final String VERSION_0_PREFIX = "0.";
     public static final String VERSION_1_PREFIX = "1.";
+    private static final int COLUMN_INDEX_H2_VERSION = 1;
 
     /**
      * Expects the schema explained in
@@ -253,8 +254,11 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         try (Statement statement = connectionToH2.createStatement()) {
             final String query = "SELECT H2Version();";
             try (ResultSet columns = statement.executeQuery(query)) {
-                columns.next();
-                return columns.getString("H2Version()");
+                boolean hasNext = columns.next();
+                if (!hasNext) {
+                    throw new IllegalArgumentException("Cannot retrieve H2 version");
+                }
+                return columns.getString(COLUMN_INDEX_H2_VERSION);
             }
         }
     }
