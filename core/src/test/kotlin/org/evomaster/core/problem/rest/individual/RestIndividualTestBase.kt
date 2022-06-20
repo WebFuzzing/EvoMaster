@@ -36,6 +36,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Archive
@@ -43,7 +44,6 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -51,15 +51,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockserver.client.MockServerClient
-import org.mockserver.matchers.TimeToLive
-import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.testcontainers.containers.MockServerContainer
 import org.testcontainers.utility.DockerImageName
 import java.sql.Connection
 import java.sql.DriverManager
-import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 import kotlin.math.max
 
@@ -155,7 +152,7 @@ abstract class RestIndividualTestBase {
         initResourceNode(numResource, 5)
         config.maxActionEvaluations = iteration
 
-        (0 until iteration).forEach { _ ->
+        (0 until iteration).forEach { i ->
             val ind = getSampler().sample()
 
             assertEquals(0, ind.seeInitializingActions().size)
@@ -164,13 +161,18 @@ abstract class RestIndividualTestBase {
                 ind.getResourceCalls().forEach { r->
                     val dbIndexes = r.getIndexedChildren(DbAction::class.java).keys
                     val restIndexes = r.getIndexedChildren(RestCallAction::class.java).keys
-                    Assertions.assertTrue(restIndexes.all {
+                    assertTrue(restIndexes.all {
                         it > (dbIndexes.maxOrNull() ?: -1)
                     })
                 }
             }
+            extraSampledIndividualCheck(i, ind)
         }
     }
+
+    open fun extraSampledIndividualCheck(index: Int, individual: RestIndividual){}
+
+
     @ParameterizedTest
     @MethodSource("getBudgetAndNumOfResource")
     fun testMutatedIndividual(iteration: Int, numResource: Int){
@@ -388,7 +390,7 @@ abstract class RestIndividualTestBase {
                     javax.ws.rs.ProcessingException: java.net.ProtocolException: Invalid HTTP method: PATCH
                     Caused by: java.net.ProtocolException: Invalid HTTP method: PATCH
 
-                    remove path method for the moment
+                    remove patch method for the moment
                  */
 //                patch(
 //                    Operation()
