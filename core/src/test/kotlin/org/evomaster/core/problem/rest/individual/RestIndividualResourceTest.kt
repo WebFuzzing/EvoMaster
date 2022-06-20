@@ -1,35 +1,23 @@
 package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
-import org.evomaster.core.problem.rest.resource.ResourceCluster
-import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.service.*
-import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.MethodSource
 import kotlin.math.min
 
-@Disabled
+/**
+ * tests are for checking resource-based solution with enabled hypermutation
+ */
 class RestIndividualResourceTest : RestIndividualTestBase(){
 
     private lateinit var sampler : ResourceSampler
     private lateinit var mutator : ResourceRestMutator
     private lateinit var rm : ResourceManageService
     private lateinit var ff : RestResourceFitness
-
-    private lateinit var cluster : ResourceCluster
 
     override fun getProblemModule() = ResourceRestModule(false)
     override fun getMutator(): StandardMutator<RestIndividual> = mutator
@@ -49,31 +37,10 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
     }
 
 
+    override fun extraMutatedIndividualCheck(evaluated: Int, original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>) {
+        checkTracking(evaluated + 1, mutated)
 
-//    @Disabled // not finish
-//    @ParameterizedTest
-//    @MethodSource("getBudgetAndNumOfResource")
-//    fun testMutatedAHWIndividual(iteration: Int, numResource: Int){
-//        initResourceNode(numResource, 5)
-//        config.maxActionEvaluations = iteration
-//
-//        val ind = sampler.sample()
-//        var eval = ff.calculateCoverage(ind)
-//        assertNotNull(eval)
-//
-//        var evaluated = 1
-//        do{
-//            evaluated ++
-//            val mutated = mutator.mutateAndSave(1, eval!!, archive)
-//           checkTracking(evaluated, mutated)
-//
-//
-//            eval = mutated
-//        }while (searchTimeController.shouldContinueSearch())
-//    }
-
-    override fun extraMutatedIndividualCheck(evaluated: Int, mutated: EvaluatedIndividual<RestIndividual>) {
-        checkTracking(evaluated, mutated)
+        // TODO add some assertions for impact
     }
 
     private fun checkTracking(evaluated: Int, mutated: EvaluatedIndividual<RestIndividual>){

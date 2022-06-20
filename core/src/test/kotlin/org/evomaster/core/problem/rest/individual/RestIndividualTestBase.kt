@@ -36,7 +36,6 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
-import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Archive
@@ -70,7 +69,10 @@ abstract class RestIndividualTestBase {
     companion object {
         private lateinit var connection: Connection
 
-        var randomness : Randomness = Randomness()
+        /**
+         * randomness used in tests
+         */
+        val randomness : Randomness = Randomness()
         var sqlInsertBuilder : SqlInsertBuilder? = null
 
         private val MOCKSERVER_IMAGE = DockerImageName.parse(
@@ -114,11 +116,28 @@ abstract class RestIndividualTestBase {
             sutAddress = "http://${mockServer.host}:${mockServer.serverPort}"
         }
 
+        private val budget = arrayOf(10, 100, 1000)
 
         @JvmStatic
-        fun getBudgetAndNumOfResource(): Stream<Arguments> {
-            val budget = arrayOf(10, 100, 1000)
+        fun getBudgetAndNumOfResourceForSampler(): Stream<Arguments> {
             val range = (1..30)
+            return range.map {r-> budget.map { Arguments.of(it, r) } }.flatten().stream()
+        }
+
+        @JvmStatic
+        fun getBudgetAndNumOfResourceForMutator(): Stream<Arguments> {
+            /*
+                employ less resources for mutator
+                since the current failwhere are sampled at random
+                it would lead to at most 3 * number of resources insertions
+                with parameterizedtest,
+                more than 60 insertions would lead to java.lang.OutOfMemoryError: Java heap space
+
+                https://github.com/junit-team/junit5/issues/1445
+
+                might need to upgrade the junit 5 version
+             */
+            val range = (1..10)
             return range.map {r-> budget.map { Arguments.of(it, r) } }.flatten().stream()
         }
 
@@ -147,7 +166,7 @@ abstract class RestIndividualTestBase {
     abstract fun getFitnessFunction() : AbstractRestFitness<RestIndividual>
 
     @ParameterizedTest
-    @MethodSource("getBudgetAndNumOfResource")
+    @MethodSource("getBudgetAndNumOfResourceForSampler")
     fun testSampledIndividual(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
         config.maxActionEvaluations = iteration
@@ -174,7 +193,7 @@ abstract class RestIndividualTestBase {
 
 
     @ParameterizedTest
-    @MethodSource("getBudgetAndNumOfResource")
+    @MethodSource("getBudgetAndNumOfResourceForMutator")
     fun testMutatedIndividual(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
         config.maxActionEvaluations = iteration
@@ -188,7 +207,7 @@ abstract class RestIndividualTestBase {
             val mutated = getMutator().mutateAndSave(1, eval!!, archive)
             evaluated ++
             checkActionIndex(mutated.individual)
-
+            extraMutatedIndividualCheck(evaluated, eval, mutated)
             eval = mutated
         }while (searchTimeController.shouldContinueSearch())
 
@@ -210,7 +229,7 @@ abstract class RestIndividualTestBase {
         assertTrue(existingBeforeInsert)
     }
 
-    open fun extraMutatedIndividualCheck(evaluated: Int, mutated: EvaluatedIndividual<RestIndividual>){}
+    open fun extraMutatedIndividualCheck(evaluated: Int, original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>){}
 
 
     fun registerTable(tableName: String, columns: List<Pair<String, Boolean>>, columnTypes: List<ColumnDataType>){
@@ -252,7 +271,7 @@ abstract class RestIndividualTestBase {
             .withModules(modules)
             .build().createInjector()
 
-        randomness = injector.getInstance(Randomness::class.java)
+       // randomness = injector.getInstance(Randomness::class.java)
         config = injector.getInstance(EMConfig::class.java)
         archive = injector.getInstance(Key.get(
             object : TypeLiteral<Archive<RestIndividual>>() {}))

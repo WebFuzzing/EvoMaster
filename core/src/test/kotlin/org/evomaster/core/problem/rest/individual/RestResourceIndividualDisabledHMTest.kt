@@ -13,9 +13,13 @@ import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.mutator.StandardMutator
@@ -29,7 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource
  * adaptive hypermutation
  *
  * beside the basic tests for sampler and mutator inherited from [RestIndividualTestBase]
- * there are tests for resource call manipulation
+ * there are tests for resource call manipulation and binding genes within a resource call
  */
 class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
 
@@ -114,7 +118,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
      * such as add, remove, modify
      */
     @ParameterizedTest
-    @MethodSource("getBudgetAndNumOfResource")
+    @MethodSource("getBudgetAndNumOfResourceForSampler")
     fun testIndividualResourceManipulation(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
 
@@ -271,7 +275,45 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                         }
                     }
                 }
+                else->{
+                    fail("the template (${call.template!!.template}) should not exist")
+                }
+            }
+        }
+
+
+        /*
+            with a sampled individual
+            all values of genes which have the same name should be same
+         */
+        sameNameWithSameValue(individual)
+    }
+
+    override fun extraMutatedIndividualCheck(evaluated: Int, original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>) {
+        /*
+            with a mutated individual
+            all values of genes which have the same name should be same
+         */
+        sameNameWithSameValue(mutated.individual)
+    }
+
+    private fun sameNameWithSameValue(individual: RestIndividual){
+        individual.getResourceCalls().forEach { call->
+            // collect all mutable&bindingable leaf gene for all actions
+            val allGene = call.seeActions(ActionFilter.ALL)
+                .flatMap { it.seeGenes() }
+                .filter { it.isMutable() && it !is SqlPrimaryKeyGene && it !is SqlForeignKeyGene }
+                .flatMap { it.flatView{g: Gene -> g is DateGene || g is DateTimeGene || g is TimeGene} }.filter { it.getViewOfChildren().isEmpty() }
+
+            allGene.groupBy { it.name }.forEach { (t, u) ->
+                if (u.size > 1){
+                    val printableValue = u.first().getValueAsPrintableString()
+                    u.forEach {
+                        assertEquals(printableValue, it.getValueAsPrintableString())
+                    }
+                }
             }
         }
     }
+
 }
