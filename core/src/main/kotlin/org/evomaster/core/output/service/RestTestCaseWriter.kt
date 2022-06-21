@@ -284,7 +284,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     else -> ""
                 }
                 val baseUri: String = if (call.locationId != null) {
-                    /* A variable should not be enclosed by quotes */
+                    /* A variable should NOT be enclosed by quotes */
                     locationVar(call.locationId!!)
                 } else {
                     /* Literals should be enclosed by quotes */
@@ -294,7 +294,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 //TODO JS and C#
                 val extract = "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
 
-                lines.add("${locationVar(call.path.lastElement())} = $baseUri + $extract")
+                lines.add("${locationVar(call.path.lastElement())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon(format)
             }
         }
