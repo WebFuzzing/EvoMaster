@@ -16,7 +16,15 @@ class RestResourceTemplateHandler{
     companion object {
 
 
-        private val arrayHttpVerbs : Array<HttpVerb> = arrayOf(HttpVerb.POST, HttpVerb.GET, HttpVerb.PUT, HttpVerb.PATCH,HttpVerb.DELETE, HttpVerb.OPTIONS, HttpVerb.HEAD)
+        private val arrayHttpVerbs : Array<HttpVerb> =
+                arrayOf(HttpVerb.POST,
+                        HttpVerb.GET,
+                        HttpVerb.PUT,
+                        HttpVerb.PATCH,
+                        HttpVerb.DELETE,
+                        HttpVerb.OPTIONS,
+                        HttpVerb.HEAD,
+                        HttpVerb.TRACE)
         private const val SeparatorTemplate = "-"
 
 
