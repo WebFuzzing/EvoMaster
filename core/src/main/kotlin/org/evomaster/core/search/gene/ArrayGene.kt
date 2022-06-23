@@ -181,7 +181,8 @@ class ArrayGene<T>(
 
         if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
             val gene = template.copy() as T
-            gene.randomize(randomness, false)
+//            gene.randomize(randomness, false)
+            gene.doInitialize(randomness)
             addElement(gene)
         }else{
             log.trace("Remvoving gene in mutation")

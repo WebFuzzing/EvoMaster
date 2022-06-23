@@ -340,7 +340,10 @@ abstract class RestIndividualTestBase {
         }
     }
 
-    // now only involve these types in tests, might expand it when needed
+    /*
+        now only involve these types in tests, might expand it when needed
+        might need to add ArrayGene and MapGene
+     */
     private fun typeCluster() = listOf(ColumnDataType.INT, ColumnDataType.VARCHAR, ColumnDataType.DATE)
 
 
