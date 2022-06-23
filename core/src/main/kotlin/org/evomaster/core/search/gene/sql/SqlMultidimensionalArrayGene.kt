@@ -120,11 +120,11 @@ class SqlMultidimensionalArrayGene<T>(
 
         var current = getArray()
         ((0..(dimensionIndexes.size - 2))).forEach {
-            checkIndexWithinRange(dimensionIndexes[it], current.elements.indices)
-            current = current.elements[dimensionIndexes[it]] as ArrayGene<*>
+            checkIndexWithinRange(dimensionIndexes[it], current.getViewOfElements().indices)
+            current = current.getViewOfElements()[dimensionIndexes[it]] as ArrayGene<*>
         }
-        checkIndexWithinRange(dimensionIndexes.last(), current.elements.indices)
-        return current.elements[dimensionIndexes.last()] as T
+        checkIndexWithinRange(dimensionIndexes.last(), current.getViewOfElements().indices)
+        return current.getViewOfElements()[dimensionIndexes.last()] as T
     }
 
     private fun isValid(currentArrayGene: ArrayGene<*>, currentDimensionIndex: Int): Boolean {
@@ -178,15 +178,15 @@ class SqlMultidimensionalArrayGene<T>(
         }
 
         var current = getArray()
-        if (current.elements.isEmpty()) {
+        if (current.getViewOfElements().isEmpty()) {
             checkIndexWithinRange(dimensionIndex, IntRange(0, numberOfDimensions - 1))
             return 0
         }
 
         repeat(dimensionIndex) {
-            current = current.elements[0] as ArrayGene<*>
+            current = current.getViewOfElements()[0] as ArrayGene<*>
         }
-        return current.elements.size
+        return current.getViewOfElements().size
     }
 
 

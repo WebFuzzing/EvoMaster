@@ -38,8 +38,11 @@ class ArrayGene<T>(
         /**
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
+         *
+         * Man: change var to val to maintain list reference as its children
+         *
          */
-        var elements: MutableList<T> = mutableListOf(),
+        val elements: MutableList<T> = mutableListOf(),
         private val openingTag : String = "[",
         private val closingTag : String = "]",
         private val separatorTag : String = ", "
@@ -97,9 +100,9 @@ class ArrayGene<T>(
 
         killAllChildren()
         // check maxSize
-        this.elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
+        val elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
         // build parents for [element]
-        addChildren(this.elements)
+        addChildren(elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -225,7 +228,7 @@ class ArrayGene<T>(
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
-            elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
+            val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
             addChildren(elements)
             return true
         }
@@ -270,7 +273,7 @@ class ArrayGene<T>(
         return true
     }
 
-    fun getAllElements() = elements
+    fun getViewOfElements() = elements.toList()
 
     override fun isEmpty(): Boolean {
         return elements.isEmpty()

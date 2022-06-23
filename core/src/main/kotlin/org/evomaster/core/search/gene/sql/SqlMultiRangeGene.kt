@@ -60,7 +60,7 @@ class SqlMultiRangeGene<T>(
 
     override fun getValueAsRawString(): String {
         return "{ ${
-            rangeGenes.getAllElements()
+            rangeGenes.getViewOfElements()
                     .map { it.getValueAsRawString() }
                     .joinToString(" , ")
         } } "
@@ -98,7 +98,7 @@ class SqlMultiRangeGene<T>(
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "\"{" +
-                rangeGenes.elements.map { g ->
+                rangeGenes.getViewOfElements().map { g ->
                     removeEnclosedQuotationMarks(g.getValueAsPrintableString(previousGenes, mode, targetFormat))
                 }.joinToString(", ") +
                 "}\""

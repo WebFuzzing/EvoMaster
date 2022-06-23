@@ -72,14 +72,14 @@ class SqlPolygonGene(
                 }
 
                 val cut = Line2D.linesIntersect(
-                        points.getAllElements()[i].x.value.toDouble(),
-                        points.getAllElements()[i].y.value.toDouble(),
-                        points.getAllElements()[i + 1].x.value.toDouble(),
-                        points.getAllElements()[i + 1].y.value.toDouble(),
-                        points.getAllElements()[j].x.value.toDouble(),
-                        points.getAllElements()[j].y.value.toDouble(),
-                        points.getAllElements()[(j + 1) % len].x.value.toDouble(),
-                        points.getAllElements()[(j + 1) % len].y.value.toDouble())
+                        points.getViewOfElements()[i].x.value.toDouble(),
+                        points.getViewOfElements()[i].y.value.toDouble(),
+                        points.getViewOfElements()[i + 1].x.value.toDouble(),
+                        points.getViewOfElements()[i + 1].y.value.toDouble(),
+                        points.getViewOfElements()[j].x.value.toDouble(),
+                        points.getViewOfElements()[j].y.value.toDouble(),
+                        points.getViewOfElements()[(j + 1) % len].x.value.toDouble(),
+                        points.getViewOfElements()[(j + 1) % len].y.value.toDouble())
 
                 if (cut) {
                     return false
@@ -114,10 +114,10 @@ class SqlPolygonGene(
              * end of the list
              */
             DatabaseType.MYSQL -> {
-                "POLYGON(" + points.getAllElements()
+                "POLYGON(" + points.getViewOfElements()
                         .joinToString(" , ")
                         { it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) } + "," +
-                        points.getAllElements().get(0).getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                        points.getViewOfElements().get(0).getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
                         ")"
             }
             /*
@@ -125,7 +125,7 @@ class SqlPolygonGene(
              */
             DatabaseType.POSTGRES -> {
                 "\" (  ${
-                    points.getAllElements().joinToString(" , ")
+                    points.getViewOfElements().joinToString(" , ")
                     { it.getValueAsRawString() }
                 } ) \""
             }
@@ -137,7 +137,7 @@ class SqlPolygonGene(
 
     override fun getValueAsRawString(): String {
         return "( ${
-            points.getAllElements()
+            points.getViewOfElements()
                 .map { it.getValueAsRawString() }
                 .joinToString(" , ")
         } ) "
