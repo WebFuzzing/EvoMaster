@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -289,7 +290,8 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
         sameNameWithSameValue(individual)
     }
 
-    override fun extraMutatedIndividualCheck(evaluated: Int, original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>) {
+    override fun extraMutatedIndividualCheck(evaluated: Int, copyOfImpact: ImpactsOfIndividual?,
+                                             original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>) {
         /*
             with a mutated individual
             all values of genes which have the same name should be same

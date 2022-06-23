@@ -4,6 +4,7 @@ import com.google.inject.*
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.Assertions.*
@@ -37,10 +38,11 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
     }
 
 
-    override fun extraMutatedIndividualCheck(evaluated: Int, original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>) {
+    override fun extraMutatedIndividualCheck(evaluated: Int, copyOfImpact: ImpactsOfIndividual?,
+                                             original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>) {
         checkTracking(evaluated + 1, mutated)
 
-        // TODO add some assertions for impact
+        checkImpactUpdate(evaluated, copyOfImpact, original, mutated)
     }
 
     private fun checkTracking(evaluated: Int, mutated: EvaluatedIndividual<RestIndividual>){
@@ -51,5 +53,41 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
             // with faked remote controller, it should always return better results
             assertEquals(EvaluatedMutation.BETTER_THAN,this.history.last().evaluatedResult)
         }
+    }
+
+    private fun checkImpactUpdate(evaluated: Int, copyOfImpact: ImpactsOfIndividual?,
+                                  original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>){
+
+        assertNotNull(mutated)
+        assertNotNull(mutated.impactInfo)
+        val existingData = mutated.impactInfo!!.getSQLExistingData()
+        assertEquals(existingData, mutated.individual.seeInitializingActions().count { it.representExistingData })
+
+        val anyNewDbActions = mutated.individual.seeInitializingActions().size - original.individual.seeInitializingActions().size
+
+        if (anyNewDbActions == 0){
+            if (mutated.trackOperator?.operatorTag() == RestResourceStructureMutator::class.java.simpleName){
+                //TODO
+            }else if (mutated.trackOperator?.operatorTag() == ResourceRestMutator::class.java.simpleName){
+                //TODO
+
+            }else{
+                fail("the operator (${mutated.trackOperator?.operatorTag()?:"null"}) is not expected")
+            }
+        }else if (anyNewDbActions > 0){
+            // impact structure should be updated
+        } else{
+            fail("DbAction should not be removed with current strategy for REST problem")
+        }
+
+        if (searchTimeController.percentageUsedBudget() >= 0.1){
+            /*
+                newly additional dbaction would affect the impact collections
+                then disable after 10% used budget
+             */
+            employFakeDbHeuristicResult = false
+        }
+
+
     }
 }

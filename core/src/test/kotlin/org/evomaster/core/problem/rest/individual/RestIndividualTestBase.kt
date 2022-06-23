@@ -38,11 +38,13 @@ import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -74,6 +76,17 @@ abstract class RestIndividualTestBase {
          */
         val randomness : Randomness = Randomness()
         var sqlInsertBuilder : SqlInsertBuilder? = null
+
+        /**
+         * this is used to configure whether to employ fake
+         * database heuristics results, such as setup
+         * fake extraHeuristic in test execution results,
+         * provide fake existing data
+         *
+         * this setting will be reset to true after each test
+         */
+        var employFakeDbHeuristicResult = true
+
 
         private val MOCKSERVER_IMAGE = DockerImageName.parse(
             "jamesdbloom/mockserver:mockserver-5.13.2"
@@ -204,10 +217,11 @@ abstract class RestIndividualTestBase {
 
         var evaluated = 0
         do {
+            val impact = eval?.impactInfo?.copy()
             val mutated = getMutator().mutateAndSave(1, eval!!, archive)
             evaluated ++
             checkActionIndex(mutated.individual)
-            extraMutatedIndividualCheck(evaluated, eval, mutated)
+            extraMutatedIndividualCheck(evaluated, impact, eval, mutated)
             eval = mutated
         }while (searchTimeController.shouldContinueSearch())
 
@@ -229,7 +243,11 @@ abstract class RestIndividualTestBase {
         assertTrue(existingBeforeInsert)
     }
 
-    open fun extraMutatedIndividualCheck(evaluated: Int, original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>){}
+    open fun extraMutatedIndividualCheck(
+            evaluated: Int,
+            copyOfImpact: ImpactsOfIndividual?,
+            original: EvaluatedIndividual<RestIndividual>,
+            mutated: EvaluatedIndividual<RestIndividual>){}
 
 
     fun registerTable(tableName: String, columns: List<Pair<String, Boolean>>, columnTypes: List<ColumnDataType>){
@@ -578,7 +596,7 @@ abstract class RestIndividualTestBase {
                 additionalInfoList = (0 until executedActionCounter).map { AdditionalInfoDto() }
                 extraHeuristics = (0 until executedActionCounter).map {
                     ExtraHeuristicsDto().apply {
-                        if (randomness.nextBoolean()){
+                        if (employFakeDbHeuristicResult && randomness.nextBoolean()){
                             databaseExecutionDto = ExecutionDto().apply {
                                 val table = randomness.choose( sqlInsertBuilder!!.getTableNames())
                                 val failed = randomness.choose(sqlInsertBuilder!!.getTable(table).columns.map { it.name })
@@ -615,6 +633,7 @@ abstract class RestIndividualTestBase {
         }
 
         override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
+            if (!employFakeDbHeuristicResult) return null
             /*
                 in order to check dbaction representing existing data in rest individual,
                 need to simulate existing data here,
@@ -633,6 +652,11 @@ abstract class RestIndividualTestBase {
             return null
         }
 
+    }
+
+    @AfterEach
+    fun defaultSetting(){
+        employFakeDbHeuristicResult = true
     }
 
 }
