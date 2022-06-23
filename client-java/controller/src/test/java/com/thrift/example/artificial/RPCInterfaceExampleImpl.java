@@ -328,7 +328,7 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     }
 
     @Override
-    public String seedcheck(List<Long> longList, List<Integer> integerList, List<BigNumberObj> objList, Map<Integer, String> integerStringMap) {
+    public String seedcheck(List<Long> longList, List<Integer> integerList, List<BigNumberObj> objList, Map<Integer, String> integerStringMap, BigNumberObj obj) {
         StringBuilder sb = new StringBuilder();
         if (longList != null){
             longList.forEach(l-> sb.append(l).append(";"));
@@ -347,7 +347,11 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
         if (integerStringMap != null){
             integerStringMap.forEach((key, value) -> sb.append(key).append(":").append(value).append(";"));
+            sb.append(System.lineSeparator());
         }
+
+        if (obj != null)
+            sb.append(obj).append(";");
 
         return sb.toString();
     }

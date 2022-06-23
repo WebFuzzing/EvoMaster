@@ -102,7 +102,7 @@ public class RPCSutControllerTest {
     @Test
     public void testSeedcheck(){
 
-        assertEquals(1, seededTestDtos.size());
+        assertEquals(2, seededTestDtos.size());
         assertEquals(1, seededTestDtos.get(0).size());
 
         RPCActionDto test_1 = seededTestDtos.get(0).get(0);
@@ -120,8 +120,23 @@ public class RPCSutControllerTest {
         String expectedResponse = "1;2;3;" + System.lineSeparator()+
                 "1;2;3;" + System.lineSeparator()+
                 "BigNumberObj{bdPositiveFloat=10.12, bdNegativeFloat=-10.12, bdPositiveOrZeroFloat=0.00, bdNegativeOrZeroFloat=-2.16, biPositive=10, biPositiveOrZero=0, biNegative=-10, biNegativeOrZero=-2};" + System.lineSeparator()+
-                "1:1;2:2;";
+                "1:1;2:2;" + System.lineSeparator();
         assertEquals(expectedResponse, responseDto.rpcResponse.stringValue);
+
+
+        RPCActionDto test_2 = seededTestDtos.get(1).get(0);
+        RPCActionDto dto2 = test_2.copy();
+
+        dto2.doGenerateAssertions = true;
+        dto2.doGenerateTestScript = true;
+        dto2.controllerVariable = "rpcController";
+        dto2.responseVariable = "res1";
+        dto2.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto2 = new ActionResponseDto();
+        rpcController.executeAction(dto2, responseDto2);
+
+        assertEquals("", responseDto2.rpcResponse.stringValue);
     }
 
     @Test

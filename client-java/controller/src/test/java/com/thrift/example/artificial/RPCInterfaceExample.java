@@ -95,7 +95,7 @@ public interface RPCInterfaceExample {
 
     double pDoubleResponse();
 
-    String seedcheck(List<Long> longList, List<Integer> integerList, List<BigNumberObj> objList, Map<Integer, String> integerStringMap);
+    String seedcheck(List<Long> longList, List<Integer> integerList, List<BigNumberObj> objList, Map<Integer, String> integerStringMap, BigNumberObj obj);
 
     boolean throwTException(int type) throws Exception;
 
