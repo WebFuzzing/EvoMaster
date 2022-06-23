@@ -1,9 +1,13 @@
 package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.StandardMutator
@@ -58,32 +62,80 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
     private fun checkImpactUpdate(evaluated: Int, copyOfImpact: ImpactsOfIndividual?,
                                   original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>){
 
+        if (evaluated <= 1) return
+
         assertNotNull(mutated)
         assertNotNull(mutated.impactInfo)
-        val existingData = mutated.impactInfo!!.getSQLExistingData()
+
+        val mutatedImpact = mutated.impactInfo!!
+
+        val existingData = mutatedImpact.getSQLExistingData()
         assertEquals(existingData, mutated.individual.seeInitializingActions().count { it.representExistingData })
 
-        val anyNewDbActions = mutated.individual.seeInitializingActions().size - original.individual.seeInitializingActions().size
+        val currentInit = mutatedImpact.initializationGeneImpacts.getOriginalSize(includeExistingSQLData = true)
+
+        val origInit = original.individual.seeInitializingActions()
+        val mutatedInit = mutated.individual.seeInitializingActions()
+
+        assertEquals(mutatedInit.size, currentInit)
+
+        // check whether impact info is consistent with individual after mutation
+        mutated.individual.seeInitializingActions().forEachIndexed { index, dbAction ->
+            if (!dbAction.representExistingData){
+                val impact = mutatedImpact.initializationGeneImpacts.getImpactOfAction(dbAction.getName(), index)
+                assertNotNull(impact)
+            }
+        }
+
+        mutated.individual.seeActions(ActionFilter.NO_INIT).forEachIndexed { index, action ->
+            val impact = mutatedImpact.actionGeneImpacts[index]
+            assertEquals(action.getName(), impact.actionName)
+            action.seeGenes().forEach { g->
+                val geneId = ImpactUtils.generateGeneId(mutated.individual, g)
+                val geneImpact = impact.get(geneId, action.getName())
+                assertNotNull(geneImpact)
+            }
+        }
+
+        val anyNewDbActions = mutatedInit.size - origInit.size
+        assertFalse( anyNewDbActions < 0, "DbAction should not be removed with the current strategy for REST problem")
 
         if (anyNewDbActions == 0){
+
             if (mutated.trackOperator?.operatorTag() == RestResourceStructureMutator::class.java.simpleName){
-                //TODO
+                //TODO might check the structure impact
             }else if (mutated.trackOperator?.operatorTag() == ResourceRestMutator::class.java.simpleName){
-                //TODO
+                var improved = 0
+                var anyMutated = 0
+                mutated.individual.seeActions(ActionFilter.ALL).forEachIndexed { index, action ->
+                    if (action !is DbAction || !action.representExistingData){
+                        action.seeGenes().filter { it.isMutable() }.forEach { g->
+                            val impactId = ImpactUtils.generateGeneId(mutated.individual, g)
+                            val fromInit = mutatedInit.contains(action)
+                            val actionIndex = if (fromInit) index else (index - mutatedInit.size)
+                            val ogeneImpact = copyOfImpact!!.getGene(actionName = action.getName(), geneId = impactId, actionIndex = actionIndex, fromInitialization = fromInit)
+                            assertNotNull(ogeneImpact)
+                            val mgeneImpact = mutatedImpact.getGene(actionName = action.getName(), geneId = impactId, actionIndex = actionIndex, fromInitialization = fromInit)
+                            assertNotNull(impactId)
+                            val mutatedTimes = mgeneImpact!!.shared.timesToManipulate - ogeneImpact!!.shared.timesToManipulate
+                            val impactTimes = mgeneImpact.shared.timesOfImpact.size - ogeneImpact.shared.timesOfImpact.size
+                            assertTrue(mutatedTimes == 1 || mutatedTimes == 0)
+                            assertTrue(impactTimes >= 0)
+                            improved += impactTimes
+                            anyMutated += mutatedTimes
+                        }
+                    }
+                }
 
             }else{
                 fail("the operator (${mutated.trackOperator?.operatorTag()?:"null"}) is not expected")
             }
-        }else if (anyNewDbActions > 0){
-            // impact structure should be updated
-        } else{
-            fail("DbAction should not be removed with the current strategy for REST problem")
         }
 
-        if (searchTimeController.evaluatedActions > 20 || searchTimeController.percentageUsedBudget() >= 0){
+        if (searchTimeController.evaluatedActions > 20 || searchTimeController.percentageUsedBudget() >= 0.1){
             /*
                 newly additional dbaction would affect the impact collections
-                then disable after 10% used budget
+                then disable after 10% used budget or after 20 rest action evaluations
              */
             employFakeDbHeuristicResult = false
         }

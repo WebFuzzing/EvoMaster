@@ -218,10 +218,11 @@ abstract class RestIndividualTestBase {
         var evaluated = 0
         do {
             val impact = eval?.impactInfo?.copy()
-            val mutated = getMutator().mutateAndSave(1, eval!!, archive)
+            val original = eval!!.copy()
+            val mutated = getMutator().mutateAndSave(1, eval, archive)
             evaluated ++
             checkActionIndex(mutated.individual)
-            extraMutatedIndividualCheck(evaluated, impact, eval, mutated)
+            extraMutatedIndividualCheck(evaluated, impact, original, mutated)
             eval = mutated
         }while (searchTimeController.shouldContinueSearch())
 
