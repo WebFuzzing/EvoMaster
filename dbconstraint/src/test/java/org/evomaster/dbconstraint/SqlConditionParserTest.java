@@ -276,8 +276,16 @@ class SqlConditionParserTest {
             SqlCondition e = parse("age_max === NULL".toUpperCase());
             fail();
         } catch (SqlConditionParserException e) {
-
+            // do nothing
         }
+    }
+
+    @Test
+    void testSingleLikeConstraint() throws SqlConditionParserException {
+        SqlCondition actual = parse( "(\"F_ID\" IN(CAST('hi' AS CHARACTER LARGE OBJECT(2)), CAST('low' AS CHARACTER LARGE OBJECT(3))))");
+        SqlCondition expected = in("F_ID", "hi", "low");
+        assertEquals(expected, actual);
+
     }
 
 }

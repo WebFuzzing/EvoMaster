@@ -79,7 +79,9 @@ class DbActionGeneBuilder {
                  * A StringGene of length 1 is used to represent the data.
                  *
                  */
-                ColumnDataType.CHAR ->
+                ColumnDataType.CHAR,
+                ColumnDataType.CHARACTER,
+                ColumnDataType.CHARACTER_LARGE_OBJECT->
                     handleCharColumn(column)
 
                 /**
@@ -101,7 +103,8 @@ class DbActionGeneBuilder {
                  *
                  */
 
-                ColumnDataType.DOUBLE ->
+                ColumnDataType.DOUBLE,
+                ColumnDataType.DOUBLE_PRECISION ->
                     handleDoubleColumn(column)
 
                 /**
@@ -112,6 +115,7 @@ class DbActionGeneBuilder {
                 ColumnDataType.TEXT,
                 ColumnDataType.LONGTEXT,
                 ColumnDataType.VARCHAR,
+                ColumnDataType.CHARACTER_VARYING,
                 ColumnDataType.CLOB,
                 ColumnDataType.MEDIUMTEXT,
                 ColumnDataType.LONGBLOB,
@@ -154,7 +158,8 @@ class DbActionGeneBuilder {
                  * Could be any kind of binary data... so let's just use a string,
                  * which also simplifies when needing generate the test files
                  */
-                ColumnDataType.BLOB ->
+                ColumnDataType.BLOB,
+                ColumnDataType.BINARY_LARGE_OBJECT->
                     handleBLOBColumn(column)
 
                 ColumnDataType.BINARY ->
@@ -360,7 +365,7 @@ class DbActionGeneBuilder {
 //                SqlPolygonGene(column.name, minLengthOfPolygonRing=3, onlyNonIntersectingPolygons = true, databaseType = column.databaseType)
 //            }
             DatabaseType.POSTGRES -> {
-                return SqlPolygonGene(column.name, minLengthOfPolygonRing=2, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
+                SqlPolygonGene(column.name, minLengthOfPolygonRing=2, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
 
             }
             else -> {throw IllegalArgumentException("Must define minLengthOfPolygonRing for database ${column.databaseType}")}

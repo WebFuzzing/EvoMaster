@@ -16,14 +16,22 @@ import java.util.stream.Collectors;
 
 public class H2ConstraintExtractor extends TableConstraintExtractor {
 
-    public static final String CONSTRAINT_TYPE = "CONSTRAINT_TYPE";
-    public static final String CHECK_EXPRESSION = "CHECK_EXPRESSION";
-    public static final String COLUMN_LIST = "COLUMN_LIST";
-    public static final String UNIQUE = "UNIQUE";
-    public static final String REFERENTIAL = "REFERENTIAL";
-    public static final String PRIMARY_KEY = "PRIMARY_KEY";
-    public static final String PRIMARY_KEY_BLANK = "PRIMARY KEY";
-    public static final String CHECK = "CHECK";
+    private static final String CONSTRAINT_TYPE = "CONSTRAINT_TYPE";
+    private static final String CHECK_EXPRESSION = "CHECK_EXPRESSION";
+    private static final String COLUMN_LIST = "COLUMN_LIST";
+    private static final String UNIQUE = "UNIQUE";
+    private static final String REFERENTIAL = "REFERENTIAL";
+    private static final String PRIMARY_KEY = "PRIMARY_KEY";
+    private static final String PRIMARY_KEY_BLANK = "PRIMARY KEY";
+    private static final String CHECK = "CHECK";
+    private static final String CHECK_CONSTRAINT = "CHECK_CONSTRAINT";
+    private static final String CONSTRAINT_CATALOG = "CONSTRAINT_CATALOG";
+    private static final String COLUMN_NAME = "COLUMN_NAME";
+    private static final String CONSTRAINT_SCHEMA = "CONSTRAINT_SCHEMA";
+    private static final String CONSTRAINT_NAME = "CONSTRAINT_NAME";
+    public static final String VERSION_0_PREFIX = "0.";
+    public static final String VERSION_1_PREFIX = "1.";
+    private static final int COLUMN_INDEX_H2_VERSION = 1;
 
     /**
      * Expects the schema explained in
@@ -31,13 +39,14 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      *
      * @param connectionToH2 a connection to a H2 database
      * @param schemaDto      a DTO schema with retrieved information from the JBDC metadata
-     * @throws SQLException  if the connection to the H2 database fails
+     * @throws SQLException if the connection to the H2 database fails
      */
     public List<DbTableConstraint> extract(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
 
-        List<DbTableConstraint> columnConstraints = extractColumnConstraints(connectionToH2, schemaDto);
+        final String h2DatabaseVersion = getVersion(connectionToH2);
 
-        List<DbTableConstraint> tableCheckExpressions = extractTableConstraints(connectionToH2, schemaDto);
+        List<DbTableConstraint> columnConstraints = extractColumnConstraints(connectionToH2, schemaDto, h2DatabaseVersion);
+        List<DbTableConstraint> tableCheckExpressions = extractTableConstraints(connectionToH2, schemaDto, h2DatabaseVersion);
 
         List<DbTableConstraint> allConstraints = new ArrayList<>();
         allConstraints.addAll(columnConstraints);
@@ -54,6 +63,27 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         SimpleLogger.uniqueWarn("WARNING, EvoMaster cannot extract H2 constraints with type '" + constraintType);
     }
 
+    private boolean isVersion2OrHigher(String h2DatabaseVersion) {
+        return !h2DatabaseVersion.startsWith(VERSION_0_PREFIX) && !h2DatabaseVersion.startsWith(VERSION_1_PREFIX);
+    }
+
+    private List<DbTableConstraint> extractColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto, String h2DatabaseVersion) throws SQLException {
+        if (isVersion2OrHigher(h2DatabaseVersion)) {
+            return new ArrayList<>();
+        } else {
+            return extractColumnConstraintsVersion1OrLower(connectionToH2, schemaDto, h2DatabaseVersion);
+        }
+    }
+
+    private List<DbTableConstraint> extractTableConstraints(Connection connectionToH2, DbSchemaDto schemaDto, String h2DatabaseVersion) throws SQLException {
+        if (isVersion2OrHigher(h2DatabaseVersion)) {
+            return extractTableConstraintsVersionTwoOrHigher(connectionToH2, schemaDto);
+        } else {
+            return extractTableConstraintsVersionOneOrLower(connectionToH2, schemaDto);
+        }
+    }
+
+
     /**
      * For each table in the schema DTO, this method appends
      * the constraints that are originated in the ALTER TABLE commands
@@ -62,43 +92,140 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      * Foreign keys are handled separately in the JDBC metadata
      *
      * @param connectionToH2 a connection to a H2 database
-     * @param schemaDto DTO with database schema information
+     * @param schemaDto      DTO with database schema information
      * @throws SQLException if the connection to the H2 database fails
      */
-    private List<DbTableConstraint> extractTableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
-
+    private List<DbTableConstraint> extractTableConstraintsVersionTwoOrHigher(Connection connectionToH2,
+                                                                              DbSchemaDto schemaDto) throws SQLException {
         List<DbTableConstraint> tableCheckExpressions = new ArrayList<>();
 
         String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;
             try (Statement statement = connectionToH2.createStatement()) {
+                final String query = String.format("Select CONSTRAINT_CATALOG,CONSTRAINT_SCHEMA,CONSTRAINT_NAME,CONSTRAINT_TYPE From INFORMATION_SCHEMA.TABLE_CONSTRAINTS\n" +
+                        " where TABLE_CONSTRAINTS.TABLE_SCHEMA='%s' \n"
+                        + " and TABLE_CONSTRAINTS.TABLE_NAME='%s' ", tableSchema, tableName);
+                try (ResultSet constraints = statement.executeQuery(query)) {
+                    while (constraints.next()) {
+                        String constraintCatalog = constraints.getString(CONSTRAINT_CATALOG);
+                        String constraintSchema = constraints.getString(CONSTRAINT_SCHEMA);
+                        String constraintName = constraints.getString(CONSTRAINT_NAME);
+                        String constraintType = constraints.getString(CONSTRAINT_TYPE);
+                        switch (constraintType) {
+                            case UNIQUE: {
+                                DbTableUniqueConstraint constraint = getTableUniqueConstraint(connectionToH2, tableName,
+                                        constraintCatalog, constraintSchema, constraintName);
+                                tableCheckExpressions.add(constraint);
+                                break;
+                            }
+                            case CHECK: {
+                                DbTableCheckExpression constraint = getTableCheckExpression(connectionToH2, tableName, constraintCatalog, constraintSchema, constraintName);
+                                tableCheckExpressions.add(constraint);
+                                break;
+                            }
+                            case PRIMARY_KEY:
+                            case PRIMARY_KEY_BLANK:
+                            case REFERENTIAL:
+                                /*
+                                 * This type of constraint is already handled by
+                                 * JDBC Metadata
+                                 **/
+                                break;
+                            default:
+                                cannotHandle(constraintType);
+                        }
+                    }
+                }
+            }
+        }
 
-                final String query = String.format("Select * From INFORMATION_SCHEMA.CONSTRAINTS\n" +
+        return tableCheckExpressions;
+    }
+
+    private DbTableUniqueConstraint getTableUniqueConstraint(Connection connectionToH2,
+                                                             String tableName,
+                                                             String constraintCatalog,
+                                                             String constraintSchema,
+                                                             String constraintName) throws SQLException {
+
+        try (Statement columnsUsageStatement = connectionToH2.createStatement()) {
+            String columnsUsageQuery = String.format("SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE "
+                            + "WHERE CONSTRAINT_CATALOG='%s' AND CONSTRAINT_SCHEMA='%s' AND CONSTRAINT_NAME='%s' ",
+                    constraintCatalog, constraintSchema, constraintName);
+            try (ResultSet columnsUsageResultSet = columnsUsageStatement.executeQuery(columnsUsageQuery)) {
+                List<String> uniqueColumnNames = new ArrayList<>();
+                while (columnsUsageResultSet.next()) {
+                    String columnName = columnsUsageResultSet.getString(COLUMN_NAME);
+                    uniqueColumnNames.add(columnName);
+                }
+                return new DbTableUniqueConstraint(tableName, uniqueColumnNames);
+            }
+        }
+    }
+
+
+    private DbTableCheckExpression getTableCheckExpression(Connection connectionToH2,
+                                                           String tableName,
+                                                           String constraintCatalog,
+                                                           String constraintSchema,
+                                                           String constraintName) throws SQLException {
+
+        try (Statement checkClauseStatement = connectionToH2.createStatement()) {
+            String checkClauseQuery = String.format("SELECT CHECK_CLAUSE FROM INFORMATION_SCHEMA.CHECK_CONSTRAINTS "
+                            + "WHERE CONSTRAINT_CATALOG='%s' AND CONSTRAINT_SCHEMA='%s' AND CONSTRAINT_NAME='%s' ",
+                    constraintCatalog, constraintSchema, constraintName);
+            try (ResultSet checkClauseResultSet = checkClauseStatement.executeQuery(checkClauseQuery)) {
+                if (checkClauseResultSet.next()) {
+                    String sqlCheckExpression = checkClauseResultSet.getString("CHECK_CLAUSE");
+                    return new DbTableCheckExpression(tableName, "(" + sqlCheckExpression + ")");
+                } else {
+                    throw new IllegalArgumentException(String.format("Cannot find constraint such that CONSTRAINT_CATALOG='%s' AND CONSTRAINT_SCHEMA='%s' AND CONSTRAINT_NAME='%s' ", constraintCatalog, constraintSchema, constraintName));
+                }
+            }
+        }
+    }
+
+    /**
+     * Extracts DbTableConstraints for version 0.xxx and 1.xxx
+     *
+     * @param connectionToH2 the connection to the H2 database
+     * @param schemaDto the schema
+     * @return the list of constraints in the table
+     * @throws SQLException an unexpected exception while executing the queries
+     */
+    private List<DbTableConstraint> extractTableConstraintsVersionOneOrLower(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
+        List<DbTableConstraint> tableCheckExpressions = new ArrayList<>();
+        String tableSchema = schemaDto.name;
+        for (TableDto tableDto : schemaDto.tables) {
+            String tableName = tableDto.name;
+            try (Statement statement = connectionToH2.createStatement()) {
+                final String query = String.format("Select CONSTRAINT_TYPE, CHECK_EXPRESSION, COLUMN_LIST From INFORMATION_SCHEMA.CONSTRAINTS\n" +
                         " where CONSTRAINTS.TABLE_SCHEMA='%s' \n"
                         + " and CONSTRAINTS.TABLE_NAME='%s' ", tableSchema, tableName);
                 try (ResultSet constraints = statement.executeQuery(query)) {
 
                     while (constraints.next()) {
                         String constraintType = constraints.getString(CONSTRAINT_TYPE);
-                        String sqlCheckExpression = constraints.getString(CHECK_EXPRESSION);
-                        String columnList = constraints.getString(COLUMN_LIST);
                         DbTableConstraint constraint;
                         switch (constraintType) {
-                            case UNIQUE:
+                            case UNIQUE: {
+                                String columnList = constraints.getString(COLUMN_LIST);
                                 List<String> uniqueColumnNames = Arrays.stream(columnList.split(",")).map(String::trim).collect(Collectors.toList());
                                 constraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);
                                 tableCheckExpressions.add(constraint);
                                 break;
+                            }
                             case PRIMARY_KEY:
                             case PRIMARY_KEY_BLANK:
                             case REFERENTIAL:
-                                /**
+                                /*
                                  * This type of constraint is already handled by
                                  * JDBC Metadata
                                  **/
                                 break;
                             case CHECK:
+                                String sqlCheckExpression = constraints.getString(CHECK_EXPRESSION);
                                 constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
                                 tableCheckExpressions.add(constraint);
                                 break;
@@ -114,6 +241,28 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         return tableCheckExpressions;
     }
 
+
+    /**
+     * Returns the version of the H2 database.
+     * Some possible values are "2.1.212", "1.4.200"
+     *
+     * @param connectionToH2 the connection to the H2 database
+     * @return the version of the H2 database
+     * @throws SQLException if the H2Version() function is not implemented
+     */
+    private String getVersion(Connection connectionToH2) throws SQLException {
+        try (Statement statement = connectionToH2.createStatement()) {
+            final String query = "SELECT H2Version();";
+            try (ResultSet columns = statement.executeQuery(query)) {
+                boolean hasNext = columns.next();
+                if (!hasNext) {
+                    throw new IllegalArgumentException("Cannot retrieve H2 version");
+                }
+                return columns.getString(COLUMN_INDEX_H2_VERSION);
+            }
+        }
+    }
+
     /**
      * For each table in the schema DTO, this method appends
      * the constraints that are originated in the CREATE TABLE commands
@@ -122,10 +271,11 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      * Unique constraints and Foreign keys are handled separately in the JDBC metadata
      *
      * @param connectionToH2 a connection to a H2 database
-     * @param schemaDto DTO with database schema information
+     * @param schemaDto      DTO with database schema information
      * @throws SQLException if the connection to the database fails
      */
-    private List<DbTableConstraint> extractColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
+    private List<DbTableConstraint> extractColumnConstraintsVersion1OrLower(Connection connectionToH2, DbSchemaDto schemaDto, String h2DatabaseVersion) throws SQLException {
+
         String tableSchema = schemaDto.name;
         List<DbTableConstraint> columnConstraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
@@ -133,11 +283,12 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
 
             try (Statement statement = connectionToH2.createStatement()) {
 
+
                 final String query = String.format("Select * From INFORMATION_SCHEMA.COLUMNS where COLUMNS.TABLE_SCHEMA='%s' and COLUMNS.TABLE_NAME='%s' ", tableSchema, tableName);
 
                 try (ResultSet columns = statement.executeQuery(query)) {
                     while (columns.next()) {
-                        String sqlCheckExpression = columns.getString("CHECK_CONSTRAINT");
+                        String sqlCheckExpression = columns.getString(CHECK_CONSTRAINT);
                         if (sqlCheckExpression != null && !sqlCheckExpression.equals("")) {
                             DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
                             columnConstraints.add(constraint);

@@ -18,7 +18,7 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
 
     @Test
-    public default void testHeuristic() throws Exception {
+    default void testHeuristic() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)", true);
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (10)", true);
@@ -72,7 +72,7 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public default void testMultiline() throws Exception {
+    default void testMultiline() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", true);
@@ -107,7 +107,7 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public default void testVarNotInSelect() throws Exception {
+    default void testVarNotInSelect() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)", true);
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)", true);
@@ -142,20 +142,20 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public default void testInnerJoin() throws Exception {
+    default void testInnerJoin() throws Exception {
 
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, value INT)", true);
-        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, value INT, bar_id INT, " +
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
                 "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
 
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (0, 0)", true);
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (0, 0, 0)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (0, 0)", true);
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0)", true);
 
         int x = 10;
         int y = 20;
 
-        String select = "select f.id, f.value, f.bar_id  from Foo f inner join Bar b on f.bar_id=b.id " +
-                "where f.value=" + x + " and b.value=" + y + " limit 1";
+        String select = "select f.id, f.valueColumn, f.bar_id  from Foo f inner join Bar b on f.bar_id=b.id " +
+                "where f.valueColumn=" + x + " and b.valueColumn=" + y + " limit 1";
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
@@ -170,21 +170,21 @@ public interface HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
             double a = getFirstAndStartNew(url);
             assertTrue(a > 0d);
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (1, " + x + ", 0)", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, " + x + ", 0)", true);
             SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double b = getFirstAndStartNew(url);
             assertTrue(b < a);
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (1, " + y + ")", true);
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (2, 0, 1)", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (1, " + y + ")", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (2, 0, 1)", true);
             SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double c = getFirstAndStartNew(url);
             assertTrue(c < b);
 
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (2, " + y + ")", true);
-            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (3, " + x + ", 2)", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (2, " + y + ")", true);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (3, " + x + ", 2)", true);
             SqlScriptRunner.execCommand(getConnection(), select, true);
 
             double d = getFirstAndStartNew(url);
