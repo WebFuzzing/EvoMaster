@@ -119,8 +119,12 @@ public final class InterfaceSchema{
         if (!(type instanceof CycleObjectType)){
             typeCollections.put(typeName, type);
         }
-        if (!(param.getType() instanceof CycleObjectType))
-            objParamCollections.put(param.getType().getFullTypeNameWithGenericType(), param);
+        if (!(param.getType() instanceof CycleObjectType)){
+            NamedTypedValue p = objParamCollections.get(param.getType().getFullTypeNameWithGenericType());
+            if (p == null || param.getType().depth > p.getType().depth)
+                objParamCollections.put(param.getType().getFullTypeNameWithGenericType(), param);
+        }
+
     }
 
     public Map<String, NamedTypedValue> getObjParamCollections() {
