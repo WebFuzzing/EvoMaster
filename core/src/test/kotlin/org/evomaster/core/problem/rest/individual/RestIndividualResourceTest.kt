@@ -131,6 +131,8 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
                         }
                     }
                 }
+                if (anyMutated > 0)
+                    assertTrue(improved > 0)
 
             }else{
                 fail("the operator (${mutated.trackOperator?.operatorTag()?:"null"}) is not expected")
