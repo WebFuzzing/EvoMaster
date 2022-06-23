@@ -117,7 +117,9 @@ public final class InterfaceSchema{
     public void registerType(TypeSchema type, NamedTypedValue param){
         String typeName = type.getFullTypeNameWithGenericType();
         if (!(type instanceof CycleObjectType)){
-            typeCollections.put(typeName, type);
+            TypeSchema t = typeCollections.get(typeName);
+            if (t == null || t.depth < type.depth)
+                typeCollections.put(typeName, type);
         }
         if (!(param.getType() instanceof CycleObjectType)){
             NamedTypedValue p = objParamCollections.get(param.getType().getFullTypeNameWithGenericType());
