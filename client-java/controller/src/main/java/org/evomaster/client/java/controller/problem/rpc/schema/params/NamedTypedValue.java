@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  */
 public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
-    public final static String NOT_NULL_MARK_OBJ_DATE = "{}";
+
 
     private final static ObjectMapper objectMaper = new ObjectMapper();
 

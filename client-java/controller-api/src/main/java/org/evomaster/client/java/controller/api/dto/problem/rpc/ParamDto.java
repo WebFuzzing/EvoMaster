@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
  */
 public class ParamDto {
 
+    public final static String NOT_NULL_MARK_OBJ_DATE = "{}";
+
     /**
      * param name
      */
@@ -151,6 +153,15 @@ public class ParamDto {
 
     public boolean hasNumberConstraints(){
         return minValue != null || maxValue != null || precision != null || scale !=  null;
+    }
+
+    public void setNullValue(){
+        stringValue = null;
+        innerContent = null;
+    }
+
+    public void setNotNullValue() {
+        stringValue = NOT_NULL_MARK_OBJ_DATE;
     }
 
 }

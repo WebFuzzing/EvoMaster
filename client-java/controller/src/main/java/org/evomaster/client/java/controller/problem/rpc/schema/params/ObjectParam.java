@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto.NOT_NULL_MARK_OBJ_DATE;
+
 /**
  * object param
  */

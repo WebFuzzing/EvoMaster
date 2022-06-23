@@ -375,11 +375,14 @@ class RPCEndpointsHandler {
         if (gene is OptionalGene && !gene.isActive){
             // set null value
             if (gene.gene is ObjectGene || gene.gene is DateTimeGene){
-                dto.innerContent = null
-                dto.stringValue = null
+//                dto.innerContent = null
+//                dto.stringValue = null
+                dto.setNullValue()
             }
             return
         }
+
+        dto.setNotNullValue()
 
         when(val valueGene = ParamUtil.getValueGene(gene)){
             is IntegerGene -> dto.stringValue = valueGene.value.toString()
