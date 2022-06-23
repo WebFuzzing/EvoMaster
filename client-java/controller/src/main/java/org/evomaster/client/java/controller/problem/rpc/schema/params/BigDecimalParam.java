@@ -90,6 +90,7 @@ public class BigDecimalParam extends NamedTypedValue<BigDecimalType, BigDecimal>
 
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        if (json == null)  return;
         BigDecimal bd = parseValue(json.toString());
         setValue(bd);
     }

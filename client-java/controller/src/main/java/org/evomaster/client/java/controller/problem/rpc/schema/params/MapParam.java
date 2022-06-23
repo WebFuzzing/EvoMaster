@@ -86,10 +86,16 @@ public class MapParam extends NamedTypedValue<MapType, List<PairParam>>{
 
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
-        if (json == null) return;
+        Object instance = json;
+        if (json instanceof String)
+            instance = parseValueWithJson((String) json);
 
-        assert json instanceof String;
-        Object instance = parseValueWithJson((String) json);
+        if (instance == null){
+            setValue(null); return;
+        }
+
+        if (!isValidInstance(instance))
+            throw new RuntimeException("cannot parse Map param "+getName()+" with the type "+json.getClass().getName());
 
         PairParam t = getType().getTemplate();
         List<PairParam> values = new ArrayList<>();

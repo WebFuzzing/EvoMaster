@@ -80,27 +80,29 @@ public class ArrayParam extends CollectionParam<List<NamedTypedValue>>{
 
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+
+        Object instance = json;
+        if (json instanceof String)
+            instance = parseValueWithJson((String) json);
+
+        if (instance == null){
+            setValue(null); return;
+        }
+
+        if (!isValidInstance(instance))
+            throw new RuntimeException("cannot parse Array param "+getName()+" with the type "+json.getClass().getName());
+
         NamedTypedValue t = getType().getTemplate();
         List<NamedTypedValue> values = new ArrayList<>();
 
-
-        if (json instanceof String){
-            Object instance = parseValueWithJson((String) json);
-
-            int length = Array.getLength(instance);
-            for (int i = 0; i < length; i++){
-                Object e = Array.get(instance, i);
-                NamedTypedValue copy = t.copyStructureWithProperties();
-                copy.setValueBasedOnInstanceOrJson(e);
-                values.add(copy);
-            }
-            setValue(values);
-        } else if (isValidInstance(json))
-            setValueBasedOnValidInstance(json);
-        else {
-            throw new RuntimeException("cannot parse Array param "+getName()+" with the type "+json.getClass().getName());
+        int length = Array.getLength(instance);
+        for (int i = 0; i < length; i++){
+            Object e = Array.get(instance, i);
+            NamedTypedValue copy = t.copyStructureWithProperties();
+            copy.setValueBasedOnInstanceOrJson(e);
+            values.add(copy);
         }
-
+        setValue(values);
 
     }
 
