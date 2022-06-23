@@ -77,10 +77,10 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
         }else if (anyNewDbActions > 0){
             // impact structure should be updated
         } else{
-            fail("DbAction should not be removed with current strategy for REST problem")
+            fail("DbAction should not be removed with the current strategy for REST problem")
         }
 
-        if (searchTimeController.percentageUsedBudget() >= 0.1){
+        if (searchTimeController.evaluatedActions > 20 || searchTimeController.percentageUsedBudget() >= 0){
             /*
                 newly additional dbaction would affect the impact collections
                 then disable after 10% used budget
