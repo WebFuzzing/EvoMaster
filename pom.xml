@@ -109,11 +109,12 @@
         <junit.platform.version>1.7.2</junit.platform.version>
         <dropwizard.version>1.3.7</dropwizard.version>
         <swagger.version>1.6.1</swagger.version>
-        <swagger.parser-v2.version>1.0.39</swagger.parser-v2.version>
-        <swagger.parser-v3.version>2.0.27</swagger.parser-v3.version>
+        <swagger.parser-v2.version>1.0.61</swagger.parser-v2.version>
+        <swagger.parser-v3.version>2.1.0</swagger.parser-v3.version>
+        <swagger.annotations.version>2.2.1</swagger.annotations.version>
         <springboot.version>2.5.4</springboot.version>
         <springfox.version>3.0.0</springfox.version>
-        <springdoc.version>1.5.10</springdoc.version>
+        <springdoc.version>1.6.9</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
         <jersey.version>2.33</jersey.version>
         <javax.el.version>2.2.5</javax.el.version>
@@ -139,7 +140,6 @@
         <micronaut.version>3.2.7</micronaut.version>
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
         <micronaut.test.version>3.0.5</micronaut.test.version>
-        <swagger.annotations.version>2.1.10</swagger.annotations.version>
     </properties>
 
 
