@@ -6,7 +6,6 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -41,9 +40,15 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
 
     }
 
+    override fun extraSampledIndividualCheck(index: Int, individual: RestIndividual) {
+        assertTrue(individual.isInitialized())
+    }
+
 
     override fun extraMutatedIndividualCheck(evaluated: Int, copyOfImpact: ImpactsOfIndividual?,
                                              original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>) {
+        assertTrue(mutated.individual.isInitialized())
+
         checkTracking(evaluated + 1, mutated)
 
         checkImpactUpdate(evaluated, copyOfImpact, original, mutated)
