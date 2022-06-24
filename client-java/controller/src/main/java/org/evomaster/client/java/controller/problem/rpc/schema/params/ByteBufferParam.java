@@ -63,7 +63,8 @@ public class ByteBufferParam extends NamedTypedValue<ByteBufferType, ByteBuffer>
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
         if (json == null)  return;
-        assert json instanceof String;
+        if (!(json instanceof String))
+            throw new IllegalArgumentException("Cannot set value for ByteBufferParam with the type:"+json.getClass().getName());
         setValue(((String)json).getBytes());
     }
 
