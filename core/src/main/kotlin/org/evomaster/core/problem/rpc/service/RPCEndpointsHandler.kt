@@ -226,9 +226,8 @@ class RPCEndpointsHandler {
         problem.schemas.forEach { i->
             i.types.sortedBy { it.type.depth }
                 .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
-                typeCache[t.type.fullTypeNameWithGenericType] = handleObjectType(t)
+                buildTypeCache(t)
             }
-
         }
 
         actionCluster.clear()
@@ -275,6 +274,13 @@ class RPCEndpointsHandler {
 
         // report statistic of endpoints
         reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 })
+    }
+
+    private fun buildTypeCache(type: ParamDto){
+        if (!typeCache.containsKey(type.type.fullTypeNameWithGenericType)){
+            typeCache[type.type.fullTypeNameWithGenericType] = handleObjectType(type)
+        }
+
     }
 
     private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_client${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
@@ -826,7 +832,10 @@ class RPCEndpointsHandler {
             return ObjectGene(typeName, listOf(), refType = typeName)
         }
 
-        val fields = type.innerContent.map { f-> handleDtoParam(f) }
+        val fields = type.innerContent.map { f->
+            buildTypeCache(f)
+            handleDtoParam(f)
+        }
 
         return ObjectGene(typeName, fields, refType = typeName)
     }
