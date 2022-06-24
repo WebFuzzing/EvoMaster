@@ -214,7 +214,7 @@ public class DateType extends TypeSchema {
 
         String[] secondValue = timeValues[2].split("\\.");
 //        assert secondValue.length == 2;
-        if (secondValue.length != 3){
+        if (secondValue.length != 2){
             throw new IllegalArgumentException("invalid a string for specifying seconds:"+ strValues[2]);
         }
         values.get(5).setValue(Integer.parseInt(secondValue[0]));
