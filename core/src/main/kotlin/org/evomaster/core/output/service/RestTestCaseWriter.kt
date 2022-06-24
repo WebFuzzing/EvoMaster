@@ -151,7 +151,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         if (format.isCsharp()) {
             lines.append(".${capitalizeFirstChar(verb)}Async(")
         } else {
-            lines.add(".$verb(")
+            if(verb == "trace" && format.isJavaOrKotlin()){
+                //currently, RestAssured does not have a trace() method
+                lines.add(".request(io.restassured.http.Method.TRACE, ")
+            } else {
+                lines.add(".$verb(")
+            }
         }
 
         if (call.locationId != null) {
@@ -284,15 +289,17 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     else -> ""
                 }
                 val baseUri: String = if (call.locationId != null) {
+                    /* A variable should NOT be enclosed by quotes */
                     locationVar(call.locationId!!)
                 } else {
-                    call.path.resolveOnlyPath(call.parameters)
+                    /* Literals should be enclosed by quotes */
+                    "\"${call.path.resolveOnlyPath(call.parameters)}\""
                 }
 
                 //TODO JS and C#
                 val extract = "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
 
-                lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + $extract")
+                lines.add("${locationVar(call.path.lastElement())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon(format)
             }
         }

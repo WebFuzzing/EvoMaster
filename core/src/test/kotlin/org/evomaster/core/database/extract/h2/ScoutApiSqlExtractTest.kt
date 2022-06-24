@@ -17,7 +17,7 @@ class ScoutApiSqlExtractTest : ExtractTestBaseH2() {
 
         assertNotNull(schema)
 
-        assertAll(Executable { assertEquals("public", schema.name.toLowerCase()) },
+        assertAll(Executable { assertEquals("public", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(14, schema.tables.size) },
                 Executable { assertTrue(schema.tables.any { it.name == "ACTIVITY" }, "missing table ACTIVITY") },
@@ -48,9 +48,9 @@ class ScoutApiSqlExtractTest : ExtractTestBaseH2() {
 
         assertEquals(5, schema.tables.filter { it.name == "USERS" }.first().columns.size)
 
-        assertEquals(true, schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().columns.filter { it.name == "publishing_activity_id".toUpperCase() }.first().unique)
-        assertEquals(true, schema.tables.filter { it.name == "MEDIA_FILE" }.first().columns.filter { it.name == "uri".toUpperCase() }.first().unique)
-        assertEquals(true, schema.tables.filter { it.name == "SYSTEM_MESSAGE" }.first().columns.filter { it.name == "key".toUpperCase() }.first().unique)
+        assertEquals(true, schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().columns.filter { it.name == "publishing_activity_id".uppercase() }.first().unique)
+        assertEquals(true, schema.tables.filter { it.name == "MEDIA_FILE" }.first().columns.filter { it.name == "uri".uppercase() }.first().unique)
+        assertEquals(true, schema.tables.filter { it.name == "SYSTEM_MESSAGE" }.first().columns.filter { it.name == "keyColumn".uppercase() }.first().unique)
 
         assertEquals(2, schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions.size)
         assertEquals("(\"AGE_MAX\" <= 100)", schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions[0].sqlCheckExpression)

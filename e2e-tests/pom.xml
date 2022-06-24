@@ -24,6 +24,7 @@
         <module>spring-rpc</module>
         <module>wiremock</module>
         <module>spring-rest-postgres-data-types</module>
+        <module>spring-rest-h2-v1</module>
     </modules>
 
 

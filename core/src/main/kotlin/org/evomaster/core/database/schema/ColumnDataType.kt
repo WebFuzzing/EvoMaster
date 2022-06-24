@@ -62,6 +62,16 @@ enum class ColumnDataType(dataTypeName: String) {
     CHAR("CHAR"),
 
     /**
+     * https://www.h2database.com/html/datatypes.html#character_large_object_type
+     */
+    CHARACTER_LARGE_OBJECT("CHARACTER_LARGE_OBJECT"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#character_type
+     */
+    CHARACTER("CHARACTER"),
+
+    /**
      * A normal-size integer.
      * The signed range is -2147483648 to 2147483647.
      * The unsigned range is 0 to 4294967295.
@@ -83,6 +93,11 @@ enum class ColumnDataType(dataTypeName: String) {
      * The length of the column is variable
      */
     VARCHAR("VARCHAR"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#character_varying_type
+     */
+    CHARACTER_VARYING("CHARACTER_VARYING"),
 
     /**
      * LONG or LONG VARCHAR
@@ -142,6 +157,11 @@ enum class ColumnDataType(dataTypeName: String) {
     DOUBLE("DOUBLE"),
 
     /**
+     * https://www.h2database.com/html/datatypes.html#double_precision_type
+     */
+    DOUBLE_PRECISION("DOUBLE_PRECISION"),
+
+    /**
      * A 16-bit (2 bytes) exact integer value
      */
     SMALLINT("SMALLINT"),
@@ -179,6 +199,11 @@ enum class ColumnDataType(dataTypeName: String) {
      * A Binary Large Object, typically images, audio or multimedia.
      */
     BLOB("BLOB"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#binary_large_object_type
+     */
+    BINARY_LARGE_OBJECT("BINARY_LARGE_OBJECT"),
 
     /**
      * Postgres. The data type uuid stores Universally Unique Identifiers (UUID)
@@ -320,6 +345,6 @@ enum class ColumnDataType(dataTypeName: String) {
             single type
          */
         return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TIMESTAMPTZ) || equals(TEXT)
-                || equals(UUID)
-    }
+                || equals(UUID) || equals(CHARACTER) || equals(CHARACTER_LARGE_OBJECT) || equals(CHARACTER_VARYING)
+     }
 }
