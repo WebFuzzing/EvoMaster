@@ -151,7 +151,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         if (format.isCsharp()) {
             lines.append(".${capitalizeFirstChar(verb)}Async(")
         } else {
-            lines.add(".$verb(")
+            if(verb == "trace" && format.isJavaOrKotlin()){
+                //currently, RestAssured does not have a trace() method
+                lines.add(".request(io.restassured.http.Method.TRACE, ")
+            } else {
+                lines.add(".$verb(")
+            }
         }
 
         if (call.locationId != null) {
