@@ -277,10 +277,9 @@ class RPCEndpointsHandler {
     }
 
     private fun buildTypeCache(type: ParamDto){
-        if (!typeCache.containsKey(type.type.fullTypeNameWithGenericType)){
+        if (type.type.type == RPCSupportedDataType.CUSTOM_OBJECT && !typeCache.containsKey(type.type.fullTypeNameWithGenericType)){
             typeCache[type.type.fullTypeNameWithGenericType] = handleObjectType(type)
         }
-
     }
 
     private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_client${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
