@@ -278,7 +278,7 @@ class RPCEndpointsHandler {
 
     private fun buildTypeCache(type: ParamDto){
         if (type.type.type == RPCSupportedDataType.CUSTOM_OBJECT && !typeCache.containsKey(type.type.fullTypeNameWithGenericType)){
-            typeCache[type.type.fullTypeNameWithGenericType] = handleObjectType(type)
+            typeCache[type.type.fullTypeNameWithGenericType] = handleObjectType(type, true)
         }
     }
 
@@ -623,7 +623,7 @@ class RPCEndpointsHandler {
 
     private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"
 
-    private fun handleDtoParam(param: ParamDto): Gene{
+    private fun handleDtoParam(param: ParamDto, building: Boolean = false): Gene{
         val gene = when(param.type.type){
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT ->
                 IntegerGene(param.name, min = param.minValue?.toInt()?: Int.MIN_VALUE, max = param.maxValue?.toInt()?:Int.MAX_VALUE,
@@ -693,8 +693,8 @@ class RPCEndpointsHandler {
                 }
             }
             RPCSupportedDataType.ENUM -> handleEnumParam(param)
-            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param)
-            RPCSupportedDataType.MAP -> handleMapParam(param)
+            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param, building)
+            RPCSupportedDataType.MAP -> handleMapParam(param, building)
             RPCSupportedDataType.UTIL_DATE -> handleUtilDate(param)
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> CycleObjectGene(param.name)
@@ -805,25 +805,27 @@ class RPCEndpointsHandler {
 
     }
 
-    private fun handleMapParam(param: ParamDto) : Gene{
+    private fun handleMapParam(param: ParamDto, building: Boolean) : Gene{
         val pair = param.type.example
         Lazy.assert { pair.innerContent.size == 2 }
-        val keyTemplate = handleDtoParam(pair.innerContent[0])
-        val valueTemplate = handleDtoParam(pair.innerContent[1])
+        val keyTemplate = handleDtoParam(pair.innerContent[0], building)
+        val valueTemplate = handleDtoParam(pair.innerContent[1], building)
 
         return MapGene(param.name, keyTemplate, valueTemplate, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt())
     }
 
-    private fun handleCollectionParam(param: ParamDto) : Gene{
+    private fun handleCollectionParam(param: ParamDto, building: Boolean) : Gene{
         val templateParam = when(param.type.type){
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST -> param.type.example
             else -> throw IllegalStateException("do not support the collection type: "+ param.type.type)
         }
+        if (building)
+            buildTypeCache(templateParam)
         val template = handleDtoParam(templateParam)
         return ArrayGene(param.name, template, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt())
     }
 
-    private fun handleObjectType(type: ParamDto): Gene{
+    private fun handleObjectType(type: ParamDto, building: Boolean): Gene{
         val typeName = type.type.fullTypeNameWithGenericType
         if (type.innerContent.isEmpty()){
             LoggingUtil.uniqueWarn(log, "Object with name (${type.type.fullTypeNameWithGenericType}) has empty fields")
@@ -832,7 +834,8 @@ class RPCEndpointsHandler {
         }
 
         val fields = type.innerContent.map { f->
-            buildTypeCache(f)
+            if (building)
+                buildTypeCache(f)
             handleDtoParam(f)
         }
 
