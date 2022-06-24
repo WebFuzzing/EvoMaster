@@ -836,7 +836,7 @@ class RPCEndpointsHandler {
         val fields = type.innerContent.map { f->
             if (building)
                 buildTypeCache(f)
-            handleDtoParam(f)
+            handleDtoParam(f, building)
         }
 
         return ObjectGene(typeName, fields, refType = typeName)
