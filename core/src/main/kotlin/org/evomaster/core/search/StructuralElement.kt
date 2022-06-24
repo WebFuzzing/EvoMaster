@@ -1,6 +1,5 @@
 package org.evomaster.core.search
 
-import org.evomaster.core.problem.graphql.GraphQLAction
 import org.slf4j.LoggerFactory
 
 /**
@@ -239,5 +238,16 @@ abstract class StructuralElement (
             back.add(0, index)
             parent!!.traverseBackIndex(back)
         }
+    }
+
+    /**
+     * @return whether there exist any parent satisfies the specified predicate
+     */
+    fun existAnyParent(predicate: (StructuralElement) -> Boolean): Boolean{
+        if (parent!= null){
+            if (predicate(parent!!)) return true
+            return parent!!.existAnyParent(predicate)
+        }
+        return false
     }
 }

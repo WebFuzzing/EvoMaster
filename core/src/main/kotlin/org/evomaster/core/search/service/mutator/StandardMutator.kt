@@ -176,6 +176,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
             gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAGM, additionalGeneMutationInfo = additionInfo)
         }
+
+        if (config.trackingEnabled()) tag(copy, time.evaluatedIndividuals)
         return copy
     }
 
@@ -186,7 +188,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         postActionAfterMutation(mutatedIndividual, mutatedGenes)
 
-        if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
+//        if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
 
         return mutatedIndividual
     }

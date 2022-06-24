@@ -54,10 +54,10 @@ class SqlPathGene(
     ): String {
         return when (databaseType) {
             DatabaseType.POSTGRES -> {"\" ( ${
-                points.getAllElements().joinToString(" , ") { it.getValueAsRawString() }
+                points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
             } ) \""}
             DatabaseType.MYSQL -> {
-                "LINESTRING(${points.getAllElements()
+                "LINESTRING(${points.getViewOfElements()
                         .joinToString(" , ")
                         { it.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck) }})"
             }
@@ -67,7 +67,7 @@ class SqlPathGene(
 
     override fun getValueAsRawString(): String {
         return "( ${
-            points.getAllElements()
+            points.getViewOfElements()
                     .map { it.getValueAsRawString() }
                     .joinToString(" , ")
         } ) "

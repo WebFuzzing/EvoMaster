@@ -40,7 +40,7 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
      */
     abstract fun shouldCountForFitnessEvaluations(): Boolean
 
-    open fun postRandomizedChecks(){}
+    open fun postRandomizedChecks(randomness: Randomness?) {}
 
     /**
      * Randomize all genes in this action.
@@ -51,7 +51,7 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
                 .forEach {
                     it.randomize(randomness, forceNewValue, all)
                 }
-        postRandomizedChecks()
+        postRandomizedChecks(randomness)
     }
 
     /**
@@ -59,7 +59,7 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
      */
     fun doInitialize(randomness: Randomness? = null) {
         seeGenes().forEach { it.doInitialize(randomness) }
-        postRandomizedChecks()
+        postRandomizedChecks(randomness)
     }
 
     fun isInitialized(): Boolean {
