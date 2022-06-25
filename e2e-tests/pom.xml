@@ -26,6 +26,7 @@
         <module>spring-rest-postgres-data-types</module>
         <module>spring-rest-h2-v1</module>
         <module>spring-rest-mysql-data-types</module>
+        <module>spring-rest-h2-data-types</module>
 
     </modules>
 

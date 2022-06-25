@@ -100,6 +100,11 @@ enum class ColumnDataType(dataTypeName: String) {
     CHARACTER_VARYING("CHARACTER_VARYING"),
 
     /**
+     * https://www.h2database.com/html/datatypes.html#varchar_ignorecase_type
+     */
+    VARCHAR_IGNORECASE("VARCHAR_IGNORECASE"),
+
+    /**
      * LONG or LONG VARCHAR
      * https://dev.mysql.com/doc/refman/8.0/en/blob.html
      */
@@ -124,10 +129,22 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     TIMESTAMPTZ("TIMESTAMPTZ"),
 
+    /*
+     * http://www.h2database.com/html/datatypes.html#timestamp_with_time_zone_type
+     */
+    TIMESTAMP_WITH_TIME_ZONE("TIMESTAMP_WITH_TIME_ZONE"),
+
     /**
      * Alias for time with time zone. It is a PostgreSQL extension.
      */
     TIMETZ("TIMETZ"),
+
+    /*
+     * http://www.h2database.com/html/datatypes.html#time_with_time_zone_type
+     */
+    TIME_WITH_TIME_ZONE("TIME_WITH_TIME_ZONE"),
+
+
 
     /**
      * VARBINARY is similar to VARCHAR, except that it contains binary strings rather than nonbinary strings.
@@ -136,6 +153,10 @@ enum class ColumnDataType(dataTypeName: String) {
     VARBINARY("VARBINARY"),
 
 
+    /**
+     * https://www.h2database.com/html/datatypes.html#binary_varying_type
+     */
+    BINARY_VARYING("BINARY_VARYING"),
     /**
      * https://dev.mysql.com/doc/refman/8.0/en/binary-varbinary.html
      */
@@ -346,5 +367,6 @@ enum class ColumnDataType(dataTypeName: String) {
          */
         return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TIMESTAMPTZ) || equals(TEXT)
                 || equals(UUID) || equals(CHARACTER) || equals(CHARACTER_LARGE_OBJECT) || equals(CHARACTER_VARYING)
+                || equals(VARCHAR_IGNORECASE)
      }
 }

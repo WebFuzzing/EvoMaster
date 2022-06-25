@@ -116,6 +116,7 @@ class DbActionGeneBuilder {
                 ColumnDataType.LONGTEXT,
                 ColumnDataType.VARCHAR,
                 ColumnDataType.CHARACTER_VARYING,
+                ColumnDataType.VARCHAR_IGNORECASE,
                 ColumnDataType.CLOB,
                 ColumnDataType.MEDIUMTEXT,
                 ColumnDataType.LONGBLOB,
@@ -124,16 +125,20 @@ class DbActionGeneBuilder {
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
-                ColumnDataType.TIME,
-                ColumnDataType.TIMETZ ->
+                ColumnDataType.TIME ->
                     buildSqlTimeGene(column)
+
+                ColumnDataType.TIMETZ,
+                ColumnDataType.TIME_WITH_TIME_ZONE ->
+                    buildSqlTimeWithTimeZoneGene(column)
 
 
                 /**
                  * TIMESTAMP is assumed to be a Date field
                  */
                 ColumnDataType.TIMESTAMP,
-                ColumnDataType.TIMESTAMPTZ ->
+                ColumnDataType.TIMESTAMPTZ,
+                ColumnDataType.TIMESTAMP_WITH_TIME_ZONE ->
                     handleTimestampColumn(column)
 
                 /**
@@ -165,6 +170,7 @@ class DbActionGeneBuilder {
                 ColumnDataType.BINARY ->
                     handleMySqlBinaryColumn(column)
 
+                ColumnDataType.BINARY_VARYING,
                 ColumnDataType.VARBINARY ->
                     handleMySqlVarBinaryColumn(column)
 
@@ -461,7 +467,18 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings)
         } else {
-            StringGene(name = column.name, value = "f", minLength = 0, maxLength = 1)
+            val minLength: Int
+            val maxLength: Int
+            when (column.databaseType) {
+                DatabaseType.H2 -> {
+                    minLength = column.size
+                    maxLength = column.size }
+                else -> {
+                    minLength = 0
+                    maxLength = 1
+                }
+            }
+            StringGene(name = column.name, value = "f", minLength = minLength, maxLength = maxLength)
         }
     }
 
@@ -640,19 +657,24 @@ class DbActionGeneBuilder {
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
-    private fun buildSqlTimeGene(column: Column): TimeGene {
-        val timeGeneFormat = when (column.databaseType) {
-            DatabaseType.MYSQL -> TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
-            DatabaseType.POSTGRES -> TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
-            else -> TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
-        }
-
+    private fun buildSqlTimeWithTimeZoneGene(column: Column): TimeGene {
         return TimeGene(
                 column.name,
                 hour = IntegerGene("hour", 0, 0, 23),
                 minute = IntegerGene("minute", 0, 0, 59),
                 second = IntegerGene("second", 0, 0, 59),
-                timeGeneFormat = timeGeneFormat
+                timeGeneFormat =  TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+        )
+    }
+
+
+    private fun buildSqlTimeGene(column: Column): TimeGene {
+        return TimeGene(
+                column.name,
+                hour = IntegerGene("hour", 0, 0, 23),
+                minute = IntegerGene("minute", 0, 0, 59),
+                second = IntegerGene("second", 0, 0, 59),
+                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
         )
     }
 
@@ -738,6 +760,7 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
+
             if (column.scale != null && column.scale >= 0) {
                 /*
                     set precision and boundary for DECIMAL

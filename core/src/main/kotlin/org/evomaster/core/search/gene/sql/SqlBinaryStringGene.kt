@@ -52,6 +52,7 @@ class SqlBinaryStringGene(
         }.joinToString(EMPTY_STR)
 
         return when (databaseType) {
+            DatabaseType.H2,
             DatabaseType.MYSQL -> "X${GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER}${hexString}${GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER}"
             DatabaseType.POSTGRES -> "\"\\x${hexString}\""
             else -> throw IllegalArgumentException("getValueAsPrintableString() not supported for ${databaseType}")
