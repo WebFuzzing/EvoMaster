@@ -140,8 +140,8 @@ public class H2ColumnTypesController extends SpringController {
             //"  pointzmColumn GEOMETRY(POINT ZM) NOT NULL,\n" +
             //"  pointSRIColumn GEOMETRY(POINT, 12) NOT NULL,\n" +
             //"  geometryColumn GEOMETRY(GEOMETRY) NOT NULL,\n" +
-            "  pointColumn GEOMETRY(POINT) NOT NULL,\n" +
-            "  linestring GEOMETRY(LINESTRING) NOT NULL\n" +
+            "  pointColumn GEOMETRY(POINT) NOT NULL\n" +
+            //"  linestring GEOMETRY(LINESTRING) NOT NULL\n" +
             ");";
 
     private static final String CREATE_TABLES_SQL = CREATE_TABLE_CHARACTER_TYPES

@@ -54,6 +54,7 @@ class SqlPointGene(
         extraCheck: Boolean
     ): String {
         return when (databaseType)  {
+            DatabaseType.H2 -> "\"POINT(${x.getValueAsPrintableString()} ${y.getValueAsPrintableString()})\""
             DatabaseType.MYSQL -> "POINT(${x.getValueAsPrintableString()},${y.getValueAsPrintableString()})"
             DatabaseType.POSTGRES -> "\" (${x.getValueAsRawString()} , ${y.getValueAsRawString()}) \""
             else ->
