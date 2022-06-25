@@ -275,6 +275,11 @@ enum class ColumnDataType(dataTypeName: String) {
     JAVA_OBJECT("JAVA_OBJECT"),
 
     /**
+     * https://www.h2database.com/html/datatypes.html#geometry_type
+     */
+    GEOMETRYCOLLECTION("GEOMETRYCOLLECTION"),
+
+    /**
      *  https://www.postgresql.org/docs/14/datatype-numeric.html
      */
     FLOAT4("FLOAT4"),

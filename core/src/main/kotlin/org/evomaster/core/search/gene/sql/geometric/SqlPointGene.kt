@@ -56,7 +56,8 @@ class SqlPointGene(
         return when (databaseType)  {
             DatabaseType.MYSQL -> "POINT(${x.getValueAsPrintableString()},${y.getValueAsPrintableString()})"
             DatabaseType.POSTGRES -> "\" (${x.getValueAsRawString()} , ${y.getValueAsRawString()}) \""
-            else -> throw IllegalArgumentException("SqlPointGene.getValueAsPrintableString is not supported for databasetype: ${databaseType}")}
+            else ->
+                throw IllegalArgumentException("SqlPointGene.getValueAsPrintableString is not supported for databasetype: ${databaseType}")}
     }
 
     override fun getValueAsRawString(): String {
