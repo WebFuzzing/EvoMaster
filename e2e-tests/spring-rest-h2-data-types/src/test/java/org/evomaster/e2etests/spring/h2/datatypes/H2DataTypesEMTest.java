@@ -63,6 +63,8 @@ public class H2DataTypesEMTest extends SpringTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/varcharignorecasetype", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/varcharignorecasetype", null);
 
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/javaobjecttypes", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/javaobjecttypes   ", null);
                 });
     }
 }

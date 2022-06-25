@@ -9,7 +9,6 @@ package org.evomaster.core.database.schema
 enum class ColumnDataType(dataTypeName: String) {
 
 
-
     /**
      * TODO
      * String - set
@@ -61,15 +60,6 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     CHAR("CHAR"),
 
-    /**
-     * https://www.h2database.com/html/datatypes.html#character_large_object_type
-     */
-    CHARACTER_LARGE_OBJECT("CHARACTER_LARGE_OBJECT"),
-
-    /**
-     * https://www.h2database.com/html/datatypes.html#character_type
-     */
-    CHARACTER("CHARACTER"),
 
     /**
      * A normal-size integer.
@@ -94,15 +84,6 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     VARCHAR("VARCHAR"),
 
-    /**
-     * https://www.h2database.com/html/datatypes.html#character_varying_type
-     */
-    CHARACTER_VARYING("CHARACTER_VARYING"),
-
-    /**
-     * https://www.h2database.com/html/datatypes.html#varchar_ignorecase_type
-     */
-    VARCHAR_IGNORECASE("VARCHAR_IGNORECASE"),
 
     /**
      * LONG or LONG VARCHAR
@@ -129,21 +110,11 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     TIMESTAMPTZ("TIMESTAMPTZ"),
 
-    /*
-     * http://www.h2database.com/html/datatypes.html#timestamp_with_time_zone_type
-     */
-    TIMESTAMP_WITH_TIME_ZONE("TIMESTAMP_WITH_TIME_ZONE"),
 
     /**
      * Alias for time with time zone. It is a PostgreSQL extension.
      */
     TIMETZ("TIMETZ"),
-
-    /*
-     * http://www.h2database.com/html/datatypes.html#time_with_time_zone_type
-     */
-    TIME_WITH_TIME_ZONE("TIME_WITH_TIME_ZONE"),
-
 
 
     /**
@@ -153,10 +124,6 @@ enum class ColumnDataType(dataTypeName: String) {
     VARBINARY("VARBINARY"),
 
 
-    /**
-     * https://www.h2database.com/html/datatypes.html#binary_varying_type
-     */
-    BINARY_VARYING("BINARY_VARYING"),
     /**
      * https://dev.mysql.com/doc/refman/8.0/en/binary-varbinary.html
      */
@@ -171,16 +138,13 @@ enum class ColumnDataType(dataTypeName: String) {
      * A precision from 24 to 53 results in an 8-byte double-precision DOUBLE column.
      */
     FLOAT("FLOAT"),
+
     /**
      *  The DOUBLE type represents approximate numeric data values.
      *  MySQL uses eight bytes for double-precision values.
      */
     DOUBLE("DOUBLE"),
 
-    /**
-     * https://www.h2database.com/html/datatypes.html#double_precision_type
-     */
-    DOUBLE_PRECISION("DOUBLE_PRECISION"),
 
     /**
      * A 16-bit (2 bytes) exact integer value
@@ -221,10 +185,6 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     BLOB("BLOB"),
 
-    /**
-     * https://www.h2database.com/html/datatypes.html#binary_large_object_type
-     */
-    BINARY_LARGE_OBJECT("BINARY_LARGE_OBJECT"),
 
     /**
      * Postgres. The data type uuid stores Universally Unique Identifiers (UUID)
@@ -264,31 +224,87 @@ enum class ColumnDataType(dataTypeName: String) {
 
     SERIAL("SERIAL"),
 
-    // POSTGRES
-    // https://www.postgresql.org/docs/14/datatype-numeric.html
+    /**
+     * http://www.h2database.com/html/datatypes.html#timestamp_with_time_zone_type
+     */
+    TIMESTAMP_WITH_TIME_ZONE("TIMESTAMP_WITH_TIME_ZONE"),
+
+    /**
+     * http://www.h2database.com/html/datatypes.html#time_with_time_zone_type
+     */
+    TIME_WITH_TIME_ZONE("TIME_WITH_TIME_ZONE"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#binary_varying_type
+     */
+    BINARY_VARYING("BINARY_VARYING"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#double_precision_type
+     */
+    DOUBLE_PRECISION("DOUBLE_PRECISION"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#binary_large_object_type
+     */
+    BINARY_LARGE_OBJECT("BINARY_LARGE_OBJECT"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#character_large_object_type
+     */
+    CHARACTER_LARGE_OBJECT("CHARACTER_LARGE_OBJECT"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#character_type
+     */
+    CHARACTER("CHARACTER"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#character_varying_type
+     */
+    CHARACTER_VARYING("CHARACTER_VARYING"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#varchar_ignorecase_type
+     */
+    VARCHAR_IGNORECASE("VARCHAR_IGNORECASE"),
+
+    /**
+     * https://www.h2database.com/html/datatypes.html#java_object_type
+     */
+    JAVA_OBJECT("JAVA_OBJECT"),
+
+    /**
+     *  https://www.postgresql.org/docs/14/datatype-numeric.html
+     */
     FLOAT4("FLOAT4"),
     FLOAT8("FLOAT8"),
     SMALLSERIAL("SMALLSERIAL"),
 
-    // POSTGRES
-    // https://www.postgresql.org/docs/14/datatype-money.html
+    /**
+     * https://www.postgresql.org/docs/14/datatype-money.html
+     */
     MONEY("MONEY"),
 
-    // POSTGRES
-    // The bpchar column type stands for blank-padded char
-    // https://www.postgresql.org/docs/current/typeconv-query.html
+    /**
+     * https://www.postgresql.org/docs/current/typeconv-query.html
+     * The bpchar column type stands for blank-padded char
+     */
     BPCHAR("BPCHAR"),
 
-    // POSTGRES
-    // https://www.postgresql.org/docs/14/datatype-binary.html
+    /**
+     * https://www.postgresql.org/docs/14/datatype-binary.html
+     */
     BYTEA("BYTEA"),
 
-    // POSTGRES
-    // https://www.postgresql.org/docs/14/datatype-datetime.html
+    /**
+     * https://www.postgresql.org/docs/14/datatype-datetime.html
+     */
     INTERVAL("INTERVAL"),
 
-    // POSTGRES
-    // https://www.postgresql.org/docs/14/datatype-geometric.html
+    /**
+     * https://www.postgresql.org/docs/14/datatype-geometric.html
+     */
     POINT("POINT"),
     LINE("LINE"),
     LSEG("LSEG"),
@@ -297,8 +313,9 @@ enum class ColumnDataType(dataTypeName: String) {
     POLYGON("POLYGON"),
     CIRCLE("CIRCLE"),
 
-    // MySql
-    // https://dev.mysql.com/doc/refman/8.0/en/spatial-types.html
+    /**
+     * https://dev.mysql.com/doc/refman/8.0/en/spatial-types.html
+     */
     LINESTRING("LINESTRING"),
     MULTIPOINT("MULTIPOINT"),
     MULTILINESTRING("MULTILINESTRING"),
@@ -306,21 +323,29 @@ enum class ColumnDataType(dataTypeName: String) {
     GEOMETRY("GEOMETRY"),
     GEOMCOLLECTION("GEOMCOLLECTION"),
 
-    // https://www.postgresql.org/docs/14/datatype-net-types.html
+    /**
+     * https://www.postgresql.org/docs/14/datatype-net-types.html
+     */
     CIDR("CIDR"),
     INET("INET"),
     MACADDR("MACADDR"),
     MACADDR8("MACADDR8"),
 
-    // https://www.postgresql.org/docs/14/datatype-textsearch.html
+    /**
+     * https://www.postgresql.org/docs/14/datatype-textsearch.html
+     */
     TSVECTOR("TSVECTOR"),
     TSQUERY("TSQUERY"),
 
-    // https://www.postgresql.org/docs/14/datatype-json.html#DATATYPE-JSONPATH
+    /**
+     * https://www.postgresql.org/docs/14/datatype-json.html#DATATYPE-JSONPATH
+     */
     JSONPATH("JSONPATH"),
 
-    // https://www.postgresql.org/docs/14/rangetypes.html
-    // built-in range types
+    /**
+     * https://www.postgresql.org/docs/14/rangetypes.html
+     * built-in range types
+     */
     INT4RANGE("INT4RANGE"),
     INT8RANGE("INT8RANGE"),
     NUMRANGE("NUMRANGE"),
@@ -328,8 +353,10 @@ enum class ColumnDataType(dataTypeName: String) {
     TSTZRANGE("TSTZRANGE"),
     DATERANGE("DATERANGE"),
 
-    // https://www.postgresql.org/docs/14/rangetypes.html
-    // built-in multirange types
+    /**
+     * https://www.postgresql.org/docs/14/rangetypes.html
+     * built-in multirange types
+     */
     INT4MULTIRANGE("INT4MULTIRANGE"),
     INT8MULTIRANGE("INT8MULTIRANGE"),
     NUMMULTIRANGE("NUMMULTIRANGE"),
@@ -337,12 +364,16 @@ enum class ColumnDataType(dataTypeName: String) {
     TSTZMULTIRANGE("TSTZMULTIRANGE"),
     DATEMULTIRANGE("DATEMULTIRANGE"),
 
-    // https://www.postgresql.org/docs/current/datatype-pg-lsn.html
-    // postgres log sequence number
+    /**
+     * https://www.postgresql.org/docs/current/datatype-pg-lsn.html
+     * postgres log sequence number
+     */
     PG_LSN("PG_LSN"),
 
-    // https://www.postgresql.org/docs/current/datatype-oid.html
-    // postgres aliases for object identifiers
+    /**
+     * https://www.postgresql.org/docs/current/datatype-oid.html
+     * postgres aliases for object identifiers
+     */
     OID("OID"),
     REGCLASS("REGCLASS"),
     REGCOLLATION("REGCOLLATION"),
@@ -356,8 +387,10 @@ enum class ColumnDataType(dataTypeName: String) {
     REGROLE("REGROLE"),
     REGTYPE("REGTYPE"),
 
-    // This is not an actual built-in column data type,
-    // but a placeholder for user-defined composite types.
+    /**
+     * This is not an actual built-in column data type,
+     * but a placeholder for user-defined composite types.
+     */
     COMPOSITE_TYPE("\$COMPOSITE_TYPE");
 
     fun shouldBePrintedInQuotes(): Boolean {
@@ -368,5 +401,5 @@ enum class ColumnDataType(dataTypeName: String) {
         return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TIMESTAMPTZ) || equals(TEXT)
                 || equals(UUID) || equals(CHARACTER) || equals(CHARACTER_LARGE_OBJECT) || equals(CHARACTER_VARYING)
                 || equals(VARCHAR_IGNORECASE)
-     }
+    }
 }

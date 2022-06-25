@@ -158,7 +158,7 @@ public class H2DataTypesRest {
         }
     }
 
-    //@GetMapping("/intervaltypes")
+    @GetMapping("/javaobjecttypes")
     public ResponseEntity<Void> getJavaObjectTypes() {
         Query query = em.createNativeQuery(
                 "select (1) from javaObjectTypes where dummyColumn>0");
@@ -170,6 +170,5 @@ public class H2DataTypesRest {
             return ResponseEntity.status(200).build();
         }
     }
-
 }
 

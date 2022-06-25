@@ -136,9 +136,9 @@ public class H2DataTypesAppController extends SpringController {
             + CREATE_TABLE_NUMERIC_TYPES
             + CREATE_TABLE_DATE_TIME_TYPES
             + CREATE_TABLE_JSON_TYPE
-            + CREATE_TABLE_UUID_TYPE;
+            + CREATE_TABLE_UUID_TYPE
             //+ CREATE_TABLE_INTERVAL_TYPES
-            //+ CREATE_TABLE_JAVA_OBJECT_TYPES
+            + CREATE_TABLE_JAVA_OBJECT_TYPES;
 
     public H2DataTypesAppController() {
         this(H2DataTypesApplication.class);

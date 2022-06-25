@@ -81,7 +81,7 @@ class DbActionGeneBuilder {
                  */
                 ColumnDataType.CHAR,
                 ColumnDataType.CHARACTER,
-                ColumnDataType.CHARACTER_LARGE_OBJECT->
+                ColumnDataType.CHARACTER_LARGE_OBJECT ->
                     handleCharColumn(column)
 
                 /**
@@ -164,14 +164,15 @@ class DbActionGeneBuilder {
                  * which also simplifies when needing generate the test files
                  */
                 ColumnDataType.BLOB,
-                ColumnDataType.BINARY_LARGE_OBJECT->
+                ColumnDataType.BINARY_LARGE_OBJECT ->
                     handleBLOBColumn(column)
 
                 ColumnDataType.BINARY ->
                     handleMySqlBinaryColumn(column)
 
                 ColumnDataType.BINARY_VARYING,
-                ColumnDataType.VARBINARY ->
+                ColumnDataType.VARBINARY,
+                ColumnDataType.JAVA_OBJECT ->
                     handleMySqlVarBinaryColumn(column)
 
 
@@ -226,7 +227,7 @@ class DbActionGeneBuilder {
                  * MySQL and PostgreSQL Point column data type
                  */
                 ColumnDataType.POINT ->
-                    SqlPointGene(column.name, databaseType=column.databaseType)
+                    SqlPointGene(column.name, databaseType = column.databaseType)
 
                 /*
                  * PostgreSQL LINE Column data type
@@ -371,10 +372,12 @@ class DbActionGeneBuilder {
 //                SqlPolygonGene(column.name, minLengthOfPolygonRing=3, onlyNonIntersectingPolygons = true, databaseType = column.databaseType)
 //            }
             DatabaseType.POSTGRES -> {
-                SqlPolygonGene(column.name, minLengthOfPolygonRing=2, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
+                SqlPolygonGene(column.name, minLengthOfPolygonRing = 2, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
 
             }
-            else -> {throw IllegalArgumentException("Must define minLengthOfPolygonRing for database ${column.databaseType}")}
+            else -> {
+                throw IllegalArgumentException("Must define minLengthOfPolygonRing for database ${column.databaseType}")
+            }
         }
     }
 
@@ -472,7 +475,8 @@ class DbActionGeneBuilder {
             when (column.databaseType) {
                 DatabaseType.H2 -> {
                     minLength = column.size
-                    maxLength = column.size }
+                    maxLength = column.size
+                }
                 else -> {
                     minLength = 0
                     maxLength = 1
@@ -663,7 +667,7 @@ class DbActionGeneBuilder {
                 hour = IntegerGene("hour", 0, 0, 23),
                 minute = IntegerGene("minute", 0, 0, 59),
                 second = IntegerGene("second", 0, 0, 59),
-                timeGeneFormat =  TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+                timeGeneFormat = TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
         )
     }
 
@@ -695,7 +699,7 @@ class DbActionGeneBuilder {
                 name = name,
                 date = DateGene(
                         "date",
-                        year = IntegerGene("year", 2016,  minYear, maxYear),
+                        year = IntegerGene("year", 2016, minYear, maxYear),
                         month = IntegerGene("month", 3, 1, 12),
                         day = IntegerGene("day", 12, 1, 31),
                         onlyValidDates = true
