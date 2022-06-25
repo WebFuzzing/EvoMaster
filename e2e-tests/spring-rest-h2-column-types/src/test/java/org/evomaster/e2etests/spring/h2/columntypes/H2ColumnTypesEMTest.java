@@ -25,7 +25,7 @@ public class H2ColumnTypesEMTest extends SpringTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "H2ColumnTypesEM",
-                "com.foo.spring.rest.h2.columntypes.H2DataTypesEvoMaster",
+                "com.foo.spring.rest.h2.columntypes.H2ColumnTypesEvoMaster",
                 1000,
                 (args) -> {
                     args.add("--enableWeightBasedMutationRateSelectionForGene");

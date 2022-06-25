@@ -66,17 +66,18 @@ public class H2ColumnTypesController extends SpringController {
             "  dummyColumn INTEGER NOT NULL,\n" +
             //"  decFloatColumn DECFLOAT NOT NULL,\n" +
             //"  decFloatWithPrecisionColumn DECFLOAT (20) NOT NULL,\n" +
+            //"  floatWithPrecisionColumn FLOAT (2) NOT NULL,\n" +
+            //"  numericWithPrecisionAndScaleColumn NUMERIC (20,2) NOT NULL,\n" +
             "  booleanColumn BOOLEAN NOT NULL,\n" +
             "  tinyintColumn TINYINT  NOT NULL,\n" +
             "  smallintColumn SMALLINT NOT NULL,\n" +
             "  integerColumn INTEGER NOT NULL,\n" +
             "  intColumn INT NOT NULL,\n" +
             "  bigintColumn BIGINT NOT NULL,\n" +
-            "  numericColumn NUMERIC (20,2) NOT NULL,\n" +
-            "  decimalColumn DECIMAL (3,0) NOT NULL,\n" +
-            "  decColumn DEC (3,0) NOT NULL,\n" +
+            "  numericColumn NUMERIC NOT NULL,\n" +
+            "  decimalColumn DECIMAL NOT NULL,\n" +
+            "  decColumn DEC NOT NULL,\n" +
             "  realColumn REAL NOT NULL,\n" +
-            "  floatWithPrecisionColumn FLOAT (2) NOT NULL,\n" +
             "  doublePrecisionColumn DOUBLE PRECISION NOT NULL,\n" +
             "  floatColumn FLOAT NOT NULL\n" +
             ");";
@@ -140,8 +141,8 @@ public class H2ColumnTypesController extends SpringController {
             //"  pointzmColumn GEOMETRY(POINT ZM) NOT NULL,\n" +
             //"  pointSRIColumn GEOMETRY(POINT, 12) NOT NULL,\n" +
             //"  geometryColumn GEOMETRY(GEOMETRY) NOT NULL,\n" +
-            "  pointColumn GEOMETRY(POINT) NOT NULL\n" +
-            //"  linestring GEOMETRY(LINESTRING) NOT NULL\n" +
+            "  pointColumn GEOMETRY(POINT) NOT NULL,\n" +
+            "  linestring GEOMETRY(LINESTRING) NOT NULL\n" +
             ");";
 
     private static final String CREATE_TABLES_SQL = CREATE_TABLE_CHARACTER_TYPES

@@ -18,7 +18,7 @@ class SqlPathGene(
                 name = "points",
                 // paths are lists of at least 2 points
                 minSize = 2,
-                template = SqlPointGene("p", databaseType=databaseType))
+                template = SqlPointGene("p", databaseType = databaseType))
 ) : Gene(name, mutableListOf(points)) {
 
     companion object {
@@ -56,15 +56,29 @@ class SqlPathGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
-            DatabaseType.POSTGRES -> {"\" ( ${
-                points.getAllElements().joinToString(" , ") { it.getValueAsRawString() }
-            } ) \""}
-            DatabaseType.MYSQL -> {
-                "LINESTRING(${points.getAllElements()
-                        .joinToString(" , ")
-                        { it.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck) }})"
+            DatabaseType.H2 -> {
+                "\"LINESTRING(${
+                    points.getAllElements().joinToString(" , ") {
+                        it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                                " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                    }
+                })\""
             }
-            else -> { throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")}
+            DatabaseType.POSTGRES -> {
+                "\" ( ${
+                    points.getAllElements().joinToString(" , ") { it.getValueAsRawString() }
+                } ) \""
+            }
+            DatabaseType.MYSQL -> {
+                "LINESTRING(${
+                    points.getAllElements()
+                            .joinToString(" , ")
+                            { it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) }
+                })"
+            }
+            else -> {
+                throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")
+            }
         }
     }
 
