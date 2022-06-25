@@ -211,6 +211,9 @@ public class SchemaExtractor {
         if (dt.equals(DatabaseType.POSTGRES)) {
             List<ColumnAttributes> columnAttributes = getPostgresColumnAttributes(connection);
             addColumnAttributes(schemaDto, columnAttributes);
+        } else if (dt.equals(DatabaseType.H2)) {
+            List<DbTableConstraint> h2EnumConstraints = getH2EnumTypes(schemaDto.name, md);
+            addConstraints(schemaDto, h2EnumConstraints);
         }
 
         assert validate(schemaDto);
@@ -403,12 +406,39 @@ public class SchemaExtractor {
         return columnDtos;
     }
 
+    /**
+     * In H2, the ENUM columns are stored as the column type.
+     * We return the definition of each enum column using TABLE_COLUMN -> [ENUM VALUES]
+     *
+     * @param md the database metadata
+     * @return a list of enum constraints
+     * @throws SQLException if any column name is incorrect
+     */
+    private static List<DbTableConstraint> getH2EnumTypes(String schemaName, DatabaseMetaData md) throws SQLException {
+        List<DbTableConstraint> enumTypesConstraints = new LinkedList<>();
+        ResultSet tables = md.getTables(null, schemaName, null, new String[]{"TABLE"});
+        while (tables.next()) {
+            String tableName = tables.getString("TABLE_NAME");
+            ResultSet columns = md.getColumns(null, schemaName, tableName, null);
+            while (columns.next()) {
+                String columnName = columns.getString("COLUMN_NAME");
+                String typeName = columns.getString("TYPE_NAME");
+                if (typeName.startsWith("ENUM")) {
+                    String sqlExpression = String.format("(\"%s\" IN %s)", columnName, typeName.substring("ENUM".length()));
+                    DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlExpression);
+                    enumTypesConstraints.add(constraint);
+                }
+            }
+        }
+        return enumTypesConstraints;
+    }
+
     private static Map<String, Set<String>> getPostgresEnumTypes(Connection connection) throws SQLException {
         String query = "SELECT t.typname, e.enumlabel\n" +
                 "FROM pg_type AS t\n" +
                 "   JOIN pg_enum AS e ON t.oid = e.enumtypid\n" +
                 "ORDER BY e.enumsortorder;";
-        Map<String, Set<String>> enumLabels = new HashMap<>();
+        Map<String, Set<String>> enumLabels = new LinkedHashMap<>();
         try (Statement stmt = connection.createStatement()) {
             ResultSet enumTypeValues = stmt.executeQuery(query);
             while (enumTypeValues.next()) {
@@ -608,6 +638,13 @@ public class SchemaExtractor {
                     columnDto.isCompositeType = schemaDto.compositeTypes.stream()
                             .anyMatch(k -> k.name.equals(typeAsString));
                     break;
+                case H2:
+                    columnDto.type = typeAsString.startsWith("ENUM") ? "VARCHAR" : typeAsString;
+                    columnDto.nullable = columns.getBoolean("IS_NULLABLE");
+                    columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
+                    columnDto.isEnumeratedType = false;
+                    break;
+
                 default:
                     // might need to support unsigned property of numeric in other types of db
                     columnDto.type = typeAsString;

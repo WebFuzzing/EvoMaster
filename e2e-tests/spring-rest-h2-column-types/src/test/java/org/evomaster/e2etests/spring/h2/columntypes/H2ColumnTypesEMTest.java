@@ -70,6 +70,12 @@ public class H2ColumnTypesEMTest extends SpringTestBase {
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/geometrytypes", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/geometrytypes", null);
+
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/enumtype", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/enumtype", null);
+
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/createtypeasenum", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/createtypeasenum", null);
                 });
     }
 }

@@ -182,5 +182,31 @@ public class H2ColumnTypesRest {
             return ResponseEntity.status(200).build();
         }
     }
+
+    @GetMapping("/enumtype")
+    public ResponseEntity<Void> getEnumType() {
+        Query query = em.createNativeQuery(
+                "select (1) from enumType where dummyColumn>0");
+        List<?> data = query.getResultList();
+
+        if(data.isEmpty()) {
+            return ResponseEntity.status(400).build();
+        } else {
+            return ResponseEntity.status(200).build();
+        }
+    }
+
+    @GetMapping("/createtypeasenum")
+    public ResponseEntity<Void> getCreateTypeAsEnum() {
+        Query query = em.createNativeQuery(
+                "select (1) from createTypeAsEnumTable where dummyColumn>0");
+        List<?> data = query.getResultList();
+
+        if(data.isEmpty()) {
+            return ResponseEntity.status(400).build();
+        } else {
+            return ResponseEntity.status(200).build();
+        }
+    }
 }
 

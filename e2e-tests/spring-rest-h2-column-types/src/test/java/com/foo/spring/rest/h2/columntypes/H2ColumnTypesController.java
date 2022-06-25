@@ -145,6 +145,26 @@ public class H2ColumnTypesController extends SpringController {
             "  linestring GEOMETRY(LINESTRING) NOT NULL\n" +
             ");";
 
+
+    private static final String CREATE_TYPE_AS_ENUM = "CREATE TYPE cardsuit as ENUM ('clubs', 'diamonds', 'hearts', 'spades');\n"
+            + "CREATE TABLE createTypeAsEnumTable (\n" +
+            "  dummyColumn INTEGER NOT NULL,\n" +
+            "  cardsuitColumn cardsuit NOT NULL\n" +
+            ");";
+
+    private static final String CREATE_TABLE_ENUM_TYPE = "CREATE TABLE enumType (\n" +
+            "  dummyColumn INTEGER NOT NULL,\n" +
+            "  enumColumn ENUM('clubs', 'diamonds', 'hearts', 'spades') NOT NULL\n" +
+            ");";
+
+    private static final String CREATE_TABLE_ARRAY_TYPES = "CREATE TABLE arrayTypes (\n" +
+            "  dummyColumn INTEGER NOT NULL\n" +
+            //"  booleanArrayColumn BOOLEAN ARRAY NOT NULL,\n" +
+            //"  varcharArrayColumn VARCHAR ARRAY NOT NULL,\n" +
+            //"  varcharWithMaxSizeArrayColumn VARCHAR(100) ARRAY NOT NULL,\n" +
+            //"  varcharArrayWithMaxLengthColumn VARCHAR ARRAY[100] NOT NULL\n" +
+            ");";
+
     private static final String CREATE_TABLES_SQL = CREATE_TABLE_CHARACTER_TYPES
             + CREATE_TABLE_CHARACTER_VARYING_TYPES
             + CREATE_TABLE_CHARACTER_LARGE_OBJECT_TYPES
@@ -156,7 +176,10 @@ public class H2ColumnTypesController extends SpringController {
             + CREATE_TABLE_UUID_TYPE
             + CREATE_TABLE_INTERVAL_TYPES
             + CREATE_TABLE_JAVA_OBJECT_TYPES
-            + CREATE_TABLE_GEOMETRY_TYPES;
+            + CREATE_TABLE_GEOMETRY_TYPES
+            + CREATE_TABLE_ENUM_TYPE
+            + CREATE_TABLE_ARRAY_TYPES
+            +CREATE_TYPE_AS_ENUM;
 
     public H2ColumnTypesController() {
         this(H2ColumnTypesApplication.class);

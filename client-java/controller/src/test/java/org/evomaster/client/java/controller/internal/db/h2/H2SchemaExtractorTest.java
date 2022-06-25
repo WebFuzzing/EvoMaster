@@ -512,6 +512,82 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
     }
 
+    @Test
+    public void testCreateEnumIntColumn() throws Exception {
+        SqlScriptRunner.execCommand(connection, "CREATE TYPE enumType as ENUM (10, 20, 30);");
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (enumTypeColumn enumType NOT NULL);");
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("enumTypeColumn")));
+
+        ColumnDto enumTypeColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("enumTypeColumn")).findFirst().get();
+
+        assertTrue("enumTypeColumn".equalsIgnoreCase(enumTypeColumn.name));
+        assertFalse(enumTypeColumn.isEnumeratedType);
+        assertTrue("varchar".equalsIgnoreCase(enumTypeColumn.type));
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(\"ENUMTYPECOLUMN\" IN ('10', '20', '30'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+
+    }
+
+    @Test
+    public void testCreateEnumColumn() throws Exception {
+        SqlScriptRunner.execCommand(connection, "CREATE TYPE cardsuit as ENUM ('clubs', 'diamonds', 'hearts', 'spades');");
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (cardsuitColumn cardsuit NOT NULL);");
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("cardsuitColumn")));
+
+        ColumnDto cardsuitColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("cardsuitColumn")).findFirst().get();
+
+        assertTrue("cardsuitColumn".equalsIgnoreCase(cardsuitColumn.name));
+        assertFalse(cardsuitColumn.isEnumeratedType);
+        assertTrue("varchar".equalsIgnoreCase(cardsuitColumn.type));
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(\"CARDSUITCOLUMN\" IN ('clubs', 'diamonds', 'hearts', 'spades'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+
+    }
+
+    @Test
+    public void testEnumColumn() throws Exception {
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (enumColumn ENUM('clubs', 'diamonds', 'hearts', 'spades') NOT NULL);");
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("enumColumn")));
+
+        ColumnDto enumColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("enumColumn")).findFirst().get();
+
+        assertTrue("enumColumn".equalsIgnoreCase(enumColumn.name));
+        assertFalse(enumColumn.isEnumeratedType);
+        assertTrue("varchar".equalsIgnoreCase(enumColumn.type));
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(\"ENUMCOLUMN\" IN ('clubs', 'diamonds', 'hearts', 'spades'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+    }
+
 
     @Override
     public Connection getConnection() {
