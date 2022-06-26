@@ -69,7 +69,7 @@ class SqlTextSearchQueryGene(
         /*
          *  A geometric polygon must be always a non-empty list
          */
-        if (queryLexemes.getAllElements().isEmpty()) {
+        if (queryLexemes.getViewOfElements().isEmpty()) {
             val stringGene = StringGene("lexeme")
             stringGene.randomize(randomness, tryToForceNewValue, allGenes)
             queryLexemes.addElement(stringGene)
@@ -94,7 +94,7 @@ class SqlTextSearchQueryGene(
             extraCheck: Boolean
     ): String {
         val queryStr =
-                queryLexemes.getAllElements()
+                queryLexemes.getViewOfElements()
                         .map {
                             removeEnclosedQuotationMarks(
                                     it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
@@ -104,7 +104,7 @@ class SqlTextSearchQueryGene(
     }
 
     override fun getValueAsRawString(): String {
-        return queryLexemes.getAllElements()
+        return queryLexemes.getViewOfElements()
                 .map { it.getValueAsRawString() }
                 .joinToString(" $AMPERSAND_CHAR ")
 

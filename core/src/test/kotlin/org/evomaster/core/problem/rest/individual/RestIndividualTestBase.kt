@@ -38,12 +38,13 @@ import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -51,15 +52,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockserver.client.MockServerClient
-import org.mockserver.matchers.TimeToLive
-import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.testcontainers.containers.MockServerContainer
 import org.testcontainers.utility.DockerImageName
 import java.sql.Connection
 import java.sql.DriverManager
-import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 import kotlin.math.max
 
@@ -73,8 +71,22 @@ abstract class RestIndividualTestBase {
     companion object {
         private lateinit var connection: Connection
 
-        var randomness : Randomness = Randomness()
+        /**
+         * randomness used in tests
+         */
+        val randomness : Randomness = Randomness()
         var sqlInsertBuilder : SqlInsertBuilder? = null
+
+        /**
+         * this is used to configure whether to employ fake
+         * database heuristics results, such as setup
+         * fake extraHeuristic in test execution results,
+         * provide fake existing data
+         *
+         * this setting will be reset to true after each test
+         */
+        var employFakeDbHeuristicResult = true
+
 
         private val MOCKSERVER_IMAGE = DockerImageName.parse(
             "jamesdbloom/mockserver:mockserver-5.13.2"
@@ -117,11 +129,28 @@ abstract class RestIndividualTestBase {
             sutAddress = "http://${mockServer.host}:${mockServer.serverPort}"
         }
 
+        private val budget = arrayOf(10, 100, 1000)
 
         @JvmStatic
-        fun getBudgetAndNumOfResource(): Stream<Arguments> {
-            val budget = arrayOf(10, 100, 1000)
+        fun getBudgetAndNumOfResourceForSampler(): Stream<Arguments> {
             val range = (1..30)
+            return range.map {r-> budget.map { Arguments.of(it, r) } }.flatten().stream()
+        }
+
+        @JvmStatic
+        fun getBudgetAndNumOfResourceForMutator(): Stream<Arguments> {
+            /*
+                employ less resources for mutator
+                since the current failwhere are sampled at random
+                it would lead to at most 3 * number of resources insertions
+                with parameterizedtest,
+                more than 60 insertions would lead to java.lang.OutOfMemoryError: Java heap space
+
+                https://github.com/junit-team/junit5/issues/1445
+
+                might need to upgrade the junit 5 version
+             */
+            val range = (1..10)
             return range.map {r-> budget.map { Arguments.of(it, r) } }.flatten().stream()
         }
 
@@ -150,12 +179,12 @@ abstract class RestIndividualTestBase {
     abstract fun getFitnessFunction() : AbstractRestFitness<RestIndividual>
 
     @ParameterizedTest
-    @MethodSource("getBudgetAndNumOfResource")
+    @MethodSource("getBudgetAndNumOfResourceForSampler")
     fun testSampledIndividual(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
         config.maxActionEvaluations = iteration
 
-        (0 until iteration).forEach { _ ->
+        (0 until iteration).forEach { i ->
             val ind = getSampler().sample()
 
             assertEquals(0, ind.seeInitializingActions().size)
@@ -164,15 +193,20 @@ abstract class RestIndividualTestBase {
                 ind.getResourceCalls().forEach { r->
                     val dbIndexes = r.getIndexedChildren(DbAction::class.java).keys
                     val restIndexes = r.getIndexedChildren(RestCallAction::class.java).keys
-                    Assertions.assertTrue(restIndexes.all {
+                    assertTrue(restIndexes.all {
                         it > (dbIndexes.maxOrNull() ?: -1)
                     })
                 }
             }
+            extraSampledIndividualCheck(i, ind)
         }
     }
+
+    open fun extraSampledIndividualCheck(index: Int, individual: RestIndividual){}
+
+
     @ParameterizedTest
-    @MethodSource("getBudgetAndNumOfResource")
+    @MethodSource("getBudgetAndNumOfResourceForMutator")
     fun testMutatedIndividual(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
         config.maxActionEvaluations = iteration
@@ -183,10 +217,12 @@ abstract class RestIndividualTestBase {
 
         var evaluated = 0
         do {
-            val mutated = getMutator().mutateAndSave(1, eval!!, archive)
+            val impact = eval?.impactInfo?.copy()
+            val original = eval!!.copy()
+            val mutated = getMutator().mutateAndSave(1, eval, archive)
             evaluated ++
             checkActionIndex(mutated.individual)
-
+            extraMutatedIndividualCheck(evaluated, impact, original, mutated)
             eval = mutated
         }while (searchTimeController.shouldContinueSearch())
 
@@ -208,7 +244,11 @@ abstract class RestIndividualTestBase {
         assertTrue(existingBeforeInsert)
     }
 
-    open fun extraMutatedIndividualCheck(evaluated: Int, mutated: EvaluatedIndividual<RestIndividual>){}
+    open fun extraMutatedIndividualCheck(
+            evaluated: Int,
+            copyOfImpact: ImpactsOfIndividual?,
+            original: EvaluatedIndividual<RestIndividual>,
+            mutated: EvaluatedIndividual<RestIndividual>){}
 
 
     fun registerTable(tableName: String, columns: List<Pair<String, Boolean>>, columnTypes: List<ColumnDataType>){
@@ -250,7 +290,7 @@ abstract class RestIndividualTestBase {
             .withModules(modules)
             .build().createInjector()
 
-        randomness = injector.getInstance(Randomness::class.java)
+       // randomness = injector.getInstance(Randomness::class.java)
         config = injector.getInstance(EMConfig::class.java)
         archive = injector.getInstance(Key.get(
             object : TypeLiteral<Archive<RestIndividual>>() {}))
@@ -300,7 +340,10 @@ abstract class RestIndividualTestBase {
         }
     }
 
-    // now only involve these types in tests, might expand it when needed
+    /*
+        now only involve these types in tests, might expand it when needed
+        might need to add ArrayGene and MapGene
+     */
     private fun typeCluster() = listOf(ColumnDataType.INT, ColumnDataType.VARCHAR, ColumnDataType.DATE)
 
 
@@ -388,7 +431,7 @@ abstract class RestIndividualTestBase {
                     javax.ws.rs.ProcessingException: java.net.ProtocolException: Invalid HTTP method: PATCH
                     Caused by: java.net.ProtocolException: Invalid HTTP method: PATCH
 
-                    remove path method for the moment
+                    remove patch method for the moment
                  */
 //                patch(
 //                    Operation()
@@ -557,7 +600,7 @@ abstract class RestIndividualTestBase {
                 additionalInfoList = (0 until executedActionCounter).map { AdditionalInfoDto() }
                 extraHeuristics = (0 until executedActionCounter).map {
                     ExtraHeuristicsDto().apply {
-                        if (randomness.nextBoolean()){
+                        if (employFakeDbHeuristicResult && randomness.nextBoolean()){
                             databaseExecutionDto = ExecutionDto().apply {
                                 val table = randomness.choose( sqlInsertBuilder!!.getTableNames())
                                 val failed = randomness.choose(sqlInsertBuilder!!.getTable(table).columns.map { it.name })
@@ -594,6 +637,7 @@ abstract class RestIndividualTestBase {
         }
 
         override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
+            if (!employFakeDbHeuristicResult) return null
             /*
                 in order to check dbaction representing existing data in rest individual,
                 need to simulate existing data here,
@@ -612,6 +656,11 @@ abstract class RestIndividualTestBase {
             return null
         }
 
+    }
+
+    @AfterEach
+    fun defaultSetting(){
+        employFakeDbHeuristicResult = true
     }
 
 }

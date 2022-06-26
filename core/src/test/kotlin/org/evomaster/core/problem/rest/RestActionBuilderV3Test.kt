@@ -17,6 +17,20 @@ import org.junit.jupiter.params.provider.ValueSource
 class RestActionBuilderV3Test{
 
     @Test
+    fun testTraceV2(){
+        /*
+            Swagger Parser for V2 seems buggy, as ignoring TRACE.
+            See: io.swagger.parser.util.SwaggerDeserializer#path
+         */
+        loadAndAssertActions("/swagger/artificial/trace_v2.json", 0)
+    }
+
+    @Test
+    fun testTraceV3(){
+        loadAndAssertActions("/swagger/artificial/trace_v3.json", 1)
+    }
+
+    @Test
     fun testEnumYml(){
 
         val map = loadAndAssertActions("/swagger/artificial/openapi-enum.yml", 2)

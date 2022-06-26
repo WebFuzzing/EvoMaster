@@ -396,7 +396,7 @@ class RPCEndpointsHandler {
             is BigIntegerGene -> dto.stringValue = valueGene.getValueAsRawString()
             is ArrayGene<*> -> {
                 val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a collection is null")
-                val innerContent = valueGene.getAllElements().map {
+                val innerContent = valueGene.getViewOfElements().map {
                     val copy = template.copy()
                     transformGeneToParamDto(it, copy)
                     copy

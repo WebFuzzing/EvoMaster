@@ -63,6 +63,7 @@ class SamplerVerifierTest {
         return target.walk()
                 .filter { it.isFile }
                 .filter { !it.name.endsWith("features_service_null.json") } //issue with parser
+                .filter { !it.name.endsWith("trace_v2.json") } // no actions are parsed
                 .map {
                     val s = it.path.replace("\\", "/")
                             .replace(relativePath, "swagger")
@@ -82,6 +83,7 @@ class SamplerVerifierTest {
         val injector = getInjector(sutInfo, controllerInfo, listOf("--seed","42"))
 
         val sampler = injector.getInstance(ResourceSampler::class.java)
+
 
         for(i in 0..iterations) {
             val ind = sampler.sample()

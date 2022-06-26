@@ -6,6 +6,10 @@ import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.search.service.mutator.StandardMutator
 
 
+/**
+ * tests are to check sampler and mutator which do not employ
+ * resource-based strategies and adaptive hypermutation
+ */
 class RestIndividualDisabledHMTest : RestIndividualTestBase(){
 
     private lateinit var sampler : RestSampler

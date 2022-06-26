@@ -301,6 +301,7 @@ class MapGene<K, V>(
             gene.first.randomize(randomness, true, elements.map { it.first })
         }
 
+        gene.markAllAsInitialized()
         return gene
     }
 

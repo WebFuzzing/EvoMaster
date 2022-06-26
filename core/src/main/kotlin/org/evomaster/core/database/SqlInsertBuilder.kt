@@ -615,8 +615,10 @@ class SqlInsertBuilder(
             }
         }
 
-        return DbAction(table, pks.toSet(), id, genes, true)
+        val db = DbAction(table, pks.toSet(), id, genes, true)
 
+        db.doInitialize()
+        return db
     }
 
 
