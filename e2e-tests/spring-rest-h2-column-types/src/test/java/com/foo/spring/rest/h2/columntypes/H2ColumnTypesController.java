@@ -159,10 +159,14 @@ public class H2ColumnTypesController extends SpringController {
 
     private static final String CREATE_TABLE_ARRAY_TYPES = "CREATE TABLE arrayTypes (\n" +
             "  dummyColumn INTEGER NOT NULL\n" +
+            //"  varcharArrayWithMaxLengthColumn VARCHAR ARRAY[100] NOT NULL\n" +
+            //"  varcharWithMaxSizeArrayColumn VARCHAR(100) ARRAY NOT NULL\n" +
+            //"  bidimensionalArrayColumn BOOLEAN ARRAY ARRAY NOT NULL,\n" +
+            //"  tridimensionalArrayColumn BOOLEAN ARRAY ARRAY ARRAY NOT NULL,\n" +
             //"  booleanArrayColumn BOOLEAN ARRAY NOT NULL,\n" +
             //"  varcharArrayColumn VARCHAR ARRAY NOT NULL,\n" +
-            //"  varcharWithMaxSizeArrayColumn VARCHAR(100) ARRAY NOT NULL,\n" +
-            //"  varcharArrayWithMaxLengthColumn VARCHAR ARRAY[100] NOT NULL\n" +
+            //"  integerArrayColumn INTEGER ARRAY NOT NULL,\n" +
+            //"  integerArrayWithMaxLengthColumn INTEGER ARRAY[10] NOT NULL\n" +
             ");";
 
     private static final String CREATE_TABLES_SQL = CREATE_TABLE_CHARACTER_TYPES

@@ -6,6 +6,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -581,75 +583,21 @@ public class SchemaExtractor {
 
             switch (schemaDto.databaseType) {
                 case MYSQL:
-                    // numeric https://dev.mysql.com/doc/refman/8.0/en/numeric-type-syntax.html
-                    String[] attrs = typeAsString.split(" ");
-                    if (attrs.length == 0)
-                        throw new IllegalStateException("missing type info of the column");
-
-                    if (attrs[0].equalsIgnoreCase(GEOMETRY)) {
-                        /*
-                         * In MYSQL, the TYPE_NAME column of the JDBC table metadata returns the GEOMETRY data type,
-                         * which is the supertype of all geometry data. In order to know the specific geometric data
-                         * type of a column, it is required to query the [INFORMATION_SCHEMA.COLUMNS] table for the
-                         * corresponding [DATA_TYPE] column value.
-                         */
-                        String sqlQuery = String.format("SELECT DATA_TYPE, table_schema from INFORMATION_SCHEMA.COLUMNS where\n" +
-                                " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", schemaDto.name, tableDto.name, columnDto.name);
-                        try (Statement statement = connection.createStatement()) {
-                            ResultSet rs = statement.executeQuery(sqlQuery);
-                            if (rs.next()) {
-                                String dataType = rs.getString("DATA_TYPE");
-                                /*
-                                 * uppercase to enforce case insensitivity.
-                                 */
-                                columnDto.type = dataType.toUpperCase();
-                            } else {
-                                columnDto.type = GEOMETRY;
-                            }
-                        }
-                    } else {
-                        columnDto.type = attrs[0];
-                    }
-
-                    columnDto.isUnsigned = attrs.length > 1 && IntStream
-                            .range(1, attrs.length).anyMatch(i -> attrs[i].equalsIgnoreCase("UNSIGNED"));
-                    columnDto.nullable = columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
-                    columnDto.autoIncrement = columns.getString("IS_AUTOINCREMENT").equalsIgnoreCase("yes");
-                    /*
-                        this precision is only used for decimal, not for double and float in mysql
-                        https://dev.mysql.com/doc/refman/8.0/en/floating-point-types.html
-                        therefore, here, we only set precision when type is DECIMAL
-                     */
-                    if (columnDto.type.equals("DECIMAL")) {
-                        columnDto.scale = columns.getInt("DECIMAL_DIGITS");
-                        // default is 0
-                        if (columnDto.scale < 0)
-                            columnDto.scale = 0;
-                    }
-
-
+                    extractMySQLColumn(schemaDto, tableDto, columnDto, typeAsString, columns, connection);
                     break;
                 case POSTGRES:
-                    columnDto.type = typeAsString;
-                    columnDto.nullable = columns.getBoolean("IS_NULLABLE");
-                    columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
-                    columnDto.isEnumeratedType = schemaDto.enumeraredTypes.stream()
-                            .anyMatch(k -> k.name.equals(typeAsString));
-                    columnDto.isCompositeType = schemaDto.compositeTypes.stream()
-                            .anyMatch(k -> k.name.equals(typeAsString));
+                    extractPostgresColumn(schemaDto, columnDto, typeAsString, columns);
                     break;
                 case H2:
-                    columnDto.type = typeAsString.startsWith("ENUM") ? "VARCHAR" : typeAsString;
-                    columnDto.nullable = columns.getBoolean("IS_NULLABLE");
-                    columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
-                    columnDto.isEnumeratedType = false;
+                    extractH2Column(columnDto, typeAsString, columns);
                     break;
 
                 default:
-                    // might need to support unsigned property of numeric in other types of db
-                    columnDto.type = typeAsString;
                     columnDto.nullable = columns.getBoolean("IS_NULLABLE");
                     columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
+
+                    // might need to support unsigned property of numeric in other types of db
+                    columnDto.type = typeAsString;
                     // TODO handle precision for other databases
             }
             //columns.getString("DECIMAL_DIGITS");
@@ -670,6 +618,132 @@ public class SchemaExtractor {
             tableDto.foreignKeys.add(fkDto);
         }
         fks.close();
+    }
+
+    private static void extractH2Column(ColumnDto columnDto, String typeAsString, ResultSet columns) throws SQLException {
+        columnDto.nullable = columns.getBoolean("IS_NULLABLE");
+        columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
+        /*
+         * In H2, ENUM types are always VARCHAR Columns
+         */
+        if (typeAsString.startsWith("ENUM")) {
+            columnDto.type = "VARCHAR";
+        } else
+            /*
+             * In H2, there is no other way of obtaining
+             * the number of dimensionas for arrays/multi
+             * dimensional arrays except parsing the
+             * type string.
+             */
+            if (typeAsString.contains("ARRAY")) {
+                columnDto.type = getH2ArrayBaseType(typeAsString);
+                columnDto.numberOfDimensions = getH2ArrayNumberOfDimensions(typeAsString);
+            } else {
+                columnDto.type = typeAsString;
+            }
+
+
+    }
+
+    private static void extractPostgresColumn(DbSchemaDto schemaDto,
+                                              ColumnDto columnDto,
+                                              String typeAsString,
+                                              ResultSet columns) throws SQLException {
+        columnDto.nullable = columns.getBoolean("IS_NULLABLE");
+        columnDto.autoIncrement = columns.getBoolean("IS_AUTOINCREMENT");
+        columnDto.type = typeAsString;
+        columnDto.isEnumeratedType = schemaDto.enumeraredTypes.stream()
+                .anyMatch(k -> k.name.equals(typeAsString));
+        columnDto.isCompositeType = schemaDto.compositeTypes.stream()
+                .anyMatch(k -> k.name.equals(typeAsString));
+    }
+
+    private static void extractMySQLColumn(DbSchemaDto schemaDto,
+                                           TableDto tableDto,
+                                           ColumnDto columnDto,
+                                           String typeAsStringValue,
+                                           ResultSet columns,
+                                           Connection connection) throws SQLException {
+
+        int decimalDigitsValue = columns.getInt("DECIMAL_DIGITS");
+        int nullableValue = columns.getInt("NULLABLE");
+        String isAutoIncrementValue = columns.getString("IS_AUTOINCREMENT");
+
+        // numeric https://dev.mysql.com/doc/refman/8.0/en/numeric-type-syntax.html
+        String[] attrs = typeAsStringValue.split(" ");
+        if (attrs.length == 0)
+            throw new IllegalStateException("missing type info of the column");
+
+        if (attrs[0].equalsIgnoreCase(GEOMETRY)) {
+            /*
+             * In MYSQL, the TYPE_NAME column of the JDBC table metadata returns the GEOMETRY data type,
+             * which is the supertype of all geometry data. In order to know the specific geometric data
+             * type of a column, it is required to query the [INFORMATION_SCHEMA.COLUMNS] table for the
+             * corresponding [DATA_TYPE] column value.
+             */
+            String sqlQuery = String.format("SELECT DATA_TYPE, table_schema from INFORMATION_SCHEMA.COLUMNS where\n" +
+                    " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", schemaDto.name, tableDto.name, columnDto.name);
+            try (Statement statement = connection.createStatement()) {
+                ResultSet rs = statement.executeQuery(sqlQuery);
+                if (rs.next()) {
+                    String dataType = rs.getString("DATA_TYPE");
+                    /*
+                     * uppercase to enforce case insensitivity.
+                     */
+                    columnDto.type = dataType.toUpperCase();
+                } else {
+                    columnDto.type = GEOMETRY;
+                }
+            }
+        } else {
+            columnDto.type = attrs[0];
+        }
+
+        columnDto.isUnsigned = attrs.length > 1 && IntStream
+                .range(1, attrs.length).anyMatch(i -> attrs[i].equalsIgnoreCase("UNSIGNED"));
+        columnDto.nullable = nullableValue == DatabaseMetaData.columnNullable;
+        columnDto.autoIncrement = isAutoIncrementValue.equalsIgnoreCase("yes");
+                    /*
+                        this precision is only used for decimal, not for double and float in mysql
+                        https://dev.mysql.com/doc/refman/8.0/en/floating-point-types.html
+                        therefore, here, we only set precision when type is DECIMAL
+                     */
+        if (columnDto.type.equals("DECIMAL")) {
+            columnDto.scale = decimalDigitsValue;
+            // default is 0
+            if (columnDto.scale < 0)
+                columnDto.scale = 0;
+        }
+    }
+
+    private static int getH2ArrayNumberOfDimensions(String typeAsString) {
+        if (!typeAsString.contains("ARRAY")) {
+            throw new IllegalArgumentException("Cannot get number of dimensions of non-array type " + typeAsString);
+        }
+        Pattern arrayOnlyPattern = Pattern.compile("ARRAY");
+        Matcher arrayOnlyMatcher = arrayOnlyPattern.matcher(typeAsString);
+        int numberOfDimensions = 0;
+        while (arrayOnlyMatcher.find()) {
+            numberOfDimensions++;
+        }
+        return numberOfDimensions;
+    }
+
+    private static String getH2ArrayBaseType(String typeAsString) {
+        if (!typeAsString.contains("ARRAY")) {
+            throw new IllegalArgumentException("Cannot get base type from non-array type " + typeAsString);
+        }
+        Pattern pattern = Pattern.compile("\\s*ARRAY\\s*\\[\\s*\\d+\\s*\\]");
+        Matcher matcher = pattern.matcher(typeAsString);
+        if (matcher.find()) {
+            throw new IllegalArgumentException("Cannot handle array type with maximum length " + typeAsString);
+        }
+        /*
+         * The typeAsString does have ARRAY but it does not have maximum length
+         * (it is still not supported).
+         */
+        String baseType = typeAsString.replaceAll("ARRAY", "").trim();
+        return baseType.trim();
     }
 
     /**

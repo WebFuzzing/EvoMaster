@@ -76,6 +76,9 @@ public class H2ColumnTypesEMTest extends SpringTestBase {
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/createtypeasenum", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/createtypeasenum", null);
+
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/arraytypes", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/arraytypes", null);
                 });
     }
 }

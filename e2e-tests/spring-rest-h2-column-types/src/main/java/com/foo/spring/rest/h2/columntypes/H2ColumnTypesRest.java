@@ -208,5 +208,18 @@ public class H2ColumnTypesRest {
             return ResponseEntity.status(200).build();
         }
     }
+
+    @GetMapping("/arraytypes")
+    public ResponseEntity<Void> getArrayTypes() {
+        Query query = em.createNativeQuery(
+                "select (1) from arrayTypes where dummyColumn>0");
+        List<?> data = query.getResultList();
+
+        if(data.isEmpty()) {
+            return ResponseEntity.status(400).build();
+        } else {
+            return ResponseEntity.status(200).build();
+        }
+    }
 }
 
