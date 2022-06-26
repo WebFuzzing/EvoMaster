@@ -36,6 +36,11 @@ class H2GeometryTypeParser {
          */
         private const val H2_GEOMETRY_REGEX = "GEOMETRY(\\s*)\\((\\s*)(?<geometricObject>GEOMETRY|POINT|LINESTRING|POLYGON|MULTIPOINT|MULTILINESTRING|MULTIPOLYGON|GEOMETRYCOLLECTION)(\\s*)(?<geometricDimension>Z|M|ZM)?(\\s*)(,\\s*(?<spatialReferenceSystemIdentifier>\\d+)\\s*)?\\)"
 
+        /**
+         * Precompiled pattern for the H2 Geometry definition grammar
+         */
+        private val pattern = Pattern.compile(H2_GEOMETRY_REGEX)
+
     }
 
     /**
@@ -43,7 +48,6 @@ class H2GeometryTypeParser {
      * H2 Geometry type definition.
      */
     fun isParsable(typeAsString: String): Boolean {
-        val pattern = Pattern.compile(H2_GEOMETRY_REGEX)
         val matcher = pattern.matcher(typeAsString.trim())
         return matcher.matches()
     }
@@ -51,15 +55,15 @@ class H2GeometryTypeParser {
 
     /**
      * Requires the string to be a valid H2 Geometry type definition
-     * [isParsable()] returns true.
-     * It returns a H2GeometryType instance with the geometricObject,
+     * (i.e. [isParsable()] must returns true).
+     *
+     * It returns a H2GeometryType instance with the geometricObject string,
      * the dimension (if any) and the spatialReferenceSystemIdentifier (if any)
      */
     fun parse(typeAsString: String): H2GeometryType {
         if (!isParsable(typeAsString)) {
             throw IllegalArgumentException("Cannot translate an invalid H2 geometry type definition: $typeAsString")
         }
-        val pattern = Pattern.compile(H2_GEOMETRY_REGEX)
         val matcher = pattern.matcher(typeAsString.trim())
         matcher.matches()
         return H2GeometryType(geometricObjectString = matcher.group("geometricObject"),
