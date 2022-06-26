@@ -61,7 +61,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         RestIndividual mutatedTwoCalls = mutator.mutate(twoCallsEval, Collections.emptySet(), spec);
         assertEquals(0, spec.mutatedDbGeneInfo().size());
         // it might be flaky. but with specified seed, this should be determinate
-        assertEquals(3, spec.mutatedGeneInfo().size());
+        assertEquals(2, spec.mutatedGeneInfo().size());
 
 //        Gene rdObj = calls.get(0).seeGenes(GeneFilter.NO_SQL).stream().findFirst().orElse(null);
 //        Gene mrdObj = mutatedTwoCalls.getResourceCalls().get(0).seeGenes(GeneFilter.NO_SQL).stream().findFirst().orElse(null);
