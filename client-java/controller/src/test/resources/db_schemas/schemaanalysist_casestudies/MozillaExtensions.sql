@@ -1,0 +1,10 @@
+CREATE TABLE addon (internal_id INTEGER PRIMARY KEY, id TEXT, syncGUID TEXT, location TEXT, version TEXT, type TEXT, internalName TEXT, updateURL TEXT, updateKey TEXT, optionsURL TEXT, optionsType TEXT, aboutURL TEXT, iconURL TEXT, icon64URL TEXT, defaultLocale INTEGER, visible INTEGER, active INTEGER, userDisabled INTEGER, appDisabled INTEGER, pendingUninstall INTEGER, descriptor TEXT, installDate INTEGER, updateDate INTEGER, applyBackgroundUpdates INTEGER, bootstrap INTEGER, skinnable INTEGER, size INTEGER, sourceURI TEXT, releaseNotesURI TEXT, softDisabled INTEGER, isForeignInstall INTEGER, hasBinaryComponents INTEGER, strictCompatibility INTEGER, UNIQUE (id, location), UNIQUE (syncGUID));
+CREATE TABLE addon_locale (addon_internal_id INTEGER, locale TEXT, locale_id INTEGER, UNIQUE (addon_internal_id, locale));
+CREATE TABLE locale (id INTEGER PRIMARY KEY, name TEXT, description TEXT, creator TEXT, homepageURL TEXT);
+CREATE TABLE locale_strings (locale_id INTEGER, type TEXT, value TEXT);
+CREATE TABLE targetApplication (addon_internal_id INTEGER, id TEXT, minVersion TEXT, maxVersion TEXT, UNIQUE (addon_internal_id, id));
+CREATE TABLE targetPlatform (addon_internal_id INTEGER, os TEXT, abi TEXT, UNIQUE (addon_internal_id, os, abi));
+CREATE INDEX locale_strings_idx ON locale_strings (locale_id);
+CREATE TRIGGER delete_addon AFTER DELETE ON addon BEGIN DELETE FROM targetApplication WHERE addon_internal_id=old.internal_id; DELETE FROM targetPlatform WHERE addon_internal_id=old.internal_id; DELETE FROM addon_locale WHERE addon_internal_id=old.internal_id; DELETE FROM locale WHERE id=old.defaultLocale; END;
+CREATE TRIGGER delete_addon_locale AFTER DELETE ON addon_locale WHEN NOT EXISTS (SELECT * FROM addon_locale WHERE locale_id=old.locale_id) BEGIN DELETE FROM locale WHERE id=old.locale_id; END;
+CREATE TRIGGER delete_locale AFTER DELETE ON locale BEGIN DELETE FROM locale_strings WHERE locale_id=old.id; END;

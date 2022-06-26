@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-public abstract class DatabaseH2TestInit {
+    public abstract class DatabaseH2TestInit {
 
     protected static Connection connection;
 

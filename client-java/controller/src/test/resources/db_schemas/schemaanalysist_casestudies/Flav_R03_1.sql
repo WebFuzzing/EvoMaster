@@ -1,0 +1,22 @@
+-- http://www.ars.usda.gov/Services/docs.htm?docid=6231
+CREATE TABLE 'DATA_SRC' ('DataSrc_ID' TEXT, 'Authors' TEXT, 'Title' TEXT, 'Jorunal' TEXT, 'Year' TEXT, 'Volume' TEXT, 'Issue' TEXT, 'Start_Page' TEXT, 'Emd_Page' TEXT);
+CREATE TABLE 'DATSRCLN' ('NDB_No' TEXT, 'Nutr_no' TEXT, 'DataSrc_ID' TEXT);
+CREATE TABLE 'FD_GROUP' ('FdGrp_CD' TEXT, 'FdGrp_Desc' TEXT);
+CREATE TABLE 'FLAV_DAT' ('NDB_No' TEXT, 'Nutr_no' TEXT, 'Nutrient name' TEXT, 'Flav_Val' DOUBLE, 'Se' DOUBLE, 'n' INTEGER, 'Min' DOUBLE, 'CC' TEXT, 'Max' DOUBLE);
+CREATE TABLE 'FLAV_IND' ('NDB_No' TEXT, 'DataSrc ID' TEXT, 'Food No' TEXT, 'FoodIndiv_Desc' TEXT, 'Method' TEXT, 'Cmpd_Name' TEXT, 'Rptd CmpdVal' DOUBLE, 'Rptd_Std Dev' TEXT, 'Num_Data_Pts' DOUBLE, 'LT' TEXT, 'Rptd_Units' TEXT, 'Fresh Dry_Wt' TEXT, 'Quant_Std' TEXT, 'Conv_Factor_G' DOUBLE, 'Conv_Factor_M' TEXT, 'Conv_Factor_SpGr' DOUBLE, 'Cmpd_Val' DOUBLE, 'Cmpt_StdDev' TEXT);
+CREATE TABLE 'FOOD_DES' ('NDB_No' TEXT, 'FdGrp_Cd' TEXT, 'Long_Desc' TEXT, 'SciName' TEXT);
+CREATE TABLE 'NUTR_DEF' ('Nutrr_no' TEXT, 'Nutrient name' TEXT, 'Flav_Class' TEXT, 'Unit' TEXT, 'Tagname' TEXT);
+CREATE UNIQUE INDEX 'DATA_SRC_PrimaryKey' ON 'DATA_SRC' ('DataSrc_ID' );
+CREATE INDEX 'DATSRCLN_DATA_SRCDATSRCLN' ON 'DATSRCLN' ('DataSrc_ID' );
+CREATE INDEX 'DATSRCLN_DATSRCLNNDB_No' ON 'DATSRCLN' ('NDB_No' );
+CREATE UNIQUE INDEX 'DATSRCLN_PrimaryKey' ON 'DATSRCLN' ('NDB_No' , 'Nutr_no' , 'DataSrc_ID' );
+CREATE UNIQUE INDEX 'FD_GROUP_PrimaryKey' ON 'FD_GROUP' ('FdGrp_CD' );
+CREATE INDEX 'FLAV_DAT_FOOD_DESFLAV_DAT' ON 'FLAV_DAT' ('NDB_No' );
+CREATE INDEX 'FLAV_DAT_NUTR_DEFFLAV_DAT' ON 'FLAV_DAT' ('Nutr_no' );
+CREATE UNIQUE INDEX 'FLAV_DAT_PrimaryKey' ON 'FLAV_DAT' ('NDB_No' , 'Nutr_no' );
+CREATE INDEX 'FLAV_IND_DataSrc ID' ON 'FLAV_IND' ('DataSrc ID' );
+CREATE INDEX 'FLAV_IND_FLAV_INDNDB_No' ON 'FLAV_IND' ('NDB_No' );
+CREATE INDEX 'FLAV_IND_Num_Data_Pts' ON 'FLAV_IND' ('Num_Data_Pts' );
+CREATE INDEX 'FOOD_DES_FD_GROUPFOOD_DES' ON 'FOOD_DES' ('FdGrp_Cd' );
+CREATE UNIQUE INDEX 'FOOD_DES_PrimaryKey' ON 'FOOD_DES' ('NDB_No' );
+CREATE UNIQUE INDEX 'NUTR_DEF_PrimaryKey' ON 'NUTR_DEF' ('Nutrr_no' );

@@ -1,0 +1,16 @@
+DROP TABLE S;
+
+DROP TABLE T;
+
+CREATE TABLE T 
+(
+     A int NOT NULL, B int NOT NULL, C int NOT NULL,
+     CONSTRAINT UniqueOnColsAandB UNIQUE (A, B)
+);
+
+CREATE TABLE S 
+(
+     X int NOT NULL, Y int NOT NULL, Z int NOT NULL,
+     CONSTRAINT RefToColsAandB FOREIGN KEY (X, Y)
+     REFERENCES T (A, B)
+);

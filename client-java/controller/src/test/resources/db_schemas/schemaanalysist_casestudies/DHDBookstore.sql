@@ -1,0 +1,21 @@
+-- http://dhdurso.org/ms-access-downloads.html
+CREATE TABLE 'Authors' ('author_name' TEXT);
+CREATE TABLE 'Books' ('isbn' TEXT, 'author_name' TEXT, 'title' TEXT, 'publisher_name' TEXT, 'publication_year' INTEGER, 'binding' TEXT, 'source_numb' INTEGER, 'retail_price' DOUBLE, 'number_on_hand' INTEGER);
+CREATE TABLE 'Customers' ('customer_numb' INTEGER, 'customer_first_name' TEXT, 'customer_last_name' TEXT, 'customer_street' TEXT, 'customer_city' TEXT, 'customer_state' TEXT, 'customer_phone' TEXT, 'customer_email' TEXT, 'customer_zip' TEXT);
+CREATE TABLE 'Orderlines' ('order_numb' INTEGER, 'isbn' TEXT, 'quantity' INTEGER, 'cost_each' DOUBLE, 'cost_line' DOUBLE, 'shipped' TEXT);
+CREATE TABLE 'Orders' ('order_numb' INTEGER, 'customer_numb' INTEGER, 'order_date' DATETIME, 'credit_card_numb' TEXT, 'order_filled' TEXT, 'credit card exp date' DATETIME);
+CREATE TABLE 'Publishers' ('publisher_name' TEXT);
+CREATE TABLE 'Sources' ('source_numb' INTEGER, 'source_name' TEXT, 'source_street' TEXT, 'source_city' TEXT, 'source_state' TEXT, 'source_zip' INTEGER, 'source_phone' TEXT);
+CREATE UNIQUE INDEX 'Authors_PrimaryKey' ON 'Authors' ('author_name' );
+CREATE INDEX 'Books_Booksauthor_name' ON 'Books' ('author_name' );
+CREATE INDEX 'Books_Bookspublisher_name' ON 'Books' ('publisher_name' );
+CREATE UNIQUE INDEX 'Books_PrimaryKey' ON 'Books' ('isbn' );
+CREATE INDEX 'Books_{FD3CD3C4-664B-11D5-9007-AE4FB6C27C52}' ON 'Books' ('source_numb' );
+CREATE UNIQUE INDEX 'Customers_PrimaryKey' ON 'Customers' ('customer_numb' );
+CREATE UNIQUE INDEX 'Orderlines_PrimaryKey' ON 'Orderlines' ('order_numb' , 'isbn' );
+CREATE INDEX 'Orderlines_{FD3CD3C0-664B-11D5-9007-AE4FB6C27C52}' ON 'Orderlines' ('isbn' );
+CREATE INDEX 'Orderlines_{FD3CD3C2-664B-11D5-9007-AE4FB6C27C52}' ON 'Orderlines' ('order_numb' );
+CREATE INDEX 'Orders_Customer_num' ON 'Orders' ('customer_numb' );
+CREATE UNIQUE INDEX 'Orders_PrimaryKey' ON 'Orders' ('order_numb' );
+CREATE UNIQUE INDEX 'Publishers_PrimaryKey' ON 'Publishers' ('publisher_name' );
+CREATE UNIQUE INDEX 'Sources_PrimaryKey' ON 'Sources' ('source_numb' );
