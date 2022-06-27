@@ -512,6 +512,232 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
     }
 
+    @Test
+    public void testCreateEnumIntColumn() throws Exception {
+        SqlScriptRunner.execCommand(connection, "CREATE TYPE enumType as ENUM (10, 20, 30);");
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (enumTypeColumn enumType NOT NULL);");
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("enumTypeColumn")));
+
+        ColumnDto enumTypeColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("enumTypeColumn")).findFirst().get();
+
+        assertTrue("enumTypeColumn".equalsIgnoreCase(enumTypeColumn.name));
+        assertFalse(enumTypeColumn.isEnumeratedType);
+        assertTrue("varchar".equalsIgnoreCase(enumTypeColumn.type));
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(\"ENUMTYPECOLUMN\" IN ('10', '20', '30'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+
+    }
+
+    @Test
+    public void testCreateEnumColumn() throws Exception {
+        SqlScriptRunner.execCommand(connection, "CREATE TYPE cardsuit as ENUM ('clubs', 'diamonds', 'hearts', 'spades');");
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (cardsuitColumn cardsuit NOT NULL);");
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("cardsuitColumn")));
+
+        ColumnDto cardsuitColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("cardsuitColumn")).findFirst().get();
+
+        assertTrue("cardsuitColumn".equalsIgnoreCase(cardsuitColumn.name));
+        assertFalse(cardsuitColumn.isEnumeratedType);
+        assertTrue("varchar".equalsIgnoreCase(cardsuitColumn.type));
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(\"CARDSUITCOLUMN\" IN ('clubs', 'diamonds', 'hearts', 'spades'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+
+    }
+
+    @Test
+    public void testEnumColumn() throws Exception {
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE FOO (enumColumn ENUM('clubs', 'diamonds', 'hearts', 'spades') NOT NULL);");
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("enumColumn")));
+
+        ColumnDto enumColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("enumColumn")).findFirst().get();
+
+        assertTrue("enumColumn".equalsIgnoreCase(enumColumn.name));
+        assertFalse(enumColumn.isEnumeratedType);
+        assertTrue("varchar".equalsIgnoreCase(enumColumn.type));
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(\"ENUMCOLUMN\" IN ('clubs', 'diamonds', 'hearts', 'spades'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+    }
+
+
+    @Test
+    public void testArray() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (booleanArrayColumn BOOLEAN ARRAY NOT NULL);";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        assertTrue(fooTableOptional.isPresent());
+        TableDto fooTable = fooTableOptional.get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        Optional<ColumnDto> booleanArrayColumnOptional = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("booleanArrayColumn")).findAny();
+        assertTrue(booleanArrayColumnOptional.isPresent());
+
+        ColumnDto booleanArrayColumn = booleanArrayColumnOptional.get();
+
+        assertEquals(1, booleanArrayColumn.numberOfDimensions);
+        assertEquals("BOOLEAN", booleanArrayColumn.type);
+    }
+
+    @Test
+    public void testMultidimensionalArrayOfTwoDimensions() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (booleanArrayColumn BOOLEAN ARRAY ARRAY NOT NULL);";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        assertTrue(fooTableOptional.isPresent());
+        TableDto fooTable = fooTableOptional.get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        Optional<ColumnDto> booleanArrayColumnOptional = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("booleanArrayColumn")).findAny();
+        assertTrue(booleanArrayColumnOptional.isPresent());
+
+        ColumnDto booleanArrayColumn = booleanArrayColumnOptional.get();
+
+        assertEquals(2, booleanArrayColumn.numberOfDimensions);
+        assertEquals("BOOLEAN", booleanArrayColumn.type);
+
+    }
+
+    @Test
+    public void testMultidimensionalArrayOfThreeDimensions() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (booleanArrayColumn BOOLEAN ARRAY ARRAY ARRAY NOT NULL);";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        assertTrue(fooTableOptional.isPresent());
+        TableDto fooTable = fooTableOptional.get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        Optional<ColumnDto> booleanArrayColumnOptional = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("booleanArrayColumn")).findAny();
+        assertTrue(booleanArrayColumnOptional.isPresent());
+
+        ColumnDto booleanArrayColumn = booleanArrayColumnOptional.get();
+
+        assertEquals(3, booleanArrayColumn.numberOfDimensions);
+        assertEquals("BOOLEAN", booleanArrayColumn.type);
+
+    }
+
+    @Test
+    public void testBooleanNonlArray() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (booleanColumn BOOLEAN NOT NULL);";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        assertTrue(fooTableOptional.isPresent());
+        TableDto fooTable = fooTableOptional.get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        Optional<ColumnDto> booleanArrayColumnOptional = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("booleanColumn")).findAny();
+        assertTrue(booleanArrayColumnOptional.isPresent());
+
+        ColumnDto booleanArrayColumn = booleanArrayColumnOptional.get();
+
+        assertEquals(0, booleanArrayColumn.numberOfDimensions);
+        assertEquals("BOOLEAN", booleanArrayColumn.type);
+
+    }
+
+    @Test
+    public void testVarCharArray() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (varCharArrayColumn VARCHAR ARRAY NOT NULL);";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        assertTrue(fooTableOptional.isPresent());
+        TableDto fooTable = fooTableOptional.get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        Optional<ColumnDto> varcharArrayColumnOptional = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("varCharArrayColumn")).findAny();
+        assertTrue(varcharArrayColumnOptional.isPresent());
+
+        ColumnDto varcharArrayColumn = varcharArrayColumnOptional.get();
+
+        assertEquals(1, varcharArrayColumn.numberOfDimensions);
+        assertEquals("CHARACTER VARYING", varcharArrayColumn.type);
+
+    }
+
+
+    @Test
+    public void testIntegerArrayWithMaxLengthColumn() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (integerArrayWithMaxLengthColumn INTEGER ARRAY[10] NOT NULL);";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+        assertEquals(1, schema.tables.size());
+
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        assertTrue(fooTableOptional.isPresent());
+        TableDto fooTable = fooTableOptional.get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        Optional<ColumnDto> integerArrayWithMaxLengthColumnOptional = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("integerArrayWithMaxLengthColumn")).findAny();
+        assertTrue(integerArrayWithMaxLengthColumnOptional.isPresent());
+
+        ColumnDto integerArrayWithMaxLengthColumn = integerArrayWithMaxLengthColumnOptional.get();
+
+        assertEquals(1, integerArrayWithMaxLengthColumn.numberOfDimensions);
+        assertEquals("INTEGER", integerArrayWithMaxLengthColumn.type);
+        assertEquals(10, integerArrayWithMaxLengthColumn.size);
+
+    }
+    @Test
+    public void testMultidimensionalArrayOfThreeDimensionsWithMaxLength() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (booleanArrayColumn BOOLEAN ARRAY[3] ARRAY[2] ARRAY[5] NOT NULL);";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+        assertThrows(RuntimeException.class, () -> {
+            SchemaExtractor.extract(getConnection());
+        });
+    }
 
     @Override
     public Connection getConnection() {
