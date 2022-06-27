@@ -187,11 +187,12 @@ class ResourceCluster {
                 } else{
                     sqlInsertBuilder.createSqlInsertionAction(t.name).also {
                         //FIXME need refactoring after getting rid of allGenes
-                        it.forEach { a-> a.randomize(randomness,false, it.flatMap { a -> a.seeGenes()}) }
+                       // it.forEach { a-> a.randomize(randomness,false, it.flatMap { a -> a.seeGenes()}) }
+                        it.forEach { a -> a.doInitialize(randomness) }
                     }
                 }
                 if (actions != null){
-                    actions.forEach {it.doInitialize()}
+                    //actions.forEach {it.doInitialize()}
                     added.addAll(actions)
                     preTables.addAll(actions.filter { !isInsertion || !it.representExistingData }.map { it.table.name })
                 }
