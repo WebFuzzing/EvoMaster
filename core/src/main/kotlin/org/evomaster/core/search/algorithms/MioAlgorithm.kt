@@ -21,7 +21,6 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
     override fun searchOnce() {
 
-
             val randomP = apc.getProbRandomSampling()
 
             if(archive.isEmpty()
@@ -35,7 +34,7 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                     //note this can still be a smart sample
                     sampler.sample()
                 }
-                Lazy.assert { ind.isInitialized() }
+                Lazy.assert { ind.isInitialized() && ind.searchGlobalState!=null }
 
                 ff.calculateCoverage(ind)?.run {
 

@@ -177,7 +177,7 @@ class ResourceCluster {
 
         sorted.forEach { t->
             if (!doNotCreateDuplicatedAction || preTables.none { p-> p.equals(t.name, ignoreCase = true) }){
-                val action = if (!isInsertion){
+                val actions = if (!isInsertion){
                     if ((getDataInDb(t.name)?.size ?: 0) == 0) null
                     else{
                         val candidates = getDataInDb(t.name)!!
@@ -187,12 +187,14 @@ class ResourceCluster {
                 } else{
                     sqlInsertBuilder.createSqlInsertionAction(t.name).also {
                         //FIXME need refactoring after getting rid of allGenes
-                        it.forEach { a-> a.randomize(randomness,false, it.flatMap { a -> a.seeGenes()}); a.doInitialize() }
+                       // it.forEach { a-> a.randomize(randomness,false, it.flatMap { a -> a.seeGenes()}) }
+                        it.forEach { a -> a.doInitialize(randomness) }
                     }
                 }
-                if (action != null){
-                    added.addAll(action)
-                    preTables.addAll(action.filter { !isInsertion || !it.representExistingData }.map { it.table.name })
+                if (actions != null){
+                    //actions.forEach {it.doInitialize()}
+                    added.addAll(actions)
+                    preTables.addAll(actions.filter { !isInsertion || !it.representExistingData }.map { it.table.name })
                 }
             }
         }

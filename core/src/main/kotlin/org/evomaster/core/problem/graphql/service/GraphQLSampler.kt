@@ -114,6 +114,9 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         }
         val ind =  GraphQLIndividual(actions, SampleType.RANDOM, mutableListOf())
         GraphQLUtils.repairIndividual(ind)
+        ind.searchGlobalState = searchGlobalState
+        ind.doGlobalInitialize()
+
         return ind
     }
 
