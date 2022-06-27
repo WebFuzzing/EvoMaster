@@ -17,7 +17,7 @@ public interface DatabaseTestTemplate {
         https://www.tutorialspoint.com/sql/index.htm
      */
 
-    public Connection getConnection();
+    Connection getConnection();
 
     default String start(InstrumentedSutStarter starter) {
         boolean started = starter.start();
@@ -61,7 +61,7 @@ public interface DatabaseTestTemplate {
     }
 
 
-    public SutController getSutController();
+    SutController getSutController();
 
     default InstrumentedSutStarter getInstrumentedSutStarter() {
         SutController sutController = getSutController();

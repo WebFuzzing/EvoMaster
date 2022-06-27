@@ -1,5 +1,7 @@
-package org.evomaster.client.java.controller.db;
+package org.evomaster.client.java.controller.db.h2;
 
+import org.evomaster.client.java.controller.db.QueryResult;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

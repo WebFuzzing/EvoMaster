@@ -1,20 +1,19 @@
-package org.evomaster.client.java.controller.internal.db;
+package org.evomaster.client.java.controller.db;
 
-import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
-import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import java.sql.Connection;
 
-public interface SchemaAnalysistExtractorTest extends DatabaseTestTemplate {
+import static org.junit.Assert.assertNotNull;
+
+public interface CollectedSchemasExtractorTestBase {
+
+    Connection getConnection();
 
     @ParameterizedTest
     @ValueSource(strings = {"AdmissionsPatient.sql", "AdmissionsPatientRepaired.sql",
@@ -49,17 +48,15 @@ public interface SchemaAnalysistExtractorTest extends DatabaseTestTemplate {
             "WordNet.sql", "WordPress.sql", "WordPress-orig.sql",
             "World.sql", "World-orig.sql", "Writers.sql", "WwWordNet.sql"})
     default void testExtraction(String sqlFileName) throws Exception {
-
         try {
             String resourcePath = "/db_schemas/schemaanalysist_casestudies/" + sqlFileName;
             SqlScriptRunner.runScriptFromResourceFile(getConnection(), resourcePath);
         } catch (Exception ex) {
-            Assumptions.assumeTrue(false);
+            // Ignore test case if SQL script fails
+            Assumptions.assumeTrue(false,ex.getMessage());
         }
-
         DbSchemaDto schema = SchemaExtractor.extract(getConnection());
-        assertNotNull(schema);
-
+        Assertions.assertNotNull(schema);
     }
 
 }

@@ -1,7 +1,10 @@
-package org.evomaster.client.java.controller.db;
+package org.evomaster.client.java.controller.db.h2;
 
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.DatabaseTestTemplate;
+import org.evomaster.client.java.controller.db.DataRow;
+import org.evomaster.client.java.controller.db.QueryResult;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.internal.db.h2.DatabaseFakeH2SutController;
 import org.evomaster.client.java.controller.internal.db.h2.DatabaseH2TestInit;
@@ -425,7 +428,7 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (42)");
 
         res = SqlScriptRunner.execCommand(getConnection(), select);
-        assertTrue(!res.isEmpty());
+        assertFalse(res.isEmpty());
     }
 
 
@@ -469,7 +472,7 @@ public class SqlScriptRunnerTest extends DatabaseH2TestInit implements DatabaseT
         DataRow row = res.seeRows().get(0);
         assertEquals(4, row.getValue(0));
         assertEquals(1, row.getValue(1));
-        assertEquals(null, row.getValue(2));
+        assertNull(row.getValue(2));
         assertEquals("bar", row.getValue(3));
     }
 

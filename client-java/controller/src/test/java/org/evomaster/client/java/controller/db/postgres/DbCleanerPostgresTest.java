@@ -1,6 +1,9 @@
-package org.evomaster.client.java.controller.db;
+package org.evomaster.client.java.controller.db.postgres;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.db.DbCleaner;
+import org.evomaster.client.java.controller.db.DbCleanerTestBase;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,11 +16,11 @@ import java.util.List;
 /**
  * Created by arcuri82 on 08-Apr-19.
  */
-public class DbCleanerPostgresTest extends DbCleanerTestBase{
+public class DbCleanerPostgresTest extends DbCleanerTestBase {
 
     private static final String POSTGRES_VERSION = "14";
 
-    private static final GenericContainer postgres = new GenericContainer("postgres:" + POSTGRES_VERSION)
+    private static final GenericContainer<?> postgres = new GenericContainer<>("postgres:" + POSTGRES_VERSION)
             .withExposedPorts(5432)
             .withEnv("POSTGRES_HOST_AUTH_METHOD","trust");
 

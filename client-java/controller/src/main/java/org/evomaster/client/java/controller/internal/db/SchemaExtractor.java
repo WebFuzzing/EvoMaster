@@ -543,7 +543,7 @@ public class SchemaExtractor {
 
         Set<String> pks = new HashSet<>();
         SortedMap<Integer, String> primaryKeySequence = new TreeMap<>();
-        ResultSet rsPK = md.getPrimaryKeys(null, null, tableDto.name);
+        ResultSet rsPK = md.getPrimaryKeys(null, schemaDto.name, tableDto.name);
 
 
         while (rsPK.next()) {
@@ -607,7 +607,7 @@ public class SchemaExtractor {
         columns.close();
 
 
-        ResultSet fks = md.getImportedKeys(null, null, tableDto.name);
+        ResultSet fks = md.getImportedKeys(null, schemaDto.name, tableDto.name);
         while (fks.next()) {
             //TODO need to see how to handle case of multi-columns
 
