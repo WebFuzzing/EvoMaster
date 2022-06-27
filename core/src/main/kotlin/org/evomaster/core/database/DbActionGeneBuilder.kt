@@ -81,7 +81,7 @@ class DbActionGeneBuilder {
                  */
                 ColumnDataType.CHAR,
                 ColumnDataType.CHARACTER,
-                ColumnDataType.CHARACTER_LARGE_OBJECT->
+                ColumnDataType.CHARACTER_LARGE_OBJECT ->
                     handleCharColumn(column)
 
                 /**
@@ -116,6 +116,7 @@ class DbActionGeneBuilder {
                 ColumnDataType.LONGTEXT,
                 ColumnDataType.VARCHAR,
                 ColumnDataType.CHARACTER_VARYING,
+                ColumnDataType.VARCHAR_IGNORECASE,
                 ColumnDataType.CLOB,
                 ColumnDataType.MEDIUMTEXT,
                 ColumnDataType.LONGBLOB,
@@ -124,16 +125,20 @@ class DbActionGeneBuilder {
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
-                ColumnDataType.TIME,
-                ColumnDataType.TIMETZ ->
+                ColumnDataType.TIME ->
                     buildSqlTimeGene(column)
+
+                ColumnDataType.TIMETZ,
+                ColumnDataType.TIME_WITH_TIME_ZONE ->
+                    buildSqlTimeWithTimeZoneGene(column)
 
 
                 /**
                  * TIMESTAMP is assumed to be a Date field
                  */
                 ColumnDataType.TIMESTAMP,
-                ColumnDataType.TIMESTAMPTZ ->
+                ColumnDataType.TIMESTAMPTZ,
+                ColumnDataType.TIMESTAMP_WITH_TIME_ZONE ->
                     handleTimestampColumn(column)
 
                 /**
@@ -159,13 +164,15 @@ class DbActionGeneBuilder {
                  * which also simplifies when needing generate the test files
                  */
                 ColumnDataType.BLOB,
-                ColumnDataType.BINARY_LARGE_OBJECT->
+                ColumnDataType.BINARY_LARGE_OBJECT ->
                     handleBLOBColumn(column)
 
                 ColumnDataType.BINARY ->
                     handleMySqlBinaryColumn(column)
 
-                ColumnDataType.VARBINARY ->
+                ColumnDataType.BINARY_VARYING,
+                ColumnDataType.VARBINARY,
+                ColumnDataType.JAVA_OBJECT ->
                     handleMySqlVarBinaryColumn(column)
 
 
@@ -220,7 +227,7 @@ class DbActionGeneBuilder {
                  * MySQL and PostgreSQL Point column data type
                  */
                 ColumnDataType.POINT ->
-                    SqlPointGene(column.name, databaseType=column.databaseType)
+                    SqlPointGene(column.name, databaseType = column.databaseType)
 
                 /*
                  * PostgreSQL LINE Column data type
@@ -365,10 +372,12 @@ class DbActionGeneBuilder {
 //                SqlPolygonGene(column.name, minLengthOfPolygonRing=3, onlyNonIntersectingPolygons = true, databaseType = column.databaseType)
 //            }
             DatabaseType.POSTGRES -> {
-                SqlPolygonGene(column.name, minLengthOfPolygonRing=2, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
+                SqlPolygonGene(column.name, minLengthOfPolygonRing = 2, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
 
             }
-            else -> {throw IllegalArgumentException("Must define minLengthOfPolygonRing for database ${column.databaseType}")}
+            else -> {
+                throw IllegalArgumentException("Must define minLengthOfPolygonRing for database ${column.databaseType}")
+            }
         }
     }
 
@@ -461,7 +470,19 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings)
         } else {
-            StringGene(name = column.name, value = "f", minLength = 0, maxLength = 1)
+            val minLength: Int
+            val maxLength: Int
+            when (column.databaseType) {
+                DatabaseType.H2 -> {
+                    minLength = column.size
+                    maxLength = column.size
+                }
+                else -> {
+                    minLength = 0
+                    maxLength = 1
+                }
+            }
+            StringGene(name = column.name, value = "f", minLength = minLength, maxLength = maxLength)
         }
     }
 
@@ -640,19 +661,24 @@ class DbActionGeneBuilder {
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
-    private fun buildSqlTimeGene(column: Column): TimeGene {
-        val timeGeneFormat = when (column.databaseType) {
-            DatabaseType.MYSQL -> TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
-            DatabaseType.POSTGRES -> TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
-            else -> TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
-        }
-
+    private fun buildSqlTimeWithTimeZoneGene(column: Column): TimeGene {
         return TimeGene(
                 column.name,
                 hour = IntegerGene("hour", 0, 0, 23),
                 minute = IntegerGene("minute", 0, 0, 59),
                 second = IntegerGene("second", 0, 0, 59),
-                timeGeneFormat = timeGeneFormat
+                timeGeneFormat = TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+        )
+    }
+
+
+    private fun buildSqlTimeGene(column: Column): TimeGene {
+        return TimeGene(
+                column.name,
+                hour = IntegerGene("hour", 0, 0, 23),
+                minute = IntegerGene("minute", 0, 0, 59),
+                second = IntegerGene("second", 0, 0, 59),
+                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
         )
     }
 
@@ -673,7 +699,7 @@ class DbActionGeneBuilder {
                 name = name,
                 date = DateGene(
                         "date",
-                        year = IntegerGene("year", 2016,  minYear, maxYear),
+                        year = IntegerGene("year", 2016, minYear, maxYear),
                         month = IntegerGene("month", 3, 1, 12),
                         day = IntegerGene("day", 12, 1, 31),
                         onlyValidDates = true
@@ -738,6 +764,7 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
+
             if (column.scale != null && column.scale >= 0) {
                 /*
                     set precision and boundary for DECIMAL
