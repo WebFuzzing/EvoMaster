@@ -7,18 +7,18 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
-abstract class AbstractGeometricGene(
+abstract class SqlAbstractGeometricGene(
     name: String,
     protected val p: SqlPointGene,
     protected val q: SqlPointGene,
     val doNotAllowSamePoints: Boolean = false
-) : Gene(name, mutableListOf(p, q)) {
+) : CompositeFixedGene(name, mutableListOf(p, q)) {
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(p, q)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        p.randomize(randomness, forceNewValue, allGenes)
-        q.randomize(randomness, forceNewValue, allGenes)
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        p.randomize(randomness, tryToForceNewValue, allGenes)
+        q.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -46,10 +46,7 @@ abstract class AbstractGeometricGene(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(p.flatView(excludePredicate)).plus(q.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(p, q)
 

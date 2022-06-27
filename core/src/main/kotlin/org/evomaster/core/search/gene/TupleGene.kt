@@ -38,7 +38,7 @@ class TupleGene(
      */
     val lastElementTreatedSpecially: Boolean = false,
 
-    ) : Gene(name, elements) {
+    ) : CompositeFixedGene(name, elements) {
 
     init {
         if (elements.isEmpty()) {
@@ -161,12 +161,10 @@ class TupleGene(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-        if (elements.isNotEmpty())
-            elements.forEach {
-                it.randomize(randomness, false)
-            }
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        elements.filter { it.isMutable() }.forEach {
+            it.randomize(randomness, false)
+        }
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -214,8 +212,6 @@ class TupleGene(
 
     }
 
-    override fun getChildren(): List<Gene> = elements
-
     override fun isMutable(): Boolean {
         return elements.any { it.isMutable() }
     }
@@ -235,10 +231,6 @@ class TupleGene(
         return elements.filter { it.isMutable() }
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
-    }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 
@@ -256,6 +248,6 @@ class TupleGene(
     }
 
     override fun copyContent(): Gene {
-        return TupleGene(name, elements.map(Gene::copyContent), lastElementTreatedSpecially)
+        return TupleGene(name, elements.map(Gene::copy), lastElementTreatedSpecially)
     }
 }

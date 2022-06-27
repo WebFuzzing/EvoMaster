@@ -366,7 +366,7 @@ class SqlInsertBuilder(
      */
     fun isTable(tableName: String) = tables.keys.any { it.equals(tableName, ignoreCase = true) }
 
-    private fun getTable(tableName: String): Table {
+    fun getTable(tableName: String): Table {
         /**
          * SQL is not case sensitivity, table/column must ignore case sensitivity.
          */
@@ -527,6 +527,7 @@ class SqlInsertBuilder(
                 list.add(action)
             }
         }
+        list.forEach { it.doInitialize() }
 
         return list
     }
@@ -614,8 +615,10 @@ class SqlInsertBuilder(
             }
         }
 
-        return DbAction(table, pks.toSet(), id, genes, true)
+        val db = DbAction(table, pks.toSet(), id, genes, true)
 
+        db.doInitialize()
+        return db
     }
 
 

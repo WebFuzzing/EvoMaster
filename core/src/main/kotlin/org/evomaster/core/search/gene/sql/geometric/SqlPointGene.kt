@@ -16,24 +16,23 @@ class SqlPointGene(
     val x: FloatGene = FloatGene(name = "x"),
     val y: FloatGene = FloatGene(name = "y"),
     val databaseType: DatabaseType = DatabaseType.POSTGRES
-) : Gene(name, mutableListOf(x, y)) {
+) : CompositeFixedGene(name, mutableListOf(x, y)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPointGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(x, y)
 
     override fun copyContent(): Gene = SqlPointGene(
         name,
-        x.copyContent(),
-        y.copyContent(),
+        x.copy() as FloatGene,
+        y.copy() as FloatGene,
         databaseType = databaseType
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        x.randomize(randomness, forceNewValue, allGenes)
-        y.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        x.randomize(randomness, tryToForceNewValue, allGenes)
+        y.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -81,10 +80,7 @@ class SqlPointGene(
                 && this.y.containsSameValueAs(other.y)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(x.flatView(excludePredicate)).plus(y.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(x, y)
 

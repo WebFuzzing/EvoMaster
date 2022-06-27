@@ -26,6 +26,7 @@ import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
@@ -246,7 +247,7 @@ class Main {
                  */
                 assert(!config.blackBox || config.bbExperiments)
 
-                val rc = RemoteController(base.getEMConfig())
+                val rc = RemoteControllerImplementation(base.getEMConfig())
 
                 rc.checkConnection()
 
@@ -469,7 +470,7 @@ class Main {
             val rc = injector.getInstance(RemoteController::class.java)
 
             val dto = rc.getControllerInfo() ?: throw IllegalStateException(
-                    "Cannot retrieve Remote Controller info from ${rc.host}:${rc.port}")
+                    "Cannot retrieve Remote Controller info from ${rc.address()}")
 
             if (dto.isInstrumentationOn != true) {
                 LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")

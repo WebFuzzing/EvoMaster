@@ -21,8 +21,8 @@ class LongGene(
         minInclusive : Boolean = true,
         maxInclusive : Boolean = true
 ) : IntegralNumberGene<Long>(name, value,
-    min = if (precision != null) (-NumberCalculationUtil.upperBound(precision, 0)).toLong().run { if (min== null || this > min) this else min } else min,
-    max = if (precision != null) NumberCalculationUtil.upperBound(precision, 0).toLong().run { if (max == null || this < max) this else max } else max,
+    min = if (precision != null) (-NumberCalculationUtil.upperBound(precision, 0, maxValue = Long.MAX_VALUE)).toLong().run { if (min== null || this > min) this else min } else min,
+    max = if (precision != null) NumberCalculationUtil.upperBound(precision, 0, maxValue = Long.MAX_VALUE).toLong().run { if (max == null || this < max) this else max } else max,
     precision, minInclusive, maxInclusive) {
 
     companion object{
@@ -32,8 +32,7 @@ class LongGene(
     init {
         if (getMaximum() == getMinimum())
             this.value = getMinimum()
-        if (getMaximum() < getMinimum())
-            throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+
     }
 
     override fun copyContent(): Gene {
@@ -42,12 +41,12 @@ class LongGene(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        value = NumberMutatorUtils.randomizeLong(value, min, max, randomness, forceNewValue)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        value = NumberMutatorUtils.randomizeLong(value, min, max, randomness, tryToForceNewValue)
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
-        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+        val mutated = super.shallowMutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (mutated) return true
 
         value = NumberMutatorUtils.mutateLong(value, min, max, randomness, apc)
@@ -73,7 +72,6 @@ class LongGene(
         return this.value == other.value
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when(gene){
@@ -96,7 +94,7 @@ class LongGene(
                 value = gene.uniqueId
             }
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype())
+                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
                 return this.bindValueBasedOn(gene.number)

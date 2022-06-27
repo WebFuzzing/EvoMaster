@@ -223,6 +223,7 @@ class IndividualGeneImpactTest {
                     true,mutatedIndex
                 )
                 ind2.actions.removeAt(mutatedIndex)
+                ind2.killChildByIndex(mutatedIndex)
 
             }else{
                 val action = IndAction.getIndAction(1).first()
@@ -234,6 +235,7 @@ class IndividualGeneImpactTest {
                 )
 
                 ind2.actions.add(mutatedIndex, action)
+                ind2.addChild(action)
             }
 
             mutatedGeneSpecification.setMutatedIndividual(ind2)
@@ -301,10 +303,9 @@ class IndividualGeneImpactTest {
             }
         }
         override fun copyContent(): Individual {
-            return Ind(actions.map { it.copyContent() as IndAction }.toMutableList())
+            return Ind(actions.map { it.copy() as IndAction }.toMutableList(),
+                    initialization.map { it.copy() as IndAction }.toMutableList())
         }
-
-        override fun getChildren(): List<Action> = initialization.plus(actions)
 
         override fun seeGenes(filter: GeneFilter): List<out Gene> {
            return when(filter){
@@ -334,12 +335,15 @@ class IndividualGeneImpactTest {
 
     class IndAction(private val genes : List<out Gene>) : Action(genes){
 
-        override fun getChildren(): List<Gene> = genes
+
 
         companion object{
             fun getIndAction(size: Int = 1): List<IndAction>{
                 if(size < 1) throw IllegalArgumentException("size should be at least 1, but $size")
-                return (0 until size).map { IndAction(listOf(StringGene("index1","index1"), StringGene("index2", "index2")))}
+                return (0 until size).map {
+                    IndAction(listOf(StringGene("index1","index1"),
+                            StringGene("index2", "index2")))
+                            .apply { doInitialize(Randomness().apply { updateSeed(42) }) }}
             }
 
             fun getSeqIndAction(size : Int) : List<IndAction>{
@@ -379,14 +383,10 @@ class IndividualGeneImpactTest {
         }
 
         override fun copyContent(): Action {
-            return IndAction(genes.map { it.copyContent() })
+            return IndAction(genes.map { it.copy() })
         }
 
         override fun shouldCountForFitnessEvaluations(): Boolean = true
-
-        override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-            seeGenes().forEach { it.randomize(randomness, forceNewValue) }
-        }
 
     }
 }

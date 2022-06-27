@@ -150,7 +150,7 @@ open class ResourceSampler : AbstractRestSampler() {
     }
 
     private fun sampleIndependentAction(resourceCalls: MutableList<RestResourceCalls>){
-        val key = randomness.choose(rm.getResourceCluster().filter { it.value.hasIndependentAction() }.keys)//selectAResource(randomness)
+        val key = randomness.choose(rm.getResourceCluster().filter { it.value.hasIndependentAction() }.keys)
         rm.sampleCall(key, false, resourceCalls, getMaxTestSizeDuringSampler())
     }
 
@@ -225,7 +225,8 @@ open class ResourceSampler : AbstractRestSampler() {
             RestResourceCalls(
                     template = node.getTemplate(it.verb.toString()),
                     node = node,
-                    actions = mutableListOf(it)
+                    actions = mutableListOf(it),
+                    dbActions = listOf()
             )
         }.toMutableList()
         return RestIndividual(

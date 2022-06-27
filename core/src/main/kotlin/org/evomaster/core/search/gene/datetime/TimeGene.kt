@@ -25,7 +25,7 @@ class TimeGene(
     val minute: IntegerGene = IntegerGene("minute", 0, MIN_MINUTE, MAX_MINUTE),
     val second: IntegerGene = IntegerGene("second", 0, MIN_SECOND, MAX_SECOND),
     val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
-) : Comparable<TimeGene>, Gene(name, mutableListOf<Gene>(hour, minute, second)) {
+) : Comparable<TimeGene>, CompositeFixedGene(name, listOf(hour, minute, second)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(TimeGene::class.java)
@@ -51,8 +51,6 @@ class TimeGene(
         TIME_WITH_MILLISECONDS
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(hour, minute, second)
-
     /*
         Note: would need to handle timezone and second fractions,
         but not sure how important for testing purposes
@@ -60,17 +58,17 @@ class TimeGene(
 
     override fun copyContent(): Gene = TimeGene(
         name,
-        hour.copyContent() as IntegerGene,
-        minute.copyContent() as IntegerGene,
-        second.copyContent() as IntegerGene,
+        hour.copy() as IntegerGene,
+        minute.copy() as IntegerGene,
+        second.copy() as IntegerGene,
         timeGeneFormat = this.timeGeneFormat
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
-        hour.randomize(randomness, forceNewValue, allGenes)
-        minute.randomize(randomness, forceNewValue, allGenes)
-        second.randomize(randomness, forceNewValue, allGenes)
+        hour.randomize(randomness, tryToForceNewValue, allGenes)
+        minute.randomize(randomness, tryToForceNewValue, allGenes)
+        second.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -162,12 +160,6 @@ class TimeGene(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(hour.flatView(excludePredicate))
-            .plus(minute.flatView(excludePredicate))
-            .plus(second.flatView(excludePredicate))
-    }
 
     private fun isValidHourRange(gene: IntegerGene): Boolean {
         return gene.min == 0 && gene.max == 23
@@ -207,7 +199,7 @@ class TimeGene(
             }
             gene is DateTimeGene -> bindValueBasedOn(gene.time)
             gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype())
+            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype()  as Gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind TimeGene with ${gene::class.java.simpleName}")
                 false

@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql.network
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.IntegerGene
@@ -28,19 +29,17 @@ import org.slf4j.LoggerFactory
  */
 class SqlCidrGene(
         name: String,
-        val octets: List<IntegerGene> = List(INET_SIZE)
+        private val octets: List<IntegerGene> = List(INET_SIZE)
         { i -> IntegerGene("b$i", min = 0, max = 255) }
-) : Gene(name, octets.toMutableList()) {
+) : CompositeFixedGene(name, octets.toMutableList()) {
 
     companion object {
         const val INET_SIZE = 4
         val log: Logger = LoggerFactory.getLogger(SqlCidrGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = octets.toMutableList()
-
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        octets.forEach { it.randomize(randomness, forceNewValue, allGenes) }
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        octets.forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
     }
 
     override fun candidatesInternalGenes(
@@ -68,15 +67,6 @@ class SqlCidrGene(
             .joinToString(".")
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        if (excludePredicate(this))
-            return listOf(this)
-        else {
-            val result = listOf(this)
-            octets.forEach { result.plus(it.flatView(excludePredicate)) }
-            return result
-        }
-    }
 
     override fun innerGene(): List<Gene> = octets.toList()
 
@@ -124,5 +114,5 @@ class SqlCidrGene(
         return result
     }
 
-    override fun copyContent() = SqlCidrGene(name, octets.map { it.copyContent() as IntegerGene }.toList())
+    override fun copyContent() = SqlCidrGene(name, octets.map { it.copy() as IntegerGene }.toList())
 }

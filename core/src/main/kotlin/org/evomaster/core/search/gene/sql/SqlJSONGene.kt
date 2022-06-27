@@ -2,21 +2,22 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlJsonGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name, mutableListOf(objectGene)) {
+class SqlJSONGene(name: String,
+                  val objectGene: ObjectGene = ObjectGene(name, fields = listOf())
+) : CompositeFixedGene(name, mutableListOf(objectGene)) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(SqlJSONGene::class.java)
@@ -24,14 +25,11 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
 
     override fun copyContent(): Gene = SqlJSONGene(
             name,
-            objectGene = this.objectGene.copyContent() as ObjectGene)
+            objectGene = this.objectGene.copy() as ObjectGene)
 
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(objectGene)
-
-
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        objectGene.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        objectGene.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -47,7 +45,7 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
         throw IllegalArgumentException("impact is null or not SqlJsonGeneImpact")
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         // do nothing since the objectGene is not mutable
         return true
     }
@@ -84,10 +82,7 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
         return this.objectGene.containsSameValueAs(other.objectGene)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(objectGene.flatView(excludePredicate))
-    }
+
 
     override fun mutationWeight(): Double {
         return objectGene.mutationWeight()

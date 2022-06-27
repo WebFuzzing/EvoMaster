@@ -48,7 +48,7 @@ class SqlTextSearchQueryGene(
                 minSize = 0
                 ),
 
-) : Gene(name, mutableListOf(queryLexemes)) {
+) : CompositeFixedGene(name, mutableListOf(queryLexemes)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchQueryGene::class.java)
@@ -59,22 +59,19 @@ class SqlTextSearchQueryGene(
         const val BLANK_CHAR = ' '
     }
 
-
-    override fun getChildren(): MutableList<Gene> = mutableListOf(queryLexemes)
-
     override fun copyContent(): Gene = SqlTextSearchQueryGene(
             name,
-            queryLexemes.copyContent() as ArrayGene<StringGene>
+            queryLexemes.copy() as ArrayGene<StringGene>
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        queryLexemes.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        queryLexemes.randomize(randomness, tryToForceNewValue, allGenes)
         /*
          *  A geometric polygon must be always a non-empty list
          */
-        if (queryLexemes.getAllElements().isEmpty()) {
+        if (queryLexemes.getViewOfElements().isEmpty()) {
             val stringGene = StringGene("lexeme")
-            stringGene.randomize(randomness, forceNewValue, allGenes)
+            stringGene.randomize(randomness, tryToForceNewValue, allGenes)
             queryLexemes.addElement(stringGene)
         }
     }
@@ -97,7 +94,7 @@ class SqlTextSearchQueryGene(
             extraCheck: Boolean
     ): String {
         val queryStr =
-                queryLexemes.getAllElements()
+                queryLexemes.getViewOfElements()
                         .map {
                             removeEnclosedQuotationMarks(
                                     it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
@@ -107,7 +104,7 @@ class SqlTextSearchQueryGene(
     }
 
     override fun getValueAsRawString(): String {
-        return queryLexemes.getAllElements()
+        return queryLexemes.getViewOfElements()
                 .map { it.getValueAsRawString() }
                 .joinToString(" $AMPERSAND_CHAR ")
 
@@ -127,10 +124,7 @@ class SqlTextSearchQueryGene(
         return this.queryLexemes.containsSameValueAs(other.queryLexemes)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(queryLexemes.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(queryLexemes)
 

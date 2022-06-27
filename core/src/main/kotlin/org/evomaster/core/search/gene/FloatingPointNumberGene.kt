@@ -3,9 +3,10 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
+import java.math.BigDecimal
 import java.math.RoundingMode
 
-abstract class FloatingPointNumber<T:Number>(
+abstract class FloatingPointNumberGene<T:Number>(
     name: String,
     value: T?,
     min: T? = null,
@@ -62,6 +63,14 @@ abstract class FloatingPointNumber<T:Number>(
      *      2) precision if it is specified
      */
     override fun isValid(): Boolean {
-        return super.isValid() && (scale == null || !value.toString().contains(".") || value.toString().split(".")[1].length <= scale)
+
+        //Need to remove scientific notation, which is default when printing double/float
+        val plainValue = if(value is BigDecimal){
+            (value as BigDecimal).toPlainString()
+        } else BigDecimal(value.toString()).toPlainString()
+
+        return super.isValid() && (scale == null
+                || !plainValue.contains(".")
+                || (if (scale == 0) plainValue.split(".")[1].toDouble() == 0.0 else plainValue.split(".")[1].length <= scale))
     }
 }

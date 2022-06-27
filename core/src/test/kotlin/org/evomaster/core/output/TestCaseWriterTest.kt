@@ -113,14 +113,14 @@ class TestCaseWriterTest {
 
         val restActions = emptyList<RestCallAction>().toMutableList()
 
-
         val individual = RestIndividual(restActions, sampleType, dbInitialization)
+        individual.doInitialize()
 
         val fitnessVal = FitnessValue(0.0)
 
         val results = dbInitialization.map { DbActionResult().also { it.setInsertExecutionResult(true) } }
 
-        val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
+        val ei = EvaluatedIndividual(fitnessVal, individual, results)
         return Triple(format, baseUrlOfSut, ei)
     }
 
@@ -226,7 +226,7 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val integerGene = IntegerGene(idColumn.name, 42, 0, 50)
         val stringGene = StringGene(nameColumn.name, "nameValue", 0, 10)
 
         val insertIntoTableAction = DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(integerGene, stringGene))

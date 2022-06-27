@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.SimpleGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -12,26 +13,25 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 /**
  * Immutable class
  */
-class PatternCharacterBlock(
+class PatternCharacterBlockGene(
         name: String,
         val stringBlock: String
-) : RxAtom(name, listOf()) {
+) : RxAtom, SimpleGene(name) {
 
     override fun isMutable(): Boolean {
         return false
     }
 
-    override fun getChildren(): List<Gene> = listOf()
 
     override fun copyContent(): Gene {
-        return PatternCharacterBlock(name, stringBlock)
+        return PatternCharacterBlockGene(name, stringBlock)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
     }
 
@@ -40,7 +40,7 @@ class PatternCharacterBlock(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is PatternCharacterBlock) {
+        if (other !is PatternCharacterBlockGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
@@ -51,13 +51,12 @@ class PatternCharacterBlock(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is PatternCharacterBlock) {
+        if (other !is PatternCharacterBlockGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.stringBlock == other.stringBlock
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing

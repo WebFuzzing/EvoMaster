@@ -2,7 +2,6 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.OptionalGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -28,7 +27,7 @@ class OptionalGene(name: String,
                     * put them on.
                     */
                    var requestSelection: Boolean = false)
-    : Gene(name, mutableListOf(gene)) {
+    : CompositeFixedGene(name, gene) {
 
 
     companion object{
@@ -48,10 +47,8 @@ class OptionalGene(name: String,
         isActive = false
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
-
     override fun copyContent(): Gene {
-        val copy = OptionalGene(name, gene.copyContent(), isActive, requestSelection)
+        val copy = OptionalGene(name, gene.copy(), isActive, requestSelection)
         copy.selectable = this.selectable
         return copy
     }
@@ -78,18 +75,20 @@ class OptionalGene(name: String,
                 && this.gene.containsSameValueAs(other.gene)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         if(!selectable){
             return
         }
 
-        if (!forceNewValue) {
+        if (!tryToForceNewValue) {
             isActive = randomness.nextBoolean()
-            gene.randomize(randomness, false, allGenes)
+            if(gene.isMutable()) {
+                gene.randomize(randomness, false, allGenes)
+            }
         } else {
 
-            if (randomness.nextBoolean()) {
+            if (randomness.nextBoolean() || !gene.isMutable()) {
                 isActive = !isActive
             } else {
                 gene.randomize(randomness, true, allGenes)
@@ -127,7 +126,7 @@ class OptionalGene(name: String,
         throw IllegalArgumentException("impact is null or not OptionalGeneImpact")
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         isActive = !isActive
         if (enableAdaptiveGeneMutation){
@@ -150,10 +149,6 @@ class OptionalGene(name: String,
     override fun getVariableName() = gene.getVariableName()
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(gene.flatView(excludePredicate))
-    }
 
     override fun mutationWeight(): Double {
         return 1.0 + gene.mutationWeight()
@@ -166,4 +161,7 @@ class OptionalGene(name: String,
         return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 
+    override fun isPrintable(): Boolean {
+        return gene.isPrintable()
+    }
 }

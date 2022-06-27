@@ -2,17 +2,16 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.NumberMutatorUtils.handleMinMaxInConstructor
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.RoundingMode
 
 
 class FloatGene(name: String,
@@ -29,10 +28,10 @@ class FloatGene(name: String,
                  * specified scale
                  */
                 scale: Int? = null
-) : FloatingPointNumber<Float>(name, value,
-    min = if (precision != null && scale != null) (-NumberCalculationUtil.upperBound(precision, scale)).toFloat().run { if (min== null || this > min) this else min } else min,
-    max = if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).toFloat().run { if (max == null || this < max) this else max } else max,
-    minInclusive, maxInclusive, precision, scale) {
+) : FloatingPointNumberGene<Float>(name, value,
+        min = handleMinMaxInConstructor(value = min, isMin = true, precision = precision, scale = scale, example = 0.0f),
+        max = handleMinMaxInConstructor(value = max, isMin = false, precision = precision, scale = scale, example = 0.0f),
+        minInclusive, maxInclusive, precision, scale) {
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(FloatGene::class.java)
@@ -40,13 +39,13 @@ class FloatGene(name: String,
 
     override fun copyContent() = FloatGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         val rand = NumberMutatorUtils.randomizeDouble(getMinimum().toDouble(), getMaximum().toDouble(), scale, randomness)
         value = getFormattedValue(rand.toFloat())
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+        val mutated = super.shallowMutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (mutated) return true
 
         value = mutateFloatingPointNumber(randomness, apc).run {
@@ -74,7 +73,6 @@ class FloatGene(name: String,
         }
         return this.value == other.value
     }
-    override fun innerGene(): List<Gene> = listOf()
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
@@ -98,7 +96,7 @@ class FloatGene(name: String,
                 value = gene.uniqueId.toFloat()
             }
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype())
+                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
                 return this.bindValueBasedOn(gene.number)

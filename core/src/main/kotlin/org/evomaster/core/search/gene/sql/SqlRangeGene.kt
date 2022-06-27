@@ -26,14 +26,14 @@ class SqlRangeGene<T>(
 
         private val isLeftClosed: BooleanGene = BooleanGene("isLeftClosed"),
 
-        private val left: T = template.copyContent() as T,
+        private val left: T = template.copy() as T,
 
-        private val right: T = template.copyContent() as T,
+        private val right: T = template.copy() as T,
 
         private val isRightClosed: BooleanGene = BooleanGene("isRightClosed")
 
-) : Gene(name, mutableListOf(isLeftClosed, left, right, isRightClosed))
-        where T : ComparableGene {
+) : CompositeFixedGene(name, mutableListOf(isLeftClosed, left, right, isRightClosed))
+        where T : ComparableGene, T: Gene {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlRangeGene::class.java)
@@ -63,17 +63,14 @@ class SqlRangeGene<T>(
         assert(left <= right)
     }
 
-    override fun getChildren(): MutableList<Gene> =
-            mutableListOf(isLeftClosed, left, right, isRightClosed)
-
     override fun copyContent(): Gene {
         return SqlRangeGene<T>(
                 name = name,
-                template = template.copyContent() as T,
-                isLeftClosed = isLeftClosed.copyContent() as BooleanGene,
-                left = left.copyContent() as T,
-                right = right.copyContent() as T,
-                isRightClosed = isRightClosed.copyContent() as BooleanGene
+                template = template.copy() as T,
+                isLeftClosed = isLeftClosed.copy() as BooleanGene,
+                left = left.copy() as T,
+                right = right.copy() as T,
+                isRightClosed = isRightClosed.copy() as BooleanGene
         )
     }
 
@@ -83,8 +80,8 @@ class SqlRangeGene<T>(
         }
 
         isLeftClosed.copyValueFrom(other.isLeftClosed)
-        left.copyValueFrom(other.left)
-        right.copyValueFrom(other.right)
+        left.copyValueFrom(other.left as Gene)
+        right.copyValueFrom(other.right as Gene)
         isRightClosed.copyValueFrom(other.isRightClosed)
     }
 
@@ -93,16 +90,16 @@ class SqlRangeGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return isLeftClosed.containsSameValueAs(other.isRightClosed)
-                && left.containsSameValueAs(other.left)
-                && right.containsSameValueAs(other.right)
+                && left.containsSameValueAs(other.left as Gene)
+                && right.containsSameValueAs(other.right as Gene)
                 && isRightClosed.containsSameValueAs(other.isRightClosed)
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         log.trace("Randomizing SqlRangeGene")
         listOf(isRightClosed, left, right, isRightClosed)
-                .forEach { it.randomize(randomness, forceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
         repairGeneIfNeeded()
     }
 
@@ -153,13 +150,6 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(isLeftClosed)
-                    .plus(left)
-                    .plus(right)
-                    .plus(isRightClosed)
-    }
 
 
     override fun innerGene(): List<Gene> =
@@ -168,8 +158,8 @@ class SqlRangeGene<T>(
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
             this.isLeftClosed.bindValueBasedOn(gene.isLeftClosed)
-            this.left.bindValueBasedOn(gene.left)
-            this.right.bindValueBasedOn(gene.right)
+            this.left.bindValueBasedOn(gene.left as Gene)
+            this.right.bindValueBasedOn(gene.right as Gene)
             this.isRightClosed.bindValueBasedOn(gene.isRightClosed)
         }
         LoggingUtil.uniqueWarn(
@@ -180,7 +170,7 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

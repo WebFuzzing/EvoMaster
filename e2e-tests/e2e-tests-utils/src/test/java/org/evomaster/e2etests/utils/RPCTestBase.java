@@ -131,7 +131,7 @@ public class RPCTestBase extends WsTestBase{
         }
 
         if (valueGene instanceof ArrayGene)
-            return ((ArrayGene)valueGene).getAllElements().size();
+            return ((ArrayGene)valueGene).getViewOfElements().size();
         if (valueGene instanceof MapGene)
             return ((MapGene) valueGene).getAllElements().size();
         return -1;

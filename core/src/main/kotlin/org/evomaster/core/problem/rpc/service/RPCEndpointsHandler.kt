@@ -200,7 +200,7 @@ class RPCEndpointsHandler {
 
     private fun handleActionWithSeededCandidates(action: RPCCallAction, candidateKey: String){
         action.seeGenes().flatMap { it.flatView() }.filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
-            val index = ((g as DisruptiveGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it.name == candidateKey }
+            val index = ((g as DisruptiveGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it is Gene && it.name == candidateKey }
             if (index != -1){
                 (g.gene as SeededGene<*>).employSeeded = true
                 g.gene.seeded.index = index
@@ -211,7 +211,7 @@ class RPCEndpointsHandler {
     private fun handleActionNoSeededCandidates(action: RPCCallAction){
         action.seeGenes().filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
             ((g as DisruptiveGene<*>).gene as SeededGene<*>).employSeeded = false
-            (g.gene as SeededGene<*>).gene.randomize(randomness, false)
+            ((g.gene as SeededGene<*>).gene as Gene).randomize(randomness, false)
         }
     }
 
@@ -396,7 +396,7 @@ class RPCEndpointsHandler {
             is BigIntegerGene -> dto.stringValue = valueGene.getValueAsRawString()
             is ArrayGene<*> -> {
                 val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a collection is null")
-                val innerContent = valueGene.getAllElements().map {
+                val innerContent = valueGene.getViewOfElements().map {
                     val copy = template.copy()
                     transformGeneToParamDto(it, copy)
                     copy
@@ -473,7 +473,7 @@ class RPCEndpointsHandler {
                         response might refer to input dto, then it might exist seeded gene
                      */
                     valueGene.employSeeded = false
-                    setGeneBasedOnParamDto(valueGene.gene, dto)
+                    setGeneBasedOnParamDto(valueGene.gene as Gene, dto)
                 }
                 is PairGene<*, *> -> {
                     Lazy.assert { dto.innerContent.size == 2 }
@@ -498,7 +498,7 @@ class RPCEndpointsHandler {
                         }else
                             this
                     }.forEach { p->
-                        val copy = template.copyContent()
+                        val copy = template.copy()
                         // TODO need to handle cycle object gene in responses
                         if (copy !is CycleObjectGene){
                             setGeneBasedOnParamDto(copy, p)
@@ -515,7 +515,7 @@ class RPCEndpointsHandler {
                         }else
                             this
                     }.forEach { p->
-                        val copy = template.copyContent()
+                        val copy = template.copy()
                         setGeneBasedOnParamDto(copy, p)
                         valueGene.addElement(copy)
                     }
@@ -563,7 +563,7 @@ class RPCEndpointsHandler {
     private fun isValidToSetValue(gene: Gene, dto: ParamDto) : Boolean{
         val valueGene = ParamUtil.getValueGene(gene)
         if (valueGene is SeededGene<*>)
-            return isValidToSetValue(valueGene.gene, dto)
+            return isValidToSetValue(valueGene.gene  as Gene, dto)
 
         return when(dto.type.type){
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT,
@@ -656,11 +656,11 @@ class RPCEndpointsHandler {
 
                         // String could have bigDecimal or bigInteger as part of specification if any number related constraint property is specified
                         if (param.precision != null || param.scale != null){
-                            specializationGenes.add(BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
+                            addChild(BigDecimalGene(param.name, min = param.minValue?.toBigDecimalOrNull(), max = param.maxValue?.toBigDecimalOrNull(),
                                 precision = param.precision, scale = param.scale, minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
                         } else if (param.minValue != null || param.maxValue != null){
                             // only max or min, we recognize it as biginteger
-                            specializationGenes.add(BigIntegerGene(param.name, min=param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
+                            addChild(BigIntegerGene(param.name, min=param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
                                 minInclusive = param.minValue == null || param.minInclusive, maxInclusive = param.maxValue == null || param.maxInclusive))
                         }
                     }
@@ -673,7 +673,7 @@ class RPCEndpointsHandler {
                                 otherwise put the regex as part of specialization
                              */
                             if ((strGene as? StringGene)?.specializationGenes?.isNotEmpty() == true){
-                                strGene.specializationGenes.add(regex)
+                                strGene.addChild(regex)
                             }else
                                 strGene = regex
                         } catch (e: Exception) {
@@ -761,7 +761,7 @@ class RPCEndpointsHandler {
     }
 
     private fun getValueForSeededGene(gene: SeededGene<*>) : String{
-        return when (val pGene = gene.getPhenotype()) {
+        return when (val pGene = gene.getPhenotype() as Gene) {
             is StringGene -> pGene.getValueAsRawString()
             is IntegerGene -> pGene.value.toString()
             is FloatGene -> pGene.value.toString()

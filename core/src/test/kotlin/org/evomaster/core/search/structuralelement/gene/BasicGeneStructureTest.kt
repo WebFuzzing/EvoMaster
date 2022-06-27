@@ -167,7 +167,7 @@ class ArrayGeneIntStructureTest : GeneStructuralElementBaseTest() {
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is ArrayGene<*>)
-        assertEquals(copyFromTemplateSize, (base as ArrayGene<*>).getAllElements().size)
+        assertEquals(copyFromTemplateSize, (base as ArrayGene<*>).getViewOfElements().size)
     }
 }
 
@@ -180,21 +180,21 @@ class ArrayGeneObjStructureTest : GeneStructuralElementBaseTest() {
 
     override fun getStructuralElement(): ArrayGene<ObjectGene> = ArrayGene(
         "foo",
-        template = objTemplate.copyContent() as ObjectGene,
+        template = objTemplate.copy() as ObjectGene,
         maxSize = 20,
-        elements = (0 until size).map { objTemplate.copyContent() as ObjectGene }.toMutableList())
+        elements = (0 until size).map { objTemplate.copy() as ObjectGene }.toMutableList())
 
     override fun getExpectedChildrenSize(): Int  = size
 
     override fun getCopyFromTemplate(): Gene = ArrayGene(
         "foo",
-        template = objTemplate.copyContent() as ObjectGene,
+        template = objTemplate.copy() as ObjectGene,
         maxSize = 20,
-        elements = (0 until copyFromTemplateSize).map {objTemplate.copyContent() as ObjectGene }.toMutableList())
+        elements = (0 until copyFromTemplateSize).map {objTemplate.copy() as ObjectGene }.toMutableList())
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is ArrayGene<*>)
-        assertEquals(copyFromTemplateSize, (base as ArrayGene<*>).getAllElements().size)
+        assertEquals(copyFromTemplateSize, (base as ArrayGene<*>).getViewOfElements().size)
         assertChildren(base, 5)
     }
 }

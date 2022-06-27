@@ -1160,6 +1160,7 @@ class GraphQLActionBuilderTest {
         assertTrue((tupleDataSetMetadataList.elements.last() as OptionalGene).gene !is CycleObjectGene)
     }
 
+    @Disabled("this gives lot of GC issues")
     @Test
     fun zoraTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -1193,7 +1194,7 @@ class GraphQLActionBuilderTest {
         assertEquals(2, actionCluster.size)
     }
 
-    //@Disabled
+    @Disabled
     @Test
     fun gitHubTest() {
         val actionCluster = mutableMapOf<String, Action>()

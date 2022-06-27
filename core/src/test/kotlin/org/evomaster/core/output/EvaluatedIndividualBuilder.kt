@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.*
+import org.evomaster.core.search.service.Randomness
 
 class EvaluatedIndividualBuilder {
 
@@ -19,6 +20,7 @@ class EvaluatedIndividualBuilder {
             val restActions = emptyList<RestCallAction>().toMutableList()
 
             val individual = RestIndividual(restActions, sampleType, dbInitialization)
+            individual.doInitialize()
 
             val fitnessVal = FitnessValue(0.0)
 
@@ -50,6 +52,7 @@ class EvaluatedIndividualBuilder {
             }.toMutableList()
 
             val individual = RestIndividual(calls, sampleType, null, dbInitialization)
+            individual.doInitialize()
 
             val fitnessVal = FitnessValue(0.0)
 

@@ -52,7 +52,7 @@ object GeneWeightTestSchema {
         val action1 = actions[name]?: throw IllegalArgumentException("$name cannot found in defined schema")
 
         // 1 dbaction with 3 genes, and 1 restaction with 1 bodyGene and 1 contentType
-        return RestIndividual(actions = (0 until numRestAction).map { action1.copyContent() as RestCallAction }.toMutableList(), dbInitialization = dbActions, sampleType = SampleType.RANDOM)
+        return RestIndividual(actions = (0 until numRestAction).map { action1.copy() as RestCallAction }.toMutableList(), dbInitialization = dbActions, sampleType = SampleType.RANDOM)
     }
 
 }

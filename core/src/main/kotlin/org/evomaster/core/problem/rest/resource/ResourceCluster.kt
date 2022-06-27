@@ -74,6 +74,12 @@ class ResourceCluster {
         resourceCluster.values.forEach{it.init()}
     }
 
+    fun reset(){
+        resourceCluster.clear()
+        dataInDB.clear()
+        tables.clear()
+    }
+
 
     /**
      * derive related table for each resource node
@@ -180,7 +186,8 @@ class ResourceCluster {
                     }
                 } else{
                     sqlInsertBuilder.createSqlInsertionAction(t.name).also {
-                        it.forEach { a-> a.randomize(randomness,false, it) }
+                        //FIXME need refactoring after getting rid of allGenes
+                        it.forEach { a-> a.randomize(randomness,false, it.flatMap { a -> a.seeGenes()}); a.doInitialize() }
                     }
                 }
                 if (action != null){

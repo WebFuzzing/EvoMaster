@@ -9,7 +9,7 @@ class SqlLineSegmentGene(
     name: String,
     p: SqlPointGene = SqlPointGene("p"),
     q: SqlPointGene = SqlPointGene("q")
-) : AbstractGeometricGene(name, p, q) {
+) : SqlAbstractGeometricGene(name, p, q) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlLineSegmentGene::class.java)
@@ -17,8 +17,8 @@ class SqlLineSegmentGene(
 
     override fun copyContent(): Gene = SqlLineSegmentGene(
         name,
-        p.copyContent() as SqlPointGene,
-        q.copyContent() as SqlPointGene
+        p.copy() as SqlPointGene,
+        q.copy() as SqlPointGene
     )
 
     override fun copyValueFrom(other: Gene) {

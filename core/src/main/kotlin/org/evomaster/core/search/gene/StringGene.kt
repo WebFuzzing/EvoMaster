@@ -43,9 +43,9 @@ class StringGene(
         /**
          * specialization based on taint analysis
          */
-        val specializationGenes: MutableList<Gene> = mutableListOf()
+        specializationGenes: List<Gene> = listOf()
 
-) : ComparableGene(name, specializationGenes) {
+) : ComparableGene, CompositeGene(name, specializationGenes.toMutableList()) {
 
     init {
         if (minLength>maxLength) {
@@ -106,10 +106,12 @@ class StringGene(
      */
     var bindingIds = mutableSetOf<String>()
 
-    override fun getChildren(): List<Gene> = specializationGenes
+    //right now, all children are specializations
+    val specializationGenes: List<Gene>
+        get() {return children}
 
     override fun copyContent(): Gene {
-        val copy = StringGene(name, value, minLength, maxLength, invalidChars, this.specializationGenes.map { g -> g.copyContent() }.toMutableList())
+        val copy = StringGene(name, value, minLength, maxLength, invalidChars, this.specializationGenes.map { g -> g.copy() }.toMutableList())
                 .also {
                     it.specializations.addAll(this.specializations)
                     it.validChar = this.validChar
@@ -119,7 +121,6 @@ class StringGene(
                     it.bindingIds = this.bindingIds.map { id -> id }.toMutableSet()
                 }
 //        copy.specializationGenes.forEach { it.parent = copy }
-        copy.addChildren(copy.specializationGenes)
         return copy
     }
 
@@ -137,7 +138,7 @@ class StringGene(
         return true
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         /*
             TODO weirdly we did not do taint on sampling!!! we must do it, and evaluate it
@@ -153,8 +154,12 @@ class StringGene(
         handleBinding(allGenes)
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>,
-                        selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+        return listOf()
+    }
+
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>,
+                               selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
             additionalGeneMutationInfo.archiveGeneMutator.mutateStringGene(
@@ -454,10 +459,8 @@ class StringGene(
             selectionUpdatedSinceLastMutation = true
             toAddGenes.forEach {
                 it.randomize(randomness, false, listOf())
-//                it.parent = this
             }
             log.trace("in total added specification size: {}", toAddGenes.size)
-            specializationGenes.addAll(toAddGenes)
             addChildren(toAddGenes)
 
             specializations.addAll(toAddSpecs)
@@ -585,9 +588,8 @@ class StringGene(
         this.specializations.clear()
         this.specializations.addAll(other.specializations)
 
-        this.specializationGenes.clear()
-        this.specializationGenes.addAll(other.specializationGenes.map { it.copy() })
-        addChildren(this.specializationGenes)
+        killAllChildren()
+        addChildren(other.specializationGenes.map { it.copy() })
 
         this.tainted = other.tainted
 
@@ -619,10 +621,6 @@ class StringGene(
         return this.value == other.value
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(specializationGenes.flatMap { it.flatView(excludePredicate) })
-    }
 
     override fun mutationWeight(): Double {
         return if(specializationGenes.isEmpty()) 1.0 else (specializationGenes.map { it.mutationWeight() }.sum() * PROB_CHANGE_SPEC + 1.0)
@@ -668,7 +666,7 @@ class StringGene(
             is BigDecimalGene -> value = gene.value.toString()
             is BigIntegerGene -> value = gene.value.toString()
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype())
+                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
                 return this.bindValueBasedOn(gene.number)

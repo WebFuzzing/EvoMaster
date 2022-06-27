@@ -5,6 +5,7 @@ import org.evomaster.core.search.structuralelement.simple.model.Middle
 import org.evomaster.core.search.structuralelement.simple.model.Root
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 
 class BasicElementCopyTest {
 
@@ -48,12 +49,10 @@ class BasicElementCopyTest {
         leafB1.binding.add(leafA1)
 
         val root = Root(3.0, mutableListOf(middleA, middleB))
-        root.identifyAsRoot()
-
         val copy = root.copy()
 
         assertTrue(copy is Root)
-        assertEquals(2, copy.getChildren().size)
+        assertEquals(2, copy.getViewOfChildren().size)
         assertEquals(3.0, (copy as Root).data)
         assertEquals(1, copy.middles[0].data)
         assertEquals("A1", copy.middles[0].leaves[0].data)

@@ -92,8 +92,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         !action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach {
-                        val gene = StringGene(it).apply { randomize(randomness, false, listOf()) }
-                        action.parameters.add(HeaderParam(it, OptionalGene(it, gene, false, requestSelection = true)))
+                        val gene = StringGene(it)
+                        action.addParam(HeaderParam(it,
+                                OptionalGene(it, gene, false, requestSelection = true).apply { doInitialize() }))
                     }
 
             info.queryParameters
@@ -101,8 +102,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach {
-                        val gene = StringGene(it).apply { randomize(randomness, false, listOf()) }
-                        action.parameters.add(QueryParam(it, OptionalGene(it, gene, false, requestSelection = true)))
+                        val gene = StringGene(it).apply { doInitialize(randomness) }
+                        action.addParam(QueryParam(it,
+                                OptionalGene(it, gene, false, requestSelection = true).apply { doInitialize() }))
                     }
 
             if(result.getStatusCode() == 415){
@@ -118,15 +120,15 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                  */
                 if(action.parameters.none{ it is BodyParam}){
 
-                    val obj = ObjectGene("body", listOf())
+                    val obj = ObjectGene("body", listOf()).apply { doInitialize(randomness) }
 
                     val body = BodyParam(obj,
                              // TODO could look at "Accept" header instead of defaulting to JSON
-                            EnumGene("contentType", listOf("application/json")))
+                            EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
 
                     val update = UpdateForBodyParam(body)
 
-                    action.parameters.add(update)
+                    action.addParam(update)
                 }
             }
 
@@ -158,12 +160,12 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
                 }
                 val name = dtoNames.first()
-                val obj = getObjectGeneForDto(name)
-                obj.randomize(randomness, false, listOf())
+                val obj = getObjectGeneForDto(name).apply { doInitialize(randomness) }
 
-                val body = BodyParam(obj, EnumGene("contentType", listOf("application/json")))
+                val body = BodyParam(obj,
+                        EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
                 val update = UpdateForBodyParam(body)
-                action.parameters.add(update)
+                action.addParam(update)
             }
         }
     }

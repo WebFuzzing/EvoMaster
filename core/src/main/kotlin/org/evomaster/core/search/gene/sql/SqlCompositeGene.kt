@@ -2,15 +2,15 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
 import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -21,21 +21,36 @@ class SqlCompositeGene(
         val fields: List<out Gene>,
         // the name of the composite type
         val compositeTypeName: String? = null
-) : Gene(name, mutableListOf<StructuralElement>().apply { addAll(fields) }) {
+) : CompositeFixedGene(name, fields.toMutableList()) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlCompositeGene::class.java)
 
+        const val SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER"
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         fields.filter { it.isMutable() }
-                .forEach { it.randomize(randomness, forceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
+    }
+
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+        return listOf()
+    }
+
+    private val QUOTATION_MARK = "\""
+
+    private fun replaceEnclosedQuotationMarks(str: String): String {
+        if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
+            return SINGLE_APOSTROPHE_PLACEHOLDER + str.subSequence(1, str.length - 1) + SINGLE_APOSTROPHE_PLACEHOLDER
+        } else {
+            return str
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "ROW(${
-            fields
+            fields.filter { it.isPrintable() }
                     .map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
                     .joinToString { replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(it) }
         })"
@@ -82,14 +97,12 @@ class SqlCompositeGene(
         return false
     }
 
-    override fun getChildren() = fields
-
-    override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copyContent() }.toList(), this.compositeTypeName)
+    override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copy() }.toList(), this.compositeTypeName)
 
     /**
      * Dummy mutation for composite genes
      */
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

@@ -35,7 +35,7 @@ class GraphQLAction(
 
     override fun copyContent(): Action {
 
-        return GraphQLAction(id, methodName, methodType, parameters.map { it.copyContent() }.toMutableList(), auth )
+        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(), auth )
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {

@@ -5,6 +5,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.SimpleGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -18,7 +19,7 @@ import kotlin.math.min
 class CharacterRangeRxGene(
         val negated: Boolean,
         ranges: List<Pair<Char,Char>>
-) : RxAtom(".", listOf()){
+) : RxAtom, SimpleGene("."){
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
@@ -48,7 +49,6 @@ class CharacterRangeRxGene(
      */
     val ranges = ranges.map { Pair(min(it.first.code,it.second.code).toChar(), max(it.first.code, it.second.code).toChar()) }
 
-    override fun getChildren(): List<Gene> = listOf()
 
     override fun isMutable(): Boolean {
         return ranges.size > 1 || ranges[0].let { it.first != it.second }
@@ -60,7 +60,7 @@ class CharacterRangeRxGene(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         /*
             TODO current is very simple, biased implementation.
@@ -71,7 +71,7 @@ class CharacterRangeRxGene(
         value = randomness.nextChar(range.first, range.second)
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
 
         var t = 0
         for(i in 0 until ranges.size){
@@ -126,7 +126,6 @@ class CharacterRangeRxGene(
         return this.value == other.value
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is CharacterRangeRxGene){

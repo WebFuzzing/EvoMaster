@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.sql.SqlNullable
+import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.BinaryGeneImpact
 
@@ -13,7 +13,7 @@ class SqlNullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: 
                         val geneImpact: GeneImpact) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
 
-    constructor(id : String, sqlnullGene: SqlNullable) : this(SharedImpactInfo(id), SpecificImpactInfo(), geneImpact = ImpactUtils.createGeneImpact(sqlnullGene.gene, id))
+    constructor(id : String, sqlnullGene: SqlNullableGene) : this(SharedImpactInfo(id), SpecificImpactInfo(), geneImpact = ImpactUtils.createGeneImpact(sqlnullGene.gene, id))
 
     override fun copy(): SqlNullableImpact {
         return SqlNullableImpact(
@@ -32,14 +32,14 @@ class SqlNullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext,noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
-        if (gc.current  !is SqlNullable){
+        if (gc.current  !is SqlNullableGene){
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
         }
-        if (gc.previous != null && gc.previous !is SqlNullable){
+        if (gc.previous != null && gc.previous !is SqlNullableGene){
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlNullable")
         }
 
-        if (gc.previous == null || (gc.previous as SqlNullable).isPresent != gc.current.isPresent){
+        if (gc.previous == null || (gc.previous as SqlNullableGene).isPresent != gc.current.isPresent){
             presentImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
             if (gc.current.isPresent)
@@ -56,7 +56,7 @@ class SqlNullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: 
 
         if (gc.current.isPresent){
             val mutatedGeneWithContext = MutatedGeneWithContext(
-                    previous = if (gc.previous == null) null else (gc.previous as SqlNullable).gene,
+                    previous = if (gc.previous == null) null else (gc.previous as SqlNullableGene).gene,
                     current = gc.current.gene,
                     numOfMutatedGene = gc.numOfMutatedGene
             )
@@ -64,7 +64,7 @@ class SqlNullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: 
         }
     }
 
-    override fun validate(gene: Gene): Boolean = gene is SqlNullable
+    override fun validate(gene: Gene): Boolean = gene is SqlNullableGene
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
         return mutableMapOf("${getId()}-${geneImpact.getId()}" to geneImpact)
@@ -78,6 +78,6 @@ class SqlNullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: 
 
     override fun syncImpact(previous: Gene?, current: Gene) {
         check(previous,current)
-        geneImpact.syncImpact((previous as SqlNullable).gene, (current as SqlNullable).gene)
+        geneImpact.syncImpact((previous as SqlNullableGene).gene, (current as SqlNullableGene).gene)
     }
 }

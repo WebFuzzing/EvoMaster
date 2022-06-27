@@ -18,24 +18,21 @@ class SqlPathGene(
                 name = "points",
                 // paths are lists of at least 2 points
                 minSize = 2,
-                template = SqlPointGene("p", databaseType = databaseType))
-) : Gene(name, mutableListOf(points)) {
+                template = SqlPointGene("p", databaseType=databaseType))
+) : CompositeGene(name, mutableListOf(points)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
     }
 
-
-    override fun getChildren(): MutableList<Gene> = mutableListOf(points)
-
     override fun copyContent(): Gene = SqlPathGene(
             name,
-            points = points.copyContent() as ArrayGene<SqlPointGene>,
+            points = points.copy() as ArrayGene<SqlPointGene>,
             databaseType = this.databaseType
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        points.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -56,35 +53,29 @@ class SqlPathGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
+            DatabaseType.POSTGRES -> {"\" ( ${
+                points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
+            } ) \""}
             DatabaseType.H2 -> {
                 "\"LINESTRING(${
-                    points.getAllElements().joinToString(" , ") {
+                    points.getViewOfElements().joinToString(" , ") {
                         it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
                                 " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
                     }
                 })\""
             }
-            DatabaseType.POSTGRES -> {
-                "\" ( ${
-                    points.getAllElements().joinToString(" , ") { it.getValueAsRawString() }
-                } ) \""
-            }
             DatabaseType.MYSQL -> {
-                "LINESTRING(${
-                    points.getAllElements()
-                            .joinToString(" , ")
-                            { it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) }
-                })"
+                "LINESTRING(${points.getViewOfElements()
+                        .joinToString(" , ")
+                        { it.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck) }})"
             }
-            else -> {
-                throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")
-            }
+            else -> { throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")}
         }
     }
 
     override fun getValueAsRawString(): String {
         return "( ${
-            points.getAllElements()
+            points.getViewOfElements()
                     .map { it.getValueAsRawString() }
                     .joinToString(" , ")
         } ) "
@@ -104,10 +95,7 @@ class SqlPathGene(
         return this.points.containsSameValueAs(other.points)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(points.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(points)
 

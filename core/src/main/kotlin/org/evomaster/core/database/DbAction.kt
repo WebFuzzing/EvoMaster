@@ -59,7 +59,7 @@ class DbAction(
     }
 
 
-    override fun getChildren(): List<Gene> = genes
+
 
     private fun handleVarBinary(column: Column): Gene {
         /*
@@ -100,20 +100,11 @@ class DbAction(
     }
 
     override fun copyContent(): Action {
-        return DbAction(table, selectedColumns, id, genes.map(Gene::copyContent), representExistingData)
+        return DbAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
         return false
-    }
-
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-        val allGenes = all.flatMap { it.seeGenes() }
-        seeGenes().asSequence()
-            .filter { it.isMutable() }
-            .forEach {
-                it.randomize(randomness, false, allGenes)
-            }
     }
 
     fun geInsertionId(): Long {

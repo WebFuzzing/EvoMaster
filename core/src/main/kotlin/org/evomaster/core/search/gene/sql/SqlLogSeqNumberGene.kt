@@ -21,7 +21,7 @@ import kotlin.math.pow
  *  Min value is 0/0
  *  Max value is FFFFFFFF/FFFFFFFF
  */
-class SqlLogSeqNumber(
+class SqlLogSeqNumberGene(
         /**
          * The name of this gene
          */
@@ -30,7 +30,7 @@ class SqlLogSeqNumber(
         /**
          * The left part of 32 bits
          */
-        private val leftPart: LongGene = LongGene("leftPart",
+        val leftPart: LongGene = LongGene("leftPart",
                 value = 0,
                 min = 0,
                 max = MAX_VALUE,
@@ -40,17 +40,17 @@ class SqlLogSeqNumber(
         /**
          * The right part of 32 bits
          */
-        private val rightPart: LongGene = LongGene("rightPart",
+        val rightPart: LongGene = LongGene("rightPart",
                 value = 0,
                 min = 0,
                 max = MAX_VALUE,
                 minInclusive = true,
                 maxInclusive = true),
 
-        ) : Gene(name, mutableListOf(leftPart, rightPart)) {
+        ) : CompositeFixedGene(name, mutableListOf(leftPart, rightPart)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(SqlLogSeqNumber::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlLogSeqNumberGene::class.java)
 
         val MAX_VALUE = 2.toDouble().pow(32.toDouble()).toLong() - 1
 
@@ -59,19 +59,16 @@ class SqlLogSeqNumber(
     }
 
 
-    override fun getChildren(): MutableList<Gene> =
-            mutableListOf(leftPart, rightPart)
-
     override fun copyContent(): Gene {
-        return SqlLogSeqNumber(
+        return SqlLogSeqNumberGene(
                 name = name,
-                leftPart = leftPart.copyContent() as LongGene,
-                rightPart = rightPart.copyContent() as LongGene
+                leftPart = leftPart.copy() as LongGene,
+                rightPart = rightPart.copy() as LongGene
         )
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlLogSeqNumber) {
+        if (other !is SqlLogSeqNumberGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
@@ -80,7 +77,7 @@ class SqlLogSeqNumber(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlLogSeqNumber) {
+        if (other !is SqlLogSeqNumberGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return leftPart.containsSameValueAs(other.leftPart)
@@ -89,11 +86,11 @@ class SqlLogSeqNumber(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         log.trace("Randomizing ${this::class.java.simpleName}")
         val genes: List<Gene> = listOf(leftPart, rightPart)
         val index = randomness.nextInt(genes.size)
-        genes[index].randomize(randomness, forceNewValue, allGenes)
+        genes[index].randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     /**
@@ -126,18 +123,12 @@ class SqlLogSeqNumber(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this)
-                    .plus(leftPart)
-                    .plus(rightPart)
-    }
 
     override fun innerGene(): List<Gene> =
             listOf(leftPart, rightPart)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlLogSeqNumber) {
+        if (gene is SqlLogSeqNumberGene) {
             this.leftPart.bindValueBasedOn(gene.leftPart)
             this.rightPart.bindValueBasedOn(gene.rightPart)
         }
@@ -149,7 +140,7 @@ class SqlLogSeqNumber(
     }
 
 
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

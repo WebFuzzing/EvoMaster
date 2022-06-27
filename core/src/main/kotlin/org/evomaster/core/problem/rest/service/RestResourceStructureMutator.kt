@@ -386,7 +386,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             var addPos : Int? = null
             if(pair.first != null){
                 val pos = ind.getResourceCalls().indexOf(pair.first!!)
-                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true, randomness = randomness)
                 addPos = randomness.nextInt(0, pos)
             }
             if (addPos == null) addPos = randomness.nextInt(0, ind.getResourceCalls().size)
@@ -425,17 +425,23 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
 
         val pos = if(fromDependency){
             dm.handleDelNonDepResource(ind).run {
-                ind.getResourceCalls().indexOf(this)
+                ind.getIndexedResourceCalls().entries.first { it.value == this }!!.key
             }
         }else{
-            ind.getResourceCalls().indexOf(randomness.choose(ind.getResourceCalls().filter(RestResourceCalls::isDeletable)))
+            randomness.choose(ind.getIndexedResourceCalls().entries
+                    .filter { it.value.isDeletable }
+                    .map { it.key })
         }
 
 
-        max += ind.getResourceCalls()[pos].seeActionSize(NO_SQL)
+        max += ind.getIndexedResourceCalls()[pos]!!.seeActionSize(NO_SQL)
 
         val pair = if(fromDependency && pos != ind.getResourceCalls().size -1){
-                        dm.handleAddDepResource(ind, max, if (pos == ind.getResourceCalls().size-1) mutableListOf() else ind.getResourceCalls().subList(pos+1, ind.getResourceCalls().size).toMutableList())
+                        dm.handleAddDepResource(ind, max,
+                                if (pos == ind.getViewOfChildren().size-1) mutableListOf()
+                                else ind.getIndexedResourceCalls().filter { it.key > pos }
+                                        .map { it.value }
+                                        .toMutableList())
                     }else null
 
         var call = pair?.second
@@ -443,11 +449,11 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             call =  rm.handleAddResource(ind, max)
         }else{
             if(pair.first != null){
-                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true, randomness = randomness)
             }
         }
 
-       ind.getResourceCalls()[pos].seeActions(ALL).forEach {
+       ind.getIndexedResourceCalls()[pos]!!.seeActions(ALL).forEach {
            mutatedGenes?.addRemovedOrAddedByAction(
                it,
                ind.seeActions(NO_INIT).indexOf(it),
@@ -480,12 +486,14 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             else randomness.choose(this)
         }
 
-        val pos = randomness.choose(ind.getResourceCalls().filter { it.isDeletable }.map { ind.getResourceCalls().indexOf(it) })
+        val pos = randomness.choose(
+                ind.getIndexedResourceCalls().filter { it.value.isDeletable }
+                        .map { it.key })
 
-        val old = ind.getResourceCalls()[pos]
+        val old = ind.getIndexedResourceCalls()[pos]!!
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.seeActionSize(NO_SQL)}
-        max += ind.getResourceCalls()[pos].seeActionSize(NO_SQL)
+        max += old.seeActionSize(NO_SQL)
         var new = old.getResourceNode().generateAnother(old, randomness, max)
         if(new == null){
             new = old.getResourceNode().sampleOneAction(null, randomness)
@@ -493,7 +501,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         maintainAuth(auth, new)
 
         //record removed
-        ind.getResourceCalls()[pos].seeActions(ALL).forEach {
+        old.seeActions(ALL).forEach {
             mutatedGenes?.addRemovedOrAddedByAction(
                 it,
                 ind.seeActions(NO_INIT).indexOf(it),

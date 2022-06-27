@@ -79,6 +79,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if (individual.seeActions(ALL).size < results.size){
             throw IllegalArgumentException("Less actions (${individual.seeActions(ALL).size}) than results (${results.size})")
         }
+        if(!individual.isInitialized()){
+            throw IllegalArgumentException("Individual is not initialized")
+        }
     }
 
     constructor(fitness: FitnessValue, individual: T, results: List<out ActionResult>, trackOperator: TrackOperator? = null, index: Int = -1, config : EMConfig):

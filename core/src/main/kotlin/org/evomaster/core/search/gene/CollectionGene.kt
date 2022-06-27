@@ -6,6 +6,13 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import kotlin.math.min
 
 /**
+ * For genes representing typical collections like arrays, maps and sets.
+ *
+ * Note: a gene with mutable number of children is not necessarily a collection
+ *
+ * Note: if a gene has a child that is a collection, we do not necessarily need to mark the
+ * parent as a collection
+ *
  * created by manzh on 2020-06-06
  */
 interface CollectionGene {
@@ -28,10 +35,7 @@ interface CollectionGene {
 
     private fun timesProbToModifySize() : Int = 3
 
-    /**
-     * clear all elements
-     */
-    fun clearElements()
+
 
     /**
      * @return if [this] collection is empty, ie, elements is empty

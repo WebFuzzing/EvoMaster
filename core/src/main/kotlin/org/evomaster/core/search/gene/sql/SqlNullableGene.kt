@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
 import org.evomaster.core.search.gene.GeneUtils
@@ -14,10 +15,10 @@ import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
 
 
-class SqlNullable(name: String,
-                  val gene: Gene,
-                  var isPresent: Boolean = true
-) : SqlWrapperGene(name, listOf(gene)) {
+class SqlNullableGene(name: String,
+                      val gene: Gene,
+                      var isPresent: Boolean = true
+) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
     init{
         if(gene is SqlWrapperGene && gene.getForeignKey() != null){
@@ -27,11 +28,9 @@ class SqlNullable(name: String,
     }
 
     companion object{
-        private val log: Logger = LoggerFactory.getLogger(SqlNullable::class.java)
+        private val log: Logger = LoggerFactory.getLogger(SqlNullableGene::class.java)
         private const val ABSENT = 0.1
     }
-
-    override fun getChildren(): List<Gene> = listOf(gene)
 
 
     override fun getForeignKey(): SqlForeignKeyGene? {
@@ -39,17 +38,18 @@ class SqlNullable(name: String,
     }
 
     override fun copyContent(): Gene {
-        return SqlNullable(name, gene.copyContent(), isPresent)
+        return SqlNullableGene(name, gene.copy(), isPresent)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
-        isPresent = if (!isPresent && forceNewValue)
+        isPresent = if (!isPresent && tryToForceNewValue)
             true
         else
             randomness.nextBoolean(ABSENT)
 
-        gene.randomize(randomness, forceNewValue, allGenes)
+        if(gene.isMutable())
+            gene.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -81,7 +81,7 @@ class SqlNullable(name: String,
         throw IllegalArgumentException("impact is null or not SqlNullableImpact")
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         isPresent = !isPresent
         return true
@@ -97,7 +97,7 @@ class SqlNullable(name: String,
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlNullable) {
+        if (other !is SqlNullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.isPresent = other.isPresent
@@ -105,17 +105,14 @@ class SqlNullable(name: String,
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlNullable) {
+        if (other !is SqlNullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.isPresent == other.isPresent &&
                 this.gene.containsSameValueAs(other.gene)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(gene.flatView(excludePredicate))
-    }
+
 
     override fun mutationWeight(): Double {
         return 1.0 + gene.mutationWeight()
@@ -124,7 +121,7 @@ class SqlNullable(name: String,
     override fun innerGene(): List<Gene> = listOf(gene)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlNullable) isPresent = gene.isPresent
+        if (gene is SqlNullableGene) isPresent = gene.isPresent
         return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 }

@@ -2,11 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.LongGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlUUIDGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -28,22 +24,20 @@ class SqlUUIDGene(
     name: String,
     val mostSigBits: LongGene = LongGene("mostSigBits", 0L),
     val leastSigBits: LongGene = LongGene("leastSigBits", 0L)
-) : Gene(name, mutableListOf(mostSigBits, leastSigBits)) {
-
-    override fun getChildren(): MutableList<LongGene> = mutableListOf(mostSigBits, leastSigBits)
+) : CompositeFixedGene(name, mutableListOf(mostSigBits, leastSigBits)) {
 
     override fun copyContent(): Gene = SqlUUIDGene(
             name,
-            mostSigBits.copyContent() as LongGene,
-            leastSigBits.copyContent() as LongGene
+            mostSigBits.copy() as LongGene,
+            leastSigBits.copy() as LongGene
     )
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(SqlUUIDGene::class.java)
     }
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        mostSigBits.randomize(randomness, forceNewValue, allGenes)
-        leastSigBits.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        mostSigBits.randomize(randomness, tryToForceNewValue, allGenes)
+        leastSigBits.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -88,11 +82,6 @@ class SqlUUIDGene(
                 && this.leastSigBits.containsSameValueAs(other.leastSigBits)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(mostSigBits.flatView(excludePredicate))
-                    .plus(leastSigBits.flatView(excludePredicate))
-    }
 
     override fun innerGene(): List<Gene> = listOf(mostSigBits, leastSigBits)
 

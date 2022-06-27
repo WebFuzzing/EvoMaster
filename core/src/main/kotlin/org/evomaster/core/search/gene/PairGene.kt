@@ -17,8 +17,8 @@ class PairGene<F,S>(
          *
          * whether the [first] is mutable
          */
-        val isFirstMutable : Boolean = true
-):Gene(name, listOf(first, second)) where F: Gene, S: Gene{
+        val isFirstMutable : Boolean = true //TODO shouldn't be first.isMutable()?
+):CompositeFixedGene(name, listOf(first, second)) where F: Gene, S: Gene{
 
     companion object{
 
@@ -40,19 +40,20 @@ class PairGene<F,S>(
 
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        first.randomize(randomness, forceNewValue, allGenes)
-        second.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        if(first.isMutable()) {
+            first.randomize(randomness, tryToForceNewValue, allGenes)
+        }
+        if(second.isMutable()) {
+            second.randomize(randomness, tryToForceNewValue, allGenes)
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "${first.getValueAsPrintableString(targetFormat = targetFormat)}:${second.getValueAsPrintableString(targetFormat = targetFormat)}"
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(listOf(first,second).flatMap { g -> g.flatView(excludePredicate) })
-    }
+
 
     override fun copyValueFrom(other: Gene) {
         if (other !is PairGene<*,*>) {
@@ -80,13 +81,9 @@ class PairGene<F,S>(
         return first.bindValueBasedOn(gene.first) && second.bindValueBasedOn(gene.second)
     }
 
-    override fun getChildren(): List<Gene> {
-        return listOf(first, second)
-    }
-
 
     override fun copyContent(): Gene {
-        return PairGene(name, first.copyContent(), second.copyContent(), isFirstMutable)
+        return PairGene(name, first.copy(), second.copy(), isFirstMutable)
     }
 
     override fun isMutable(): Boolean {

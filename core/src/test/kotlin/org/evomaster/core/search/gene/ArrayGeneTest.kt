@@ -10,16 +10,16 @@ class ArrayGeneTest {
     @Test
     fun testGene() {
         val gene = ArrayGene("array", template=BooleanGene("boolean"))
-        assertEquals(0, gene.getChildren().size)
+        assertEquals(0, gene.getViewOfChildren().size)
     }
 
     @Test
     fun testGeneMinSize() {
         val gene = ArrayGene("array", minSize = 1, maxSize =10, template=BooleanGene("boolean"))
-        assertEquals(0, gene.getChildren().size)
+        assertEquals(0, gene.getViewOfChildren().size)
         val randomness = Randomness()
-        gene.randomize(randomness, forceNewValue = true, listOf())
-        assertTrue(gene.getChildren().isNotEmpty())
+        gene.randomize(randomness, tryToForceNewValue = true, listOf())
+        assertTrue(gene.getViewOfChildren().isNotEmpty())
     }
 
 }

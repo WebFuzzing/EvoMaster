@@ -14,18 +14,17 @@ import java.util.*
 class Base64StringGene(
         name: String,
         val data: StringGene = StringGene("data")
-) : Gene(name, mutableListOf(data)) {
+) : CompositeFixedGene(name, data) {
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(Base64StringGene::class.java)
     }
 
-    override fun getChildren(): MutableList<StringGene> = mutableListOf(data)
 
-    override fun copyContent(): Gene = Base64StringGene(name, data.copyContent() as StringGene)
+    override fun copyContent(): Gene = Base64StringGene(name, data.copy() as StringGene)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        data.randomize(randomness, forceNewValue)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        data.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -51,9 +50,7 @@ class Base64StringGene(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(data.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf()
 

@@ -1,6 +1,5 @@
 package org.evomaster.core.search
 
-import org.evomaster.core.logging.LoggingUtil
 import org.slf4j.LoggerFactory
 
 /**
@@ -10,8 +9,11 @@ import org.slf4j.LoggerFactory
  * @property parent its parent
  */
 abstract class StructuralElement (
-    children : List<out StructuralElement> = mutableListOf()
+    protected open val children : MutableList<out StructuralElement> = mutableListOf()
 ) {
+
+    //FIXME this workaround does not seem to work, see ProcessMonitorTest
+    //constructor() : this(mutableListOf()) //issues with Kotlin compiler
 
     companion object{
         private val log = LoggerFactory.getLogger(StructuralElement::class.java)
@@ -24,56 +26,133 @@ abstract class StructuralElement (
     var parent : StructuralElement? = null
         private set
 
-    /**
-     * present whether the element is defined root
-     */
-    private var isDefinedRoot : Boolean = false
+
 
     init {
         initChildren(children)
     }
 
-    private fun initChildren(children : List<StructuralElement>){
-        children.forEach { it.parent = this }
-    }
+
+    open fun getViewOfChildren() : List<StructuralElement> = children
 
     /**
-     * @return children of [this]
+     * Return a map from index in the children array to child value.
+     * Only the children of type [klass] are included
      */
-    abstract fun getChildren(): List<out StructuralElement>
+     fun <T> getIndexedChildren(klass: Class<T>): Map<Int, T>{
+        val m  = mutableMapOf<Int, T>()
+        for(i in children.indices){
+            val child = children[i]
+            if(!klass.isAssignableFrom(child.javaClass)){
+                continue
+            }
+            m[i] = child as T
+        }
+        return m
+    }
+
+    private fun initChildren(children : List<StructuralElement>){
+        children.forEach { it.parent = this; }
+    }
+
 
     /**
      * add a child of the element
-     * Note that the default method is only to build the parent/children relationship
      */
-    open fun addChild(child: StructuralElement){
+    open fun addChild(child: StructuralElement){  //TODO check usage
+        if(children.contains(child)){
+            throw IllegalArgumentException("Child already present")
+        }
         child.parent = this
+        //TODO re-check proper use of in/out in Kotlin
+        (children as MutableList<StructuralElement>).add(child)
+    }
+
+    open fun addChild(position: Int, child: StructuralElement){  //TODO check usage
+        if(children.contains(child)) throw IllegalArgumentException("Child already present")
+        child.parent = this
+        //TODO re-check proper use of in/out in Kotlin
+        (children as MutableList<StructuralElement>).add(position, child)
     }
 
     /**
      * add children of the element
-     * Note that the default method is only to build the parent/children relationship
      */
-    open fun addChildren(children : List<StructuralElement>){
-        initChildren(children)
+    fun addChildren(children : List<StructuralElement>){
+        children.forEach { addChild(it) }
+    }
+
+    open fun addChildren(position: Int, list : List<StructuralElement>){
+        for(child in list){
+            if(children.contains(child)) throw IllegalArgumentException("Child already present")
+        }
+        list.forEach { it.parent = this }
+        (children as MutableList<StructuralElement>).addAll(position, list)
+    }
+
+    //https://preview.redd.it/hg27vjl7x0241.jpg?auto=webp&s=d3c8b5d2cfbf12a05715271e0cf7f1c26e962827
+    open fun killAllChildren(){
+        children.forEach {
+            it.parent = null; //let's avoid memory leaks
+        }
+        children.clear()
+    }
+
+    open fun killChildren(predicate: (StructuralElement) -> Boolean){
+        val toRemove = children.filter(predicate)
+        for(child in toRemove){
+            killChild(child)
+        }
+    }
+
+    open fun killChildren(toKill: List<out StructuralElement>){
+        for(child in toKill){
+            killChild(child)
+        }
+    }
+
+    open fun killChild(child: StructuralElement){
+        child.parent = null
+        children.remove(child)
+    }
+
+    open fun killChildByIndex(index: Int) : StructuralElement{
+        val child = children.removeAt(index)
+        child.parent = null
+        return  child
+    }
+
+
+
+    fun swapChildren(position1: Int, position2: Int){
+        if(position1 > children.size || position2 > children.size)
+            throw IllegalArgumentException("position is out of range of list")
+        if(position1 == position2)
+            throw IllegalArgumentException("It is not necessary to swap two same positions")
+        val first = children[position1]
+        (children as MutableList<StructuralElement>)[position1] = children[position2]
+        (children as MutableList<StructuralElement>)[position2] = first
     }
 
     /**
      * make a deep copy on the content
      *
-     * Noet that here we only copy the content the element,
-     * do not further build relationship (e.g., binding) among the elements
+     * Note that here we only copy the content the element,
+     * do not further build relationship (e.g., binding) among the elements.
+     *
+     * After this method is called, need to call [postCopy] to setup to
+     * relationship. This will be handled in [copy]
      */
-    abstract fun copyContent(): StructuralElement
+    protected abstract fun copyContent(): StructuralElement
 
     /**
-     * post-handling on the copy based on its [template]
+     * post-handling on the copy based on its [original] version
      */
-    open fun postCopy(template : StructuralElement){
-        if (getChildren().size != template.getChildren().size)
-            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${getChildren().size}) vs. template (${template.getChildren().size})")
-        getChildren().indices.forEach {
-            getChildren()[it].postCopy(template.getChildren()[it])
+    protected open fun postCopy(original : StructuralElement){
+        if (children.size != original.children.size)
+            throw IllegalStateException("copy has different size of children compared to original, e.g., copy (${children.size}) vs. original (${original.children.size})")
+        children.indices.forEach {
+            children[it].postCopy(original.children[it])
         }
     }
 
@@ -82,9 +161,6 @@ abstract class StructuralElement (
      * @return a new Copyable based on [this]
      */
     open fun copy() : StructuralElement {
-        // except individual, all elements should have a parent
-        if (parent == null && !isDefinedRoot())
-            LoggingUtil.uniqueWarn(log, "${this::class.java} should have a parent but currently it is null")
         val copy = copyContent()
         copy.postCopy(this)
         return copy
@@ -134,9 +210,9 @@ abstract class StructuralElement (
     fun targetWithIndex(path: List<Int>): StructuralElement {
         var target = this
         path.forEach {
-            if (it >= target.getChildren().size)
-                throw IllegalStateException("cannot get the children at index $it for $target which has ${target.getChildren().size} children")
-            target = target.getChildren()[it]
+            if (it >= target.children.size)
+                throw IllegalStateException("cannot get the children at index $it for $target which has ${target.children.size} children")
+            target = target.children[it]
         }
         return target
     }
@@ -156,7 +232,7 @@ abstract class StructuralElement (
      */
     fun traverseBackIndex(back : MutableList<Int>) {
         if (parent!=null) {
-            val index = parent!!.getChildren().indexOf(this)
+            val index = parent!!.children.indexOf(this)
             if (index == -1)
                 throw IllegalStateException("cannot find this in its parent")
             back.add(0, index)
@@ -165,15 +241,13 @@ abstract class StructuralElement (
     }
 
     /**
-     * clarify if the element is root as defined
+     * @return whether there exist any parent satisfies the specified predicate
      */
-    fun isDefinedRoot() = isDefinedRoot
-
-    /**
-     * identify the element as root
-     */
-    fun identifyAsRoot(){
-        isDefinedRoot = true
+    fun existAnyParent(predicate: (StructuralElement) -> Boolean): Boolean{
+        if (parent!= null){
+            if (predicate(parent!!)) return true
+            return parent!!.existAnyParent(predicate)
+        }
+        return false
     }
-
 }

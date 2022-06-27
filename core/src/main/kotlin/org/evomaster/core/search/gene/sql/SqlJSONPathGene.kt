@@ -2,10 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlJsonGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -31,7 +28,7 @@ import org.slf4j.LoggerFactory
 class SqlJSONPathGene(
     name: String,
     val pathExpression: StringGene = StringGene(name)
-) : Gene(name, mutableListOf(pathExpression)) {
+) : CompositeFixedGene(name, mutableListOf(pathExpression)) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlJSONPathGene::class.java)
@@ -39,15 +36,12 @@ class SqlJSONPathGene(
 
     override fun copyContent(): Gene = SqlJSONPathGene(
         name,
-        pathExpression = this.pathExpression.copyContent() as StringGene
+        pathExpression = this.pathExpression.copy() as StringGene
     )
 
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(pathExpression)
-
-
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        pathExpression.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        pathExpression.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -80,7 +74,7 @@ class SqlJSONPathGene(
         throw IllegalArgumentException("impact is null or not SqlJsonGeneImpact")
     }
 
-    override fun mutate(
+    override fun shallowMutate(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
@@ -130,10 +124,7 @@ class SqlJSONPathGene(
         return this.pathExpression.containsSameValueAs(other.pathExpression)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(pathExpression.flatView(excludePredicate))
-    }
+
 
     override fun mutationWeight(): Double {
         return pathExpression.mutationWeight()

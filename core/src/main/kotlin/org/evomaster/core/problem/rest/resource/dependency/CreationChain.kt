@@ -38,7 +38,7 @@ class PostCreationChain(val actions: MutableList<RestCallAction>, private var fa
 
     fun createPostChain(randomness: Randomness) : List<RestCallAction>{
         return actions.map {
-            val a = (it.copyContent() as RestCallAction)
+            val a = (it.copy() as RestCallAction)
             a.randomize(randomness, false)
             a
         }

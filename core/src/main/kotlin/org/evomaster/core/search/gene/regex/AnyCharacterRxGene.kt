@@ -12,7 +12,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class AnyCharacterRxGene : RxAtom(".", listOf()){
+class AnyCharacterRxGene : RxAtom, SimpleGene("."){
 
     companion object{
         private val log : Logger = LoggerFactory.getLogger(AnyCharacterRxGene::class.java)
@@ -20,20 +20,18 @@ class AnyCharacterRxGene : RxAtom(".", listOf()){
 
     var value: Char = 'a'
 
-    override fun getChildren(): List<Gene> = listOf()
-
     override fun copyContent(): Gene {
         val copy = AnyCharacterRxGene()
         copy.value = this.value
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         //TODO properly... this is just a tmp hack
         value = randomness.nextWordChar()
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         randomize(randomness, true, allGenes)
         return true
     }
@@ -59,7 +57,6 @@ class AnyCharacterRxGene : RxAtom(".", listOf()){
         return this.value == other.value
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when(gene){

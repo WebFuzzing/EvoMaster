@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql.time
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.IntegerGene
@@ -20,21 +21,19 @@ class SqlTimeIntervalGene(
                 "hoursMinutesAndSeconds",
                 timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
         )
-) : Gene(name, mutableListOf(days, time)) {
+) : CompositeFixedGene(name, mutableListOf(days, time)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTimeIntervalGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(days, time)
-
     override fun copyContent(): Gene = SqlTimeIntervalGene(
             name,
-            days.copyContent() as IntegerGene,
-            time.copyContent() as TimeGene
+            days.copy() as IntegerGene,
+            time.copy() as TimeGene
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         /**
          * If forceNewValue==true both date and time
          * get a new value, but it only might need
@@ -43,8 +42,8 @@ class SqlTimeIntervalGene(
          * Shouldn't this method decide randomly if
          * date, time or both get a new value?
          */
-        days.randomize(randomness, forceNewValue, allGenes)
-        time.randomize(randomness, forceNewValue, allGenes)
+        days.randomize(randomness, tryToForceNewValue, allGenes)
+        time.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -87,10 +86,7 @@ class SqlTimeIntervalGene(
                 && this.time.containsSameValueAs(other.time)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(days.flatView(excludePredicate)).plus(time.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(days, time)
 
