@@ -22,8 +22,8 @@ import org.evomaster.core.search.tracer.TrackingHistory
  */
 abstract class Individual(override var trackOperator: TrackOperator? = null,
                           override var index: Int = Traceable.DEFAULT_INDEX,
-                          children: List<out StructuralElement>
-) : Traceable, StructuralElement(children){
+                          children: List<StructuralElement>
+) : Traceable, StructuralElement(children.toMutableList()), RootElement{
 
     /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
@@ -47,9 +47,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     var populationOrigin : String? = null
 
-    init {
-        identifyAsRoot()
-    }
 
     /**
      * Make a deep copy of this individual
@@ -60,6 +57,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
             throw IllegalStateException("mismatched type: the type should be Individual, but it is ${this::class.java.simpleName}")
         copy.populationOrigin = this.populationOrigin
         return copy
+    }
+
+    fun isInitialized() : Boolean{
+        return seeGenes().all { it.initialized }
     }
 
     override fun copyContent(): Individual {
@@ -89,6 +90,20 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     open fun seeActions(filter: ActionFilter) : List<out Action>{
         return seeActions()
+    }
+
+    open fun doInitialize(randomness: Randomness? = null){
+        //TODO refactor with seeAllActions
+
+//        sequence<Action> {
+//            seeInitializingActions()
+//            seeActions()
+//            seeDbActions()
+//        }.toSet().forEach { it.doInitialize(randomness) }
+
+        seeInitializingActions().plus(seeActions()).plus(seeDbActions())
+                .toSet()
+        .forEach { it.doInitialize(randomness) }
     }
 
     /**

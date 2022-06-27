@@ -24,7 +24,7 @@ internal class MapGeneTest{
         val intKey1 = IntegerGene("key_1", 1)
         val strValue1 = StringGene("key_1", "foo")
         val intKey2 = IntegerGene("key_2", 2)
-        val strValue2 = strValue1.copyContent() as StringGene
+        val strValue2 = strValue1.copy() as StringGene
 
         val targetFormat = OutputFormat.KOTLIN_JUNIT_5
 
@@ -42,14 +42,14 @@ internal class MapGeneTest{
         assertTrue(mapstring.contains("\"2\":\"foo\"", ignoreCase = true))
 
         val intKey3 = IntegerGene("key_3", 2)
-        val strValue3 = strValue1.copyContent() as StringGene
+        val strValue3 = strValue1.copy() as StringGene
         val s3 = PairGene("key_3", intKey3, strValue3)
         assertTrue(map.containsKey(s3))
         intKey3.value = 3
         assertFalse(map.containsKey(s3))
 
         val intKey4 = IntegerGene("key_4", 1)
-        val strValue4 = strValue1.copyContent() as StringGene
+        val strValue4 = strValue1.copy() as StringGene
         strValue4.value = "bar"
         val s4 = PairGene("key_4", intKey4, strValue4)
         assertTrue(map.containsKey(s4))

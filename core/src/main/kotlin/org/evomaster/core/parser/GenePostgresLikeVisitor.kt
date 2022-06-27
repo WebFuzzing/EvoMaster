@@ -1,5 +1,6 @@
 package org.evomaster.core.parser
 
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.*
 import java.lang.IllegalArgumentException
 
@@ -12,7 +13,7 @@ class GenePostgresLikeVisitor : PostgresLikeBaseVisitor<VisitResult>() {
 
     override fun visitPattern(ctx: PostgresLikeParser.PatternContext): VisitResult {
 
-        val terms = mutableListOf<RxTerm>()
+        val terms = mutableListOf<Gene>()
 
         for(i in 0 until ctx.term().size) {
 
@@ -20,7 +21,7 @@ class GenePostgresLikeVisitor : PostgresLikeBaseVisitor<VisitResult>() {
             val gene = resTerm.genes.firstOrNull()
 
             if (gene != null) {
-                terms.add(gene as RxTerm)
+                terms.add(gene)
             }
         }
 
@@ -44,7 +45,7 @@ class GenePostgresLikeVisitor : PostgresLikeBaseVisitor<VisitResult>() {
         } else {
 
             val block = ctx.baseSymbol().map { it.text }.joinToString("")
-            return VisitResult(PatternCharacterBlock(block, block))
+            return VisitResult(PatternCharacterBlockGene(block, block))
         }
 
     }

@@ -37,12 +37,12 @@ class BindingBuildTest {
         (queryPathParam.gene as DoubleGene).value = 6.0
         val get = RestCallAction("get", HttpVerb.GET, path = path.copy(), parameters = mutableListOf(pathParam.copy(), queryPathParam.copy()))
 
-        val map = BindingBuilder.buildBindBetweenParams(bodyParam, post.path, get.path, get.parameters)
+        val map = BindingBuilder.buildBindBetweenParams(bodyParam, post.path, get.path, get.parameters, randomness = null)
         assertEquals(2, map.size)
         assert(map.map { "${it.first.name}${it.second.name}" }.contains("${f1.name}${f1.name}"))
         assert(map.map { "${it.first.name}${it.second.name}" }.contains("${f2.name}${f2.name}"))
 
-        post.bindBasedOn(get.path, get.parameters)
+        post.bindBasedOn(get.path, get.parameters, randomness = null)
         val idfield = ((post.parameters.first() as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == f1.name }
         assertNotNull(idfield)
         assertEquals(5L, (idfield as LongGene).value)

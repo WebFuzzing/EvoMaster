@@ -3,7 +3,7 @@ package org.evomaster.core.database.extract.h2
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.sql.SqlNullable
+import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -85,6 +85,6 @@ class OcvnExtractTest : ExtractTestBaseH2() {
         val all = actions.flatMap { it.seeGenes() }.flatMap { it.flatView() }
         val gene = all.find { it.name.equals(columnName, true) }
 
-        assertTrue(gene is SqlNullable && gene.gene is StringGene)
+        assertTrue(gene is SqlNullableGene && gene.gene is StringGene)
     }
 }

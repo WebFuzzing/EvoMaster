@@ -24,7 +24,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "ResourceEM",
+                "ResourceDBEM",
                 "org.db.resource.ResourceEM",
                 1_000,
                 true,

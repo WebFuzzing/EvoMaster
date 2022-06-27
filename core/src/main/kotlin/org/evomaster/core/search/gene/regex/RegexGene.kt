@@ -1,7 +1,7 @@
 package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
@@ -17,16 +17,14 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 class RegexGene(
         name: String,
         val disjunctions: DisjunctionListRxGene
-) : Gene(name, listOf(disjunctions)) {
-
-    override fun getChildren(): List<DisjunctionListRxGene> = listOf(disjunctions)
+) : CompositeFixedGene(name, disjunctions) {
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copyContent() as DisjunctionListRxGene)
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        disjunctions.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        disjunctions.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun isMutable(): Boolean {
@@ -46,7 +44,7 @@ class RegexGene(
         throw IllegalArgumentException("mismatched gene impact")
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         // do nothing since disjunctions is not mutable
         return true
     }
@@ -88,10 +86,7 @@ class RegexGene(
         return this.disjunctions.containsSameValueAs(other.disjunctions)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(disjunctions.flatView(excludePredicate))
-    }
+
 
     /**
      * use mutationweight of [disjunctions]

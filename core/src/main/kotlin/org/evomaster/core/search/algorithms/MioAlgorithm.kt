@@ -1,6 +1,7 @@
 package org.evomaster.core.search.algorithms
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchAlgorithm
@@ -34,6 +35,7 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                     //note this can still be a smart sample
                     sampler.sample()
                 }
+                Lazy.assert { ind.isInitialized() }
 
                 ff.calculateCoverage(ind)?.run {
 

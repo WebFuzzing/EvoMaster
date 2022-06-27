@@ -7,6 +7,6 @@ import org.evomaster.core.search.gene.Gene
 class FormParam (name: String, gene: Gene) : Param(name, gene){
 
     override fun copyContent(): Param {
-        return FormParam(name, gene.copyContent())
+        return FormParam(name, gene.copy())
     }
 }

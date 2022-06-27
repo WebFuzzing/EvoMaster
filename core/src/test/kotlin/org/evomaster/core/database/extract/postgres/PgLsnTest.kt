@@ -6,7 +6,7 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.sql.SqlLogSeqNumber
+import org.evomaster.core.search.gene.sql.SqlLogSeqNumberGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -55,9 +55,9 @@ class PgLsnTest : ExtractTestBasePostgres() {
 
         assertEquals(2, genes.size)
         assertTrue(genes[0] is IntegerGene)
-        assertTrue(genes[1] is SqlLogSeqNumber)
+        assertTrue(genes[1] is SqlLogSeqNumberGene)
 
-        val pglsnColumn = genes[1] as SqlLogSeqNumber
+        val pglsnColumn = genes[1] as SqlLogSeqNumberGene
         assertEquals("\"0/0\"", pglsnColumn.getValueAsPrintableString())
 
         val leftPartGene = pglsnColumn.innerGene()[0] as LongGene
@@ -85,7 +85,7 @@ class PgLsnTest : ExtractTestBasePostgres() {
         )
 
         val genes = actions[0].seeGenes()
-        val pglsnColumn = genes[1] as SqlLogSeqNumber
+        val pglsnColumn = genes[1] as SqlLogSeqNumberGene
         val leftPartGene = pglsnColumn.innerGene()[0] as LongGene
         val rightPartGene = pglsnColumn.innerGene()[1] as LongGene
         leftPartGene.value = 4294967295L

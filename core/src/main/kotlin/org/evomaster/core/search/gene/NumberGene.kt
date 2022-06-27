@@ -45,7 +45,7 @@ abstract class NumberGene<T : Number>(name: String,
                                        * 5.2 and 0.1 are considered as `valid`
                                        */
                                       val scale: Int?
-                                      ) : ComparableGene(name, mutableListOf()) {
+                                      ) : ComparableGene, SimpleGene(name) {
 
 
     var value : T
@@ -55,10 +55,22 @@ abstract class NumberGene<T : Number>(name: String,
             this.value = getDefaultValue()
         else
             this.value = value
+
+        if (precision != null && precision <= 0)
+            throw IllegalArgumentException("precision must be positive number")
+
+        if (scale != null && scale < 0)
+            throw IllegalArgumentException("scale must be zero or positive number")
+
+        if (getMaximum().toDouble() < getMinimum().toDouble())
+            throwMinMaxException()
     }
 
-
-    override fun getChildren(): MutableList<Gene> = mutableListOf()
+    fun throwMinMaxException(){
+        val x = if(minInclusive) "inclusive" else "exclusive"
+        val y = if(maxInclusive) "inclusive" else "exclusive"
+        throw IllegalArgumentException("max must be greater than min but $y max is $max and $x min is $min")
+    }
 
     open fun isRangeSpecified() = min != null || max != null
 
@@ -114,4 +126,7 @@ abstract class NumberGene<T : Number>(name: String,
      */
     abstract fun getZero() : T
 
+    override fun toString(): String {
+        return "${this.javaClass.simpleName}: $value [$minInclusive $min, $maxInclusive $max] [s=$scale,p=$precision]"
+    }
 }

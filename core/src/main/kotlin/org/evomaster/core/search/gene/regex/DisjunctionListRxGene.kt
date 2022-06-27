@@ -2,7 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionListRxGeneImpact
@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory
 
 class DisjunctionListRxGene(
         val disjunctions: List<DisjunctionRxGene>
-) : RxAtom("disjunction_list", disjunctions) {
+) : RxAtom, CompositeFixedGene("disjunction_list", disjunctions) {
 
     var activeDisjunction: Int = 0
 
@@ -26,10 +26,9 @@ class DisjunctionListRxGene(
         private val log: Logger = LoggerFactory.getLogger(DisjunctionListRxGene::class.java)
     }
 
-    override fun getChildren(): List<DisjunctionRxGene> = disjunctions
 
     override fun copyContent(): Gene {
-        val copy = DisjunctionListRxGene(disjunctions.map { it.copyContent() as DisjunctionRxGene })
+        val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
         copy.activeDisjunction = this.activeDisjunction
         return copy
     }
@@ -38,13 +37,13 @@ class DisjunctionListRxGene(
         return disjunctions.size > 1 || disjunctions.any { it.isMutable() }
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         /*
             randomize content of all disjunctions
             (since standardMutation can be invoked on another term)
          */
-        disjunctions.forEach {  it.randomize(randomness,forceNewValue,allGenes) }
+        disjunctions.forEach {  it.randomize(randomness,tryToForceNewValue,allGenes) }
 
         /**
          * randomly choose a new disjunction term
@@ -86,7 +85,7 @@ class DisjunctionListRxGene(
         return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.disjunctions[disjunctions.indexOf(it)], it) }.toList()
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         // select another disjunction based on impact
         if (enableAdaptiveGeneMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
             additionalGeneMutationInfo?:throw IllegalStateException("")
@@ -148,10 +147,7 @@ class DisjunctionListRxGene(
                 .containsSameValueAs(other.disjunctions[activeDisjunction])
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(disjunctions.flatMap { it.flatView(excludePredicate) })
-    }
+
 
     override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
 

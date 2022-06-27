@@ -13,7 +13,11 @@ import org.evomaster.core.search.service.Randomness
  *  A typical example is a Primary Key in a database, and we want
  *  a Foreign Key pointing to it
  */
-class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boolean) : Gene(name, mutableListOf()){
+class ImmutableDataHolderGene(
+        name: String,
+        val value: String,
+        val inQuotes: Boolean
+        ) : SimpleGene(name){
 
     /*
         Note that instead of returning itself, here we create a copy for it since it might be bound with other genes.
@@ -28,9 +32,7 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
 
     override fun isPrintable() = true
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf()
-
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         throw IllegalStateException("Not supposed to modify an immutable gene")
     }
 
@@ -55,7 +57,6 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
 
     override fun mutationWeight(): Double = 0.0
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing

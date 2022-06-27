@@ -23,7 +23,7 @@ open class DateTimeGene(
     val date: DateGene = DateGene("date"),
     val time: TimeGene = TimeGene("time"),
     val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
-) : ComparableGene(name, mutableListOf(date, time)) {
+) : ComparableGene, CompositeFixedGene(name, listOf(date, time)) {
 
     enum class DateTimeGeneFormat {
         // YYYY-MM-DDTHH:SS:MM
@@ -40,16 +40,15 @@ open class DateTimeGene(
             .thenBy { it.time }
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(date, time)
 
     override fun copyContent(): Gene = DateTimeGene(
         name,
-        date.copyContent() as DateGene,
-        time.copyContent() as TimeGene,
+        date.copy() as DateGene,
+        time.copy() as TimeGene,
         dateTimeGeneFormat = this.dateTimeGeneFormat
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         /**
          * If forceNewValue==true both date and time
          * get a new value, but it only might need
@@ -58,8 +57,8 @@ open class DateTimeGene(
          * Shouldn't this method decide randomly if
          * date, time or both get a new value?
          */
-        date.randomize(randomness, forceNewValue, allGenes)
-        time.randomize(randomness, forceNewValue, allGenes)
+        date.randomize(randomness, tryToForceNewValue, allGenes)
+        time.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -151,10 +150,7 @@ open class DateTimeGene(
                 && this.time.containsSameValueAs(other.time)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(date.flatView(excludePredicate)).plus(time.flatView(excludePredicate))
-    }
+
 
     /*
      override fun mutationWeight(): Int
@@ -175,7 +171,7 @@ open class DateTimeGene(
             gene is StringGene && gene.getSpecializationGene() != null -> {
                 bindValueBasedOn(gene.getSpecializationGene()!!)
             }
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype())
+            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype()as Gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateTimeGene with ${gene::class.java.simpleName}")
                 false

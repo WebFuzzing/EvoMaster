@@ -27,7 +27,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         val matchStart = assertionMatches.first
         val matchEnd = assertionMatches.second
 
-        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as RxTerm }, matchStart, matchEnd)
+        val disj = DisjunctionRxGene("disj", altRes.genes.map { it  }, matchStart, matchEnd)
 
         val res = VisitResult(disj)
 
@@ -86,7 +86,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         val resAtom = ctx.atom().accept(this)
-        val atom = resAtom.genes.firstOrNull() as RxAtom?
+        val atom = resAtom.genes.firstOrNull()
                 ?: return res
 
         if(ctx.quantifier() != null){
@@ -162,7 +162,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
             val name = if(block.isBlank()) "blankBlock" else block
 
-            val gene = PatternCharacterBlock(name, block)
+            val gene = PatternCharacterBlockGene(name, block)
 
             return VisitResult(gene)
         }
@@ -171,7 +171,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
-            val gene = PatternCharacterBlock("block", block)
+            val gene = PatternCharacterBlockGene("block", block)
 
             return VisitResult(gene)
         }

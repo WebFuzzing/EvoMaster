@@ -9,21 +9,23 @@ import org.slf4j.LoggerFactory
  * A variable-length individual will be composed by 1 or more "actions".
  * Actions can be: REST call, setup Wiremock, setup database, etc.
  */
-abstract class Action(children: List<out StructuralElement>) : StructuralElement(children){
+abstract class Action(children: List<StructuralElement>) : StructuralElement(children.toMutableList()) {
 
-    companion object{
+    companion object {
         private val log: Logger = LoggerFactory.getLogger(Action::class.java)
     }
 
-    abstract fun getName() : String
+    abstract fun getName(): String
 
     /**
      * Return a view of the genes in the action.
      * Those are the actual instances, and not copies.
+     *
+     * TODO clarify if these are top-level (i guess?) or not
      */
-    abstract fun seeGenes() : List<out Gene>
+    abstract fun seeGenes(): List<out Gene>
 
-    final override fun copy() : Action{
+    final override fun copy(): Action {
         val copy = super.copy()
         if (copy !is Action)
             throw IllegalStateException("mismatched type: the type should be Action, but it is ${this::class.java.simpleName}")
@@ -38,18 +40,38 @@ abstract class Action(children: List<out StructuralElement>) : StructuralElement
      */
     abstract fun shouldCountForFitnessEvaluations(): Boolean
 
-    abstract fun randomize(
-        randomness: Randomness,
-        forceNewValue: Boolean,
-        all: List<Action> = listOf())
+    open fun postRandomizedChecks(randomness: Randomness?) {}
 
+    /**
+     * Randomize all genes in this action.
+     */
+    fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Gene> = listOf()) {
+        seeGenes()
+                .filter { it.isMutable() }
+                .forEach {
+                    it.randomize(randomness, forceNewValue, all)
+                }
+        postRandomizedChecks(randomness)
+    }
+
+    /**
+     * Initialize all the genes in this action
+     */
+    fun doInitialize(randomness: Randomness? = null) {
+        seeGenes().forEach { it.doInitialize(randomness) }
+        postRandomizedChecks(randomness)
+    }
+
+    fun isInitialized(): Boolean {
+        return seeGenes().all { it.initialized }
+    }
 
     /**
      * removing all binding which refers to [this] gene
      */
-    fun removeThisFromItsBindingGenes(){
-        seeGenes().forEach { g->
-            g.flatView().forEach { r->
+    fun removeThisFromItsBindingGenes() {
+        seeGenes().forEach { g ->
+            g.flatView().forEach { r ->
                 r.removeThisFromItsBindingGenes()
             }
         }

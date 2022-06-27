@@ -32,7 +32,7 @@ class SeededGeneImpact(
 
     constructor(id: String, seededGene: SeededGene<*>) : this(
         id,
-        geneImpact = ImpactUtils.createGeneImpact(seededGene.gene, "gene"),
+        geneImpact = ImpactUtils.createGeneImpact(seededGene.gene as Gene, "gene"),
         seededGeneImpact = ImpactUtils.createGeneImpact(seededGene.seeded, "seeded") as EnumGeneImpact
     )
 
@@ -62,7 +62,7 @@ class SeededGeneImpact(
 
     override fun syncImpact(previous: Gene?, current: Gene) {
         check(previous, current)
-        geneImpact.syncImpact((previous as? SeededGene<*>)?.gene, (current as SeededGene<*>).gene)
+        geneImpact.syncImpact((previous as? SeededGene<*>)?.gene as Gene, (current as SeededGene<*>).gene as Gene)
         seededGeneImpact.syncImpact((previous as? SeededGene<*>)?.seeded, (current as SeededGene<*>).seeded)
     }
 

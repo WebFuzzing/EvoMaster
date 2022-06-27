@@ -24,7 +24,7 @@ class ArrayGene<T>(
          * The type for this array. Every time we create a new element to add, it has to be based
          * on this template
          */
-        val template: T,
+        val template: T, //TODO refactor all templates, to be KClass and not gene instances, to avoid confusion
         /**
          *  How max elements to have in this array. Usually arrays are unbound, till the maximum int size (ie, 2 billion
          *  elements on the JVM). But, for search reasons, too large arrays are impractical
@@ -38,15 +38,22 @@ class ArrayGene<T>(
         /**
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
+         *
+         * Man: change var to val to maintain list reference as its children
+         *
          */
-        var elements: MutableList<T> = mutableListOf()
-) : CollectionGene, Gene(name, elements)
+        val elements: MutableList<T> = mutableListOf(),
+        private val openingTag : String = "[",
+        private val closingTag : String = "]",
+        private val separatorTag : String = ", "
+) : CollectionGene, CompositeGene(name, elements)
         where T : Gene {
 
     init {
         if(template is CycleObjectGene){
+            minSize = 0
             maxSize = 0
-            clearElements()
+            killAllChildren()
         }
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
@@ -57,10 +64,6 @@ class ArrayGene<T>(
             throw IllegalArgumentException(
                 "ArrayGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
-
-        // might not check min size in constructor
-
-        template.identifyAsRoot()
     }
 
     companion object{
@@ -71,20 +74,21 @@ class ArrayGene<T>(
 
     fun forceToOnlyEmpty(){
         maxSize = 0
-        clearElements()
+        killAllChildren()
     }
 
-    override fun getChildren(): MutableList<T> = elements
-
     override fun copyContent(): Gene {
-        val copy = ArrayGene<T>(name,
-                template.copyContent() as T,
+        val copy = ArrayGene(name,
+                template.copy() as T,
                 maxSize,
                 minSize,
-                elements.map { e -> e.copyContent() as T }.toMutableList()
+                elements.map { e -> e.copy() as T }.toMutableList(),
+                openingTag = openingTag,
+                closingTag = closingTag,
+                separatorTag = separatorTag
         )
-        if (copy.getChildren().size!=this.getChildren().size) {
-            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${getChildren().size}) vs. template (${template.getChildren().size})")
+        if (copy.children.size!=this.children.size) {
+            throw IllegalStateException("copy and its template have different size of children, e.g., copy (${copy.children.size}) vs. template (${this.children.size})")
         }
         return copy
     }
@@ -94,11 +98,11 @@ class ArrayGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        clearElements()
+        killAllChildren()
         // check maxSize
-        this.elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copyContent() as T }.toMutableList()
+        val elements = (if(maxSize!= null && other.elements.size > maxSize!!) other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
         // build parents for [element]
-        addChildren(this.elements)
+        addChildren(elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -122,24 +126,25 @@ class ArrayGene<T>(
                 && (!(getMinSizeOrDefault() == getMaxSizeOrDefault() && elements.size == getMinSizeOrDefault() && elements.none { it.isMutable() }))
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         if(maxSize == 0){
-            //nothing to do
             return
         }
 
         //maybe not so important here to complicate code to enable forceNewValue
-        clearElements()
+        killAllChildren()
         log.trace("Randomizing ArrayGene")
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
-        (0 until n).forEach {
+        repeat(n) {
             val gene = template.copy() as T
-//            gene.parent = this
-            gene.randomize(randomness, false)
-            elements.add(gene)
+            if(gene.isMutable()) {
+                gene.randomize(randomness, false)
+            }
             addChild(gene)
         }
+        assert(minSize==null || (minSize!! <= elements.size))
+        assert(maxSize==null || (elements.size <= maxSize!!))
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -172,11 +177,12 @@ class ArrayGene<T>(
     /**
      * leaf mutation for arrayGene is size mutation, i.e., 'remove' or 'add'
      */
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
             val gene = template.copy() as T
-            gene.randomize(randomness, false)
+//            gene.randomize(randomness, false)
+            gene.doInitialize(randomness)
             addElement(gene)
         }else{
             log.trace("Remvoving gene in mutation")
@@ -188,7 +194,7 @@ class ArrayGene<T>(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return "[" +
+        return openingTag +
                 elements.map { g ->
                     if (GeneUtils.isGraphQLModes(mode)) {
                         if (g is EnumGene<*> || (g is OptionalGene && g.gene is EnumGene<*>))
@@ -199,15 +205,12 @@ class ArrayGene<T>(
                     } else {
                         g.getValueAsPrintableString(previousGenes, mode, targetFormat)
                     }
-                }.joinToString(", ") +
-                "]"
+                }.joinToString(separatorTag) +
+                closingTag
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
-    }
+
 
     /**
      * 1 is for 'remove' or 'add' element
@@ -225,18 +228,13 @@ class ArrayGene<T>(
      */
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
-            clearElements()
-            elements = gene.elements.mapNotNull { it.copyContent() as? T}.toMutableList()
+            killAllChildren()
+            val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
             addChildren(elements)
             return true
         }
         LoggingUtil.uniqueWarn(log, "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}")
         return false
-    }
-
-    override fun clearElements() {
-        elements.forEach { it.removeThisFromItsBindingGenes() }
-        elements.clear()
     }
 
     /**
@@ -258,7 +256,7 @@ class ArrayGene<T>(
     fun addElement(element: T){
         checkConstraintsForAdd()
 
-        elements.add(element)
+        //elements.add(element)
         addChild(element)
     }
 
@@ -272,13 +270,11 @@ class ArrayGene<T>(
     fun addElement(element: Gene) : Boolean{
         element as? T ?: return false
         checkConstraintsForAdd()
-
-        elements.add(element)
         addChild(element)
         return true
     }
 
-    fun getAllElements() = elements
+    fun getViewOfElements() = elements.toList()
 
     override fun isEmpty(): Boolean {
         return elements.isEmpty()

@@ -37,6 +37,10 @@ open class PrimitiveTypeMatchIndividual (
         fun stringTemplate() = PrimitiveTypeMatchIndividual(StringGene(name()))
     }
 
+    override fun doInitialize(randomness: Randomness?) {
+        gene.doInitialize(randomness)
+    }
+
     override fun seeActions(): List<out Action> = listOf()
 
     override fun verifyInitializationActions(): Boolean {
@@ -53,8 +57,7 @@ open class PrimitiveTypeMatchIndividual (
     override fun seeGenes(filter: GeneFilter): List<out Gene> = listOf(gene)
 
     override fun copyContent(): Individual {
-        return PrimitiveTypeMatchIndividual(gene.copyContent())
+        return PrimitiveTypeMatchIndividual(gene.copy())
     }
 
-    override fun getChildren(): List<Gene> = listOf(gene)
 }

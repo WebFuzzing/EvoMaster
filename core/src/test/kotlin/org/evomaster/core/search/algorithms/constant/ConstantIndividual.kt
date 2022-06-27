@@ -13,10 +13,9 @@ import org.evomaster.core.search.service.Randomness
 class ConstantIndividual(val gene: IntegerGene) : Individual(children = listOf(gene)) {
 
     override fun copyContent(): Individual {
-        return ConstantIndividual(gene.copyContent() as IntegerGene)
+        return ConstantIndividual(gene.copy() as IntegerGene)
     }
 
-    override fun getChildren(): List<Gene> = listOf(gene)
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return listOf(gene)

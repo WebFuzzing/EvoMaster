@@ -115,7 +115,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
                     New action should be before existing one, but still after the
                     initializing ones
                  */
-//                val position = sampler.existingSqlData.size
+                //TODO check position after new changes in handling of children
                 val position = ind.seeInitializingActions().indexOfLast { it is DbAction && it.representExistingData } + 1
                 ind.addInitializingActions(position, insertions)
 
@@ -250,6 +250,9 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         }
 
         DbActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
+        //FIXME refactoring
+        list.flatten().forEach { it.seeGenes().forEach { g -> g.markAllAsInitialized() } }
+        //FIXME broken elements are not removed from list
         DbActionUtils.repairBrokenDbActionsList(list.flatten().toMutableList(), randomness)
         return list
     }

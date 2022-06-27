@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
 class SqlTextSearchVectorGene(
         name: String,
         private val textLexeme: StringGene = StringGene(name = "textLexemes")
-) : Gene(name, mutableListOf(textLexeme)) {
+) : CompositeFixedGene(name, mutableListOf(textLexeme)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchVectorGene::class.java)
@@ -31,15 +31,13 @@ class SqlTextSearchVectorGene(
         const val TO_TSVECTOR = "to_tsvector"
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(textLexeme)
-
     override fun copyContent(): Gene = SqlTextSearchVectorGene(
             name,
-            textLexeme.copyContent() as StringGene
+            textLexeme.copy() as StringGene
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        textLexeme.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        textLexeme.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -83,10 +81,6 @@ class SqlTextSearchVectorGene(
         return this.textLexeme.containsSameValueAs(other.textLexeme)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(textLexeme.flatView(excludePredicate))
-    }
 
     override fun innerGene(): List<Gene> = listOf(textLexeme)
 

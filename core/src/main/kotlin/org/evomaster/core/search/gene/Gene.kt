@@ -12,22 +12,29 @@ import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHis
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.evomaster.core.Lazy
+import org.evomaster.core.search.RootElement
 
 
 /**
+ *
  * A building block representing one part of an Individual.
  * The terms "gene" comes from the evolutionary algorithm literature
  *
+ * When creating a new Gene type, should not extend directly from this class, but rather
+ * from [SimpleGene], [CompositeGene] or [CompositeFixedGene], or any of their subclasses.
+ * There are test cases to impose this property.
  *
  *
  * TO enable adaptive hypermutation
- * 1. override [mutationWeight] if the gene is not simple gene
+ * 1. override [mutationWeight] if the gene is not simple gene, e.g., it is complex with many genes inside
  *
- * 2. if the gene has inner genes which are needed to collect impact info.
- * implement an impact for the new gene to collect impact info for gene mutation,
- *  for instance, see [org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact]
+ * 2. if the gene has inner genes, then we need to collect impact info.
+ * Implement an impact (a subclass of [GeneImpact]) for the new gene to collect impact info for gene mutation.
+ * Impact here is referred to how the gene is influencing the fitness.
+ * For instance, see [org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact]
  *  we collect impacts for each field, then could guide on which field to be selected for mutation.
- *  see more details in comments of [org.evomaster.core.search.impact.impactinfocollection.GeneImpact]
+ * See more details in comments of [org.evomaster.core.search.impact.impactinfocollection.GeneImpact]
  *
  * 3. override [candidatesInternalGenes] to decide 1) whether to apply selection for the internal genes
  *  2) what candidates are in [this] gene to be selected for mutation, eg, mutable fields for ObjectGene.
@@ -36,16 +43,120 @@ import org.slf4j.LoggerFactory
  * 4. with the collected impact info, override [adaptiveSelectSubset] to decide which gene to be selected
  *
  */
-abstract class Gene(var name: String, children: List<out StructuralElement>) : StructuralElement(children){
+abstract class Gene(
+        /**
+         * The name for this gene, mainly needed for debugging.
+         * One actual use is for binding, e.g., paremeters in HTTP requests
+         */
+        var name: String,
+        /**
+         * The direct node inside this Gene (excluding templates).
+         * These children might have their own children.
+         * Note that children while have links back to their "parents".
+         */
+        children: MutableList<out Gene>
+) : StructuralElement(children){
+
+    /*
+        TODO Major refactoring still to do:
+        - mutation of gene (including hypermutation and innerGene)
+        - impact of genes
+        - validity / robustness testing (will need new ChoiceGene)
+
+        - for binding, we ll need tests on Individual
+     */
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
     }
 
+    var initialized : Boolean = false
+        private set
+
+    /**
+     * In the scope of [Individual] and not genes in isolation.
+     * The current gene could be "bound" to other genes.
+     * This means that, if this gene is modified, then ALL the other
+     * bound gene must be updated as well.
+     * The type can be different, eg strings vs numbers, but still consistent.
+     *
+     * WARNING: genes are mutable, but here we check for references. this implies
+     * NO gene can overridde hashcode.
+     *
+     * If A is bound to B, then as well B is bound to A.
+     * If [this] is A, then binding genes will contain only B, and the binding genes of B
+     * will contain [this] A.
+     *
+     * If A bound (->) B, and B->C, then C->A.
+     * If [this] is A, then [this] as binding genes will contain B
+     * but not "necessary" C... ???
+     * TODO will need to be clarified and tested on all conditions
+     *
+     * A gene X is never bound to itself.
+     *
+     * In other words, this relationship is symmetric, transitive but not reflexive
+     */
+    private val bindingGenes: MutableSet<Gene> = mutableSetOf()
+
     init{
         if(name.isBlank()){
             throw IllegalArgumentException("Empty name for Gene")
         }
+    }
+
+    override fun hashCode(): Int {
+        //Otherwise bindingGenes will not work
+        return super.hashCode()
+    }
+
+    /*
+        TODO: make sure to call it not only on mutation, but also on printing out
+     */
+    private fun checkInitialized(){
+        if(! initialized)
+            throw IllegalStateException("Trying to use a gene that is not initialized")
+    }
+
+    override  val children : MutableList<Gene>
+        get() = super.children as MutableList<Gene>
+
+    final override fun getViewOfChildren() : List<Gene> = children
+
+    /**
+     * Initialize this gene with random data, as well as initializing all
+     * of its children, recursively.
+     *
+     * A gene cannot be used (eg, mutated or printed in the phenotype) before it is initialized
+     *
+     * if [rand] is provided, the gene will be randomized. this should always be provided, unless
+     * you are building tests directly. Otherwise, the default values might not be within the given
+     * constraints (if any). For example, a default 0 int would fail a constraint min=42.
+     *
+     * If a gene is already initialized, this will fail.
+     * The reasoning is to avoid building manual tests (eg via seeding) and randomize them
+     * by mistake by doing a second doInitialize call.
+     * On the other hand, randomize a gene twice (or more) by mistake at initialization is not
+     * a huge deal, apart from wasted CPU cycles.
+     */
+    fun doInitialize(rand: Randomness? = null){
+        if(initialized){
+            throw IllegalStateException("Gene already initialized")
+        }
+        if(rand != null) {
+            randomize(rand, false)
+        }
+        markAllAsInitialized()
+        Lazy.assert{isValid()}
+    }
+
+    /*
+        TODO needed for copies. check if can be refactored, eg if copyContent enforce the copy of initialized
+
+        will need to be removed / made private, and refactor all its callers
+     */
+    fun markAllAsInitialized(){
+        flatView().forEach{it.initialized = true}
+        initialized = true
     }
 
     /**
@@ -55,12 +166,94 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         val copy = super.copy()
         if (copy !is Gene)
             throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
+        copy.initialized = initialized
+        copy.flatView().forEach{it.initialized = initialized}
         return copy
     }
+
+    /*
+     * override to force return type Gene
+     */
+    //TODO put back, once we have tests for it
+    //abstract override  fun copyContent(): Gene
 
     override fun copyContent(): Gene {
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
+
+    override fun postCopy(original: StructuralElement) {
+        //rebuild the binding genes
+        val root = getRoot()
+        if(root is RootElement) {
+            /*
+                a gene can refer to other genes outside of its tree.
+                when we make a copy we need to make sure that we refer to the new gene in the copied
+                individual, not the original individual.
+                so, this is applied only  when the root is an individual, otherswise skipped, because
+                would not be able to find those genes anyway
+             */
+            val postBinding = (original as Gene).bindingGenes.map { b ->
+                val found = root.find(b)
+                found as? Gene
+                        ?: throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
+            }
+            bindingGenes.clear()
+            bindingGenes.addAll(postBinding)
+            Lazy.assert { !bindingGenes.contains(this) }
+        } else {
+            assert(bindingGenes.isEmpty())
+        }
+
+
+        super.postCopy(original)
+    }
+
+    /**
+     * there might be a need to repair gene based on some constraints, e.g., DateGene and TimeGene
+     */
+    open fun repair(){
+        //do nothing
+    }
+
+    /**
+     * @return whether the gene is valid
+     *  based on any specialized rule for different types of genes if there exist
+     *
+     * Note that the method is only used for debugging and testing purposes.
+     *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
+     *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
+     *
+     * Validity is based only internal constraints. if those constraints lead to meanignless data (eg
+     * a date object with month index 42), it would still be "valid"
+     *
+     * FIXME remove default =true, to force implementation
+     */
+    open fun isValid() = true
+
+    //TODO add distinction between isLocallyValid and isGloballyValid, eg, when we have intr-gene constraints
+
+    /**
+     * mutated gene should pass the check if needed, eg, DateGene
+     *
+     * In some cases, we must have genes with 'valid' values.
+     * For example, a date with month 42 would be invalid.
+     * On the one hand, it can still be useful for robustness testing
+     * to provide such invalid values in a HTTP call. On the other hand,
+     * it would be pointless to try to add it directly into a database,
+     * as that SQL command would simply fail without any SUT code involved.
+     *
+     * FIXME This will be removed once we refactor how we do Robustness Testing using
+     * ChoiceGene
+     */
+    @Deprecated("will be removed")
+    open fun mutationCheck() : Boolean = true
+
+
+    /*
+        TODO shall we remove to default function implementation? to make sure new
+        genes are forced to set them up, and not forget about them?
+        or can we write invariants which will make tests fail in those cases?
+     */
 
     /**
      * weight for mutation
@@ -83,17 +276,27 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
 
 
     /**
+     *
      *   Randomize the content of this gene.
+     *   After a gene is randomized, it MUST be valid.
+     *
+     *   TODO shall we guarantee validity here at randomization? YES, but need to see how to implement it,
+     *   or maybe better we do it in the tests
      *
      *   @param randomness the source of non-determinism
-     *   @param forceNewValue whether we should force the change of value. When we do mutation,
-     *          it could otherwise happen that a value is replace with itself
+     *   @param tryToForceNewValue whether we should force the change of value. When we do mutation,
+     *          it could otherwise happen that a value is replace with itself.
+     *          This is not 100% enforced, it is more like a "strong recommendation"
+     *
+     *   TODO likely deprecated, because we can traverse the tree upward now
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
+     *
+     *   TODO also pass AdaptiveParameterControl here
      */
     abstract fun randomize(
             randomness: Randomness,
-            forceNewValue: Boolean,
+            tryToForceNewValue: Boolean,
             allGenes: List<Gene> = listOf())
 
     /**
@@ -103,7 +306,7 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
      * 1) there might exist multiple internal genes i.e.,[candidatesInternalGenes].
      *  In this case, we first apply [selectSubset] to select a subset of internal genes.
      *  then apply mutation on each of the selected genes.
-     * 2) When there is no need to do further selection, we apply [mutate] on the current gene.
+     * 2) When there is no need to do further selection, we apply [shallowMutate] on the current gene.
      *
      *   @param randomness the source of non-determinism
      *   @param apc parameter control
@@ -118,15 +321,18 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,
+            //TODO likely deprecated
             allGenes: List<Gene> = listOf(),
             internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
             enableAdaptiveGeneMutation: Boolean = false,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
     ){
+        checkInitialized()
+
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
         val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
-            val mutated = mutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val mutated = shallowMutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             if (!mutated)
                 throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
@@ -150,39 +356,72 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         syncBindingGenesBasedOnThis()
     }
 
-    /**
-     * mutated gene should pass the check if needed, eg, DateGene
-     *
-     * In some cases, we must have genes with 'valid' values.
-     * For example, a date with month 42 would be invalid.
-     * On the one hand, it can still be useful for robustness testing
-     * to provide such invalid values in a HTTP call. On the other hand,
-     * it would be pointless to try to add it directly into a database,
-     * as that SQL command would simply fail without any SUT code involved.
-     */
-    open fun mutationCheck() : Boolean = true
 
     /**
      * @return a list of internal gene to be selected for mutation, eg, weight-based or adaptive weight-based gene selection
-     * note that if return an empty list, [mutate] will be applied to mutate this gene
+     * note that if return an empty list, [shallowMutate] will be applied to mutate this gene
      *
      * For instance, see [ArrayGene.candidatesInternalGenes], with a probability, it returns an empty list.
-     * the empty list means (see [ArrayGene.mutate]) that the mutation is applied to change the size of this array gene.
+     * the empty list means (see [ArrayGene.shallowMutate]) that the mutation is applied to change the size of this array gene.
+     *
+     * A default implementation for "simple" genes would be to return "listOf<Gene>()"
+     *
+     * Note that the current gene must never be returned in this method
+     * TODO add test for it
      */
-    open fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?)
-            = listOf<Gene>()
+    protected abstract fun candidatesInternalGenes(randomness: Randomness,
+                                         apc: AdaptiveParameterControl,
+                                         //TODO remove deprecated
+                                         allGenes: List<Gene>,
+                                         selectionStrategy: SubsetGeneSelectionStrategy,
+                                         enableAdaptiveGeneMutation: Boolean,
+                                         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): List<Gene>
+
+
+    /**
+     * How we are going to use impact info on selecting the given subset of internal genes
+     *
+     * @param randomness
+     * @param internalGenes is a set of candidates to be selected
+     * @param mwc is mutation weight controller which can be used to select genes with given weights
+     * @param additionalGeneMutationInfo contains impact info of [this] gene
+     * @return a subset of [internalGenes] with corresponding impact info
+     */
+    //TODO abstract
+    protected open fun adaptiveSelectSubset(randomness: Randomness,
+                                  internalGenes: List<Gene>,
+                                  mwc: MutationWeightControl,
+                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
+    }
+
+    /**
+     * TODO is this necessary considering children and flatView???
+     * TODO need documentation if we keep it
+     *
+     *  likely not needed fo binding
+     *  TODO check if really needed for impact, as string specialization can be mutated.
+     *  if so, can get rid of it, and use children
+     *  TODO need to go through implementation of Impact before changing this
+     *
+     * @return internal genes
+     */
+    abstract fun innerGene() : List<Gene>
 
     /**
      * @return a subset of internal genes to apply mutations
      */
-    open fun selectSubset(internalGenes: List<Gene>,
+    private fun selectSubset(internalGenes: List<Gene>,
                           randomness: Randomness,
                           apc: AdaptiveParameterControl,
                           mwc: MutationWeightControl,
                           allGenes: List<Gene> = listOf(),
                           selectionStrategy: SubsetGeneSelectionStrategy,
                           enableAdaptiveGeneMutation: Boolean,
-                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         return  when(selectionStrategy){
             SubsetGeneSelectionStrategy.DEFAULT -> {
                 val s = randomness.choose(internalGenes)
@@ -205,30 +444,20 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         }
     }
 
-    /**
-     * @param randomness
-     * @param internalGenes is a set of candidates to be selected
-     * @param mwc is mutation weight controller which can be used to select genes with given weights
-     * @param additionalGeneMutationInfo contains impact info of [this] gene
-     * @return a subset of [internalGenes] with corresponding impact info
-     */
-    open fun adaptiveSelectSubset(randomness: Randomness,
-                                  internalGenes: List<Gene>,
-                                  mwc: MutationWeightControl,
-                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-        throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
-    }
+
 
     /**
-     * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty
+     * mutate the current gene (and NONE of its children directly, if any) if there is no need to apply selection,
+     * i.e., when [candidatesInternalGenes] is empty.
+     * Note though that this method might add/remove children
      */
-    open fun mutate(randomness: Randomness,
-                    apc: AdaptiveParameterControl,
-                    mwc: MutationWeightControl,
-                    allGenes: List<Gene> = listOf(),
-                    selectionStrategy: SubsetGeneSelectionStrategy,
-                    enableAdaptiveGeneMutation: Boolean,
-                    additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    protected open fun shallowMutate(randomness: Randomness,
+                           apc: AdaptiveParameterControl,
+                           mwc: MutationWeightControl,
+                           allGenes: List<Gene> = listOf(),
+                           selectionStrategy: SubsetGeneSelectionStrategy,
+                           enableAdaptiveGeneMutation: Boolean,
+                           additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
             if (additionalGeneMutationInfo.hasHistory()){
@@ -296,13 +525,17 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
 
     /**
      * Genes might have other genes inside (eg, think of array).
+     * But these are only the ones in "child-parent" hierarchy.
+     * There might be cases like "template" genes inside, those will NOT be returned.
+     *
      * @param excludePredicate is used to configure which genes you do not want to show genes inside.
      *      For instance, an excludePredicate is {gene : Gene -> (gene is TimeGene)}, then when flatView of a Gene including TimeGene,
      *      the genes inside e.g., hour: IntegerGene will be not viewed, but TimeGene will be viewed.
      * @return a recursive list of all nested genes, "this" included
      */
-    open fun flatView(excludePredicate: (Gene) -> Boolean = {false}): List<Gene>{
-        return listOf(this)
+    fun flatView(excludePredicate: (Gene) -> Boolean = {false}): List<Gene>{
+        return if (excludePredicate(this)) listOf(this) else
+            listOf(this).plus(children.flatMap { g -> g.flatView(excludePredicate) })
     }
 
     /**
@@ -312,10 +545,7 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     abstract fun containsSameValueAs(other: Gene): Boolean
 
 
-    /**
-     * @return internal genes
-     */
-    abstract fun innerGene() : List<Gene>
+
 
     /**
      * evaluate whether [this] and [gene] belong to one evolution during search
@@ -325,7 +555,8 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
 
     //========================= handing binding genes ===================================
 
-    private val bindingGenes: MutableSet<Gene> = mutableSetOf()
+    //TODO make sure all public methods keep the gene in a valid state.
+    //TODO go through all these methods
 
     /**
      * rebuild the binding relationship of [this] gene based on [copiedGene] which exists in [copiedIndividual]
@@ -340,6 +571,7 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
         }
 
         bindingGenes.addAll(list)
+        Lazy.assert { !bindingGenes.contains(this) }
     }
 
     /**
@@ -355,31 +587,55 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
             b.syncBindingGenesBasedOnThis(all)
         }
 
+        //TODO likely innegerGene() can be replaced with children
         innerGene().filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
     }
 
     /**
-     * get all binding genes of [this]
+     * get all binding genes of [this], transitively,
+     * as well as for any internal gene which is bound
+     *
+     * TODO this is not necessary if transitive relations have been sync,
+     * because could use bindingGenes directly
      */
-    private fun getBindingGenes(all : MutableSet<Gene>){
+    private fun computeTransitiveBindingGenes(all : MutableSet<Gene>){
         if (bindingGenes.isEmpty()) return
-        all.add(this)
-        bindingGenes.filterNot { all.contains(it) }.forEach { b->
+        all.add(this) //adding current
+
+        bindingGenes.filterNot { all.contains(it) }
+                //all other genes that are bound to this and are NOT in all
+                .forEach { b->
             all.add(b)
-            b.getBindingGenes(all)
+            b.computeTransitiveBindingGenes(all)
         }
-        innerGene().filterNot { all.contains(it) }.forEach { it.getBindingGenes(all) }
+        /*
+            TODO if [this] is bound, can any of its children be bound??? likely not
+            TODO likey can replace innerGene() with children
+         */
+        innerGene().filterNot { all.contains(it) }.forEach { it.computeTransitiveBindingGenes(all) }
     }
 
     /**
-     * remove [this] from its binding genes
+     * remove [this] from its binding genes, and also make
+     * sure that any children will lose their bindings
+     *
+     * For example, if [this] is an Object K with no binding, but
+     * with two fields X and Y that are bound, all genes we lose their
+     * binding to X and Y
+     *
+     * TODO possibly rename, see next TODO
      */
     fun removeThisFromItsBindingGenes(){
         val all = mutableSetOf<Gene>()
-        getBindingGenes(all)
+
+        //TODO can we remove a gene that is not in sync? if not, we can look at bindingGenes directly
+        computeTransitiveBindingGenes(all)
         all.forEach { b->
+            //FIXME this is a bug, removing to K, but not X and Y, isn'it?
             b.removeBindingGene(this)
         }
+        //TODO should we do this???
+        //bindingGenes.clear()
     }
 
     /**
@@ -413,6 +669,7 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
      */
     fun addBindingGene(gene: Gene) {
         bindingGenes.add(gene)
+        Lazy.assert { !bindingGenes.contains(this) }
     }
 
     /**
@@ -433,6 +690,7 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
     fun resetBinding(genes: Set<Gene>) {
         bindingGenes.clear()
         bindingGenes.addAll(genes)
+        Lazy.assert { !bindingGenes.contains(this) }
     }
 
     /**
@@ -442,40 +700,13 @@ abstract class Gene(var name: String, children: List<out StructuralElement>) : S
 
 
     /**
-     * bind value of [this] gene based on [gene]
+     * bind value of [this] gene based on [gene].
+     * The type of genes can be different.
      * @return whether the binding performs successfully
      */
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
 
 
-    override fun postCopy(template: StructuralElement) {
-        //rebuild the binding genes
-        val root = getRoot()
-        val postBinding = (template as Gene).bindingGenes.map {b->
-            val found = root.find(b)
-            found as? Gene?:throw IllegalStateException("mismatched type between template (${b::class.java.simpleName}) and found (${found::class.java.simpleName})")
-        }
-        bindingGenes.clear()
-        bindingGenes.addAll(postBinding)
 
-        super.postCopy(template)
-    }
-
-    /**
-     * there might be a need to repair gene based on some constraints, e.g., DateGene and TimeGene
-     */
-    open fun repair(){
-        //do nothing
-    }
-
-    /**
-     * @return whether the gene is valid
-     *  based on any specialized rule for different types of genes if there exist
-     *
-     * Note that the method is only used for debugging and testing purposes.
-     *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
-     *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
-     */
-    open fun isValid() = true
 }
 

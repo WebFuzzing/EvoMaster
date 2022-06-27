@@ -27,14 +27,7 @@ abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
     var existingSqlData : List<DbAction> = listOf()
         protected set
 
-    /**
-     * When genes are created, those are not necessarily initialized.
-     * The reason is that some genes might depend on other genes (eg., foreign keys in SQL).
-     * So, once all genes are created, we force their initialization, which will also randomize their values.
-     */
-    fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
-        action.randomize(randomness, false)
-    }
+
 
     protected fun updateConfigBasedOnSutInfoDto(infoDto: SutInfoDto) {
         if (config.outputFormat == OutputFormat.DEFAULT) {
@@ -63,6 +56,8 @@ abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
             ?: throw IllegalStateException("No DB schema is available")
 
         DbActionUtils.randomizeDbActionGenes(actions, randomness)
+        //FIXME need proper handling of intra-gene constraints
+        actions.forEach { it.seeGenes().forEach { g -> g.markAllAsInitialized() } }
 
         if (log.isTraceEnabled){
             log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,

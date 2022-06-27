@@ -28,16 +28,14 @@ class SqlMultiRangeGene<T>(
         name: String,
         val template: SqlRangeGene<T>,
         val rangeGenes: ArrayGene<SqlRangeGene<T>> = ArrayGene(name, template)
-) : Gene(name, mutableListOf(rangeGenes)) where T : ComparableGene {
+) : CompositeFixedGene(name, mutableListOf(rangeGenes)) where T : ComparableGene, T: Gene {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlMultiRangeGene::class.java)
     }
 
-    override fun getChildren(): List<Gene> = listOf(rangeGenes)
-
     override fun copyContent(): Gene {
-        val copyOfRangeGenes = rangeGenes.copyContent() as ArrayGene<SqlRangeGene<T>>
+        val copyOfRangeGenes = rangeGenes.copy() as ArrayGene<SqlRangeGene<T>>
         return SqlMultiRangeGene(
                 name,
                 template = copyOfRangeGenes.template,
@@ -45,8 +43,8 @@ class SqlMultiRangeGene<T>(
         )
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        rangeGenes.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        rangeGenes.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -62,7 +60,7 @@ class SqlMultiRangeGene<T>(
 
     override fun getValueAsRawString(): String {
         return "{ ${
-            rangeGenes.getAllElements()
+            rangeGenes.getViewOfElements()
                     .map { it.getValueAsRawString() }
                     .joinToString(" , ")
         } } "
@@ -82,10 +80,7 @@ class SqlMultiRangeGene<T>(
         return this.rangeGenes.containsSameValueAs(other.rangeGenes)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(rangeGenes.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(rangeGenes)
 
@@ -103,7 +98,7 @@ class SqlMultiRangeGene<T>(
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "\"{" +
-                rangeGenes.elements.map { g ->
+                rangeGenes.getViewOfElements().map { g ->
                     removeEnclosedQuotationMarks(g.getValueAsPrintableString(previousGenes, mode, targetFormat))
                 }.joinToString(", ") +
                 "}\""
