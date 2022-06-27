@@ -79,6 +79,7 @@ public class BigIntegerParam extends NamedTypedValue<BigIntegerType, BigInteger>
 
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
+        if (json == null) return;
         setValue(parseValue(json.toString()));
     }
 

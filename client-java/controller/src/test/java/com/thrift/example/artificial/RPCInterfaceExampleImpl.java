@@ -153,6 +153,7 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
     @Override
     public StringChildDto handledInheritedGenericStringDto(StringChildDto dto) {
+        if (dto == null) return null;
         dto.setCode(dto.getCode()!= null? child_mark+dto.getCode(): child_mark);
         dto.setMessage(dto.getMessage()!=null? child_mark+ dto.getMessage(): child_mark);
         return dto;
@@ -160,6 +161,8 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
     @Override
     public IntChildDto handledInheritedGenericIntDto(IntChildDto dto) {
+        if (dto == null) return null;
+
         dto.setCode(dto.getCode()!= null? 1+dto.getCode(): 0);
         dto.setMessage(dto.getMessage()!=null? 1+ dto.getMessage(): 0);
         return dto;
@@ -167,6 +170,7 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
     @Override
     public ListChildDto handledInheritedGenericListDto(ListChildDto dto) {
+        if (dto == null) return null;
         dto.setCode(dto.getCode()!= null? dto.getCode().stream().map(x-> x+1).collect(Collectors.toList()): Arrays.asList(0));
         dto.setMessage(dto.getMessage()!=null? dto.getCode().stream().map(x-> x+1).collect(Collectors.toList()): Arrays.asList(0));
         return dto;
@@ -174,6 +178,7 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
     @Override
     public GenericDto<Integer, String> handleGenericIntString(GenericDto<Integer, String> dto) {
+        if (dto == null) return null;
         dto.data1 = dto.data1 == null? 0 : dto.data1+1;
         dto.data2 = dto.data2 == null? "generic" : "generic"+dto.data2;
         return dto;
@@ -181,6 +186,7 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
     @Override
     public GenericDto<StringChildDto, String> handleGenericObjectString(GenericDto<StringChildDto, String> dto) {
+        if (dto == null) return null;
         if (dto.data1 == null)
             dto.data1 = new StringChildDto(){{
                 setMessage(child_mark);
@@ -328,7 +334,7 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     }
 
     @Override
-    public String seedcheck(List<Long> longList, List<Integer> integerList, List<BigNumberObj> objList, Map<Integer, String> integerStringMap) {
+    public String seedcheck(List<Long> longList, List<Integer> integerList, List<BigNumberObj> objList, Map<Integer, String> integerStringMap, BigNumberObj obj) {
         StringBuilder sb = new StringBuilder();
         if (longList != null){
             longList.forEach(l-> sb.append(l).append(";"));
@@ -347,7 +353,11 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
 
         if (integerStringMap != null){
             integerStringMap.forEach((key, value) -> sb.append(key).append(":").append(value).append(";"));
+            sb.append(System.lineSeparator());
         }
+
+        if (obj != null)
+            sb.append(obj).append(";");
 
         return sb.toString();
     }

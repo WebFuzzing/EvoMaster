@@ -11,6 +11,11 @@ import java.util.stream.Collectors;
 public class ParamDto {
 
     /**
+     * Placeholder used to indicate "not null" [stringValue] for objects such as ObjectParam and DataParam
+     */
+    private final static String NOT_NULL_MARK_OBJ_DATE = "{}";
+
+    /**
      * param name
      */
     public String name;
@@ -151,6 +156,15 @@ public class ParamDto {
 
     public boolean hasNumberConstraints(){
         return minValue != null || maxValue != null || precision != null || scale !=  null;
+    }
+
+    public void setNullValue(){
+        stringValue = null;
+        innerContent = null;
+    }
+
+    public void setNotNullValue() {
+        stringValue = NOT_NULL_MARK_OBJ_DATE;
     }
 
 }

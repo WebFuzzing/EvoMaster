@@ -713,10 +713,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         if (endpointSchema.getResponse() != null){
+            // successful execution
+            NamedTypedValue resSchema = endpointSchema.getResponse().copyStructureWithProperties();
             if (response != null){
                 try{
-                    // successful execution
-                    NamedTypedValue resSchema = endpointSchema.getResponse().copyStructureWithProperties();
                     resSchema.setValueBasedOnInstance(response);
                     responseDto.rpcResponse = resSchema.getDto();
                     if (dto.doGenerateAssertions && dto.responseVariable != null)
@@ -734,6 +734,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     SimpleLogger.error("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
                     //throw new RuntimeException("ERROR: fail to categorize result with implemented categorizeBasedOnResponse "+ e.getMessage());
                 }
+            } else {
+                if (dto.doGenerateAssertions && dto.responseVariable != null)
+                    responseDto.assertionScript = resSchema.newAssertionWithJava(dto.responseVariable, dto.maxAssertionForDataInCollection);
             }
         }
     }

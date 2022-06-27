@@ -40,7 +40,7 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
         ParamDto dto = super.getDto();
         if (getValue() != null){
             dto.innerContent = getValue().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
-            dto.stringValue = NOT_NULL_MARK_OBJ_DATE;
+            dto.setNotNullValue();
         } else
             dto.innerContent = getType().getDateFields().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;

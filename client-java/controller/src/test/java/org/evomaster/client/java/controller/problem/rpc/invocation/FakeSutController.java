@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.problem.rpc.invocation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thrift.example.artificial.BigNumberObj;
 import com.thrift.example.artificial.RPCInterfaceExample;
 import com.thrift.example.artificial.RPCInterfaceExampleImpl;
 import org.evomaster.client.java.controller.EmbeddedSutController;
@@ -92,16 +93,30 @@ public class FakeSutController extends EmbeddedSutController {
 
     @Override
     public List<SeededRPCTestDto> seedRPCTests() {
-        return Arrays.asList(new SeededRPCTestDto(){{
-            testName = "test_1";
-            rpcFunctions = Arrays.asList(
-                    new SeededRPCActionDto(){{
-                        interfaceName = RPCInterfaceExample.class.getName();
-                        functionName = "seedcheck";
-                        inputParams= Arrays.asList("[1,2,3]","[1,2,3]","[{\"bdPositiveFloat\":10.12,\"bdNegativeFloat\":-10.12,\"bdPositiveOrZeroFloat\":0.00,\"bdNegativeOrZeroFloat\":-2.16,\"biPositive\":10,\"biPositiveOrZero\":0,\"biNegative\":-10,\"biNegativeOrZero\":-2}]","{\"1\":\"1\",\"2\":\"2\"}");
-                        inputParamTypes= Arrays.asList(List.class.getName(),List.class.getName(),List.class.getName(), Map.class.getName());
-                    }}
-            );
-        }});
+        return Arrays.asList(
+                new SeededRPCTestDto(){{
+                    testName = "test_1";
+                    rpcFunctions = Arrays.asList(
+                            new SeededRPCActionDto(){{
+                                interfaceName = RPCInterfaceExample.class.getName();
+                                functionName = "seedcheck";
+                                inputParams= Arrays.asList("[1,2,3]","[1,2,3]","[{\"bdPositiveFloat\":10.12,\"bdNegativeFloat\":-10.12,\"bdPositiveOrZeroFloat\":0.00,\"bdNegativeOrZeroFloat\":-2.16,\"biPositive\":10,\"biPositiveOrZero\":0,\"biNegative\":-10,\"biNegativeOrZero\":-2}]","{\"1\":\"1\",\"2\":\"2\"}","null");
+                                inputParamTypes= Arrays.asList(List.class.getName(),List.class.getName(),List.class.getName(), Map.class.getName(), BigNumberObj.class.getName());
+                            }}
+                    );
+                }},
+                new SeededRPCTestDto(){{
+                    testName = "test_2";
+                    rpcFunctions = Arrays.asList(
+                            new SeededRPCActionDto(){{
+                                interfaceName = RPCInterfaceExample.class.getName();
+                                functionName = "seedcheck";
+                                inputParams= Arrays.asList("null","null","null","null","null");
+                                inputParamTypes= Arrays.asList(List.class.getName(),List.class.getName(),List.class.getName(), Map.class.getName(), BigNumberObj.class.getName());
+                            }}
+                    );
+                }}
+
+        );
     }
 }

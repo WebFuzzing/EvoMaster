@@ -141,7 +141,9 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
 
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
-        assert json instanceof String;
+        if (json == null)  return;
+        if (!(json instanceof String))
+            throw new IllegalArgumentException("Cannot set value for StringParam with the type:"+json.getClass().getName());
         setValue((String) json);
     }
 

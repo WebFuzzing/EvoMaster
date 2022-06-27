@@ -64,7 +64,9 @@ public class PairParam extends NamedTypedValue<PairType, AbstractMap.SimpleEntry
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
         if (json == null) return;
-        assert json instanceof Map.Entry;
+        if (!(json instanceof Map.Entry))
+            throw new IllegalArgumentException("Cannot set value for PairParam with the type:"+json.getClass().getName());
+//        assert json instanceof Map.Entry;
         NamedTypedValue first = getType().getFirstTemplate().copyStructureWithProperties();
         NamedTypedValue second = getType().getSecondTemplate().copyStructureWithProperties();
         first.setValueBasedOnInstanceOrJson(((Map.Entry)json).getKey());
