@@ -18,7 +18,7 @@ class SqlLineGene(
         x = FloatGene("x", value = 1.0f),
         y = FloatGene("y", value = 1.0f)
     )
-) : AbstractGeometricGene(name, p, q) {
+) : SqlAbstractGeometricGene(name, p, q) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlLineGene::class.java)
@@ -26,8 +26,8 @@ class SqlLineGene(
 
     override fun copyContent(): Gene = SqlLineGene(
         name,
-        p.copyContent() as SqlPointGene,
-        q.copyContent() as SqlPointGene
+        p.copy() as SqlPointGene,
+        q.copy() as SqlPointGene
     )
 
     override fun copyValueFrom(other: Gene) {
@@ -59,8 +59,8 @@ class SqlLineGene(
         }
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        super.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        super.randomize(randomness, tryToForceNewValue, allGenes)
         /*
          * Lines cannot contain the same p,q points
          */

@@ -30,7 +30,7 @@ class DateGene(
     val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
     val onlyValidDates: Boolean = false,
     val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
-) : ComparableGene(name, mutableListOf(year, month, day)) {
+) : ComparableGene, CompositeFixedGene(name, listOf(year, month, day)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(DateGene::class.java)
@@ -51,22 +51,20 @@ class DateGene(
         ISO_LOCAL_DATE_FORMAT
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(year, month, day)
-
     override fun copyContent(): Gene = DateGene(
         name,
-        year.copyContent() as IntegerGene,
-        month.copyContent() as IntegerGene,
-        day.copyContent() as IntegerGene,
+        year.copy() as IntegerGene,
+        month.copy() as IntegerGene,
+        day.copy() as IntegerGene,
         dateGeneFormat = this.dateGeneFormat,
         onlyValidDates = this.onlyValidDates
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         do {
-            year.randomize(randomness, forceNewValue, allGenes)
-            month.randomize(randomness, forceNewValue, allGenes)
-            day.randomize(randomness, forceNewValue, allGenes)
+            year.randomize(randomness, tryToForceNewValue, allGenes)
+            month.randomize(randomness, tryToForceNewValue, allGenes)
+            day.randomize(randomness, tryToForceNewValue, allGenes)
         } while (onlyValidDates && !isValidDate())
     }
 
@@ -170,12 +168,6 @@ class DateGene(
                 && this.day.containsSameValueAs(other.day)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(year.flatView(excludePredicate))
-                .plus(month.flatView(excludePredicate))
-                .plus(day.flatView(excludePredicate))
-    }
 
     /*
      override fun mutationWeight(): Int
@@ -194,7 +186,7 @@ class DateGene(
             }
             gene is DateTimeGene -> bindValueBasedOn(gene.date)
             gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype())
+            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype() as Gene)
             // Man: convert to string based on the format?
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateGene with ${gene::class.java.simpleName}")

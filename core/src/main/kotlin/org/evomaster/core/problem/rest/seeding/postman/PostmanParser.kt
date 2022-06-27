@@ -62,7 +62,7 @@ class PostmanParser(
         if (originalRestAction == null)
             log.warn("Endpoint {} not found in the Swagger", "$verb:$path")
 
-        return originalRestAction?.copyContent() as RestCallAction?
+        return originalRestAction?.copy() as RestCallAction?
     }
 
     private fun updateParameterGenesWithRequest(parameter: Param, postmanRequest: Request, restAction: RestCallAction) {

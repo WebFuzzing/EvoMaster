@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
 import org.evomaster.core.search.gene.GeneUtils
@@ -28,7 +29,7 @@ class SqlPrimaryKeyGene(name: String,
                          * Cannot be negative
                          */
                         val uniqueId: Long
-) : SqlWrapperGene(name, mutableListOf(gene)) {
+) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
 
     init {
@@ -48,11 +49,9 @@ class SqlPrimaryKeyGene(name: String,
         return null
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
+    override fun copyContent() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)
 
-    override fun copyContent() = SqlPrimaryKeyGene(name, tableName, gene.copyContent(), uniqueId)
-
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         gene.randomize(randomness, false, allGenes)
     }
 
@@ -70,7 +69,7 @@ class SqlPrimaryKeyGene(name: String,
 
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         //do nothing since the gene is not mutable
         return true
     }
@@ -100,10 +99,7 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun getVariableName() = gene.getVariableName()
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(gene.flatView(excludePredicate))
-    }
+
 
     override fun isMutable() = gene.isMutable()
 

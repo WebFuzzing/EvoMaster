@@ -37,8 +37,8 @@ internal class CollectionTest {
         arrayGene.randomize(Randomness(), false, listOf())
         assertEquals(expected, arrayGene.getMaxSizeUsedInRandomize())
         assertEquals(defaultMax, arrayGene.getDefaultMaxSize())
-        assertTrue(arrayGene.getAllElements().size <= arrayGene.getMaxSizeUsedInRandomize())
-        assertTrue(arrayGene.getAllElements().size >= arrayGene.getMinSizeOrDefault())
+        assertTrue(arrayGene.getViewOfElements().size <= arrayGene.getMaxSizeUsedInRandomize())
+        assertTrue(arrayGene.getViewOfElements().size >= arrayGene.getMinSizeOrDefault())
 
     }
 

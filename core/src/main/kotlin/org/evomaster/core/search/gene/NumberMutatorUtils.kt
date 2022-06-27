@@ -1,10 +1,15 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.utils.NumberCalculationUtil
 import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.math.RoundingMode
 import kotlin.math.max
 import kotlin.math.min
@@ -16,10 +21,18 @@ import kotlin.math.pow
  */
 object NumberMutatorUtils {
 
+
+    val log : Logger = LoggerFactory.getLogger(NumberMutatorUtils::class.java)
+
+    /**
+     * digits allow in the number
+     */
+    const val MAX_PRECISION = 308
+
     /**
      * 19 with Long.MAX
      */
-    const val MAX_INTEGER_PRECISION = 308
+    const val MAX_LONG_PRECISION = 19
 
     /**
      * with, IEEE 754
@@ -128,13 +141,13 @@ object NumberMutatorUtils {
     }
 
     private fun modifyValue(randomness: Randomness, value: Double, delta: Double, maxRange: Long, specifiedJumpDelta: Int, precisionChangeable: Boolean): Double{
-        val strategies = FloatingPointNumber.ModifyStrategy.values().filter{
-            precisionChangeable || it != FloatingPointNumber.ModifyStrategy.REDUCE_PRECISION
+        val strategies = FloatingPointNumberGene.ModifyStrategy.values().filter{
+            precisionChangeable || it != FloatingPointNumberGene.ModifyStrategy.REDUCE_PRECISION
         }
         return when(randomness.choose(strategies)){
-            FloatingPointNumber.ModifyStrategy.SMALL_CHANGE-> value + min(1, maxRange) * delta
-            FloatingPointNumber.ModifyStrategy.LARGE_JUMP -> value + specifiedJumpDelta * delta
-            FloatingPointNumber.ModifyStrategy.REDUCE_PRECISION -> BigDecimal(value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
+            FloatingPointNumberGene.ModifyStrategy.SMALL_CHANGE-> value + min(1, maxRange) * delta
+            FloatingPointNumberGene.ModifyStrategy.LARGE_JUMP -> value + specifiedJumpDelta * delta
+            FloatingPointNumberGene.ModifyStrategy.REDUCE_PRECISION -> BigDecimal(value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
         }
     }
 
@@ -162,9 +175,9 @@ object NumberMutatorUtils {
         if (scale == null)
             return valueToFormat
         return when (valueToFormat) {
-            is Double -> valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toDouble() as N
-            is Float -> valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode).toFloat() as N
-            is BigDecimal -> valueWithPrecisionAndScale(valueToFormat.toDouble(), scale, roundingMode) as N
+            is Double -> valueWithPrecisionAndScale(valueToFormat.toString(), scale, roundingMode).toDouble() as N
+            is Float -> valueWithPrecisionAndScale(valueToFormat.toString(), scale, roundingMode).toFloat() as N
+            is BigDecimal -> valueWithPrecisionAndScale(valueToFormat.toString(), scale, roundingMode) as N
             else -> throw Exception("valueToFormat must be Double, Float or BigDecimal, but it is ${valueToFormat::class.java.simpleName}")
         }
     }
@@ -246,6 +259,46 @@ object NumberMutatorUtils {
             rand = randomness.nextDouble(min, max)
         }
         return getFormattedValue(rand, scale)
+    }
+
+    /**
+     * handle the min and max in constructor of number gene
+     * @param value is the specified value if it has
+     * @param isMin is for configuring min (true) or max (false)
+     * @param precision is the specified precision if it exists
+     * @param scale is the specified scale if it exists
+     * @param example is used to represent the data type in case [value] is null
+     */
+    fun <N: Number> handleMinMaxInConstructor(value: N?, isMin: Boolean, precision: Int?, scale: Int?, example: N) : N?{
+        if ((precision == null || scale == null) && value == null) return null
+        val bound  = if (precision != null && scale != null) NumberCalculationUtil.upperBound(precision, scale).run {
+            val number = (if (isMin) BigDecimal.ZERO.subtract(this) else this).run {
+                when(example) {
+                    is Double -> toDouble()
+                    is Float -> toFloat()
+                    is Long -> toLong()
+                    is Int -> toInt()
+                    is Short -> toShort()
+                    is BigInteger -> toBigInteger()
+                    is BigDecimal -> this
+                    else -> throw IllegalStateException("Number type ${example::class.java} cannot be handled")
+                }
+            }
+
+            if(value == null || (if (isMin) number.toDouble() > value.toDouble() else number.toDouble() < value.toDouble())){
+                number as N
+            } else value
+
+        } else value
+
+        Lazy.assert { bound != null }
+
+        val formatted = getFormattedValue(bound!!, scale, if (isMin) RoundingMode.UP else RoundingMode.DOWN)
+
+        if (value != null && value.toString() != formatted.toString())
+            log.warn("Note that originally specified ${if (isMin) "min" else "max"} ($value) has been modified to $formatted based on specified precision (${precision?:"unspecified"}) and scale(${scale?:"unspecified"}), and its inclusive would be kept as it is specified)")
+
+        return formatted
     }
 
 }

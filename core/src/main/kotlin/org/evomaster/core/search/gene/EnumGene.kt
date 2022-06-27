@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.EnumGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -22,7 +21,7 @@ class EnumGene<T : Comparable<T>>(
     name: String,
     data: Collection<T>,
     var index: Int = 0
-) : Gene(name, mutableListOf()) {
+) : SimpleGene(name) {
 
     companion object {
 
@@ -73,8 +72,6 @@ class EnumGene<T : Comparable<T>>(
         }
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf()
-
     override fun isMutable(): Boolean {
         return values.size > 1
     }
@@ -84,10 +81,10 @@ class EnumGene<T : Comparable<T>>(
         return EnumGene<T>(name, values, index)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         if(values.isEmpty()) return
 
-        val k = if (forceNewValue) {
+        val k = if (tryToForceNewValue) {
             randomness.nextInt(0, values.size - 1, index)
         } else {
             randomness.nextInt(0, values.size - 1)
@@ -96,7 +93,7 @@ class EnumGene<T : Comparable<T>>(
         index = k
     }
 
-    override fun mutate(
+    override fun shallowMutate(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
@@ -158,7 +155,6 @@ class EnumGene<T : Comparable<T>>(
         return this.index == other.index
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when {

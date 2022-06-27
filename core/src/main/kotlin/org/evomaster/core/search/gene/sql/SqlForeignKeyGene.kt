@@ -1,9 +1,9 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.SimpleGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -36,7 +36,7 @@ class SqlForeignKeyGene(
          */
         var uniqueIdOfPrimaryKey: Long = -1
 
-) : SqlWrapperGene(sourceColumn, listOf()) {
+) : SqlWrapperGene, SimpleGene(sourceColumn) {
 
     init {
         if (uniqueId < 0) {
@@ -48,12 +48,9 @@ class SqlForeignKeyGene(
         return this
     }
 
-
-    override fun getChildren(): List<Gene> = listOf()
-
     override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         //All the ids of previous PKs for the target table
         val pks = allGenes.asSequence()
@@ -66,12 +63,17 @@ class SqlForeignKeyGene(
                 .toSet()
 
         if (pks.isEmpty()) {
-            if (!nullable) {
-                throw IllegalStateException("Trying to bind a non-nullable FK, but no valid PK is found")
-            } else {
+            /*
+                FIXME: we cannot crash here.
+                TODO We need new method / post-processing when we have intra-action dependencies
+                eg, enforceIntraActionDependencies()
+             */
+//            if (!nullable) {
+//                throw IllegalStateException("Trying to bind a non-nullable FK, but no valid PK is found")
+//            } else {
                 uniqueIdOfPrimaryKey = -1
                 return
-            }
+//            }
         }
 
         /*
@@ -82,7 +84,7 @@ class SqlForeignKeyGene(
                 //only one possible option
                 pks.first()
             } else {
-                if (!forceNewValue) {
+                if (!tryToForceNewValue) {
                     randomness.choose(pks)
                 } else {
                     randomness.choose(pks.filter { it != uniqueIdOfPrimaryKey })
@@ -101,7 +103,7 @@ class SqlForeignKeyGene(
             //currently bound, but with certain probability we set it to NULL
             -1
         } else {
-            if (!forceNewValue || pks.size == 1) {
+            if (!tryToForceNewValue || pks.size == 1) {
                 randomness.choose(pks)
             } else {
                 randomness.choose(pks.filter { it != uniqueIdOfPrimaryKey })
@@ -110,7 +112,7 @@ class SqlForeignKeyGene(
 
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         randomize(randomness, true, allGenes)
         return true
     }
@@ -194,7 +196,6 @@ class SqlForeignKeyGene(
     fun hasValidUniqueIdOfPrimaryKey() = uniqueIdOfPrimaryKey >= 0 ||
             (nullable && uniqueIdOfPrimaryKey == -1L)
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing

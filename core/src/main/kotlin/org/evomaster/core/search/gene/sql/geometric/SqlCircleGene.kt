@@ -15,23 +15,22 @@ class SqlCircleGene(
         val c: SqlPointGene = SqlPointGene(name = "c"),
         // radius cannot be negative
         val r: FloatGene = FloatGene(name = "r", min = 0f, minInclusive = true)
-) : Gene(name, mutableListOf(c, r)) {
+) : CompositeFixedGene(name, mutableListOf(c, r)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlCircleGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(c, r)
 
     override fun copyContent(): Gene = SqlCircleGene(
             name,
-            c.copyContent() as SqlPointGene,
-            r.copyContent()
+            c.copy() as SqlPointGene,
+            r.copy() as FloatGene
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        c.randomize(randomness, forceNewValue, allGenes)
-        r.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        c.randomize(randomness, tryToForceNewValue, allGenes)
+        r.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -74,10 +73,7 @@ class SqlCircleGene(
                 && this.r.containsSameValueAs(other.r)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(c.flatView(excludePredicate)).plus(r.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf(c, r)
 

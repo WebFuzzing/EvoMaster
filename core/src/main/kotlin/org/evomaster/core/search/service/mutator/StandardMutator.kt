@@ -110,9 +110,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
             val update = a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
             if(update != null){
-                a.parameters.removeIf{ it is BodyParam}
-                a.parameters.removeIf{ it is UpdateForBodyParam}
-                a.parameters.add(update.body)
+                a.killChildren{ it is BodyParam}
+                a.killChildren{ it is UpdateForBodyParam}
+                a.addChild(update.body)
             }
 
             a.seeGenes().flatMap { it.flatView()}
@@ -176,6 +176,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
             gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAGM, additionalGeneMutationInfo = additionInfo)
         }
+
+        if (config.trackingEnabled()) tag(copy, time.evaluatedIndividuals)
         return copy
     }
 
@@ -186,7 +188,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         postActionAfterMutation(mutatedIndividual, mutatedGenes)
 
-        if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
+//        if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
 
         return mutatedIndividual
     }

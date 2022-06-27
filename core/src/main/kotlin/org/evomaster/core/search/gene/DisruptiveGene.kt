@@ -2,7 +2,6 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.value.DisruptiveGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -15,7 +14,8 @@ import org.slf4j.LoggerFactory
  * A gene that has a major, disruptive impact on the whole chromosome.
  * As such, it should be mutated only with low probability
  */
-class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) : Gene(name, mutableListOf(gene))
+class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
+) : CompositeFixedGene(name, gene)
         where T : Gene {
 
     init {
@@ -31,14 +31,12 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         private val log: Logger = LoggerFactory.getLogger(DisruptiveGene::class.java)
     }
 
-    override fun getChildren(): MutableList<Gene> = mutableListOf(gene)
-
     override fun copyContent(): Gene {
-        return DisruptiveGene(name, gene.copyContent(), probability)
+        return DisruptiveGene(name, gene.copy(), probability)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        gene.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        gene.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -59,9 +57,9 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
     /**
      *  mutation of inside gene in DisruptiveGene is based on the probability.
      *  In [candidatesInternalGenes], we decide whether to return the inside gene .
-     *  if the return is empty, [mutate] will be invoked
+     *  if the return is empty, [shallowMutate] will be invoked
      */
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         // do nothing due to rand() > probability
         return true
     }
@@ -74,7 +72,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         return gene.getValueAsRawString()
     }
 
-    override fun isMutable() = probability > 0
+    override fun isMutable() = probability > 0 && gene.isMutable()
 
     override fun copyValueFrom(other: Gene) {
         if (other !is DisruptiveGene<*>) {
@@ -99,9 +97,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
 
     override fun getVariableName() = gene.getVariableName()
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(gene.flatView(excludePredicate))
-    }
+
 
     override fun mutationWeight(): Double {
         return 1.0 + gene.mutationWeight() * probability

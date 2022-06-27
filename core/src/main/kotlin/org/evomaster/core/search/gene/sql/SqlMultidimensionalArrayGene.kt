@@ -2,13 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
-import org.evomaster.core.search.gene.ArrayGene
-import org.evomaster.core.search.gene.CollectionGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.impact.impactinfocollection.CollectionImpact
-import org.evomaster.core.search.impact.impactinfocollection.Impact
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -41,35 +35,30 @@ class SqlMultidimensionalArrayGene<T>(
         /**
          *  How many elements each dimension can have.
          */
-        private val maxDimensionSize: Int = ArrayGene.MAX_SIZE,
+        private val maxDimensionSize: Int = ArrayGene.MAX_SIZE
+) : CompositeGene(name, mutableListOf()) where T : Gene {
 
-        /**
-         * The multidimensional array is internally represented
-         * as nested lists of genes. For example, a mutidimensional
-         * array with only one dimension (i.e. an array) is a
-         * list of genes:
-         * { g1, g2, g3 }
-         * On the other hand, a matrix is a list of lists of genes.
-         * Each list of the same size:
-         * { {g1,g2,g3} , {g4, g5, g6} }
-         * Similarly, a three dimensional array is a list of lists of lists of
-         * genes:
-         * { { {g1,g2,g3} , {g4, g5, g6} }, { {g7,g8,g9} , {g10, g11, g12} } }.
-         *
-         * Multidimensional arrays are inialized with no elements (i.e.
-         * the length of each dimension is 0).
-         */
-        private val nestedListOfElements: MutableList<Any> = mutableListOf()
-) : CollectionGene, Gene(name, listOf()) where T : Gene {
+    /**
+     * Stores what is the size of each dimension.
+     * It is used to check that the multidimensional array
+     * is valid.
+     */
+    private var dimensionSizes: List<Int> = listOf()
 
     init {
-        if (numberOfDimensions < 0)
-            throw IllegalArgumentException("Invalid number of dimensions ${numberOfDimensions}")
+        if (numberOfDimensions < 1)
+            throw IllegalArgumentException("Invalid number of dimensions $numberOfDimensions")
     }
 
-    companion object {
+    /*
+        FIXME
+        only one direct child
+        override children modifications to rather work on internal array genes.
 
-        const val DEFAULT_MIN_SIZE = 0
+        but, before that, need to refactor/look-into CollectionGene
+     */
+
+    companion object {
 
         val log: Logger = LoggerFactory.getLogger(SqlMultidimensionalArrayGene::class.java)
 
@@ -79,24 +68,10 @@ class SqlMultidimensionalArrayGene<T>(
          */
         private fun checkIndexWithinRange(index: Int, indices: IntRange) {
             if (index !in indices) {
-                throw IndexOutOfBoundsException("Cannot access index ${index} in a dimension of size ${indices}")
+                throw IndexOutOfBoundsException("Cannot access index $index in a dimension of size $indices")
             }
         }
 
-        /**
-         * Returns a list with all the genes contained in the
-         * internal representation of the multidimensional array.
-         */
-        private fun getAllGenes(nestedListOfElements: List<Any>): List<Gene> {
-            val result = mutableListOf<Gene>()
-            nestedListOfElements.forEach {
-                when (it) {
-                    is Gene -> result.add(it)
-                    is List<*> -> result.addAll(getAllGenes(it as List<Any>))
-                }
-            }
-            return result
-        }
 
         /**
          * Recursively creates the internal representation
@@ -105,67 +80,20 @@ class SqlMultidimensionalArrayGene<T>(
          */
         private fun <T : Gene> buildNewElements(
                 dimensionSizes: List<Int>,
-                template: T
-        ): MutableList<Any> {
-            val currentDimensionSize = dimensionSizes.first()
-            val nextDimensionSizes = dimensionSizes.drop(1)
-            val nestedListOfNewElements: MutableList<Any> = mutableListOf()
-            repeat(currentDimensionSize) {
-                val element = if (nextDimensionSizes.isEmpty()) {
-                    template.copy()
-                } else {
-                    buildNewElements(nextDimensionSizes, template)
-                }
-                nestedListOfNewElements.add(element)
-            }
-            return nestedListOfNewElements
-        }
+                elementTemplate: T
+        ): ArrayGene<*> {
+            val s = dimensionSizes[0]
+            return if (dimensionSizes.size == 1) {
+                // leaf ArrayGene case
+                ArrayGene("[$s]", elementTemplate.copy(), maxSize = s, minSize = s, openingTag = "{", closingTag = "}", separatorTag = ",")
+            } else {
+                // nested/inner ArrayGene case
+                val currentDimensionSize = dimensionSizes.first()
+                val nextDimensionSizes = dimensionSizes.drop(1)
+                val arrayTemplate = buildNewElements(nextDimensionSizes, elementTemplate)
 
-        private fun containsSameValueAs(nestedListOfElements: List<Any>, otherNestedListOfElements: List<Any>): Boolean {
-            if (nestedListOfElements.size != otherNestedListOfElements.size)
-                return false
-
-            return nestedListOfElements.zip(otherNestedListOfElements) { a, b ->
-                when (a) {
-                    is Gene -> a.containsSameValueAs(b as Gene)
-                    is List<*> -> containsSameValueAs(a as List<Any>, b as List<Any>)
-                    else -> throw IllegalArgumentException("Unsupported class type ${a.javaClass}")
-                }
-            }.all { it }
-        }
-
-        private fun copyValueFrom(otherNestedListOfElements: List<Any>): List<Any> {
-            return otherNestedListOfElements.map { e ->
-                when (e) {
-                    is Gene -> e.copyContent()
-                    is List<*> -> copyValueFrom(e as List<Any>)
-                    else -> throw IllegalArgumentException("Unsupported class type ${e.javaClass}")
-                }
-            }.toMutableList()
-        }
-
-        private fun getValueAsPrintableString(
-                nestedListOfElements: List<Any>,
-                previousGenes: List<Gene>,
-                mode: GeneUtils.EscapeMode?,
-                targetFormat: OutputFormat?,
-                extraCheck: Boolean
-        ): String {
-            return nestedListOfElements.joinToString(",") { e ->
-                when (e) {
-                    is Gene ->
-                        e.getValueAsPrintableString(previousGenes, mode = GeneUtils.EscapeMode.TEXT, targetFormat = OutputFormat.DEFAULT, extraCheck)
-                    is List<*> -> "{${
-                        getValueAsPrintableString(
-                                e as List<Any>,
-                                previousGenes,
-                                mode,
-                                targetFormat,
-                                extraCheck
-                        )
-                    }}"
-                    else -> throw IllegalArgumentException("Unsupported class type ${e.javaClass}")
-                }
+                ArrayGene("[$currentDimensionSize]${arrayTemplate.name}", arrayTemplate,
+                        maxSize = currentDimensionSize, minSize = currentDimensionSize, openingTag = "{", closingTag = "}", separatorTag = ",")
             }
         }
     }
@@ -181,18 +109,56 @@ class SqlMultidimensionalArrayGene<T>(
      * getElement({0,0}) returns g1.
      * getElement({2,2}) returns g6
      */
-    fun getElement(dimensionIndexes: List<Int>): Gene {
-        if (dimensionIndexes.size != numberOfDimensions) {
-            throw IllegalArgumentException("Incorrect number of indices to get an element of an array of ${numberOfDimensions} dimensions")
+    fun getElement(dimensionIndexes: List<Int>): T {
+        if (!initialized) {
+            throw IllegalStateException("Cannot get element from an unitialized multidimensional array")
         }
 
-        var currentNestedListOfElements = nestedListOfElements
-        ((0..(dimensionIndexes.size - 2))).forEach {
-            checkIndexWithinRange(dimensionIndexes[it], currentNestedListOfElements.indices)
-            currentNestedListOfElements = currentNestedListOfElements[dimensionIndexes[it]] as MutableList<Any>
+        if (dimensionIndexes.size != numberOfDimensions) {
+            throw IllegalArgumentException("Incorrect number of indices to get an element of an array of $numberOfDimensions dimensions")
         }
-        checkIndexWithinRange(dimensionIndexes.last(), currentNestedListOfElements.indices)
-        return currentNestedListOfElements[dimensionIndexes.last()] as Gene
+
+        var current = getArray()
+        ((0..(dimensionIndexes.size - 2))).forEach {
+            checkIndexWithinRange(dimensionIndexes[it], current.getViewOfElements().indices)
+            current = current.getViewOfElements()[dimensionIndexes[it]] as ArrayGene<*>
+        }
+        checkIndexWithinRange(dimensionIndexes.last(), current.getViewOfElements().indices)
+        return current.getViewOfElements()[dimensionIndexes.last()] as T
+    }
+
+    private fun isValid(currentArrayGene: ArrayGene<*>, currentDimensionIndex: Int): Boolean {
+        return if (!currentArrayGene.isValid())
+            false
+        else if (currentArrayGene.getViewOfChildren().size != this.dimensionSizes[currentDimensionIndex]) {
+            false
+        } else if (currentDimensionIndex == numberOfDimensions - 1) {
+            // case of leaf ArrayGene
+            currentArrayGene.getViewOfChildren().all { it::class.java.isAssignableFrom(template::class.java) }
+        } else {
+            // case of inner, nested ArrayGene
+            currentArrayGene.getViewOfChildren().all { isValid(it as ArrayGene<*>, currentDimensionIndex + 1) }
+        }
+    }
+
+    /**
+     * Check that the nested arraygenes equal the number of dimensions, check that each
+     * dimension length is preserved.
+     */
+    override fun isValid(): Boolean {
+        return if (this.children.size != 1) {
+            false
+        } else {
+            isValid(this.children[0] as ArrayGene<*>, 0)
+        }
+    }
+
+    /**
+     *  Requires the multidimensional array to be initialized
+     */
+    private fun getArray(): ArrayGene<*> {
+        assert(initialized)
+        return children[0] as ArrayGene<*>
     }
 
     /**
@@ -203,17 +169,24 @@ class SqlMultidimensionalArrayGene<T>(
      * getDimensionSize(1) returns 3
      */
     fun getDimensionSize(dimensionIndex: Int): Int {
-        var currentNestedListOfElements = nestedListOfElements
-        if (nestedListOfElements.isEmpty()) {
+        if (!initialized) {
+            throw IllegalStateException("Cannot get element from an unitialized multidimensional array")
+        }
+
+        if (dimensionIndex >= this.numberOfDimensions) {
+            throw IndexOutOfBoundsException("Cannot get dimension size of dimension ${dimensionIndex} for an array of ${numberOfDimensions} dimensions")
+        }
+
+        var current = getArray()
+        if (current.getViewOfElements().isEmpty()) {
             checkIndexWithinRange(dimensionIndex, IntRange(0, numberOfDimensions - 1))
             return 0
         }
 
-
         repeat(dimensionIndex) {
-            currentNestedListOfElements = currentNestedListOfElements[0] as MutableList<Any>
+            current = current.getViewOfElements()[0] as ArrayGene<*>
         }
-        return currentNestedListOfElements.size
+        return current.getViewOfElements().size
     }
 
 
@@ -221,33 +194,35 @@ class SqlMultidimensionalArrayGene<T>(
      * Randomizes the whole multidimensional array by removing all dimensions, and then
      * creating new sizes for each dimension, and new gene elements from the template.
      */
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        // get the size of each dimension
-        val dimensionSizes: MutableList<Int> = buildNewDimensionSizes(randomness)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        val newDimensionSizes: List<Int> = buildNewDimensionSizes(randomness)
+        val newChild = buildNewElements(newDimensionSizes, template.copy())
 
-        replaceElements(dimensionSizes)
-        // randomize fresh elements
-        getAllGenes(nestedListOfElements).forEach { it.randomize(randomness, forceNewValue, allGenes) }
+        killAllChildren()
+        addChild(newChild)
+        this.dimensionSizes = newDimensionSizes
+        newChild.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     /**
      * Creates a new list of randomized dimension sizes.
      * The total number of dimensions is equal to numberOfDimensions, and
-     * no dimension is greater than maxDimensionSize, or less than 1.
+     * no dimension is greater than maxDimensionSize.
+     * If the array is unidimensional, the dimensionSize could be 0, otherwise
+     * is always greater than 0.
      */
-    private fun buildNewDimensionSizes(randomness: Randomness): MutableList<Int> {
-        val dimensionSizes: MutableList<Int> = mutableListOf()
-        repeat(numberOfDimensions) {
-            val dimensionSize = randomness.nextInt(1, maxDimensionSize)
-            dimensionSizes.add(dimensionSize)
+    private fun buildNewDimensionSizes(randomness: Randomness): List<Int> {
+        if (numberOfDimensions == 1) {
+            val dimensionSize = randomness.nextInt(0, maxDimensionSize)
+            return mutableListOf(dimensionSize)
+        } else {
+            val dimensionSizes: MutableList<Int> = mutableListOf()
+            repeat(numberOfDimensions) {
+                val dimensionSize = randomness.nextInt(1, maxDimensionSize)
+                dimensionSizes.add(dimensionSize)
+            }
+            return dimensionSizes.toList()
         }
-        return dimensionSizes
-    }
-
-
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(getAllGenes(nestedListOfElements).flatMap { g -> g.flatView(excludePredicate) })
     }
 
 
@@ -257,42 +232,47 @@ class SqlMultidimensionalArrayGene<T>(
      * and containsSameValueAs the other genes.
      */
     override fun containsSameValueAs(other: Gene): Boolean {
+        if (!initialized) {
+            throw IllegalStateException("Cannot call to containsSameValueAs using an unitialized multidimensional array")
+        }
         if (other !is SqlMultidimensionalArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        if (this.numberOfDimensions != other.numberOfDimensions)
+        if (this.numberOfDimensions != other.numberOfDimensions) {
             return false
-        return containsSameValueAs(this.nestedListOfElements, other.nestedListOfElements)
+        }
+        if (this.dimensionSizes != other.dimensionSizes) {
+            return false
+        }
+        return this.getViewOfChildren()[0].containsSameValueAs(other.getViewOfChildren()[0])
     }
 
     override fun innerGene(): List<Gene> {
-        return getAllGenes(nestedListOfElements)
+        return listOf(getArray())
     }
 
+    /**
+     * A multidimensional array gene can only bind to other multidimensional array genes
+     * with the same template and number of dimensions.
+     */
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if ((gene !is SqlMultidimensionalArrayGene<*>)
-                || (gene.template::class.java.simpleName != template::class.java.simpleName)
-        ) {
-            LoggingUtil.uniqueWarn(
-                    log,
-                    "cannot bind SqlMultidimensionalArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}"
-            )
+        if (gene !is SqlMultidimensionalArrayGene<*>) {
+            LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene to ${gene::class.java.simpleName}")
             return false
         }
-
+        if (gene.template::class.java.simpleName != template::class.java.simpleName) {
+            LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}")
+            return false
+        }
         if (numberOfDimensions != gene.numberOfDimensions) {
-            LoggingUtil.uniqueWarn(
-                    log,
-                    "cannot bind SqlMultidimensionalArrayGene of ${numberOfDimensions} dimensions to gene of ${gene.numberOfDimensions}"
-            )
+            LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene of ${numberOfDimensions} dimensions to another multidimensional array gene of ${gene.numberOfDimensions}")
             return false
         }
-        this.copyValueFrom(gene)
+        killAllChildren()
+        val elements = gene.getViewOfChildren().mapNotNull { it.copy() as? T }.toMutableList()
+        addChildren(elements)
+        this.dimensionSizes = gene.dimensionSizes
         return true
-    }
-
-    override fun getChildren(): List<out StructuralElement> {
-        return getAllGenes(nestedListOfElements)
     }
 
     override fun getValueAsPrintableString(
@@ -301,7 +281,10 @@ class SqlMultidimensionalArrayGene<T>(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\"{${getValueAsPrintableString(this.nestedListOfElements, previousGenes, mode, targetFormat, extraCheck)}}\""
+        if (!initialized) {
+            throw IllegalStateException("Cannot call to getValueAsPrintableString() using an unitialized multidimensional array")
+        }
+        return "\"${this.children[0].getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)}\""
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -310,87 +293,12 @@ class SqlMultidimensionalArrayGene<T>(
         }
 
         if (numberOfDimensions != other.numberOfDimensions) {
-            throw IllegalArgumentException("Cannot copy value to array of  ${numberOfDimensions} dimensions from array of ${other.numberOfDimensions} dimensions")
+            throw IllegalArgumentException("Cannot copy value to array of  $numberOfDimensions dimensions from array of ${other.numberOfDimensions} dimensions")
         }
-
-        // clear elements (remove from its binding genes if needed)
-        clearElements()
-        addAllElements(copyValueFrom(other.nestedListOfElements))
+        getViewOfChildren()[0].copyValueFrom(other.getViewOfChildren()[0])
+        this.dimensionSizes = other.dimensionSizes
     }
 
-    fun replaceElements(
-            dimensionSizes: List<Int>
-    ) {
-        // check the number of dimensions is correct
-        if (dimensionSizes.size != this.numberOfDimensions) {
-            throw IllegalArgumentException("Cannot create an multidimensional array of ${numberOfDimensions} with a list of ${dimensionSizes.size}")
-        }
-        // check each dimension size is greater or equal to 0
-        if (dimensionSizes.any { it < 0 })
-            throw IllegalArgumentException(
-                    "Cannot create a dimension of size ${
-                        dimensionSizes.first { it < 0 }
-                    }"
-            )
-
-        // remove old elements (remove from its binding genes if needed)
-        clearElements()
-        // build new elements using template with the internal representation
-        val newElements = buildNewElements(dimensionSizes, template)
-        // store new freshly created elements
-        addAllElements(newElements)
-    }
-
-    /**
-     * Add all elements (adding them to the structured gene)
-     */
-    private fun addAllElements(newElements: List<Any>) {
-        nestedListOfElements.addAll(newElements)
-        addChildren(getAllGenes(nestedListOfElements))
-    }
-
-    /**
-     * Remove all elements (and clear genes from its binding genes if needed)
-     */
-    override fun clearElements() {
-        getAllGenes(nestedListOfElements).forEach { it.removeThisFromItsBindingGenes() }
-        nestedListOfElements.clear()
-    }
-
-    override fun isEmpty() = getChildren().isEmpty()
-
-    override fun getSizeOfElements(filterMutable: Boolean): Int {
-        val genes = getAllGenes(nestedListOfElements)
-        if (!filterMutable)
-            return genes.size
-        else
-            return genes.count { it.isMutable() }
-    }
-
-    override fun getGeneName() = name
-
-    override fun getSpecifiedMinSize() = DEFAULT_MIN_SIZE
-
-    override fun getMinSizeOrDefault() = DEFAULT_MIN_SIZE
-
-    /**
-     * For example, a multidimensional array built with 3 dimensions
-     * has a default max size of 3 * ArrayGene.MAX_SIZE,
-     * independently of the maxDimensionSize passed to the constructor.
-     */
-    override fun getDefaultMaxSize() = numberOfDimensions * ArrayGene.MAX_SIZE
-
-    /**
-     * For example, a multidimensional array built with 3 and a
-     * maxDimensionalSize of 10 has a specified max size of 3 * 10
-     */
-    override fun getSpecifiedMaxSize() = numberOfDimensions * maxDimensionSize
-
-    /**
-     * Returns the maxDimensionalSize * numberOfDimensions
-     * By default, maxDimensionalSize is equal to ArrayGene.MAX_SIZE.
-     */
-    override fun getMaxSizeOrDefault() = getSpecifiedMaxSize()
 
     /**
      * 1 is for 'remove' or 'add' element.
@@ -398,9 +306,9 @@ class SqlMultidimensionalArrayGene<T>(
      * as ArrayGene.mutationWeight()
      */
     override fun mutationWeight(): Double {
-        return 1.0 + getAllGenes(this.nestedListOfElements).sumOf { it.mutationWeight() }
+        return 1.0 //TODO
+        //return 1.0 + getAllGenes(this.nestedListOfElements).sumOf { it.mutationWeight() }
     }
-
 
     /**
      * The function adaptiveSelectSubset() behaves as ArrayGene.adaptiveSelectSubset()
@@ -430,43 +338,34 @@ class SqlMultidimensionalArrayGene<T>(
                                          enableAdaptiveGeneMutation: Boolean,
                                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        if (!isMutable()) {
-            throw IllegalStateException("Cannot mutate a immutable multidimensional array")
+        //TODO
+        return listOf()
+    }
+
+
+    override fun copyContent(): Gene {
+        /*
+            TODO Not sure about this. Even if we want to put this constraint, then should be in Gene
+         */
+//        if (!initialized) {
+//            throw IllegalStateException("Cannot call to copyContent() from an uninitialized multidimensional array")
+//        }
+
+        val copy = SqlMultidimensionalArrayGene(
+                name = name,
+                template = template.copy(),
+                numberOfDimensions = numberOfDimensions,
+                maxDimensionSize = maxDimensionSize,
+        )
+
+        if (children.isNotEmpty()) {
+            copy.addChild(this.children[0].copy())
         }
-        val mutableGenes = getAllGenes(nestedListOfElements).filter { it.isMutable() }
-        // if min == max, the size is not mutable
-        if (getMinSizeOrDefault() == getMaxSizeOrDefault() && nestedListOfElements.size == getMinSizeOrDefault())
-            return mutableGenes
-        // if mutable is empty, modify size
-        if (mutableGenes.isEmpty()) return listOf()
-
-        val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
-        return if (randomness.nextBoolean(p)) listOf() else mutableGenes
+        copy.dimensionSizes = this.dimensionSizes
+        return copy
     }
 
-    /**
-     * an impact-based probability fo modifying size/dimensions of the multidimensional array
-     */
-    override fun probabilityToModifySize(selectionStrategy: SubsetGeneSelectionStrategy, impact: Impact?): Double {
-        if (selectionStrategy != SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT) return defaultProbabilityToModifySize()
-        impact ?: return defaultProbabilityToModifySize()
-        if (impact !is CollectionImpact) return defaultProbabilityToModifySize()
-
-        return if (impact.recentImprovementOnSize()) defaultProbabilityToModifySize() * timesProbToModifySize() else defaultProbabilityToModifySize()
-    }
-
-    /**
-     * Same value as ArrayGene.timesProbToModifySize()
-     */
-    private fun timesProbToModifySize(): Int = 3
-
-    override fun copyContent() = SqlMultidimensionalArrayGene(name = name,
-            template = template.copyContent(),
-            numberOfDimensions = numberOfDimensions,
-            maxDimensionSize = maxDimensionSize,
-            nestedListOfElements = copyValueFrom(nestedListOfElements).toMutableList())
-
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

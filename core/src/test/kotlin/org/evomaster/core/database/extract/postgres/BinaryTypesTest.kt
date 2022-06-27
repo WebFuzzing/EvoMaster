@@ -71,16 +71,16 @@ class BinaryTypesTest : ExtractTestBasePostgres() {
         val sqlBinaryStringGene = genes[0] as SqlBinaryStringGene
 
         val arrayGene  = sqlBinaryStringGene.innerGene()[0] as ArrayGene<IntegerGene>
-        val integerGene0 = arrayGene.template.copyContent() as IntegerGene
+        val integerGene0 = arrayGene.template.copy() as IntegerGene
         integerGene0.value = 0
 
-        val integerGene1 = arrayGene.template.copyContent() as IntegerGene
+        val integerGene1 = arrayGene.template.copy() as IntegerGene
         integerGene1.value = 42
 
-        val integerGene2 = arrayGene.template.copyContent() as IntegerGene
+        val integerGene2 = arrayGene.template.copy() as IntegerGene
         integerGene2.value = 255
 
-        val integerGene3= arrayGene.template.copyContent() as IntegerGene
+        val integerGene3= arrayGene.template.copy() as IntegerGene
         integerGene3.value = 16
 
         arrayGene.addElement(integerGene0)

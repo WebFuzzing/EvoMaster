@@ -2,7 +2,6 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -28,7 +27,7 @@ class SqlBitStringGene(
 
         private val booleanArrayGene: ArrayGene<BooleanGene> = ArrayGene(name, template = BooleanGene(name), minSize = minSize, maxSize = maxSize)
 
-) : CollectionGene, Gene(name, booleanArrayGene.getAllElements()) {
+) :  CompositeFixedGene(name, mutableListOf( booleanArrayGene)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlBitStringGene::class.java)
@@ -40,16 +39,20 @@ class SqlBitStringGene(
         const val EMPTY_STR = ""
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        booleanArrayGene.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        booleanArrayGene.randomize(randomness, tryToForceNewValue, allGenes)
+    }
+
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+       return listOf(booleanArrayGene)
     }
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return buildString {
             append("B$SINGLE_APOSTROPHE_PLACEHOLDER")
-            append(booleanArrayGene.getChildren().map { g ->
-                if (g.value) TRUE_VALUE else FALSE_VALUE
+            append(booleanArrayGene.getViewOfChildren().map { g ->
+                if ((g as BooleanGene).value) TRUE_VALUE else FALSE_VALUE
             }.joinToString(EMPTY_STR))
             append(SINGLE_APOSTROPHE_PLACEHOLDER)
         }
@@ -81,33 +84,11 @@ class SqlBitStringGene(
         return false
     }
 
-    override fun getChildren(): List<out StructuralElement> {
-        return booleanArrayGene.getChildren()
-    }
 
-    override fun clearElements() {
-        return booleanArrayGene.clearElements()
-    }
 
-    override fun isEmpty() = booleanArrayGene.isEmpty()
+    override fun copyContent() = SqlBitStringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copy() as ArrayGene<BooleanGene>)
 
-    override fun getMaxSizeOrDefault() = booleanArrayGene.getMaxSizeOrDefault()
-
-    override fun getSpecifiedMaxSize() = booleanArrayGene.getSpecifiedMaxSize()
-
-    override fun getMinSizeOrDefault() = booleanArrayGene.getMinSizeOrDefault()
-
-    override fun getSpecifiedMinSize() = booleanArrayGene.getSpecifiedMinSize()
-
-    override fun getSizeOfElements(filterMutable: Boolean) = booleanArrayGene.getSizeOfElements(filterMutable)
-
-    override fun getGeneName() = name
-
-    override fun getDefaultMaxSize() = booleanArrayGene.getDefaultMaxSize()
-
-    override fun copyContent() = SqlBitStringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copyContent() as ArrayGene<BooleanGene>)
-
-    override fun mutate(
+    override fun shallowMutate(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,

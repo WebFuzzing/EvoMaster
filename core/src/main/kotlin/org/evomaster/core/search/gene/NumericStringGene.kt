@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.impact.impactinfocollection.value.OptionalGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.NumericStringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -26,7 +25,7 @@ class NumericStringGene(
      */
     val minLength: Int,
     val number : BigDecimalGene
-) : ComparableGene(name, mutableListOf(number)) {
+) : ComparableGene, CompositeFixedGene(name, number) {
 
     constructor(name: String,
                 minLength: Int = 0,
@@ -40,10 +39,9 @@ class NumericStringGene(
                 scale : Int? = null) : this(name, minLength, BigDecimalGene(name, value, min, max, minInclusive, maxInclusive, floatingPointMode, precision?:if (scale == 0) 20 else 15, scale))
 
 
-    override fun getChildren(): List<Gene> = mutableListOf(number)
 
     override fun copyContent(): Gene {
-        return NumericStringGene(name, minLength, number.copyContent())
+        return NumericStringGene(name, minLength, number.copy() as BigDecimalGene)
     }
 
     override fun isMutable(): Boolean {
@@ -62,8 +60,8 @@ class NumericStringGene(
         return this.number.containsSameValueAs(other.number)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-        number.randomize(randomness, forceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        number.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -99,9 +97,7 @@ class NumericStringGene(
         return "\"" + number.value.toPlainString() + "\""
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(number.flatView(excludePredicate))
-    }
+
 
     override fun innerGene(): List<Gene> = listOf()
 

@@ -2,7 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -15,10 +15,16 @@ import org.slf4j.LoggerFactory
 
 class QuantifierRxGene(
         name: String,
-        val template: RxAtom,
+        val template: Gene,
         val min: Int = 1,
         val max: Int = 1
-) : RxTerm(name, listOf(template)) {
+) : RxTerm, CompositeGene(name, mutableListOf()) {
+
+    init{
+        if(template !is RxAtom){
+            throw IllegalArgumentException("Template must be a RxAtom")
+        }
+    }
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(QuantifierRxGene::class.java)
@@ -26,7 +32,8 @@ class QuantifierRxGene(
     }
 
 
-    val atoms = mutableListOf<RxAtom>()
+    val atoms : List<Gene>
+        get() {return getViewOfChildren() }
 
     /**
      *  A * quantifier could lead to billions of atom elements.
@@ -60,30 +67,25 @@ class QuantifierRxGene(
                 this means this whole gene is immutable. still need to initialize it
              */
             for(i in 0 until min){
-                val a = template.copy() as RxAtom
-//                a.parent = this
-                atoms.add(a)
+                val a = template.copy() as Gene
                 addChild(a)
             }
         }
     }
 
 
-    override fun getChildren(): List<RxAtom> = listOf(template).plus(atoms)
-
     override fun copyContent(): Gene {
 
         val copy = QuantifierRxGene(
                 name,
-                template.copyContent() as RxAtom,
+                template.copy(),
                 min,
                 max
         )
-        copy.atoms.clear()
+        copy.killAllChildren()
+
         this.atoms.forEach {
-            val a = it.copyContent() as RxAtom
-//            a.parent = copy
-            copy.atoms.add(a)
+            val a = it.copy()
             copy.addChild(a)
         }
 
@@ -92,11 +94,11 @@ class QuantifierRxGene(
 
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         val length = randomness.nextInt(min, limitedMax)
 
-        atoms.clear()
+        killAllChildren()
 
         if (length == 0) {
             //nothing to do
@@ -104,9 +106,8 @@ class QuantifierRxGene(
         }
 
         for (i in 0 until length) {
-           addNewAtom(randomness, forceNewValue, allGenes)
+           addNewAtom(randomness, tryToForceNewValue, allGenes)
         }
-        addChildren(atoms)
     }
 
     override fun isMutable(): Boolean {
@@ -136,7 +137,7 @@ class QuantifierRxGene(
         return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(null, s))
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         val length = atoms.size
 
         if (length < min || length > limitedMax)
@@ -155,7 +156,7 @@ class QuantifierRxGene(
 
         if(remove){
             log.trace("Removing atom")
-            atoms.removeAt(randomness.nextInt(length))
+            killChildByIndex(randomness.nextInt(length))
         }
         if(add){
             addNewAtom(randomness, false, listOf())
@@ -165,12 +166,10 @@ class QuantifierRxGene(
     }
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>){
-        val base = template.copy() as RxAtom
-//        base.parent = this
+        val base = template.copy()
         if (base.isMutable()) {
             base.randomize(randomness, forceNewValue, allGenes)
         }
-        atoms.add(base)
         addChild(base)
     }
 
@@ -192,11 +191,9 @@ class QuantifierRxGene(
             }
         } else {
             //different size, so clear and create new copies
-            this.atoms.clear()
+            this.killAllChildren()
             other.atoms.forEach{
-                val a = it.copy() as RxAtom
-//                a.parent = this
-                this.atoms.add(a)
+                val a = it.copy()
                 this.addChild(a)
             }
         }
@@ -220,10 +217,7 @@ class QuantifierRxGene(
         return true
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this)
-        else listOf(this).plus(atoms.flatMap { it.flatView(excludePredicate) })
-    }
+
 
     override fun mutationWeight(): Double {
         return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0
@@ -245,11 +239,10 @@ class QuantifierRxGene(
                     result =  r && result
                 }
             }else{
-                this.atoms.clear()
+                this.killAllChildren()
                 gene.atoms.forEach{
-                    val a = it.copy() as RxAtom
-//                    a.parent = this
-                    this.atoms.add(a)
+                    val a = it.copy()
+                    this.addChild(a)
                 }
             }
             return result

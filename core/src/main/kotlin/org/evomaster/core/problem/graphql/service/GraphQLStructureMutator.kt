@@ -70,10 +70,10 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
 
             //delete one at random
             log.trace("Deleting action from test")
-            val chosen = randomness.nextInt(ind.seeActions().size)
+            val chosen = randomness.choose(ind.getIndexedCalls().keys)
 
             //save mutated genes
-            val removedActions = ind.seeActions()[chosen]
+            val removedActions = ind.getIndexedCalls()[chosen]!!
             mutatedGenes?.addRemovedOrAddedByAction(removedActions, chosen, true, chosen)
 
             ind.removeGQLActionAt(chosen)
@@ -84,7 +84,7 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
             log.trace("Adding action to test")
             val sampledAction = sampler.sampleRandomAction(0.05) as GraphQLAction
 
-            val chosen = randomness.nextInt(ind.seeActions().size)
+            val chosen = randomness.choose(ind.getIndexedCalls().keys)
             ind.addGQLAction(chosen, sampledAction)
 
             //save mutated genes

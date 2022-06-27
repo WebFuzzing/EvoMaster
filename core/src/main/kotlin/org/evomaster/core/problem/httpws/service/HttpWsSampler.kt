@@ -35,7 +35,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
      */
     fun sampleRandomAction(noAuthP: Double): HttpWsAction {
         val action = randomness.choose(actionCluster).copy() as HttpWsAction
-        randomizeActionGenes(action)
+        action.doInitialize(randomness)
         action.auth = getRandomAuth(noAuthP)
         return action
     }

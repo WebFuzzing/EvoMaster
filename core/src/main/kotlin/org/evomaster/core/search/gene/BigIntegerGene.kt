@@ -65,8 +65,7 @@ class BigIntegerGene(
 
         if (getMaximum() == getMinimum())
             this.value = getMinimum()
-        if (getMaximum() < getMinimum())
-            throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
+
     }
 
     override fun copyContent(): BigIntegerGene = BigIntegerGene(name, value, min, max, precision, minInclusive, maxInclusive)
@@ -79,13 +78,13 @@ class BigIntegerGene(
         return value.compareTo(other.value)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
-        val longValue = NumberMutatorUtils.randomizeLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, forceNewValue)
+        val longValue = NumberMutatorUtils.randomizeLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, tryToForceNewValue)
         setValueWithLong(longValue)
     }
 
-    override fun mutate(
+    override fun shallowMutate(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
@@ -94,7 +93,7 @@ class BigIntegerGene(
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        val mutated = super.shallowMutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (mutated) return true
 
         val longValue = NumberMutatorUtils.mutateLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, apc)
@@ -127,11 +126,10 @@ class BigIntegerGene(
         return this.value.compareTo(other.value) == 0
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when(gene){
-            is SeededGene<*> -> return this.bindValueBasedOn(gene.getPhenotype())
+            is SeededGene<*> -> return this.bindValueBasedOn(gene.getPhenotype() as Gene)
             is NumericStringGene -> return this.bindValueBasedOn(gene.number)
             is LongGene -> setValueWithLong(gene.value)
             is FloatGene -> setValueWithLong(gene.value.toLong())
@@ -203,7 +201,7 @@ class BigIntegerGene(
         if (max!= null && max <= BigInteger.valueOf(Long.MIN_VALUE))
             throw IllegalStateException("not support yet: max value is less than Long.MIN")
 
-        val m = if (max == null || BigInteger.valueOf(Long.MAX_VALUE) <= min) Long.MAX_VALUE else max.toLong()
+        val m = if (max == null || (min != null && BigInteger.valueOf(Long.MAX_VALUE) <= min)) Long.MAX_VALUE else max.toLong()
         return m.run { if (!maxInclusive) this - 1L else this }
     }
 

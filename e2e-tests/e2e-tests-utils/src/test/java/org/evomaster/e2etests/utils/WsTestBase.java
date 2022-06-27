@@ -20,6 +20,7 @@ import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.output.compiler.CompilerForTestGenerated;
 import org.evomaster.core.problem.api.service.ApiWsIndividual;
 import org.evomaster.core.remote.service.RemoteController;
+import org.evomaster.core.remote.service.RemoteControllerImplementation;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -431,7 +432,7 @@ public abstract class WsTestBase {
 
         controllerPort = embeddedStarter.getControllerServerPort();
 
-        remoteController = new RemoteController("localhost", controllerPort, true, true, config);
+        remoteController = new RemoteControllerImplementation("localhost", controllerPort, true, true, config);
         boolean started = remoteController.startSUT();
         assertTrue(started, "Failed to start the SUT");
 

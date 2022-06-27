@@ -62,14 +62,8 @@ object DbActionUtils {
             references to each other (eg Foreign Keys)
          */
 
-//        val all = actions.flatMap { it.seeGenes() }
-//        all.asSequence()
-//                .filter { it.isMutable() }
-//                .forEach {
-//                    it.randomize(randomness, false, all)
-//                }
         actions.forEach {
-            it.randomize(randomness, false, actions)
+            it.randomize(randomness, false, actions.flatMap { a -> a.seeGenes()})
         }
 
         Lazy.assert { verifyForeignKeys(actions) }
@@ -245,13 +239,14 @@ object DbActionUtils {
         val allGenes = actions.flatMap { it.seeGenes() }
 
         val dbActions = mutableListOf<DbAction>()
-        for ((actionIndex, action) in actions.withIndex()) {
+        for ((actionIndex, action) in actions.withIndex().sortedBy { it.index }) {
 
             if (action !is DbAction) {
                 continue
             }
             dbActions += action
 
+            handleFKs(action, actionIndex)?.let{return it}
             handleUnique(action, actionIndex, uniqueColumnValues, allGenes, randomness)?.let { return it }
             handlePKs(action, actionIndex, pksValues, allGenes, randomness)?.let { return it }
             checkIfTableConstraintsAreSatisfied(action, actionIndex, dbActions, randomness)?.let { return it }
@@ -262,6 +257,14 @@ object DbActionUtils {
 
         //if reached here, then there was no problem
         return Pair(null, -1)
+    }
+
+    private fun handleFKs(action: DbAction, actionIndex: Int): Pair<Gene?, Int>? {
+
+        action.seeGenes().flatMap { it.flatView() }
+                .filterIsInstance<SqlForeignKeyGene>()
+                .firstOrNull { !it.hasValidUniqueIdOfPrimaryKey() }?.let { return Pair(it,actionIndex) }
+                ?: return null
     }
 
     private fun handleUnique(

@@ -3,7 +3,6 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.graphql.GqlConst
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -18,26 +17,28 @@ import java.net.URLEncoder
 /**
  * @property refType presents the name of reference type of the object
  */
-open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null) : Gene(name, mutableListOf<StructuralElement>().apply { addAll(fields) }) {
+open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null
+) : CompositeFixedGene(name, fields) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
 
     }
 
-    override fun getChildren(): List<Gene> {
-        return fields
-    }
+    /*
+        In theory, it is possible to have an object with no fields...
+     */
+    override fun canBeChildless() = true
 
     override fun copyContent(): Gene {
-        return ObjectGene(name, fields.map(Gene::copyContent), refType)
+        return ObjectGene(name, fields.map(Gene::copy), refType)
     }
 
     override fun copyValueFrom(other: Gene) {
         if (other !is ObjectGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        for (i in 0 until fields.size) {
+        for (i in fields.indices) {
             this.fields[i].copyValueFrom(other.fields[i])
         }
     }
@@ -82,10 +83,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         }.all { it == true }
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
         fields.filter { it.isMutable() }
-                .forEach { it.randomize(randomness, forceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -98,7 +99,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
         val includedFields = fields.filter {
             it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
-        }
+        } .filter { it.isPrintable() }
 
         //by default, return in JSON format
         if (mode == null || mode == GeneUtils.EscapeMode.JSON) {
@@ -343,10 +344,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     private fun closeXml(tagName: String) = "</$tagName>"
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf(this) else
-            listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
-    }
+
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 

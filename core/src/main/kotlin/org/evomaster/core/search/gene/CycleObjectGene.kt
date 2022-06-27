@@ -26,11 +26,11 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
 
     override fun copyContent(): Gene = CycleObjectGene(name)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         //nothing to do
     }
 
-    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         randomize(randomness, true, allGenes)
         return true
     }
@@ -40,4 +40,8 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
     }
 
     override fun innerGene(): List<Gene> = listOf()
+
+    override fun isPrintable(): Boolean {
+        return false
+    }
 }

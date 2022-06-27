@@ -10,15 +10,13 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
 
 /**
  * the abstract individual for API based SUT, such as REST, GraphQL, RPC
  */
 abstract class ApiWsIndividual (
-    /**
-     * a list of db actions for its Initialization
-     */
-    private val dbInitialization: MutableList<DbAction> = mutableListOf(),
+
     /**
      * a tracked operator to manipulate the individual (nullable)
      */
@@ -37,6 +35,12 @@ abstract class ApiWsIndividual (
     companion object{
         private val log : Logger = LoggerFactory.getLogger(ApiWsIndividual::class.java)
     }
+
+    /**
+     * a list of db actions for its Initialization
+     */
+    private val dbInitialization: List<DbAction>
+        get() {return children.filterIsInstance<DbAction>()}
 
     override fun seeInitializingActions(): List<DbAction> {
         return dbInitialization
@@ -69,29 +73,30 @@ abstract class ApiWsIndividual (
         return super.hasAnyAction() || dbInitialization.isNotEmpty()
     }
 
+    private fun getLastIndexOfDbActionToAdd(): Int = children.indexOfLast { it is DbAction } + 1
+
     /**
      * add [actions] at [position]
      * if [position] = -1, append the [actions] at the end
      */
     fun addInitializingActions(position: Int=-1, actions: List<DbAction>){
-        if (position == -1)  dbInitialization.addAll(actions)
-        else{
-            dbInitialization.addAll(position, actions)
+        if (position == -1)  {
+            addChildren(getLastIndexOfDbActionToAdd(), actions)
+        } else{
+            addChildren(position, actions)
         }
-        addChildren(actions)
     }
 
     private fun resetInitializingActions(actions: List<DbAction>){
-        dbInitialization.clear()
-        dbInitialization.addAll(actions)
-        addChildren(actions)
+        killChildren { it is DbAction }
+        addChildren(getLastIndexOfDbActionToAdd(), actions)
     }
 
     /**
      * remove specified dbactions i.e., [actions] from [dbInitialization]
      */
     fun removeInitDbActions(actions: List<DbAction>) {
-        dbInitialization.removeAll(actions)
+        killChildren { it is DbAction && actions.contains(it)}
     }
 
     /**

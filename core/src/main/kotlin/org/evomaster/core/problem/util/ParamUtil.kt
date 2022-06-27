@@ -7,7 +7,7 @@ import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
-import org.evomaster.core.search.gene.sql.SqlNullable
+import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 
 /**
@@ -91,7 +91,7 @@ class ParamUtil {
          * @return whether [geneA] and [geneB] have same value.
          */
         fun compareGenesWithValue(geneA: Gene, geneB: Gene): Boolean {
-            val geneAWithGeneBType = geneB.copyContent()
+            val geneAWithGeneBType = geneB.copy()
             geneAWithGeneBType.bindValueBasedOn(geneA)
             return when (geneB) {
                 is StringGene -> geneB.value == (geneAWithGeneBType as StringGene).value
@@ -233,7 +233,7 @@ class ParamUtil {
         }
 
         private fun extractPathFromRoot(comGene: ArrayGene<*>, gene: Gene, names: MutableList<String>): Boolean {
-            comGene.getAllElements().forEach {
+            comGene.getViewOfElements().forEach {
                 if (extractPathFromRoot(it, gene, names)) {
                     return true
                 }
@@ -276,7 +276,7 @@ class ParamUtil {
                 if (gene.gene is SqlAutoIncrementGene)
                     return gene
                 else return getValueGene(gene.gene)
-            } else if (gene is SqlNullable) {
+            } else if (gene is SqlNullableGene) {
                 return getValueGene(gene.gene)
             }
             return gene

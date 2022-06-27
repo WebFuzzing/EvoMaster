@@ -15,6 +15,7 @@ import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -25,24 +26,41 @@ import org.slf4j.LoggerFactory
  * @property actions is a sequence of actions in the [RestResourceCalls] that follows [template]
  * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
  * @param withBinding specifies whether to build binding between rest genes
+ * @param randomness is required when [withBinding] is true
  *
  */
 class RestResourceCalls(
     val template: CallsTemplate? = null,
     val node: RestResourceNode? = null,
-    private val actions: MutableList<RestCallAction>,
-    private val dbActions: MutableList<DbAction> = mutableListOf(),
-    withBinding: Boolean = false
-): StructuralElement(mutableListOf<StructuralElement>().apply { addAll(dbActions); addAll(actions) }){
+    children: MutableList<out Action>,
+    withBinding: Boolean = false,
+    randomness: Randomness? = null
+): StructuralElement(children){
+
+    constructor(template: CallsTemplate? = null, node: RestResourceNode? = null, actions: List<RestCallAction>,
+                dbActions: List<DbAction>, withBinding: Boolean = false, randomness: Randomness? = null) :
+            this(template, node,mutableListOf<Action>().apply { addAll(dbActions); addAll(actions) }, withBinding, randomness)
 
     companion object{
         private val  log : Logger = LoggerFactory.getLogger(RestResourceCalls::class.java)
     }
 
     init {
-        if (withBinding)
-            buildBindingGene()
+        if (withBinding){
+            Lazy.assert { randomness != null }
+            buildBindingGene(randomness)
+        }
     }
+
+    fun doInitialize(randomness: Randomness? = null){
+        children.filterIsInstance<Action>().forEach { it.doInitialize(randomness) }
+    }
+
+    private val actions : List<RestCallAction>
+        get() {return children.filterIsInstance<RestCallAction>() }
+
+    private val dbActions : List<DbAction>
+        get() {return children.filterIsInstance<DbAction>()}
 
     /**
      * build gene binding among rest actions, ie, [actions]
@@ -53,10 +71,10 @@ class RestResourceCalls(
      *     3, GET /A/{a}/B/{b}
      * (0-2) actions bind values based on the action at 3
      */
-    private fun buildBindingGene(){
+    private fun buildBindingGene(randomness: Randomness?){
         if (actions.size == 1) return
         (0 until actions.size-1).forEach {
-            actions[it].bindBasedOn(actions.last())
+            actions[it].bindBasedOn(actions.last(), randomness)
         }
     }
 
@@ -95,18 +113,14 @@ class RestResourceCalls(
         return copy
     }
 
-    /**
-     * @return children of RestResourceCall which is a sequence of [dbActions] and [actions]
-     */
-    override fun getChildren(): List<Action> = dbActions.plus(actions)
+
 
     override fun copyContent() : RestResourceCalls{
         val copy = RestResourceCalls(
             template,
             node,
-            actions.map { a -> a.copyContent() as RestCallAction}.toMutableList(),
-            dbActions.map { db-> db.copyContent() as DbAction }.toMutableList(),
-            withBinding = false
+            children.map { it.copy() as Action}.toMutableList(),
+            withBinding = false, randomness = null
         )
 
         copy.isDeletable = isDeletable
@@ -148,22 +162,12 @@ class RestResourceCalls(
         return seeActions(filter).size
     }
 
-    fun addDbAction(position : Int = -1, actions: List<DbAction>){
-        if (position == -1) dbActions.addAll(actions)
-        else{
-            dbActions.addAll(position, actions)
-        }
-        addChildren(actions)
-    }
-
     /**
      * reset dbactions with [actions]
      */
     fun resetDbAction(actions: List<DbAction>){
-        dbActions.clear()
-        dbActions.addAll(actions)
+        killChildren { it is DbAction }
         addChildren(actions)
-
         (getRoot() as? RestIndividual)?.cleanBrokenBindingReference()
     }
 
@@ -177,7 +181,7 @@ class RestResourceCalls(
 
     private fun removeDbActions(remove: List<DbAction>){
         val removedGenes = remove.flatMap { it.seeGenes() }.flatMap { it.flatView() }
-        dbActions.removeAll(remove)
+        killChildren(remove)
         (dbActions.plus(actions).flatMap { it.seeGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }.forEach {
             it.cleanRemovedGenes(removedGenes)
         }
@@ -187,7 +191,8 @@ class RestResourceCalls(
      * @return the mutable SQL genes and they do not bind with any of Rest Actions
      *
      * */
-    private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode().getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
+    private fun seeMutableSQLGenes() : List<out Gene> = getResourceNode()
+            .getMutableSQLGenes(dbActions, getRestTemplate(), is2POST)
 
 
     /**
@@ -197,7 +202,7 @@ class RestResourceCalls(
      *      e.g., for resource C, table C is created, in addition, A and B are also created since B refers to them,
      *      in this case, if the following handling is related to A and B, we do not further create A and B once [doRemoveDuplicatedTable] is true
      */
-    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, cluster: ResourceCluster, doRemoveDuplicatedTable: Boolean){
+    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, cluster: ResourceCluster, doRemoveDuplicatedTable: Boolean, randomness: Randomness?){
         // handling [this.dbActions]
         if (this.dbActions.isNotEmpty() && doRemoveDuplicatedTable){
             removeDuplicatedDbActions(relatedResourceCalls, cluster, doRemoveDuplicatedTable)
@@ -208,7 +213,7 @@ class RestResourceCalls(
             relatedResourceCalls.forEach { call->
                 call.seeActions(ActionFilter.NO_SQL).forEach { previous->
                     if (previous is RestCallAction){
-                        val dependent = current.bindBasedOn(previous)
+                        val dependent = current.bindBasedOn(previous, randomness = randomness)
                         if (dependent){
                             setDependentCall(call)
                         }
@@ -331,8 +336,8 @@ class RestResourceCalls(
         }
 
         if (this.dbActions.isNotEmpty()) throw IllegalStateException("dbactions of this RestResourceCall is not empty")
-        this.dbActions.addAll(dbActions)
-        addChildren(dbActions)
+        // db action should add in the front of rest actions
+        addChildren(0, dbActions)
 
         bindRestActionBasedOnDbActions(dbActions, cluster, forceBindParamBasedOnDB, dbRemovedDueToRepair)
 
@@ -361,13 +366,13 @@ class RestResourceCalls(
     /**
      * build the binding between [this] with other [restResourceCalls]
      */
-    fun bindRestActionsWith(restResourceCalls: RestResourceCalls){
+    fun bindRestActionsWith(restResourceCalls: RestResourceCalls, randomness: Randomness?){
         if (restResourceCalls.getResourceNode().path != getResourceNode().path)
             throw IllegalArgumentException("target to bind refers to a different resource node, i.e., target (${restResourceCalls.getResourceNode().path}) vs. this (${getResourceNode().path})")
         val params = restResourceCalls.actions.flatMap { it.parameters }
         actions.forEach { ac ->
             if(ac.parameters.isNotEmpty()){
-                ac.bindBasedOn(ac.path, params)
+                ac.bindBasedOn(ac.path, params, randomness)
             }
         }
     }

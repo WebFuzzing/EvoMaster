@@ -8,13 +8,11 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.utils.NumberCalculationUtil
 import org.evomaster.core.utils.NumberCalculationUtil.upperBound
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.math.BigInteger
 import kotlin.math.max
 import kotlin.math.min
 
@@ -38,9 +36,6 @@ class IntegerGene(
     init {
         if (getMaximum() == getMinimum())
             this.value = getMinimum()
-        if (getMaximum() < getMinimum())
-            throw IllegalArgumentException("max must be greater than min but max is $max and min is $min")
-
     }
 
     companion object {
@@ -65,12 +60,12 @@ class IntegerGene(
         return this.value == other.value
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
-        value = randomness.randomizeBoundedIntAndLong(value.toLong(), getMinimum().toLong(), getMaximum().toLong(), forceNewValue).toInt()
+        value = randomness.randomizeBoundedIntAndLong(value.toLong(), getMinimum().toLong(), getMaximum().toLong(), tryToForceNewValue).toInt()
     }
 
-    override fun mutate(
+    override fun shallowMutate(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
@@ -80,7 +75,7 @@ class IntegerGene(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
 
-        val mutated = super.mutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        val mutated = super.shallowMutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (mutated) return true
 
         //check maximum range. no point in having a delta greater than such range
@@ -116,7 +111,6 @@ class IntegerGene(
         return value.toString()
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         when (gene) {
@@ -139,7 +133,7 @@ class IntegerGene(
                 value = gene.uniqueId.toInt()
             }
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype())
+                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
                 return this.bindValueBasedOn(gene.number)

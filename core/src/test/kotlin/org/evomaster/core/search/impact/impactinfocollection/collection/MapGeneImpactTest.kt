@@ -42,10 +42,10 @@ class MapGeneImpactTest : GeneImpactTest(){
             }
             mutationTag == 2 || (mutationTag == 0 && !p)->{
                 if (geneToMutate.getAllElements().size + 1 > geneToMutate.getMaxSizeOrDefault())
-                    geneToMutate.getAllElements().removeAt(0)
+                    geneToMutate.killChildByIndex(0)
                 else{
                     val key = generateKey()
-                    geneToMutate.getAllElements().add(PairGene.createStringPairGene(IntegerGene(key.toString(), key)))
+                    geneToMutate.addElement(PairGene.createStringPairGene(IntegerGene(key.toString(), key)))
                 }
             }
         }

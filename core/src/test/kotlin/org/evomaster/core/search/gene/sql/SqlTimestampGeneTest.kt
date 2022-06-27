@@ -37,7 +37,7 @@ class SqlTimestampGeneTest {
         val gene = DbActionGeneBuilder().buildSqlTimestampGene("timestamp")
 
         for (i in 1..10000) {
-            gene.randomize(randomness, forceNewValue = true)
+            gene.randomize(randomness, tryToForceNewValue = true)
             val rawString = gene.getValueAsRawString()
             val formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT_PATTERN)
             LocalDateTime.parse(rawString, formatter)

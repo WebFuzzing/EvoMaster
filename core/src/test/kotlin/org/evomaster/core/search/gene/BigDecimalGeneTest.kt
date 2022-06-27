@@ -4,8 +4,6 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
-import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -17,7 +15,7 @@ class BigDecimalGeneTest {
         val randomness = Randomness()
 
         val config = EMConfig()
-        config.stoppingCriterion=EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         val time = SearchTimeController()
 
         val apc = AdaptiveParameterControl()
@@ -33,29 +31,22 @@ class BigDecimalGeneTest {
         timeField.isAccessible = false
 
         val configurationField = SearchTimeController::class.java.getDeclaredField("configuration")
-        configurationField.isAccessible=true
+        configurationField.isAccessible = true
         configurationField.set(time, config)
-        configurationField.isAccessible=false
-
-        val mwc = MutationWeightControl()
+        configurationField.isAccessible = false
 
         val gene = BigDecimalGene("gene",
                 min = BigDecimal(-100),
                 max = BigDecimal(100),
-                floatingPointMode=false)
+                floatingPointMode = false)
         gene.value = BigDecimal(0)
         val initialValue = gene.value
 
         repeat(1000) {
-            gene.mutate(randomness,
-                    apc = apc,
-                    mwc = mwc,
-                    allGenes = listOf(),
-                    enableAdaptiveGeneMutation = false,
-                    additionalGeneMutationInfo = null,
-                    selectionStrategy = SubsetGeneSelectionStrategy.DEFAULT)
+            gene.mutateFloatingPointNumber(randomness,
+                    apc = apc)
 
-            assertTrue(gene.isValid(),"BigDecimalRange with range [${gene.min},${gene.max}] and initial value ${initialValue} lead to ${gene.value} after ${it} mutations")
+            assertTrue(gene.isValid(), "BigDecimalRange with range [${gene.min},${gene.max}] and initial value ${initialValue} lead to ${gene.value} after ${it} mutations")
         }
     }
 }
