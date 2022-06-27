@@ -10,7 +10,11 @@ import java.util.stream.Collectors;
  */
 public class ParamDto {
 
-    public final static String NOT_NULL_MARK_OBJ_DATE = "{}";
+    /**
+     * this is used to indicate whether a value of a param is null with its [stringValue]
+     * such as ObjectParam, DateParam
+     */
+    private final static String NOT_NULL_MARK_OBJ_DATE = "{}";
 
     /**
      * param name

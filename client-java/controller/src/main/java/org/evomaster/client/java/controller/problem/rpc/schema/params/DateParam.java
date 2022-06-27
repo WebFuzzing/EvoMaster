@@ -11,8 +11,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto.NOT_NULL_MARK_OBJ_DATE;
-
 /**
  * handle date param with java.util.Date
  */
@@ -42,7 +40,7 @@ public class DateParam extends NamedTypedValue<DateType, List<IntParam>>{
         ParamDto dto = super.getDto();
         if (getValue() != null){
             dto.innerContent = getValue().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
-            dto.stringValue = NOT_NULL_MARK_OBJ_DATE;
+            dto.setNotNullValue();
         } else
             dto.innerContent = getType().getDateFields().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;
