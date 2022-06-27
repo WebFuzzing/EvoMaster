@@ -78,6 +78,8 @@ open class ResourceSampler : AbstractRestSampler() {
 
         val ind = RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
+        ind.searchGlobalState = searchGlobalState
+        ind.doGlobalInitialize()
         return ind
     }
 
@@ -98,17 +100,22 @@ open class ResourceSampler : AbstractRestSampler() {
         /*
             At the beginning, sampleAll from this set, until it is empty
          */
-        if (adHocInitialIndividuals.isNotEmpty()) {
-            return adHocInitialIndividuals.removeAt(0)
-        }
+        val ind = if (adHocInitialIndividuals.isNotEmpty()) {
+             adHocInitialIndividuals.removeAt(0)
+        } else {
 
-        val withDependency = config.probOfEnablingResourceDependencyHeuristics > 0.0
+            val withDependency = config.probOfEnablingResourceDependencyHeuristics > 0.0
                     && dm.isDependencyNotEmpty()
                     && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
 
-        val method = ssc.getSampleStrategy()
+            val method = ssc.getSampleStrategy()
 
-        return sampleWithMethodAndDependencyOption(method, withDependency)?:sampleAtRandom()
+            sampleWithMethodAndDependencyOption(method, withDependency)
+                    ?: return sampleAtRandom()
+        }
+        ind.searchGlobalState = searchGlobalState
+        ind.doGlobalInitialize()
+        return ind
     }
 
 
@@ -229,10 +236,12 @@ open class ResourceSampler : AbstractRestSampler() {
                     dbActions = listOf()
             )
         }.toMutableList()
-        return RestIndividual(
+        val ind =  RestIndividual(
                 resourceCalls=resourceCalls,
                 sampleType = SampleType.SMART_RESOURCE,
                 trackOperator = if (config.trackingEnabled()) this else null,
                 index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
+        ind.searchGlobalState = searchGlobalState
+        return ind
     }
 }

@@ -24,6 +24,9 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
     @Inject
     protected lateinit var apc: AdaptiveParameterControl
 
+    @Inject
+    protected lateinit var searchGlobalState: SearchGlobalState
+
     /**
      * Set of available actions that can be used to define a test case
      *
@@ -33,6 +36,11 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      */
     protected val actionCluster: MutableMap<String, Action> = mutableMapOf()
 
+    /**
+     * Sample a new individual at random, but still satisfying all given constraints.
+     *
+     * Note: must guarantee to setup the [searchGlobalState] in this new individual
+     */
     abstract fun sampleAtRandom(): T
 
 
@@ -63,6 +71,8 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
     /**
      * Create a new individual, but not fully at random, but rather
      * by using some domain-knowledge.
+     *
+     * Note: must guarantee to setup the [searchGlobalState] in this new individual
      */
     open fun smartSample(): T {
         //unless this method is overridden, just sample at random

@@ -140,18 +140,29 @@ class StringGene(
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
 
-        /*
-            TODO weirdly we did not do taint on sampling!!! we must do it, and evaluate it
-
-        if(!tainted){
-            redoTaint()
-        }
-         */
-
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
         repair()
         selectedSpecialization = -1
         handleBinding(allGenes)
+    }
+
+    override fun applyGlobalUpdates() {
+        assert(!tainted)
+
+        //check if starting directly with a tainted value
+        val state = getSearchGlobalState()!! //cannot be null when this method is called
+        if(state.config.taintOnSampling){
+
+            if(state.spa.hasInfoFor(name) && state.randomness.nextDouble() < state.config.useGlobalTaintInfoProbability){
+                val spec = state.spa.chooseSpecialization(name, state.randomness)!!
+                assert(specializations.size == 0)
+                addSpecializations("", listOf(spec),state.randomness, false)
+                assert(specializationGenes.size == 1)
+                selectedSpecialization = specializationGenes.lastIndex
+            } else {
+                redoTaint(state.apc, state.randomness, listOf())
+            }
+        }
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -369,7 +380,15 @@ class StringGene(
         }
     }
 
-    fun addSpecializations(key: String, specs: Collection<StringSpecializationInfo>, randomness: Randomness) {
+    fun addSpecializations(
+            /**
+             * TODO what whas this? does not seem to be used
+             */
+            key: String,
+            specs: Collection<StringSpecializationInfo>,
+            randomness: Randomness,
+            updateGlobalInfo: Boolean = true
+    ) {
 
         val toAddSpecs = specs
                 //don't add the same specialization twice
@@ -458,7 +477,8 @@ class StringGene(
         if (toAddGenes.size > 0) {
             selectionUpdatedSinceLastMutation = true
             toAddGenes.forEach {
-                it.randomize(randomness, false, listOf())
+                //it.randomize(randomness, false, listOf())
+                it.doInitialize(randomness)
             }
             log.trace("in total added specification size: {}", toAddGenes.size)
             addChildren(toAddGenes)
@@ -473,6 +493,11 @@ class StringGene(
              */
             val ids = toAddSpecs.filter { it.stringSpecialization == EQUAL }.map { it.value }
             bindingIds.addAll(ids)
+        }
+
+        if(updateGlobalInfo) {
+            val state = getSearchGlobalState()!! //cannot be null when this method is called
+            state.spa.updateStats(name, toAddSpecs)
         }
     }
 

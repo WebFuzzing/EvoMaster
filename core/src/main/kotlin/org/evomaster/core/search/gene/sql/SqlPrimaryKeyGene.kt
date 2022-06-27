@@ -52,7 +52,8 @@ class SqlPrimaryKeyGene(name: String,
     override fun copyContent() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        gene.randomize(randomness, false, allGenes)
+        if(gene.isMutable())
+            gene.randomize(randomness, false, allGenes)
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {

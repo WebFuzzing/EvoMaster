@@ -48,12 +48,12 @@ class RandomnessTest{
     @Test
     fun testChooseByProbability(){
 
-        val m = mutableMapOf<String, Float>()
-        m["a"] = 1f
-        m["b"] = 2f
-        m["c"] = 1f
-        m["d"] = 1f
-        m["e"] = 2f
+        val m = mutableMapOf<String, Double>()
+        m["a"] = 1.0
+        m["b"] = 2.0
+        m["c"] = 1.0
+        m["d"] = 1.0
+        m["e"] = 2.0
 
 
         rand.updateSeed(seed)

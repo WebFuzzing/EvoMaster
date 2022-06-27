@@ -2,6 +2,7 @@ package org.evomaster.core.search
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -47,6 +48,16 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     var populationOrigin : String? = null
 
+    /**
+     * Reference of the singleton in this search for global state.
+     *
+     * Note: due to avoiding major refactoring of all samplers and places where individual are instantiated,
+     * eg, in unit tests, this is a nullable ref. ie, in some cases, it can be missing, and the code
+     * does not assume its presence.
+     *
+     * However, when running actual search with MIO, its presence is checked
+     */
+    var searchGlobalState : SearchGlobalState? = null
 
     /**
      * Make a deep copy of this individual
@@ -56,7 +67,15 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         if (copy !is Individual)
             throw IllegalStateException("mismatched type: the type should be Individual, but it is ${this::class.java.simpleName}")
         copy.populationOrigin = this.populationOrigin
+        copy.searchGlobalState = this.searchGlobalState
         return copy
+    }
+
+    fun doGlobalInitialize(){
+
+        //TODO make sure that seeded individual get skipped here
+
+        seeGenes().forEach { it.doGlobalInitialize() }
     }
 
     fun isInitialized() : Boolean{
