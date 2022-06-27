@@ -11,8 +11,7 @@ import java.util.stream.Collectors;
 public class ParamDto {
 
     /**
-     * this is used to indicate whether a value of a param is null with its [stringValue]
-     * such as ObjectParam, DateParam
+     * Placeholder used to indicate "not null" [stringValue] for objects such as ObjectParam and DataParam
      */
     private final static String NOT_NULL_MARK_OBJ_DATE = "{}";
 
