@@ -56,6 +56,14 @@ class SqlPathGene(
             DatabaseType.POSTGRES -> {"\" ( ${
                 points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
             } ) \""}
+            DatabaseType.H2 -> {
+                "\"LINESTRING(${
+                    points.getViewOfElements().joinToString(" , ") {
+                        it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                                " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                    }
+                })\""
+            }
             DatabaseType.MYSQL -> {
                 "LINESTRING(${points.getViewOfElements()
                         .joinToString(" , ")
@@ -102,6 +110,5 @@ class SqlPathGene(
             }
         }
     }
-
 
 }

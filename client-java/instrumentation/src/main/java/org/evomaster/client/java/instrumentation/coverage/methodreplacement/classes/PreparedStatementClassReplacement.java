@@ -113,6 +113,11 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
      *
      */
     public static String interpolateSqlStringWithJSqlParser(String sql, List<String> params) {
+        if (params.isEmpty()) {
+            // if no params, return the same sql without visiting
+            return sql;
+        }
+
         StringBuilder sqlbuffer = new StringBuilder();
 
         try {
@@ -216,18 +221,18 @@ public class PreparedStatementClassReplacement implements MethodReplacementClass
     @Replacement(type = ReplacementType.TRACKER, isPure = false, category = ReplacementCategory.SQL)
     public static ResultSet executeQuery(PreparedStatement stmt) throws SQLException {
         String sql = handlePreparedStatement(stmt);
-        return executeSql(()-> stmt.executeQuery(), sql);
+        return executeSql(stmt::executeQuery, sql);
     }
 
     @Replacement(type = ReplacementType.TRACKER, isPure = false, category = ReplacementCategory.SQL)
     public static int executeUpdate(PreparedStatement stmt) throws SQLException {
         String sql = handlePreparedStatement(stmt);
-        return executeSql(()-> stmt.executeUpdate(), sql);
+        return executeSql(stmt::executeUpdate, sql);
     }
 
     @Replacement(type = ReplacementType.TRACKER, isPure = false, category = ReplacementCategory.SQL)
     public static boolean execute(PreparedStatement stmt) throws SQLException {
         String sql = handlePreparedStatement(stmt);
-        return executeSql(()-> stmt.execute(), sql);
+        return executeSql(stmt::execute, sql);
     }
 }
