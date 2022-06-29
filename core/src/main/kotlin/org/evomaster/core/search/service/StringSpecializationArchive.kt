@@ -31,8 +31,8 @@ class StringSpecializationArchive {
 
     fun updateStats(name: String, specs : Collection<StringSpecializationInfo>){
         for(info in specs){
-            occurrences.compute(info){ _,v -> v?.plus(1) ?: 0}
-            specializationsForVariable.compute(name){_,v -> v?.apply {add(info)} ?: mutableSetOf() }
+            occurrences.compute(info){ _,v -> v?.plus(1) ?: 1}
+            specializationsForVariable.compute(name){_,v -> v?.apply {add(info)} ?: mutableSetOf(info) }
         }
     }
 
@@ -42,7 +42,7 @@ class StringSpecializationArchive {
 
         val specs = specializationsForVariable[name]
         if(specs == null || specs.isEmpty()){
-            return null
+            return null //can this even happen??? likely not
         }
 
         //the more occurrences, the least chances to be chosen
