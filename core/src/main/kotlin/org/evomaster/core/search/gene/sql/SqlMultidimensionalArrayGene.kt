@@ -128,7 +128,7 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
     private fun isValid(currentArrayGene: ArrayGene<*>, currentDimensionIndex: Int): Boolean {
-        return if (!currentArrayGene.isValid())
+        return if (!currentArrayGene.isLocallyValid())
             false
         else if (currentArrayGene.getViewOfChildren().size != this.dimensionSizes[currentDimensionIndex]) {
             false
@@ -145,7 +145,7 @@ class SqlMultidimensionalArrayGene<T>(
      * Check that the nested arraygenes equal the number of dimensions, check that each
      * dimension length is preserved.
      */
-    override fun isValid(): Boolean {
+    override fun isLocallyValid(): Boolean {
         return if (this.children.size != 1) {
             false
         } else {

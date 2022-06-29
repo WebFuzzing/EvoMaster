@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import kotlin.reflect.full.isSuperclassOf
@@ -74,7 +73,7 @@ class GeneTest {
             rand.updateSeed(i.toLong())
             val s = GeneSamplerForTests.sample(StringGene::class, rand)
             s.randomize(rand, true, listOf())
-            assertTrue(s.isValid())
+            assertTrue(s.isLocallyValid())
             assertTrue(s.value.length >= s.minLength)
             assertTrue(s.value.length <= s.maxLength)
         }
@@ -142,7 +141,7 @@ class GeneTest {
         sample.filter { it.isMutable() }
                 .forEach { root ->
                     root.randomize(rand, true)
-                    assertTrue(root.isValid(), "Not valid root: ${root.javaClass}. $root")
+                    assertTrue(root.isLocallyValid(), "Not valid root: ${root.javaClass}. $root")
 
                     val wholeTree = root.flatView().filter { it != root }
 
@@ -168,7 +167,7 @@ class GeneTest {
         sample.filter { it.isMutable() }
                 .forEach { root ->
                     root.randomize(rand, true)
-                    assertTrue(root.isValid(), "Not valid root: ${root.javaClass}")
+                    assertTrue(root.isLocallyValid(), "Not valid root: ${root.javaClass}")
 
                     val copy = root.copy()
                     assertTrue(copy != root) //TODO what is immutable root? might fail
@@ -244,7 +243,7 @@ class GeneTest {
 
         val msg = "Failed invariant for ${gene.javaClass}"
 
-        assertTrue(gene.isValid(), msg)
+        assertTrue(gene.isLocallyValid(), msg)
 
         val initialized = gene.initialized
         assertTrue(gene.flatView().all { it.initialized == initialized }, msg)

@@ -42,6 +42,6 @@ class DecDataTypeEMTest : RestTestBase() {
     }
 
     private fun areAllValidGene(inds : MutableList<EvaluatedIndividual<RestIndividual>>): Boolean{
-        return inds.all { e-> e.individual.seeGenes(ALL).all { g-> g.flatView().all { ig-> ig.isValid() } } }
+        return inds.all { e-> e.individual.seeGenes(ALL).all { g-> g.flatView().all { ig-> ig.isLocallyValid() } } }
     }
 }

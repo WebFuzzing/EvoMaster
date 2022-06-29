@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.NumberMutatorUtils.getFormattedValue
@@ -16,15 +15,12 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.evomaster.core.utils.NumberCalculationUtil.getMiddle
-import org.evomaster.core.utils.NumberCalculationUtil.upperBound
 import org.evomaster.core.utils.NumberCalculationUtil.valueWithPrecisionAndScale
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
-import kotlin.math.max
-import kotlin.math.min
 
 /**
  * gene representing BigDecimal
@@ -334,8 +330,8 @@ class BigDecimalGene(
         return valueWithPrecisionAndScale(getMaxUsedInSearch().toString(), scale)
     }
 
-    override fun isValid(): Boolean {
-        if (!super.isValid()) return false
+    override fun isLocallyValid(): Boolean {
+        if (!super.isLocallyValid()) return false
         if (max != null && value > getMaximum())
             return false
         if (min != null && value < getMinimum())

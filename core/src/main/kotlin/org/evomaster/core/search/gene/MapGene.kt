@@ -55,7 +55,7 @@ class MapGene<K, V>(
         const val MAX_SIZE = 5
     }
 
-    override fun isValid(): Boolean {
+    override fun isLocallyValid(): Boolean {
         return (minSize == null || elements.size >= minSize) && (maxSize == null || elements.size <= maxSize)
     }
 

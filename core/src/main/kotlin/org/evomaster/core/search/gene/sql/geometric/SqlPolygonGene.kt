@@ -37,9 +37,12 @@ class SqlPolygonGene(
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+        /*
+            FIXME this code is problematic
+         */
         do {
             points.randomize(randomness, tryToForceNewValue, allGenes)
-        } while (!isValid())
+        } while (!isLocallyValid())
     }
 
     /**
@@ -48,7 +51,7 @@ class SqlPolygonGene(
      * againts each other O(n^2)
      * Source: https://stackoverflow.com/questions/4876065/is-there-an-easy-and-fast-way-of-checking-if-a-polygon-is-self-intersecting
      */
-    override fun isValid(): Boolean {
+    override fun isLocallyValid(): Boolean {
         if (!onlyNonIntersectingPolygons)
             return true
 

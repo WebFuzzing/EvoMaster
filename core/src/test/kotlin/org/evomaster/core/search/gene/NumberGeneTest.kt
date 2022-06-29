@@ -1,12 +1,10 @@
 package org.evomaster.core.search.gene
 
-import com.mysql.cj.result.BigDecimalValueFactory
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.BigInteger
-import java.math.MathContext
 
 class NumberGeneTest {
 
@@ -37,7 +35,7 @@ class NumberGeneTest {
         gene.randomize(random, false, listOf())
         assertTrue(gene.value in -99.99..99.99)
 
-        assertTrue(gene.isValid())
+        assertTrue(gene.isLocallyValid())
     }
 
 
@@ -46,28 +44,28 @@ class NumberGeneTest {
         BigDecimalGene("foo", precision = 2, scale = 0).apply {
             assertEquals("99", getMaximum().toString())
             assertEquals("-99", getMinimum().toString())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
 
             this.value = BigDecimal("100")
-            assertFalse(isValid())
+            assertFalse(isLocallyValid())
         }
 
         BigDecimalGene("foo", precision = 2, scale = 0, maxInclusive = false).apply {
             assertEquals("98", getMaximum().toString())
             assertEquals("-99", getMinimum().toString())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         BigDecimalGene("foo", precision = 2, scale = 0, minInclusive = false).apply {
             assertEquals("99", getMaximum().toString())
             assertEquals("-98", getMinimum().toString())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         BigDecimalGene("foo", min= BigDecimal("42"), max = BigDecimal("42")).apply {
@@ -85,9 +83,9 @@ class NumberGeneTest {
             // default
             assertEquals("0.00", value.toString())
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
 
@@ -97,9 +95,9 @@ class NumberGeneTest {
             // default
             assertEquals("-50.00", value.toString())
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
 
@@ -109,9 +107,9 @@ class NumberGeneTest {
             // default
             assertEquals("50.00", value.toString())
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
     }
@@ -125,9 +123,9 @@ class NumberGeneTest {
             // default
             assertEquals(50.0, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         DoubleGene("value", max = 0.0,precision = 4, scale = 2, maxInclusive = false).apply {
@@ -136,9 +134,9 @@ class NumberGeneTest {
             // default
             assertEquals(-50.0, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         DoubleGene("value").apply {
@@ -164,9 +162,9 @@ class NumberGeneTest {
             // default
             assertEquals(50.0f, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         FloatGene("value", max = 0.0f,precision = 4, scale = 2, maxInclusive = false).apply {
@@ -175,9 +173,9 @@ class NumberGeneTest {
             // default
             assertEquals(-50.0f, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         FloatGene("value").apply {
@@ -201,9 +199,9 @@ class NumberGeneTest {
             // default
             assertEquals(0, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         IntegerGene("ig", min = 0, precision = 2, minInclusive = false).apply {
@@ -212,9 +210,9 @@ class NumberGeneTest {
             // default
             assertEquals(50, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         IntegerGene("ig", max = 0, precision = 2, maxInclusive = false).apply {
@@ -223,9 +221,9 @@ class NumberGeneTest {
             // default
             assertEquals(-50, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
     }
 
@@ -237,9 +235,9 @@ class NumberGeneTest {
             // default
             assertEquals(0, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         LongGene("ig", min = 0, precision = 2, minInclusive = false).apply {
@@ -248,9 +246,9 @@ class NumberGeneTest {
             // default
             assertEquals(50, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         LongGene("ig", max = 0, precision = 2, maxInclusive = false).apply {
@@ -259,9 +257,9 @@ class NumberGeneTest {
             // default
             assertEquals(-50, value)
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
     }
 
@@ -273,9 +271,9 @@ class NumberGeneTest {
             // default
             assertEquals(0, value.toInt())
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         BigIntegerGene("ig", min = BigInteger.ZERO, precision = 2, minInclusive = false).apply {
@@ -284,9 +282,9 @@ class NumberGeneTest {
             // default
             assertEquals(50, value.toInt())
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
 
         BigIntegerGene("ig", max = BigInteger.ZERO, precision = 2, maxInclusive = false).apply {
@@ -295,9 +293,9 @@ class NumberGeneTest {
             // default
             assertEquals(-50, value.toInt())
 
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
             randomize(random, false, listOf())
-            assertTrue(isValid())
+            assertTrue(isLocallyValid())
         }
     }
 
