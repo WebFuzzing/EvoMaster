@@ -10,16 +10,13 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
 import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
@@ -1053,6 +1050,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return null;
     }
 
+    @Override
+    public boolean additionalRPCTest(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionDto> actions, List<ActionResponseDto> responses) {
+        return false;
+    }
+
+    @Override
+    public boolean customizeMockingRPCExternalService(List<MockRPCExternalServiceDto> externalServiceDtos) {
+        return false;
+    }
 
     @Override
     public void resetDatabase(List<String> tablesToClean) {
