@@ -156,7 +156,7 @@ class RestResourceCalls(
             ActionFilter.INIT, ActionFilter.ONLY_SQL -> dbActions
             ActionFilter.NO_INIT,
             ActionFilter.NO_SQL -> actions
-            ActionFilter.ONLY_EXTERNAL_SERVICE -> externalServiceActions
+//            ActionFilter.ONLY_EXTERNAL_SERVICE -> externalServiceActions
         }
     }
 

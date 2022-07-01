@@ -5,8 +5,24 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
+/**
+ * Action to execute the external service related need
+ * to handle the external service calls.
+ *
+ * Typically, handle WireMock responses
+ */
 class ExternalServiceAction (
+    /**
+     * Received request to the respective WireMock instance
+     *
+     * TODO: Need to expand the properties further in future
+     * depending on the need
+     */
     val request: ExternalServiceRequest,
+
+    /**
+     * WireMock server which received the request
+     */
     val wireMockServer: WireMockServer,
     private val id: Long,
     computedGenes: List<Gene>? = null,
