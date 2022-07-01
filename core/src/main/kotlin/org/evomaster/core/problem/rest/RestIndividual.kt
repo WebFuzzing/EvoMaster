@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
@@ -40,23 +41,26 @@ class RestIndividual(
             sampleType: SampleType,
             sampleSpec: SamplerSpecification? = null,
             dbInitialization: MutableList<DbAction> = mutableListOf(),
+            externalServiceInitialization: MutableList<ExternalServiceAction> = mutableListOf(),
             trackOperator: TrackOperator? = null,
             index : Int = -1
     ) : this(sampleType, sampleSpec, trackOperator, index, mutableListOf<StructuralElement>().apply {
-        addAll(dbInitialization); addAll(resourceCalls)
+        addAll(externalServiceInitialization);addAll(dbInitialization); addAll(resourceCalls)
     })
 
     constructor(
-            actions: MutableList<out Action>,
-            sampleType: SampleType,
-            dbInitialization: MutableList<DbAction> = mutableListOf(),
-            trackOperator: TrackOperator? = null,
-            index : Int = Traceable.DEFAULT_INDEX
+        actions: MutableList<out Action>,
+        sampleType: SampleType,
+        dbInitialization: MutableList<DbAction> = mutableListOf(),
+        externalServiceInitialization: MutableList<ExternalServiceAction> = mutableListOf(),
+        trackOperator: TrackOperator? = null,
+        index : Int = Traceable.DEFAULT_INDEX
     ) : this(
                     actions.map {RestResourceCalls(actions= listOf(it as RestCallAction), dbActions = listOf())}.toMutableList(),
                     sampleType,
                     null,
                     dbInitialization,
+                    externalServiceInitialization,
                     trackOperator,
                     index
             )
@@ -96,6 +100,7 @@ class RestIndividual(
             GeneFilter.ALL -> seeDbActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeGenes)
+//            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ExternalServiceAction::seeGenes)
         }
     }
 
@@ -141,6 +146,10 @@ class RestIndividual(
     override fun seeDbActions(): List<DbAction> {
         return seeInitializingActions().plus(getResourceCalls().flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
     }
+
+//    override fun seeExternalServiceActions(): List<ExternalServiceAction> {
+//        return seeExternalServiceActions().plus(getResourceCalls().flatMap { c-> c.seeActions(ONLY_EXTERNAL_SERVICE) as List<ExternalServiceAction> })
+//    }
 
     override fun verifyInitializationActions(): Boolean {
         return DbActionUtils.verifyActions(seeInitializingActions())
@@ -333,6 +342,7 @@ class RestIndividual(
             INIT -> seeInitializingActions()
             ONLY_SQL -> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ONLY_SQL) })
             NO_SQL -> getResourceCalls().flatMap { it.seeActions(NO_SQL) }
+//            ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().plus(getResourceCalls().flatMap { it.seeActions(ONLY_EXTERNAL_SERVICE) })
         }
     }
 

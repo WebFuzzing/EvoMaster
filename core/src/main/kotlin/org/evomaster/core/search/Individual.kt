@@ -149,6 +149,13 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     open fun seeDbActions() : List<Action> = seeInitializingActions()
 
     /**
+     * return a list of all external service actions in [this] individual
+     * that include all the initializing actions plus external service actions
+     * among rest actions
+     */
+    open fun seeExternalServiceActions() : List<Action> = seeInitializingActions()
+
+    /**
      * Determine if the structure (ie the actions) of this individual
      * can be mutated (eg, add/remove actions).
      * Note: even if this is false, it would still be possible to

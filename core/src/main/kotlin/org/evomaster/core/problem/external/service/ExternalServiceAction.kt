@@ -1,13 +1,13 @@
 package org.evomaster.core.problem.external.service
 
-import com.github.tomakehurst.wiremock.stubbing.ServeEvent
+import com.github.tomakehurst.wiremock.WireMockServer
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.service.Randomness
 
 class ExternalServiceAction (
-    val request: ServeEvent,
+    val request: ExternalServiceRequest,
+    val wireMockServer: WireMockServer,
     private val id: Long,
     computedGenes: List<Gene>? = null,
         ) : Action(listOf()) {
@@ -18,7 +18,7 @@ class ExternalServiceAction (
 
     override fun getName(): String {
         // TODO: Need to change in future
-        return request.id.toString()
+        return request.getID()
     }
 
     override fun seeGenes(): List<out Gene> {
@@ -29,18 +29,8 @@ class ExternalServiceAction (
         return false
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Action>) {
-        val allGenes = all.flatMap { it.seeGenes() }
-        seeGenes().asSequence()
-            .filter { it.isMutable() }
-            .forEach {
-                it.randomize(randomness, false, allGenes)
-            }
-    }
-
-    override fun getChildren() : List<Gene> = genes
-
     override fun copyContent(): StructuralElement {
-        return ExternalServiceAction(request, id, genes.map(Gene::copyContent))
+        return ExternalServiceAction(request, wireMockServer, id, genes.map(Gene::copy))
     }
+
 }

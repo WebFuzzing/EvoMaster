@@ -34,7 +34,7 @@ class RestSampler : AbstractRestSampler(){
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05) as RestCallAction)
         }
-        val ind = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
+        val ind = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), mutableListOf(),this, time.evaluatedIndividuals)
         ind.searchGlobalState = searchGlobalState
         return ind
     }

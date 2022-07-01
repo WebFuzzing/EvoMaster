@@ -258,6 +258,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             throw IllegalArgumentException("Action is not initialized")
         }
         val ind =  RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
+                , mutableListOf()
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
         org.evomaster.core.Lazy.assert { ind.isInitialized() }
         return ind

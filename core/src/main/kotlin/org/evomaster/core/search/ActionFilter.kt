@@ -24,5 +24,10 @@ enum class ActionFilter {
     /**
      * actions which are not SQL-related actions
      */
-    NO_SQL
+    NO_SQL,
+
+    /**
+     * actions which are External Service related actions
+     */
+//    ONLY_EXTERNAL_SERVICE
 }
