@@ -71,7 +71,7 @@ public interface CustomizationHandler {
      *                  Note that the response is matched with the action based on the index
      * @return a result of handling of additional RPC Test
      */
-    boolean additionalRPCTest(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionDto> actions, List<ActionResponseDto> responses);
+    boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionDto> actions, List<ActionResponseDto> responses);
 
     /**
      * <p>

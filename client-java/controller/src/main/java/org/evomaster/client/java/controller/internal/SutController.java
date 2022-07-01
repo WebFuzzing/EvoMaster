@@ -1051,7 +1051,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public boolean additionalRPCTest(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionDto> actions, List<ActionResponseDto> responses) {
+    public boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<RPCActionDto> actions, List<ActionResponseDto> responses) {
         return false;
     }
 
