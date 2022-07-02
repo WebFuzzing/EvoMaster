@@ -18,11 +18,11 @@ public abstract class H2VersionUtils {
     public static final String H2_VERSION_2_0_0 = "2.0.0";
 
     /**
-     * Returns true if [versionString] >= [otherVersionString]
+     * Returns true if [versionString] &gt;= [otherVersionString]
      *
      * @param versionString a string with a version (e.g. "1.2.100")
      * @param otherVersionString another string with a version (e.g. "1.4.100")
-     * @return true if [versionString] >= [otherVersionString]
+     * @return true if [versionString] &gt;= [otherVersionString]
      */
     public static synchronized boolean isVersionGreaterOrEqual(String versionString, String otherVersionString) {
         Version version  = VersionUtil.parseVersion(versionString,null,null);
