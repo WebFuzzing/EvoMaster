@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.db;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.db.h2.H2VersionUtils;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -31,7 +32,18 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean) {
-        clearDatabase(getDefaultRetries(DatabaseType.H2), connection, schemaName, tableToSkip, tableToClean, DatabaseType.H2, false, true, true);
+        try {
+            final String h2Version = H2VersionUtils.getH2Version(connection);
+            /*
+             * The SQL command "TRUNCATE TABLE my_table RESTART IDENTITY"
+             * is not supported by H2 version 1.4.199 or lower
+             */
+            final boolean restartIdentitiyWhenTruncating = H2VersionUtils.isVersionGreaterOrEqual(h2Version, H2VersionUtils.H2_VERSION_2_0_0);
+            clearDatabase(getDefaultRetries(DatabaseType.H2), connection, schemaName, tableToSkip, tableToClean, DatabaseType.H2,
+                    false, true, restartIdentitiyWhenTruncating);
+        } catch (SQLException e) {
+            throw new RuntimeException("Unexpected SQLException while fetching H2 version", e);
+        }
     }
 
     /*
@@ -140,7 +152,17 @@ public class DbCleaner {
          * Enable the restarting of Identity fields only if sequences are to be restarted
          * and the database type is H2
          */
-        boolean restartIdentityWhenTruncating = doResetSequence && type.equals(DatabaseType.H2);
+        boolean restartIdentityWhenTruncating;
+        if (doResetSequence && type.equals(DatabaseType.H2)) {
+            try {
+                String h2Version = H2VersionUtils.getH2Version(connection);
+                restartIdentityWhenTruncating = H2VersionUtils.isVersionGreaterOrEqual(h2Version, H2VersionUtils.H2_VERSION_2_0_0);
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unexpected SQL exception while getting H2 version", ex);
+            }
+        } else {
+            restartIdentityWhenTruncating = false;
+        }
         clearDatabase(getDefaultRetries(type), connection, getSchemaName(schemaName, type), tableToSkip, tableToClean, type, false, doResetSequence, restartIdentityWhenTruncating);
     }
 

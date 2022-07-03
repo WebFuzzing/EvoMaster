@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.internal.db.constraint;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.db.h2.H2VersionUtils;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -29,9 +30,6 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
     private static final String COLUMN_NAME = "COLUMN_NAME";
     private static final String CONSTRAINT_SCHEMA = "CONSTRAINT_SCHEMA";
     private static final String CONSTRAINT_NAME = "CONSTRAINT_NAME";
-    public static final String VERSION_0_PREFIX = "0.";
-    public static final String VERSION_1_PREFIX = "1.";
-    private static final int COLUMN_INDEX_H2_VERSION = 1;
 
     /**
      * Expects the schema explained in
@@ -43,7 +41,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      */
     public List<DbTableConstraint> extract(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
 
-        final String h2DatabaseVersion = getVersion(connectionToH2);
+        final String h2DatabaseVersion = H2VersionUtils.getH2Version(connectionToH2);
 
         List<DbTableConstraint> columnConstraints = extractColumnConstraints(connectionToH2, schemaDto, h2DatabaseVersion);
         List<DbTableConstraint> tableCheckExpressions = extractTableConstraints(connectionToH2, schemaDto, h2DatabaseVersion);
@@ -63,12 +61,8 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         SimpleLogger.uniqueWarn("WARNING, EvoMaster cannot extract H2 constraints with type '" + constraintType);
     }
 
-    private boolean isVersion2OrHigher(String h2DatabaseVersion) {
-        return !h2DatabaseVersion.startsWith(VERSION_0_PREFIX) && !h2DatabaseVersion.startsWith(VERSION_1_PREFIX);
-    }
-
     private List<DbTableConstraint> extractColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto, String h2DatabaseVersion) throws SQLException {
-        if (isVersion2OrHigher(h2DatabaseVersion)) {
+        if (H2VersionUtils.isVersionGreaterOrEqual(h2DatabaseVersion, H2VersionUtils.H2_VERSION_2_0_0)) {
             return new ArrayList<>();
         } else {
             return extractColumnConstraintsVersion1OrLower(connectionToH2, schemaDto, h2DatabaseVersion);
@@ -76,7 +70,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
     }
 
     private List<DbTableConstraint> extractTableConstraints(Connection connectionToH2, DbSchemaDto schemaDto, String h2DatabaseVersion) throws SQLException {
-        if (isVersion2OrHigher(h2DatabaseVersion)) {
+        if (H2VersionUtils.isVersionGreaterOrEqual(h2DatabaseVersion, H2VersionUtils.H2_VERSION_2_0_0)) {
             return extractTableConstraintsVersionTwoOrHigher(connectionToH2, schemaDto);
         } else {
             return extractTableConstraintsVersionOneOrLower(connectionToH2, schemaDto);
@@ -190,7 +184,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      * Extracts DbTableConstraints for version 0.xxx and 1.xxx
      *
      * @param connectionToH2 the connection to the H2 database
-     * @param schemaDto the schema
+     * @param schemaDto      the schema
      * @return the list of constraints in the table
      * @throws SQLException an unexpected exception while executing the queries
      */
@@ -243,27 +237,6 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
 
 
     /**
-     * Returns the version of the H2 database.
-     * Some possible values are "2.1.212", "1.4.200"
-     *
-     * @param connectionToH2 the connection to the H2 database
-     * @return the version of the H2 database
-     * @throws SQLException if the H2Version() function is not implemented
-     */
-    private String getVersion(Connection connectionToH2) throws SQLException {
-        try (Statement statement = connectionToH2.createStatement()) {
-            final String query = "SELECT H2Version();";
-            try (ResultSet columns = statement.executeQuery(query)) {
-                boolean hasNext = columns.next();
-                if (!hasNext) {
-                    throw new IllegalArgumentException("Cannot retrieve H2 version");
-                }
-                return columns.getString(COLUMN_INDEX_H2_VERSION);
-            }
-        }
-    }
-
-    /**
      * For each table in the schema DTO, this method appends
      * the constraints that are originated in the CREATE TABLE commands
      * for those particular tables.
@@ -275,7 +248,9 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      * @throws SQLException if the connection to the database fails
      */
     private List<DbTableConstraint> extractColumnConstraintsVersion1OrLower(Connection connectionToH2, DbSchemaDto schemaDto, String h2DatabaseVersion) throws SQLException {
-
+        if (H2VersionUtils.isVersionGreaterOrEqual(h2DatabaseVersion, H2VersionUtils.H2_VERSION_2_0_0)) {
+            throw new IllegalArgumentException("Cannot extract column constraints for H2 version 2 or higher with H2 database version  " + h2DatabaseVersion);
+        }
         String tableSchema = schemaDto.name;
         List<DbTableConstraint> columnConstraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
