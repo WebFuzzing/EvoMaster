@@ -284,7 +284,10 @@ class SqlMultidimensionalArrayGene<T>(
         if (!initialized) {
             throw IllegalStateException("Cannot call to getValueAsPrintableString() using an unitialized multidimensional array")
         }
-        return "\"${this.children[0].getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)}\""
+        // FIXME: This is a hack to ensure that quotes are escaped.
+        // This should be refactored when the getValueAsPrintableString is refactored.
+        return "\"${this.children[0].getValueAsPrintableString(previousGenes, 
+                mode ?: GeneUtils.EscapeMode.TEXT, targetFormat ?: OutputFormat.DEFAULT, extraCheck)}\""
     }
 
     override fun copyValueFrom(other: Gene) {

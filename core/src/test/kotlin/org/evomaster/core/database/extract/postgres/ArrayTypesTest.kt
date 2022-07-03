@@ -11,13 +11,11 @@ import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 /**
  * Created by jgaleotti on 07-May-19.
  */
-@Disabled
 class ArrayTypesTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/postgres_array_types.sql"
@@ -113,15 +111,10 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
 
         val arrayColumn = genes[1] as SqlMultidimensionalArrayGene<IntegerGene>
         assertEquals(1, arrayColumn.numberOfDimensions)
-        assertEquals("\"{}\"", arrayColumn.getValueAsPrintableString())
-
         val matrixColumn = genes[2] as SqlMultidimensionalArrayGene<IntegerGene>
         assertEquals(2, matrixColumn.numberOfDimensions)
-        assertEquals("\"{}\"", matrixColumn.getValueAsPrintableString())
-
         val spaceColumn = genes[3] as SqlMultidimensionalArrayGene<IntegerGene>
         assertEquals(3, spaceColumn.numberOfDimensions)
-        assertEquals("\"{}\"", spaceColumn.getValueAsPrintableString())
 
         arrayColumn.doInitialize(rand)
         do {
@@ -156,7 +149,7 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
                 "exactSizeMatrixColumn"
             )
         )
-
+        actions.forEach { it.doInitialize(rand) }
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
@@ -181,7 +174,6 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         val nullableArrayColumn = genes[0] as SqlMultidimensionalArrayGene<*>
         assertEquals(1, nullableArrayColumn.numberOfDimensions)
         assertTrue(nullableArrayColumn.template is SqlNullableGene)
-        assertEquals("\"{}\"", nullableArrayColumn.getValueAsPrintableString())
 
         nullableArrayColumn.doInitialize(rand)
         do {
@@ -218,7 +210,7 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         val stringArrayColumn = genes[0] as SqlMultidimensionalArrayGene<*>
         assertEquals(1, stringArrayColumn.numberOfDimensions)
         assertTrue(stringArrayColumn.template is StringGene)
-        assertEquals("\"{}\"", stringArrayColumn.getValueAsPrintableString())
+
 
         stringArrayColumn.doInitialize(rand)
         do {
@@ -254,8 +246,6 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         val stringArrayColumn = genes[0] as SqlMultidimensionalArrayGene<*>
         assertEquals(1, stringArrayColumn.numberOfDimensions)
         assertTrue(stringArrayColumn.template is StringGene)
-        assertEquals("\"{}\"", stringArrayColumn.getValueAsPrintableString())
-
         stringArrayColumn.doInitialize(rand)
         do {
             stringArrayColumn.randomize(rand,tryToForceNewValue = false)
@@ -291,7 +281,6 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         val stringArrayColumn = genes[0] as SqlMultidimensionalArrayGene<*>
         assertEquals(1, stringArrayColumn.numberOfDimensions)
         assertTrue(stringArrayColumn.template is StringGene)
-        assertEquals("\"{}\"", stringArrayColumn.getValueAsPrintableString())
 
         stringArrayColumn.doInitialize(rand)
         do {
