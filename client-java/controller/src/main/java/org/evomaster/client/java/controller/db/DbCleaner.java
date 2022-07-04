@@ -32,18 +32,19 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean) {
+        final String h2Version;
         try {
-            final String h2Version = H2VersionUtils.getH2Version(connection);
-            /*
-             * The SQL command "TRUNCATE TABLE my_table RESTART IDENTITY"
-             * is not supported by H2 version 1.4.199 or lower
-             */
-            final boolean restartIdentitiyWhenTruncating = H2VersionUtils.isVersionGreaterOrEqual(h2Version, H2VersionUtils.H2_VERSION_2_0_0);
-            clearDatabase(getDefaultRetries(DatabaseType.H2), connection, schemaName, tableToSkip, tableToClean, DatabaseType.H2,
-                    false, true, restartIdentitiyWhenTruncating);
+            h2Version = H2VersionUtils.getH2Version(connection);
         } catch (SQLException e) {
             throw new RuntimeException("Unexpected SQLException while fetching H2 version", e);
         }
+        /*
+         * The SQL command "TRUNCATE TABLE my_table RESTART IDENTITY"
+         * is not supported by H2 version 1.4.199 or lower
+         */
+        final boolean restartIdentitiyWhenTruncating = H2VersionUtils.isVersionGreaterOrEqual(h2Version, H2VersionUtils.H2_VERSION_2_0_0);
+        clearDatabase(getDefaultRetries(DatabaseType.H2), connection, schemaName, tableToSkip, tableToClean, DatabaseType.H2,
+                false, true, restartIdentitiyWhenTruncating);
     }
 
     /*
