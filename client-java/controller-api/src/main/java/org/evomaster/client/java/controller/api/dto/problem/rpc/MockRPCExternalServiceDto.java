@@ -5,6 +5,11 @@ import java.util.List;
 public class MockRPCExternalServiceDto {
 
     /**
+     * a key refers to the RPC-based API which contains the specified RPC interface
+     */
+    public String appKey;
+
+    /**
      * a full name of the RPC interface to mock
      */
     public String interfaceFullName;
