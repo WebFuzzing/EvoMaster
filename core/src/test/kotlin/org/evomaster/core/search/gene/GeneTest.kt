@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import kotlin.reflect.full.isSuperclassOf
@@ -21,7 +20,7 @@ class GeneTest {
             This number should not change, unless you explicitly add/remove any gene.
             if so, update this number accordingly
          */
-        assertEquals(69, genes.size)
+        assertEquals(71, genes.size)
     }
 
     @Test
@@ -224,7 +223,7 @@ class GeneTest {
                     checkInvariants(root)
 
                     val copy = root.copy()
-                    checkInvariants(copy);
+                    checkInvariants(copy)
 
                     //TODO we need to handle Globally Valid before we can check this
 //                    if(root.isPrintable()) {
