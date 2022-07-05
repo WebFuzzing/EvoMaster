@@ -330,6 +330,23 @@ class RemoteControllerImplementation() : RemoteController{
         return dto?.data
     }
 
+    /**
+     * process post actions after search based on [postSearchActionDto]
+     */
+    override fun postSearchAction(postSearchActionDto: PostSearchActionDto): Boolean {
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.POST_SEARCH_ACTION)
+                .request()
+                .post(Entity.entity(postSearchActionDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+        if (!wasSuccess(response)){
+            //TODO
+            return false
+        }
+        return true
+    }
+
     override fun registerNewAction(actionDto: ActionDto) : Boolean{
 
         val response = makeHttpCall {

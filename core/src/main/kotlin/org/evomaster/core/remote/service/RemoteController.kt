@@ -51,6 +51,8 @@ interface RemoteController : DatabaseExecutor {
 
     fun executeNewRPCActionAndGetResponse(actionDto: ActionDto) : ActionResponseDto?
 
+    fun postSearchAction(postSearchActionDto: PostSearchActionDto) : Boolean
+
     fun registerNewAction(actionDto: ActionDto) : Boolean
 
     fun address() : String

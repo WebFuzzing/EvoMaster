@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import org.evomaster.client.java.controller.api.dto.problem.rpc.EvaluatedRPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.MockRPCExternalServiceDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 
@@ -23,7 +24,7 @@ public class RPCTestDto {
     /**
      * a list of RPC actions
      */
-    public List<RPCActionDto> actions;
+    public List<EvaluatedRPCActionDto> actions;
 
     /**
      * a list of response correspoding to the actions

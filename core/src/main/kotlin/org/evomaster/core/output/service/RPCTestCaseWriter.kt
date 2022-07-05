@@ -2,6 +2,7 @@ package org.evomaster.core.output.service
 
 import com.google.inject.Inject
 import org.evomaster.core.output.Lines
+import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
@@ -236,5 +237,13 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
         then we need to further handle it
      */
     private fun handleClientType(clientType: String) = clientType.replace("\$",".")
+
+    override fun additionalTestHandling(tests: List<TestCase>) {
+        try {
+            rpcHandler.handleCustomizedTests(tests.map { t-> t.test as EvaluatedIndividual<RPCIndividual> })
+        }catch (e : Exception){
+            log.warn("Fail to process ")
+        }
+    }
 
 }

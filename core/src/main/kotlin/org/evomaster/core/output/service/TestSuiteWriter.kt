@@ -139,6 +139,9 @@ class TestSuiteWriter {
 
         footer(lines)
 
+        // additional handling on generated tests
+        testCaseWriter.additionalTestHandling(tests)
+
         return lines.toString()
     }
 
