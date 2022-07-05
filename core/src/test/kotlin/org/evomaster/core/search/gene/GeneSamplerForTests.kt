@@ -131,6 +131,8 @@ object GeneSamplerForTests {
             SqlCidrGene::class -> sampleSqlCidrGene(rand) as T
             SqlAutoIncrementGene::class -> sampleSqlAutoIncrementGene(rand) as T
             SqlPathGene::class -> sampleSqlPathGene(rand) as T
+            SqlMultiPointGene::class -> sampleSqlMultiPointGene(rand) as T
+            SqlMultiPathGene::class -> sampleSqlMultiPathGene(rand) as T
             SqlLineGene::class -> sampleSqlLineGene(rand) as T
             SqlPolygonGene::class -> sampleSqlPolygonGene(rand) as T
             SqlCircleGene::class -> sampleSqlCircleGene(rand) as T
@@ -211,6 +213,14 @@ object GeneSamplerForTests {
 
     private fun sampleSqlPathGene(rand: Randomness): SqlPathGene {
         return SqlPathGene("rand SqlPathGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlMultiPointGene(rand: Randomness): SqlMultiPointGene {
+        return SqlMultiPointGene("rand SqlMultiPointGene ${rand.nextInt()}")
+    }
+
+    private fun sampleSqlMultiPathGene(rand: Randomness): SqlMultiPathGene {
+        return SqlMultiPathGene("rand SqlMultiPathGene ${rand.nextInt()}")
     }
 
     private fun sampleSqlAutoIncrementGene(rand: Randomness): SqlAutoIncrementGene {

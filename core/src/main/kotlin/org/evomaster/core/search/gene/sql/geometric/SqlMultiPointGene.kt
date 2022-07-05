@@ -12,27 +12,30 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * A LineString/Path is a Polyline or from Wikipedia "a curve specified by the sequence of points".
- * It must have at least two points to be valid.
+ * Represents a collection of points without lines between them.
+ * Column types MULTIPOINT of databases H2 and PostgreSQL are supported by
+ * this gene.
  */
-class SqlPathGene(
+class SqlMultiPointGene(
         name: String,
+        /**
+         * The database type of the source column for this gene
+         */
         val databaseType: DatabaseType = DatabaseType.POSTGRES,
         val points: ArrayGene<SqlPointGene> = ArrayGene(
                 name = "points",
-                // paths are lists of at least 2 points
-                minSize = 2,
-                template = SqlPointGene("p", databaseType=databaseType))
+                minSize = 0,
+                template = SqlPointGene("p", databaseType = databaseType))
 ) : CompositeFixedGene(name, mutableListOf(points)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlMultiPointGene::class.java)
     }
 
-    override fun copyContent(): Gene = SqlPathGene(
+    override fun copyContent(): Gene = SqlMultiPointGene(
             name,
-            points = points.copy() as ArrayGene<SqlPointGene>,
-            databaseType = this.databaseType
+            databaseType = this.databaseType,
+            points = points.copy() as ArrayGene<SqlPointGene>
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
@@ -57,10 +60,7 @@ class SqlPathGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
-            DatabaseType.POSTGRES -> {"\" ( ${
-                points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
-            } ) \""}
-            DatabaseType.H2 -> {
+            DatabaseType.POSTGRES -> {
                 "\"LINESTRING(${
                     points.getViewOfElements().joinToString(" , ") {
                         it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
@@ -68,42 +68,50 @@ class SqlPathGene(
                     }
                 })\""
             }
-            DatabaseType.MYSQL -> {
-                "LINESTRING(${points.getViewOfElements()
-                        .joinToString(" , ")
-                        { it.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck) }})"
+            DatabaseType.H2 -> {
+                if (points.isEmpty()) "\"MULTIPOINT EMPTY\""
+                else
+                    "\"MULTIPOINT(${
+                        points.getViewOfElements().joinToString(" , ") {
+                            it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                                    " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                        }
+                    })\""
             }
-            else -> { throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")}
+            else -> {
+                throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsPrintableString() for $databaseType")
+            }
         }
     }
 
     override fun getValueAsRawString(): String {
         return "( ${
-            points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
+            points.getViewOfElements()
+                    .map { it.getValueAsRawString() }
+                    .joinToString(" , ")
         } ) "
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlPathGene) {
+        if (other !is SqlMultiPointGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.points.copyValueFrom(other.points)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlPathGene) {
+        if (other !is SqlMultiPointGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.points.containsSameValueAs(other.points)
     }
 
 
-
     override fun innerGene(): List<Gene> = listOf(points)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is SqlPathGene -> {
+            gene is SqlMultiPointGene -> {
                 points.bindValueBasedOn(gene.points)
             }
             else -> {

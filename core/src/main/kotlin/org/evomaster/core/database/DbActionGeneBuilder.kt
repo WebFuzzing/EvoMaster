@@ -255,6 +255,20 @@ class DbActionGeneBuilder {
                 ColumnDataType.PATH ->
                     SqlPathGene(column.name, databaseType = column.databaseType)
 
+                /**
+                 * PostgreSQL and H2 MULTIPOINT
+                 * column types
+                 */
+                ColumnDataType.MULTIPOINT ->
+                    SqlMultiPointGene(column.name, databaseType = column.databaseType)
+
+                /**
+                 * PostgreSQL and H2 MULTILINESTRING
+                 * column types
+                 */
+                ColumnDataType.MULTILINESTRING ->
+                    SqlMultiPathGene(column.name, databaseType = column.databaseType)
+
                 /* MySQL and PostgreSQL POLYGON
                  * column data type
                  */
@@ -354,28 +368,10 @@ class DbActionGeneBuilder {
         }
 
         if (column.dimension > 0) {
-            val openingTag: String
-            val closingTag: String
-            val separatorTag = ", "
-            when (column.databaseType) {
-                DatabaseType.H2 -> {
-                    openingTag = "ARRAY["
-                    closingTag = "]"
-                }
-                DatabaseType.POSTGRES -> {
-                    openingTag = "\"{"
-                    closingTag = "}\""
-                }
-                else ->
-                    throw IllegalArgumentException("Cannot handle: ${column.databaseType}")
-            }
-            // if the column type is an array, matrix, etc.
             gene = SqlMultidimensionalArrayGene(column.name,
+                    databaseType = column.databaseType,
                     template = gene,
-                    numberOfDimensions = column.dimension,
-                    openingTag = openingTag,
-                    closingTag = closingTag,
-                    separatorTag = separatorTag)
+                    numberOfDimensions = column.dimension)
         }
         return gene
     }

@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.Randomness
@@ -32,9 +33,12 @@ class SqlMultidimensionalArrayGeneTest {
         return gene
     }
 
-    private fun sampleTwoDimensionalArrayOfIntegerGenes(rows: Int, columns: Int): SqlMultidimensionalArrayGene<IntegerGene> {
+    private fun sampleTwoDimensionalArrayOfIntegerGenes(rows: Int,
+                                                        columns: Int,
+                                                        databaseType: DatabaseType = DatabaseType.POSTGRES): SqlMultidimensionalArrayGene<IntegerGene> {
         val gene = SqlMultidimensionalArrayGene(
                 "matrix",
+                databaseType = databaseType,
                 template = IntegerGene("element"),
                 numberOfDimensions = 2
         )
@@ -322,7 +326,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(1)).value = 2
         gene.getElement(listOf(2)).value = 3
 
-        assertEquals("\"{1,2,3}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{1, 2, 3}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 
@@ -336,7 +340,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(1, 0)).value = 3
         gene.getElement(listOf(1, 1)).value = 4
 
-        assertEquals("\"{{1,2},{3,4}}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{{1, 2}, {3, 4}}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 
@@ -346,7 +350,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(0, 0)).value = 1
         gene.getElement(listOf(0, 1)).value = 2
         gene.getElement(listOf(0, 2)).value = 3
-        assertEquals("\"{{1,2,3}}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{{1, 2, 3}}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 
@@ -356,7 +360,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(0, 0)).value = 1
         gene.getElement(listOf(1, 0)).value = 2
         gene.getElement(listOf(2, 0)).value = 3
-        assertEquals("\"{{1},{2},{3}}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{{1}, {2}, {3}}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 
@@ -381,7 +385,7 @@ class SqlMultidimensionalArrayGeneTest {
 
         gene.getElement(listOf(0)).value = "Hello"
         gene.getElement(listOf(1)).value = "World"
-        assertEquals("\"{\"Hello\",\"World\"}\"", gene.getValueAsPrintableString())
+        assertEquals("\"{\"Hello\", \"World\"}\"", gene.getValueAsPrintableString())
         assertTrue(gene.isValid())
     }
 
@@ -423,6 +427,33 @@ class SqlMultidimensionalArrayGeneTest {
         assertTrue(copy.isValid())
     }
 
+    @Test
+    fun testGetPrintableValueOfStringGenesNonEmptyArrayWithH2() {
+        val gene = SqlMultidimensionalArrayGene(
+                "matrix",
+                databaseType = DatabaseType.H2,
+                template = StringGene("element"),
+                numberOfDimensions = 1
+        )
+        gene.doInitialize(rand)
+        do {
+            gene.randomize(rand, tryToForceNewValue = false)
+        } while (gene.getDimensionSize(0) != 2)
 
+        gene.getElement(listOf(0)).value = "Hello"
+        gene.getElement(listOf(1)).value = "World"
+        assertEquals("ARRAY[SINGLE_APOSTROPHE_PLACEHOLDERHelloSINGLE_APOSTROPHE_PLACEHOLDER, SINGLE_APOSTROPHE_PLACEHOLDERWorldSINGLE_APOSTROPHE_PLACEHOLDER]", gene.getValueAsPrintableString())
+        assertTrue(gene.isValid())
+    }
+
+    @Test
+    fun testGetPrintableValueOfNonSquareMatrixAsVectorH2() {
+        val gene = sampleTwoDimensionalArrayOfIntegerGenes(rows = 3, columns = 1, databaseType = DatabaseType.H2)
+        gene.getElement(listOf(0, 0)).value = 1
+        gene.getElement(listOf(1, 0)).value = 2
+        gene.getElement(listOf(2, 0)).value = 3
+        assertEquals("ARRAY[ARRAY[1], ARRAY[2], ARRAY[3]]", gene.getValueAsPrintableString())
+        assertTrue(gene.isValid())
+    }
 
 }

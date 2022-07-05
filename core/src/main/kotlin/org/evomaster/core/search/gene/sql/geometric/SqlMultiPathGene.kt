@@ -11,32 +11,30 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-/**
- * A LineString/Path is a Polyline or from Wikipedia "a curve specified by the sequence of points".
- * It must have at least two points to be valid.
- */
-class SqlPathGene(
+class SqlMultiPathGene(
         name: String,
+        /**
+         * The database type of the source column for this gene
+         */
         val databaseType: DatabaseType = DatabaseType.POSTGRES,
-        val points: ArrayGene<SqlPointGene> = ArrayGene(
+        val paths: ArrayGene<SqlPathGene> = ArrayGene(
                 name = "points",
-                // paths are lists of at least 2 points
-                minSize = 2,
-                template = SqlPointGene("p", databaseType=databaseType))
-) : CompositeFixedGene(name, mutableListOf(points)) {
+                minSize = 0,
+                template = SqlPathGene("p", databaseType = databaseType))
+) : CompositeFixedGene(name, mutableListOf(paths)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlMultiPathGene::class.java)
     }
 
-    override fun copyContent(): Gene = SqlPathGene(
+    override fun copyContent(): Gene = SqlMultiPathGene(
             name,
-            points = points.copy() as ArrayGene<SqlPointGene>,
-            databaseType = this.databaseType
+            databaseType = this.databaseType,
+            paths = paths.copy() as ArrayGene<SqlPathGene>
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, tryToForceNewValue, allGenes)
+        paths.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -47,7 +45,7 @@ class SqlPathGene(
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        return listOf(points)
+        return listOf(paths)
     }
 
     override fun getValueAsPrintableString(
@@ -57,54 +55,58 @@ class SqlPathGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
-            DatabaseType.POSTGRES -> {"\" ( ${
-                points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
-            } ) \""}
             DatabaseType.H2 -> {
-                "\"LINESTRING(${
-                    points.getViewOfElements().joinToString(" , ") {
-                        it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                                " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                    }
-                })\""
+                if (paths.getViewOfElements().isEmpty())
+                    "\"MULTILINESTRING EMPTY\""
+                else
+                    "\"MULTILINESTRING(${
+                        paths.getViewOfElements().joinToString(" , ") { path ->
+                            if (path.points.getViewOfElements().isEmpty()) {
+                                "EMPTY"
+                            } else {
+                                "(" + path.points.getViewOfElements().joinToString(" , ") { point ->
+                                    point.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                                            " " + point.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                                } + ")"
+                            }
+                        }
+                    })\""
             }
-            DatabaseType.MYSQL -> {
-                "LINESTRING(${points.getViewOfElements()
-                        .joinToString(" , ")
-                        { it.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck) }})"
+            else -> {
+                throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsPrintableString() for $databaseType")
             }
-            else -> { throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")}
         }
     }
 
     override fun getValueAsRawString(): String {
         return "( ${
-            points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
+            paths.getViewOfElements()
+                    .map { it.getValueAsRawString() }
+                    .joinToString(" , ")
         } ) "
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlPathGene) {
+        if (other !is SqlMultiPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.points.copyValueFrom(other.points)
+        this.paths.copyValueFrom(other.paths)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlPathGene) {
+        if (other !is SqlMultiPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.points.containsSameValueAs(other.points)
+        return this.paths.containsSameValueAs(other.paths)
     }
 
 
-
-    override fun innerGene(): List<Gene> = listOf(points)
+    override fun innerGene(): List<Gene> = listOf(paths)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is SqlPathGene -> {
-                points.bindValueBasedOn(gene.points)
+            gene is SqlMultiPathGene -> {
+                paths.bindValueBasedOn(gene.paths)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

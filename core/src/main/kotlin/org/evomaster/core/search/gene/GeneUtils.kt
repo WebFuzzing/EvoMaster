@@ -627,7 +627,7 @@ object GeneUtils {
      */
     fun removeEnclosedQuotationMarks(str: String): String {
         return if (str.startsWith(QUOTATION_MARK) && str.endsWith(QUOTATION_MARK)) {
-            str.subSequence(1, str.length - 1).toString()
+            str.substring(1,str.length-1)
         } else {
             str
         }

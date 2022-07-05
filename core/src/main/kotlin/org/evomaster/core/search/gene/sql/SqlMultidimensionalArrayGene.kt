@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -23,6 +24,11 @@ class SqlMultidimensionalArrayGene<T>(
          */
         name: String,
         /**
+         * The database type of the column where the gene is inserted.
+         * By default, the database type is POSTGRES
+         */
+        val databaseType: DatabaseType = DatabaseType.POSTGRES,
+        /**
          * The type for this array. Every time we create a new element to add, it has to be based
          * on this template
          */
@@ -35,10 +41,7 @@ class SqlMultidimensionalArrayGene<T>(
         /**
          *  How many elements each dimension can have.
          */
-        private val maxDimensionSize: Int = ArrayGene.MAX_SIZE,
-        private val openingTag: String = "\"{",
-        private val closingTag: String = "}\"",
-        private val separatorTag: String = ", "
+        private val maxDimensionSize: Int = ArrayGene.MAX_SIZE
 ) : CompositeGene(name, mutableListOf()) where T : Gene {
 
     /**
@@ -83,23 +86,20 @@ class SqlMultidimensionalArrayGene<T>(
          */
         private fun <T : Gene> buildNewElements(
                 dimensionSizes: List<Int>,
-                elementTemplate: T,
-                openingTag: String,
-                closingTag: String,
-                separatorTag: String
+                elementTemplate: T
         ): ArrayGene<*> {
             val s = dimensionSizes[0]
             return if (dimensionSizes.size == 1) {
                 // leaf ArrayGene case
-                ArrayGene("[$s]", elementTemplate.copy(), maxSize = s, minSize = s, openingTag = openingTag, closingTag = closingTag, separatorTag = separatorTag)
+                ArrayGene("[$s]", elementTemplate.copy(), maxSize = s, minSize = s)
             } else {
                 // nested/inner ArrayGene case
                 val currentDimensionSize = dimensionSizes.first()
                 val nextDimensionSizes = dimensionSizes.drop(1)
-                val arrayTemplate = buildNewElements(nextDimensionSizes, elementTemplate, openingTag, closingTag, separatorTag)
+                val arrayTemplate = buildNewElements(nextDimensionSizes, elementTemplate)
 
                 ArrayGene("[$currentDimensionSize]${arrayTemplate.name}", arrayTemplate,
-                        maxSize = currentDimensionSize, minSize = currentDimensionSize, openingTag = openingTag, closingTag = closingTag, separatorTag = separatorTag)
+                        maxSize = currentDimensionSize, minSize = currentDimensionSize)
             }
         }
     }
@@ -202,7 +202,7 @@ class SqlMultidimensionalArrayGene<T>(
      */
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         val newDimensionSizes: List<Int> = buildNewDimensionSizes(randomness)
-        val newChild = buildNewElements(newDimensionSizes, template.copy(), this.openingTag, this.closingTag, this.separatorTag)
+        val newChild = buildNewElements(newDimensionSizes, template.copy())
 
         killAllChildren()
         addChild(newChild)
@@ -290,26 +290,37 @@ class SqlMultidimensionalArrayGene<T>(
         if (!initialized) {
             throw IllegalStateException("Cannot call to getValueAsPrintableString() using an unitialized multidimensional array")
         }
-        return getValueAsPrintableString(this.children[0], previousGenes, mode, targetFormat, extraCheck)
+        val printableString = getValueAsPrintableString(this.children[0], previousGenes, mode, targetFormat, extraCheck)
+        return when (databaseType) {
+            DatabaseType.H2 -> printableString
+            DatabaseType.POSTGRES -> "\"$printableString\""
+            else -> throw IllegalStateException("Unsupported getValueAsPrintableString for database type $databaseType")
+        }
     }
 
     /**
      * Helper funcgtion for printing the inner arrays and elements
      */
     private fun getValueAsPrintableString(gene: Gene, previousGenes: List<Gene>,
-                                  mode: GeneUtils.EscapeMode?,
-                                  targetFormat: OutputFormat?,
-                                  extraCheck: Boolean
+                                          mode: GeneUtils.EscapeMode?,
+                                          targetFormat: OutputFormat?,
+                                          extraCheck: Boolean
     ): String {
         return if (gene is ArrayGene<*>) {
-            openingTag +
-                    gene.getViewOfElements().map { g ->
-                        getValueAsPrintableString(g, previousGenes, mode, targetFormat, extraCheck)
-                    }.joinToString(separatorTag) +
-                    closingTag
+            val str = gene.getViewOfElements().joinToString(", ") { g ->
+                getValueAsPrintableString(g, previousGenes, mode, targetFormat, extraCheck)}
+            when (databaseType) {
+                DatabaseType.POSTGRES -> "{$str}"
+                DatabaseType.H2 -> "ARRAY[$str]"
+                else -> throw IllegalStateException("Unsupported getValueAsPrintableString for database type $databaseType")
+            }
         } else {
-            // gene is an element
-            GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(gene.getValueAsPrintableString( previousGenes, mode, targetFormat, extraCheck))
+            val str = gene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+            when (databaseType) {
+                DatabaseType.POSTGRES -> str
+                DatabaseType.H2 -> GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(str)
+                else -> throw IllegalStateException("Unsupported getValueAsPrintableString for database type $databaseType")
+            }
         }
     }
 
@@ -379,12 +390,10 @@ class SqlMultidimensionalArrayGene<T>(
 
         val copy = SqlMultidimensionalArrayGene(
                 name = name,
+                databaseType = this.databaseType,
                 template = template.copy(),
                 numberOfDimensions = numberOfDimensions,
-                maxDimensionSize = maxDimensionSize,
-                openingTag = this.openingTag,
-                closingTag = this.closingTag,
-                separatorTag = this.separatorTag
+                maxDimensionSize = maxDimensionSize
         )
 
         if (children.isNotEmpty()) {

@@ -320,6 +320,7 @@ enum class ColumnDataType(dataTypeName: String) {
 
     /**
      * https://dev.mysql.com/doc/refman/8.0/en/spatial-types.html
+     * https://h2database.com/html/datatypes.html#geometry_type
      */
     LINESTRING("LINESTRING"),
     MULTIPOINT("MULTIPOINT"),
