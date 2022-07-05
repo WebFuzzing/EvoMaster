@@ -151,6 +151,7 @@ There are 3 types of options:
 |`enablePureRPCTestGeneration`| __Boolean__. Whether to generate RPC endpoint invocation which is independent from EM driver. *Default value*: `false`.|
 |`enableRPCAssertionWithInstance`| __Boolean__. Whether to generate RPC Assertions based on response instance. *Default value*: `false`.|
 |`enableRPCCustomizedResponseTargets`| __Boolean__. Whether to enable customized responses indicating business logic. *Default value*: `false`.|
+|`enableRPCCustomizedTestOutput`| __Boolean__. Whether to enable customized RPC Test output if 'customizeRPCTestOutput' is implemented. *Default value*: `false`.|
 |`enableRPCExtraResponseTargets`| __Boolean__. Whether to enable extra targets for responses, e.g., regarding nullable response, having extra targets for whether it is null. *Default value*: `false`.|
 |`enableTrackIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals during the search. *Default value*: `false`.|
 |`enableWriteSnapshotTests`| __Boolean__. Enable to print snapshots of the generated tests during the search in an interval defined in snapshotsInterval. *Default value*: `false`.|

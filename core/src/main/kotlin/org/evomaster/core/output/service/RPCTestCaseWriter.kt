@@ -239,10 +239,12 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
     private fun handleClientType(clientType: String) = clientType.replace("\$",".")
 
     override fun additionalTestHandling(tests: List<TestCase>) {
+        if (!config.enableRPCCustomizedTestOutput) return
+
         try {
             rpcHandler.handleCustomizedTests(tests.map { t-> t.test as EvaluatedIndividual<RPCIndividual> })
         }catch (e : Exception){
-            log.warn("Fail to process ")
+            log.warn("Fail to handle customized tests: ${e.message}")
         }
     }
 
