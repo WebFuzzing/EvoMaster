@@ -40,11 +40,11 @@ public abstract class H2VersionUtils {
      */
     public static synchronized String getH2Version(Connection connectionToH2) throws SQLException {
         try (Statement statement = connectionToH2.createStatement()) {
-            final String query = "SELECT H2Version();";
+            final String query = "SELECT H2VERSION();";
             try (ResultSet columns = statement.executeQuery(query)) {
                 boolean hasNext = columns.next();
                 if (!hasNext) {
-                    throw new IllegalArgumentException("Cannot retrieve H2 version");
+                    throw new IllegalArgumentException("No results for query: SELECT H2VERSION();");
                 }
                 return columns.getString(COLUMN_INDEX_H2_VERSION);
             }
