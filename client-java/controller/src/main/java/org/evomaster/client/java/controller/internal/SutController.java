@@ -628,6 +628,22 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void newSearch();
 
     /**
+     * handling post actions after the search
+     * @param dto contains required info for the post handling
+     */
+    public void postSearchAction(PostSearchActionDto dto){
+        try{
+            if (dto != null && dto.rpcTests != null && !dto.rpcTests.isEmpty()){
+                dto.rpcTests.forEach(s->
+                        customizeRPCTestOutput(s.externalServiceDtos, s.sqlInsertions, s.actions, s.responses)
+                );
+            }
+        }catch (Exception e){
+            throw new RuntimeException("fail to customize RPC Test outputs:", e);
+        }
+    }
+
+    /**
      * Re-initialize some internal data needed before running a new test
      */
     public final void newTest() {
