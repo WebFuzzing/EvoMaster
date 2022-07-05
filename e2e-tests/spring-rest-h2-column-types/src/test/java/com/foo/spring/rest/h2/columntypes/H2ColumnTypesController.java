@@ -131,6 +131,8 @@ public class H2ColumnTypesController extends SpringController {
 
     private static final String CREATE_TABLE_GEOMETRY_TYPES = "CREATE TABLE geometryTypes (\n" +
             "  dummyColumn INTEGER NOT NULL,\n" +
+            "  pointColumn GEOMETRY(POINT) NOT NULL,\n" +
+            "  linestring GEOMETRY(LINESTRING) NOT NULL\n" +
             //"  multipointColumn GEOMETRY(MULTIPOINT) NOT NULL,\n" +
             //"  multilinestringColumn GEOMETRY(MULTILINESTRING) NOT NULL,\n" +
             //"  polygonColumn GEOMETRY(POLYGON) NOT NULL,\n" +
@@ -141,8 +143,7 @@ public class H2ColumnTypesController extends SpringController {
             //"  pointzmColumn GEOMETRY(POINT ZM) NOT NULL,\n" +
             //"  pointSRIColumn GEOMETRY(POINT, 12) NOT NULL,\n" +
             //"  geometryColumn GEOMETRY(GEOMETRY) NOT NULL,\n" +
-            "  pointColumn GEOMETRY(POINT) NOT NULL,\n" +
-            "  linestring GEOMETRY(LINESTRING) NOT NULL\n" +
+
             ");";
 
 
@@ -158,15 +159,15 @@ public class H2ColumnTypesController extends SpringController {
             ");";
 
     private static final String CREATE_TABLE_ARRAY_TYPES = "CREATE TABLE arrayTypes (\n" +
-            "  dummyColumn INTEGER NOT NULL\n" +
-            //"  varcharArrayWithMaxLengthColumn VARCHAR ARRAY[100] NOT NULL\n" +
-            //"  varcharWithMaxSizeArrayColumn VARCHAR(100) ARRAY NOT NULL\n" +
+            "  dummyColumn INTEGER NOT NULL,\n" +
+            "  integerArrayColumn INTEGER ARRAY NOT NULL,\n" +
+            "  booleanArrayColumn BOOLEAN ARRAY NOT NULL,\n" +
+            "  varcharArrayColumn VARCHAR ARRAY NOT NULL,\n" +
+            "  integerArrayWithMaxLengthColumn INTEGER ARRAY[10] NOT NULL,\n" +
+            "  varcharArrayWithMaxLengthColumn VARCHAR ARRAY[10] NOT NULL\n" +
+            //"  varcharWithSizeArrayColumn VARCHAR(10) ARRAY NOT NULL\n" +
             //"  bidimensionalArrayColumn BOOLEAN ARRAY ARRAY NOT NULL,\n" +
             //"  tridimensionalArrayColumn BOOLEAN ARRAY ARRAY ARRAY NOT NULL,\n" +
-            //"  booleanArrayColumn BOOLEAN ARRAY NOT NULL,\n" +
-            //"  varcharArrayColumn VARCHAR ARRAY NOT NULL,\n" +
-            //"  integerArrayColumn INTEGER ARRAY NOT NULL,\n" +
-            //"  integerArrayWithMaxLengthColumn INTEGER ARRAY[10] NOT NULL\n" +
             ");";
 
     private static final String CREATE_TABLES_SQL = CREATE_TABLE_CHARACTER_TYPES

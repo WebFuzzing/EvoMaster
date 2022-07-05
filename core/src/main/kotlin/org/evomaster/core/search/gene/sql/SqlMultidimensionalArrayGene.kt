@@ -35,7 +35,10 @@ class SqlMultidimensionalArrayGene<T>(
         /**
          *  How many elements each dimension can have.
          */
-        private val maxDimensionSize: Int = ArrayGene.MAX_SIZE
+        private val maxDimensionSize: Int = ArrayGene.MAX_SIZE,
+        private val openingTag: String = "\"{",
+        private val closingTag: String = "}\"",
+        private val separatorTag: String = ", "
 ) : CompositeGene(name, mutableListOf()) where T : Gene {
 
     /**
@@ -80,20 +83,23 @@ class SqlMultidimensionalArrayGene<T>(
          */
         private fun <T : Gene> buildNewElements(
                 dimensionSizes: List<Int>,
-                elementTemplate: T
+                elementTemplate: T,
+                openingTag: String,
+                closingTag: String,
+                separatorTag: String
         ): ArrayGene<*> {
             val s = dimensionSizes[0]
             return if (dimensionSizes.size == 1) {
                 // leaf ArrayGene case
-                ArrayGene("[$s]", elementTemplate.copy(), maxSize = s, minSize = s, openingTag = "{", closingTag = "}", separatorTag = ",")
+                ArrayGene("[$s]", elementTemplate.copy(), maxSize = s, minSize = s, openingTag = openingTag, closingTag = closingTag, separatorTag = separatorTag)
             } else {
                 // nested/inner ArrayGene case
                 val currentDimensionSize = dimensionSizes.first()
                 val nextDimensionSizes = dimensionSizes.drop(1)
-                val arrayTemplate = buildNewElements(nextDimensionSizes, elementTemplate)
+                val arrayTemplate = buildNewElements(nextDimensionSizes, elementTemplate, openingTag, closingTag, separatorTag)
 
                 ArrayGene("[$currentDimensionSize]${arrayTemplate.name}", arrayTemplate,
-                        maxSize = currentDimensionSize, minSize = currentDimensionSize, openingTag = "{", closingTag = "}", separatorTag = ",")
+                        maxSize = currentDimensionSize, minSize = currentDimensionSize, openingTag = openingTag, closingTag = closingTag, separatorTag = separatorTag)
             }
         }
     }
@@ -196,7 +202,7 @@ class SqlMultidimensionalArrayGene<T>(
      */
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         val newDimensionSizes: List<Int> = buildNewDimensionSizes(randomness)
-        val newChild = buildNewElements(newDimensionSizes, template.copy())
+        val newChild = buildNewElements(newDimensionSizes, template.copy(), this.openingTag, this.closingTag, this.separatorTag)
 
         killAllChildren()
         addChild(newChild)
@@ -284,7 +290,27 @@ class SqlMultidimensionalArrayGene<T>(
         if (!initialized) {
             throw IllegalStateException("Cannot call to getValueAsPrintableString() using an unitialized multidimensional array")
         }
-        return "\"${this.children[0].getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)}\""
+        return getValueAsPrintableString(this.children[0], previousGenes, mode, targetFormat, extraCheck)
+    }
+
+    /**
+     * Helper funcgtion for printing the inner arrays and elements
+     */
+    private fun getValueAsPrintableString(gene: Gene, previousGenes: List<Gene>,
+                                  mode: GeneUtils.EscapeMode?,
+                                  targetFormat: OutputFormat?,
+                                  extraCheck: Boolean
+    ): String {
+        return if (gene is ArrayGene<*>) {
+            openingTag +
+                    gene.getViewOfElements().map { g ->
+                        getValueAsPrintableString(g, previousGenes, mode, targetFormat, extraCheck)
+                    }.joinToString(separatorTag) +
+                    closingTag
+        } else {
+            // gene is an element
+            GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(gene.getValueAsPrintableString( previousGenes, mode, targetFormat, extraCheck))
+        }
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -356,6 +382,9 @@ class SqlMultidimensionalArrayGene<T>(
                 template = template.copy(),
                 numberOfDimensions = numberOfDimensions,
                 maxDimensionSize = maxDimensionSize,
+                openingTag = this.openingTag,
+                closingTag = this.closingTag,
+                separatorTag = this.separatorTag
         )
 
         if (children.isNotEmpty()) {

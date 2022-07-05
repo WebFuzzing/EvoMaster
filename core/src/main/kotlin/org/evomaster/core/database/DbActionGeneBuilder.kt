@@ -354,10 +354,29 @@ class DbActionGeneBuilder {
         }
 
         if (column.dimension > 0) {
+            val openingTag: String
+            val closingTag: String
+            val separatorTag = ", "
+            when (column.databaseType) {
+                DatabaseType.H2 -> {
+                    openingTag = "ARRAY["
+                    closingTag = "]"
+                }
+                DatabaseType.POSTGRES -> {
+                    openingTag = "\"{"
+                    closingTag = "}\""
+                }
+                else ->
+                    throw IllegalArgumentException("Cannot handle: ${column.databaseType}")
+            }
             // if the column type is an array, matrix, etc.
-            gene = SqlMultidimensionalArrayGene<Gene>(column.name, template = gene, numberOfDimensions = column.dimension)
+            gene = SqlMultidimensionalArrayGene(column.name,
+                    template = gene,
+                    numberOfDimensions = column.dimension,
+                    openingTag = openingTag,
+                    closingTag = closingTag,
+                    separatorTag = separatorTag)
         }
-
         return gene
     }
 
