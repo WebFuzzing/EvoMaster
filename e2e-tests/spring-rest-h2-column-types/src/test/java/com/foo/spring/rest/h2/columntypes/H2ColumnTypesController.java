@@ -134,15 +134,16 @@ public class H2ColumnTypesController extends SpringController {
             "  pointColumn GEOMETRY(POINT) NOT NULL,\n" +
             "  linestring GEOMETRY(LINESTRING) NOT NULL,\n" +
             "  multipointColumn GEOMETRY(MULTIPOINT) NOT NULL,\n" +
-            "  multilinestringColumn GEOMETRY(MULTILINESTRING) NOT NULL\n" +
-            //"  polygonColumn GEOMETRY(POLYGON) NOT NULL,\n" +
+            "  multilinestringColumn GEOMETRY(MULTILINESTRING) NOT NULL,\n" +
+            "  polygonColumn GEOMETRY(POLYGON) NOT NULL\n" +
+            //"  geometryColumn GEOMETRY(GEOMETRY) NOT NULL\n" +
             //"  multipolygonColumn GEOMETRY(MULTIPOLYGON) NOT NULL,\n" +
+
+            //"  pointzColumn GEOMETRY(POINT Z) NOT NULL\n" +
             //"  geometryCollectionColumn GEOMETRY(GEOMETRYCOLLECTION) NOT NULL,\n" +
-            //"  pointzColumn GEOMETRY(POINT Z) NOT NULL,\n" +
             //"  pointmColumn GEOMETRY(POINT M) NOT NULL,\n" +
             //"  pointzmColumn GEOMETRY(POINT ZM) NOT NULL,\n" +
             //"  pointSRIColumn GEOMETRY(POINT, 12) NOT NULL,\n" +
-            //"  geometryColumn GEOMETRY(GEOMETRY) NOT NULL,\n" +
 
             ");";
 

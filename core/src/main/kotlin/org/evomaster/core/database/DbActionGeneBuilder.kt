@@ -383,12 +383,14 @@ class DbActionGeneBuilder {
              * method is ensured after each mutation of the
              * children of the SqlPolygonGene.
              */
-//            DatabaseType.MYSQL -> {
-//                SqlPolygonGene(column.name, minLengthOfPolygonRing=3, onlyNonIntersectingPolygons = true, databaseType = column.databaseType)
-//            }
+            DatabaseType.MYSQL -> {
+                SqlPolygonGene(column.name, minLengthOfPolygonRing=3, onlyNonIntersectingPolygons = true, databaseType = column.databaseType)
+            }
+            DatabaseType.H2 -> {
+                SqlPolygonGene(column.name, minLengthOfPolygonRing = 3, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
+            }
             DatabaseType.POSTGRES -> {
                 SqlPolygonGene(column.name, minLengthOfPolygonRing = 2, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
-
             }
             else -> {
                 throw IllegalArgumentException("Must define minLengthOfPolygonRing for database ${column.databaseType}")
