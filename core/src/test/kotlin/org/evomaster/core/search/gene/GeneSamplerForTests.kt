@@ -97,6 +97,7 @@ object GeneSamplerForTests {
             NumericStringGene::class -> sampleNumericStringGene(rand) as T
             ObjectGene::class -> sampleObjectGene(rand) as T
             OptionalGene::class -> sampleOptionalGene(rand) as T
+            ChoiceGene::class -> sampleChoiceGene(rand) as T
             PairGene::class -> samplePairGene(rand) as T
             SeededGene::class -> sampleSeededGene(rand) as T
             StringGene::class -> sampleStringGene(rand) as T
@@ -455,6 +456,17 @@ object GeneSamplerForTests {
         return OptionalGene(
                 name = "rand OptionalGene",
                 gene = sample(rand.choose(selection), rand)
+        )
+    }
+
+    fun sampleChoiceGene(rand: Randomness): ChoiceGene {
+        val selection = geneClasses.filter { !it.isAbstract }
+        return ChoiceGene(
+                name = "rand ChoiceGene",
+                choices = listOf(
+                        sample(rand.choose(selection), rand),
+                        sample(rand.choose(selection), rand)
+                )
         )
     }
 

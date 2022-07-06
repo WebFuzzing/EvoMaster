@@ -227,7 +227,7 @@ class DbActionGeneBuilder {
                  * MySQL and PostgreSQL Point column data type
                  */
                 ColumnDataType.POINT ->
-                    SqlPointGene(column.name, databaseType = column.databaseType)
+                    buildSqlPointGene(column)
 
                 /*
                  * PostgreSQL LINE Column data type
@@ -253,21 +253,21 @@ class DbActionGeneBuilder {
                  */
                 ColumnDataType.LINESTRING,
                 ColumnDataType.PATH ->
-                    SqlPathGene(column.name, databaseType = column.databaseType)
+                    buildSqlPathGene(column)
 
                 /**
                  * PostgreSQL and H2 MULTIPOINT
                  * column types
                  */
                 ColumnDataType.MULTIPOINT ->
-                    SqlMultiPointGene(column.name, databaseType = column.databaseType)
+                    buildSqlMultiPointGene(column)
 
                 /**
                  * PostgreSQL and H2 MULTILINESTRING
                  * column types
                  */
                 ColumnDataType.MULTILINESTRING ->
-                    SqlMultiPathGene(column.name, databaseType = column.databaseType)
+                    buildSqlMultiPathGene(column)
 
                 /* MySQL and PostgreSQL POLYGON
                  * column data type
@@ -279,8 +279,10 @@ class DbActionGeneBuilder {
                  * column data type
                    */
                 ColumnDataType.MULTIPOLYGON ->
-                    SqlMultiPolygonGene(column.name, databaseType = column.databaseType)
+                    buildSqlMultiPolygonGene(column)
 
+                ColumnDataType.GEOMETRY ->
+                    handleSqlGeometry(column)
 
                 /*
                  * PostgreSQL CIRCLE column data type
@@ -383,6 +385,32 @@ class DbActionGeneBuilder {
         return gene
     }
 
+    private fun handleSqlGeometry(column: Column): Gene {
+        val gene = ChoiceGene(name = column.name,
+                listOf(buildSqlPointGene(column),
+                        buildSqlMultiPointGene(column),
+                        buildSqlPathGene(column),
+                        buildSqlMultiPathGene(column),
+                        buildSqlPolygonGene(column),
+                        buildSqlMultiPolygonGene(column)))
+        return gene
+    }
+
+    private fun buildSqlPointGene(column: Column) =
+            SqlPointGene(column.name, databaseType = column.databaseType)
+
+    private fun buildSqlPathGene(column: Column) =
+            SqlPathGene(column.name, databaseType = column.databaseType)
+
+    private fun buildSqlMultiPointGene(column: Column) =
+            SqlMultiPointGene(column.name, databaseType = column.databaseType)
+
+    private fun buildSqlMultiPathGene(column: Column) =
+            SqlMultiPathGene(column.name, databaseType = column.databaseType)
+
+    private fun buildSqlMultiPolygonGene(column: Column) =
+            SqlMultiPolygonGene(column.name, databaseType = column.databaseType)
+
     private fun buildSqlPolygonGene(column: Column): SqlPolygonGene {
         return when (column.databaseType) {
             /*
@@ -391,7 +419,7 @@ class DbActionGeneBuilder {
              * children of the SqlPolygonGene.
              */
             DatabaseType.MYSQL -> {
-                SqlPolygonGene(column.name, minLengthOfPolygonRing=3, onlyNonIntersectingPolygons = true, databaseType = column.databaseType)
+                SqlPolygonGene(column.name, minLengthOfPolygonRing = 3, onlyNonIntersectingPolygons = true, databaseType = column.databaseType)
             }
             DatabaseType.H2 -> {
                 SqlPolygonGene(column.name, minLengthOfPolygonRing = 3, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
