@@ -12,34 +12,36 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * Represents a collection of points without lines between them.
- * Column types MULTIPOINT of databases H2 and PostgreSQL are supported by
- * this gene.
+ * Represents a collection of polygons.
+ * It is intended to hold values for Column types MULTIPOINT
+ * of databases H2 and PostgreSQL.
  */
-class SqlMultiPointGene(
+class SqlMultiPolygonGene(
         name: String,
         /**
          * The database type of the source column for this gene
          */
         val databaseType: DatabaseType = DatabaseType.POSTGRES,
-        val points: ArrayGene<SqlPointGene> = ArrayGene(
-                name = "points",
+        val polygons: ArrayGene<SqlPolygonGene> = ArrayGene(
+                name = "polygons",
                 minSize = 0,
-                template = SqlPointGene("p", databaseType = databaseType))
-) : CompositeFixedGene(name, mutableListOf(points)) {
+                template = SqlPolygonGene("polygon",
+                        minLengthOfPolygonRing = 3,
+                        databaseType = databaseType))
+) : CompositeFixedGene(name, mutableListOf(polygons)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(SqlMultiPointGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlMultiPolygonGene::class.java)
     }
 
-    override fun copyContent(): Gene = SqlMultiPointGene(
+    override fun copyContent(): Gene = SqlMultiPolygonGene(
             name,
             databaseType = this.databaseType,
-            points = points.copy() as ArrayGene<SqlPointGene>
+            polygons = polygons.copy() as ArrayGene<SqlPolygonGene>
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, tryToForceNewValue, allGenes)
+        polygons.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -50,7 +52,7 @@ class SqlMultiPointGene(
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        return listOf(points)
+        return listOf(polygons)
     }
 
     override fun getValueAsPrintableString(
@@ -60,21 +62,19 @@ class SqlMultiPointGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
-            DatabaseType.POSTGRES -> {
-                "\"LINESTRING(${
-                    points.getViewOfElements().joinToString(", ") {
-                        it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                                " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                    }
-                })\""
-            }
             DatabaseType.H2 -> {
-                if (points.getViewOfElements().isEmpty()) "\"MULTIPOINT EMPTY\""
+                if (polygons.getViewOfElements().isEmpty()) "\"MULTIPOLYGON EMPTY\""
                 else
-                    "\"MULTIPOINT(${
-                        points.getViewOfElements().joinToString(", ") {
-                            it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                                    " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                    "\"MULTIPOLYGON(${
+                        polygons.getViewOfElements().joinToString(", ") {
+                            polygon -> 
+                            "((${polygon.points.getViewOfElements().joinToString(", ") {
+                                point -> 
+                                point.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                                        " " + point.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                            } + ", " + polygon.points.getViewOfElements().get(0).x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                                    " " + polygon.points.getViewOfElements().get(0).y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                            }))"
                         }
                     })\""
             }
@@ -86,33 +86,33 @@ class SqlMultiPointGene(
 
     override fun getValueAsRawString(): String {
         return "( ${
-            points.getViewOfElements()
+            polygons.getViewOfElements()
                     .map { it.getValueAsRawString() }
                     .joinToString(" , ")
         } ) "
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlMultiPointGene) {
+        if (other !is SqlMultiPolygonGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.points.copyValueFrom(other.points)
+        this.polygons.copyValueFrom(other.polygons)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlMultiPointGene) {
+        if (other !is SqlMultiPolygonGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.points.containsSameValueAs(other.points)
+        return this.polygons.containsSameValueAs(other.polygons)
     }
 
 
-    override fun innerGene(): List<Gene> = listOf(points)
+    override fun innerGene(): List<Gene> = listOf(polygons)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is SqlMultiPointGene -> {
-                points.bindValueBasedOn(gene.points)
+            gene is SqlMultiPolygonGene -> {
+                polygons.bindValueBasedOn(gene.polygons)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

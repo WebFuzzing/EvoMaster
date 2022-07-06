@@ -275,6 +275,13 @@ class DbActionGeneBuilder {
                 ColumnDataType.POLYGON ->
                     buildSqlPolygonGene(column)
 
+                /* MySQL and PostgreSQL MULTIPOLYGON
+                 * column data type
+                   */
+                ColumnDataType.MULTIPOLYGON ->
+                    SqlMultiPolygonGene(column.name, databaseType = column.databaseType)
+
+
                 /*
                  * PostgreSQL CIRCLE column data type
                  */

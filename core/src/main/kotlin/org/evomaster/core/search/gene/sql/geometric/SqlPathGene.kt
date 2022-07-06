@@ -62,7 +62,7 @@ class SqlPathGene(
             } ) \""}
             DatabaseType.H2 -> {
                 "\"LINESTRING(${
-                    points.getViewOfElements().joinToString(" , ") {
+                    points.getViewOfElements().joinToString(", ") {
                         it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
                                 " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
                     }

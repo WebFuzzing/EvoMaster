@@ -60,11 +60,11 @@ class SqlMultiPathGene(
                     "\"MULTILINESTRING EMPTY\""
                 else
                     "\"MULTILINESTRING(${
-                        paths.getViewOfElements().joinToString(" , ") { path ->
+                        paths.getViewOfElements().joinToString(", ") { path ->
                             if (path.points.getViewOfElements().isEmpty()) {
                                 "EMPTY"
                             } else {
-                                "(" + path.points.getViewOfElements().joinToString(" , ") { point ->
+                                "(" + path.points.getViewOfElements().joinToString(", ") { point ->
                                     point.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
                                             " " + point.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
                                 } + ")"

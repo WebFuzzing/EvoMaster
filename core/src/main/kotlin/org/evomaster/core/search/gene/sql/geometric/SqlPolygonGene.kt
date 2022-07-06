@@ -160,10 +160,10 @@ class SqlPolygonGene(
              */
             DatabaseType.H2 -> {
                 "\"POLYGON((${
-                    points.getViewOfElements().joinToString(" , ") {
+                    points.getViewOfElements().joinToString(", ") {
                         it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
                                 " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                    } + " , " + points.getViewOfElements().get(0).x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                    } + ", " + points.getViewOfElements().get(0).x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
                     " " + points.getViewOfElements().get(0).y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
                 }))\""
             }

@@ -30,6 +30,21 @@ public class H2InsertionTest extends DatabaseH2TestInit implements DatabaseTestT
 
     }
 
+
+    @Test
+    public void testInsertMultiPolygon() throws Exception {
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE GEOMETRYTYPES(polygonColumn GEOMETRY(MULTIPOLYGON) NOT NULL);");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO GEOMETRYTYPES(polygonColumn) VALUES ('MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))');");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO GEOMETRYTYPES(polygonColumn) VALUES ('MULTIPOLYGON(((-1 -2, 10 1, 2 20, -1 -2)))');");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO GEOMETRYTYPES(polygonColumn) VALUES ('MULTIPOLYGON(((-1 -2, -1 -2, -1 -2, -1 -2)))');");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO GEOMETRYTYPES(polygonColumn) VALUES ('MULTIPOLYGON EMPTY');");
+
+        assertThrows(SQLException.class,()->
+                SqlScriptRunner.execCommand(getConnection(), "INSERT INTO GEOMETRYTYPES(polygonColumn) VALUES ('MULTIPOLYGON(((0.121834956 0.14660847 , 0.28196073 0.69853836)))');")
+        );
+    }
+
+
     @Override
     public Connection getConnection() {
         return connection;
