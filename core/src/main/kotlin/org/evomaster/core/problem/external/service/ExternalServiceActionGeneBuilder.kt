@@ -12,6 +12,6 @@ class ExternalServiceActionGeneBuilder {
      * will return Gene to represent the responses
      */
     fun buildGene(request: ExternalServiceRequest): List<Gene> {
-        return listOf(EnumGene(name = request.getID(), data = setOf(200, 404, 500)))
+        return listOf(EnumGene(name = request.getID(), data = setOf(200, 400, 401, 404, 500)))
     }
 }

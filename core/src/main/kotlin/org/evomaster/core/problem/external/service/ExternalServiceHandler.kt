@@ -43,6 +43,8 @@ class ExternalServiceHandler {
      */
     private var lastIPAddress : String = ""
 
+    private var counter: Long = 0
+
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
      *
@@ -100,6 +102,16 @@ class ExternalServiceHandler {
         externalServices.forEach {
             it.value.stopWireMockServer()
         }
+    }
+
+    fun getExternalServiceActions() : MutableList<ExternalServiceAction> {
+        val actions = mutableListOf<ExternalServiceAction>()
+        externalServices.forEach { (_, u) ->
+            u.getRequests().forEach{
+                actions.add(ExternalServiceAction(it, u.getWireMockServer(), counter++))
+            }
+        }
+        return actions
     }
 
     /**

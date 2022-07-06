@@ -1,9 +1,11 @@
 package org.evomaster.core.problem.external.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.Randomness
 
 /**
  * Action to execute the external service related need
@@ -47,6 +49,21 @@ class ExternalServiceAction (
 
     override fun copyContent(): StructuralElement {
         return ExternalServiceAction(request, wireMockServer, id, genes.map(Gene::copy))
+    }
+
+    /**
+     * Experimental implementation of WireMock stub generation
+     *
+     * Method should randomize the response code
+     */
+    fun buildResponse(randomness: Randomness) {
+        wireMockServer.stubFor(
+            WireMock.get(WireMock.urlMatching(request.getURL()))
+                .atPriority(1)
+                .willReturn(
+                    WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody("")))
     }
 
 }

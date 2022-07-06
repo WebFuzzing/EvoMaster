@@ -7,7 +7,7 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 
 public class ExternalServiceTransformationFlakyTest extends SpringTestBase {
 
@@ -19,7 +19,7 @@ public class ExternalServiceTransformationFlakyTest extends SpringTestBase {
         SpringTestBase.initClass(searchController, config);
     }
 
-    @Test
+    @Disabled
     public void requestTransformationTest() throws Throwable {
         runTestHandlingFlakyAndCompilation(
                 "SearchTransformationEMTest",

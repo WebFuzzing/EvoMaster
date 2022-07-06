@@ -14,8 +14,14 @@ class ExternalService (
         return wireMockServer.options.bindAddress()
     }
 
+    fun getWireMockServer() : WireMockServer {
+        return wireMockServer
+    }
+
     /**
      * To get all the HTTP/S requests made to the WireMock instance
+     *
+     * TODO: Filter only the events which doesn't have no match
      */
     fun getRequests() : MutableList<ExternalServiceRequest> {
         return wireMockServer.allServeEvents.map {
@@ -39,4 +45,5 @@ class ExternalService (
     fun stopWireMockServer() {
         wireMockServer.stop()
     }
+
 }

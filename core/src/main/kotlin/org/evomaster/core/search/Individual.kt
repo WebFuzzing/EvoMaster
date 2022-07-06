@@ -122,7 +122,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 //            seeDbActions()
 //        }.toSet().forEach { it.doInitialize(randomness) }
 
-        seeInitializingActions().plus(seeActions()).plus(seeDbActions())
+        seeInitializingActions().plus(seeActions()).plus(seeDbActions()).plus(seeExternalServiceActions())
                 .toSet()
         .forEach { it.doInitialize(randomness) }
     }
