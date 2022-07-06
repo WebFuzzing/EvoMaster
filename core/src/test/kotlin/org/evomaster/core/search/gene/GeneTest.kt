@@ -20,7 +20,7 @@ class GeneTest {
             This number should not change, unless you explicitly add/remove any gene.
             if so, update this number accordingly
          */
-        assertEquals(73, genes.size)
+        assertEquals(74, genes.size)
     }
 
     @Test
