@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory
 
 /**
  * Represents a collection of polygons.
- * It is intended to hold values for Column types MULTIPOINT
- * of databases H2 and PostgreSQL.
+ * It is intended to hold values for Column types MULTIPOLYGON
+ * of databases H2 and MySQL.
  */
 class SqlMultiPolygonGene(
         name: String,
@@ -24,7 +24,7 @@ class SqlMultiPolygonGene(
         val databaseType: DatabaseType = DatabaseType.POSTGRES,
         val polygons: ArrayGene<SqlPolygonGene> = ArrayGene(
                 name = "polygons",
-                minSize = 0,
+                minSize = 1,
                 template = SqlPolygonGene("polygon",
                         minLengthOfPolygonRing = 3,
                         databaseType = databaseType))
@@ -62,34 +62,35 @@ class SqlMultiPolygonGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
-            DatabaseType.H2 -> {
-                if (polygons.getViewOfElements().isEmpty()) "\"MULTIPOLYGON EMPTY\""
-                else
-                    "\"MULTIPOLYGON(${
-                        polygons.getViewOfElements().joinToString(", ") {
-                            polygon -> 
-                            "((${polygon.points.getViewOfElements().joinToString(", ") {
-                                point -> 
-                                point.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                                        " " + point.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                            } + ", " + polygon.points.getViewOfElements().get(0).x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                                    " " + polygon.points.getViewOfElements().get(0).y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                            }))"
-                        }
-                    })\""
-            }
-            else -> {
-                throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsPrintableString() for $databaseType")
-            }
+            DatabaseType.H2 -> "\"${getValueAsRawString()}\""
+            DatabaseType.MYSQL -> getValueAsRawString()
+            else -> throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsPrintableString() for $databaseType")
         }
     }
 
     override fun getValueAsRawString(): String {
-        return "( ${
-            polygons.getViewOfElements()
-                    .map { it.getValueAsRawString() }
-                    .joinToString(" , ")
-        } ) "
+        return when (databaseType) {
+            DatabaseType.H2 -> {
+                if (polygons.getViewOfElements().isEmpty()) "MULTIPOLYGON EMPTY"
+                else
+                    "MULTIPOLYGON(${
+                        polygons.getViewOfElements().joinToString(", ") { polygon ->
+                            "((${
+                                polygon.points.getViewOfElements().joinToString(", ") { point ->
+                                    point.x.getValueAsRawString() +
+                                            " " + point.y.getValueAsRawString()
+                                } + ", " + polygon.points.getViewOfElements()[0].x.getValueAsRawString() +
+                                        " " + polygon.points.getViewOfElements()[0].y.getValueAsRawString()
+                            }))"
+                        }
+                    })"
+            }
+            DatabaseType.MYSQL -> {
+                "MULTIPOLYGON(${polygons.getViewOfElements().joinToString(", "){ it.getValueAsRawString() }})"
+            }
+            else -> throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsRawString() for $databaseType")
+
+        }
     }
 
     override fun copyValueFrom(other: Gene) {

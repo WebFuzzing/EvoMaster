@@ -10,7 +10,7 @@ class SqlPointGeneTest {
     val rand = Randomness()
 
     @Test
-    fun testGetValueForNontEmpty() {
+    fun testGetValueH2() {
         val gene =SqlPointGene("p0", databaseType = DatabaseType.H2)
         gene.randomize(rand,true)
         gene.x.value = 0f
@@ -18,5 +18,22 @@ class SqlPointGeneTest {
         assertEquals("\"POINT(0.0 0.0)\"", gene.getValueAsPrintableString())
     }
 
+    @Test
+    fun testGetValueMySQL() {
+        val gene =SqlPointGene("p0", databaseType = DatabaseType.MYSQL)
+        gene.randomize(rand,true)
+        gene.x.value = 0f
+        gene.y.value = 0f
+        assertEquals("POINT(0.0, 0.0)", gene.getValueAsPrintableString())
+    }
+
+    @Test
+    fun testGetValuePostgre() {
+        val gene =SqlPointGene("p0", databaseType = DatabaseType.POSTGRES)
+        gene.randomize(rand,true)
+        gene.x.value = 0f
+        gene.y.value = 0f
+        assertEquals("\"(0.0, 0.0)\"", gene.getValueAsPrintableString())
+    }
 
 }

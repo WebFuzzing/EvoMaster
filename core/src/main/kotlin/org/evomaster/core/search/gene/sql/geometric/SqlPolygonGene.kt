@@ -130,6 +130,16 @@ class SqlPolygonGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
+            DatabaseType.POSTGRES,
+            DatabaseType.H2 -> "\"${getValueAsRawString()}\""
+            DatabaseType.MYSQL -> getValueAsRawString()
+            else ->
+                throw IllegalArgumentException("Unsupported SqlPolygonGene.getValueAsPrintableString() for ${databaseType}")
+        }
+    }
+
+    override fun getValueAsRawString(): String {
+        return when (databaseType) {
             /*
              * In MySQL, the first and the last point of
              * the polygon should be equal. We enforce
@@ -137,20 +147,20 @@ class SqlPolygonGene(
              * end of the list
              */
             DatabaseType.MYSQL -> {
-                "POLYGON(" + points.getViewOfElements()
-                        .joinToString(" , ")
-                        { it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) } + "," +
-                        points.getViewOfElements().get(0).getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                        ")"
+                "POLYGON(LINESTRING(" + points.getViewOfElements()
+                        .joinToString(", ")
+                        { it.getValueAsRawString() } + ", " +
+                        points.getViewOfElements()[0].getValueAsRawString() +
+                        "))"
             }
             /*
              * In PostgreSQL, the (..) denotes a closed path
              */
             DatabaseType.POSTGRES -> {
-                "\" (  ${
-                    points.getViewOfElements().joinToString(" , ")
+                "(${
+                    points.getViewOfElements().joinToString(", ")
                     { it.getValueAsRawString() }
-                } ) \""
+                })"
             }
 
             /*
@@ -159,27 +169,17 @@ class SqlPolygonGene(
              * first point.
              */
             DatabaseType.H2 -> {
-                "\"POLYGON((${
+                "POLYGON((${
                     points.getViewOfElements().joinToString(", ") {
-                        it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                                " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                    } + ", " + points.getViewOfElements().get(0).x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                    " " + points.getViewOfElements().get(0).y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                }))\""
+                        it.x.getValueAsRawString() +
+                                " " + it.y.getValueAsRawString()
+                    } + ", " + points.getViewOfElements()[0].x.getValueAsRawString() +
+                            " " + points.getViewOfElements()[0].y.getValueAsRawString()
+                }))"
             }
+            else -> throw IllegalArgumentException("Unsupported SqlPolygonGene.getValueAsRawString() for ${databaseType}")
 
-            else -> {
-                throw IllegalArgumentException("Unsupported SqlPolygonGene.getValueAsPrintableString() for ${databaseType}")
-            }
         }
-    }
-
-    override fun getValueAsRawString(): String {
-        return "( ${
-            points.getViewOfElements()
-                    .map { it.getValueAsRawString() }
-                    .joinToString(" , ")
-        } ) "
     }
 
     override fun copyValueFrom(other: Gene) {

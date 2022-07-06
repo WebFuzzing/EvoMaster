@@ -248,7 +248,7 @@ class DbActionGeneBuilder {
                     SqlBoxGene(column.name)
 
                 /*
-                 * MySQL LINESTRING and PostgreSQL PATH
+                 * MySQL,H2 LINESTRING and PostgreSQL PATH
                  * column data types
                  */
                 ColumnDataType.LINESTRING,
@@ -256,7 +256,7 @@ class DbActionGeneBuilder {
                     buildSqlPathGene(column)
 
                 /**
-                 * PostgreSQL and H2 MULTIPOINT
+                 * MySQL and H2 MULTIPOINT
                  * column types
                  */
                 ColumnDataType.MULTIPOINT ->
@@ -275,14 +275,26 @@ class DbActionGeneBuilder {
                 ColumnDataType.POLYGON ->
                     buildSqlPolygonGene(column)
 
-                /* MySQL and PostgreSQL MULTIPOLYGON
+                /* MySQL and H2 MULTIPOLYGON
                  * column data type
                    */
                 ColumnDataType.MULTIPOLYGON ->
                     buildSqlMultiPolygonGene(column)
 
+                /**
+                 * H2 GEOMETRY column data type
+                 */
                 ColumnDataType.GEOMETRY ->
                     handleSqlGeometry(column)
+
+                /**
+                 * H2 GEOMETRYCOLLECTION and MYSQL GEOMCOLLECTION
+                 * column data types
+                 */
+                ColumnDataType.GEOMCOLLECTION,
+                ColumnDataType.GEOMETRYCOLLECTION ->
+                    handleSqlGeometryCollection(column)
+
 
                 /*
                  * PostgreSQL CIRCLE column data type
@@ -385,15 +397,14 @@ class DbActionGeneBuilder {
         return gene
     }
 
-    private fun handleSqlGeometry(column: Column): Gene {
-        val gene = ChoiceGene(name = column.name,
+    private fun handleSqlGeometry(column: Column): ChoiceGene<*> {
+        return ChoiceGene(name = column.name,
                 listOf(buildSqlPointGene(column),
                         buildSqlMultiPointGene(column),
                         buildSqlPathGene(column),
                         buildSqlMultiPathGene(column),
                         buildSqlPolygonGene(column),
                         buildSqlMultiPolygonGene(column)))
-        return gene
     }
 
     private fun buildSqlPointGene(column: Column) =
@@ -410,6 +421,11 @@ class DbActionGeneBuilder {
 
     private fun buildSqlMultiPolygonGene(column: Column) =
             SqlMultiPolygonGene(column.name, databaseType = column.databaseType)
+
+    private fun handleSqlGeometryCollection(column: Column) =
+            SqlGeometryCollectionGene(column.name,
+                    databaseType = column.databaseType,
+                    template = handleSqlGeometry(column))
 
     private fun buildSqlPolygonGene(column: Column): SqlPolygonGene {
         return when (column.databaseType) {
@@ -912,7 +928,7 @@ class DbActionGeneBuilder {
     }
 
     /**
-     * handle bitvarying for postgres
+     * handle bit varying for postgres
      * https://www.postgresql.org/docs/14/datatype-bit.html
      */
     private fun handleBitVaryingColumn(column: Column): Gene {

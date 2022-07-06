@@ -10,11 +10,11 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
-class ChoiceGene(name: String,
-                 private val choices: List<Gene>,
+class ChoiceGene<T>(name: String,
+                 private val choices: List<T>,
                  activeChoice: Int = 0
 
-) : CompositeFixedGene(name, choices) {
+) : CompositeFixedGene(name, choices) where T : Gene {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ChoiceGene::class.java)
@@ -47,8 +47,13 @@ class ChoiceGene(name: String,
                 .getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
     }
 
+    override fun getValueAsRawString(): String {
+        return choices[activeChoice]
+                .getValueAsRawString()
+    }
+
     override fun copyValueFrom(other: Gene) {
-        if (other !is ChoiceGene) {
+        if (other !is ChoiceGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         } else if (choices.size != other.choices.size) {
             throw IllegalArgumentException("Cannot copy value from another choice gene with  ${other.choices.size} choices (current gene has ${choices.size} choices)")
@@ -61,7 +66,7 @@ class ChoiceGene(name: String,
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is ChoiceGene) {
+        if (other !is ChoiceGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         if (this.activeChoice != other.activeChoice) {
@@ -73,7 +78,7 @@ class ChoiceGene(name: String,
     }
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is ChoiceGene && gene.choices.size == choices.size) {
+        if (gene is ChoiceGene<*> && gene.choices.size == choices.size) {
             var result = true
             choices.indices.forEach { i ->
                 val r = choices[i].bindValueBasedOn(gene.choices[i])

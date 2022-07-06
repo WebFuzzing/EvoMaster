@@ -11,30 +11,38 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class SqlMultiPathGene(
+/**
+ * Represents a collection of geometric objects.
+ */
+class SqlGeometryCollectionGene(
         name: String,
         /**
          * The database type of the source column for this gene
          */
-        val databaseType: DatabaseType = DatabaseType.MYSQL,
-        val paths: ArrayGene<SqlPathGene> = ArrayGene(
+        val databaseType: DatabaseType = DatabaseType.H2,
+        template: Gene,
+        val elements: ArrayGene<Gene> = ArrayGene(
                 name = "points",
-                minSize = 1,
-                template = SqlPathGene("p", databaseType = databaseType))
-) : CompositeFixedGene(name, mutableListOf(paths)) {
+                minSize = 0,
+                template = template)
+) : CompositeFixedGene(name, mutableListOf(elements)) {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(SqlMultiPathGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(SqlGeometryCollectionGene::class.java)
     }
 
-    override fun copyContent(): Gene = SqlMultiPathGene(
-            name,
-            databaseType = this.databaseType,
-            paths = paths.copy() as ArrayGene<SqlPathGene>
-    )
+    override fun copyContent(): Gene {
+        val newElements = elements.copy() as ArrayGene<Gene>
+        return SqlGeometryCollectionGene(
+                name,
+                databaseType = this.databaseType,
+                template = newElements.template,
+                elements = newElements
+        )
+    }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        paths.randomize(randomness, tryToForceNewValue, allGenes)
+        elements.randomize(randomness, tryToForceNewValue, allGenes)
     }
 
     override fun candidatesInternalGenes(
@@ -45,7 +53,7 @@ class SqlMultiPathGene(
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        return listOf(paths)
+        return listOf(elements)
     }
 
     override fun getValueAsPrintableString(
@@ -55,65 +63,50 @@ class SqlMultiPathGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
-            DatabaseType.H2,
-            DatabaseType.POSTGRES -> "\"${getValueAsRawString()}\""
             DatabaseType.MYSQL -> getValueAsRawString()
-            else -> throw IllegalArgumentException("Unsupported getValueAsPrintableString() for database type: $databaseType")
+            DatabaseType.H2 -> "\"${getValueAsRawString()}\""
+            else -> throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsPrintableString() for $databaseType")
         }
     }
 
     override fun getValueAsRawString(): String {
         return when (databaseType) {
+            DatabaseType.MYSQL,
             DatabaseType.H2 -> {
-                if (paths.getViewOfElements().isEmpty())
-                    "MULTILINESTRING EMPTY"
+                if (elements.getViewOfElements().isEmpty()) "GEOMETRYCOLLECTION EMPTY"
                 else
-                    "MULTILINESTRING(${
-                        paths.getViewOfElements().joinToString(", ") { path ->
-                            if (path.points.getViewOfElements().isEmpty()) {
-                                "EMPTY"
-                            } else {
-                                "(" + path.points.getViewOfElements().joinToString(", ") { point ->
-                                    point.x.getValueAsRawString() +
-                                            " " + point.y.getValueAsRawString()
-                                } + ")"
-                            }
+                    "GEOMETRYCOLLECTION(${
+                        elements.getViewOfElements().joinToString(", ") {
+                            it.getValueAsRawString()
                         }
                     })"
             }
-            DatabaseType.MYSQL -> {
-                "MULTILINESTRING(${
-                    paths.getViewOfElements().joinToString(", ") {
-                        it.getValueAsRawString()
-                    }
-                })"
-            }
-            else -> throw IllegalArgumentException("Unsupported getValueAsRawString() for database type: $databaseType")
+            else -> throw IllegalArgumentException("Unsupported SqlGeometryCollectionGene.getValueAsRawString() for $databaseType")
 
         }
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlMultiPathGene) {
+        if (other !is SqlGeometryCollectionGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.paths.copyValueFrom(other.paths)
+        this.elements.copyValueFrom(other.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlMultiPathGene) {
+        if (other !is SqlGeometryCollectionGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.paths.containsSameValueAs(other.paths)
+        return this.elements.containsSameValueAs(other.elements)
     }
 
 
-    override fun innerGene(): List<Gene> = listOf(paths)
+    override fun innerGene(): List<Gene> = listOf(elements)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlMultiPathGene -> {
-                paths.bindValueBasedOn(gene.paths)
+        return when (gene) {
+            is SqlGeometryCollectionGene -> {
+                elements.bindValueBasedOn(gene.elements)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

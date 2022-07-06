@@ -63,7 +63,7 @@ class SqlTimeIntervalGene(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\"${days.value} days ${time.getValueAsRawString()}\""
+        return "${days.value} days ${time.getValueAsRawString()}"
     }
 
     override fun getValueAsRawString(): String {

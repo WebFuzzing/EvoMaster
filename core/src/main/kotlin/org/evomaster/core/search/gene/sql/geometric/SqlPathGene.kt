@@ -22,7 +22,7 @@ class SqlPathGene(
                 name = "points",
                 // paths are lists of at least 2 points
                 minSize = 2,
-                template = SqlPointGene("p", databaseType=databaseType))
+                template = SqlPointGene("p", databaseType = databaseType))
 ) : CompositeFixedGene(name, mutableListOf(points)) {
 
     companion object {
@@ -57,30 +57,39 @@ class SqlPathGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
-            DatabaseType.POSTGRES -> {"\" ( ${
-                points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
-            } ) \""}
-            DatabaseType.H2 -> {
-                "\"LINESTRING(${
-                    points.getViewOfElements().joinToString(", ") {
-                        it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                                " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                    }
-                })\""
-            }
-            DatabaseType.MYSQL -> {
-                "LINESTRING(${points.getViewOfElements()
-                        .joinToString(" , ")
-                        { it.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck) }})"
-            }
-            else -> { throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")}
+            DatabaseType.H2,
+            DatabaseType.POSTGRES -> "\"${this.getValueAsRawString()}\""
+            DatabaseType.MYSQL -> this.getValueAsRawString()
+            else ->throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")
         }
     }
 
     override fun getValueAsRawString(): String {
-        return "( ${
-            points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
-        } ) "
+        return when (databaseType) {
+            DatabaseType.POSTGRES -> {
+                "(${
+                    points.getViewOfElements().joinToString(", ") { it.getValueAsRawString() }
+                })"
+            }
+            DatabaseType.H2 -> {
+                if (points.getViewOfElements().isEmpty()) "LINESTRING EMPTY"
+                else
+                    "LINESTRING(${
+                        points.getViewOfElements().joinToString(", ") {
+                            it.x.getValueAsRawString() +
+                                    " " + it.y.getValueAsRawString()
+                        }
+                    })"
+            }
+            DatabaseType.MYSQL -> {
+                "LINESTRING(${
+                    points.getViewOfElements()
+                            .joinToString(", ")
+                            { it.getValueAsRawString() }
+                })"
+            }
+            else -> throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsRawString() for $databaseType")
+        }
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -96,7 +105,6 @@ class SqlPathGene(
         }
         return this.points.containsSameValueAs(other.points)
     }
-
 
 
     override fun innerGene(): List<Gene> = listOf(points)

@@ -21,7 +21,7 @@ class SqlMultiPointGene(
         /**
          * The database type of the source column for this gene
          */
-        val databaseType: DatabaseType = DatabaseType.POSTGRES,
+        val databaseType: DatabaseType = DatabaseType.H2,
         val points: ArrayGene<SqlPointGene> = ArrayGene(
                 name = "points",
                 minSize = 0,
@@ -60,36 +60,34 @@ class SqlMultiPointGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
-            DatabaseType.POSTGRES -> {
-                "\"LINESTRING(${
-                    points.getViewOfElements().joinToString(", ") {
-                        it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                                " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                    }
-                })\""
-            }
-            DatabaseType.H2 -> {
-                if (points.getViewOfElements().isEmpty()) "\"MULTIPOINT EMPTY\""
-                else
-                    "\"MULTIPOINT(${
-                        points.getViewOfElements().joinToString(", ") {
-                            it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                                    " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
-                        }
-                    })\""
-            }
-            else -> {
-                throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsPrintableString() for $databaseType")
-            }
+            DatabaseType.H2 -> "\"${getValueAsRawString()}\""
+            DatabaseType.MYSQL -> getValueAsRawString()
+            else -> throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsPrintableString() for $databaseType")
+
         }
     }
 
     override fun getValueAsRawString(): String {
-        return "( ${
-            points.getViewOfElements()
-                    .map { it.getValueAsRawString() }
-                    .joinToString(" , ")
-        } ) "
+        return when (databaseType) {
+            DatabaseType.H2 -> {
+                if (points.getViewOfElements().isEmpty()) "MULTIPOINT EMPTY"
+                else
+                    "MULTIPOINT(${
+                        points.getViewOfElements().joinToString(", ") {
+                            it.x.getValueAsRawString() + " " + it.y.getValueAsRawString()
+                        }
+                    })"
+            }
+            DatabaseType.MYSQL -> {
+                    "MULTIPOINT(${
+                        points.getViewOfElements().joinToString(", ") {
+                            it.getValueAsRawString() 
+                        }
+                    })"
+            }
+            else -> throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsRawString() for $databaseType")
+
+        }
     }
 
     override fun copyValueFrom(other: Gene) {

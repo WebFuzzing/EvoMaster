@@ -82,19 +82,53 @@ class SqlPolygonGeneTest {
     }
 
     @Test
-    fun testGetValueAsPrintable() {
+    fun testGetValueAsPrintableH2() {
         val gene = SqlPolygonGene(name = "polygon", databaseType = DatabaseType.H2, minLengthOfPolygonRing = 2, onlyNonIntersectingPolygons = true)
         gene.randomize(rand,true)
         gene.points.killAllChildren()
-        gene.points.addElement(SqlPointGene("p",
+        gene.points.addElement(SqlPointGene("p",databaseType = DatabaseType.H2,
                 x = FloatGene("x", value = 0f),
                 y = FloatGene("y", value = 1f)))
-        gene.points.addElement(SqlPointGene("p",
+        gene.points.addElement(SqlPointGene("p",databaseType = DatabaseType.H2,
                 x = FloatGene("x", value = 1f),
                 y = FloatGene("y", value = 1f)))
-        gene.points.addElement(SqlPointGene("p",
+        gene.points.addElement(SqlPointGene("p",databaseType = DatabaseType.H2,
                 x = FloatGene("x", value = 0f),
                 y = FloatGene("y", value = 0f)))
         assertEquals("\"POLYGON((0.0 1.0, 1.0 1.0, 0.0 0.0, 0.0 1.0))\"",gene.getValueAsPrintableString())
+    }
+
+    @Test
+    fun testGetValueAsPrintableMySQL() {
+        val gene = SqlPolygonGene(name = "polygon", databaseType = DatabaseType.MYSQL, minLengthOfPolygonRing = 2, onlyNonIntersectingPolygons = true)
+        gene.randomize(rand,true)
+        gene.points.killAllChildren()
+        gene.points.addElement(SqlPointGene("p",databaseType = DatabaseType.MYSQL,
+                x = FloatGene("x", value = 0f),
+                y = FloatGene("y", value = 1f)))
+        gene.points.addElement(SqlPointGene("p",databaseType = DatabaseType.MYSQL,
+                x = FloatGene("x", value = 1f),
+                y = FloatGene("y", value = 1f)))
+        gene.points.addElement(SqlPointGene("p",databaseType = DatabaseType.MYSQL,
+                x = FloatGene("x", value = 0f),
+                y = FloatGene("y", value = 0f)))
+        assertEquals("POLYGON(LINESTRING(POINT(0.0, 1.0), POINT(1.0, 1.0), POINT(0.0, 0.0), POINT(0.0, 1.0)))",gene.getValueAsPrintableString())
+    }
+
+    @Test
+    fun testGetValueAsPrintablePostgres() {
+        val gene = SqlPolygonGene(name = "polygon", databaseType = DatabaseType.POSTGRES, minLengthOfPolygonRing = 2, onlyNonIntersectingPolygons = true)
+        gene.randomize(rand,true)
+        gene.points.killAllChildren()
+        gene.points.addElement(SqlPointGene("p",databaseType = DatabaseType.POSTGRES,
+                x = FloatGene("x", value = 0f),
+                y = FloatGene("y", value = 1f)))
+        gene.points.addElement(SqlPointGene("p",databaseType = DatabaseType.POSTGRES,
+                x = FloatGene("x", value = 1f),
+                y = FloatGene("y", value = 1f)))
+        gene.points.addElement(SqlPointGene("p",databaseType = DatabaseType.POSTGRES,
+                x = FloatGene("x", value = 0f),
+                y = FloatGene("y", value = 0f)))
+        assertEquals("\"((0.0, 1.0), (1.0, 1.0), (0.0, 0.0))\"",gene.getValueAsPrintableString())
     }
 }

@@ -11,7 +11,7 @@ class SqlMultiPointGeneTest {
     val rand = Randomness()
 
     @Test
-    fun testGetValueForEmpty() {
+    fun testGetValueForEmptyH2() {
         val gene = SqlMultiPointGene("multipoint", databaseType = DatabaseType.H2)
         gene.randomize(rand, true)
         gene.points.killAllChildren()
@@ -20,13 +20,13 @@ class SqlMultiPointGeneTest {
     }
 
     @Test
-    fun testGetValueForNontEmpty() {
+    fun testGetValueForNontEmptyH2() {
         val gene = SqlMultiPointGene("multipoint", databaseType = DatabaseType.H2)
         gene.randomize(rand, true)
         gene.points.killAllChildren()
 
         gene.points.addElement(
-                SqlPointGene("p0",
+                SqlPointGene("p0",databaseType = DatabaseType.H2,
                         x = FloatGene("x", value = 0f),
                         y = FloatGene("y", value = 0f))
         )
@@ -34,21 +34,56 @@ class SqlMultiPointGeneTest {
     }
 
     @Test
-    fun testGetValueForTwoPoints() {
+    fun testGetValueForTwoPointsH2() {
         val gene = SqlMultiPointGene("multipoint", databaseType = DatabaseType.H2)
         gene.randomize(rand, true)
         gene.points.killAllChildren()
 
         gene.points.addElement(
-                SqlPointGene("p0",
+                SqlPointGene("p0", databaseType = DatabaseType.H2,
                         x = FloatGene("x", value = 0f),
                         y = FloatGene("y", value = 0f))
         )
         gene.points.addElement(
-                SqlPointGene("p1",
+                SqlPointGene("p1", databaseType = DatabaseType.H2,
                         x = FloatGene("x", value = 1.0f),
                         y = FloatGene("y", value = 1.0f))
         )
         assertEquals("\"MULTIPOINT(0.0 0.0, 1.0 1.0)\"", gene.getValueAsPrintableString())
     }
+
+    @Test
+    fun testGetValueForNontEmptyMySQL() {
+        val gene = SqlMultiPointGene("multipoint", databaseType = DatabaseType.MYSQL)
+        gene.randomize(rand, true)
+        gene.points.killAllChildren()
+
+        gene.points.addElement(
+                SqlPointGene("p0", databaseType = DatabaseType.MYSQL,
+                        x = FloatGene("x", value = 0f),
+                        y = FloatGene("y", value = 0f))
+        )
+        assertEquals("MULTIPOINT(POINT(0.0, 0.0))", gene.getValueAsPrintableString())
+    }
+
+    @Test
+    fun testGetValueForTwoPointsMySQL() {
+        val gene = SqlMultiPointGene("multipoint", databaseType = DatabaseType.MYSQL)
+        gene.randomize(rand, true)
+        gene.points.killAllChildren()
+
+        gene.points.addElement(
+                SqlPointGene("p0", databaseType = DatabaseType.MYSQL,
+                        x = FloatGene("x", value = 0f),
+                        y = FloatGene("y", value = 0f))
+        )
+        gene.points.addElement(
+                SqlPointGene("p1", databaseType = DatabaseType.MYSQL,
+                        x = FloatGene("x", value = 1.0f),
+                        y = FloatGene("y", value = 1.0f))
+        )
+        assertEquals("MULTIPOINT(POINT(0.0, 0.0), POINT(1.0, 1.0))", gene.getValueAsPrintableString())
+    }
+
+
 }
