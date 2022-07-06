@@ -38,7 +38,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "false");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "true");
                 });
     }
 }

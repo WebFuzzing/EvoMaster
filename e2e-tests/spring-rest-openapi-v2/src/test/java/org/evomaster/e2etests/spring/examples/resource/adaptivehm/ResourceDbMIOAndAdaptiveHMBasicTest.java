@@ -55,7 +55,7 @@ public class ResourceDbMIOAndAdaptiveHMBasicTest extends ResourceMIOHWTestBase {
         rmanger.sampleCall(rdkey, true, calls, 8, false, Collections.emptyList(), "POST-POST");
 
 
-        RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
+        RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, null, 1);
         EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet());
 
         ImpactsOfIndividual impactInd = twoCallsEval.getImpactInfo();

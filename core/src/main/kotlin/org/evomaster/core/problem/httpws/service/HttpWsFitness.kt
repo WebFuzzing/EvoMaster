@@ -3,6 +3,7 @@ package org.evomaster.core.problem.httpws.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.core.StaticCounter
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.CookieWriter
@@ -258,12 +259,12 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
         if (log.isTraceEnabled){
             log.trace("do {} InitializingActions: {}", ind.seeInitializingActions().size,
-                ind.seeInitializingActions().joinToString(","){
+                ind.seeInitializingActions().filterIsInstance<DbAction>().joinToString(","){
                     it.getResolvedName()
                 })
         }
 
-        if (ind.seeInitializingActions().none { !it.representExistingData }) {
+        if (ind.seeInitializingActions().filterIsInstance<DbAction>().none { !it.representExistingData }) {
             /*
                 We are going to do an initialization of database only if there
                 is data to add.
@@ -273,7 +274,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
             return
         }
 
-        val dto = DbActionTransformer.transform(ind.seeInitializingActions())
+        val dto = DbActionTransformer.transform(ind.seeInitializingActions().filterIsInstance<DbAction>())
         dto.idCounter = StaticCounter.getAndIncrease()
 
         val ok = rc.executeDatabaseCommand(dto)

@@ -99,7 +99,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         val max = config.maxSqlInitActionsPerMissingData
         val initializingActions = ind.seeInitializingActions()
 
-        var missing = findMissing(fw, initializingActions)
+        var missing = findMissing(fw, initializingActions.filterIsInstance<DbAction>())
 
         val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
 
@@ -133,7 +133,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
                 imply generating an action for B as well.
                 So, we need to recompute "missing" each time
              */
-            missing = findMissing(fw, ind.seeInitializingActions())
+            missing = findMissing(fw, ind.seeInitializingActions().filterIsInstance<DbAction>())
         }
 
         if (config.generateSqlDataWithDSE) {
@@ -171,7 +171,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
            note that if there is no any init sql, we randomly select one table to add.
         */
 
-        val candidatesToMutate = individual.seeInitializingActions().filterNot { it.representExistingData }
+        val candidatesToMutate = individual.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }
         val tables = candidatesToMutate.map { it.table.name }.run {
             ifEmpty { getSqlInsertBuilder()!!.getTableNames() }
         }
@@ -221,7 +221,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         val pks = remove.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
         val index = ind.seeInitializingActions().indexOf(remove)
         if (index < ind.seeInitializingActions().size - 1 && pks.isNotEmpty()){
-            val removeDbFKs = ind.seeInitializingActions().subList(index + 1, ind.seeInitializingActions().size).filter {
+            val removeDbFKs = ind.seeInitializingActions().filterIsInstance<DbAction>().subList(index + 1, ind.seeInitializingActions().size).filter {
                 it.seeGenes().flatMap { g-> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
                         .any {fk-> pks.any {pk->fk.uniqueIdOfPrimaryKey == pk.uniqueId} } }
             relatedRemove.addAll(removeDbFKs)

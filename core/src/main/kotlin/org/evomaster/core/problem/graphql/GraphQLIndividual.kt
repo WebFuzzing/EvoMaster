@@ -33,11 +33,15 @@ class GraphQLIndividual(
 
     }
 
+    /**
+     * TODO: ONLY_EXTERNAL_SERVICE needs to be revisited
+     */
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
+            GeneFilter.ALL -> seeInitializingActions().filterIsInstance<DbAction>().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeGenes)
+            GeneFilter.ONLY_SQL -> seeInitializingActions().filterIsInstance<DbAction>().flatMap(DbAction::seeGenes)
+            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>().flatMap(ExternalServiceAction::seeGenes)
         }
     }
 
@@ -51,17 +55,20 @@ class GraphQLIndividual(
 
     fun getIndexedCalls(): Map<Int,GraphQLAction> = getIndexedChildren(GraphQLAction::class.java)
 
-
+    /**
+     * TODO: ONLY_EXTERNAL_SERVICE needs to be revisited
+     */
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when(filter){
             ActionFilter.ALL -> children as List<Action>
             ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
             ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions()
         }
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeInitializingActions())
+        return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
     }
 
     //TODO refactor to make sure all problem types use same/similar code with checks on indices

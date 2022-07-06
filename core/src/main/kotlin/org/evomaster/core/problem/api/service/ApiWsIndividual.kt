@@ -6,6 +6,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.InitializationActions
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -49,8 +50,8 @@ abstract class ApiWsIndividual (
     private val externalServiceInitialization: List<ExternalServiceAction>
         get() { return children.filterIsInstance<ExternalServiceAction>()}
 
-    override fun seeInitializingActions(): List<DbAction> {
-        return dbInitialization
+    override fun seeInitializingActions(): List<Action> {
+        return dbInitialization.plus(externalServiceInitialization)
     }
 
     override fun seeExternalServiceActions(): List<ExternalServiceAction> {

@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rpc
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
@@ -31,12 +32,15 @@ class RPCIndividual(
         addAll(dbInitialization); addAll(actions)
     })
 
-
+    /**
+     * TODO: ONLY_EXTERNAL_SERVICE needs to be revisited
+     */
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
+            GeneFilter.ALL -> seeInitializingActions().filterIsInstance<DbAction>().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeGenes)
+            GeneFilter.ONLY_SQL -> seeInitializingActions().filterIsInstance<DbAction>().flatMap(DbAction::seeGenes)
+            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>().flatMap(ExternalServiceAction::seeGenes)
         }
     }
 
@@ -46,11 +50,15 @@ class RPCIndividual(
 
     override fun canMutateStructure(): Boolean = true
 
+    /**
+     * TODO: ONLY_EXTERNAL_SERVICE needs to be revisited
+     */
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when (filter) {
             ActionFilter.ALL -> children as List<Action>
             ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
             ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions()
         }
     }
 
@@ -61,7 +69,7 @@ class RPCIndividual(
      fun seeIndexedRPCCalls() : Map<Int, RPCCallAction> = getIndexedChildren(RPCCallAction::class.java)
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeInitializingActions())
+        return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
     }
 
 

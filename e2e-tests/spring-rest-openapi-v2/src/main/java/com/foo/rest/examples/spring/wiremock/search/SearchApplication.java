@@ -10,6 +10,5 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
 public class SearchApplication extends SwaggerConfiguration {
 
-    public static void main(String[] args) { SpringApplication.run(SearchApplication.class, args);
-    }
+    public static void main(String[] args) { SpringApplication.run(SearchApplication.class, args); }
 }

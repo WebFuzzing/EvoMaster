@@ -52,7 +52,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         rmanger.sampleCall(rdkey, true, calls, 8, false, Collections.emptyList(), "POST-POST");
         assertEquals(2, calls.size());
 
-        RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
+        RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null,null, 1);
         EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet());
         assertEquals(4, mutator.genesToMutation(twoCalls, twoCallsEval, Collections.emptySet()).size());
 
@@ -142,7 +142,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         assertEquals(1, rAIdcall.seeGenes(GeneFilter.NO_SQL).size());
 
         //test binding after value mutator
-        RestIndividual raIdInd = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
+        RestIndividual raIdInd = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, null, 1);
         EvaluatedIndividual<RestIndividual> rdIdEval = ff.calculateCoverage(raIdInd, Collections.emptySet());
         // mutable genes should be 0+1+2+1=4
         assertEquals(4, mutator.genesToMutation(raIdInd, rdIdEval, Collections.emptySet()).size());

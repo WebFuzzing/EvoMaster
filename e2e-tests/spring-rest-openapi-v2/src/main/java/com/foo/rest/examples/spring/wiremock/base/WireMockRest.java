@@ -37,8 +37,8 @@ public class WireMockRest {
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public StringsResponseDto externalCall() {
-        StringsResponseDto stringsResponseDto = new StringsResponseDto();
+    public Boolean externalCall() {
+        Boolean responseDto = false;
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -56,13 +56,13 @@ public class WireMockRest {
             ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
             if (response.getStatusCode().value() == 200 && response.getBody().equals("foo")) {
-                stringsResponseDto.valid = true;
+                responseDto = true;
             } else {
-                stringsResponseDto.valid = false;
+                responseDto = false;
             }
         } catch (Exception e) {
-            stringsResponseDto.valid = false;
+            responseDto = false;
         }
-        return stringsResponseDto;
+        return responseDto;
     }
 }

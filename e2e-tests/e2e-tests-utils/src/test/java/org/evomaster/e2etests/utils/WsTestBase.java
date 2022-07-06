@@ -450,7 +450,7 @@ public abstract class WsTestBase {
     protected void assertInsertionIntoTable(Solution<? extends ApiWsIndividual> solution, String tableName) {
 
         boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> ind.getIndividual().seeInitializingActions().stream().anyMatch(
+                ind -> ind.getIndividual().seeDbActions().stream().anyMatch(
                         da -> da.getTable().getName().equalsIgnoreCase(tableName))
         );
 
