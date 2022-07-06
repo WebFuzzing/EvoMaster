@@ -147,9 +147,9 @@ class RestIndividual(
         return seeInitializingActions().filterIsInstance<DbAction>().plus(getResourceCalls().flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
     }
 
-//    override fun seeExternalServiceActions(): List<ExternalServiceAction> {
-//        return seeExternalServiceActions().plus(getResourceCalls().flatMap { c-> c.seeActions(ONLY_EXTERNAL_SERVICE) as List<ExternalServiceAction> })
-//    }
+    override fun seeExternalServiceActions(): List<ExternalServiceAction> {
+        return seeExternalServiceActions().plus(getResourceCalls().flatMap { c-> c.seeActions(ONLY_EXTERNAL_SERVICE) as List<ExternalServiceAction> })
+    }
 
     override fun verifyInitializationActions(): Boolean {
         return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())

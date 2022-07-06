@@ -96,6 +96,12 @@ class ExternalServiceHandler {
         return externalServices
     }
 
+    fun reset() {
+        externalServices.forEach {
+            it.value.stopWireMockServer()
+        }
+    }
+
     /**
      * Default IP address will be a randomly generated IP
      *

@@ -12,20 +12,12 @@ import javax.ws.rs.core.MediaType;
 public class SearchRest {
 
     @RequestMapping(
-            value = "/search/{s}",
+            value = "/search/{key}",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public Boolean equalsFoo(@PathVariable("s") String s) {
+    public Boolean equalsFoo(@PathVariable("key") String s) {
         return "foo".equals(s);
     }
 
-    @RequestMapping(
-            value = "/search/return/foo",
-            method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
-    )
-    public String returnFoo() {
-        return "foo";
-    }
 }
