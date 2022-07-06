@@ -90,7 +90,7 @@ class ResourceSampleMethodController {
             with dependency handling and sql handling, the resource might be become possibly dependent from independent
             thus, the applicable of methods might be updated.
          */
-        if (config.probOfApplySQLActionToCreateResources > 0 && methods.any { !it.value.applicable })
+        if (config.shouldGenerateSqlData() && config.probOfApplySQLActionToCreateResources > 0 && methods.any { !it.value.applicable })
             initApplicableStrategies()
 
         if(methods.filter { it.value.applicable }.size == 1) return getStrategyWithItsProbability()
