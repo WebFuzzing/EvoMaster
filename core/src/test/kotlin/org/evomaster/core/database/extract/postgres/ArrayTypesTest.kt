@@ -100,7 +100,7 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
             )
         )
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(7, genes.size)
         assertTrue(genes[0] is IntegerGene)
@@ -174,7 +174,7 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
                 "nullableArrayColumn"
             )
         )
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
 
@@ -211,7 +211,7 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
                 "stringArrayColumn"
             )
         )
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
 
@@ -247,7 +247,7 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
                         "stringArrayColumn"
                 )
         )
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
 
@@ -284,7 +284,7 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
                         "stringArrayColumn"
                 )
         )
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
 

@@ -300,7 +300,7 @@ class ResourceManageService {
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
          */
-        GeneUtils.repairGenes(dbActions.flatMap { it.seeGenes() })
+        GeneUtils.repairGenes(dbActions.flatMap { it.seeTopGenes() })
 
         return DbActionUtils.repairBrokenDbActionsList(dbActions, randomness)
     }

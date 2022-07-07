@@ -58,7 +58,7 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
         assert(insertions[0].table.name.equals("PROJECT", ignoreCase = true))
         assert(insertions[1].table.name.equals("lANGUAGE_LIST", ignoreCase = true))
 
-        val projectId = (insertions[0].seeGenes().filterIsInstance<SqlPrimaryKeyGene>()).first().uniqueId
+        val projectId = (insertions[0].seeTopGenes().filterIsInstance<SqlPrimaryKeyGene>()).first().uniqueId
 
         val dtoForPersons = DbActionTransformer.transform(listOf(insertions[0]), execSqlIdMaps)
         val responseForPersons = SqlScriptRunner.execInsert(connection, dtoForPersons.insertions).idMapping

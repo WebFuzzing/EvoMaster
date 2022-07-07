@@ -22,7 +22,7 @@ class DoctorsExtractTest : ExtractTestBaseH2() {
 
         val actions = builder.createSqlInsertionAction("DOCTORS", setOf("PERSON_ID"))
 
-        val all = actions.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val all = actions.flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
 
         //force binding
         val randomness = Randomness()//.apply { updateSeed(1) }

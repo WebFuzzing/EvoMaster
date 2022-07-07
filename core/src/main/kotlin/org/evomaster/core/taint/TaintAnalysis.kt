@@ -80,7 +80,7 @@ object TaintAnalysis {
 
         for (s in specs) {
 
-            val genes = action.seeGenes()
+            val genes = action.seeTopGenes()
                     .flatMap { it.flatView() }
                     .filterIsInstance<StringGene>()
                     .filter {
@@ -153,7 +153,7 @@ object TaintAnalysis {
 
             if (fullMatch.isNotEmpty()) {
 
-                val genes = action.seeGenes()
+                val genes = action.seeTopGenes()
                         .flatMap { it.flatView() }
                         .filterIsInstance<StringGene>()
                         .filter { it.getValueAsRawString().equals(taintedInput, true) }
@@ -173,7 +173,7 @@ object TaintAnalysis {
             //partial match on single genes
             if (partialMatch.isNotEmpty()) {
 
-                val genes = action.seeGenes()
+                val genes = action.seeTopGenes()
                         .flatMap { it.flatView() }
                         .filterIsInstance<StringGene>()
                         .filter { taintedInput.contains(it.getValueAsRawString(), true) }

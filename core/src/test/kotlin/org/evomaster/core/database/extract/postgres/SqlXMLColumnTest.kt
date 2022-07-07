@@ -25,7 +25,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmlData"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is SqlXMLGene)
@@ -39,7 +39,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmlData"))
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
 
         val query = "Select * from x"

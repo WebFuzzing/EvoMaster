@@ -96,7 +96,7 @@ class ProxyPrintSqlExtractTest : ExtractTestBaseH2() {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(3, genes.size)
 
@@ -115,7 +115,7 @@ class ProxyPrintSqlExtractTest : ExtractTestBaseH2() {
 
         val actions = builder.createSqlInsertionAction("PRINT_REQUESTS", setOf("CONSUMER_ID"))
 
-        val all = actions.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val all = actions.flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
 
         //force binding
         val randomness = Randomness()//.apply { updateSeed(1) }

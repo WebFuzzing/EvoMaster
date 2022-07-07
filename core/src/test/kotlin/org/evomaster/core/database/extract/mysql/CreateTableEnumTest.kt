@@ -34,7 +34,7 @@ class CreateTableEnumTest : ExtractTestBaseMySQL() {
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("shirts", setOf("name", "size"))
 
-        val sizeGene = actions[0].seeGenes().find { it.name == "size" }
+        val sizeGene = actions[0].seeTopGenes().find { it.name == "size" }
         assertTrue(sizeGene is SqlNullableGene)
         (sizeGene as SqlNullableGene).apply {
             assertTrue(gene is EnumGene<*>)

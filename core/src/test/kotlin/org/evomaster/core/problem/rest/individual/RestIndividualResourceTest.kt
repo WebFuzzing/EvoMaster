@@ -95,7 +95,7 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
         mutated.individual.seeActions(ActionFilter.NO_INIT).forEachIndexed { index, action ->
             val impact = mutatedImpact.actionGeneImpacts[index]
             assertEquals(action.getName(), impact.actionName)
-            action.seeGenes().forEach { g->
+            action.seeTopGenes().forEach { g->
                 val geneId = ImpactUtils.generateGeneId(mutated.individual, g)
                 val geneImpact = impact.get(geneId, action.getName())
                 assertNotNull(geneImpact)
@@ -114,7 +114,7 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
                 var anyMutated = 0
                 mutated.individual.seeActions(ActionFilter.ALL).forEachIndexed { index, action ->
                     if (action !is DbAction || !action.representExistingData){
-                        action.seeGenes().filter { it.isMutable() }.forEach { g->
+                        action.seeTopGenes().filter { it.isMutable() }.forEach { g->
                             val impactId = ImpactUtils.generateGeneId(mutated.individual, g)
                             val fromInit = mutatedInit.contains(action)
                             val actionIndex = if (fromInit) index else (index - mutatedInit.size)

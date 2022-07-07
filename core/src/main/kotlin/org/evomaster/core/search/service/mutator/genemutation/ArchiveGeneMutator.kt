@@ -458,7 +458,7 @@ class ArchiveGeneMutator{
         val ipairs = mutableListOf<Pair<Gene, Gene>>()
         originalActions.forEachIndexed { index, action ->
             val maction = mutatedActions.elementAt(index)
-            action.seeGenes().filter { it.isMutable()}.forEach {g->
+            action.seeTopGenes().filter { it.isMutable()}.forEach { g->
                 val m = ImpactUtils.findMutatedGene(maction, g)
                 if (m != null)
                     ipairs.add(g to m)

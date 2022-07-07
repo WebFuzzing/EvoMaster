@@ -27,7 +27,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("purchases", setOf("id", "uuid"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(2, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
@@ -45,7 +45,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("purchases", setOf("id", "uuid"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
         val expectedUUID = (genes[1] as SqlUUIDGene).getValueAsUUID()
@@ -72,7 +72,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("uuid"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
@@ -92,7 +92,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("uuid"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
@@ -123,7 +123,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("y", setOf("uuid"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is SqlNullableGene)
@@ -142,7 +142,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("y", setOf("uuid"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         val uuidGene = (genes[0] as SqlNullableGene).gene as SqlUUIDGene
 

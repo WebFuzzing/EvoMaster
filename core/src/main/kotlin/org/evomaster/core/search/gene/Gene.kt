@@ -295,7 +295,6 @@ abstract class Gene(
      */
     open fun isGloballyValid() = isLocallyValid()
 
-    //TODO add distinction between isLocallyValid and isGloballyValid, eg, when we have intr-gene constraints
 
     /**
      * mutated gene should pass the check if needed, eg, DateGene

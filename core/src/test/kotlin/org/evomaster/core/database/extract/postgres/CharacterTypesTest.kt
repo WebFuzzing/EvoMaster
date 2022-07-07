@@ -38,7 +38,7 @@ class CharacterTypesTest : ExtractTestBasePostgres() {
             )
         )
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(5, genes.size)
         assertTrue(genes[0] is StringGene) //character varying
@@ -93,7 +93,7 @@ class CharacterTypesTest : ExtractTestBasePostgres() {
         )
         )
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         (genes[0] as StringGene).value = "f"
         (genes[1] as StringGene).value = "f"

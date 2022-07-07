@@ -263,7 +263,7 @@ class ResourceNodeWithDbTest {
     }
 
     private fun getGenePredict(action: Action, name: String, predict: (Gene) -> Boolean) : Gene?{
-        return action.seeGenes().flatMap { it.flatView() }.find { g-> predict(g) && g.name.equals(name, ignoreCase = true) }
+        return action.seeTopGenes().flatMap { it.flatView() }.find { g-> predict(g) && g.name.equals(name, ignoreCase = true) }
     }
 
     private class DbExecutor : DatabaseExecutor {

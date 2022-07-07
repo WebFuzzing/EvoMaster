@@ -60,7 +60,7 @@ public class ResourceDbMIOBasicTest extends ResourceMIOHWTestBase {
         rmanger.sampleCall(raIdKey, true, calls, 10, true, Collections.emptyList(), "GET");
         assertEquals(2, calls.get(0).seeActions(ActionFilter.ALL).size());
         assert( calls.get(0).seeActions(ActionFilter.ALL).get(0) instanceof DbAction);
-        assertEquals(3, calls.get(0).seeActions(ActionFilter.ALL).get(0).seeGenes().size());
+        assertEquals(3, calls.get(0).seeActions(ActionFilter.ALL).get(0).seeTopGenes().size());
         //check whether the gene binding with rest action is removed with seeGenes(GeneFilter.ONLY_SQL)
         assertEquals(2, calls.get(0).seeGenes(GeneFilter.ONLY_SQL).size());
         checkingBinding(calls.get(0), "GET", raIdKey, true);

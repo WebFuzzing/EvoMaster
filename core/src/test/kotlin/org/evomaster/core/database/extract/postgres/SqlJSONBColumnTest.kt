@@ -25,7 +25,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(2, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
@@ -39,7 +39,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
         assertTrue(genes[1] is SqlJSONGene)
@@ -71,7 +71,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
 
         val action = actions[0]
-        val genes = action.seeGenes()
+        val genes = action.seeTopGenes()
 
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
@@ -118,7 +118,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
 
         val action = actions[0]
-        val genes = action.seeGenes()
+        val genes = action.seeTopGenes()
 
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
@@ -162,7 +162,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
 
         val action = actions[0]
-        val genes = action.seeGenes()
+        val genes = action.seeTopGenes()
 
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
@@ -211,7 +211,7 @@ class SqlJSONBColumnTest : ExtractTestBasePostgres() {
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
 
         val action = actions[0]
-        val genes = action.seeGenes()
+        val genes = action.seeTopGenes()
 
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value

@@ -82,7 +82,7 @@ class OcvnExtractTest : ExtractTestBaseH2() {
         val columnName = "BYTES"
         val actions = builder.createSqlInsertionAction(tableName, setOf(columnName))
 
-        val all = actions.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val all = actions.flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
         val gene = all.find { it.name.equals(columnName, true) }
 
         assertTrue(gene is SqlNullableGene && gene.gene is StringGene)

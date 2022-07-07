@@ -92,7 +92,7 @@ class ImpactUtils {
         private const val SEPARATOR_GENE = ";"
         private const val SEPARATOR_GENE_WITH_TYPE = ">"
 
-        fun generateGeneId(action: Action, gene : Gene) : String = "${action.getName()}$SEPARATOR_ACTION_TO_GENE${generateGeneId(gene)}$SEPARATOR_ACTION_TO_GENE${action.seeGenes().indexOf(gene)}"
+        fun generateGeneId(action: Action, gene : Gene) : String = "${action.getName()}$SEPARATOR_ACTION_TO_GENE${generateGeneId(gene)}$SEPARATOR_ACTION_TO_GENE${action.seeTopGenes().indexOf(gene)}"
 
         fun extractActionName(geneId : String) : String?{
             if (!geneId.contains(SEPARATOR_ACTION_TO_GENE)) return null
@@ -105,11 +105,11 @@ class ImpactUtils {
                 return generateGeneId(gene)
             }
             individual.seeInitializingActions().find { da->
-                da.seeGenes().contains(gene)
+                da.seeTopGenes().contains(gene)
             }?.let {
                 return generateGeneId(it, gene)
             }
-            individual.seeActions(ActionFilter.NO_INIT).find { a-> a.seeGenes().contains(gene) }?.let {
+            individual.seeActions(ActionFilter.NO_INIT).find { a-> a.seeTopGenes().contains(gene) }?.let {
                 return generateGeneId(action = it, gene = gene)
             }
             return generateGeneId(gene)
@@ -138,7 +138,7 @@ class ImpactUtils {
                 }
             }else{
                 individual.seeActions().forEachIndexed { index, action ->
-                    action.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
+                    action.seeTopGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                         val id = generateGeneId(action, g)
                         val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
                         val previous = findGeneById(previousIndividual, id, action.getName(), index, false)?: throw IllegalArgumentException("mismatched previous individual")
@@ -163,7 +163,7 @@ class ImpactUtils {
 
                 val manipulated = mutatedGeneSpecification.isActionMutated(index, isInit)
                 if (manipulated){
-                    a.seeGenes().filter {
+                    a.seeTopGenes().filter {
                         if (isInit)
                             mutatedGeneSpecification.mutatedInitGeneInfo().contains(it)
                         else
@@ -222,7 +222,7 @@ class ImpactUtils {
             val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
             if (action.getName() != actionName)
                 throw IllegalArgumentException("mismatched gene mutated info ${action.getName()} vs. $actionName")
-            return action.seeGenes().find { generateGeneId(action, it) == id }
+            return action.seeTopGenes().find { generateGeneId(action, it) == id }
         }
 
         private fun findGeneById(individual: Individual, id : String):Gene?{
@@ -235,7 +235,7 @@ class ImpactUtils {
             val names = id.split(SEPARATOR_ACTION_TO_GENE)
 
             Lazy.assert{names.size == 2}
-            return actions.filter { it.getName() == names[0] }.flatMap { it.seeGenes() }.filter { it.name == names[1] }.toMutableList()
+            return actions.filter { it.getName() == names[0] }.flatMap { it.seeTopGenes() }.filter { it.name == names[1] }.toMutableList()
         }
 
         fun isAnyChange(geneA : Gene, geneB : Gene) : Boolean{
@@ -260,7 +260,7 @@ class ImpactUtils {
          * @param gene is one of root genes of [action]
          */
         fun findMutatedGene(action: Action, gene : Gene, includeSameValue : Boolean = false) : Gene?{
-            return findMutatedGene(action.seeGenes(), gene, includeSameValue)
+            return findMutatedGene(action.seeTopGenes(), gene, includeSameValue)
         }
 
 

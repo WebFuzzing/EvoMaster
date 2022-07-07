@@ -19,7 +19,7 @@ data class ImpactsOfAction(val actionName: String?, val geneImpacts: MutableMap<
 
     constructor(action: Action) : this(
             actionName = action.getName(),
-            geneImpacts = action.seeGenes().map {
+            geneImpacts = action.seeTopGenes().map {
                 val id = ImpactUtils.generateGeneId(action, it)
                 id to ImpactUtils.createGeneImpact(it, id)
             }.toMap().toMutableMap())
