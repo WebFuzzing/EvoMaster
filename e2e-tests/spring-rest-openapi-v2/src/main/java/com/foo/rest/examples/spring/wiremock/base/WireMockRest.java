@@ -1,6 +1,5 @@
 package com.foo.rest.examples.spring.wiremock.base;
 
-import com.foo.rest.examples.spring.strings.StringsResponseDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,17 +19,10 @@ public class WireMockRest {
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public StringsResponseDto equalsFoo(
+    public boolean equalsFoo(
             @PathVariable("s") String s
     ){
-        StringsResponseDto dto = new StringsResponseDto();
-        if("foo".equals(s)){
-            dto.valid = true;
-        } else {
-            dto.valid = false;
-        }
-
-        return dto;
+        return "foo".equals(s);
     }
 
     @RequestMapping(
