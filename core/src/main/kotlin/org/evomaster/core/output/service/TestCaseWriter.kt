@@ -188,4 +188,11 @@ abstract class TestCaseWriter {
         }
     }
 
+    /**
+     * an optional handling for handling generated tests
+     */
+    open fun additionalTestHandling(tests: List<TestCase>){
+        // do nothing
+    }
+
 }

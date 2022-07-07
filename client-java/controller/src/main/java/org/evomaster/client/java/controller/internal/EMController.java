@@ -286,6 +286,26 @@ public class EMController {
     }
 
 
+
+    @Path(ControllerConstants.POST_SEARCH_ACTION)
+    @POST
+    @Consumes(Formats.JSON_V1)
+    public Response postSearchAction(PostSearchActionDto dto, @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try{
+            noKillSwitch(() -> sutController.postSearchAction(dto));
+        }catch (RuntimeException e){
+            String msg = "Failed to process post actions after search:" +e.getMessage();
+            SimpleLogger.error(msg);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        }
+
+        return Response.status(201).entity(WrappedResponseDto.withNoData()).build();
+    }
+
+
     @Path(ControllerConstants.RUN_SUT_PATH)
     @PUT
     @Consumes(Formats.JSON_V1)

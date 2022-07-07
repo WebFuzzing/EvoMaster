@@ -330,6 +330,23 @@ class RemoteControllerImplementation() : RemoteController{
         return dto?.data
     }
 
+    /**
+     * process post actions after search based on [postSearchActionDto]
+     */
+    override fun postSearchAction(postSearchActionDto: PostSearchActionDto): Boolean {
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.POST_SEARCH_ACTION)
+                .request()
+                .post(Entity.entity(postSearchActionDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+        if (!wasSuccess(response)){
+            //TODO
+            return handleFailedResponse(response,"process post actions after search","postSearchAction failure")
+        }
+        return true
+    }
+
     override fun registerNewAction(actionDto: ActionDto) : Boolean{
 
         val response = makeHttpCall {
@@ -358,37 +375,41 @@ class RemoteControllerImplementation() : RemoteController{
         */
         if (!wasSuccess(response)) {
 
-            LoggingUtil.uniqueWarn(log, "Failed to execute database command. HTTP status: {}.", response.status)
-
-            if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){
-                //something weird is going on... possibly a bug in the Driver?
-
-                val res = response.readEntity(String::class.java)
-                log.error("Database command failure, HTTP status ${response.status}: $res")
-                return false
-            }
-
-            val responseDto = try {
-                response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
-            } catch (e: Exception) {
-                handleFailedDtoParsing(e)
-                return false
-            }
-
-            if(responseDto.error != null) {
-                //this can happen if we do not handle all constraints
-                LoggingUtil.uniqueWarn(log, "Error message: " + responseDto.error)
-            }
-
-            /*
-                TODO refactor this method once we support most of SQL handling, and do not need
-                to have uniqueWarn any longer
-             */
-
-            return false
+            return handleFailedResponse(response, "execute database command","Database command failure")
         }
 
         return true
+    }
+
+    private fun handleFailedResponse(response: Response, endpoint: String, textWarning: String) : Boolean{
+        LoggingUtil.uniqueWarn(log, "Failed to $endpoint. HTTP status: {}.", response.status)
+
+        if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){
+            //something weird is going on... possibly a bug in the Driver?
+
+            val res = response.readEntity(String::class.java)
+            log.error("$textWarning, HTTP status ${response.status}: $res")
+            return false
+        }
+
+        val responseDto = try {
+            response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
+        } catch (e: Exception) {
+            handleFailedDtoParsing(e)
+            return false
+        }
+
+        if(responseDto.error != null) {
+            //this can happen if we do not handle all constraints
+            LoggingUtil.uniqueWarn(log, "Error message: " + responseDto.error)
+        }
+
+        /*
+            TODO refactor this method once we support most of SQL handling, and do not need
+            to have uniqueWarn any longer
+         */
+
+        return false
     }
 
     override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {

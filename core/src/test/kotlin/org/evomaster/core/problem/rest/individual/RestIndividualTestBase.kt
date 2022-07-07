@@ -632,6 +632,10 @@ abstract class RestIndividualTestBase {
 
         }
 
+        override fun postSearchAction(postSearchActionDto: PostSearchActionDto): Boolean {
+            return true
+        }
+
         override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
             return true
         }
