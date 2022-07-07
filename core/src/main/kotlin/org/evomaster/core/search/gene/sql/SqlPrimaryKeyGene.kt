@@ -42,6 +42,10 @@ class SqlPrimaryKeyGene(name: String,
         private val log: Logger = LoggerFactory.getLogger(SqlPrimaryKeyGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun getForeignKey(): SqlForeignKeyGene? {
         if(gene is SqlWrapperGene){
             return gene.getForeignKey()

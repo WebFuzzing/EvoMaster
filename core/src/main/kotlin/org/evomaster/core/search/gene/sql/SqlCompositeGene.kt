@@ -29,6 +29,10 @@ class SqlCompositeGene(
         const val SINGLE_APOSTROPHE_PLACEHOLDER = "SINGLE_APOSTROPHE_PLACEHOLDER"
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         fields.filter { it.isMutable() }
                 .forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }

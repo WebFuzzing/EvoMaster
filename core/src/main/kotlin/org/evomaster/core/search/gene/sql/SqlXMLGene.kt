@@ -23,6 +23,9 @@ class SqlXMLGene(name: String,
         private val log: Logger = LoggerFactory.getLogger(SqlXMLGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene = SqlXMLGene(
             name,

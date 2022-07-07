@@ -20,7 +20,9 @@ class BooleanGene(
         private val log : Logger = LoggerFactory.getLogger(BooleanGene::class.java)
     }
 
-
+    override fun isLocallyValid() : Boolean{
+        return true
+    }
     override fun copyContent(): Gene {
         return BooleanGene(name, value)
     }

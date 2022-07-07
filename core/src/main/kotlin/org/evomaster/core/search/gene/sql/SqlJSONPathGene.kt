@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory
  *
  * The jsonpath type implements support for the SQL/JSON path language in PostgreSQL to
  * efficiently query JSON data.
+ *
+ * TODO this feels like a string following a specific RegEx
  */
 class SqlJSONPathGene(
     name: String,
@@ -32,6 +34,10 @@ class SqlJSONPathGene(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SqlJSONPathGene::class.java)
+    }
+
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
     }
 
     override fun copyContent(): Gene = SqlJSONPathGene(

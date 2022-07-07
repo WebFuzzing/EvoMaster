@@ -25,6 +25,10 @@ class SqlPathGene(
         val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlPathGene(
             name,
             points = points.copy() as ArrayGene<SqlPointGene>,

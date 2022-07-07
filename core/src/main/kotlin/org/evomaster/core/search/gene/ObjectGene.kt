@@ -25,6 +25,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     /*
         In theory, it is possible to have an object with no fields...
      */

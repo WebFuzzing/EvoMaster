@@ -19,6 +19,10 @@ class LimitObjectGene(name: String) : ObjectGene(name, listOf()) {
 
     override fun copyContent(): Gene = LimitObjectGene(name)
 
+    override fun isLocallyValid() : Boolean{
+        return true
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         //nothing to do
     }

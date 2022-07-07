@@ -58,6 +58,9 @@ class SqlLogSeqNumberGene(
 
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene {
         return SqlLogSeqNumberGene(

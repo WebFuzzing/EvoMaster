@@ -31,6 +31,10 @@ class SqlTextSearchVectorGene(
         const val TO_TSVECTOR = "to_tsvector"
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlTextSearchVectorGene(
             name,
             textLexeme.copy() as StringGene

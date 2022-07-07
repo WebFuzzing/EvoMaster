@@ -257,6 +257,11 @@ class GeneTest {
 
         //flat view gives whole tree, so cannot be more than direct children
         assertTrue(gene.getViewOfChildren().size <= gene.flatView().size)
+
+        val locallyValid = gene.isLocallyValid()
+        if(locallyValid){ //other way round not necessarily true: invalid gene might have some valid genes as children
+            assertTrue(gene.flatView().all { it.isLocallyValid() })
+        }
     }
 
 

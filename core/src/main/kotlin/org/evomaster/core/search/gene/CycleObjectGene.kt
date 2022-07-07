@@ -24,6 +24,9 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
 
     override fun isMutable() = false
 
+    override fun isLocallyValid() : Boolean{
+        return true
+    }
     override fun copyContent(): Gene = CycleObjectGene(name)
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {

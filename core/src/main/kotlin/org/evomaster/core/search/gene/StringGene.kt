@@ -110,6 +110,12 @@ class StringGene(
     val specializationGenes: List<Gene>
         get() {return children}
 
+    override fun isLocallyValid() : Boolean{
+        return value.length in minLength..maxLength
+                && invalidChars.none { value.contains(it) }
+                && getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene {
         val copy = StringGene(name, value, minLength, maxLength, invalidChars, this.specializationGenes.map { g -> g.copy() }.toMutableList())
                 .also {

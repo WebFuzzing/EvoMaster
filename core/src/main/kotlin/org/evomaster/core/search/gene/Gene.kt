@@ -277,9 +277,14 @@ abstract class Gene(
      * Validity is based only internal constraints. if those constraints lead to meaningless data (eg
      * a date object with month index 42), it would still be "valid".
      *
-     * FIXME remove default =true, to force implementation
+     * Note that, if a gene is valid, then all of its children must be valid as well, regardless of whether
+     * they are having any effect on the phenotype.
+     *
+     * A default implementation could be:
+     *        return getViewOfChildren().all { it.isLocallyValid() }
+     * but here we want to force new genes to explicitly write this method
      */
-    open fun isLocallyValid() = true
+    abstract fun isLocallyValid() : Boolean
 
     /**
      *  TODO documentation and see where it is needed

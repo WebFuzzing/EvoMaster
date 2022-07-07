@@ -40,6 +40,9 @@ open class DateTimeGene(
             .thenBy { it.time }
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene = DateTimeGene(
         name,

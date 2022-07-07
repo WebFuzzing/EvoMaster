@@ -45,6 +45,9 @@ class SqlRangeGene<T>(
         repairGeneIfNeeded()
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     private fun swapLeftRightValues() {
         val copyOfLeftGene = left.copy()

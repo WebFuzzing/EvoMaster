@@ -26,7 +26,10 @@ class DisjunctionListRxGene(
         private val log: Logger = LoggerFactory.getLogger(DisjunctionListRxGene::class.java)
     }
 
-
+    override fun isLocallyValid() : Boolean{
+        return activeDisjunction >= 0 && activeDisjunction < disjunctions.size
+                && getViewOfChildren().all { it.isLocallyValid() }
+    }
     override fun copyContent(): Gene {
         val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
         copy.activeDisjunction = this.activeDisjunction

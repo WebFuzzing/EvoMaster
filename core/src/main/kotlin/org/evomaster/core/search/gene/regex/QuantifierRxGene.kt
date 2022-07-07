@@ -43,7 +43,7 @@ class QuantifierRxGene(
      */
     private val LIMIT = 2
 
-    val limitedMax: Int
+    private val limitedMax: Int
 
     init {
         if (min < 0) {
@@ -73,6 +73,10 @@ class QuantifierRxGene(
         }
     }
 
+    override fun isLocallyValid() : Boolean{
+        val n = getViewOfChildren().size
+        return n in min..limitedMax &&  getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene {
 

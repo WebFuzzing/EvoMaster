@@ -32,6 +32,9 @@ class SqlNullableGene(name: String,
         private const val ABSENT = 0.1
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun getForeignKey(): SqlForeignKeyGene? {
         return null

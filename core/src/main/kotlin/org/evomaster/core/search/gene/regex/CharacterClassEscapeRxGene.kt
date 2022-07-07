@@ -36,6 +36,10 @@ class CharacterClassEscapeRxGene(
         }
     }
 
+    override fun isLocallyValid() : Boolean{
+        return value.matches(Regex("\\$type"))
+    }
+
     override fun copyContent(): Gene {
         val copy = CharacterClassEscapeRxGene(type)
         copy.value = this.value

@@ -9,6 +9,9 @@ import org.evomaster.core.search.service.Randomness
 
 class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
 
+    override fun isLocallyValid() : Boolean{
+        return true
+    }
 
     override fun copyContent(): Gene {
         return SqlAutoIncrementGene(name)

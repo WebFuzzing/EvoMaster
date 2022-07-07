@@ -39,6 +39,10 @@ class NumericStringGene(
                 scale : Int? = null) : this(name, minLength, BigDecimalGene(name, value, min, max, minInclusive, maxInclusive, floatingPointMode, precision?:if (scale == 0) 20 else 15, scale))
 
 
+    override fun isLocallyValid() : Boolean{
+        //TODO minLength does not seem to be used...
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene {
         return NumericStringGene(name, minLength, number.copy() as BigDecimalGene)

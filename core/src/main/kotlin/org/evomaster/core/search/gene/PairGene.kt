@@ -38,7 +38,9 @@ class PairGene<F,S>(
 
     }
 
-
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         if(first.isMutable()) {
@@ -87,7 +89,11 @@ class PairGene<F,S>(
     }
 
     override fun isMutable(): Boolean {
-        return (first.isMutable() && isFirstMutable) || second.isMutable()
+        /*
+            Can be tricky... assume a first that is mutable, but we do not want to change it.
+            we still need to intialize with randomize, otherwise its constraints might fail
+         */
+        return (first.isMutable() && (isFirstMutable || !first.initialized)) || second.isMutable()
     }
 
     override fun isPrintable(): Boolean {

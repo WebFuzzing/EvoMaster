@@ -43,7 +43,14 @@ class SeededGene<T>(
         isEmploySeededMutable = false
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+
+        if(!gene.initialized) gene.randomize(randomness, tryToForceNewValue, allGenes)
+
         if (isEmploySeededMutable){
             if (tryToForceNewValue) {
                 employSeeded = !employSeeded

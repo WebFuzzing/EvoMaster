@@ -47,6 +47,11 @@ class DisjunctionRxGene(
         private val log : Logger = LoggerFactory.getLogger(DisjunctionRxGene::class.java)
     }
 
+
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     /**
      *  to handle "term*", as * can be empty, representing an empty string ""
      */

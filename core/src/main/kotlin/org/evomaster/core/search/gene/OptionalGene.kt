@@ -41,6 +41,9 @@ class OptionalGene(name: String,
     var selectable = true
         private set
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     fun forbidSelection(){
         selectable = false
@@ -76,6 +79,11 @@ class OptionalGene(name: String,
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+
+        if(!gene.initialized && gene.isMutable()){
+            //make sure that, if not initialized, to randomize it, to make sure constraints are satisfied
+            gene.randomize(randomness, false, allGenes)
+        }
 
         if(!selectable){
             return

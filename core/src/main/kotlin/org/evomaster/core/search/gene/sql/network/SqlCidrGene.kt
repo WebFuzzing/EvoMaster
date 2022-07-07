@@ -38,6 +38,10 @@ class SqlCidrGene(
         val log: Logger = LoggerFactory.getLogger(SqlCidrGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         octets.forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
     }

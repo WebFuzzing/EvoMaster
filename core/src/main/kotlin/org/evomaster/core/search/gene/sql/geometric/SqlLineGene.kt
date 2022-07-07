@@ -24,6 +24,11 @@ class SqlLineGene(
         val log: Logger = LoggerFactory.getLogger(SqlLineGene::class.java)
     }
 
+
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlLineGene(
         name,
         p.copy() as SqlPointGene,

@@ -22,6 +22,9 @@ class PatternCharacterBlockGene(
         return false
     }
 
+    override fun isLocallyValid() : Boolean{
+        return true
+    }
 
     override fun copyContent(): Gene {
         return PatternCharacterBlockGene(name, stringBlock)

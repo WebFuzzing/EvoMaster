@@ -59,6 +59,10 @@ class SqlTextSearchQueryGene(
         const val BLANK_CHAR = ' '
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlTextSearchQueryGene(
             name,
             queryLexemes.copy() as ArrayGene<StringGene>

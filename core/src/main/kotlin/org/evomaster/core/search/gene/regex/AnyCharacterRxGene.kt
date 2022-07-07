@@ -20,6 +20,10 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
 
     var value: Char = 'a'
 
+    override fun isLocallyValid() : Boolean{
+        return true
+    }
+
     override fun copyContent(): Gene {
         val copy = AnyCharacterRxGene()
         copy.value = this.value

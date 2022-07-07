@@ -38,6 +38,10 @@ class SqlBinaryStringGene(
 
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
         binaryArrayGene.randomize(randomness, tryToForceNewValue, allGenes)
     }

@@ -21,6 +21,10 @@ class SqlCircleGene(
         val log: Logger = LoggerFactory.getLogger(SqlCircleGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
 
     override fun copyContent(): Gene = SqlCircleGene(
             name,

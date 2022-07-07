@@ -77,6 +77,11 @@ class ArrayGene<T>(
         killAllChildren()
     }
 
+    override fun isLocallyValid() : Boolean{
+        return elements.size >= (minSize ?: 0) && elements.size <= (maxSize ?: Int.MAX_VALUE)
+                && elements.all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene {
         val copy = ArrayGene(name,
                 template.copy() as T,

@@ -72,6 +72,10 @@ class EnumGene<T : Comparable<T>>(
         }
     }
 
+    override fun isLocallyValid() : Boolean{
+        return (index >= 0 && index < values.size) || values.isEmpty()
+    }
+
     override fun isMutable(): Boolean {
         return values.size > 1
     }

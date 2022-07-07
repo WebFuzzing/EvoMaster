@@ -19,6 +19,10 @@ class RegexGene(
         val disjunctions: DisjunctionListRxGene
 ) : CompositeFixedGene(name, disjunctions) {
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene {
         return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene)
     }

@@ -51,6 +51,10 @@ class TimeGene(
         TIME_WITH_MILLISECONDS
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     /*
         Note: would need to handle timezone and second fractions,
         but not sure how important for testing purposes

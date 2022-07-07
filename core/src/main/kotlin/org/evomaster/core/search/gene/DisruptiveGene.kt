@@ -31,6 +31,10 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
         private val log: Logger = LoggerFactory.getLogger(DisruptiveGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene {
         return DisruptiveGene(name, gene.copy(), probability)
     }
