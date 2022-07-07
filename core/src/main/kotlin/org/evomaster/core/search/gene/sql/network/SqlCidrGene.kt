@@ -58,9 +58,7 @@ class SqlCidrGene(
             mode: GeneUtils.EscapeMode?,
             targetFormat: OutputFormat?,
             extraCheck: Boolean
-    ): String = "\"" + this.octets
-            .map { it.value }
-            .joinToString(".") + "\""
+    ): String = "\"${getValueAsRawString()}\""
 
     override fun getValueAsRawString() = this.octets
             .map { it.value }
