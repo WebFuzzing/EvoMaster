@@ -177,6 +177,10 @@ class SamplerVerifierTest {
             return null
         }
 
+        override fun postSearchAction(postSearchActionDto: PostSearchActionDto): Boolean {
+            return true
+        }
+
         override fun registerNewAction(actionDto: ActionDto): Boolean {
             return true
         }

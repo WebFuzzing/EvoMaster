@@ -3,24 +3,31 @@ package org.evomaster.core.problem.rpc.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.PostSearchActionDto
+import org.evomaster.client.java.controller.api.dto.RPCTestDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.EvaluatedRPCActionDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rpc.RPCCallAction
+import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -43,6 +50,9 @@ class RPCEndpointsHandler {
 
     @Inject
     private lateinit var randomness: Randomness
+
+    @Inject(optional = true)
+    private lateinit var remoteController: RemoteController
 
 
     /**
@@ -96,6 +106,29 @@ class RPCEndpointsHandler {
      */
     fun getActionDto(actionId : String) : RPCActionDto{
         return actionSchemaCluster[actionId]?: throw IllegalStateException("could not find the $actionId")
+    }
+
+    /**
+     * handle customized tests with post actions after search
+     */
+    fun handleCustomizedTests(individuals : List<EvaluatedIndividual<RPCIndividual>>){
+        val postSearchActionDto = PostSearchActionDto()
+        postSearchActionDto.rpcTests = individuals.map {eval->
+            val test = RPCTestDto()
+            test.actions = eval.evaluatedActions().map {eval->
+                val call = eval.action as RPCCallAction
+                val res = eval.result as RPCCallResult
+                val evaluatedRPCActionDto = transformResponseDto(call)
+                if (res.isExceptionThrown()){
+                    evaluatedRPCActionDto.exceptionMessage = res.getErrorMessage()
+                    evaluatedRPCActionDto.exceptionName = res.getExceptionTypeName()
+                }
+                evaluatedRPCActionDto
+            }
+            // TODO for sql insertion
+            test
+        }
+        remoteController.postSearchAction(postSearchActionDto)
     }
 
     /**
@@ -314,6 +347,18 @@ class RPCEndpointsHandler {
         setGenerationConfiguration(rpcAction, index, generateResponseVariable(index))
 
         return rpcAction
+    }
+
+    private fun transformResponseDto(action: RPCCallAction) : EvaluatedRPCActionDto{
+        // generate RPCActionDto
+        val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
+        val rpcResponseDto = rpcAction.responseParam
+        if (action.response != null) transformGeneToParamDto(action.response!!.gene, rpcResponseDto)
+
+        val evaluatedDto = EvaluatedRPCActionDto()
+        evaluatedDto.rpcAction = transformActionDto(action)
+        evaluatedDto.response = rpcResponseDto
+        return evaluatedDto
     }
 
     private fun setGenerationConfiguration(action: RPCActionDto, index: Int, responseVarName: String){

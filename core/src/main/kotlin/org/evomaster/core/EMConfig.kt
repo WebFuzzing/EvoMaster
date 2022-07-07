@@ -1628,6 +1628,10 @@ class EMConfig {
     var enableRPCAssertionWithInstance = false
 
     @Experimental
+    @Cfg("Whether to enable customized RPC Test output if 'customizeRPCTestOutput' is implemented")
+    var enableRPCCustomizedTestOutput = false
+
+    @Experimental
     @Cfg("Specify a maximum number of data in a collection to be asserted in the generated tests." +
             " Note that zero means that only the size of the collection will be asserted." +
             " A negative value means all data in the collection will be asserted (i.e., no limit).")
