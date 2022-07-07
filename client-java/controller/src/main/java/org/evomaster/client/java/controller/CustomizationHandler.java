@@ -1,8 +1,12 @@
 package org.evomaster.client.java.controller;
 
 
+import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedCallResultCode;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.EvaluatedRPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.MockRPCExternalServiceDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCTestDto;
 
@@ -55,4 +59,25 @@ public interface CustomizationHandler {
      * @return a list of dto for seeded tests
      */
     List<SeededRPCTestDto> seedRPCTests();
+
+
+    /**
+     * <p>
+     *     here we provide additional handling on the generated RPC tests
+     * </p>
+     * @param externalServiceDtos represent info is to mock responses of external services
+     * @param sqlInsertions represent a sequence of SQL insertions
+     * @param actions represent a list of RPC actions to execute in this test with returned responses
+     * @return a result of handling of additional RPC Test
+     */
+    boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<EvaluatedRPCActionDto> actions);
+
+    /**
+     * <p>
+     *     implement how to enable mocking of RPC based external services
+     * </p>
+     * @param externalServiceDtos contains info about how to setup responses
+     * @return whether the mocked instance starts successfully,
+     */
+    boolean customizeMockingRPCExternalService(List<MockRPCExternalServiceDto> externalServiceDtos);
 }

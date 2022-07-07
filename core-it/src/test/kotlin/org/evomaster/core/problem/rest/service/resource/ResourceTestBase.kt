@@ -96,6 +96,8 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     private fun preSteps(skip : List<String> = listOf(), doesInvolveDatabase : Boolean = false, doesAppleNameMatching : Boolean = false, probOfDep : Double = 0.0){
         config.probOfApplySQLActionToCreateResources = if(doesInvolveDatabase) 0.5 else 0.0
         config.doesApplyNameMatching = doesAppleNameMatching
+        if (doesInvolveDatabase)
+            config.generateSqlDataWithSearch = true
 
         config.probOfEnablingResourceDependencyHeuristics = probOfDep
 
