@@ -1,7 +1,6 @@
 package com.foo.rest.examples.spring.wiremock.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.foo.rest.examples.spring.strings.StringsResponseDto;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,8 +20,8 @@ public class ServiceRest {
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public StringsResponseDto dummyExternalCall() {
-        StringsResponseDto stringsResponseDto = new StringsResponseDto();
+    public boolean dummyExternalCall() {
+        boolean responseDto = false;
 
         try {
             // To bind WireMock in port 80 and 443 require root privileges
@@ -36,16 +35,13 @@ public class ServiceRest {
             MockApiResponse result = mapper.readValue(responseStream, MockApiResponse.class);
 
             if (result.message.equals("foo")) {
-                stringsResponseDto.valid = true;
-            } else {
-                stringsResponseDto.valid = false;
+                responseDto = true;
             }
         } catch (IOException e) {
             e.printStackTrace();
-            stringsResponseDto.valid = false;
         }
 
-        return stringsResponseDto;
+        return responseDto;
     }
 
 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import javax.ws.rs.core.MediaType;
+import java.util.Objects;
 
 @RestController
 @RequestMapping(path = "/api/wiremock")
@@ -37,31 +38,29 @@ public class WireMockRest {
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public Boolean externalCall() {
-        Boolean responseDto = false;
+    public boolean externalCall() {
+        boolean responseDto = false;
 
         RestTemplate restTemplate = new RestTemplate();
 
-        /**
-         * Below code will call the external api with the value `foo`
-         * to fetch the response as foo, if it's a success it'll return
-         * true otherwise false.
-         * Java DNS cache manipulator will replace the target hostname
-         * to resolve to localhost, so the WireMock will act as the
-         * target server.
+        /*
+          Below code will call the external api with the value `foo`
+          to fetch the response as foo, if it's a success it'll return
+          true otherwise false.
+          Java DNS cache manipulator will replace the target hostname
+          to resolve to localhost, so the WireMock will act as the
+          target server.
          */
         String uri = "http://foo.bar:8080/api/echo/foo";
 
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
-            if (response.getStatusCode().value() == 200 && response.getBody().equals("foo")) {
+            if (response.getStatusCode().value() == 200 && Objects.requireNonNull(response.getBody()).equals("foo")) {
                 responseDto = true;
-            } else {
-                responseDto = false;
             }
         } catch (Exception e) {
-            responseDto = false;
+           e.printStackTrace();
         }
         return responseDto;
     }

@@ -7,7 +7,6 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class ExternalServiceTransformationFlakyTest extends SpringTestBase {
@@ -25,7 +24,7 @@ public class ExternalServiceTransformationFlakyTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "SearchTransformationEMTest",
                 "org.bar.SearchTransformationEMTest",
-                1000,
+                100,
                 (args) -> {
 
                     args.add("--externalServiceIPSelectionStrategy");
@@ -35,7 +34,7 @@ public class ExternalServiceTransformationFlakyTest extends SpringTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/search/foo", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/search", "false");
                 });
     }
 }
