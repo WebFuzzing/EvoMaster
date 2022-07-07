@@ -39,4 +39,4 @@ VENDOR="EvoMaster Team"
 
 $JPACKAGE --main-jar $JAR --input $BUILD --dest $RELEASE --name evomaster \
   --copyright "$COPYRIGHT" --license-file ./LICENSE --vendor "$VENDOR" --app-version $VERSION $OS \
-  --java-options "--add-opens java.base/java.net=ALL-UNNAMED"
+  --java-options "--add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"
