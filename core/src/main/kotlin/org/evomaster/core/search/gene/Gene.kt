@@ -71,6 +71,11 @@ abstract class Gene(
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
     }
 
+    /**
+     * Whether this gene has been initialized, and can be used.
+     * Note that gene can have validity constraints, and those might not be satisfied
+     * when the constructor of a gene is called to create a new instance.
+     */
     var initialized : Boolean = false
         private set
 
@@ -132,7 +137,7 @@ abstract class Gene(
      * Think about a disjunction in a regex like A | B | C, only 1 gene would be active.
      * Same thing for Optional and Nullable genes.
      *
-     * TODO add tests for this invariant
+     * TODO add tests for this invariant, but might need refactoring of innerGene
      */
     override  val children : MutableList<Gene>
         get() = super.children as MutableList<Gene>
@@ -219,12 +224,8 @@ abstract class Gene(
     /*
      * override to force return type Gene
      */
-    //TODO put back, once we have tests for it
-    //abstract override  fun copyContent(): Gene
+    protected abstract override  fun copyContent(): Gene
 
-    override fun copyContent(): Gene {
-        throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
-    }
 
     override fun postCopy(original: StructuralElement) {
         //rebuild the binding genes

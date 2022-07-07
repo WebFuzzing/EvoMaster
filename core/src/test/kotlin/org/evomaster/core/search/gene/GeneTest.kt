@@ -243,13 +243,22 @@ class GeneTest {
 
         val msg = "Failed invariant for ${gene.javaClass}"
 
+        //must be locally valid once gene has been randomized
         assertTrue(gene.isLocallyValid(), msg)
 
+        //all same initialization state
         val initialized = gene.initialized
         assertTrue(gene.flatView().all { it.initialized == initialized }, msg)
 
         assertEquals(1, gene.flatView().map { it.getRoot() }.toSet().size, msg)
+
+        //all children should have this gene as parent
+        gene.getViewOfChildren().all { it.parent == gene }
+
+        //flat view gives whole tree, so cannot be more than direct children
+        assertTrue(gene.getViewOfChildren().size <= gene.flatView().size)
     }
+
 
 
 
