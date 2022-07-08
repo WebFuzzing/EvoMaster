@@ -679,6 +679,10 @@ class StringGene(
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
+
+        Lazy.assert{isLocallyValid()};
+        val current = value
+
         when(gene){
             //shall I add the specification into the string if it applies?
             is StringGene -> value = gene.value
@@ -713,6 +717,12 @@ class StringGene(
                 }
             }
         }
+
+        if(!isLocallyValid()){
+            //this actually can happen when binding to Long, and goes above lenght limit of String
+            value = current
+        }
+
         return true
     }
 
