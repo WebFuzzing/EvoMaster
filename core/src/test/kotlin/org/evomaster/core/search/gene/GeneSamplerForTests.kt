@@ -473,9 +473,9 @@ object GeneSamplerForTests {
 
     fun sampleChoiceGene(rand: Randomness): ChoiceGene<*> {
         val selection = geneClasses.filter { !it.isAbstract }
-        return ChoiceGene(
+        return ChoiceGene<Gene>(
                 name = "rand ChoiceGene",
-                choices = listOf(
+                geneChoices = listOf(
                         sample(rand.choose(selection), rand),
                         sample(rand.choose(selection), rand)
                 )
