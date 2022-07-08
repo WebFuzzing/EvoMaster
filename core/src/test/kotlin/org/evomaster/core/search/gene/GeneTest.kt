@@ -205,7 +205,7 @@ class GeneTest {
         }
     }
 
-    @Disabled("check seed 1616")
+    //@Disabled("check seed 1616")
     @TestFactory
     fun testRandomized(): Collection<DynamicTest> {
         return (1000..2000L).map {
