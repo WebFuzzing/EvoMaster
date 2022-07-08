@@ -797,6 +797,10 @@ abstract class Gene(
      * bind value of [this] gene based on [gene].
      * The type of genes can be different.
      * @return whether the binding performs successfully
+     *
+     * TODO what if this lead to isLocallyValid to be false? can we prevent it?
+     * or just return false here?
+     *
      */
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
 

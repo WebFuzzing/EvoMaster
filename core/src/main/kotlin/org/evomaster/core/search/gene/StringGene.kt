@@ -680,7 +680,7 @@ class StringGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
 
-        Lazy.assert{isLocallyValid()};
+        org.evomaster.core.Lazy.assert{isLocallyValid()};
         val current = value
 
         when(gene){
@@ -721,6 +721,7 @@ class StringGene(
         if(!isLocallyValid()){
             //this actually can happen when binding to Long, and goes above lenght limit of String
             value = current
+            //TODO should we rather enforce this to never happen?
         }
 
         return true
