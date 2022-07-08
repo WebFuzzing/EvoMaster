@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 
 class SqlPointGeneTest {
 
-    val rand = Randomness()
+    val rand = Randomness().apply { updateSeed(42) }
 
     @Test
     fun testGetValueH2() {

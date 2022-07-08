@@ -9,85 +9,131 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * A gene that holds many potenial genes (genotype) but
+ * only one is active at any time (phenotype). The list
+ * of gene choices cannot be empty.
+ */
 
 class ChoiceGene<T>(name: String,
-                 private val choices: List<T>,
-                 activeChoice: Int = 0
+                    private val geneChoices: List<T>,
+                    activeChoice: Int = 0
 
-) : CompositeFixedGene(name, choices) where T : Gene {
+) : CompositeFixedGene(name, geneChoices) where T : Gene {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ChoiceGene::class.java)
     }
 
-    var activeChoice: Int = activeChoice
+    var activeGeneIndex: Int = activeChoice
         private set
 
     init {
-        if (activeChoice < 0 || activeChoice >= choices.size) {
-            throw IllegalArgumentException("Active choice must be between 0 and ${choices.size - 1}")
+        if (geneChoices.isEmpty()) {
+            throw IllegalArgumentException("The list of gene choices cannot be empty")
+        }
+
+        if (activeChoice < 0 || activeChoice >= geneChoices.size) {
+            throw IllegalArgumentException("Active choice must be between 0 and ${geneChoices.size - 1}")
         }
     }
 
+    /**
+     * Randomizes the active gene index, and if the newly selected active gene index
+     * is mutable, the active gene is also randomized.
+     */
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        activeChoice = randomness.nextInt(choices.size)
-        if (choices[activeChoice].isMutable()) {
-            choices[activeChoice].randomize(randomness, tryToForceNewValue, allGenes)
+        activeGeneIndex = randomness.nextInt(geneChoices.size)
+        if (geneChoices[activeGeneIndex].isMutable()) {
+            geneChoices[activeGeneIndex].randomize(randomness, tryToForceNewValue, allGenes)
         }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) = innerGene()
+    /**
+     * TODO This method must be implemented to reflect usage
+     * of the selectionStrategy and the additionalGeneMutationInfo
+     */
+    override fun candidatesInternalGenes(randomness: Randomness,
+                                         apc: AdaptiveParameterControl,
+                                         allGenes: List<Gene>,
+                                         selectionStrategy: SubsetGeneSelectionStrategy,
+                                         enableAdaptiveGeneMutation: Boolean,
+                                         additionalGeneMutationInfo: AdditionalGeneMutationInfo?) = innerGene()
 
+    /**
+     * Returns only the active gene.
+     */
     override fun innerGene() =
-            listOf(choices[activeChoice])
+            listOf(geneChoices[activeGeneIndex])
 
 
+    /**
+     * Returns the value of the active gene as a printable string
+     */
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return choices[activeChoice]
+        return geneChoices[activeGeneIndex]
                 .getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
     }
 
+    /**
+     * Returns the value of the active gene as a raw string
+     */
     override fun getValueAsRawString(): String {
-        return choices[activeChoice]
+        return geneChoices[activeGeneIndex]
                 .getValueAsRawString()
     }
 
+    /**
+     * Copies the value of the other gene. The other gene
+     * has to be a [ChoiceGene] with the same number
+     * of gene choices. The value of each gene choice
+     * is also copied.
+     */
     override fun copyValueFrom(other: Gene) {
         if (other !is ChoiceGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        } else if (choices.size != other.choices.size) {
-            throw IllegalArgumentException("Cannot copy value from another choice gene with  ${other.choices.size} choices (current gene has ${choices.size} choices)")
+        } else if (geneChoices.size != other.geneChoices.size) {
+            throw IllegalArgumentException("Cannot copy value from another choice gene with  ${other.geneChoices.size} choices (current gene has ${geneChoices.size} choices)")
         } else {
-            this.activeChoice = other.activeChoice
-            for (i in choices.indices) {
-                this.choices[i].copyValueFrom(other.choices[i])
+            this.activeGeneIndex = other.activeGeneIndex
+            for (i in geneChoices.indices) {
+                this.geneChoices[i].copyValueFrom(other.geneChoices[i])
             }
         }
     }
 
+    /**
+     * Checks that the other gene is another ChoiceGene,
+     * the active gene index is the same, and the gene choices are the same.
+     */
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is ChoiceGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        if (this.activeChoice != other.activeChoice) {
+        if (this.activeGeneIndex != other.activeGeneIndex) {
             return false
         }
 
-        return this.choices[activeChoice]
-                .containsSameValueAs(other.choices[activeChoice])
+        return this.geneChoices[activeGeneIndex]
+                .containsSameValueAs(other.geneChoices[activeGeneIndex])
     }
 
+    /**
+     * Binds this gene to another [ChoiceGene<T>] with the same number of
+     * gene choices, one gene choice to the corresponding gene choice in
+     * the other gene.
+     */
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is ChoiceGene<*> && gene.choices.size == choices.size) {
+        if (gene is ChoiceGene<*> && gene.geneChoices.size == geneChoices.size) {
             var result = true
-            choices.indices.forEach { i ->
-                val r = choices[i].bindValueBasedOn(gene.choices[i])
+            geneChoices.indices.forEach { i ->
+                val r = geneChoices[i].bindValueBasedOn(gene.geneChoices[i])
                 if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${choices[i].name}) at index $i")
+                    LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${geneChoices[i].name}) at index $i")
                 result = result && r
             }
 
-            activeChoice = gene.activeChoice
+            activeGeneIndex = gene.activeGeneIndex
             return result
         }
 
@@ -95,10 +141,14 @@ class ChoiceGene<T>(name: String,
         return false
     }
 
+    /**
+     * Returns a copy of this gene choice by copying
+     * all gene choices.
+     */
     override fun copyContent(): Gene = ChoiceGene(
             name,
-            activeChoice = this.activeChoice,
-            choices = this.choices.map { it.copy() }.toList()
+            activeChoice = this.activeGeneIndex,
+            geneChoices = this.geneChoices.map { it.copy() }.toList()
     )
 
 

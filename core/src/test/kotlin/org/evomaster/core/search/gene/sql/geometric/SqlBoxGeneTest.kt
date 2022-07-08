@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 
 class SqlBoxGeneTest {
 
-    val rand = Randomness()
+    val rand = Randomness().apply { updateSeed(42) }
 
     @Test
     fun testGetValueAsPrintableString() {

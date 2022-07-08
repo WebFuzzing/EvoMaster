@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 class SqlPathGeneTest {
 
-    val rand = Randomness()
+    val rand = Randomness().apply { updateSeed(42) }
 
     @Test
     fun testGetValueAsPrintableH2() {

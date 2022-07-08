@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 
 class SqlMultiPointGeneTest {
 
-    val rand = Randomness()
+    val rand = Randomness().apply { updateSeed(42) }
 
     @Test
     fun testGetValueForEmptyH2() {

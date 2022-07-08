@@ -35,7 +35,7 @@ class ChoiceGeneTest {
         }
     }
 
-    val rand = Randomness()
+    val rand = Randomness().apply { updateSeed(42) }
 
     @Test
     fun testRadomize() {
@@ -57,8 +57,8 @@ class ChoiceGeneTest {
             (gene.getViewOfChildren()[0] as IntegerGene).value = 1
             (gene.getViewOfChildren()[1] as StringGene).value = "bar"
             val value =  gene.getValueAsPrintableString()
-            assertTrue(0 <= gene.activeChoice && gene.activeChoice <=1)
-            if (gene.activeChoice == 0) {
+            assertTrue(0 <= gene.activeGeneIndex && gene.activeGeneIndex <=1)
+            if (gene.activeGeneIndex == 0) {
                 assertEquals("1", value)
             } else {
                 assertEquals("\"bar\"", value)
