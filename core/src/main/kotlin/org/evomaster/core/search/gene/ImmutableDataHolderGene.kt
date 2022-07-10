@@ -36,7 +36,7 @@ class ImmutableDataHolderGene(
         return true
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         throw IllegalStateException("Not supposed to modify an immutable gene")
     }
 

@@ -49,11 +49,11 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
     /**
      * Randomize all genes in this action.
      */
-    fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Gene> = listOf()) {
+    fun randomize(randomness: Randomness, forceNewValue: Boolean) {
         seeTopGenes()
                 .filter { it.isMutable() }
                 .forEach {
-                    it.randomize(randomness, forceNewValue, all)
+                    it.randomize(randomness, forceNewValue)
                 }
         postRandomizedChecks(randomness)
     }

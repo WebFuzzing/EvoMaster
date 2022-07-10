@@ -56,7 +56,7 @@ class SqlForeignKeyGene(
 
     override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         //All the ids of previous PKs for the target table
         val pks = allGenes.asSequence()

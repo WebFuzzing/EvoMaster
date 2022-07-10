@@ -68,17 +68,16 @@ class TimeGene(
         timeGeneFormat = this.timeGeneFormat
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
-        hour.randomize(randomness, tryToForceNewValue, allGenes)
-        minute.randomize(randomness, tryToForceNewValue, allGenes)
-        second.randomize(randomness, tryToForceNewValue, allGenes)
+        hour.randomize(randomness, tryToForceNewValue)
+        minute.randomize(randomness, tryToForceNewValue)
+        second.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?

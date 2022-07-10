@@ -17,7 +17,7 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
         return SqlAutoIncrementGene(name)
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
 

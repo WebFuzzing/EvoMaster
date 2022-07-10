@@ -194,14 +194,14 @@ class SqlMultidimensionalArrayGene<T>(
      * Randomizes the whole multidimensional array by removing all dimensions, and then
      * creating new sizes for each dimension, and new gene elements from the template.
      */
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         val newDimensionSizes: List<Int> = buildNewDimensionSizes(randomness)
         val newChild = buildNewElements(newDimensionSizes, template.copy())
 
         killAllChildren()
         addChild(newChild)
         this.dimensionSizes = newDimensionSizes
-        newChild.randomize(randomness, tryToForceNewValue, allGenes)
+        newChild.randomize(randomness, tryToForceNewValue)
     }
 
     /**
@@ -333,7 +333,6 @@ class SqlMultidimensionalArrayGene<T>(
 
     override fun candidatesInternalGenes(randomness: Randomness,
                                          apc: AdaptiveParameterControl,
-                                         allGenes: List<Gene>,
                                          selectionStrategy: SubsetGeneSelectionStrategy,
                                          enableAdaptiveGeneMutation: Boolean,
                                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -369,12 +368,11 @@ class SqlMultidimensionalArrayGene<T>(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true, allGenes)
+        this.randomize(randomness, true)
         return true
     }
 

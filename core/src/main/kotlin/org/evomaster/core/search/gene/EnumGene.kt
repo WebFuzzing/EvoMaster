@@ -85,7 +85,7 @@ class EnumGene<T : Comparable<T>>(
         return EnumGene<T>(name, values, index)
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         if(values.isEmpty()) return
 
         val k = if (tryToForceNewValue) {
@@ -101,7 +101,6 @@ class EnumGene<T : Comparable<T>>(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?

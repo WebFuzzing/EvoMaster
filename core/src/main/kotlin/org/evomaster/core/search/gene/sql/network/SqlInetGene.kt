@@ -25,14 +25,13 @@ class SqlInetGene(
         return getViewOfChildren().all { it.isLocallyValid() }
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        octets.forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        octets.forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?

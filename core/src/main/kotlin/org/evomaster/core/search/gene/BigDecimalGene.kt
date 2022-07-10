@@ -131,7 +131,7 @@ class BigDecimalGene(
         return value.compareTo(other.value)
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         if (isFloatingPointMutable && randomness.nextBoolean()){
             floatingPointMode = randomness.nextBoolean()
@@ -150,7 +150,6 @@ class BigDecimalGene(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -168,7 +167,6 @@ class BigDecimalGene(
             randomness,
             apc,
             mwc,
-            allGenes,
             selectionStrategy,
             enableAdaptiveGeneMutation,
             additionalGeneMutationInfo

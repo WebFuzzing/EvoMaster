@@ -357,8 +357,7 @@ abstract class Gene(
      */
     abstract fun randomize(
             randomness: Randomness,
-            tryToForceNewValue: Boolean,
-            allGenes: List<Gene> = listOf())
+            tryToForceNewValue: Boolean)
 
 
     /**
@@ -408,7 +407,7 @@ abstract class Gene(
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
         val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
-            val mutated = shallowMutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val mutated = shallowMutate(randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             if (!mutated)
                 throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
@@ -458,8 +457,6 @@ abstract class Gene(
      */
     protected abstract fun candidatesInternalGenes(randomness: Randomness,
                                          apc: AdaptiveParameterControl,
-                                         //TODO remove deprecated
-                                         allGenes: List<Gene>,
                                          selectionStrategy: SubsetGeneSelectionStrategy,
                                          enableAdaptiveGeneMutation: Boolean,
                                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -548,7 +545,6 @@ abstract class Gene(
     protected open fun shallowMutate(randomness: Randomness,
                            apc: AdaptiveParameterControl,
                            mwc: MutationWeightControl,
-                           allGenes: List<Gene> = listOf(),
                            selectionStrategy: SubsetGeneSelectionStrategy,
                            enableAdaptiveGeneMutation: Boolean,
                            additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{

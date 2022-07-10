@@ -64,18 +64,17 @@ class DateGene(
         onlyValidDates = this.onlyValidDates
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         do {
-            year.randomize(randomness, tryToForceNewValue, allGenes)
-            month.randomize(randomness, tryToForceNewValue, allGenes)
-            day.randomize(randomness, tryToForceNewValue, allGenes)
+            year.randomize(randomness, tryToForceNewValue)
+            month.randomize(randomness, tryToForceNewValue)
+            day.randomize(randomness, tryToForceNewValue)
         } while (onlyValidDates && !isValidDate())
     }
 
     override fun candidatesInternalGenes(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?

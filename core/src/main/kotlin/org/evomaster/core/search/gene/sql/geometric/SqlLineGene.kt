@@ -64,8 +64,8 @@ class SqlLineGene(
         }
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        super.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        super.randomize(randomness, tryToForceNewValue)
         /*
          * Lines cannot contain the same p,q points
          */

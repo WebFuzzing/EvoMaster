@@ -36,12 +36,12 @@ class SqlPolygonGene(
         databaseType = databaseType
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         /*
             FIXME this code is problematic
          */
         do {
-            points.randomize(randomness, tryToForceNewValue, allGenes)
+            points.randomize(randomness, tryToForceNewValue)
         } while (!isLocallyValid())
     }
 
@@ -95,7 +95,6 @@ class SqlPolygonGene(
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
