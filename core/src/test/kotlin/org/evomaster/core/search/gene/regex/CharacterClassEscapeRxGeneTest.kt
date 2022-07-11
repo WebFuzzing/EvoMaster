@@ -17,7 +17,7 @@ class CharacterClassEscapeRxGeneTest {
         val randomness = Randomness()
         for (i in 1..1000) {
             val gene = CharacterClassEscapeRxGene("d")
-            gene.randomize(randomness, tryToForceNewValue = true, allGenes = listOf())
+            gene.randomize(randomness, tryToForceNewValue = true)
             assertTrue(gene.value.toInt() >= 0)
             assertTrue(gene.value.toInt() <= 9)
         }

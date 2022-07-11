@@ -72,7 +72,7 @@ class GeneTest {
         for (i in 0..100) {
             rand.updateSeed(i.toLong())
             val s = GeneSamplerForTests.sample(StringGene::class, rand)
-            s.randomize(rand, true, listOf())
+            s.randomize(rand, true)
             assertTrue(s.isLocallyValid())
             assertTrue(s.value.length >= s.minLength)
             assertTrue(s.value.length <= s.maxLength)

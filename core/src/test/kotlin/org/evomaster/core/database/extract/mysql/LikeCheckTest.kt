@@ -38,7 +38,7 @@ class LikeCheckTest : ExtractTestBaseMySQL() {
         val regexGene = genes.firstIsInstance<RegexGene>()
 
         for (i in 1..100) {
-            regexGene.randomize(randomness, false, listOf())
+            regexGene.randomize(randomness, false)
 
 
             val dbCommandDto = DbActionTransformer.transform(actions)

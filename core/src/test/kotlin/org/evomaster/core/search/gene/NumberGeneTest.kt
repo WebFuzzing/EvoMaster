@@ -18,7 +18,7 @@ class NumberGeneTest {
         gene.value = 12.010003
         assertEquals(12.01, gene.getFormattedValue())
 
-        gene.randomize(random, false, listOf())
+        gene.randomize(random, false)
         assertTrue(gene.value in -99.99..99.99)
 
         assertEquals(2, gene.value.toString().split(".")[1].length)
@@ -32,7 +32,7 @@ class NumberGeneTest {
         gene.value = 12.010003f
         assertEquals(12.01f, gene.getFormattedValue())
 
-        gene.randomize(random, false, listOf())
+        gene.randomize(random, false)
         assertTrue(gene.value in -99.99..99.99)
 
         assertTrue(gene.isLocallyValid())
@@ -45,7 +45,7 @@ class NumberGeneTest {
             assertEquals("99", getMaximum().toString())
             assertEquals("-99", getMinimum().toString())
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
 
             this.value = BigDecimal("100")
@@ -56,7 +56,7 @@ class NumberGeneTest {
             assertEquals("98", getMaximum().toString())
             assertEquals("-99", getMinimum().toString())
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -64,7 +64,7 @@ class NumberGeneTest {
             assertEquals("99", getMaximum().toString())
             assertEquals("-98", getMinimum().toString())
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -84,7 +84,7 @@ class NumberGeneTest {
             assertEquals("0.00", value.toString())
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -96,7 +96,7 @@ class NumberGeneTest {
             assertEquals("-50.00", value.toString())
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -108,7 +108,7 @@ class NumberGeneTest {
             assertEquals("50.00", value.toString())
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -124,7 +124,7 @@ class NumberGeneTest {
             assertEquals(50.0, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -135,7 +135,7 @@ class NumberGeneTest {
             assertEquals(-50.0, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -163,7 +163,7 @@ class NumberGeneTest {
             assertEquals(50.0f, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -174,7 +174,7 @@ class NumberGeneTest {
             assertEquals(-50.0f, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -200,7 +200,7 @@ class NumberGeneTest {
             assertEquals(0, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -211,7 +211,7 @@ class NumberGeneTest {
             assertEquals(50, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -222,7 +222,7 @@ class NumberGeneTest {
             assertEquals(-50, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
     }
@@ -236,7 +236,7 @@ class NumberGeneTest {
             assertEquals(0, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -247,7 +247,7 @@ class NumberGeneTest {
             assertEquals(50, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -258,7 +258,7 @@ class NumberGeneTest {
             assertEquals(-50, value)
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
     }
@@ -272,7 +272,7 @@ class NumberGeneTest {
             assertEquals(0, value.toInt())
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -283,7 +283,7 @@ class NumberGeneTest {
             assertEquals(50, value.toInt())
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
 
@@ -294,7 +294,7 @@ class NumberGeneTest {
             assertEquals(-50, value.toInt())
 
             assertTrue(isLocallyValid())
-            randomize(random, false, listOf())
+            randomize(random, false)
             assertTrue(isLocallyValid())
         }
     }

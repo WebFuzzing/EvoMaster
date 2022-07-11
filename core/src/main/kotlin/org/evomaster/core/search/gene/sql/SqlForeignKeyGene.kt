@@ -58,6 +58,9 @@ class SqlForeignKeyGene(
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
+        //FIXME this is all, but we need "previous"
+        val allGenes = getAllGenesInIndividual()
+
         //All the ids of previous PKs for the target table
         val pks = allGenes.asSequence()
                 .flatMap { it.flatView().asSequence() }
@@ -118,8 +121,8 @@ class SqlForeignKeyGene(
 
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        randomize(randomness, true, allGenes)
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+        randomize(randomness, true)
         return true
     }
 

@@ -42,7 +42,7 @@ class SimilarToCheckTest : ExtractTestBasePostgres() {
 
         val genes = actions[0].seeTopGenes()
         val regexGene = genes.firstIsInstance<RegexGene>()
-        regexGene.randomize(randomness, false, listOf())
+        regexGene.randomize(randomness, false)
         val expectedValue = regexGene.getValueAsRawString()
 
         val query = "Select * from x"

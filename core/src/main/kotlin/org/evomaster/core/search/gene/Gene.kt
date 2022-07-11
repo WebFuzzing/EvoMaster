@@ -351,13 +351,8 @@ abstract class Gene(
      *          it could otherwise happen that a value is replace with itself.
      *          This is not 100% enforced, it is more like a "strong recommendation"
      *
-     *   TODO likely deprecated, because we can traverse the tree upward now
-     *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
-     *          we need to refer to them
      */
-    abstract fun randomize(
-            randomness: Randomness,
-            tryToForceNewValue: Boolean)
+    abstract fun randomize(randomness: Randomness,tryToForceNewValue: Boolean)
 
 
     /**
@@ -395,8 +390,8 @@ abstract class Gene(
      */
     fun standardMutation(
             randomness: Randomness,
-            apc: AdaptiveParameterControl,  //FIXME maybe remove, need to think
-            mwc: MutationWeightControl,  //FIXME maybe remove, need to think
+            apc: AdaptiveParameterControl,
+            mwc: MutationWeightControl,
             allGenes: List<Gene> = listOf(), //TODO remove, as deprecated
             internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
             enableAdaptiveGeneMutation: Boolean = false,
@@ -405,7 +400,7 @@ abstract class Gene(
         checkInitialized()
 
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
-        val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        val internalGenes = candidatesInternalGenes(randomness, apc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
             val mutated = shallowMutate(randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             if (!mutated)
@@ -555,7 +550,7 @@ abstract class Gene(
                     additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
                         additionalGeneMutationInfo,
                         this,
-                        allGenes
+                        getAllGenesInIndividual()
                     )
                     return true
                 }catch (e: DifferentGeneInHistory){
@@ -627,6 +622,20 @@ abstract class Gene(
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(children.flatMap { g -> g.flatView(excludePredicate) })
     }
+
+    /**
+     * Get references to ALL genes (and not just top ones) in the individual this gene belongs to.
+     * If not mounted in an individual, return an empty list
+     */
+    fun getAllGenesInIndividual() : List<Gene>{
+        val root = getRoot()
+        if(root !is Individual){
+            return listOf()
+        }
+
+        return root.seeGenes().flatMap { it.flatView() }
+    }
+
 
     /**
      * Genes might contain a value that is also stored

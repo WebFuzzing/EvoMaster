@@ -149,7 +149,7 @@ class StringGene(
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
         repair()
         selectedSpecialization = -1
-        handleBinding(allGenes)
+        handleBinding(getAllGenesInIndividual())
     }
 
     override fun applyGlobalUpdates() {
@@ -171,12 +171,15 @@ class StringGene(
         }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return listOf()
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,
                                selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+
+        val allGenes = getAllGenesInIndividual()
+
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
             additionalGeneMutationInfo.archiveGeneMutator.mutateStringGene(
@@ -346,7 +349,7 @@ class StringGene(
         }
 
         if (tainted && randomness.nextBoolean(0.5) && TaintInputName.isTaintInput(value)) {
-            randomize(randomness, true, allGenes)
+            randomize(randomness, true)
             return true
         }
 

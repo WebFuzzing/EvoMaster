@@ -62,8 +62,13 @@ object DbActionUtils {
             references to each other (eg Foreign Keys)
          */
 
+        /*
+            TODO do we need this method? or shall have it as general global post-processing?
+         */
+
+
         actions.forEach {
-            it.randomize(randomness, false, actions.flatMap { a -> a.seeTopGenes()})
+            it.randomize(randomness, false)
         }
 
         Lazy.assert { verifyForeignKeys(actions) }
@@ -108,10 +113,12 @@ object DbActionUtils {
 
         while (geneToRepair != null && attemptCounter < maxNumberOfAttemptsToRepairAnAction) {
 
+            //TODO check if this will still be needed after refactoring
             val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeTopGenes() }
+
             //Please check this. there throw java.lang.IllegalStateException: Not supposed to modify an immutable gene
             if (geneToRepair.isMutable())
-                geneToRepair.randomize(randomness, true, previousGenes)
+                geneToRepair.randomize(randomness, true)
 
             if (actionIndexToRepair == previousActionIndexToRepair) {
                 //
