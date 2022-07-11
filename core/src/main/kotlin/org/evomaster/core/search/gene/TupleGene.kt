@@ -50,7 +50,7 @@ class TupleGene(
         val log: Logger = LoggerFactory.getLogger(TupleGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun isLocallyValid(): Boolean {
         return getViewOfChildren().all { it.isLocallyValid() }
     }
 
@@ -77,11 +77,11 @@ class TupleGene(
 
         val buffer = StringBuffer()
 
-        if (mode== GeneUtils.EscapeMode.GQL_NONE_MODE) {
+        if (mode == GeneUtils.EscapeMode.GQL_NONE_MODE) {
             //need the name for input and return
             buffer.append("$name")
 
-            if (lastElementTreatedSpecially){
+            if (lastElementTreatedSpecially) {
                 //printout the inputs. See later if a refactoring is needed
                 buffer.append("(")
                 val s = elements.dropLast(1).joinToString(",") {
@@ -92,44 +92,49 @@ class TupleGene(
                 buffer.append(s)
                 buffer.append(")")
 
-            //printout the return
-            val returnGene = elements.last()
-            buffer.append(
-                if (returnGene is OptionalGene && returnGene.isActive) {
-                    assert(returnGene.gene is ObjectGene)
-                    returnGene.gene.getValueAsPrintableString(
-                        previousGenes,
-                        GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
-                        targetFormat,
-                        extraCheck = true
-                    )
-                } else
-                    if (returnGene is ObjectGene) {
-                        returnGene.getValueAsPrintableString(
+                //printout the return
+                val returnGene = elements.last()
+                buffer.append(
+                    if (returnGene is OptionalGene && returnGene.isActive) {
+                        assert(returnGene.gene is ObjectGene)
+                        returnGene.gene.getValueAsPrintableString(
                             previousGenes,
                             GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
                             targetFormat,
                             extraCheck = true
                         )
-                    } else ""
-            )
-        } else { //printout only the inputs, since there is no return (is a primitive type)
+                    } else
+                        if (returnGene is ObjectGene) {
+                            returnGene.getValueAsPrintableString(
+                                previousGenes,
+                                GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
+                                targetFormat,
+                                extraCheck = true
+                            )
+                        } else ""
+                )
+            } else { //printout only the inputs, since there is no return (is a primitive type)
                 val s = elements.filter { it !is OptionalGene || it.isActive }.joinToString(",") {
 
                     gqlInputsPrinting(it, targetFormat)
 
                 }.replace("\"", "\\\"")
 
-                if(s.isNotEmpty()) {
+                if (s.isNotEmpty()) {
                     buffer.append("(")
                     buffer.append(s)
                     buffer.append(")")
                 }
 
-            }        }
-
-            else {
-            "[" + elements.joinTo(buffer, ", ") { it.getValueAsPrintableString(previousGenes, mode, targetFormat) } + "]"
+            }
+        } else {
+            "[" + elements.filter { it.isPrintable() }.joinTo(buffer, ", ") {
+                it.getValueAsPrintableString(
+                    previousGenes,
+                    mode,
+                    targetFormat
+                )
+            } + "]"
         }
         return buffer.toString()
 
@@ -175,7 +180,7 @@ class TupleGene(
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        assert (elements.size == other.elements.size)
+        assert(elements.size == other.elements.size)
         (elements.indices).forEach {
             elements[it].copyValueFrom(other.elements[it])
         }
@@ -208,7 +213,10 @@ class TupleGene(
                 result = result && r
             }
             if (!result)
-                LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} with the specified TupleGene gene")
+                LoggingUtil.uniqueWarn(
+                    log,
+                    "cannot bind the ${this::class.java.simpleName} with the specified TupleGene gene"
+                )
             return result
         }
         LoggingUtil.uniqueWarn(log, "cannot bind TupleGene with ${gene::class.java.simpleName}")
@@ -235,17 +243,32 @@ class TupleGene(
     }
 
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubset(
+        randomness: Randomness,
+        internalGenes: List<Gene>,
+        mwc: MutationWeightControl,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 
         if (additionalGeneMutationInfo.impact != null
             && additionalGeneMutationInfo.impact is TupleGeneImpact
         ) {
             val impacts = internalGenes.map { additionalGeneMutationInfo.impact.elements.getValue(it.name) }
             val selected = mwc.selectSubGene(
-                internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
+                internalGenes,
+                true,
+                additionalGeneMutationInfo.targets,
+                individual = null,
+                impacts = impacts,
+                evi = additionalGeneMutationInfo.evi
             )
             val map = selected.map { internalGenes.indexOf(it) }
-            return map.map { internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact, gene = internalGenes[it]) }
+            return map.map {
+                internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(
+                    impact = impacts[it] as? GeneImpact,
+                    gene = internalGenes[it]
+                )
+            }
         }
         throw IllegalArgumentException("impact is null or not TupleGeneImpact, ${additionalGeneMutationInfo.impact}")
     }

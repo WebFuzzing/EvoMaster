@@ -56,6 +56,10 @@ class SqlForeignKeyGene(
 
     override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
+    override fun checkForGloballyValid(): Boolean {
+        return nullable || isBound()
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         //FIXME this is all, but we need "previous"

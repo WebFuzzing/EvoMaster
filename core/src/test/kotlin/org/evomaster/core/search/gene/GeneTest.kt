@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import kotlin.reflect.full.isSuperclassOf
@@ -220,21 +221,22 @@ class GeneTest {
         sample.filter { it.isMutable() }
                 .forEach { root ->
                     root.doInitialize(rand)
-                    checkInvariants(root)
+                    checkInvariants(root) // all invariants should hold
 
                     val copy = root.copy()
-                    checkInvariants(copy);
+                    checkInvariants(copy); //same for a copy
 
-                    //TODO we need to handle Globally Valid before we can check this
-//                    if(root.isPrintable()) {
-//                        val x = root.getValueAsRawString()
-//                        val y = copy.getValueAsRawString()
-//                        assertEquals(x, y)
-//                    } else {
-//                        assertThrows<Exception> ("Should throw exception when trying to print ${root.javaClass}"){
-//                            root.getValueAsRawString()
-//                        }
-//                    }
+                    if(root.isGloballyValid()) { //in these tests, global constraints are not handled
+                        if (root.isPrintable()) {
+                            val x = root.getValueAsRawString()
+                            val y = copy.getValueAsRawString()
+                            assertEquals(x, y) // the copy should result in same phenotype
+                        } else {
+                            assertThrows<Exception>("Should throw exception when trying to print ${root.javaClass}") {
+                                root.getValueAsRawString()
+                            }
+                        }
+                    }
                 }
     }
 
@@ -242,9 +244,6 @@ class GeneTest {
     private fun checkInvariants(gene: Gene){
 
         val msg = "Failed invariant for ${gene.javaClass}"
-
-        //must be locally valid once gene has been randomized
-        assertTrue(gene.isLocallyValid(), msg)
 
         //all same initialization state
         val initialized = gene.initialized
@@ -258,14 +257,11 @@ class GeneTest {
         //flat view gives whole tree, so cannot be more than direct children
         assertTrue(gene.getViewOfChildren().size <= gene.flatView().size)
 
-        val locallyValid = gene.isLocallyValid()
-        if(locallyValid){ //other way round not necessarily true: invalid gene might have some valid genes as children
-            assertTrue(gene.flatView().all { it.isLocallyValid() })
-        }
+        //must be locally valid once gene has been randomized
+        assertTrue(gene.isLocallyValid(), msg)
+        //all tree must be valid, regardless of impact on phenotype
+        assertTrue(gene.flatView().all { it.isLocallyValid() })
+
+        //TODO add more invariants here
     }
-
-
-
-
-    //TODO for each *Gene, sample random instances, and verify properties
 }

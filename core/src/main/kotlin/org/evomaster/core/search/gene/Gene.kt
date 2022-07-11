@@ -287,14 +287,21 @@ abstract class Gene(
     abstract fun isLocallyValid() : Boolean
 
     /**
-     *  TODO documentation and see where it is needed
-     *
-     *  TODO default implementation that calls isLocallyValid and also
-     *  by default check all bindings.
-     *  similar to doGlobalInitialize
+     *  Verify all constraints (including locals).
+     *  This is necessary when constraints involved more than 1 gene, possibly
+     *  in different actions.
      */
-    open fun isGloballyValid() = isLocallyValid()
+    open fun isGloballyValid() : Boolean {
+        if(! isLocallyValid()){
+            return false
+        }
+        //TODO check bindings
 
+        return checkForGloballyValid() && getViewOfChildren().all { it.isGloballyValid() }
+    }
+
+
+    protected open fun checkForGloballyValid() = true
 
     /**
      * mutated gene should pass the check if needed, eg, DateGene
@@ -344,11 +351,9 @@ abstract class Gene(
      *   Randomize the content of this gene.
      *   After a gene is randomized, it MUST be locally valid.
      *
-     *   TODO shall we guarantee validity here at randomization? YES
-     *
      *   @param randomness the source of non-determinism
      *   @param tryToForceNewValue whether we should force the change of value. When we do mutation,
-     *          it could otherwise happen that a value is replace with itself.
+     *          it could otherwise happen that a value is replaced with itself.
      *          This is not 100% enforced, it is more like a "strong recommendation"
      *
      */
