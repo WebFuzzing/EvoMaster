@@ -241,7 +241,7 @@ class StringGene(
                     (additionalGeneMutationInfo?.impact as? StringGeneImpact)?.hierarchySpecializationImpactInfo?.flattenImpacts()?.get(selectedSpecialization) as? GeneImpact
                 else null
                 //just mutate current selection
-                specializationGene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo?.copyFoInnerGene(impact = impact, gene = specializationGene))
+                specializationGene.standardMutation(randomness, apc, mwc, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo?.copyFoInnerGene(impact = impact, gene = specializationGene))
             }
             selectionUpdatedSinceLastMutation = false
             handleBinding(allGenes)

@@ -382,8 +382,6 @@ abstract class Gene(
      *   @param randomness the source of non-determinism
      *   @param apc parameter control
      *   @param mwc mutation weight control
-     *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
-     *          we need to refer to them
      *   @param interalGeneSelectionStrategy a strategy to select internal genes to mutate
      *   @param enableAdaptiveMutation whether apply adaptive gene mutation, e.g., archive-based gene mutation
      *   @param additionalGeneMutationInfo contains additional info for gene mutation
@@ -392,7 +390,6 @@ abstract class Gene(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,
-            allGenes: List<Gene> = listOf(), //TODO remove, as deprecated
             internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
             enableAdaptiveGeneMutation: Boolean = false,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
@@ -406,12 +403,12 @@ abstract class Gene(
             if (!mutated)
                 throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
-            val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val selected = selectSubset(internalGenes, randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
 
             selected.forEach{
                 var mutateCounter = 0
                 do {
-                    it.first.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
+                    it.first.standardMutation(randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
                     mutateCounter +=1
                 }while (!mutationCheck() && mutateCounter <=3)
                 if (!mutationCheck()){
@@ -503,7 +500,6 @@ abstract class Gene(
                           randomness: Randomness,
                           apc: AdaptiveParameterControl,
                           mwc: MutationWeightControl,
-                          allGenes: List<Gene> = listOf(),
                           selectionStrategy: SubsetGeneSelectionStrategy,
                           enableAdaptiveGeneMutation: Boolean,
                           additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -628,14 +624,17 @@ abstract class Gene(
      * If not mounted in an individual, return an empty list
      */
     fun getAllGenesInIndividual() : List<Gene>{
+        return getAllTopGenesInIndividual().flatMap { it.flatView() }
+    }
+
+    fun getAllTopGenesInIndividual() : List<Gene>{
         val root = getRoot()
         if(root !is Individual){
             return listOf()
         }
 
-        return root.seeGenes().flatMap { it.flatView() }
+        return root.seeGenes()
     }
-
 
     /**
      * Genes might contain a value that is also stored

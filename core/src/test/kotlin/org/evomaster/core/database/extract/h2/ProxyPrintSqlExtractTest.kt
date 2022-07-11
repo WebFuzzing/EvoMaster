@@ -5,6 +5,8 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -115,10 +117,12 @@ class ProxyPrintSqlExtractTest : ExtractTestBaseH2() {
 
         val actions = builder.createSqlInsertionAction("PRINT_REQUESTS", setOf("CONSUMER_ID"))
 
+        val ind = RestIndividual(mutableListOf(), SampleType.RANDOM,null,actions.toMutableList(),null,-1)
+
         val all = actions.flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
 
         //force binding
-        val randomness = Randomness()//.apply { updateSeed(1) }
+        val randomness = Randomness()
         DbActionUtils.randomizeDbActionGenes(actions, randomness)
 
         /*

@@ -326,7 +326,7 @@ class ArchiveGeneMutator{
                     val currentImpact = impact.getSpecializationImpacts().getOrNull(gene.selectedSpecialization)
                     if (selected == gene.selectedSpecialization || currentImpact?.recentImprovement() == true){
                         specializationGene.standardMutation(
-                                randomness, apc, mwc, allGenes,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
+                                randomness, apc, mwc,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
                         )
                     }else{
                         gene.selectedSpecialization = selected

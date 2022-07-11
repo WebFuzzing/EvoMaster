@@ -174,7 +174,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                     mutatedGene = mutatedGene
             )
 
-            gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAGM, additionalGeneMutationInfo = additionInfo)
+            gene.standardMutation(randomness, apc, mwc, selectionStrategy, enableAGM, additionalGeneMutationInfo = additionInfo)
         }
 
         if (config.trackingEnabled()) tag(copy, time.evaluatedIndividuals)

@@ -96,6 +96,10 @@ object DbActionUtils {
                                   maxNumberOfAttemptsToRepairAnAction: Int = DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS
     ): Boolean {
 
+        if(actions.map { it.parent }.filterNotNull().toSet().size != 1){
+            throw IllegalArgumentException("All DB actions should be mounted under same root")
+        }
+
         if (log.isTraceEnabled){
             log.trace("before repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
         }
@@ -116,12 +120,10 @@ object DbActionUtils {
             //TODO check if this will still be needed after refactoring
             val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeTopGenes() }
 
-            //Please check this. there throw java.lang.IllegalStateException: Not supposed to modify an immutable gene
             if (geneToRepair.isMutable())
                 geneToRepair.randomize(randomness, true)
 
             if (actionIndexToRepair == previousActionIndexToRepair) {
-                //
                 attemptCounter++
             } else if (actionIndexToRepair > previousActionIndexToRepair) {
                 attemptCounter = 0
