@@ -51,7 +51,7 @@ abstract class ApiWsIndividual (
         get() { return children.filterIsInstance<ExternalServiceAction>()}
 
     override fun seeInitializingActions(): List<Action> {
-        return dbInitialization
+        return dbInitialization.plus(externalServiceInitialization)
     }
 
     override fun seeExternalServiceActions(): List<ExternalServiceAction> {

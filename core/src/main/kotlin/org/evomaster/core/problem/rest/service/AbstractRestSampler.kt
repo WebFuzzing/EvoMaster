@@ -258,9 +258,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             throw IllegalArgumentException("Action is not initialized")
         }
 
-        val externalServiceActions = externalServiceHandler.getExternalServiceActions();
-
-        // TODO: Generate external service actions here
         val ind =  RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
                 , mutableListOf()
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)

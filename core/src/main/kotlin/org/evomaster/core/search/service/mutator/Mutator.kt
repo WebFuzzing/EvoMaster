@@ -134,6 +134,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             }
 
             // impact info is updated due to newly added initialization actions
+            // TODO: add external service actions here
             structureMutator.addInitializingActions(current, mutatedGenes)
 
             if (log.isTraceEnabled){

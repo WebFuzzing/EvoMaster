@@ -4,12 +4,15 @@ import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter.*
@@ -525,7 +528,35 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
     }
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
-        addInitializingActions(individual, mutatedGenes, sampler)
+        // TODO: Commented out temporarily
+//        addInitializingActions(individual, mutatedGenes, sampler)
+        if (!config.shouldGenerateSqlData()) {
+            return
+        }
+
+        val ind = individual.individual
+
+        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
+            //TODO likely to remove/change once we ll support VIEWs
+            .filter { sampler.canInsertInto(it.key) }
+
+        if (fw.isEmpty()) {
+            return
+        }
+
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
+
+        val addedInsertions = handleFailedWhereSQL(ind as ApiWsIndividual, fw, mutatedGenes, sampler as ApiWsSampler<ApiWsIndividual>)
+
+        ind.repairInitializationActions(randomness)
+        // update impact based on added genes
+        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
+            individual.updateImpactGeneDueToAddedInitializationGenes(
+                mutatedGenes,
+                old,
+                addedInsertions
+            )
+        }
     }
 
     private fun maintainAuth(authInfo: HttpWsAuthenticationInfo?, mutated: RestResourceCalls){
