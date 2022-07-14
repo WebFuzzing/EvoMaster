@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
@@ -93,9 +94,10 @@ class RestIndividual(
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
         return when (filter) {
-            GeneFilter.ALL -> seeDbActions().flatMap(DbAction::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
+            GeneFilter.ALL -> seeDbActions().flatMap(Action::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
+            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ExternalServiceAction::seeGenes)
         }
     }
 
@@ -112,13 +114,13 @@ class RestIndividual(
      */
     fun seeResource(filter: ResourceFilter) : List<String>{
         return when(filter){
-            ResourceFilter.ALL -> seeInitializingActions().map { it.table.name }.plus(
+            ResourceFilter.ALL -> seeInitializingActions().filterIsInstance<DbAction>().map { it.table.name }.plus(
                 getResourceCalls().map { it.getResourceKey() }
             )
             ResourceFilter.NO_SQL -> getResourceCalls().map { it.getResourceKey() }
-            ResourceFilter.ONLY_SQL -> seeInitializingActions().map { it.table.name }
-            ResourceFilter.ONLY_SQL_EXISTING -> seeInitializingActions().filter { it.representExistingData }.map { it.table.name }
-            ResourceFilter.ONLY_SQL_INSERTION -> seeInitializingActions().filterNot { it.representExistingData }.map { it.table.name }
+            ResourceFilter.ONLY_SQL -> seeInitializingActions().filterIsInstance<DbAction>().map { it.table.name }
+            ResourceFilter.ONLY_SQL_EXISTING -> seeInitializingActions().filterIsInstance<DbAction>().filter { it.representExistingData }.map { it.table.name }
+            ResourceFilter.ONLY_SQL_INSERTION -> seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }.map { it.table.name }
         }
     }
 
@@ -139,11 +141,11 @@ class RestIndividual(
      * @return all Sql actions which could be in initialization or between rest actions.
      */
     override fun seeDbActions(): List<DbAction> {
-        return seeInitializingActions().plus(getResourceCalls().flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
+        return seeInitializingActions().filterIsInstance<DbAction>().plus(getResourceCalls().flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeInitializingActions())
+        return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
     }
 
     override fun copy(copyFilter: TraceableElementCopyFilter): RestIndividual {
@@ -336,6 +338,7 @@ class RestIndividual(
             INIT -> seeInitializingActions()
             ONLY_SQL -> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ONLY_SQL) })
             NO_SQL -> getResourceCalls().flatMap { it.seeActions(NO_SQL) }
+            ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().plus(getResourceCalls().flatMap { it.seeActions(ONLY_EXTERNAL_SERVICE) })
         }
     }
 
