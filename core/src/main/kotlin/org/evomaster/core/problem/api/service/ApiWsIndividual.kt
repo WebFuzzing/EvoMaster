@@ -3,6 +3,8 @@ package org.evomaster.core.problem.api.service
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.GeneUtils
@@ -42,8 +44,18 @@ abstract class ApiWsIndividual (
     private val dbInitialization: List<DbAction>
         get() {return children.filterIsInstance<DbAction>()}
 
-    override fun seeInitializingActions(): List<DbAction> {
-        return dbInitialization
+    /**
+     * a list of external service actions for its Initialization
+     */
+    private val externalServiceInitialization: List<ExternalServiceAction>
+        get() { return children.filterIsInstance<ExternalServiceAction>()}
+
+    override fun seeInitializingActions(): List<Action> {
+        return dbInitialization.plus(externalServiceInitialization)
+    }
+
+    override fun seeExternalServiceActions(): List<ExternalServiceAction> {
+        return externalServiceInitialization
     }
 
     override fun repairInitializationActions(randomness: Randomness) {

@@ -43,6 +43,8 @@ class ExternalServiceHandler {
      */
     private var lastIPAddress : String = ""
 
+    private var counter: Long = 0
+
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
      *
@@ -96,6 +98,22 @@ class ExternalServiceHandler {
         return externalServices
     }
 
+    fun reset() {
+        externalServices.forEach {
+            it.value.stopWireMockServer()
+        }
+    }
+
+    fun getExternalServiceActions() : MutableList<ExternalServiceAction> {
+        val actions = mutableListOf<ExternalServiceAction>()
+        externalServices.forEach { (_, u) ->
+            u.getRequests().forEach{
+                actions.add(ExternalServiceAction(it, "", u.getWireMockServer(), counter++))
+            }
+        }
+        return actions
+    }
+
     /**
      * Default IP address will be a randomly generated IP
      *
@@ -108,14 +126,14 @@ class ExternalServiceHandler {
             // Although the default address will be a random, this
             // option allows selecting explicitly
             EMConfig.ExternalServiceIPSelectionStrategy.RANDOM -> {
-                ip = if (externalServices.size > 0) {
+                ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
                 } else {
                     generateRandomAvailableAddress(port)
                 }
             }
             EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
-                ip = if (externalServices.size > 0) {
+                ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
                 } else {
                     if (!isReservedIP(config.externalServiceIP)) {
@@ -130,7 +148,7 @@ class ExternalServiceHandler {
                 }
             }
             else -> {
-                ip = if (externalServices.size > 0) {
+                ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
                 } else {
                     generateRandomAvailableAddress(port)
