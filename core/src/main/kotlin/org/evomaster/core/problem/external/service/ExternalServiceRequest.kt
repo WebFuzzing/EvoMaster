@@ -8,10 +8,10 @@ import java.util.UUID
  *
  * TODO: Properties have to extended further based on the need
  */
-class ExternalServiceRequest (
+class ExternalServiceRequest(
     private val id: UUID,
     private val absoluteUrl: String
-        ) {
+) {
 
     fun getID(): String {
         return id.toString()

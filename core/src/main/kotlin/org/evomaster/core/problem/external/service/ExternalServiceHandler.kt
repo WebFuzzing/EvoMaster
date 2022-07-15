@@ -28,7 +28,7 @@ class ExternalServiceHandler {
     private lateinit var randomness: Randomness
 
     @Inject
-    private lateinit var config : EMConfig
+    private lateinit var config: EMConfig
 
     /**
      * Contains the information about external services as map.
@@ -41,7 +41,7 @@ class ExternalServiceHandler {
      * Contains last used loopback address for reference when creating
      * a new address
      */
-    private var lastIPAddress : String = ""
+    private var lastIPAddress: String = ""
 
     private var counter: Long = 0
 
@@ -56,14 +56,14 @@ class ExternalServiceHandler {
             if (!externalServices.containsKey(externalServiceInfo.remoteHostname)) {
                 val ip = getIP(externalServiceInfo.remotePort)
                 lastIPAddress = ip
-                val wm : WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
+                val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
 
                 externalServices[externalServiceInfo.remoteHostname] = ExternalService(externalServiceInfo, wm)
             }
         }
     }
 
-    fun getExternalServiceMappings() : Map<String, String> {
+    fun getExternalServiceMappings(): Map<String, String> {
         return externalServices.mapValues { it.value.getWireMockAddress() }
     }
 
@@ -71,7 +71,7 @@ class ExternalServiceHandler {
      * Will return the next available IP address from the last know IP address
      * used for external service.
      */
-    private fun getNextAvailableAddress(port: Int) : String {
+    private fun getNextAvailableAddress(port: Int): String {
         val nextAddress: String = nextIPAddress(lastIPAddress)
 
         if (isAddressAvailable(nextAddress, port)) {
@@ -86,7 +86,7 @@ class ExternalServiceHandler {
      * while checking the availability. If not available will
      * generate a new one.
      */
-    private fun generateRandomAvailableAddress(port: Int) : String {
+    private fun generateRandomAvailableAddress(port: Int): String {
         val ip = generateRandomIPAddress(randomness)
         if (isAddressAvailable(ip, port)) {
             return ip
@@ -94,7 +94,7 @@ class ExternalServiceHandler {
         return generateRandomAvailableAddress(port)
     }
 
-    fun getExternalServices() : Map<String, ExternalService> {
+    fun getExternalServices(): Map<String, ExternalService> {
         return externalServices
     }
 
@@ -104,10 +104,10 @@ class ExternalServiceHandler {
         }
     }
 
-    fun getExternalServiceActions() : MutableList<ExternalServiceAction> {
+    fun getExternalServiceActions(): MutableList<ExternalServiceAction> {
         val actions = mutableListOf<ExternalServiceAction>()
         externalServices.forEach { (_, u) ->
-            u.getRequests().forEach{
+            u.getRequests().forEach {
                 actions.add(ExternalServiceAction(it, "", u.getWireMockServer(), counter++))
             }
         }
@@ -120,7 +120,7 @@ class ExternalServiceHandler {
      * If user provided IP address isn't available on the port
      * IllegalStateException will be thrown.
      */
-    private fun getIP(port: Int) : String {
+    private fun getIP(port: Int): String {
         val ip: String
         when (config.externalServiceIPSelectionStrategy) {
             // Although the default address will be a random, this
@@ -157,6 +157,7 @@ class ExternalServiceHandler {
         }
         return ip
     }
+
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
      */
@@ -167,16 +168,21 @@ class ExternalServiceHandler {
             WireMockConfiguration()
                 .bindAddress(address)
                 .port(port)
-                .extensions(ResponseTemplateTransformer(false)))
+                .extensions(ResponseTemplateTransformer(false))
+        )
         wm.start()
 
         // to prevent from the 404 when no matching stub below stub is added
         // TODO: Need to decide what should be the default behaviour
-        wm.stubFor(get(urlMatching("/.*"))
-            .atPriority(2)
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withBody("{\"message\": \"Fake endpoint.\"}")))
+        wm.stubFor(
+            get(urlMatching("/.*"))
+                .atPriority(2)
+                .willReturn(
+                    aResponse()
+                        .withStatus(200)
+                        .withBody("{\"message\": \"Fake endpoint.\"}")
+                )
+        )
 
         return wm
     }

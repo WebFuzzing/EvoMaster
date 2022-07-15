@@ -21,6 +21,7 @@ import javax.annotation.PostConstruct
 
 
 abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestSampler::class.java)
     }
@@ -284,7 +285,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
     }
 
-    fun getExternalServicesInfo(): ExternalServiceHandler {
+    fun getExternalService(): ExternalServiceHandler {
         return externalServiceHandler
     }
 }

@@ -1,6 +1,7 @@
-package com.foo.rest.examples.spring.wiremock.service;
+package com.foo.rest.examples.spring.wiremock.search;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.foo.rest.examples.spring.wiremock.service.MockApiResponse;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,20 +14,18 @@ import java.net.URL;
 
 @RestController
 @RequestMapping(path = "/api/wiremock")
-public class ServiceRest {
+public class SearchRest {
 
     @RequestMapping(
-            value = "/external",
+            value = "/search",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public boolean dummyExternalCall() {
+    public boolean equalsFoo() {
         boolean responseDto = false;
 
         try {
-            // To bind WireMock in port 80 and 443 require root privileges
-            // To avoid that port set to 3000 for e2etest
-            URL url = new URL("http://foo.bar:3000/api/echo/foo");
+            URL url = new URL("http://foo.bar:8080/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
 
@@ -34,9 +33,8 @@ public class ServiceRest {
             ObjectMapper mapper = new ObjectMapper();
             MockApiResponse result = mapper.readValue(responseStream, MockApiResponse.class);
 
-            if (result.message.equals("foo")) {
-                responseDto = true;
-            }
+            responseDto = result.message.equals("foo");
+
         } catch (IOException e) {
             e.printStackTrace();
         }

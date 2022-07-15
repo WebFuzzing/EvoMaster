@@ -67,13 +67,13 @@ public class WireMockManualTest extends SpringTestBase {
                 .get(baseUrlOfSut + "/api/wiremock/equalsFoo/bar")
                 .then()
                 .statusCode(200)
-                .body("valid", is(false));
+                .body(is("false"));
 
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/equalsFoo/foo")
                 .then()
                 .statusCode(200)
-                .body("valid", is(true));
+                .body(is("true"));
 
     }
 
@@ -88,6 +88,6 @@ public class WireMockManualTest extends SpringTestBase {
                 .get(baseUrlOfSut + "/api/wiremock/external")
                 .then()
                 .statusCode(200)
-                .body("valid", is(true));
+                .body(is("true"));
     }
 }

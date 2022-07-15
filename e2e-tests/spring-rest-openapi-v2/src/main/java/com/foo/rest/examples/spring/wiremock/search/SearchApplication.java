@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.wiremock.base;
+package com.foo.rest.examples.spring.wiremock.search;
 
 import com.foo.rest.examples.spring.SwaggerConfiguration;
 import org.springframework.boot.SpringApplication;
@@ -8,9 +8,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-public class WireMockApplication extends SwaggerConfiguration {
+public class SearchApplication extends SwaggerConfiguration {
 
-    public static void main(String[] args) {
-        SpringApplication.run(WireMockApplication.class, args);
-    }
+    public static void main(String[] args) { SpringApplication.run(SearchApplication.class, args); }
 }

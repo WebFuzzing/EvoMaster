@@ -2,6 +2,7 @@ package org.evomaster.core.problem.external.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
@@ -13,7 +14,7 @@ import org.evomaster.core.search.gene.GeneUtils
  *
  * Typically, handle WireMock responses
  */
-class ExternalServiceAction (
+class ExternalServiceAction(
 
     /**
      * Received request to the respective WireMock instance
@@ -35,7 +36,7 @@ class ExternalServiceAction (
      */
     val wireMockServer: WireMockServer,
     private val id: Long,
-    ) : Action(listOf(response)) {
+) : Action(listOf(response)) {
 
     companion object {
         private fun buildResponse(template: String): ResponseParam {
@@ -44,47 +45,49 @@ class ExternalServiceAction (
         }
     }
 
-        constructor(request: ExternalServiceRequest, template: String, wireMockServer: WireMockServer, id: Long):
-                this(request, buildResponse(template),wireMockServer, id)
+    constructor(request: ExternalServiceRequest, template: String, wireMockServer: WireMockServer, id: Long) :
+            this(request, buildResponse(template), wireMockServer, id)
 
 
-        override fun getName(): String {
-            // TODO: Need to change in future
-            return request.getID()
-        }
+    override fun getName(): String {
+        // TODO: Need to change in future
+        return request.getID()
+    }
 
-        override fun seeGenes(): List<out Gene> {
-            return response.genes
-        }
+    override fun seeGenes(): List<out Gene> {
+        return response.genes
+    }
 
-        override fun shouldCountForFitnessEvaluations(): Boolean {
-            return false
-        }
+    override fun shouldCountForFitnessEvaluations(): Boolean {
+        return false
+    }
 
-        override fun copyContent(): StructuralElement {
-            return ExternalServiceAction(request, response.copy() as ResponseParam, wireMockServer, id)
-        }
+    override fun copyContent(): StructuralElement {
+        return ExternalServiceAction(request, response.copy() as ResponseParam, wireMockServer, id)
+    }
 
-        /**
-         * Experimental implementation of WireMock stub generation
-         *
-         * Method should randomize the response code
-         */
-        fun buildResponse() {
-            wireMockServer.stubFor(
-                WireMock.get(WireMock.urlMatching(request.getURL()))
-                    .atPriority(1)
-                    .willReturn(
-                        WireMock.aResponse()
-                            .withStatus(viewStatus())
-                            .withBody(viewResponse())))
-        }
+    /**
+     * Experimental implementation of WireMock stub generation
+     *
+     * Method should randomize the response code
+     */
+    fun buildResponse() {
+        wireMockServer.stubFor(
+            WireMock.get(WireMock.urlMatching(request.getURL()))
+                .atPriority(1)
+                .willReturn(
+                    WireMock.aResponse()
+                        .withStatus(viewStatus())
+                        .withBody(viewResponse())
+                )
+        )
+    }
 
-    private fun viewStatus() : Int {
+    private fun viewStatus(): Int {
         return response.status.values[response.status.index]
     }
 
-    private fun viewResponse() : String{
+    private fun viewResponse(): String {
         if (response.selected == -1) return "{}"
         return response.responses[response.selected].getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON)
     }

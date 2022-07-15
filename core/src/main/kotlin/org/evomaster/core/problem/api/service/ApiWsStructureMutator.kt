@@ -7,7 +7,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.api.service.ApiWsSampler
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -33,20 +33,17 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         /*
         TODO: Validate whether the external service is enabled for handling
          Check the sampler type and validate before execution.
+
+         Incomplete code, under development
          */
 
         if (config.externalServiceIPSelectionStrategy == EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             return
         }
 
-        if (sampler is AbstractRestSampler) {
-            val ind = individual.individual as? T
-                ?: throw IllegalArgumentException("Invalid individual type")
-
-//            ind.seeExternalServiceActions()
+        if (sampler is ResourceSampler) {
+            val actions = mutableListOf<Action>().plus(sampler.getExternalService().getExternalServiceActions())
         }
-
-        // TODO: ...
 
     }
 
@@ -54,6 +51,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         addInitializingExternalServiceActions(individual, mutatedGenes, sampler)
         addInitializingDbActions(individual, mutatedGenes, sampler)
     }
+
     private fun<T : ApiWsIndividual> addInitializingDbActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
         if (!config.shouldGenerateSqlData()) {
             return
