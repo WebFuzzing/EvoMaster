@@ -7,6 +7,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.api.service.ApiWsSampler
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
@@ -42,7 +43,21 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         }
 
         if (sampler is ResourceSampler) {
-            val actions = mutableListOf<Action>().plus(sampler.getExternalService().getExternalServiceActions())
+            val ind = individual.individual as? T
+                ?: throw IllegalArgumentException("Invalid individual type")
+
+            if (ind.seeExternalServiceActions().isEmpty() ||
+                ! ind.seeExternalServiceActions().any { it.representExistingRequest }) {
+
+                val actions = mutableListOf<ExternalServiceAction>().plus(sampler.getExternalService().getExternalServiceActions())
+
+                ind.addInitializingActions(0, actions)
+
+                mutatedGenes?.addedExistingDataInitialization?.addAll(0, actions)
+
+                if (log.isTraceEnabled)
+                    log.trace("{} existingExternalServiceData are added", actions)
+                }
         }
 
     }

@@ -94,7 +94,7 @@ abstract class ApiWsIndividual (
      * add [actions] at [position]
      * if [position] = -1, append the [actions] at the end
      */
-    fun addInitializingActions(position: Int=-1, actions: List<DbAction>){
+    fun addInitializingActions(position: Int=-1, actions: List<Action>){
         if (position == -1)  {
             addChildren(getLastIndexOfDbActionToAdd(), actions)
         } else{

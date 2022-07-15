@@ -36,6 +36,8 @@ class ExternalServiceAction(
      */
     val wireMockServer: WireMockServer,
     private val id: Long,
+
+    val representExistingRequest: Boolean = false
 ) : Action(listOf(response)) {
 
     companion object {
@@ -63,7 +65,7 @@ class ExternalServiceAction(
     }
 
     override fun copyContent(): StructuralElement {
-        return ExternalServiceAction(request, response.copy() as ResponseParam, wireMockServer, id)
+        return ExternalServiceAction(request, response.copy() as ResponseParam, wireMockServer, id, representExistingRequest)
     }
 
     /**
