@@ -20,14 +20,13 @@ class ExternalService (
 
     /**
      * To get all the HTTP/S requests made to the WireMock instance
-     *
-     * TODO: Filter only the events which doesn't have no match
      */
-    fun getRequests() : MutableList<ExternalServiceRequest> {
+    fun getAllServedRequests() : MutableList<ExternalServiceRequest> {
         return wireMockServer.allServeEvents.map {
             ExternalServiceRequest(
                 it.id,
-                it.request.absoluteUrl
+                it.request.absoluteUrl,
+                it.wasMatched,
             )
         }.toMutableList()
     }

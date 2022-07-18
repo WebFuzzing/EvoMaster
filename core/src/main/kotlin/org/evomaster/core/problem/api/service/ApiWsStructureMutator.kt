@@ -66,7 +66,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
 
     fun<T : ApiWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
         // TODO: Below commented out on purpose
-//        addInitializingExternalServiceActions(individual, mutatedGenes, sampler)
+        addInitializingExternalServiceActions(individual, mutatedGenes, sampler)
         addInitializingDbActions(individual, mutatedGenes, sampler)
     }
 
