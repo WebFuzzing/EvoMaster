@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.external.service.ExternalServiceInfo
 import org.evomaster.core.problem.external.service.ExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler

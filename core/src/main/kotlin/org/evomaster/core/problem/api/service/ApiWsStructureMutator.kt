@@ -49,11 +49,13 @@ abstract class ApiWsStructureMutator : StructureMutator(){
             if (ind.seeExternalServiceActions().isEmpty() ||
                 ! ind.seeExternalServiceActions().any { it.representExistingRequest }) {
 
+                // TODO: Because of this, externalServiceHandler gets called twice and throws the
+                //  IP address not available exception
                 val actions = mutableListOf<ExternalServiceAction>().plus(sampler.getExternalService().getExternalServiceActions())
 
                 ind.addInitializingActions(0, actions)
 
-                mutatedGenes?.addedExistingDataInitialization?.addAll(0, actions)
+//                mutatedGenes?.addedExistingDataInitialization?.addAll(0, actions)
 
                 if (log.isTraceEnabled)
                     log.trace("{} existingExternalServiceData are added", actions)
@@ -63,7 +65,8 @@ abstract class ApiWsStructureMutator : StructureMutator(){
     }
 
     fun<T : ApiWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
-        addInitializingExternalServiceActions(individual, mutatedGenes, sampler)
+        // TODO: Below commented out on purpose
+//        addInitializingExternalServiceActions(individual, mutatedGenes, sampler)
         addInitializingDbActions(individual, mutatedGenes, sampler)
     }
 

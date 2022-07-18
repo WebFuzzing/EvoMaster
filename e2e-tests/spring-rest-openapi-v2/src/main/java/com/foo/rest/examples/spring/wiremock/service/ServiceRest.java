@@ -26,7 +26,7 @@ public class ServiceRest {
         try {
             // To bind WireMock in port 80 and 443 require root privileges
             // To avoid that port set to 3000 for e2etest
-            URL url = new URL("http://foo.bar:3000/api/echo/foo");
+            URL url = new URL("http://foo.bar:8080/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
 
