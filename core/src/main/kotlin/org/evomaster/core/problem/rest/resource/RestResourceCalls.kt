@@ -63,9 +63,6 @@ class RestResourceCalls(
     private val dbActions : List<DbAction>
         get() {return children.filterIsInstance<DbAction>()}
 
-    private val externalServiceActions: List<ExternalServiceAction>
-        get() {return children.filterIsInstance<ExternalServiceAction>()}
-
     /**
      * build gene binding among rest actions, ie, [actions]
      * e.g., a sequence of actions
@@ -152,11 +149,13 @@ class RestResourceCalls(
      */
     fun seeActions(filter: ActionFilter) : List<out Action>{
         return when(filter){
+            ActionFilter.NO_EXTERNAL_SERVICE,
             ActionFilter.ALL-> dbActions.plus(actions)
             ActionFilter.INIT, ActionFilter.ONLY_SQL -> dbActions
             ActionFilter.NO_INIT,
             ActionFilter.NO_SQL -> actions
-            ActionFilter.ONLY_EXTERNAL_SERVICE -> externalServiceActions
+            // there is no external service action in RestResourceCall
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> emptyList()
         }
     }
 

@@ -10,4 +10,8 @@ class ResponseParam (
     val responses : MutableList<ObjectGene> = mutableListOf(),
     val selected : Int = -1
         ): Param("response", mutableListOf(status).plus(responses).toMutableList()) {
+
+    override fun copyContent(): Param {
+        return ResponseParam(status.copy() as EnumGene<Int>, responses.map { it.copy() } as MutableList<ObjectGene>, selected)
+    }
 }

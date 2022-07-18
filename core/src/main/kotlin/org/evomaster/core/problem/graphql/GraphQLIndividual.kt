@@ -59,9 +59,12 @@ class GraphQLIndividual(
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when(filter){
             ActionFilter.ALL -> children as List<Action>
-            ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.ONLY_SQL ->(children as List<Action>).filterIsInstance<DbAction>()
+            ActionFilter.INIT -> seeInitializingActions()
+            // TODO Man: need to systematically check NO_SQL that might be replaced with NO_INIT
             ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
-            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions()
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> (children as List<Action>).filterIsInstance<ExternalServiceAction>()
+            ActionFilter.NO_EXTERNAL_SERVICE -> (children as List<Action>).filter { it !is ExternalServiceAction }
         }
     }
 

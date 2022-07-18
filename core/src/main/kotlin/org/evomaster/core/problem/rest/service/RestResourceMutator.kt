@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
@@ -35,8 +36,9 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
         if (!config.generateSqlDataWithSearch)
             return restGenes
 
+        // TODO: Man fix for external services
         // 1) SQL genes in initialization plus 2) SQL genes in resource handling plus 3) rest actions in resource handling
-        return individual.seeInitializingActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable).plus(
+        return individual.seeInitializingActions().filterIsInstance<DbAction>().flatMap { it.seeTopGenes() }.filter(Gene::isMutable).plus(
             individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(GeneFilter.ONLY_SQL) }
         ).plus(restGenes)
 

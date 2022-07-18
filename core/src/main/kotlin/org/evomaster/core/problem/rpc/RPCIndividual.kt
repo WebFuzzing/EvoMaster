@@ -56,9 +56,12 @@ class RPCIndividual(
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when (filter) {
             ActionFilter.ALL -> children as List<Action>
+            // TODO Man: need to check NO_SQL which might be replaced with NO_INIT
             ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
-            ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
-            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions()
+            ActionFilter.ONLY_SQL -> seeInitializingActions().filterIsInstance<DbAction>()
+            ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>()
+            ActionFilter.NO_EXTERNAL_SERVICE -> (children as List<Action>).filter { it !is ExternalServiceAction }
         }
     }
 
