@@ -29,7 +29,7 @@ class ExternalServiceRequest(
     fun getURL(): String {
         return url
     }
-    
+
     fun getMethod(): String {
         return method
     }
