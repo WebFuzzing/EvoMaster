@@ -25,6 +25,8 @@ class ExternalService (
         return wireMockServer.allServeEvents.map {
             ExternalServiceRequest(
                 it.id,
+                it.request.method.value(),
+                it.request.url,
                 it.request.absoluteUrl,
                 it.wasMatched,
             )

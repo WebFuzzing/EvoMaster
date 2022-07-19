@@ -10,6 +10,8 @@ import java.util.UUID
  */
 class ExternalServiceRequest(
     private val id: UUID,
+    private val method: String,
+    private val url: String,
     private val absoluteUrl: String,
     private val wasMatched: Boolean,
 ) {
@@ -25,7 +27,11 @@ class ExternalServiceRequest(
      * information in future
      */
     fun getURL(): String {
-        return absoluteUrl
+        return url
+    }
+    
+    fun getMethod(): String {
+        return method
     }
 
     fun getWasMatched(): Boolean {

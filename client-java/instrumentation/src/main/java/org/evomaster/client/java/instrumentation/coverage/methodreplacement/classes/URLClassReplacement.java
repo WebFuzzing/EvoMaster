@@ -70,8 +70,8 @@ public class URLClassReplacement implements MethodReplacementClass {
                 URL newURL = new URL(url);
                 return newURL.openConnection();
             } else {
+                // Removed the exception to avoid restarts inside flaky
                 SimpleLogger.uniqueWarn("There is no WireMock initiated for this hostname");
-//                throw new UnknownHostException("There is no WireMock initiated for this hostname");
             }
         }
 

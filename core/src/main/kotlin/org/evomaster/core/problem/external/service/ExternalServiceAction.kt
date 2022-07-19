@@ -72,6 +72,9 @@ class ExternalServiceAction(
      * Experimental implementation of WireMock stub generation
      *
      * Method should randomize the response code
+     *
+     * TODO: This has to moved separetly to have extensive features
+     *  in future.
      */
     fun buildResponse() {
         wireMockServer.stubFor(

@@ -108,7 +108,17 @@ class ExternalServiceHandler {
         val actions = mutableListOf<ExternalServiceAction>()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
-                actions.add(ExternalServiceAction(it, "", u.getWireMockServer(), counter++))
+                if (actions.none { a -> a.request.getURL() == it.getURL() }){
+                        actions.add(
+                            ExternalServiceAction(
+                                it,
+                                "",
+                                u.getWireMockServer(),
+                                counter++
+                            )
+                        )
+                    }
+
             }
         }
         return actions
