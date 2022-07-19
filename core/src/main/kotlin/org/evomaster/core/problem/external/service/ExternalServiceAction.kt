@@ -1,7 +1,8 @@
 package org.evomaster.core.problem.external.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.StructuralElement
@@ -20,7 +21,7 @@ class ExternalServiceAction(
      * Received request to the respective WireMock instance
      *
      * TODO: Need to expand the properties further in future
-     * depending on the need
+     *  depending on the need
      */
     val request: ExternalServiceRequest,
 
@@ -50,6 +51,11 @@ class ExternalServiceAction(
     constructor(request: ExternalServiceRequest, template: String, wireMockServer: WireMockServer, id: Long) :
             this(request, buildResponse(template), wireMockServer, id)
 
+    init {
+        // TODO: This is not the correct way to do this, but for now
+        //  to test concept, this is triggered here.
+        this.buildResponse()
+    }
 
     override fun getName(): String {
         // TODO: Need to change in future
@@ -65,7 +71,13 @@ class ExternalServiceAction(
     }
 
     override fun copyContent(): StructuralElement {
-        return ExternalServiceAction(request, response.copy() as ResponseParam, wireMockServer, id, representExistingRequest)
+        return ExternalServiceAction(
+            request,
+            response.copy() as ResponseParam,
+            wireMockServer,
+            id,
+            representExistingRequest
+        )
     }
 
     /**
@@ -77,15 +89,21 @@ class ExternalServiceAction(
      *  in future.
      */
     fun buildResponse() {
-        wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching(request.getURL()))
-                .atPriority(1)
-                .willReturn(
-                    WireMock.aResponse()
-                        .withStatus(viewStatus())
-                        .withBody(viewResponse())
-                )
-        )
+        if (wireMockServer.findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.getURL()))).isEmpty()) {
+            wireMockServer.stubFor(
+                get(urlMatching(request.getURL()))
+                    .atPriority(1)
+                    .willReturn(
+                        aResponse()
+                            .withStatus(viewStatus())
+                            .withBody(viewResponse())
+                    )
+                    .withMetadata(
+                        metadata()
+                            .attr("url", request.getURL())
+                    )
+            )
+        }
     }
 
     private fun viewStatus(): Int {

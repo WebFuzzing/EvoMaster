@@ -27,7 +27,6 @@ class ExternalService (
                 it.id,
                 it.request.method.value(),
                 it.request.url,
-                it.request.absoluteUrl,
                 it.wasMatched,
             )
         }.toMutableList()

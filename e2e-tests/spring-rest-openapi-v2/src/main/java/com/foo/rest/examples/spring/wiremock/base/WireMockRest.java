@@ -1,5 +1,6 @@
 package com.foo.rest.examples.spring.wiremock.base;
 
+import org.evomaster.client.java.utils.SimpleLogger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,7 +53,7 @@ public class WireMockRest {
                 responseDto = true;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            SimpleLogger.uniqueWarn(e.getLocalizedMessage());
         }
         return responseDto;
     }

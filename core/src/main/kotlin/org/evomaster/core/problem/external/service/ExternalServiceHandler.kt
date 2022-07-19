@@ -21,7 +21,7 @@ class ExternalServiceHandler {
      * AbstractRestFitness and AbstractRestSample for further use.
      *
      * TODO: This is not the final implementation need to refactor but
-     * the concept is working.
+     *  the concept is working.
      */
 
     @Inject
@@ -173,7 +173,7 @@ class ExternalServiceHandler {
      */
     private fun initWireMockServer(address: String, port: Int): WireMockServer {
         // TODO: Port need to be changed to the remote service port
-        // In CI also using remote ports as 80 and 443 fails
+        //  In CI also using remote ports as 80 and 443 fails
         val wm = WireMockServer(
             WireMockConfiguration()
                 .bindAddress(address)
@@ -185,12 +185,12 @@ class ExternalServiceHandler {
         // to prevent from the 404 when no matching stub below stub is added
         // TODO: Need to decide what should be the default behaviour
         wm.stubFor(
-            get(urlMatching("/.*"))
-                .atPriority(2)
+            any(anyUrl())
+                .atPriority(10)
                 .willReturn(
                     aResponse()
-                        .withStatus(200)
-                        .withBody("{\"message\": \"Fake endpoint.\"}")
+                        .withStatus(500)
+                        .withBody("Internal Server Error")
                 )
         )
 
