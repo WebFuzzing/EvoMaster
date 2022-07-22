@@ -32,9 +32,6 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     // when running on a personal computer if it's macOS
                     // TODO: When running parallel tests it's always good select
                     //  Random as strategy.
-
-                    // TODO: When second time tests executed IP addresses are not released from
-                    //  the previous execution. Needs to be fixed.
                     args.add("--externalServiceIPSelectionStrategy");
                     args.add("USER");
                     args.add("--externalServiceIP");

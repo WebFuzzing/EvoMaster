@@ -2,7 +2,7 @@ package org.evomaster.core.problem.external.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 
-class ExternalService (
+class ExternalService(
     val externalServiceInfo: ExternalServiceInfo,
     private val wireMockServer: WireMockServer
 ) {
@@ -10,18 +10,18 @@ class ExternalService (
     /**
      * Return the IP address of WireMock instance
      */
-    fun getWireMockAddress() : String {
+    fun getWireMockAddress(): String {
         return wireMockServer.options.bindAddress()
     }
 
-    fun getWireMockServer() : WireMockServer {
+    fun getWireMockServer(): WireMockServer {
         return wireMockServer
     }
 
     /**
      * To get all the HTTP/S requests made to the WireMock instance
      */
-    fun getAllServedRequests() : MutableList<ExternalServiceRequest> {
+    fun getAllServedRequests(): MutableList<ExternalServiceRequest> {
         return wireMockServer.allServeEvents.map {
             ExternalServiceRequest(
                 it.id,

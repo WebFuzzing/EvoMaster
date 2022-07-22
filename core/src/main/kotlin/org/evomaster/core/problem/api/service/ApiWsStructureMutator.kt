@@ -65,7 +65,6 @@ abstract class ApiWsStructureMutator : StructureMutator(){
     }
 
     fun<T : ApiWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
-        // TODO: Below commented out on purpose
         addInitializingExternalServiceActions(individual, mutatedGenes, sampler)
         addInitializingDbActions(individual, mutatedGenes, sampler)
     }
@@ -198,8 +197,8 @@ abstract class ApiWsStructureMutator : StructureMutator(){
                         (c != "*" && a.selectedColumns.any { x ->
                             x.name.equals(c, ignoreCase = true)
                         }) // or we want all, and existing action has all columns
-                                || (c == "*" && a.table.columns.map { it.name.toLowerCase() }
-                            .containsAll(a.selectedColumns.map { it.name.toLowerCase() }))
+                                || (c == "*" && a.table.columns.map { it.name.lowercase() }
+                            .containsAll(a.selectedColumns.map { it.name.lowercase() }))
                     }
                 }
         }

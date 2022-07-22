@@ -89,7 +89,9 @@ class ExternalServiceAction(
      *  in future.
      */
     fun buildResponse() {
-        if (wireMockServer.findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.getURL()))).isEmpty()) {
+        if (wireMockServer.findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.getURL())))
+                .isEmpty()
+        ) {
             wireMockServer.stubFor(
                 get(urlMatching(request.getURL()))
                     .atPriority(1)

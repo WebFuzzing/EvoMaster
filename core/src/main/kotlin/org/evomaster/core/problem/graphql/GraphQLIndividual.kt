@@ -31,9 +31,6 @@ class GraphQLIndividual(
 
     }
 
-    /**
-     * TODO: Verify the implmentation for ALL
-     */
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
             GeneFilter.ALL -> seeInitializingActions().flatMap(Action::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
@@ -53,9 +50,6 @@ class GraphQLIndividual(
 
     fun getIndexedCalls(): Map<Int,GraphQLAction> = getIndexedChildren(GraphQLAction::class.java)
 
-    /**
-     * TODO: Verify the implmentation for ALL
-     */
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when(filter){
             ActionFilter.ALL -> children as List<Action>
