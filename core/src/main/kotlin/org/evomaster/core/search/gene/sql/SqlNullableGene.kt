@@ -89,6 +89,10 @@ class SqlNullableGene(name: String,
         return true
     }
 
+    override fun isPrintable(): Boolean {
+        return !isPresent || gene.isPrintable()
+    }
+
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         if (!isPresent) {

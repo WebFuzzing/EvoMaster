@@ -50,10 +50,14 @@ class ArrayGene<T>(
         where T : Gene {
 
     init {
-        if(template is CycleObjectGene){
+        if(template is CycleObjectGene || template is LimitObjectGene){
             minSize = 0
             maxSize = 0
             killAllChildren()
+        } else {
+            if(!template.isPrintable()){
+                throw IllegalArgumentException("Cannot build an array of non-printable genes: ${template.javaClass}")
+            }
         }
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){
