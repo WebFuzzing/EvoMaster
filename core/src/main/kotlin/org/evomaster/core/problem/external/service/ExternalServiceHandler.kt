@@ -45,6 +45,8 @@ class ExternalServiceHandler {
 
     private var counter: Long = 0
 
+    private val externalServiceRequests: MutableList<ExternalServiceRequest> = mutableListOf()
+
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
      *
@@ -104,10 +106,31 @@ class ExternalServiceHandler {
         }
     }
 
+    /**
+     * Notes:
+     * SUT - https://localhost:8080
+     * X -> /login (RestCall(DbCalls))
+     *      -> doDBCalls(SQLs)
+     *      -> https://oauth.google.com
+     *          -> WM -> ESA (request) -> Mutate response
+     *
+     * Y -> /pay
+     *      -> https://api.paypal.com
+     *
+     * Z -> /view
+     *      -> ""
+     */
     fun getExternalServiceActions(): MutableList<ExternalServiceAction> {
+        // TODO: There could be a chance for same request path to be under different host name
+        //  check that also when adding requests for mutation
+
         val actions = mutableListOf<ExternalServiceAction>()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
+                // TODO: This needs to be revised to make it nicer
+                if (externalServiceRequests.none { r -> r.getAbsoluteURL() == it.getAbsoluteURL() }) {
+                    externalServiceRequests.add(it)
+                }
                 if (actions.none { a -> a.request.getURL() == it.getURL() }) {
                     actions.add(
                         ExternalServiceAction(
@@ -195,6 +218,10 @@ class ExternalServiceHandler {
         )
 
         return wm
+    }
+
+    fun getExternalServiceRequests(): MutableList<ExternalServiceRequest> {
+        return externalServiceRequests
     }
 
 }

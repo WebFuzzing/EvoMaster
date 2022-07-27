@@ -12,6 +12,7 @@ class ExternalServiceRequest(
     private val id: UUID,
     private val method: String,
     private val url: String,
+    private val absoluteURL: String,
     private val wasMatched: Boolean,
 ) {
 
@@ -35,5 +36,9 @@ class ExternalServiceRequest(
 
     fun getWasMatched(): Boolean {
         return wasMatched
+    }
+
+    fun getAbsoluteURL(): String {
+        return absoluteURL
     }
 }

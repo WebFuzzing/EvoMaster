@@ -41,6 +41,8 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external", "false");
+                    // TODO: Disabled till the Jackson method replacement handled to unmarshall the JSON
+//                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/json", "false");
                 });
     }
 }

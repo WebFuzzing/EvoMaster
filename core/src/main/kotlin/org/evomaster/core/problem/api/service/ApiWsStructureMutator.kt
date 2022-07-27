@@ -30,13 +30,12 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
     }
 
-    private fun<T : ApiWsIndividual> addInitializingExternalServiceActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
-        /*
-        TODO: Validate whether the external service is enabled for handling
-         Check the sampler type and validate before execution.
-
-         Incomplete code, under development
-         */
+    private fun <T : ApiWsIndividual> addInitializingExternalServiceActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
+        // TODO: Incomplete code, under development
 
         if (config.externalServiceIPSelectionStrategy == EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             return
@@ -46,22 +45,18 @@ abstract class ApiWsStructureMutator : StructureMutator(){
             val ind = individual.individual as? T
                 ?: throw IllegalArgumentException("Invalid individual type")
 
-            if (ind.seeExternalServiceActions().isEmpty() ||
-                ! ind.seeExternalServiceActions().any { it.representExistingRequest }) {
+            // TODO: Under review
+            val fw = individual.fitness.getAccessedExternalServiceRequests()
 
-                // TODO: Because of this, externalServiceHandler gets called twice and throws the
-                //  IP address not available exception
-                val actions = mutableListOf<ExternalServiceAction>().plus(sampler.getExternalService().getExternalServiceActions())
+            val actions = mutableListOf<ExternalServiceAction>().plus(
+                sampler.getExternalService().getExternalServiceActions()
+            )
 
-                ind.addInitializingActions(0, actions)
+            ind.addInitializingActions(0, actions)
 
-//                mutatedGenes?.addedExistingDataInitialization?.addAll(0, actions)
-
-                if (log.isTraceEnabled)
-                    log.trace("{} existingExternalServiceData are added", actions)
-                }
+            if (log.isTraceEnabled)
+                log.trace("{} existingExternalServiceData are added", actions)
         }
-
     }
 
     fun<T : ApiWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
