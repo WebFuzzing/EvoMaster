@@ -107,23 +107,14 @@ class ExternalServiceHandler {
     }
 
     /**
-     * Notes:
-     * SUT - https://localhost:8080
-     * X -> /login (RestCall(DbCalls))
-     *      -> doDBCalls(SQLs)
-     *      -> https://oauth.google.com
-     *          -> WM -> ESA (request) -> Mutate response
+     * This takes all the served requests from WireMock server and creates them
+     * as ExternalServiceAction. It ignores if the same absolute URL is added
+     * already.
      *
-     * Y -> /pay
-     *      -> https://api.paypal.com
-     *
-     * Z -> /view
-     *      -> ""
+     * This is not perfect yet, have to explore more scenarios and perfect the
+     * implementation.
      */
     fun getExternalServiceActions(): MutableList<ExternalServiceAction> {
-        // TODO: There could be a chance for same request path to be under different host name
-        //  check that also when adding requests for mutation
-
         val actions = mutableListOf<ExternalServiceAction>()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {

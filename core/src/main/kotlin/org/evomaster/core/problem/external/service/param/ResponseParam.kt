@@ -6,12 +6,18 @@ import org.evomaster.core.search.gene.ObjectGene
 
 
 class ResponseParam (
+    /**
+     * Contains the values for HTTP status codes
+     */
     val status: EnumGene<Int> = EnumGene("status", listOf(200, 400, 401, 403, 404, 500)),
-    val responses : MutableList<ObjectGene> = mutableListOf(),
+    /**
+     * Response content type, for now supports only JSON
+     */
+    val responseType: EnumGene<String> = EnumGene("responseType", listOf("JSON")),
     val selected : Int = -1
-        ): Param("response", mutableListOf(status).plus(responses).toMutableList()) {
+        ): Param("response", mutableListOf(status).plus(responseType).toMutableList()) {
 
     override fun copyContent(): Param {
-        return ResponseParam(status.copy() as EnumGene<Int>, responses.map { it.copy() } as MutableList<ObjectGene>, selected)
+        return ResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, selected)
     }
 }
