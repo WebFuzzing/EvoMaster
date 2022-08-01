@@ -63,6 +63,9 @@ class SqlForeignKeyGene(
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         //FIXME this is all, but we need "previous"
+        /*
+            TODO also need guarantee that in resource-groups we do NOT ref to initialization DBs
+         */
         val allGenes = getAllGenesInIndividual()
 
         //All the ids of previous PKs for the target table

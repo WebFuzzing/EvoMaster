@@ -204,6 +204,9 @@ class RestIndividual(
      * however, the db action might refer to a db action which is not in the same call.
      * In this case, we need to repair the fk of db actions among calls.
      *
+     * Note: this is ignoring the DB Actions in the initialization of the individual, as we
+     * are building dependencies among resources here.
+     *
      * TODO not sure whether build binding between fk and pk
      */
     fun repairDbActionsInCalls(){

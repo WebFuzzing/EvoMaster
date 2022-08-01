@@ -53,10 +53,7 @@ abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
 
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
             ?: throw IllegalStateException("No DB schema is available")
-
-        DbActionUtils.randomizeDbActionGenes(actions, randomness)
-        //FIXME need proper handling of intra-gene constraints
-        actions.forEach { it.seeTopGenes().forEach { g -> g.markAllAsInitialized() } }
+        actions.flatMap{it.seeTopGenes()}.forEach{it.doInitialize(randomness)}
 
         if (log.isTraceEnabled){
             log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,
