@@ -267,10 +267,10 @@ class ResourceManageService {
             randomness = randomness)
 
         if(dbActions.isNotEmpty()){
-
-            val removed = repairDbActionsForResource(dbActions)
+            //FIXME cannot repair before it is mounted
+            val removed = false; //repairDbActionsForResource(dbActions)
             call.initDbActions(dbActions, cluster, false, removed, bindWith = null)
-
+            repairDbActionsForResource(dbActions) // FIXME
         }
         return paramToTables.isNotEmpty()
     }

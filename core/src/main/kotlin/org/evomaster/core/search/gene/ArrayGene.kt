@@ -56,7 +56,8 @@ class ArrayGene<T>(
             killAllChildren()
         } else {
             if(!template.isPrintable()){
-                throw IllegalArgumentException("Cannot build an array of non-printable genes: ${template.javaClass}")
+                //FIXME put back once we fix issue with Nullable
+                //throw IllegalArgumentException("Cannot build an array of non-printable genes: ${template.javaClass}")
             }
         }
 
