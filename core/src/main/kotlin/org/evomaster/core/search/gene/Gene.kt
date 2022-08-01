@@ -164,7 +164,7 @@ abstract class Gene(
         if(initialized){
             throw IllegalStateException("Gene already initialized")
         }
-        if(rand != null) {
+        if(rand != null && isMutable()) {
             randomize(rand, false)
         }
         markAllAsInitialized()
