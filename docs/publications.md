@@ -16,7 +16,8 @@ Also, some of these papers provides full replication packages, which are linked 
 * M. Zhang, A. Arcuri.
   *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
   [[arXiv](https://arxiv.org/abs/2205.05325)]
-  [[Scripts](exp/arxiv_open_problems.py)]
+  [[Script 0](exp/arxiv_open_problems_bb.py)]
+  [[Script 1](exp/arxiv_open_problems_wb.py)]
 
 ## Peer-Reviewed Publications
 
