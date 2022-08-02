@@ -3,6 +3,7 @@ package org.evomaster.core.problem.external.service.param
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.OptionalGene
 
 
 class ResponseParam (
@@ -14,10 +15,10 @@ class ResponseParam (
      * Response content type, for now supports only JSON
      */
     val responseType: EnumGene<String> = EnumGene("responseType", listOf("JSON")),
-    val selected : Int = -1
+    val response: OptionalGene = OptionalGene("response", ObjectGene("response", listOf()))
         ): Param("response", mutableListOf(status).plus(responseType).toMutableList()) {
 
     override fun copyContent(): Param {
-        return ResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, selected)
+        return ResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, response.copy() as OptionalGene)
     }
 }

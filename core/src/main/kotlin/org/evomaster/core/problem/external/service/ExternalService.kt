@@ -2,8 +2,18 @@ package org.evomaster.core.problem.external.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 
+/**
+ * Represent the external service related information including
+ * WireMock server and ExternalServiceInfo collected from SUT.
+ */
 class ExternalService(
+    /**
+     * External service information collected from SUT
+     */
     val externalServiceInfo: ExternalServiceInfo,
+    /**
+     * Initiated WireMock server for the external service
+     */
     private val wireMockServer: WireMockServer
 ) {
 

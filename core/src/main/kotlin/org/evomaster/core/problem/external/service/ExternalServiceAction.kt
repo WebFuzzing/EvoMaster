@@ -114,8 +114,7 @@ class ExternalServiceAction(
     }
 
     private fun viewStatus(): Int {
-        // TODO: This needs to be refactored
-        return response.status.values[response.status.index]
+        return response.status.getValueAsRawString().toInt()
     }
 
     private fun viewResponse(): String {

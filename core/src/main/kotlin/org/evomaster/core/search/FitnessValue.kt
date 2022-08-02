@@ -73,7 +73,7 @@ class FitnessValue(
 
     /**
      * To keep track of accessed external services prevent from adding them again
-     * TODO: (seran) fix the comment
+     * TODO: This is not completed, not need to consider for review for now
      */
     private val accessedExternalServiceRequests: MutableList<String> = mutableListOf()
 
@@ -665,10 +665,11 @@ class FitnessValue(
     fun getAccessedExternalServiceRequests() = accessedExternalServiceRequests
 
     /**
-     * Collect external service requests made by the SUT from ExternalServiceHanlder
+     * Collect external service requests made by the SUT from ExternalServiceHandler
      * and store it to prevent from adding them again
      *
-     * TODO: Under review, need a refactor
+     * TODO: This is not completed, not need to consider for review for now. Still under
+     *  development. Since it's not crashing left it as it is.
      */
     fun aggregateExternalServiceRequests() {
         accessedExternalServiceRequests.clear()
