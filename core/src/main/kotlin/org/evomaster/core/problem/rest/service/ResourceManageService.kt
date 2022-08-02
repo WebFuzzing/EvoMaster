@@ -273,6 +273,12 @@ class ResourceManageService {
             removed = !repairDbActionsForResource(dbActions) // FIXME
             if(removed){
                 call.resetDbAction(dbActions)
+                /*
+                    FIXME this breaks things with binding...
+                    however, as we are going to refactor DB actions, we can ignored for now.
+                    TODO once refactored, need to put back the disabled test:
+                    ResourceBasedTestInterface.testWithDatabaseAndNameAnalysis
+                 */
             }
         }
         return paramToTables.isNotEmpty()
