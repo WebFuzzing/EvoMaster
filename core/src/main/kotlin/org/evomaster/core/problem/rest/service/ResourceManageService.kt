@@ -268,9 +268,12 @@ class ResourceManageService {
 
         if(dbActions.isNotEmpty()){
             //FIXME cannot repair before it is mounted
-            val removed = false; //repairDbActionsForResource(dbActions)
+            var removed = false; //repairDbActionsForResource(dbActions)
             call.initDbActions(dbActions, cluster, false, removed, bindWith = null)
-            repairDbActionsForResource(dbActions) // FIXME
+            removed = !repairDbActionsForResource(dbActions) // FIXME
+            if(removed){
+                call.resetDbAction(dbActions)
+            }
         }
         return paramToTables.isNotEmpty()
     }
