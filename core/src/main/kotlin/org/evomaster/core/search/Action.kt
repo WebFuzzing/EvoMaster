@@ -9,11 +9,40 @@ import org.slf4j.LoggerFactory
  * A variable-length individual will be composed by 1 or more "actions".
  * Actions can be: REST call, setup Wiremock, setup database, etc.
  */
-abstract class Action(children: List<StructuralElement>) : StructuralElement(children.toMutableList()) {
+abstract class Action(
+    /**
+     * a unique id is used to identify this action in the context of an individual
+     */
+    private var localId : String,
+    /**
+     * a set of actions relies on this action
+     * if this action is removed, all such actions should be removed as well
+     */
+    val dependentActions : MutableList<String> = mutableListOf(),
+    children: List<StructuralElement>
+) : StructuralElement(children.toMutableList()) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(Action::class.java)
+
+        /**
+         * a constant string represents that an id of the action is not assigned
+         */
+        const val NONE_ACTION_ID = "NONE_ACTION_ID"
     }
+
+    /**
+     * set an id of the action
+     * note that the id can be only assigned once it is not NONE_ACTION_ID
+     */
+    fun setId(id: String) {
+        if (this.localId == NONE_ACTION_ID)
+            this.localId = id
+        else
+            throw IllegalStateException("cannot re-assign the id of the action, the current id is ${this.localId}")
+    }
+
+    fun getLocalId() = localId
 
     abstract fun getName(): String
 
@@ -67,7 +96,7 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
     }
 
     fun isInitialized(): Boolean {
-        return seeTopGenes().all { it.initialized }
+        return seeTopGenes().all { it.initialized } && localId != NONE_ACTION_ID
     }
 
     /**

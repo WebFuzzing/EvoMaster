@@ -29,6 +29,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 ) : Traceable, StructuralElement(children.toMutableList()), RootElement{
 
     /**
+     * this counter is used to generate ids for actions, ie, its children
+     */
+    private var counter = 0
+
+    /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
      *
      * Note that if the evalutedIndividual is tracked (i.e., [EMConfig.enableTrackEvaluatedIndividual]),

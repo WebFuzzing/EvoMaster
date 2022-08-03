@@ -35,7 +35,11 @@ class ExternalServiceAction(
      */
     val externalService: ExternalService,
     private val id: Long,
-) : Action(listOf(response)) {
+
+
+    localId : String,
+    dependentActions : MutableList<String> = mutableListOf()
+) : Action(localId, dependentActions, listOf(response)) {
 
     companion object {
         private fun buildResponse(template: String): ResponseParam {
@@ -44,8 +48,10 @@ class ExternalServiceAction(
         }
     }
 
-    constructor(request: ExternalServiceRequest, template: String, externalService: ExternalService, id: Long) :
-            this(request, buildResponse(template), externalService, id)
+    constructor(request: ExternalServiceRequest, template: String, externalService: ExternalService, id: Long,
+                localId : String = NONE_ACTION_ID,
+                dependentActions : MutableList<String> = mutableListOf()) :
+            this(request, buildResponse(template), externalService, id, localId, dependentActions)
 
     init {
         // TODO: This is not the correct way to do this, but for now
@@ -82,7 +88,9 @@ class ExternalServiceAction(
             request,
             response.copy() as ResponseParam,
             externalService,
-            id
+            id,
+            getLocalId(),
+            dependentActions.toMutableList()
         )
     }
 

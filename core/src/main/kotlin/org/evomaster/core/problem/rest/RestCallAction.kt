@@ -20,35 +20,38 @@ import java.net.URLEncoder
 
 class RestCallAction(
     /**
-         * Identifier unique within the individual
-         * **/
-        val id:String,
+     * Identifier unique within the individual
+     * **/
+    val id:String,
     val verb: HttpVerb,
     val path: RestPath,
     parameters: MutableList<Param>,
     auth: HttpWsAuthenticationInfo = NoAuth(),
     /**
-         * If true, it means that it will
-         * instruct to save the "location" header of the HTTP response for future
-         * use by following calls. Typical case is to save the location of
-         * a resource generated with a POST
-         */
-        var saveLocation: Boolean = false,
+     * If true, it means that it will
+     * instruct to save the "location" header of the HTTP response for future
+     * use by following calls. Typical case is to save the location of
+     * a resource generated with a POST
+     */
+    var saveLocation: Boolean = false,
     /**
-         * Specify to use the "location" header of a
-         * previous POST as path. As there might be different
-         * POSTs creating different resources in the same test,
-         * need to specify an id.
-         *
-         * Note: it might well be that we save the location returned
-         * by a POST, where the POST itself might use a location for
-         * path coming from a previous POST
-         */
-        var locationId: String? = null,
+     * Specify to use the "location" header of a
+     * previous POST as path. As there might be different
+     * POSTs creating different resources in the same test,
+     * need to specify an id.
+     *
+     * Note: it might well be that we save the location returned
+     * by a POST, where the POST itself might use a location for
+     * path coming from a previous POST
+     */
+    var locationId: String? = null,
     val produces: List<String> = listOf(),
     val responseRefs : MutableMap<String, String> = mutableMapOf(),
-    val skipOracleChecks : Boolean = false
-) : HttpWsAction(auth, parameters) {
+    val skipOracleChecks : Boolean = false,
+
+    localId : String,
+    dependentActions : MutableList<String> = mutableListOf()
+) : HttpWsAction(auth, parameters, localId, dependentActions) {
 
     /**
      * collect info of description and summary from swagger
@@ -69,7 +72,7 @@ class RestCallAction(
 
     override fun copyContent(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs, skipOracleChecks)
+        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs, skipOracleChecks, getLocalId(), dependentActions.toMutableList())
     }
 
     override fun getName(): String {

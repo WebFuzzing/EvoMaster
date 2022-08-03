@@ -29,8 +29,11 @@ class DbAction(
          * data already existing in the database.
          * This is very helpful when dealing with Foreign Keys.
          */
-        val representExistingData: Boolean = false
-) : Action(listOf()) {
+        val representExistingData: Boolean = false,
+
+        localId : String,
+        dependentActions : MutableList<String> = mutableListOf()
+) : Action(localId, dependentActions, listOf()) {
 
     init {
         /*
@@ -100,7 +103,7 @@ class DbAction(
     }
 
     override fun copyContent(): Action {
-        return DbAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
+        return DbAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData, getLocalId(), dependentActions.toMutableList())
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
