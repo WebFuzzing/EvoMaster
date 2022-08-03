@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
@@ -324,6 +325,11 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
+            if (useWireMock()) {
+                addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
+                addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
+            }
+
             addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
             addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
@@ -443,6 +449,9 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
+            if (useWireMock()) {
+                lines.add("private static WireMockServer wireMockServer;")
+            }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
@@ -451,6 +460,9 @@ class TestSuiteWriter {
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
+            }
+            if (useWireMock()) {
+                lines.add("private lateinit var wireMockServer: WireMockServer")
             }
         } else if (config.outputFormat.isJavaScript()) {
 
@@ -550,6 +562,29 @@ class TestSuiteWriter {
                     appendSemicolon(lines)
                 }
             }
+
+
+            if (useWireMock()) {
+               if (format.isKotlin()) {
+                   addStatement("wireMockServer = WireMockServer(WireMockConfiguration()", lines)
+                   lines.indented {
+                       lines.add(".bindAddress(\"127.0.0.1\")")
+                       lines.add(".port(8080)")
+                       lines.add(".extensions(ResponseTemplateTransformer(false))")
+                   }
+                   addStatement("wireMockServer.start()", lines)
+                   addStatement("wireMockServer.stubFor(", lines)
+                   lines.indented {
+                       lines.add("any(anyUrl()).atPriority(10)")
+                       lines.add(".willReturn(")
+                       lines.add("aResponse()")
+                       lines.add(".withStatus(500)")
+                       lines.add(".withBody(\"Internal Server Error\")))")
+                   }
+                   addStatement("DnsCacheManipulator.setDnsCache(\"foo.bar\", \"127.0.0.1\")", lines)
+               }
+            }
+
             testCaseWriter.addExtraInitStatement(lines)
         }
 
@@ -589,6 +624,11 @@ class TestSuiteWriter {
                     }
                     else -> {
                         addStatement("$controller.stopSut()", lines)
+
+                        // TODO: Verify the order later
+                        if (useWireMock()) {
+                            addStatement("wireMockServer.stop()", lines)
+                        }
                     }
                 }
             }
@@ -752,4 +792,9 @@ class TestSuiteWriter {
 
 
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
+
+    private fun useWireMock(): Boolean {
+        // TODO: Check the problem type
+        return false
+    }
 }
