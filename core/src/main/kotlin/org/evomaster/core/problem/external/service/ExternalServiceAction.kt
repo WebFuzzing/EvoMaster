@@ -63,7 +63,7 @@ class ExternalServiceAction(
         return request.id.toString()
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<out Gene> {
         return response.genes
     }
 
