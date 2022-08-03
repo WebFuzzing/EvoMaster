@@ -27,7 +27,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             id = "readValue_ObjectMapper_class",
             usageFilter = UsageFilter.ONLY_SUT,
             category = ReplacementCategory.NET)
-    public <T> T readValue(Object caller, InputStream src, Class<T> valueType) throws IOException, JsonParseException, JsonMappingException {
+    public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) throws IOException, JsonParseException, JsonMappingException {
         if(caller == null){
             throw new NullPointerException();
         }
