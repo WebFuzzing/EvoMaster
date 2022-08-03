@@ -45,6 +45,9 @@ class ExternalServiceHandler {
 
     private var counter: Long = 0
 
+    /**
+     * Collection of captured external service requests under SUT
+     */
     private val externalServiceRequests: MutableList<ExternalServiceRequest> = mutableListOf()
 
     /**
@@ -119,15 +122,15 @@ class ExternalServiceHandler {
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
                 // TODO: This needs to be revised to make it nicer
-                if (externalServiceRequests.none { r -> r.getAbsoluteURL() == it.getAbsoluteURL() }) {
+                if (externalServiceRequests.none { r -> r.absoluteURL == it.absoluteURL }) {
                     externalServiceRequests.add(it)
                 }
-                if (actions.none { a -> a.request.getURL() == it.getURL() }) {
+                if (actions.none { a -> a.request.url == it.url }) {
                     actions.add(
                         ExternalServiceAction(
                             it,
                             "",
-                            u.getWireMockServer(),
+                            u,
                             counter++
                         )
                     )

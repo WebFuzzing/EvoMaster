@@ -9,36 +9,10 @@ import java.util.UUID
  * TODO: Properties have to extended further based on the need
  */
 class ExternalServiceRequest(
-    private val id: UUID,
-    private val method: String,
-    private val url: String,
-    private val absoluteURL: String,
-    private val wasMatched: Boolean,
+    val id: UUID,
+    val method: String,
+    val url: String,
+    val absoluteURL: String,
+    val wasMatched: Boolean,
 ) {
-
-    fun getID(): String {
-        return id.toString()
-    }
-
-    /**
-     * return the URL
-     *
-     * TODO: for now represents the absolute URL need to add more
-     *  information in future
-     */
-    fun getURL(): String {
-        return url
-    }
-
-    fun getMethod(): String {
-        return method
-    }
-
-    fun getWasMatched(): Boolean {
-        return wasMatched
-    }
-
-    fun getAbsoluteURL(): String {
-        return absoluteURL
-    }
 }

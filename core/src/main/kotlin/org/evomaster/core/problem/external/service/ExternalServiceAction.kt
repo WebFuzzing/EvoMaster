@@ -1,13 +1,11 @@
 package org.evomaster.core.problem.external.service
 
-import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
 
 /**
  * Action to execute the external service related need
@@ -35,10 +33,8 @@ class ExternalServiceAction(
     /**
      * WireMock server which received the request
      */
-    val wireMockServer: WireMockServer,
+    val externalService: ExternalService,
     private val id: Long,
-
-    val representExistingRequest: Boolean = false
 ) : Action(listOf(response)) {
 
     companion object {
@@ -48,8 +44,8 @@ class ExternalServiceAction(
         }
     }
 
-    constructor(request: ExternalServiceRequest, template: String, wireMockServer: WireMockServer, id: Long) :
-            this(request, buildResponse(template), wireMockServer, id)
+    constructor(request: ExternalServiceRequest, template: String, externalService: ExternalService, id: Long) :
+            this(request, buildResponse(template), externalService, id)
 
     init {
         // TODO: This is not the correct way to do this, but for now
@@ -64,7 +60,7 @@ class ExternalServiceAction(
      * TODO: After the ID refactor, this needs to be changed.
      */
     override fun getName(): String {
-        return request.getID()
+        return request.id.toString()
     }
 
     override fun seeGenes(): List<out Gene> {
@@ -75,13 +71,18 @@ class ExternalServiceAction(
         return false
     }
 
+    /**
+     * Each external service will have a WireMock instance representing that
+     * so when the ExternalServiceAction is copied, same instance will be passed
+     * into the copy too. Otherwise, we have to manage multiple instances for the
+     * same external service.
+     */
     override fun copyContent(): StructuralElement {
         return ExternalServiceAction(
             request,
             response.copy() as ResponseParam,
-            wireMockServer,
-            id,
-            representExistingRequest
+            externalService,
+            id
         )
     }
 
@@ -94,11 +95,11 @@ class ExternalServiceAction(
      *  in future.
      */
     fun buildResponse() {
-        if (wireMockServer.findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.getURL())))
+        if (externalService.getWireMockServer().findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.url)))
                 .isEmpty()
         ) {
-            wireMockServer.stubFor(
-                get(urlMatching(request.getURL()))
+            externalService.getWireMockServer().stubFor(
+                get(urlMatching(request.url))
                     .atPriority(1)
                     .willReturn(
                         aResponse()
@@ -107,7 +108,7 @@ class ExternalServiceAction(
                     )
                     .withMetadata(
                         metadata()
-                            .attr("url", request.getURL())
+                            .attr("url", request.url)
                     )
             )
         }

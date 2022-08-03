@@ -51,6 +51,7 @@ class GraphQLIndividual(
     fun getIndexedCalls(): Map<Int,GraphQLAction> = getIndexedChildren(GraphQLAction::class.java)
 
     override fun seeActions(filter: ActionFilter): List<out Action> {
+        // FIXME: This menthod requires refactoring, has duplicate under RPC and REST
         return when(filter){
             ActionFilter.ALL -> children as List<Action>
             ActionFilter.ONLY_SQL ->(children as List<Action>).filterIsInstance<DbAction>()
