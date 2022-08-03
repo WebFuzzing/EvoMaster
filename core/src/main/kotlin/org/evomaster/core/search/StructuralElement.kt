@@ -54,6 +54,31 @@ abstract class StructuralElement (
         return m
     }
 
+    fun addChildToGroup(child: StructuralElement, groupId: String){
+        if(groups == null){
+            throw IllegalArgumentException("No groups are defined")
+        }
+        val end = groups.endIndexForGroupInsertionInclusive(groupId)
+        addChild(end, child) //appending at the end of the group
+        groups.addedToGroup(groupId, child)
+    }
+
+    fun addChildToGroup(position: Int, child: StructuralElement, groupId: String){
+        if(groups == null){
+            throw IllegalArgumentException("No groups are defined")
+        }
+        val start = groups.startIndexForGroupInsertionInclusive(groupId)
+        val end = groups.endIndexForGroupInsertionInclusive(groupId)
+        if(position < start || position > end){
+            throw IllegalArgumentException("Invalid position $position out of [$start,$end] for group $groupId")
+        }
+        addChild(position,child)
+        groups.addedToGroup(groupId, child)
+    }
+
+    fun addChildrenToGroup(children : List<StructuralElement>, groupId: String){
+        children.forEach { addChildToGroup(it, groupId) }
+    }
 
     /**
      * add a child of the element
@@ -96,6 +121,7 @@ abstract class StructuralElement (
             it.parent = null; //let's avoid memory leaks
         }
         children.clear()
+        groups?.clear()
     }
 
     open fun killChildren(predicate: (StructuralElement) -> Boolean){
@@ -112,8 +138,9 @@ abstract class StructuralElement (
     }
 
     open fun killChild(child: StructuralElement){
-        child.parent = null
-        children.remove(child)
+        val index = children.indexOf(child)
+        groups?.goingToRemoveFromGroup(index)
+        killChildByIndex(index)
     }
 
     open fun killChildByIndex(index: Int) : StructuralElement{
@@ -129,6 +156,11 @@ abstract class StructuralElement (
             throw IllegalArgumentException("position is out of range of list")
         if(position1 == position2)
             throw IllegalArgumentException("It is not necessary to swap two same positions")
+
+        if(groups != null && ! groups.areChildrenInSameGroup(position1,position2)){
+            throw IllegalArgumentException("Cannot swap children in different groups")
+        }
+
         val first = children[position1]
         (children as MutableList<StructuralElement>)[position1] = children[position2]
         (children as MutableList<StructuralElement>)[position2] = first

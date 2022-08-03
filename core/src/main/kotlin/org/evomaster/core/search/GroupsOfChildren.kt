@@ -42,8 +42,11 @@ class GroupsOfChildren(
 
 
     fun verifyGroups() {
-        if(groups.isEmpty()){
-           throw IllegalArgumentException("No group definitions")
+        if(groups.size < 2){
+            throw IllegalArgumentException("There should be at least 2 groups")
+        }
+        if(groups.map { it.id }.toSet().size != groups.size){
+            throw IllegalArgumentException("Group ids must be unique")
         }
         val size = groups.sumOf { sizeOfGroup(it.id) }
         if(size != children.size){
@@ -102,7 +105,18 @@ class GroupsOfChildren(
         return index
     }
 
-    fun addToGroup(id: String, element: StructuralElement){
+    fun getAllInGroup(id: String) : List<StructuralElement>{
+        val index = groupMap[id]?.startIndex ?: throw IllegalArgumentException("Invalid group id $id")
+        return children.subList(index, index + sizeOfGroup(id))
+    }
+
+    fun areChildrenInSameGroup(i: Int, j: Int) : Boolean{
+        val a = groupForChild(i)
+        val b = groupForChild(j)
+        return a.id == b.id
+    }
+
+    fun addedToGroup(id: String, element: StructuralElement){
         val index = getGroupIndex(id)
         if(! groups[index].canBeInGroup(element)){
             throw IllegalArgumentException("Element $element cannot be added to group $id")
@@ -113,6 +127,20 @@ class GroupsOfChildren(
             .filter { it.index > index && it.value.isInUse()}
                 // all following groups in use increase their start by 1, as shift to right
             .forEach { it.value.startIndex++ }
+    }
+
+    fun goingToRemoveFromGroup(childIndex: Int){
+        val g = groupForChild(childIndex)
+        val index = getGroupIndex(g.id)
+        val size = sizeOfGroup(g.id)
+        if(size == 1){
+            g.startIndex = -1
+        }
+        groups.withIndex()
+            .filter { it.index > index && it.value.isInUse()}
+            // all following groups in use decrease their start by 1, as shift to left
+            .forEach { it.value.startIndex-- }
+
     }
 
     fun sizeOfGroup(id: String) : Int {
