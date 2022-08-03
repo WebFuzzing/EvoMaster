@@ -53,10 +53,10 @@ data class MutatedGeneSpecification (
 
     fun addRemovedOrAddedByAction(action: Action, position: Int?, removed : Boolean, resourcePosition: Int?){
         mutatedGenes.addAll(
-            action.seeGenes().map { MutatedGene(null, it, position,
+            action.seeTopGenes().map { MutatedGene(null, it, position,
                     if (removed) MutatedType.REMOVE else MutatedType.ADD, resourcePosition = resourcePosition) }
         )
-        if (action.seeGenes().isEmpty()){
+        if (action.seeTopGenes().isEmpty()){
             mutatedGenes.add(MutatedGene(null, null, position,
                     if (removed) MutatedType.REMOVE else MutatedType.ADD, resourcePosition = resourcePosition))
         }
@@ -116,8 +116,8 @@ data class MutatedGeneSpecification (
 
     fun isMutated(gene: Gene) = (mutatedInitGenes.plus(mutatedDbGenes)).any { it.gene == gene }
             || mutatedGenes.any { it.gene == gene }
-            || addedDbActions.flatten().any { it.seeGenes().contains(gene) }
-            || removedDbActions.map { it.first }.any { it.seeGenes().contains(gene) }
+            || addedDbActions.flatten().any { it.seeTopGenes().contains(gene) }
+            || removedDbActions.map { it.first }.any { it.seeTopGenes().contains(gene) }
 
     fun mutatedActionOrInit() = setOf((mutatedGenes.plus(mutatedDbGenes)).isEmpty(), mutatedInitGenes.isNotEmpty())
 }

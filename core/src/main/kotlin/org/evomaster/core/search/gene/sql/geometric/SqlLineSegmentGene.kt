@@ -15,6 +15,10 @@ class SqlLineSegmentGene(
         val log: Logger = LoggerFactory.getLogger(SqlLineSegmentGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlLineSegmentGene(
         name,
         p.copy() as SqlPointGene,

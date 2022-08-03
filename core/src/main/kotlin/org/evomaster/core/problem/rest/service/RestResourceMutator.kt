@@ -36,7 +36,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
             return restGenes
 
         // 1) SQL genes in initialization plus 2) SQL genes in resource handling plus 3) rest actions in resource handling
-        return individual.seeInitializingActions().flatMap { it.seeGenes() }.filter(Gene::isMutable).plus(
+        return individual.seeInitializingActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable).plus(
             individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(GeneFilter.ONLY_SQL) }
         ).plus(restGenes)
 

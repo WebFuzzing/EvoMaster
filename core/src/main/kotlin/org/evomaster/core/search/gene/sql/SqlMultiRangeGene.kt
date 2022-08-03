@@ -34,6 +34,10 @@ class SqlMultiRangeGene<T>(
         val log: Logger = LoggerFactory.getLogger(SqlMultiRangeGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene {
         val copyOfRangeGenes = rangeGenes.copy() as ArrayGene<SqlRangeGene<T>>
         return SqlMultiRangeGene(
@@ -43,14 +47,13 @@ class SqlMultiRangeGene<T>(
         )
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        rangeGenes.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        rangeGenes.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?

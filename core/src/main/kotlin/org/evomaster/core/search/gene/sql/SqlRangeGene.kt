@@ -45,6 +45,9 @@ class SqlRangeGene<T>(
         repairGeneIfNeeded()
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     private fun swapLeftRightValues() {
         val copyOfLeftGene = left.copy()
@@ -96,10 +99,10 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         log.trace("Randomizing SqlRangeGene")
         listOf(isRightClosed, left, right, isRightClosed)
-                .forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue) }
         repairGeneIfNeeded()
     }
 
@@ -110,7 +113,6 @@ class SqlRangeGene<T>(
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -174,12 +176,11 @@ class SqlRangeGene<T>(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true, allGenes)
+        this.randomize(randomness, true)
         return true
     }
 

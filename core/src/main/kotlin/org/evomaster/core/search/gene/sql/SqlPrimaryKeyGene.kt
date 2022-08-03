@@ -42,6 +42,10 @@ class SqlPrimaryKeyGene(name: String,
         private val log: Logger = LoggerFactory.getLogger(SqlPrimaryKeyGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun getForeignKey(): SqlForeignKeyGene? {
         if(gene is SqlWrapperGene){
             return gene.getForeignKey()
@@ -51,12 +55,12 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun copyContent() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         if(gene.isMutable())
-            gene.randomize(randomness, false, allGenes)
+            gene.randomize(randomness, false)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return if (isMutable()) listOf(gene) else emptyList()
     }
 
@@ -70,7 +74,7 @@ class SqlPrimaryKeyGene(name: String,
 
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         //do nothing since the gene is not mutable
         return true
     }

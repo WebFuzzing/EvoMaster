@@ -73,8 +73,8 @@ class GeneTest {
         for (i in 0..100) {
             rand.updateSeed(i.toLong())
             val s = GeneSamplerForTests.sample(StringGene::class, rand)
-            s.randomize(rand, true, listOf())
-            assertTrue(s.isValid())
+            s.randomize(rand, true)
+            assertTrue(s.isLocallyValid())
             assertTrue(s.value.length >= s.minLength)
             assertTrue(s.value.length <= s.maxLength)
         }
@@ -142,7 +142,7 @@ class GeneTest {
         sample.filter { it.isMutable() }
                 .forEach { root ->
                     root.randomize(rand, true)
-                    assertTrue(root.isValid(), "Not valid root: ${root.javaClass}. $root")
+                    assertTrue(root.isLocallyValid(), "Not valid root: ${root.javaClass}. $root")
 
                     val wholeTree = root.flatView().filter { it != root }
 
@@ -168,7 +168,7 @@ class GeneTest {
         sample.filter { it.isMutable() }
                 .forEach { root ->
                     root.randomize(rand, true)
-                    assertTrue(root.isValid(), "Not valid root: ${root.javaClass}")
+                    assertTrue(root.isLocallyValid(), "Not valid root: ${root.javaClass}")
 
                     val copy = root.copy()
                     assertTrue(copy != root) //TODO what is immutable root? might fail
@@ -221,21 +221,22 @@ class GeneTest {
         sample.filter { it.isMutable() }
                 .forEach { root ->
                     root.doInitialize(rand)
-                    checkInvariants(root)
+                    checkInvariants(root) // all invariants should hold
 
                     val copy = root.copy()
-                    checkInvariants(copy);
+                    checkInvariants(copy); //same for a copy
 
-                    //TODO we need to handle Globally Valid before we can check this
-//                    if(root.isPrintable()) {
-//                        val x = root.getValueAsRawString()
-//                        val y = copy.getValueAsRawString()
-//                        assertEquals(x, y)
-//                    } else {
-//                        assertThrows<Exception> ("Should throw exception when trying to print ${root.javaClass}"){
-//                            root.getValueAsRawString()
-//                        }
-//                    }
+                    if(root.isGloballyValid()) { //in these tests, global constraints are not handled
+                        if (root.isPrintable()) {
+                            val x = root.getValueAsRawString()
+                            val y = copy.getValueAsRawString()
+                            assertEquals(x, y) // the copy should result in same phenotype
+                        } else {
+                            assertThrows<Exception>("Should throw exception when trying to print ${root.javaClass}") {
+                                root.getValueAsRawString()
+                            }
+                        }
+                    }
                 }
     }
 
@@ -244,15 +245,23 @@ class GeneTest {
 
         val msg = "Failed invariant for ${gene.javaClass}"
 
-        assertTrue(gene.isValid(), msg)
-
+        //all same initialization state
         val initialized = gene.initialized
         assertTrue(gene.flatView().all { it.initialized == initialized }, msg)
 
         assertEquals(1, gene.flatView().map { it.getRoot() }.toSet().size, msg)
+
+        //all children should have this gene as parent
+        gene.getViewOfChildren().all { it.parent == gene }
+
+        //flat view gives whole tree, so cannot be more than direct children
+        assertTrue(gene.getViewOfChildren().size <= gene.flatView().size)
+
+        //must be locally valid once gene has been randomized
+        assertTrue(gene.isLocallyValid(), msg)
+        //all tree must be valid, regardless of impact on phenotype
+        assertTrue(gene.flatView().all { it.isLocallyValid() })
+
+        //TODO add more invariants here
     }
-
-
-
-    //TODO for each *Gene, sample random instances, and verify properties
 }

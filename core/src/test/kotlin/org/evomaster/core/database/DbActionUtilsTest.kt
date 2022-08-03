@@ -5,16 +5,26 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class DbActionUtilsTest {
 
+
+    private val randomness = Randomness()
+
+    @BeforeEach
+    fun init(){
+        randomness.updateSeed(42)
+    }
 
     @Test
     fun testMultiColumnPrimaryKey() {
@@ -197,7 +207,6 @@ class DbActionUtilsTest {
 
         assertFalse(DbActionUtils.verifyActions(actions))
 
-        val randomness = Randomness()
         val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, listWasNotTruncated)
@@ -226,7 +235,6 @@ class DbActionUtilsTest {
 
         assertFalse(DbActionUtils.verifyActions(actions))
 
-        val randomness = Randomness()
         val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness, maxNumberOfAttemptsToRepairAnAction = 0)
 
         assertEquals(false, listWasNotTruncated)
@@ -254,7 +262,6 @@ class DbActionUtilsTest {
 
         assertFalse(DbActionUtils.verifyActions(actions))
 
-        val randomness = Randomness()
         val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, listWasNotTruncated)
@@ -282,7 +289,6 @@ class DbActionUtilsTest {
 
         assertFalse(DbActionUtils.verifyActions(actions))
 
-        val randomness = Randomness()
         val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, listWasNotTruncated)
@@ -292,7 +298,6 @@ class DbActionUtilsTest {
 
     @Test
     fun testIllegalMaxNumberOfAttempts() {
-        val randomness = Randomness()
         try {
             DbActionUtils.repairBrokenDbActionsList(mutableListOf(), randomness, -1)
             fail<Exception>("Expected IllegalArgumentException when maxNumberOfAttemptsToRepairAction argument is negative")
@@ -324,7 +329,6 @@ class DbActionUtilsTest {
         assertFalse(DbActionUtils.verifyUniqueColumns(actions))
         assertFalse(DbActionUtils.verifyActions(actions))
 
-        val randomness = Randomness()
         val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(false, listWasNotTruncated)
@@ -362,7 +366,6 @@ class DbActionUtilsTest {
 
         assertFalse(DbActionUtils.verifyActions(actions))
 
-        val randomness = Randomness()
         val repairWasSuccessful = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, repairWasSuccessful)
@@ -525,13 +528,13 @@ class DbActionUtilsTest {
 
         val actions = mutableListOf(action0, action1, action2, action3)
 
+        val ind = RestIndividual(mutableListOf(), SampleType.RANDOM,null,actions,null,-1)
+
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertFalse(DbActionUtils.verifyUniqueColumns(actions))
 
         assertFalse(DbActionUtils.verifyActions(actions))
 
-
-        val randomness = Randomness()
         val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, listWasNotTruncated)

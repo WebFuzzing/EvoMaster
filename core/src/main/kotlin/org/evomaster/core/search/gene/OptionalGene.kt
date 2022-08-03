@@ -41,6 +41,9 @@ class OptionalGene(name: String,
     var selectable = true
         private set
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     fun forbidSelection(){
         selectable = false
@@ -75,7 +78,12 @@ class OptionalGene(name: String,
                 && this.gene.containsSameValueAs(other.gene)
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+
+        if(!gene.initialized && gene.isMutable()){
+            //make sure that, if not initialized, to randomize it, to make sure constraints are satisfied
+            gene.randomize(randomness, false)
+        }
 
         if(!selectable){
             return
@@ -84,19 +92,19 @@ class OptionalGene(name: String,
         if (!tryToForceNewValue) {
             isActive = randomness.nextBoolean()
             if(gene.isMutable()) {
-                gene.randomize(randomness, false, allGenes)
+                gene.randomize(randomness, false)
             }
         } else {
 
             if (randomness.nextBoolean() || !gene.isMutable()) {
                 isActive = !isActive
             } else {
-                gene.randomize(randomness, true, allGenes)
+                gene.randomize(randomness, true)
             }
         }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
 
         if (!isActive || !gene.isMutable()) return emptyList()
 
@@ -126,7 +134,7 @@ class OptionalGene(name: String,
         throw IllegalArgumentException("impact is null or not OptionalGeneImpact")
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         isActive = !isActive
         if (enableAdaptiveGeneMutation){

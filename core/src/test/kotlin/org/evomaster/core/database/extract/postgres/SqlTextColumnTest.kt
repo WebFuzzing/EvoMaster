@@ -49,7 +49,7 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(3, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
@@ -63,7 +63,7 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
         val nameValue = (genes[1] as StringGene).value
@@ -92,7 +92,7 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
 

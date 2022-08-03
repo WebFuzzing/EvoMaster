@@ -39,8 +39,8 @@ public class RPCSchemaHandlerTest extends NumericStringTestBase{
         assertEquals(1, actions.size());
         assertTrue(actions.get(0) instanceof RPCCallAction);
         RPCCallAction rpcCallAction = (RPCCallAction) actions.get(0);
-        assertEquals(1, rpcCallAction.seeGenes().size());
-        ObjectGene objectGene = (ObjectGene) rpcCallAction.seeGenes().get(0);
+        assertEquals(1, rpcCallAction.seeTopGenes().size());
+        ObjectGene objectGene = (ObjectGene) rpcCallAction.seeTopGenes().get(0);
 
         for (Gene g : objectGene.getFields()){
             assertTrue(g instanceof OptionalGene);

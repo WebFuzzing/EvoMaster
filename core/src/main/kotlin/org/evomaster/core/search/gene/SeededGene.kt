@@ -43,7 +43,14 @@ class SeededGene<T>(
         isEmploySeededMutable = false
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+
+        if(!gene.initialized) gene.randomize(randomness, tryToForceNewValue)
+
         if (isEmploySeededMutable){
             if (tryToForceNewValue) {
                 employSeeded = !employSeeded
@@ -54,9 +61,9 @@ class SeededGene<T>(
         }
 
         if (!employSeeded)
-            gene.randomize(randomness, tryToForceNewValue, allGenes)
+            gene.randomize(randomness, tryToForceNewValue)
         else
-            seeded.randomize(randomness, tryToForceNewValue, allGenes)
+            seeded.randomize(randomness, tryToForceNewValue)
     }
 
     override fun copyContent(): SeededGene<T> {
@@ -144,7 +151,6 @@ class SeededGene<T>(
     override fun candidatesInternalGenes(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -177,7 +183,6 @@ class SeededGene<T>(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?

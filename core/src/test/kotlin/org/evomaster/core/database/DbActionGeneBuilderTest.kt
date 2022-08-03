@@ -19,7 +19,7 @@ class DbActionGeneBuilderTest {
         for (seed in 1..100L) {
             randomness.updateSeed(seed)
 
-            gene.randomize(randomness, false, listOf())
+            gene.randomize(randomness, false)
 
             val instance = gene.getValueAsRawString()
 
@@ -42,7 +42,7 @@ class DbActionGeneBuilderTest {
         for (seed in 1..10000L) {
             randomness.updateSeed(seed)
 
-            gene.randomize(randomness, false, listOf())
+            gene.randomize(randomness, false)
 
             val instance = gene.getValueAsRawString()
 

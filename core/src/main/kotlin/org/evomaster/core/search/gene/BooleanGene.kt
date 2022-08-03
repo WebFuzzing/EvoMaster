@@ -20,12 +20,14 @@ class BooleanGene(
         private val log : Logger = LoggerFactory.getLogger(BooleanGene::class.java)
     }
 
-
+    override fun isLocallyValid() : Boolean{
+        return true
+    }
     override fun copyContent(): Gene {
         return BooleanGene(name, value)
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         val k: Boolean = if (tryToForceNewValue) {
             !value
@@ -36,7 +38,7 @@ class BooleanGene(
         value = k
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         value = ! value
         return true
     }

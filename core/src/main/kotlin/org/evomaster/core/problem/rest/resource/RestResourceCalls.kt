@@ -136,9 +136,9 @@ class RestResourceCalls(
      */
     fun seeGenes(filter : GeneFilter = GeneFilter.NO_SQL) : List<out Gene>{
         return when(filter){
-            GeneFilter.NO_SQL -> actions.flatMap(RestCallAction::seeGenes)
+            GeneFilter.NO_SQL -> actions.flatMap(RestCallAction::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeMutableSQLGenes()
-            GeneFilter.ALL-> seeMutableSQLGenes().plus(actions.flatMap(RestCallAction::seeGenes))
+            GeneFilter.ALL-> seeMutableSQLGenes().plus(actions.flatMap(RestCallAction::seeTopGenes))
             else -> throw IllegalArgumentException("there is no initialization in an ResourceCall")
         }
     }
@@ -180,9 +180,9 @@ class RestResourceCalls(
     }
 
     private fun removeDbActions(remove: List<DbAction>){
-        val removedGenes = remove.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val removedGenes = remove.flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
         killChildren(remove)
-        (dbActions.plus(actions).flatMap { it.seeGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }.forEach {
+        (dbActions.plus(actions).flatMap { it.seeTopGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }.forEach {
             it.cleanRemovedGenes(removedGenes)
         }
     }
@@ -232,8 +232,8 @@ class RestResourceCalls(
         verify the binding which is only useful for debugging
      */
     fun verifyBindingGenes(other : List<RestResourceCalls>): Boolean{
-        val currentAll = seeActions(ActionFilter.ALL).flatMap { it.seeGenes() }.flatMap { it.flatView() }
-        val otherAll = other.flatMap { it.seeActions(ActionFilter.ALL) }.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val currentAll = seeActions(ActionFilter.ALL).flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
+        val otherAll = other.flatMap { it.seeActions(ActionFilter.ALL) }.flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
 
         currentAll.forEach { g->
             val root = g.getRoot()
@@ -273,7 +273,7 @@ class RestResourceCalls(
      */
     private fun syncValues(withRest: Boolean = true){
         (if (withRest) actions else dbActions).forEach {
-            it.seeGenes().flatMap { i-> i.flatView() }.forEach { g->
+            it.seeTopGenes().flatMap { i-> i.flatView() }.forEach { g->
                 g.syncBindingGenesBasedOnThis()
             }
         }

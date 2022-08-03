@@ -202,7 +202,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
             if (call.status == ResourceStatus.CREATED_SQL){
                 assertTrue(dbActions.isNotEmpty())
                 dbActions.forEach { a->
-                    a.seeGenes().forEach { g->
+                    a.seeTopGenes().forEach { g->
                         val valueGene = ParamUtil.getValueGene(g)
                         if (g.isMutable() && valueGene.isMutable()
                                 && !sql.contains(valueGene)
@@ -303,7 +303,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
         individual.getResourceCalls().forEach { call->
             // collect all mutable&bindingable leaf gene for all actions
             val allGene = call.seeActions(ActionFilter.ALL)
-                .flatMap { it.seeGenes() }
+                .flatMap { it.seeTopGenes() }
                 .filter { it.isMutable() && it !is SqlPrimaryKeyGene && it !is SqlForeignKeyGene }
                 .flatMap { it.flatView{g: Gene -> g is DateGene || g is DateTimeGene || g is TimeGene} }.filter { it.getViewOfChildren().isEmpty() }
 

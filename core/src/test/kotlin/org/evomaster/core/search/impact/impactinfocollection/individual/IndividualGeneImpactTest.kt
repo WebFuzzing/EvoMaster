@@ -1,8 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.individual
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionResult
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.generateIndividualResults
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
@@ -190,7 +188,7 @@ class IndividualGeneImpactTest {
         fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification, index: Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
 
-            val mutatedGene = (ind2.seeActions()[mutatedIndex].seeGenes()[1] as StringGene)
+            val mutatedGene = (ind2.seeActions()[mutatedIndex].seeTopGenes()[1] as StringGene)
 
             mutatedGeneSpecification.addMutatedGene(
                     isDb = false,
@@ -309,9 +307,9 @@ class IndividualGeneImpactTest {
 
         override fun seeGenes(filter: GeneFilter): List<out Gene> {
            return when(filter){
-               GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeGenes)
-               GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-               GeneFilter.ALL -> seeInitializingActions().plus(seeActions()).flatMap(Action::seeGenes)
+               GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeTopGenes)
+               GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
+               GeneFilter.ALL -> seeInitializingActions().plus(seeActions()).flatMap(Action::seeTopGenes)
                else -> throw IllegalArgumentException("$filter is not supported by ImpactTest Individual")
            }
         }
@@ -378,7 +376,7 @@ class IndividualGeneImpactTest {
             return genes.joinToString(",") { it.name }
         }
 
-        override fun seeGenes(): List<out Gene> {
+        override fun seeTopGenes(): List<out Gene> {
             return genes
         }
 

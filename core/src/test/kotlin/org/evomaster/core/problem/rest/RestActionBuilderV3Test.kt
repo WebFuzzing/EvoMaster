@@ -37,9 +37,9 @@ class RestActionBuilderV3Test{
         val get = map["GET:/api/enum"]!!
         val post = map["POST:/api/enum"]!!
 
-        val getEnums = get.seeGenes().flatMap { it.flatView() }.filterIsInstance<EnumGene<*>>()
+        val getEnums = get.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<EnumGene<*>>()
         assertEquals(2, getEnums.size)
-        val postEnums = post.seeGenes().flatMap { it.flatView() }.filterIsInstance<EnumGene<*>>()
+        val postEnums = post.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<EnumGene<*>>()
         assertEquals(1, postEnums.size)
     }
 
@@ -119,10 +119,10 @@ class RestActionBuilderV3Test{
         var numOfObjOfIGM = 0
 
         cluster.values.forEach { a->
-            numOfRG += a.seeGenes().size
-            numOfIG0 += a.seeGenes().count { g-> g.innerGene().isEmpty() }
-            numOfIGM += a.seeGenes().count { g-> g.innerGene().isNotEmpty() }
-            numOfObjOfIGM += a.seeGenes().count { g-> ParamUtil.getValueGene(g) is ObjectGene }
+            numOfRG += a.seeTopGenes().size
+            numOfIG0 += a.seeTopGenes().count { g-> g.innerGene().isEmpty() }
+            numOfIGM += a.seeTopGenes().count { g-> g.innerGene().isNotEmpty() }
+            numOfObjOfIGM += a.seeTopGenes().count { g-> ParamUtil.getValueGene(g) is ObjectGene }
         }
         assertEquals(expectedNumOfRootGene, numOfRG)
         assertEquals(expectedNumOfIG0, numOfIG0)
@@ -290,8 +290,8 @@ class RestActionBuilderV3Test{
         val map = loadAndAssertActions("/swagger/sut/news.json", 7)
 
         val create = map["POST:/news"] as RestCallAction
-        assertEquals(2, create.seeGenes().size)
-        val bodyNews = create.seeGenes().find { it.name == "body" }
+        assertEquals(2, create.seeTopGenes().size)
+        val bodyNews = create.seeTopGenes().find { it.name == "body" }
         assertNotNull(bodyNews)
         assertNotNull(bodyNews is OptionalGene)
         assertNotNull((bodyNews as OptionalGene).gene is ObjectGene)
@@ -309,8 +309,8 @@ class RestActionBuilderV3Test{
         val map = loadAndAssertActions("/swagger/sut/catwatch.json", 23)
 
         val postScoring = map["POST:/config/scoring.project"] as RestCallAction
-        assertEquals(3, postScoring.seeGenes().size)
-        val bodyPostScoring = postScoring.seeGenes().find { it.name == "body" }
+        assertEquals(3, postScoring.seeTopGenes().size)
+        val bodyPostScoring = postScoring.seeTopGenes().find { it.name == "body" }
         assertNotNull(bodyPostScoring)
         assertTrue(bodyPostScoring is OptionalGene)
         assertTrue((bodyPostScoring as OptionalGene).gene is StringGene)

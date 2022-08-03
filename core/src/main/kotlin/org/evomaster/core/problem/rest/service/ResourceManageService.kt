@@ -267,10 +267,19 @@ class ResourceManageService {
             randomness = randomness)
 
         if(dbActions.isNotEmpty()){
-
-            val removed = repairDbActionsForResource(dbActions)
+            //FIXME cannot repair before it is mounted
+            var removed = false; //repairDbActionsForResource(dbActions)
             call.initDbActions(dbActions, cluster, false, removed, bindWith = null)
-
+            removed = !repairDbActionsForResource(dbActions) // FIXME
+            if(removed){
+                call.resetDbAction(dbActions)
+                /*
+                    FIXME this breaks things with binding...
+                    however, as we are going to refactor DB actions, we can ignored for now.
+                    TODO once refactored, need to put back the disabled test:
+                    ResourceBasedTestInterface.testWithDatabaseAndNameAnalysis
+                 */
+            }
         }
         return paramToTables.isNotEmpty()
     }
@@ -300,7 +309,7 @@ class ResourceManageService {
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
          */
-        GeneUtils.repairGenes(dbActions.flatMap { it.seeGenes() })
+        GeneUtils.repairGenes(dbActions.flatMap { it.seeTopGenes() })
 
         return DbActionUtils.repairBrokenDbActionsList(dbActions, randomness)
     }

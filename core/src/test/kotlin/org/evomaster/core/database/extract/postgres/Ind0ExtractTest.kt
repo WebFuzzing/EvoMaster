@@ -58,7 +58,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("expr_date"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertTrue(genes.any { it is DateGene })
 
@@ -69,7 +69,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
         val schema = SchemaExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("id"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
         assertTrue(genes.firstIsInstance<SqlPrimaryKeyGene>().gene is SqlUUIDGene)
     }
 
@@ -79,7 +79,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmlData"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertTrue(genes.any { it is SqlXMLGene })
     }
@@ -91,7 +91,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("y", setOf("jsonData"))
-        val genes = actions[0].seeGenes().flatMap { it.flatView() }
+        val genes = actions[0].seeTopGenes().flatMap { it.flatView() }
 
         assertTrue(genes.any { it is SqlJSONGene })
     }
@@ -103,7 +103,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("w_id"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertTrue(genes.any { it is RegexGene })
         assertTrue(genes.filterIsInstance<RegexGene>().any { g -> g.name.equals("w_id", ignoreCase = true) })
@@ -115,7 +115,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("f_id"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertTrue(genes.any { it is RegexGene })
         val regexGene = genes.firstIsInstance<RegexGene>()

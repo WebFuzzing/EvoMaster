@@ -54,7 +54,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is IntegerGene)
@@ -81,7 +81,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertTrue(genes.any { it.name.equals("x", ignoreCase = true) })
         assertTrue(genes.any { it.name.equals("y", ignoreCase = true) })
@@ -120,7 +120,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(3, genes.size)
         assertTrue(genes[0] is StringGene)
@@ -191,7 +191,7 @@ class SqlInsertBuilderTest {
         val actions = builder.createSqlInsertionAction("FOO", setOf("TIME"))
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
         assertEquals(1, genes.size)
         assertTrue(genes[0] is DateTimeGene)
 
@@ -214,7 +214,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is DoubleGene)
@@ -234,7 +234,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is StringGene)
@@ -253,7 +253,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is IntegerGene)
@@ -272,7 +272,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is IntegerGene)
@@ -293,7 +293,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is DateTimeGene)
@@ -317,7 +317,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is BooleanGene)
@@ -336,7 +336,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is StringGene)
@@ -356,7 +356,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is LongGene)
@@ -375,7 +375,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is DoubleGene)
@@ -394,7 +394,7 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
@@ -447,9 +447,9 @@ class SqlInsertBuilderTest {
         assertAll(
                 { assertEquals(3, actions.size) },
                 { actions.all { it.representExistingData } },
-                { actions.all { it.seeGenes().size == 1 } },
-                { actions.all { it.seeGenes()[0] is SqlPrimaryKeyGene } },
-                { actions.all { (it.seeGenes()[0] as SqlPrimaryKeyGene).gene is ImmutableDataHolderGene } }
+                { actions.all { it.seeTopGenes().size == 1 } },
+                { actions.all { it.seeTopGenes()[0] is SqlPrimaryKeyGene } },
+                { actions.all { (it.seeTopGenes()[0] as SqlPrimaryKeyGene).gene is ImmutableDataHolderGene } }
         )
     }
 
@@ -476,9 +476,9 @@ class SqlInsertBuilderTest {
                 { assertEquals(5, actions.size) },
                 { actions.all { it.representExistingData } },
                 { assertEquals(2, actions.map { it.table.name }.distinct().count()) },
-                { actions.all { it.seeGenes().size == 1 } },
-                { actions.all { it.seeGenes()[0] is SqlPrimaryKeyGene } },
-                { actions.all { (it.seeGenes()[0] as SqlPrimaryKeyGene).gene is ImmutableDataHolderGene } }
+                { actions.all { it.seeTopGenes().size == 1 } },
+                { actions.all { it.seeTopGenes()[0] is SqlPrimaryKeyGene } },
+                { actions.all { (it.seeTopGenes()[0] as SqlPrimaryKeyGene).gene is ImmutableDataHolderGene } }
         )
     }
 
@@ -497,10 +497,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf("A", "B"), enumGene.values.toSet())
 
@@ -521,10 +521,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf(42, 77), enumGene.values.toSet())
 
@@ -546,10 +546,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf(true, false), enumGene.values.toSet())
 
@@ -570,10 +570,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf(42, 77), enumGene.values.toSet())
 
@@ -594,10 +594,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf(42, 77), enumGene.values.toSet())
 
@@ -618,10 +618,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf("A", "B"), enumGene.values.toSet())
 
@@ -642,10 +642,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf(42L, 77L), enumGene.values.toSet())
 
@@ -666,10 +666,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf(1.0, 2.5), enumGene.values.toSet())
 
@@ -690,10 +690,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf(1.0, 2.5), enumGene.values.toSet())
 
@@ -714,10 +714,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf(1.0f, 2.5f), enumGene.values.toSet())
 
@@ -738,10 +738,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf("A", "B"), enumGene.values.toSet())
 
@@ -762,10 +762,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf("X'0000'", "X'ffff'"), enumGene.values.toSet())
 
@@ -790,9 +790,9 @@ class SqlInsertBuilderTest {
         val fooActions = builder.createSqlInsertionAction("FOO", setOf())
 
         assertEquals(1, fooActions.size)
-        assertEquals(1, fooActions[0].seeGenes().size)
+        assertEquals(1, fooActions[0].seeTopGenes().size)
 
-        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        val gene = fooActions[0].seeTopGenes()[0] as IntegerGene
         assertEquals(-10, gene.min)
 
     }
@@ -816,9 +816,9 @@ class SqlInsertBuilderTest {
         val fooActions = builder.createSqlInsertionAction("FOO", setOf())
 
         assertEquals(1, fooActions.size)
-        assertEquals(1, fooActions[0].seeGenes().size)
+        assertEquals(1, fooActions[0].seeTopGenes().size)
 
-        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        val gene = fooActions[0].seeTopGenes()[0] as IntegerGene
         assertEquals(10, gene.max)
 
     }
@@ -849,9 +849,9 @@ class SqlInsertBuilderTest {
         val fooActions = builder.createSqlInsertionAction("FOO", setOf())
 
         assertEquals(1, fooActions.size)
-        assertEquals(1, fooActions[0].seeGenes().size)
+        assertEquals(1, fooActions[0].seeTopGenes().size)
 
-        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        val gene = fooActions[0].seeTopGenes()[0] as IntegerGene
         assertEquals(-10, gene.min)
         assertEquals(10, gene.max)
 
@@ -877,9 +877,9 @@ class SqlInsertBuilderTest {
         val fooActions = builder.createSqlInsertionAction("FOO", setOf())
 
         assertEquals(1, fooActions.size)
-        assertEquals(1, fooActions[0].seeGenes().size)
+        assertEquals(1, fooActions[0].seeTopGenes().size)
 
-        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        val gene = fooActions[0].seeTopGenes()[0] as IntegerGene
         assertEquals(10, gene.min)
         assertEquals(10, gene.max)
 
@@ -908,10 +908,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf("B"), enumGene.values.toSet())
 
@@ -956,10 +956,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf("hi"), enumGene.values.toSet())
 
@@ -1004,10 +1004,10 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, actions.size)
 
-        assertEquals(1, actions[0].seeGenes().size)
-        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+        assertEquals(1, actions[0].seeTopGenes().size)
+        assertTrue(actions[0].seeTopGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>
+        val enumGene = actions[0].seeTopGenes()[0] as EnumGene<*>
 
         assertEquals(setOf("hi", "low"), enumGene.values.toSet())
 

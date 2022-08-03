@@ -64,13 +64,18 @@ abstract class Gene(
         - impact of genes
         - validity / robustness testing (will need new ChoiceGene)
 
-        - for binding, we ll need tests on Individual
+        - for binding, we ll need tests on Individual (started in core-it)
      */
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(Gene::class.java)
     }
 
+    /**
+     * Whether this gene has been initialized, and can be used.
+     * Note that gene can have validity constraints, and those might not be satisfied
+     * when the constructor of a gene is called to create a new instance.
+     */
     var initialized : Boolean = false
         private set
 
@@ -118,6 +123,22 @@ abstract class Gene(
             throw IllegalStateException("Trying to use a gene that is not initialized")
     }
 
+
+    /**
+     * Return all direct children of this gene.
+     * Note that a gene can only have genes inside, and not other types of structural elements.
+     * These children might have their own children, and those are NOT directly returned here.
+     * If you want to see the whole tree, use flatView().
+     *
+     * Note that some genes might have special "template" genes, and those are never marked as children.
+     *
+     * In case one has several children, but only 1 is actually impacting the phenotype, still all the other
+     * siblings are returned as well.
+     * Think about a disjunction in a regex like A | B | C, only 1 gene would be active.
+     * Same thing for Optional and Nullable genes.
+     *
+     * TODO add tests for this invariant, but might need refactoring of innerGene
+     */
     override  val children : MutableList<Gene>
         get() = super.children as MutableList<Gene>
 
@@ -143,13 +164,19 @@ abstract class Gene(
         if(initialized){
             throw IllegalStateException("Gene already initialized")
         }
-        if(rand != null) {
+        if(rand != null && isMutable()) {
             randomize(rand, false)
         }
         markAllAsInitialized()
-        Lazy.assert{isValid()}
+        Lazy.assert{isLocallyValid()}
     }
 
+
+    /**
+     *  this is done once a gene is already initialized, and mounted inside an individual.
+     *  this is to deal with all intra-gene dependencies (eg. foreign keys) or when needing
+     *  references to global state
+     */
     fun doGlobalInitialize(){
         if(!initialized){
             throw IllegalStateException("The gene was not locally initialized")
@@ -164,6 +191,12 @@ abstract class Gene(
         applyGlobalUpdates()
     }
 
+    /**
+     * Once the gene is mounted inside an individual, make sure to apply all updates that
+     * depend on the other genes and are specific for this one (eg, foreign-key).
+     * When this is called, all genes are mounted and locally initialized, but the order in which
+     * this global initialization is performed is not guaranteed (for now...)
+     */
     protected open fun applyGlobalUpdates(){}
 
     /*
@@ -191,12 +224,8 @@ abstract class Gene(
     /*
      * override to force return type Gene
      */
-    //TODO put back, once we have tests for it
-    //abstract override  fun copyContent(): Gene
+    protected abstract override  fun copyContent(): Gene
 
-    override fun copyContent(): Gene {
-        throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
-    }
 
     override fun postCopy(original: StructuralElement) {
         //rebuild the binding genes
@@ -227,27 +256,52 @@ abstract class Gene(
 
     /**
      * there might be a need to repair gene based on some constraints, e.g., DateGene and TimeGene
+     *
+     * TODO likely this will be removed once we deal with ChoiceGene for robustness testing
      */
     open fun repair(){
         //do nothing
     }
 
     /**
-     * @return whether the gene is valid
-     *  based on any specialized rule for different types of genes if there exist
+     * @return whether the gene is locally valid,
+     *  based on any specialized rule for different types of genes, if there exist.
+     *  "Locally" here means that the constraints are based only on the current gene and all its children,
+     *  but not genes up in the hierarchy and in other actions.
      *
      * Note that the method is only used for debugging and testing purposes.
      *  e.g., for NumberGene, if min and max are specified, the value should be within min..max.
      *        for FloatGene with precision 2, the value 10.222 would not be considered as a valid gene.
+     * Sampling a gene at random until is valid could end up in an infinite loop, so should be avoided.
      *
-     * Validity is based only internal constraints. if those constraints lead to meanignless data (eg
-     * a date object with month index 42), it would still be "valid"
+     * Validity is based only internal constraints. if those constraints lead to meaningless data (eg
+     * a date object with month index 42), it would still be "valid".
      *
-     * FIXME remove default =true, to force implementation
+     * Note that, if a gene is valid, then all of its children must be valid as well, regardless of whether
+     * they are having any effect on the phenotype.
+     *
+     * A default implementation could be:
+     *        return getViewOfChildren().all { it.isLocallyValid() }
+     * but here we want to force new genes to explicitly write this method
      */
-    open fun isValid() = true
+    abstract fun isLocallyValid() : Boolean
 
-    //TODO add distinction between isLocallyValid and isGloballyValid, eg, when we have intr-gene constraints
+    /**
+     *  Verify all constraints (including locals).
+     *  This is necessary when constraints involved more than 1 gene, possibly
+     *  in different actions.
+     */
+    open fun isGloballyValid() : Boolean {
+        if(! isLocallyValid()){
+            return false
+        }
+        //TODO check bindings
+
+        return checkForGloballyValid() && getViewOfChildren().all { it.isGloballyValid() }
+    }
+
+
+    protected open fun checkForGloballyValid() = true
 
     /**
      * mutated gene should pass the check if needed, eg, DateGene
@@ -295,32 +349,29 @@ abstract class Gene(
     /**
      *
      *   Randomize the content of this gene.
-     *   After a gene is randomized, it MUST be valid.
-     *
-     *   TODO shall we guarantee validity here at randomization? YES, but need to see how to implement it,
-     *   or maybe better we do it in the tests
+     *   After a gene is randomized, it MUST be locally valid.
      *
      *   @param randomness the source of non-determinism
      *   @param tryToForceNewValue whether we should force the change of value. When we do mutation,
-     *          it could otherwise happen that a value is replace with itself.
+     *          it could otherwise happen that a value is replaced with itself.
      *          This is not 100% enforced, it is more like a "strong recommendation"
      *
-     *   TODO likely deprecated, because we can traverse the tree upward now
-     *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
-     *          we need to refer to them
-     *
-     *   TODO also pass AdaptiveParameterControl here
      */
-    abstract fun randomize(
-            randomness: Randomness,
-            tryToForceNewValue: Boolean,
-            allGenes: List<Gene> = listOf())
+    abstract fun randomize(randomness: Randomness,tryToForceNewValue: Boolean)
 
 
+    /**
+     * Return reference to the singleton contain all shared info for the whole search.
+     * This is going to be null if the gene is not mounted inside an individual.
+     * Otherwise, it MUST not be null.
+     */
     fun getSearchGlobalState() : SearchGlobalState? {
-
         val root = getRoot()
-        if(root is Individual) return root.searchGlobalState
+        if(root is Individual) {
+            val sgt =  root.searchGlobalState
+            assert(sgt != null) //TODO check if fails, eg in tests where individuals are created without a sampler
+            return sgt
+        }
         return null
     }
 
@@ -336,8 +387,6 @@ abstract class Gene(
      *   @param randomness the source of non-determinism
      *   @param apc parameter control
      *   @param mwc mutation weight control
-     *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
-     *          we need to refer to them
      *   @param interalGeneSelectionStrategy a strategy to select internal genes to mutate
      *   @param enableAdaptiveMutation whether apply adaptive gene mutation, e.g., archive-based gene mutation
      *   @param additionalGeneMutationInfo contains additional info for gene mutation
@@ -346,8 +395,6 @@ abstract class Gene(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,
-            //TODO likely deprecated
-            allGenes: List<Gene> = listOf(),
             internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
             enableAdaptiveGeneMutation: Boolean = false,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
@@ -355,18 +402,18 @@ abstract class Gene(
         checkInitialized()
 
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
-        val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        val internalGenes = candidatesInternalGenes(randomness, apc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
-            val mutated = shallowMutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val mutated = shallowMutate(randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             if (!mutated)
                 throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
-            val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val selected = selectSubset(internalGenes, randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
 
             selected.forEach{
                 var mutateCounter = 0
                 do {
-                    it.first.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
+                    it.first.standardMutation(randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
                     mutateCounter +=1
                 }while (!mutationCheck() && mutateCounter <=3)
                 if (!mutationCheck()){
@@ -383,21 +430,30 @@ abstract class Gene(
 
 
     /**
-     * @return a list of internal gene to be selected for mutation, eg, weight-based or adaptive weight-based gene selection
-     * note that if return an empty list, [shallowMutate] will be applied to mutate this gene
+     * @return a list of internal gene to be selected for mutation, eg, weight-based or adaptive weight-based gene selection.
+     * Note that if return an empty list, [shallowMutate] will be applied to mutate this gene.
      *
      * For instance, see [ArrayGene.candidatesInternalGenes], with a probability, it returns an empty list.
-     * the empty list means (see [ArrayGene.shallowMutate]) that the mutation is applied to change the size of this array gene.
+     * The empty list means (see [ArrayGene.shallowMutate]) that the mutation is applied to change the size of this array gene.
      *
-     * A default implementation for "simple" genes would be to return "listOf<Gene>()"
+     * The default implementation for "simple" genes would be to return "listOf<Gene>()", ie an empty list.
      *
      * Note that the current gene must never be returned in this method
      * TODO add test for it
+     *
+     * What returned here is a subset (possibly not strict) of children, based on some criteria.
+     *
+     * TODO add invariant test for it
+     *
+     * TODO are we guaranteed that the selected genes do have impact on the phenotype?
+     * we should!!! TODO add tests for invariants (eg, an easy way is to see if, after mutation, the string
+     * representation of the test is changed).
+     *
+     * TODO also add method to check if gene is currently affecting the phenotype. For example,
+     * a gene inside Optional, and that is off, then we know it is not part of phenotype for sure.
      */
     protected abstract fun candidatesInternalGenes(randomness: Randomness,
                                          apc: AdaptiveParameterControl,
-                                         //TODO remove deprecated
-                                         allGenes: List<Gene>,
                                          selectionStrategy: SubsetGeneSelectionStrategy,
                                          enableAdaptiveGeneMutation: Boolean,
                                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -431,6 +487,13 @@ abstract class Gene(
      *  if so, can get rid of it, and use children
      *  TODO need to go through implementation of Impact before changing this
      *
+     *  TODO as this is supposed to be called only from candidatesInternalGenes,
+     *   it should be protected. And such call should be there in this Gene class, ie
+     *   candidatesInternalGenes should have a defualt implementation where this method call.
+     *
+     *   TODO or maybe even remove it, as not used it so much. need to double-check
+     *
+     *   TODO or refactor into a method that guarantee that the returned genes DO impact the phenotype
      * @return internal genes
      */
     abstract fun innerGene() : List<Gene>
@@ -442,7 +505,6 @@ abstract class Gene(
                           randomness: Randomness,
                           apc: AdaptiveParameterControl,
                           mwc: MutationWeightControl,
-                          allGenes: List<Gene> = listOf(),
                           selectionStrategy: SubsetGeneSelectionStrategy,
                           enableAdaptiveGeneMutation: Boolean,
                           additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -479,7 +541,6 @@ abstract class Gene(
     protected open fun shallowMutate(randomness: Randomness,
                            apc: AdaptiveParameterControl,
                            mwc: MutationWeightControl,
-                           allGenes: List<Gene> = listOf(),
                            selectionStrategy: SubsetGeneSelectionStrategy,
                            enableAdaptiveGeneMutation: Boolean,
                            additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
@@ -490,7 +551,7 @@ abstract class Gene(
                     additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
                         additionalGeneMutationInfo,
                         this,
-                        allGenes
+                        getAllGenesInIndividual()
                     )
                     return true
                 }catch (e: DifferentGeneInHistory){
@@ -561,6 +622,23 @@ abstract class Gene(
     fun flatView(excludePredicate: (Gene) -> Boolean = {false}): List<Gene>{
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(children.flatMap { g -> g.flatView(excludePredicate) })
+    }
+
+    /**
+     * Get references to ALL genes (and not just top ones) in the individual this gene belongs to.
+     * If not mounted in an individual, return an empty list
+     */
+    fun getAllGenesInIndividual() : List<Gene>{
+        return getAllTopGenesInIndividual().flatMap { it.flatView() }
+    }
+
+    fun getAllTopGenesInIndividual() : List<Gene>{
+        val root = getRoot()
+        if(root !is Individual){
+            return listOf()
+        }
+
+        return root.seeGenes()
     }
 
     /**
@@ -728,6 +806,10 @@ abstract class Gene(
      * bind value of [this] gene based on [gene].
      * The type of genes can be different.
      * @return whether the binding performs successfully
+     *
+     * TODO what if this lead to isLocallyValid to be false? can we prevent it?
+     * or just return false here?
+     *
      */
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
 

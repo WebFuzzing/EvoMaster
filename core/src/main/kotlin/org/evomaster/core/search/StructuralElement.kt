@@ -167,8 +167,8 @@ abstract class StructuralElement (
     }
 
     /**
-     * @return root of the element which can not be null
-     * if [this] is the root, return [this]
+     * @return root of the element which can not be null.
+     * If [this] is the root, return [this]
      */
     fun getRoot() : StructuralElement {
         if (parent!=null) return parent!!.getRoot()

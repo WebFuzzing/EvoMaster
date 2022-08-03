@@ -67,7 +67,7 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val gene = StringGene(aColumn.name, "stringValue", 0, 10)
+        val gene = StringGene(aColumn.name, "stringValue", 0, 12)
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
@@ -131,11 +131,11 @@ class TestCaseWriterTest {
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
 
-        val gene0 = StringGene(aColumn.name, "stringValue0", 0, 10)
+        val gene0 = StringGene(aColumn.name, "stringValue0", 0, 16)
 
         val insertIntoTableAction0 = DbAction(aTable, setOf(aColumn), 0L, mutableListOf(gene0))
 
-        val gene1 = StringGene(aColumn.name, "stringValue1", 0, 10)
+        val gene1 = StringGene(aColumn.name, "stringValue1", 0, 16)
 
         val insertIntoTableAction1 = DbAction(aTable, setOf(aColumn), 1L, mutableListOf(gene1))
 
@@ -182,8 +182,8 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val gene0 = StringGene(column0.name, "stringValue0", 0, 10)
-        val gene1 = StringGene(column1.name, "stringValue1", 0, 10)
+        val gene0 = StringGene(column0.name, "stringValue0", 0, 16)
+        val gene1 = StringGene(column1.name, "stringValue1", 0, 16)
 
         val insertIntoTableAction = DbAction(aTable, setOf(column0, column1), id, mutableListOf(gene0, gene1))
 
@@ -271,7 +271,7 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val integerGene = IntegerGene(idColumn.name, 42, 0, 100)
         val primaryKeyGene = SqlPrimaryKeyGene(idColumn.name, "myTable", integerGene, 10)
         val stringGene = StringGene(nameColumn.name, "nameValue", 0, 10)
 
@@ -318,7 +318,7 @@ class TestCaseWriterTest {
 
         val pkGeneUniqueId = 12345L
 
-        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val integerGene = IntegerGene(idColumn.name, 42, 0, 100)
         val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", integerGene, pkGeneUniqueId)
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", integerGene, 10)
 
@@ -417,7 +417,7 @@ class TestCaseWriterTest {
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
 
-        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val integerGene = IntegerGene(idColumn.name, 42, 0, 100)
         val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", integerGene, 10)
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", integerGene, 10)
 
@@ -516,15 +516,15 @@ class TestCaseWriterTest {
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
 
-        val gene0 = StringGene(aColumn.name, "stringValue0", 0, 10)
+        val gene0 = StringGene(aColumn.name, "stringValue0", 0, 16)
 
         val insertIntoTableAction0 = DbAction(aTable, setOf(aColumn), 0L, mutableListOf(gene0))
 
-        val gene1 = StringGene(aColumn.name, "stringValue1", 0, 10)
+        val gene1 = StringGene(aColumn.name, "stringValue1", 0, 16)
 
         val insertIntoTableAction1 = DbAction(aTable, setOf(aColumn), 1L, mutableListOf(gene1))
 
-        val gene2 = StringGene(aColumn.name, "stringValue2", 0, 10)
+        val gene2 = StringGene(aColumn.name, "stringValue2", 0, 16)
 
         val insertIntoTableAction2 = DbAction(aTable, setOf(aColumn), 2L, mutableListOf(gene2))
 
@@ -1019,7 +1019,7 @@ class TestCaseWriterTest {
 
         val pkGeneUniqueId = 12345L
 
-        val integerGene = IntegerGene(fooId.name, 42, 0, 10)
+        val integerGene = IntegerGene(fooId.name, 42, 0, 100)
         val pkFoo = SqlPrimaryKeyGene(fooId.name, "Foo", integerGene, pkGeneUniqueId)
         val pkBar = SqlPrimaryKeyGene(fooId.name, "Bar", integerGene, 10)
         val fooInsertionId = 1001L
@@ -1091,7 +1091,7 @@ public void test() throws Exception {
 
         val pkGeneUniqueId = 12345L
 
-        val integerGene = IntegerGene(fooId.name, 42, 0, 10)
+        val integerGene = IntegerGene(fooId.name, 42, 0, 100)
         val pkFoo = SqlPrimaryKeyGene(fooId.name, "Foo", integerGene, pkGeneUniqueId)
         val pkBar = SqlPrimaryKeyGene(fooId.name, "Bar", integerGene, 10)
         val fooInsertionId = 1001L

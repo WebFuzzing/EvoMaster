@@ -38,14 +38,16 @@ class PairGene<F,S>(
 
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
-
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         if(first.isMutable()) {
-            first.randomize(randomness, tryToForceNewValue, allGenes)
+            first.randomize(randomness, tryToForceNewValue)
         }
         if(second.isMutable()) {
-            second.randomize(randomness, tryToForceNewValue, allGenes)
+            second.randomize(randomness, tryToForceNewValue)
         }
     }
 
@@ -87,14 +89,18 @@ class PairGene<F,S>(
     }
 
     override fun isMutable(): Boolean {
-        return (first.isMutable() && isFirstMutable) || second.isMutable()
+        /*
+            Can be tricky... assume a first that is mutable, but we do not want to change it.
+            we still need to intialize with randomize, otherwise its constraints might fail
+         */
+        return (first.isMutable() && (isFirstMutable || !first.initialized)) || second.isMutable()
     }
 
     override fun isPrintable(): Boolean {
         return first.isPrintable() && second.isPrintable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         val list = mutableListOf<Gene>()
         if (first.isMutable() && isFirstMutable)
             list.add(first)

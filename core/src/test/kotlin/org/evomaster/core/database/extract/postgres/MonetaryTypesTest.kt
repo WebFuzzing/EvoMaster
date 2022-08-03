@@ -6,7 +6,6 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.BigDecimalGene
-import org.evomaster.core.search.gene.FloatGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -31,7 +30,7 @@ class MonetaryTypesTest : ExtractTestBasePostgres() {
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("MonetaryTypes", setOf("moneyColumn"))
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is BigDecimalGene) // money

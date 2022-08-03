@@ -5,12 +5,9 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.evomaster.core.Lazy
-import org.evomaster.core.problem.rest.RestIndividual
 
 /**
  * created by manzh on 2019-10-31
@@ -170,7 +167,7 @@ open class ImpactsOfIndividual(
             val actionName = action.getName()
             val index = individual.seeActions(ActionFilter.NO_INIT).indexOf(action)
             //root genes might be changed e.g., additionalInfo, so sync impacts of all genes
-            action.seeGenes().forEach { g ->
+            action.seeTopGenes().forEach { g ->
                 val id = ImpactUtils.generateGeneId(action, g)
                 if (getGene(actionName, id, index, false) == null) {
                     val impact = ImpactUtils.createGeneImpact(g, id)

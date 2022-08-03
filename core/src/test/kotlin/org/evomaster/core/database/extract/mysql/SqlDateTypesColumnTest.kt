@@ -17,7 +17,7 @@ class SqlDateTypesColumnTest : ExtractTestBaseMySQL() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("t1", setOf("t", "dt", "ts"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(3, genes.size)
         assertTrue(genes[0] is TimeGene)

@@ -27,7 +27,7 @@ class GraphQLAction(
         return "$methodName"
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<out Gene> {
 
         return parameters.flatMap { it.seeGenes() }
     }
