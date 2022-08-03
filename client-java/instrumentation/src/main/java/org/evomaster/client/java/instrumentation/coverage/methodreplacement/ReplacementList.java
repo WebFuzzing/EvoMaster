@@ -31,6 +31,7 @@ public class ReplacementList {
                     new EnumClassReplacement(),
                     new FloatClassReplacement(),
                     new GsonClassReplacement(),
+                    new JacksonObjectMapperClassReplacement(),
                     new Http11ProcessorReplacementClass(),
                     new HttpServletRequestClassReplacement(),
                     new IntegerClassReplacement(),
