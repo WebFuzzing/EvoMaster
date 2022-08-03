@@ -44,13 +44,29 @@ class SqlForeignKeyGene(
         }
     }
 
+    override fun isLocallyValid() : Boolean{
+        //FIXME: update once this gene is refactored
+        //eg. can have multi-column FK, and values are not necessarily numeric
+        return true
+    }
+
     override fun getForeignKey(): SqlForeignKeyGene? {
         return this
     }
 
     override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun checkForGloballyValid(): Boolean {
+        return nullable || isBound()
+    }
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+
+        //FIXME this is all, but we need "previous"
+        /*
+            TODO also need guarantee that in resource-groups we do NOT ref to initialization DBs
+         */
+        val allGenes = getAllGenesInIndividual()
 
         //All the ids of previous PKs for the target table
         val pks = allGenes.asSequence()
@@ -112,8 +128,8 @@ class SqlForeignKeyGene(
 
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        randomize(randomness, true, allGenes)
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+        randomize(randomness, true)
         return true
     }
 

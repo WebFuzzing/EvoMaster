@@ -35,12 +35,17 @@ class SqlUUIDGene(
     companion object{
         private val log: Logger = LoggerFactory.getLogger(SqlUUIDGene::class.java)
     }
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        mostSigBits.randomize(randomness, tryToForceNewValue, allGenes)
-        leastSigBits.randomize(randomness, tryToForceNewValue, allGenes)
+
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        mostSigBits.randomize(randomness, tryToForceNewValue)
+        leastSigBits.randomize(randomness, tryToForceNewValue)
+    }
+
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return listOf(mostSigBits, leastSigBits)
     }
 

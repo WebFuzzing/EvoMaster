@@ -54,8 +54,6 @@ abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
 
     final override fun candidatesInternalGenes(randomness: Randomness,
                                 apc: AdaptiveParameterControl,
-            //TODO remove deprecated
-                                allGenes: List<Gene>,
                                 selectionStrategy: SubsetGeneSelectionStrategy,
                                 enableAdaptiveGeneMutation: Boolean,
                                 additionalGeneMutationInfo: AdditionalGeneMutationInfo?

@@ -6,7 +6,6 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
@@ -54,10 +53,7 @@ abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
 
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
             ?: throw IllegalStateException("No DB schema is available")
-
-        DbActionUtils.randomizeDbActionGenes(actions, randomness)
-        //FIXME need proper handling of intra-gene constraints
-        actions.forEach { it.seeGenes().forEach { g -> g.markAllAsInitialized() } }
+        actions.flatMap{it.seeTopGenes()}.forEach{it.doInitialize(randomness)}
 
         if (log.isTraceEnabled){
             log.trace("at sampleSqlInsertion, {} insertions are added, and they are {}", actions.size,

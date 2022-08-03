@@ -40,6 +40,9 @@ open class DateTimeGene(
             .thenBy { it.time }
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene = DateTimeGene(
         name,
@@ -48,7 +51,7 @@ open class DateTimeGene(
         dateTimeGeneFormat = this.dateTimeGeneFormat
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         /**
          * If forceNewValue==true both date and time
          * get a new value, but it only might need
@@ -57,14 +60,13 @@ open class DateTimeGene(
          * Shouldn't this method decide randomly if
          * date, time or both get a new value?
          */
-        date.randomize(randomness, tryToForceNewValue, allGenes)
-        time.randomize(randomness, tryToForceNewValue, allGenes)
+        date.randomize(randomness, tryToForceNewValue)
+        time.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?

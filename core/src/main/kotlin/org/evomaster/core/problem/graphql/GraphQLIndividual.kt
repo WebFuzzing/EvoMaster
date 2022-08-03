@@ -4,13 +4,11 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.SampleType
-import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 
 class GraphQLIndividual(
         val sampleType: SampleType,
@@ -34,9 +32,9 @@ class GraphQLIndividual(
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
-            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeGenes)
+            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
+            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
+            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeTopGenes)
         }
     }
 

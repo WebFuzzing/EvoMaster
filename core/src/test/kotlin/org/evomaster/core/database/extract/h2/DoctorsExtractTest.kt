@@ -4,6 +4,8 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -22,10 +24,10 @@ class DoctorsExtractTest : ExtractTestBaseH2() {
 
         val actions = builder.createSqlInsertionAction("DOCTORS", setOf("PERSON_ID"))
 
-        val all = actions.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val ind = RestIndividual(mutableListOf(), SampleType.RANDOM,null,actions.toMutableList(),null,-1)
 
         //force binding
-        val randomness = Randomness()//.apply { updateSeed(1) }
+        val randomness = Randomness()
         DbActionUtils.randomizeDbActionGenes(actions, randomness)
 
         val dto = DbActionTransformer.transform(actions)

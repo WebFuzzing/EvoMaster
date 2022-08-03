@@ -326,7 +326,7 @@ class ArchiveGeneMutator{
                     val currentImpact = impact.getSpecializationImpacts().getOrNull(gene.selectedSpecialization)
                     if (selected == gene.selectedSpecialization || currentImpact?.recentImprovement() == true){
                         specializationGene.standardMutation(
-                                randomness, apc, mwc, allGenes,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
+                                randomness, apc, mwc,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
                         )
                     }else{
                         gene.selectedSpecialization = selected
@@ -458,7 +458,7 @@ class ArchiveGeneMutator{
         val ipairs = mutableListOf<Pair<Gene, Gene>>()
         originalActions.forEachIndexed { index, action ->
             val maction = mutatedActions.elementAt(index)
-            action.seeGenes().filter { it.isMutable()}.forEach {g->
+            action.seeTopGenes().filter { it.isMutable()}.forEach { g->
                 val m = ImpactUtils.findMutatedGene(maction, g)
                 if (m != null)
                     ipairs.add(g to m)

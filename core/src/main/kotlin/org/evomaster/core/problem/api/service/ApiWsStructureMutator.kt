@@ -6,7 +6,6 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.api.service.ApiWsSampler
-import org.evomaster.core.problem.rest.service.ResourceDepManageService
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
@@ -218,11 +217,11 @@ abstract class ApiWsStructureMutator : StructureMutator(){
     }
 
     private fun getRelatedRemoveDbActions(ind: ApiWsIndividual, remove : DbAction, relatedRemove: MutableList<DbAction>){
-        val pks = remove.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
+        val pks = remove.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
         val index = ind.seeInitializingActions().indexOf(remove)
         if (index < ind.seeInitializingActions().size - 1 && pks.isNotEmpty()){
             val removeDbFKs = ind.seeInitializingActions().subList(index + 1, ind.seeInitializingActions().size).filter {
-                it.seeGenes().flatMap { g-> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
+                it.seeTopGenes().flatMap { g-> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
                         .any {fk-> pks.any {pk->fk.uniqueIdOfPrimaryKey == pk.uniqueId} } }
             relatedRemove.addAll(removeDbFKs)
             removeDbFKs.forEach {
@@ -251,7 +250,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
 
         DbActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
         //FIXME refactoring
-        list.flatten().forEach { it.seeGenes().forEach { g -> g.markAllAsInitialized() } }
+        list.flatten().forEach { it.seeTopGenes().forEach { g -> g.markAllAsInitialized() } }
         //FIXME broken elements are not removed from list
         DbActionUtils.repairBrokenDbActionsList(list.flatten().toMutableList(), randomness)
         return list

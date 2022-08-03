@@ -93,9 +93,9 @@ class RestIndividual(
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
         return when (filter) {
-            GeneFilter.ALL -> seeDbActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
-            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeGenes)
+            GeneFilter.ALL -> seeDbActions().flatMap(DbAction::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
+            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
+            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
         }
     }
 
@@ -203,6 +203,9 @@ class RestIndividual(
      * for each call, there exist db actions for preparing resources.
      * however, the db action might refer to a db action which is not in the same call.
      * In this case, we need to repair the fk of db actions among calls.
+     *
+     * Note: this is ignoring the DB Actions in the initialization of the individual, as we
+     * are building dependencies among resources here.
      *
      * TODO not sure whether build binding between fk and pk
      */

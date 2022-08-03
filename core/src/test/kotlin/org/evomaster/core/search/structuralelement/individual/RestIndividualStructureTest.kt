@@ -9,14 +9,12 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.evomaster.core.search.structuralelement.resourcecall.ResourceNodeCluster
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -78,7 +76,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
         val root = getStructuralElementAndIdentifyAsRoot() as RestIndividual
         assertEquals(root, root.getRoot())
 
-        val barId = root.seeInitializingActions()[1].seeGenes()[0]
+        val barId = root.seeInitializingActions()[1].seeTopGenes()[0]
         val dbpath = listOf(1, 0)
         assertEquals(barId, root.targetWithIndex(dbpath))
 

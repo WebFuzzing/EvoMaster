@@ -51,7 +51,7 @@ class TableConstraintGeneCollector()
             return setOf()
         }
         // return all columns that match the table name/column name (expected: one or none)
-        return dbAction.seeGenes().filter { it.name == constraint.columnName }.toSet()
+        return dbAction.seeTopGenes().filter { it.name == constraint.columnName }.toSet()
     }
 
     /**
@@ -64,7 +64,7 @@ class TableConstraintGeneCollector()
             return setOf()
         }
         // return all columns that match the table name/column name (expected: one or none)
-        return dbAction.seeGenes().filter { it.name == constraint.columnName }.toSet()
+        return dbAction.seeTopGenes().filter { it.name == constraint.columnName }.toSet()
     }
 
     /**
@@ -77,7 +77,7 @@ class TableConstraintGeneCollector()
             return setOf()
         }
         // return all columns that match the table name/column name (expected: one or none)
-        return dbAction.seeGenes().filter { it.name == constraint.columnName }.toSet()
+        return dbAction.seeTopGenes().filter { it.name == constraint.columnName }.toSet()
     }
 
 
@@ -91,7 +91,7 @@ class TableConstraintGeneCollector()
             return setOf()
         }
         // return all columns that match the table name/column name (expected: one or none)
-        return dbAction.seeGenes().filter { it.name == constraint.columnName }.toSet()
+        return dbAction.seeTopGenes().filter { it.name == constraint.columnName }.toSet()
     }
 
 
@@ -105,7 +105,7 @@ class TableConstraintGeneCollector()
             return setOf()
         }
         // return all columns that match the table name/column name (expected: one or none)
-        return dbAction.seeGenes().filter { it.name == constraint.columnName }.toSet()
+        return dbAction.seeTopGenes().filter { it.name == constraint.columnName }.toSet()
     }
 
     /**
@@ -118,7 +118,7 @@ class TableConstraintGeneCollector()
             return setOf()
         }
         // return all columns that match the table name/column name in the unique constraint (none, one or many)
-        return dbAction.seeGenes().filter { constraint.uniqueColumnNames.contains(it.name) }.toSet()
+        return dbAction.seeTopGenes().filter { constraint.uniqueColumnNames.contains(it.name) }.toSet()
     }
 
 
@@ -140,7 +140,7 @@ class TableConstraintGeneCollector()
             return setOf()
         }
         // return all columns that match the table name/column name (expected: one or none)
-        return dbAction.seeGenes().filter { it.name == constraint.columnName }.toSet()
+        return dbAction.seeTopGenes().filter { it.name == constraint.columnName }.toSet()
     }
 
     /**
@@ -153,7 +153,7 @@ class TableConstraintGeneCollector()
             return setOf()
         }
         // return all columns that match the table name/column name (expected: one or none)
-        return dbAction.seeGenes().filter { it.name == constraint.columnName }.toSet()
+        return dbAction.seeTopGenes().filter { it.name == constraint.columnName }.toSet()
     }
 
 

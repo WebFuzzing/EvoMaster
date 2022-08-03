@@ -57,7 +57,10 @@ abstract class ApiWsIndividual (
         GeneUtils.repairGenes(this.seeGenes(GeneFilter.ONLY_SQL).flatMap { it.flatView() })
 
         /**
-         * Now repair database constraints (primary keys, foreign keys, unique fields, etc.)
+         * Now repair database constraints (primary keys, foreign keys, unique fields, etc.).
+         *
+         * Note: this is only for DB Actions in the initialization phase, and NOT if there is any
+         * afterwards (eg in resource-based handling).
          */
         if (!verifyInitializationActions()) {
             if (log.isTraceEnabled)

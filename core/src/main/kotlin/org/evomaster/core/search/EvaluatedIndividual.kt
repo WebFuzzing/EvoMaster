@@ -358,7 +358,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 //handle added actions with genes
                 val groupGeneByActionIndex = addedGenes.filter { it.gene != null }.groupBy {g->
                     mutatedGenes.mutatedIndividual!!.seeActions(NO_INIT).find {
-                            a->a.seeGenes().contains(g.gene) }.run { mutatedGenes.mutatedIndividual!!.seeActions(NO_INIT).indexOf(this) }
+                            a->a.seeTopGenes().contains(g.gene) }.run { mutatedGenes.mutatedIndividual!!.seeActions(NO_INIT).indexOf(this) }
                 }
 
                 //handle added actions without genes
@@ -489,10 +489,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         // rest action
         mutated.seeActions(NO_INIT).forEachIndexed { index, action ->
-            action.seeGenes().filter { it.isMutable() }.forEach { sg->
+            action.seeTopGenes().filter { it.isMutable() }.forEach { sg->
                 val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
 
-                val p = previous.seeActions(NO_INIT)[index].seeGenes().find {
+                val p = previous.seeActions(NO_INIT)[index].seeTopGenes().find {
                     rootGeneId == ImpactUtils.generateGeneId(previous, it)
                 }
                 val impact = impactInfo!!.getGene(
@@ -522,7 +522,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val actions = if (individual is RestIndividual)  individual.seeActions(NO_INIT) else individual.seeActions()
 
         val action = actions.find {
-            it.seeGenes().contains(gene)
+            it.seeTopGenes().contains(gene)
         }
         if (action == null && !individual.seeGenes().contains(gene)) return null
 
@@ -543,7 +543,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo?:return null
 
         val id = ImpactUtils.generateGeneId(individual, gene)
-        var action = individual.seeActions(NO_INIT).find { it.seeGenes().contains(gene) }
+        var action = individual.seeActions(NO_INIT).find { it.seeTopGenes().contains(gene) }
         if (action != null){
             return impactInfo.getGene(
                     actionName = action.getName(),
@@ -552,7 +552,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                     fromInitialization = false
             )
         }
-        action = individual.seeInitializingActions().find { it.seeGenes().contains(gene) }
+        action = individual.seeInitializingActions().find { it.seeTopGenes().contains(gene) }
         if (action != null){
             return impactInfo.getGene(
                     actionName = action.getName(),
@@ -587,7 +587,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if (diff.isEmpty()) {
             return
         }
-        mutatedGenes.addedInitializationGenes.addAll(diff.flatMap { it.seeGenes() })
+        mutatedGenes.addedInitializationGenes.addAll(diff.flatMap { it.seeTopGenes() })
 
         // update impact due to newly added initialization actions
         val modified =  if (addedInsertions!!.flatten().size == diff.size)

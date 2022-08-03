@@ -51,6 +51,10 @@ class TimeGene(
         TIME_WITH_MILLISECONDS
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     /*
         Note: would need to handle timezone and second fractions,
         but not sure how important for testing purposes
@@ -64,17 +68,16 @@ class TimeGene(
         timeGeneFormat = this.timeGeneFormat
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
-        hour.randomize(randomness, tryToForceNewValue, allGenes)
-        minute.randomize(randomness, tryToForceNewValue, allGenes)
-        second.randomize(randomness, tryToForceNewValue, allGenes)
+        hour.randomize(randomness, tryToForceNewValue)
+        minute.randomize(randomness, tryToForceNewValue)
+        second.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?

@@ -49,6 +49,10 @@ class CharacterRangeRxGene(
      */
     val ranges = ranges.map { Pair(min(it.first.code,it.second.code).toChar(), max(it.first.code, it.second.code).toChar()) }
 
+    override fun isLocallyValid() : Boolean{
+        //TODO negated
+        return ranges.any { value.code >= it.first.code && value.code <= it.second.code }
+    }
 
     override fun isMutable(): Boolean {
         return ranges.size > 1 || ranges[0].let { it.first != it.second }
@@ -60,7 +64,7 @@ class CharacterRangeRxGene(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         /*
             TODO current is very simple, biased implementation.
@@ -71,7 +75,7 @@ class CharacterRangeRxGene(
         value = randomness.nextChar(range.first, range.second)
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
 
         var t = 0
         for(i in 0 until ranges.size){

@@ -161,7 +161,7 @@ open class RestResourceNode(
      */
     private fun getMutableRestGenes(actions: List<RestCallAction>, template: String) : List<out Gene>{
 
-        if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestCallAction::seeGenes).filter(Gene::isMutable)
+        if (!RestResourceTemplateHandler.isNotSingleAction(template)) return actions.flatMap(RestCallAction::seeTopGenes).filter(Gene::isMutable)
 
         val missing = getPossiblyBoundParams(template, false)
         val params = mutableListOf<Param>()

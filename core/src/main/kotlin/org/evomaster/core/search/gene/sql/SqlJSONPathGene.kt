@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory
  *
  * The jsonpath type implements support for the SQL/JSON path language in PostgreSQL to
  * efficiently query JSON data.
+ *
+ * TODO this feels like a string following a specific RegEx
  */
 class SqlJSONPathGene(
     name: String,
@@ -34,20 +36,23 @@ class SqlJSONPathGene(
         private val log: Logger = LoggerFactory.getLogger(SqlJSONPathGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlJSONPathGene(
         name,
         pathExpression = this.pathExpression.copy() as StringGene
     )
 
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        pathExpression.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        pathExpression.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -78,7 +83,6 @@ class SqlJSONPathGene(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?

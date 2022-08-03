@@ -13,7 +13,6 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
@@ -232,7 +231,7 @@ class RPCEndpointsHandler {
 
 
     private fun handleActionWithSeededCandidates(action: RPCCallAction, candidateKey: String){
-        action.seeGenes().flatMap { it.flatView() }.filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
+        action.seeTopGenes().flatMap { it.flatView() }.filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
             val index = ((g as DisruptiveGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it is Gene && it.name == candidateKey }
             if (index != -1){
                 (g.gene as SeededGene<*>).employSeeded = true
@@ -242,7 +241,7 @@ class RPCEndpointsHandler {
     }
 
     private fun handleActionNoSeededCandidates(action: RPCCallAction){
-        action.seeGenes().filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
+        action.seeTopGenes().filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
             ((g as DisruptiveGene<*>).gene as SeededGene<*>).employSeeded = false
             ((g.gene as SeededGene<*>).gene as Gene).randomize(randomness, false)
         }

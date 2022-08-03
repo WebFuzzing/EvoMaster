@@ -164,6 +164,7 @@ abstract class RestIndividualTestBase {
     fun initTest() {
         //custom H2 command
         SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;")
+        randomness.updateSeed(42)
     }
 
     fun getConnection() : Connection = connection

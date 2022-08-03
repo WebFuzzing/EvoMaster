@@ -6,6 +6,8 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
@@ -52,13 +54,15 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
 
         val insertions = builder.createSqlInsertionAction("lANGUAGE_LIST", setOf("PROJECT_ID"))
 
+        val ind = RestIndividual(mutableListOf(),SampleType.RANDOM,null,insertions.toMutableList(),null,-1)
+
         DbActionUtils.randomizeDbActionGenes(insertions.toMutableList(), Randomness())
 
         assertEquals(2, insertions.size)
         assert(insertions[0].table.name.equals("PROJECT", ignoreCase = true))
         assert(insertions[1].table.name.equals("lANGUAGE_LIST", ignoreCase = true))
 
-        val projectId = (insertions[0].seeGenes().filterIsInstance<SqlPrimaryKeyGene>()).first().uniqueId
+        val projectId = (insertions[0].seeTopGenes().filterIsInstance<SqlPrimaryKeyGene>()).first().uniqueId
 
         val dtoForPersons = DbActionTransformer.transform(listOf(insertions[0]), execSqlIdMaps)
         val responseForPersons = SqlScriptRunner.execInsert(connection, dtoForPersons.insertions).idMapping

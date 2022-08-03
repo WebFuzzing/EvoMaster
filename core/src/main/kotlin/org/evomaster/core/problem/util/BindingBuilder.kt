@@ -318,7 +318,7 @@ object BindingBuilder {
                 }")
             if(dbAction != null){
                 // columngene might be null if the column is nullable
-                val columngene = findGeneBasedNameAndType(dbAction.seeGenes(), pToGene.column, type = null).firstOrNull()
+                val columngene = findGeneBasedNameAndType(dbAction.seeTopGenes(), pToGene.column, type = null).firstOrNull()
                 if (columngene != null){
                     val param = restAction.parameters.find { p -> restNode.getParamId(restAction.parameters, p)
                         .equals(pToGene.paramId, ignoreCase = true) }

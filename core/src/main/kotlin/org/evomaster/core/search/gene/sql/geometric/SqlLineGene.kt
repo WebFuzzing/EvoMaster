@@ -24,6 +24,11 @@ class SqlLineGene(
         val log: Logger = LoggerFactory.getLogger(SqlLineGene::class.java)
     }
 
+
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlLineGene(
         name,
         p.copy() as SqlPointGene,
@@ -59,8 +64,8 @@ class SqlLineGene(
         }
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        super.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        super.randomize(randomness, tryToForceNewValue)
         /*
          * Lines cannot contain the same p,q points
          */

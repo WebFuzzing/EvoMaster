@@ -39,6 +39,10 @@ class NumericStringGene(
                 scale : Int? = null) : this(name, minLength, BigDecimalGene(name, value, min, max, minInclusive, maxInclusive, floatingPointMode, precision?:if (scale == 0) 20 else 15, scale))
 
 
+    override fun isLocallyValid() : Boolean{
+        //TODO minLength does not seem to be used...
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene {
         return NumericStringGene(name, minLength, number.copy() as BigDecimalGene)
@@ -60,14 +64,13 @@ class NumericStringGene(
         return this.number.containsSameValueAs(other.number)
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        number.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        number.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?

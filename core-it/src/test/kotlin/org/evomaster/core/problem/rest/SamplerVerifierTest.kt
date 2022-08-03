@@ -15,7 +15,7 @@ import org.evomaster.core.problem.rest.service.ResourceRestModule
 import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.evomaster.core.search.gene.Gene
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
@@ -94,6 +94,19 @@ class SamplerVerifierTest {
     private fun checkInvariant(ind: Individual){
 
         assertTrue(ind.isInitialized(), "Sampled individual is not initialized")
+
+        val actions = ind.seeActions()
+
+        for(a in actions){
+
+            val topGenes = a.seeTopGenes()
+            for(tg in topGenes) {
+                assertTrue(tg.isLocallyValid())
+                assertTrue(tg.parent !is Gene)
+            }
+        }
+
+        //TODO check global validity
 
         //TODO more checks, eg validity
     }
