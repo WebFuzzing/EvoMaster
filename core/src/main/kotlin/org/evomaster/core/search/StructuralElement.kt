@@ -6,10 +6,12 @@ import org.slf4j.LoggerFactory
  * an element which has a structure, i.e., 0..1 [parent] and 0..* children
  * the children can be initialized with constructor, and further added with [addChild] and [addChildren]
  * @param children its children
+ * @param groups optional grouping for the children.
  * @property parent its parent
  */
 abstract class StructuralElement (
-    protected open val children : MutableList<out StructuralElement> = mutableListOf()
+    protected open val children : MutableList<out StructuralElement> = mutableListOf(),
+    private val groups : GroupsOfChildren? = null
 ) {
 
     //FIXME this workaround does not seem to work, see ProcessMonitorTest
@@ -29,7 +31,8 @@ abstract class StructuralElement (
 
 
     init {
-        initChildren(children)
+        children.forEach { it.parent = this; }
+        groups?.verifyGroups()
     }
 
 
@@ -51,21 +54,18 @@ abstract class StructuralElement (
         return m
     }
 
-    private fun initChildren(children : List<StructuralElement>){
-        children.forEach { it.parent = this; }
-    }
-
 
     /**
      * add a child of the element
      */
-    open fun addChild(child: StructuralElement){  //TODO check usage
+    open fun addChild(child: StructuralElement){
         if(children.contains(child)){
             throw IllegalArgumentException("Child already present")
         }
         child.parent = this
         //TODO re-check proper use of in/out in Kotlin
         (children as MutableList<StructuralElement>).add(child)
+        //groups?.addToGroup(GroupsOfChildren.MAIN, child)
     }
 
     open fun addChild(position: Int, child: StructuralElement){  //TODO check usage
