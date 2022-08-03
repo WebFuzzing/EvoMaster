@@ -119,7 +119,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      */
     fun seeResults(actions: List<Action>? = null): List<ActionResult>{
         val list = actions?:individual.seeActions()
-        val all = individual.seeActions(ALL)
+        //TODO Man: need to fix for external services
+        val all = individual.seeActions(NO_EXTERNAL_SERVICE)
         val last = results.indexOfFirst { it.stopping }
         return list.mapNotNull {
             val index = all.indexOf(it)
@@ -552,7 +553,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                     fromInitialization = false
             )
         }
-        action = individual.seeInitializingActions().find { it.seeTopGenes().contains(gene) }
+
+        /*
+            TODO Man: need to handle impacts for external services actions
+            temporal solution is to only filter dbAction for initialization actions, but need to fix later
+         */
+        action = individual.seeInitializingActions().filterIsInstance<DbAction>().find { it.seeTopGenes().contains(gene) }
+
         if (action != null){
             return impactInfo.getGene(
                     actionName = action.getName(),

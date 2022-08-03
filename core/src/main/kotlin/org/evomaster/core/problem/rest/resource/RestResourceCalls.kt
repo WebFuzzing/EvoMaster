@@ -6,6 +6,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
@@ -148,10 +149,13 @@ class RestResourceCalls(
      */
     fun seeActions(filter: ActionFilter) : List<out Action>{
         return when(filter){
+            ActionFilter.NO_EXTERNAL_SERVICE,
             ActionFilter.ALL-> dbActions.plus(actions)
             ActionFilter.INIT, ActionFilter.ONLY_SQL -> dbActions
             ActionFilter.NO_INIT,
             ActionFilter.NO_SQL -> actions
+            // there is no external service action in RestResourceCall
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> emptyList()
         }
     }
 

@@ -15,7 +15,7 @@ object ExternalServiceUtils {
      * loopback range. If generated IP address is not in the range, this
      * will throw an Exception.
      */
-    fun nextIPAddress(address: String) : String {
+    fun nextIPAddress(address: String): String {
         val tokens = address.split(".").toMutableList()
         if (tokens.size != 4) {
             throw IllegalArgumentException("Invalid IP address format")
@@ -24,7 +24,7 @@ object ExternalServiceUtils {
                 throw IllegalStateException("Next available IP address is out of usable range")
             }
 
-            for ( i in tokens.size - 1 downTo 0) {
+            for (i in tokens.size - 1 downTo 0) {
                 var part = tokens[i].toInt()
                 if (part < 255) {
                     part += 1
@@ -49,7 +49,7 @@ object ExternalServiceUtils {
      * other services commonly. 127.0.0.0 skipped because is the network address with
      * the mask 255.0.0.0 describes the whole loopback addresses.
      */
-    fun isReservedIP(ip: String) : Boolean {
+    fun isReservedIP(ip: String): Boolean {
         val reservedIPAddresses = arrayOf("127.0.0.0", "127.255.255.255", "127.0.0.1")
         if (reservedIPAddresses.contains(ip)) {
             return true
@@ -65,7 +65,7 @@ object ExternalServiceUtils {
      * can happen. As the result when creating the next IP address from the last used,
      * there will be negligible amount of small impact on the speed of the execution.
      */
-    fun generateRandomIPAddress(randomness: Randomness) : String {
+    fun generateRandomIPAddress(randomness: Randomness): String {
         val (p1, p2, p3) = Triple(
             randomness.randomIPBit(),
             randomness.randomIPBit(),
@@ -74,7 +74,7 @@ object ExternalServiceUtils {
         var ip = String.format("127.%s.%s.%s", p1, p2, p3)
 
         if (isReservedIP(ip)) {
-            while(isReservedIP(ip)) {
+            while (isReservedIP(ip)) {
                 ip = generateRandomIPAddress(randomness)
             }
         }
@@ -93,7 +93,7 @@ object ExternalServiceUtils {
      *
      * True if connection available, false if not.
      */
-    fun isAddressAvailable(address: String, port: Int) : Boolean {
+    fun isAddressAvailable(address: String, port: Int): Boolean {
         var socket: Socket? = null
         return try {
             socket = Socket()
@@ -101,8 +101,12 @@ object ExternalServiceUtils {
             false
         } catch (e: Exception) {
             when (e) {
-                is ConnectException, is SocketTimeoutException, is IOException -> { true }
-                else -> { throw e }
+                is ConnectException, is SocketTimeoutException, is IOException -> {
+                    true
+                }
+                else -> {
+                    throw e
+                }
             }
         } finally {
             if (socket != null) {
