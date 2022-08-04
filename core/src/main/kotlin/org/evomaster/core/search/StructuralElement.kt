@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory
  */
 abstract class StructuralElement (
     protected open val children : MutableList<out StructuralElement> = mutableListOf(),
-    private val groups : GroupsOfChildren? = null
+    private val groups : GroupsOfChildren<StructuralElement>? = null
 ) {
 
     //FIXME this workaround does not seem to work, see ProcessMonitorTest

@@ -5,16 +5,16 @@ package org.evomaster.core.search
  * Group definitions for children.
  * Every time children is modified, we need to make sure to call methods here to keep the groups in sync
  */
-class GroupsOfChildren(
+class  GroupsOfChildren<T>(
     /**
      * Read-only view of current children
      */
-    private val children : List<StructuralElement> = listOf(),
+    private val children : List<T> = listOf(),
     /**
      * These groups are in order. Each one with a unique id.
      * Once groups are defined here in the constructor, cannot be modified.
      */
-    private val groups : List<ChildGroup> = listOf()
+    private val groups : List<ChildGroup<T>> = listOf()
 ) {
 
     companion object{
@@ -38,7 +38,7 @@ class GroupsOfChildren(
 
     fun copy() = GroupsOfChildren(children, groups.map { it.copy() })
 
-    fun copy(children: List<StructuralElement>) = GroupsOfChildren(children, groups.map { it.copy() })
+    fun copy(children: List<T>) = GroupsOfChildren(children, groups.map { it.copy() })
 
 
     fun verifyGroups() {
@@ -48,7 +48,12 @@ class GroupsOfChildren(
         if(groups.map { it.id }.toSet().size != groups.size){
             throw IllegalArgumentException("Group ids must be unique")
         }
-        val size = groups.sumOf { sizeOfGroup(it.id) }
+        groups.forEach {
+            if(!it.validRange()){
+                throw IllegalArgumentException("Invalid group range for $it")
+            }
+        }
+        val size = groups.sumOf {it.size() }
         if(size != children.size){
             throw IllegalStateException("There are ${children.size} children, but $size in groups")
         }
@@ -65,36 +70,44 @@ class GroupsOfChildren(
         if(children.isNotEmpty()){
            throw IllegalStateException("Children is not empty")
         }
-        groups.forEach { it.startIndex = -1 }
+        groups.forEach { it.reset() }
     }
 
-    fun numberOfGroupsInUse() = groups.filter { it.isInUse() }.size
+    fun numberOfGroupsInUse() = groups.filter { it.isNotEmpty() }.size
 
+    /**
+     * Inserting at this position is fine, and will make the element the first
+     * in the group.
+     * Inserting before could end up in a different group.
+     */
     fun startIndexForGroupInsertionInclusive(id: String) : Int {
         val index = getGroupIndex(id)
         val g = groups[index]
-        if(g.isInUse()){
+        if(g.isNotEmpty()){
             return g.startIndex
         }
         // the group is currently empty. need to check if other groups are in use
-        val previous = groups.indices.indexOfLast { it < index && groups[it].isInUse() }
+        val previous = groups.indices.indexOfLast { it < index && groups[it].isNotEmpty() }
         if(previous < 0){
             //no previous non-empty group. can start at beginning
             return 0
         }
         //there is a previous. need to determine where it ends
         val p = groups[previous]
-        return  p.startIndex + sizeOfGroup(p.id)
+        return  p.endIndex + 1
     }
 
+    /**
+     * Inserting here is fine, making new element the last in the group.
+     */
     fun endIndexForGroupInsertionInclusive(id: String) : Int {
         val index = getGroupIndex(id)
         val g = groups[index]
-        if(!g.isInUse()){
+        if(!g.isNotEmpty()){
             //if empty, start and end would be the same
             return startIndexForGroupInsertionInclusive(id)
         }
-        return g.startIndex + sizeOfGroup(id)
+        return g.endIndex + 1
     }
 
     private fun getGroupIndex(id: String) : Int{
@@ -105,9 +118,13 @@ class GroupsOfChildren(
         return index
     }
 
-    fun getAllInGroup(id: String) : List<StructuralElement>{
-        val index = groupMap[id]?.startIndex ?: throw IllegalArgumentException("Invalid group id $id")
-        return children.subList(index, index + sizeOfGroup(id))
+    fun sizeOfGroup(id: String) = groupMap[id]?.size() ?: throw IllegalArgumentException("No group $id")
+    fun getAllInGroup(id: String) : List<T>{
+        val g = groupMap[id] ?: throw IllegalArgumentException("Invalid group id $id")
+        if(!g.isNotEmpty()){
+            return listOf()
+        }
+        return children.subList(g.startIndex, g.endIndex+1)
     }
 
     fun areChildrenInSameGroup(i: Int, j: Int) : Boolean{
@@ -116,54 +133,54 @@ class GroupsOfChildren(
         return a.id == b.id
     }
 
-    fun addedToGroup(id: String, element: StructuralElement){
+    fun addedToGroup(id: String, element: T){
         val index = getGroupIndex(id)
-        if(! groups[index].canBeInGroup(element)){
+        val g = groups[index]
+        if(! g.canBeInGroup(element)){
             throw IllegalArgumentException("Element $element cannot be added to group $id")
         }
 
-        //"adding" to a group does not impact is starting index.
+        if(g.isEmpty()){
+            g.startIndex = startIndexForGroupInsertionInclusive(id)
+            g.endIndex = g.startIndex
+        } else {
+            g.endIndex++
+        }
+
+        //"adding" to a group does not impact its starting index.
         groups.withIndex()
-            .filter { it.index > index && it.value.isInUse()}
-                // all following groups in use increase their start by 1, as shift to right
-            .forEach { it.value.startIndex++ }
+            .filter { it.index > index && it.value.isNotEmpty()}
+                // all following groups in use will be shift by 1 to the right
+            .forEach {
+                it.value.startIndex++
+                it.value.endIndex++
+            }
     }
 
     fun goingToRemoveFromGroup(childIndex: Int){
         val g = groupForChild(childIndex)
         val index = getGroupIndex(g.id)
-        val size = sizeOfGroup(g.id)
+        val size = g.size()
+        if(size == 0){
+            throw IllegalArgumentException("Cannot remove from an empty group")
+        }
         if(size == 1){
-            g.startIndex = -1
+            g.reset()
+        } else {
+            g.endIndex--
         }
+
         groups.withIndex()
-            .filter { it.index > index && it.value.isInUse()}
-            // all following groups in use decrease their start by 1, as shift to left
-            .forEach { it.value.startIndex-- }
+            .filter { it.index > index && it.value.isNotEmpty()}
+            // all following groups in use are shift to left by 1
+            .forEach {
+                it.value.startIndex--
+                it.value.endIndex--
+            }
 
     }
 
-    fun sizeOfGroup(id: String) : Int {
-        val index = groups.indexOfFirst { it.id == id }
-        if(index < 0){
-            throw IllegalArgumentException("Group with id $id does not exist")
-        }
-        val g = groups[index]
-        if(!g.isInUse()){
-            return 0
-        }
-
-        val next = groups.withIndex().indexOfFirst { it.index > index && it.value.isInUse() }
-        if(next < 0){
-            // g is the last group
-            assert(index == groups.lastIndex)
-            return groups.size - g.startIndex
-        }
-
-        return  groups[next].startIndex - g.startIndex
-    }
-
-    private fun groupForChild(index: Int) : ChildGroup{
+    private fun groupForChild(index: Int) : ChildGroup<T>{
         if(index < 0 || index >= children.size){
             throw IllegalArgumentException("Index $index$ of child is out of bound for child list of size ${children.size}")
         }
@@ -172,7 +189,7 @@ class GroupsOfChildren(
         }
         var k = -1
         for(g in groups){
-            k += sizeOfGroup(g.id)
+            k += g.size()
             if(index <= k){
                 return g
             }
