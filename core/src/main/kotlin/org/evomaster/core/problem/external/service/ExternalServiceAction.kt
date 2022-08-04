@@ -89,28 +89,49 @@ class ExternalServiceAction(
     /**
      * Experimental implementation of WireMock stub generation
      *
-     * Method should randomize the response code
+     * Note: urlMatching should be a Regex, otherwise mapping will return
+     * null when using getUrl()
+     *
+     * When there is two external service with same URL path, one will be ignored
+     * because the path is used as the meta data for validation. To avoid absolute
+     * URL will be used.
      *
      * TODO: This has to moved separetly to have extensive features
      *  in future.
      */
     fun buildResponse() {
-        if (externalService.getWireMockServer().findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.url)))
+        if (externalService.getWireMockServer().findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.getSignature())))
                 .isEmpty()
         ) {
-            externalService.getWireMockServer().stubFor(
-                get(urlMatching(request.url))
-                    .atPriority(1)
-                    .willReturn(
-                        aResponse()
-                            .withStatus(viewStatus())
-                            .withBody(viewResponse())
-                    )
-                    .withMetadata(
-                        metadata()
-                            .attr("url", request.url)
-                    )
-            )
+            if (request.method.lowercase() == "get") {
+                externalService.getWireMockServer().stubFor(
+                    get(urlEqualTo(request.url))
+                        .atPriority(1)
+                        .willReturn(
+                            aResponse()
+                                .withStatus(viewStatus())
+                                .withBody(viewResponse())
+                        )
+                        .withMetadata(
+                            metadata()
+                                .attr("url", request.getSignature())
+                        )
+                )
+            } else if (request.method.lowercase() == "post") {
+                externalService.getWireMockServer().stubFor(
+                    post(urlEqualTo(request.url))
+                        .atPriority(1)
+                        .willReturn(
+                            aResponse()
+                                .withStatus(viewStatus())
+                                .withBody(viewResponse())
+                        )
+                        .withMetadata(
+                            metadata()
+                                .attr("url", request.getSignature())
+                        )
+                )
+            }
         }
     }
 

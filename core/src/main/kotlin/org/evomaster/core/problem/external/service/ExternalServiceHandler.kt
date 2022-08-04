@@ -111,7 +111,7 @@ class ExternalServiceHandler {
 
     /**
      * This takes all the served requests from WireMock server and creates them
-     * as ExternalServiceAction. It ignores if the same absolute URL is added
+     * as ExternalServiceAction. It ignores if the same URL signature is added
      * already.
      *
      * This is not perfect yet, have to explore more scenarios and perfect the
@@ -122,7 +122,7 @@ class ExternalServiceHandler {
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
                 // TODO: This needs to be revised to make it nicer
-                if (externalServiceRequests.none { r -> r.absoluteURL == it.absoluteURL }) {
+                if (externalServiceRequests.none { r -> r.getSignature() == it.getSignature() }) {
                     externalServiceRequests.add(it)
                 }
                 if (actions.none { a -> a.request.url == it.url }) {
@@ -200,7 +200,7 @@ class ExternalServiceHandler {
         wm.start()
 
         // to prevent from the 404 when no matching stub below stub is added
-        // TODO: Need to decide what should be the default behaviour
+        // Note: anyUrl returns null when using getUrl()
         wm.stubFor(
             any(anyUrl())
                 .atPriority(10)

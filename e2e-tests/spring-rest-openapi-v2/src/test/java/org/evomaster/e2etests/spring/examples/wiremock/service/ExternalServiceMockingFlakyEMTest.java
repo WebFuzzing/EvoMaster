@@ -24,7 +24,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         runTestHandlingFlaky(
                 "ExternalServiceMockingEMTest",
                 "org.bar.ExternalServiceMockingEMTest",
-                500,
+                1000,
                 true,
                 (args) -> {
                     // IP set to 127.0.0.5 to confirm the test failure
@@ -40,7 +40,13 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/second", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/third", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/fourth", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external", "false");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external/second", "false");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external/third", "false");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external/fourth", "false");
                     // TODO: Disabled till the Jackson method replacement handled to unmarshall the JSON
 //                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/json", "false");
                 });

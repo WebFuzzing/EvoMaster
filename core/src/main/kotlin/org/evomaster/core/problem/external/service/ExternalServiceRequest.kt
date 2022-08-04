@@ -15,4 +15,8 @@ class ExternalServiceRequest(
     val absoluteURL: String,
     val wasMatched: Boolean,
 ) {
+
+    fun getSignature(): String {
+        return method.plus(absoluteURL)
+    }
 }

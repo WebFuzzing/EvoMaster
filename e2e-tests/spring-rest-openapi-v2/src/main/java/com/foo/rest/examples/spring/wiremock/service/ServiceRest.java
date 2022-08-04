@@ -60,6 +60,131 @@ public class ServiceRest {
                 return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    @RequestMapping(
+            value = "/external/second",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
+    public ResponseEntity<ResponseDto> secondDummyExternalCall() {
+        ResponseDto responseDto = new ResponseDto();
+
+        int responseCode = -1;
+
+        try {
+            // To bind WireMock in port 80 and 443 require root privileges
+            // To avoid that port set to 3000 for e2e-test
+            URL url = new URL("http://fooz.bar:8080/api/echo/bar");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("accept", "application/json");
+
+            responseCode = connection.getResponseCode();
+            responseDto.valid = connection.getResponseCode() == 200;
+        } catch (IOException e) {
+            SimpleLogger.uniqueWarn(e.getLocalizedMessage());
+        }
+
+        // Note: Response will not be useful at this, since there is no mutation happening
+        // inside ExternalServiceAction.
+
+        switch (responseCode) {
+            case(200):
+                return new ResponseEntity<>(responseDto, HttpStatus.OK);
+            case(400):
+                return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
+            case(401):
+                return new ResponseEntity<>(responseDto, HttpStatus.UNAUTHORIZED);
+            case(403):
+                return new ResponseEntity<>(responseDto, HttpStatus.FORBIDDEN);
+            case(404):
+                return new ResponseEntity<>(responseDto, HttpStatus.NOT_FOUND);
+            default:
+                return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @RequestMapping(
+            value = "/external/third",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
+    public ResponseEntity<ResponseDto> thirdDummyExternalCall() {
+        ResponseDto responseDto = new ResponseDto();
+
+        int responseCode = -1;
+
+        try {
+            // To bind WireMock in port 80 and 443 require root privileges
+            // To avoid that port set to 3000 for e2e-test
+            URL url = new URL("http://fooz.bar:8080/api/echo/baz");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("accept", "application/json");
+            connection.setRequestMethod("POST");
+
+            responseCode = connection.getResponseCode();
+            responseDto.valid = connection.getResponseCode() == 200;
+        } catch (IOException e) {
+            SimpleLogger.uniqueWarn(e.getLocalizedMessage());
+        }
+
+        // Note: Response will not be useful at this, since there is no mutation happening
+        // inside ExternalServiceAction.
+
+        switch (responseCode) {
+            case(200):
+                return new ResponseEntity<>(responseDto, HttpStatus.OK);
+            case(400):
+                return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
+            case(401):
+                return new ResponseEntity<>(responseDto, HttpStatus.UNAUTHORIZED);
+            case(403):
+                return new ResponseEntity<>(responseDto, HttpStatus.FORBIDDEN);
+            case(404):
+                return new ResponseEntity<>(responseDto, HttpStatus.NOT_FOUND);
+            default:
+                return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @RequestMapping(
+            value = "/external/fourth",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
+    public ResponseEntity<ResponseDto> fourthDummyExternalCall() {
+        ResponseDto responseDto = new ResponseDto();
+
+        int responseCode = -1;
+
+        try {
+            // To bind WireMock in port 80 and 443 require root privileges
+            // To avoid that port set to 3000 for e2e-test
+            URL url = new URL("http://fooz.bar:8080/api/echo/baz");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("accept", "application/json");
+
+            responseCode = connection.getResponseCode();
+            responseDto.valid = connection.getResponseCode() == 200;
+        } catch (IOException e) {
+            SimpleLogger.uniqueWarn(e.getLocalizedMessage());
+        }
+
+        // Note: Response will not be useful at this, since there is no mutation happening
+        // inside ExternalServiceAction.
+
+        switch (responseCode) {
+            case(200):
+                return new ResponseEntity<>(responseDto, HttpStatus.OK);
+            case(400):
+                return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
+            case(401):
+                return new ResponseEntity<>(responseDto, HttpStatus.UNAUTHORIZED);
+            case(403):
+                return new ResponseEntity<>(responseDto, HttpStatus.FORBIDDEN);
+            case(404):
+                return new ResponseEntity<>(responseDto, HttpStatus.NOT_FOUND);
+            default:
+                return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     /**
      * An endpoint to receive JSON response from external service and response

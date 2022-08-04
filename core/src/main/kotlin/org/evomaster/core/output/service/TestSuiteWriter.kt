@@ -1,12 +1,12 @@
 package org.evomaster.core.output.service
 
-import com.github.tomakehurst.wiremock.client.WireMock
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.BlackBoxUtils
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
@@ -501,7 +501,7 @@ class TestSuiteWriter {
         // for generated code should be false.
     }
 
-    private fun initClassMethod(lines: Lines) {
+    private fun initClassMethod(solution: Solution<*>, lines: Lines) {
 
         // Note: for C#, this is done in the Fixture class
 
@@ -563,25 +563,70 @@ class TestSuiteWriter {
                 }
             }
 
+            /*
+            Considering only REST individuals.
+             */
 
             if (useWireMock()) {
-               if (format.isKotlin()) {
-                   addStatement("wireMockServer = WireMockServer(WireMockConfiguration()", lines)
-                   lines.indented {
-                       lines.add(".bindAddress(\"127.0.0.1\")")
-                       lines.add(".port(8080)")
-                       lines.add(".extensions(ResponseTemplateTransformer(false))")
+                val wireMockServers: MutableList<String> = mutableListOf()
+               if (format.isJavaOrKotlin()) {
+                   solution.individuals.filter { it.individual is RestIndividual }.forEach {
+                       it.individual.seeExternalServiceActions().forEach { action ->
+                           if (!wireMockServers.contains(action.externalService.getWireMockAbsoluteAddress())) {
+                               val es = action.externalService
+                               val address = es.getWireMockAddress()
+                               val port = es.getWireMockPort()
+                               val remoteHostName = es.externalServiceInfo.remoteHostname
+                               addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
+                               addStatement("wireMockServer = WireMockServer(WireMockConfiguration()", lines)
+                               lines.indented {
+                                   lines.add(".bindAddress(\"$address\")")
+                                   lines.add(".port($port)")
+                                   lines.add(".extensions(ResponseTemplateTransformer(false)")
+                               }
+                               addStatement(")", lines)
+                               addStatement("wireMockServer.start()", lines)
+                               addStatement("wireMockServer.stubFor(", lines)
+                               lines.indented {
+                                   lines.add("any(anyUrl()).atPriority(10)")
+                                   lines.add(".willReturn(")
+                                   lines.indented {
+                                       lines.add("aResponse()")
+                                       lines.indented {
+                                           lines.add(".withStatus(500)")
+                                           lines.add(".withBody(\"Internal Server Error\")")
+                                       }
+                                       lines.add(")")
+                                   }
+                               }
+                               addStatement(")", lines)
+
+                               // Since request method ANY used only for fallback purpose. It can be skipped for now to avoid
+                               // null from getUrl()
+                               es.getStubs().filter { s -> s.request.method.toString() != "ANY" }.forEach { map ->
+                                   addStatement("wireMockServer.stubFor(", lines)
+                                   // TODO: urlMatching and urlEqualTo should be handled in future if there is a chance for Regex based url patterns
+                                   lines.indented {
+                                       lines.add("${map.request.method.toString().lowercase()}(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})")
+                                       lines.add(".willReturn(")
+                                       lines.indented {
+                                           lines.add("aResponse()")
+                                           lines.indented {
+                                               lines.add(".withStatus(${map.response.status})")
+                                               lines.add(".withBody(\"${map.response.body}\")")
+                                           }
+                                           lines.add(")")
+                                       }
+                                   }
+                                   addStatement(")", lines)
+                               }
+
+                               lines.addEmpty(1)
+
+                               wireMockServers.add(es.getWireMockAbsoluteAddress())
+                           }
+                       }
                    }
-                   addStatement("wireMockServer.start()", lines)
-                   addStatement("wireMockServer.stubFor(", lines)
-                   lines.indented {
-                       lines.add("any(anyUrl()).atPriority(10)")
-                       lines.add(".willReturn(")
-                       lines.add("aResponse()")
-                       lines.add(".withStatus(500)")
-                       lines.add(".withBody(\"Internal Server Error\")))")
-                   }
-                   addStatement("DnsCacheManipulator.setDnsCache(\"foo.bar\", \"127.0.0.1\")", lines)
                }
             }
 
@@ -627,6 +672,7 @@ class TestSuiteWriter {
 
                         // TODO: Verify the order later
                         if (useWireMock()) {
+                            addStatement("DnsCacheManipulator.clearDnsCache()", lines)
                             addStatement("wireMockServer.stop()", lines)
                         }
                     }
@@ -701,7 +747,7 @@ class TestSuiteWriter {
 
             if (!format.isCsharp()) {
                 lines.addEmpty(2)
-                initClassMethod(lines)
+                initClassMethod(solution, lines)
                 lines.addEmpty(2)
 
                 tearDownMethod(lines)
@@ -795,6 +841,6 @@ class TestSuiteWriter {
 
     private fun useWireMock(): Boolean {
         // TODO: Check the problem type
-        return false
+        return config.problemType == EMConfig.ProblemType.REST
     }
 }
