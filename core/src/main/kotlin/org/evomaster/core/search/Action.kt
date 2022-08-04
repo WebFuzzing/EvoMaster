@@ -15,6 +15,12 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
         private val log: Logger = LoggerFactory.getLogger(Action::class.java)
     }
 
+    init{
+        if(children.any { it is Action || it is Individual }){
+            throw IllegalArgumentException("The children of an action cannot be other actions nor individuals")
+        }
+    }
+
     abstract fun getName(): String
 
     /**
