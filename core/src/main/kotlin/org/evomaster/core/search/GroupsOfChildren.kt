@@ -157,9 +157,9 @@ class  GroupsOfChildren<T>(
             }
     }
 
-    fun goingToRemoveFromGroup(childIndex: Int){
-        val g = groupForChild(childIndex)
-        val index = getGroupIndex(g.id)
+    fun removedFromGroup(id: String){
+        val index = getGroupIndex(id)
+        val g = groups[index]
         val size = g.size()
         if(size == 0){
             throw IllegalArgumentException("Cannot remove from an empty group")
@@ -180,7 +180,7 @@ class  GroupsOfChildren<T>(
 
     }
 
-    private fun groupForChild(index: Int) : ChildGroup<T>{
+    fun groupForChild(index: Int) : ChildGroup<T>{
         if(index < 0 || index >= children.size){
             throw IllegalArgumentException("Index $index$ of child is out of bound for child list of size ${children.size}")
         }
