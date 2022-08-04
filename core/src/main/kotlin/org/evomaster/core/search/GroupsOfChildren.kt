@@ -57,6 +57,14 @@ class  GroupsOfChildren<T>(
         if(size != children.size){
             throw IllegalStateException("There are ${children.size} children, but $size in groups")
         }
+        val inUse = groups.filter { it.isNotEmpty() }
+        for(i in 0..inUse.size-2){
+            val current = inUse[i]
+            val next = inUse[i+1]
+            if(current.endIndex+1  != next.startIndex){
+                throw IllegalArgumentException("There is a gap between $current and $next")
+            }
+        }
 
         children.forEachIndexed { index, element ->
             val g = groupForChild(index)
