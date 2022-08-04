@@ -32,6 +32,9 @@ client-java/instrumentation-shared/target/
 client-java/database-spy/target/
 client-java/ci-utils/target
 core/target/
+e2e-tests/dropwizard-examples/target/
+e2e-tests/e2e-tests-utils/target/
+e2e-tests/spring-rest-openapi-v2/target/
 experiments/target/
 /e2e-tests/spring-rest-openapi-v2/src/em/EvoMasterTest.java
 /e2e-tests/dropwizard-examples/src/em/
@@ -40,6 +43,8 @@ experiments/target/
 /report/target/
 /extra_heuristics.csv
 /dbconstraint/target/
+/e2e-tests/spring-rest-postgres/target/
+/e2e-tests/spring-rest-postgres-data-types/target/
 /core/testWithEMB.sh
 /resource-rest-experiments/api-generator/target/
 /client-js/node_modules/
@@ -53,7 +58,9 @@ experiments/target/
 /client-js/integration-tests/check/
 /client-js/integration-tests/coverage/
 
-
+/e2e-tests/spring-rest-openapi-v3/target
+/e2e-tests/spring-graphql/target
+/e2e-tests/ci-utils/target
 
 /client-js/integration-tests/build/
 /core-it/target/
@@ -103,18 +110,6 @@ Migrations/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/bin/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/obj/
 /e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/generated/
-
-/e2e-tests/spring-rest-postgres/target/
-/e2e-tests/spring-rest-postgres-data-types/target/
-/e2e-tests/spring-rest-h2-v1/target/
-/e2e-tests/spring-rest-mysql-column-types/target/
-/e2e-tests/spring-rest-postgres-column-types/target/
-/e2e-tests/spring-rest-openapi-v2/target/
-/e2e-tests/dropwizard-examples/target/
-/e2e-tests/e2e-tests-utils/target/
-/e2e-tests/spring-rest-openapi-v3/target
-/e2e-tests/spring-graphql/target
-/e2e-tests/ci-utils/target
 /e2e-tests/spring-rpc-thrift/target/
 /e2e-tests/spring-rpc/spring-rpc-thrift/target/
 /e2e-tests/micronaut-latest/target/
