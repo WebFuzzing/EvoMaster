@@ -3,6 +3,8 @@ package org.evomaster.core.problem.api.service
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.GeneUtils
@@ -42,8 +44,18 @@ abstract class ApiWsIndividual (
     private val dbInitialization: List<DbAction>
         get() {return children.filterIsInstance<DbAction>()}
 
-    override fun seeInitializingActions(): List<DbAction> {
-        return dbInitialization
+    /**
+     * a list of external service actions for its Initialization
+     */
+    private val externalServiceInitialization: List<ExternalServiceAction>
+        get() { return children.filterIsInstance<ExternalServiceAction>()}
+
+    override fun seeInitializingActions(): List<Action> {
+        return dbInitialization.plus(externalServiceInitialization)
+    }
+
+    override fun seeExternalServiceActions(): List<ExternalServiceAction> {
+        return externalServiceInitialization
     }
 
     override fun repairInitializationActions(randomness: Randomness) {
@@ -82,7 +94,7 @@ abstract class ApiWsIndividual (
      * add [actions] at [position]
      * if [position] = -1, append the [actions] at the end
      */
-    fun addInitializingActions(position: Int=-1, actions: List<DbAction>){
+    fun addInitializingActions(position: Int=-1, actions: List<Action>){
         if (position == -1)  {
             addChildren(getLastIndexOfDbActionToAdd(), actions)
         } else{

@@ -1,5 +1,7 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
@@ -86,7 +88,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
-    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
+    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_EXTERNAL_SERVICE }
 
     /**
      * Return a view of all the Genes in this chromosome/individual
@@ -146,7 +148,14 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
      * would be same with [seeInitializingActions]
      */
-    open fun seeDbActions() : List<Action> = seeInitializingActions()
+    open fun seeDbActions() : List<DbAction> = seeInitializingActions().filterIsInstance<DbAction>()
+
+    /**
+     * return a list of all external service actions in [this] individual
+     * that include all the initializing actions plus external service actions
+     * among rest actions
+     */
+    open fun seeExternalServiceActions() : List<ExternalServiceAction> = seeInitializingActions().filterIsInstance<ExternalServiceAction>()
 
     /**
      * Determine if the structure (ie the actions) of this individual

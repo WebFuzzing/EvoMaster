@@ -147,14 +147,16 @@ open class ImpactsOfIndividual(
      * synchronize the impacts based on the [individual] and [mutatedGene]
      */
     fun syncBasedOnIndividual(individual: Individual, mutatedGene: MutatedGeneSpecification) {
+        // TODO Man fix external services
+        val initActions = individual.seeInitializingActions().filterIsInstance<DbAction>()
         //for initialization due to db action fixing
-        val diff = individual.seeInitializingActions().size - initializationGeneImpacts.getOriginalSize()//mutatedGene.addedExistingDataInitialization.size - initializationGeneImpacts.getOriginalSize()
+        val diff = initActions.size - initializationGeneImpacts.getOriginalSize()//mutatedGene.addedExistingDataInitialization.size - initializationGeneImpacts.getOriginalSize()
         if (diff < 0) { //truncation
             initializationGeneImpacts.truncation(individual.seeInitializingActions())
         }else if (diff > 0){
             throw IllegalArgumentException("impact is out of sync")
         }
-        if (initializationGeneImpacts.getOriginalSize() != individual.seeInitializingActions().size){
+        if (initializationGeneImpacts.getOriginalSize() != initActions.size){
             throw IllegalStateException("inconsistent impact for SQL genes")
         }
 

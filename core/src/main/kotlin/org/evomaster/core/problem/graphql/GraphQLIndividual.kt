@@ -3,6 +3,7 @@ package org.evomaster.core.problem.graphql
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
@@ -32,9 +33,10 @@ class GraphQLIndividual(
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
+            GeneFilter.ALL -> seeInitializingActions().flatMap(Action::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeTopGenes)
+            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
+            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>().flatMap(ExternalServiceAction::seeTopGenes)
         }
     }
 
@@ -48,17 +50,21 @@ class GraphQLIndividual(
 
     fun getIndexedCalls(): Map<Int,GraphQLAction> = getIndexedChildren(GraphQLAction::class.java)
 
-
     override fun seeActions(filter: ActionFilter): List<out Action> {
+        // FIXME: This menthod requires refactoring, has duplicate under RPC and REST
         return when(filter){
             ActionFilter.ALL -> children as List<Action>
-            ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.ONLY_SQL ->(children as List<Action>).filterIsInstance<DbAction>()
+            ActionFilter.INIT -> seeInitializingActions()
+            // TODO Man: need to systematically check NO_SQL that might be replaced with NO_INIT
             ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> (children as List<Action>).filterIsInstance<ExternalServiceAction>()
+            ActionFilter.NO_EXTERNAL_SERVICE -> (children as List<Action>).filter { it !is ExternalServiceAction }
         }
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeInitializingActions())
+        return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
     }
 
     //TODO refactor to make sure all problem types use same/similar code with checks on indices

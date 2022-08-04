@@ -21,16 +21,17 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
     @Test
     public void externalServiceMockingTest() throws Throwable {
-        runTestHandlingFlakyAndCompilation(
+        runTestHandlingFlaky(
                 "ExternalServiceMockingEMTest",
                 "org.bar.ExternalServiceMockingEMTest",
                 500,
+                false,
                 (args) -> {
                     // IP set to 127.0.0.5 to confirm the test failure
                     // Use USER for external service IP selection strategy
                     // when running on a personal computer if it's macOS
                     // TODO: When running parallel tests it's always good select
-                    // Random as strategy.
+                    //  Random as strategy.
                     args.add("--externalServiceIPSelectionStrategy");
                     args.add("USER");
                     args.add("--externalServiceIP");
@@ -38,7 +39,10 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "false");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external", "false");
+                    // TODO: Disabled till the Jackson method replacement handled to unmarshall the JSON
+//                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/json", "false");
                 });
     }
 }

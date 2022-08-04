@@ -22,7 +22,6 @@
         <module>spring-graphql</module>
         <module>spring-rest-mysql</module>
         <module>spring-rpc</module>
-        <module>wiremock</module>
         <module>spring-rest-h2-v1</module>
         <module>spring-rest-postgres-column-types</module>
         <module>spring-rest-mysql-column-types</module>

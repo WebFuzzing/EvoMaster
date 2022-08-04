@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.net.URL;
 import java.net.URLConnection;
@@ -68,8 +69,6 @@ public class URLClassReplacement implements MethodReplacementClass {
 
                 URL newURL = new URL(url);
                 return newURL.openConnection();
-            } else {
-                throw new UnknownHostException("There is no WireMock initiated for this hostname");
             }
         }
 
