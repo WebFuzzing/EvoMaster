@@ -25,14 +25,14 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
         runTestHandlingFlaky(
                 "ExternalServiceMockingEMGeneratedTest",
                 "org.bar.ExternalServiceMockingEMGeneratedTest",
-                1500,
+                1000,
                 true,
                 (args) -> {
 
                     // IP set to 127.0.0.5 to confirm the test failure
                     // Use USER for external service IP selection strategy
                     // when running on a personal computer if it's macOS
-                    // TODO: When running parallel tests it's always good select
+                    // Note: When running parallel tests it's always good select
                     //  Random as strategy.
                     args.add("--externalServiceIPSelectionStrategy");
                     args.add("USER");

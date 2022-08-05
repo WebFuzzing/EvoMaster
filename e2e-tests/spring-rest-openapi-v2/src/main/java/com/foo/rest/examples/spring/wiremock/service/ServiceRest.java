@@ -31,6 +31,7 @@ public class ServiceRest {
             // To avoid that port set to 3000 for e2e-test
             URL url = new URL("http://foo.bar:8080/api/echo/foo");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(500);
             connection.setRequestProperty("accept", "application/json");
             if ((connection.getResponseCode() == 200) && s.equals("foo")) {
                 responseDto.valid = true;
