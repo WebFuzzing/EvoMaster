@@ -841,6 +841,6 @@ class TestSuiteWriter {
 
     private fun useWireMock(): Boolean {
         // TODO: Check the problem type
-        return config.problemType == EMConfig.ProblemType.REST
+        return config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE
     }
 }
