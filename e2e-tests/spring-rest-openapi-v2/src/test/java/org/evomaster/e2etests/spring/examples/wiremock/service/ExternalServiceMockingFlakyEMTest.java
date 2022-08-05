@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.examples.wiremock.service;
 
 import com.foo.rest.examples.spring.wiremock.service.ServiceController;
 import org.evomaster.core.EMConfig;
+import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;

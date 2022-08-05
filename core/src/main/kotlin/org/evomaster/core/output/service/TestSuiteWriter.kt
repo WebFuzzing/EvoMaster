@@ -327,6 +327,9 @@ class TestSuiteWriter {
 
             if (useWireMock()) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
+                addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
+                addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
+                addImport("com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer", lines)
                 addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
             }
 
@@ -578,15 +581,23 @@ class TestSuiteWriter {
                                val port = es.getWireMockPort()
                                val remoteHostName = es.externalServiceInfo.remoteHostname
                                addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
-                               addStatement("wireMockServer = WireMockServer(WireMockConfiguration()", lines)
+                               if (format.isJava()) {
+                                   lines.add("wireMockServer = new WireMockServer(new WireMockConfiguration()")
+                               } else if (format.isKotlin()) {
+                                   lines.add("wireMockServer = WireMockServer(WireMockConfiguration()")
+                               }
                                lines.indented {
                                    lines.add(".bindAddress(\"$address\")")
                                    lines.add(".port($port)")
-                                   lines.add(".extensions(ResponseTemplateTransformer(false)")
+                                   if (format.isJava()) {
+                                       lines.add(".extensions(new ResponseTemplateTransformer(false)")
+                                   } else if (format.isKotlin()) {
+                                       lines.add(".extensions(ResponseTemplateTransformer(false)")
+                                   }
                                }
                                addStatement(")", lines)
                                addStatement("wireMockServer.start()", lines)
-                               addStatement("wireMockServer.stubFor(", lines)
+                               lines.add("wireMockServer.stubFor(")
                                lines.indented {
                                    lines.add("any(anyUrl()).atPriority(10)")
                                    lines.add(".willReturn(")
@@ -604,7 +615,7 @@ class TestSuiteWriter {
                                // Since request method ANY used only for fallback purpose. It can be skipped for now to avoid
                                // null from getUrl()
                                es.getStubs().filter { s -> s.request.method.toString() != "ANY" }.forEach { map ->
-                                   addStatement("wireMockServer.stubFor(", lines)
+                                   lines.add("wireMockServer.stubFor(")
                                    // TODO: urlMatching and urlEqualTo should be handled in future if there is a chance for Regex based url patterns
                                    lines.indented {
                                        lines.add("${map.request.method.toString().lowercase()}(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})")
