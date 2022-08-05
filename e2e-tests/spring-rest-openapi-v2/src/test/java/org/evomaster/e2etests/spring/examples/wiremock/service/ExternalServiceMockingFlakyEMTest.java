@@ -22,12 +22,12 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
     @Test
     public void externalServiceMockingTest() throws Throwable {
-        runTestHandlingFlaky(
-                "ExternalServiceMockingEMTest",
-                "org.bar.ExternalServiceMockingEMTest",
-                1000,
-                true,
+        runTestHandlingFlakyAndCompilation(
+                "ExternalServiceMockingEMGeneratedTest",
+                "org.bar.ExternalServiceMockingEMGeneratedTest",
+                1500,
                 (args) -> {
+
                     // IP set to 127.0.0.5 to confirm the test failure
                     // Use USER for external service IP selection strategy
                     // when running on a personal computer if it's macOS
@@ -40,14 +40,9 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "true");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/second", "true");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/third", "true");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/fourth", "true");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external", "false");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external/second", "false");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external/third", "false");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external/fourth", "false");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/foo", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/get/foo", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/wiremock/external/post/foo", "true");
                     // TODO: Disabled till the Jackson method replacement handled to unmarshall the JSON
 //                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/json", "false");
                 });

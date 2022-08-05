@@ -326,7 +326,11 @@ class TestSuiteWriter {
             }
 
             if (useWireMock()) {
-                addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
+                if (format.isKotlin()) {
+                    addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
+                } else if (format.isJava()) {
+                    addImport("static com.github.tomakehurst.wiremock.client.WireMock.*", lines)
+                }
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
                 addImport("com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer", lines)
@@ -595,7 +599,8 @@ class TestSuiteWriter {
                                        lines.add(".extensions(ResponseTemplateTransformer(false)")
                                    }
                                }
-                               addStatement(")", lines)
+                               addStatement("))", lines)
+                               addStatement("assertNotNull(wireMockServer)", lines)
                                addStatement("wireMockServer.start()", lines)
                                lines.add("wireMockServer.stubFor(")
                                lines.indented {
@@ -851,7 +856,6 @@ class TestSuiteWriter {
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
 
     private fun useWireMock(): Boolean {
-        // TODO: Check the problem type
         return config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE
     }
 }
