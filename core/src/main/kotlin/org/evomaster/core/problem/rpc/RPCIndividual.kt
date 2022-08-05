@@ -5,10 +5,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 
 import org.evomaster.core.problem.external.service.ExternalServiceAction
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TrackOperator
 
@@ -18,7 +15,7 @@ import org.evomaster.core.search.tracer.TrackOperator
 class RPCIndividual(
         trackOperator: TrackOperator? = null,
         index: Int = -1,
-        allActions: MutableList<StructuralElement>
+        allActions: MutableList<ActionComponent>
 ) : ApiWsIndividual(trackOperator, index, allActions) {
 
     constructor(actions: MutableList<RPCCallAction>,
@@ -28,7 +25,7 @@ class RPCIndividual(
                 dbInitialization: MutableList<DbAction> = mutableListOf(),
                 trackOperator: TrackOperator? = null,
                 index: Int = -1
-    ) : this(trackOperator, index, mutableListOf<StructuralElement>().apply {
+    ) : this(trackOperator, index, mutableListOf<ActionComponent>().apply {
         addAll(dbInitialization); addAll(actions)
     })
 
@@ -102,7 +99,7 @@ class RPCIndividual(
         return RPCIndividual(
                 trackOperator,
                 index,
-                children.map { it.copy() }.toMutableList()
+                children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>
         )
     }
 }

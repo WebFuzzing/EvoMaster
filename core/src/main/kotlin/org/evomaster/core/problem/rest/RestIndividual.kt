@@ -6,11 +6,8 @@ import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.*
 import org.evomaster.core.search.ActionFilter.*
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -29,7 +26,7 @@ class RestIndividual(
         val sampleSpec: SamplerSpecification? = null,
         trackOperator: TrackOperator? = null,
         index : Int = -1,
-        allActions : MutableList<StructuralElement>
+        allActions : MutableList<out ActionComponent>
 ): ApiWsIndividual(trackOperator, index, allActions) {
 
     companion object{
@@ -43,7 +40,7 @@ class RestIndividual(
             dbInitialization: MutableList<DbAction> = mutableListOf(),
             trackOperator: TrackOperator? = null,
             index : Int = -1
-    ) : this(sampleType, sampleSpec, trackOperator, index, mutableListOf<StructuralElement>().apply {
+    ) : this(sampleType, sampleSpec, trackOperator, index, mutableListOf<ActionComponent>().apply {
         addAll(dbInitialization); addAll(resourceCalls)
     })
 
@@ -70,7 +67,7 @@ class RestIndividual(
                 sampleSpec?.copy(),
                 trackOperator,
                 index,
-                children.map { it.copy() }.toMutableList()
+                children.map { it.copy() }.toMutableList() as MutableList<out ActionComponent>
         )
     }
 

@@ -49,7 +49,7 @@ class  GroupsOfChildren<T>(
             throw IllegalArgumentException("Group ids must be unique")
         }
         groups.forEach {
-            if(!it.validRange()){
+            if(!it.isValid()){
                 throw IllegalArgumentException("Invalid group range for $it")
             }
         }
@@ -146,6 +146,11 @@ class  GroupsOfChildren<T>(
         val g = groups[index]
         if(! g.canBeInGroup(element)){
             throw IllegalArgumentException("Element $element cannot be added to group $id")
+        }
+
+        val size = g.size()
+        if(size == g.maxSize){
+            throw IllegalArgumentException("Group has already reached its max size of ${g.maxSize}")
         }
 
         if(g.isEmpty()){

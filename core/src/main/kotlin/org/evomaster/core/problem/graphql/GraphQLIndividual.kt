@@ -5,15 +5,12 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.SampleType
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 
 class GraphQLIndividual(
         val sampleType: SampleType,
-        allActions : MutableList<StructuralElement>
+        allActions : MutableList<out ActionComponent>
 ) : ApiWsIndividual(children = allActions) {
 
 
@@ -26,7 +23,7 @@ class GraphQLIndividual(
 
         return GraphQLIndividual(
                 sampleType,
-                children.map { it.copy() }.toMutableList()
+                children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>
         )
 
     }

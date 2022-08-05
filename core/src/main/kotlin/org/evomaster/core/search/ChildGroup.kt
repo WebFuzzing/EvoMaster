@@ -25,20 +25,25 @@ class ChildGroup<T>(
     /**
      * This is inclusive. Negative value means the group is empty
      */
-    var endIndex : Int = -1
+    var endIndex : Int = -1,
+    /**
+     * How many elements at most there can be in this group
+     */
+    val maxSize: Int = Int.MAX_VALUE
 ) {
 
     override fun toString(): String {
         return "$id [$startIndex,$endIndex]"
     }
 
-    fun copy() = ChildGroup(id,canBeInGroup,startIndex,endIndex)
+    fun copy() = ChildGroup(id,canBeInGroup,startIndex,endIndex,maxSize)
 
     fun isNotEmpty() = !isEmpty()
 
     fun isEmpty() = startIndex < 0
 
-    fun validRange() = (startIndex < 0 && endIndex < 0) || (startIndex >=0 && startIndex <= endIndex)
+    fun isValid() = ((startIndex < 0 && endIndex < 0) || (startIndex >=0 && startIndex <= endIndex))
+            && size() <= maxSize
 
     fun size() = if(isEmpty()) 0 else (endIndex - startIndex + 1)
 

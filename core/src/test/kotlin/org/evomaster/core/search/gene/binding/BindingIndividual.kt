@@ -6,7 +6,7 @@ import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 
-class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = genes) {
+class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = listOf()) {
 
     override fun copyContent(): Individual {
         return BindingIndividual(genes.map { it.copy() }.toMutableList())
