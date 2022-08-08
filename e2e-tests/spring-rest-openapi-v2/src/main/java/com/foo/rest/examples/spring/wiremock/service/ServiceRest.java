@@ -3,7 +3,8 @@ package com.foo.rest.examples.spring.wiremock.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foo.rest.examples.spring.wiremock.base.ResponseDto;
 import org.evomaster.client.java.utils.SimpleLogger;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,12 +20,13 @@ import java.net.URL;
 public class ServiceRest {
 
     @RequestMapping(
-            value = "/external/{s}",
+            value = "/external",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public ResponseDto dummyExternalCall(@PathVariable("s") String s) {
+    public ResponseEntity<ResponseDto> dummyExternalCall() {
         ResponseDto responseDto = new ResponseDto();
+        int responseCode = 500;
 
         try {
             // To bind WireMock in port 80 and 443 require root privileges
@@ -33,60 +35,75 @@ public class ServiceRest {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(500);
             connection.setRequestProperty("accept", "application/json");
-            if ((connection.getResponseCode() == 200) && s.equals("foo")) {
+            responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
                 responseDto.valid = true;
             }
         } catch (IOException e) {
             responseDto.valid = false;
         }
 
-        return responseDto;
+        if (responseCode == 200) {
+            return new ResponseEntity<>(responseDto, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @RequestMapping(
-            value = "/external/get/{s}",
+            value = "/external/get",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public ResponseDto secondDummyExternalCall(@PathVariable("s") String s) {
+    public ResponseEntity<ResponseDto> secondDummyExternalCall() {
         ResponseDto responseDto = new ResponseDto();
-
+        int responseCode = 500;
 
         try {
             URL url = new URL("http://fooz.bar:8080/api/echo/bar");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
-            if ((connection.getResponseCode() == 200) && s.equals("foo")) {
+            responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
                 responseDto.valid = true;
             }
         } catch (IOException e) {
             responseDto.valid = false;
         }
 
-        return responseDto;
+        if (responseCode == 200) {
+            return new ResponseEntity<>(responseDto, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @RequestMapping(
-            value = "/external/post/{s}",
+            value = "/external/post",
             method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON
     )
-    public ResponseDto thirdDummyExternalCall(@PathVariable("s") String s) {
+    public ResponseEntity<ResponseDto> thirdDummyExternalCall() {
         ResponseDto responseDto = new ResponseDto();
-
+        int responseCode = 500;
         try {
             URL url = new URL("http://fooz.bar:8080/api/echo/bar");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
             connection.setRequestMethod("POST");
-            if ((connection.getResponseCode() == 200) && s.equals("foo")) {
+            responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
                 responseDto.valid = true;
             }
         } catch (IOException e) {
             responseDto.valid = false;
         }
 
-        return responseDto;
+        if (responseCode == 200) {
+            return new ResponseEntity<>(responseDto, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
