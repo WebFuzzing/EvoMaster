@@ -24,7 +24,7 @@ class IndividualGeneImpactTest {
         val simulatedMutator = SimulatedMutator()
         simulatedMutator.config.abstractInitializationGeneToMutate = false
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividualWithInitialization(initActionSize = 0)
-        val addedInit = IndAction.getSeqIndAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
+        val addedInit = IndAction.getSeqIndInitAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
 
         evi_ind1.initAddedInitializationGenes(addedInit,0)
         assertNotNull(evi_ind1.impactInfo)
@@ -36,7 +36,7 @@ class IndividualGeneImpactTest {
         val simulatedMutator = SimulatedMutator()
         simulatedMutator.config.abstractInitializationGeneToMutate = true
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividualWithInitialization(initActionSize = 0)
-        val addedInit = IndAction.getSeqIndAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
+        val addedInit = IndAction.getSeqIndInitAction(templates = arrayOf(2,3), repeat = arrayOf(1,3))
 
         evi_ind1.initAddedInitializationGenes(addedInit,0)
         assertNotNull(evi_ind1.impactInfo)
@@ -220,11 +220,12 @@ class IndividualGeneImpactTest {
                     mutatedIndex,
                     true,mutatedIndex
                 )
-                ind2.actions.removeAt(mutatedIndex)
+
+                //ind2.actions.removeAt(mutatedIndex)
                 ind2.killChildByIndex(mutatedIndex)
 
             }else{
-                val action = IndAction.getIndAction(1).first()
+                val action = IndAction.getIndMainAction(1).first()
 
                 mutatedGeneSpecification.addRemovedOrAddedByAction(
                     action,
@@ -232,8 +233,8 @@ class IndividualGeneImpactTest {
                     false,mutatedIndex
                 )
 
-                ind2.actions.add(mutatedIndex, action)
-                ind2.addChild(action)
+                //ind2.actions.add(mutatedIndex, action)
+                ind2.addChild(mutatedIndex, action)
             }
 
             mutatedGeneSpecification.setMutatedIndividual(ind2)
@@ -290,19 +291,19 @@ class IndividualGeneImpactTest {
 
     }
 
-    class Ind(val actions : MutableList<IndAction>, val initialization : MutableList<IndAction> = mutableListOf()) : Individual(children = initialization.plus(actions)){
+    class Ind(actions : MutableList<IndMainAction>, initialization : MutableList<IndInitAction> = mutableListOf()) : Individual(children = initialization.plus(actions)){
         companion object{
             fun getInd() : Ind{
-                return Ind(IndAction.getIndAction(2).toMutableList())
+                return Ind(IndAction.getIndMainAction(2).toMutableList())
             }
 
             fun getIndWithInitialization(actionSize: Int, initializationSize: Int) : Ind{
-                return Ind(IndAction.getIndAction(2).toMutableList(), IndAction.getSeqIndAction(initializationSize).toMutableList())
+                return Ind(IndAction.getIndMainAction(actionSize).toMutableList(), IndAction.getSeqIndInitAction(initializationSize).toMutableList())
             }
         }
         override fun copyContent(): Individual {
-            return Ind(actions.map { it.copy() as IndAction }.toMutableList(),
-                    initialization.map { it.copy() as IndAction }.toMutableList())
+            return Ind(children.filterIsInstance<IndMainAction>().map { it.copy() as IndMainAction }.toMutableList(),
+                    children.filterIsInstance<IndInitAction>().map { it.copy() as IndInitAction }.toMutableList())
         }
 
         override fun seeGenes(filter: GeneFilter): List<out Gene> {
@@ -317,11 +318,7 @@ class IndividualGeneImpactTest {
         override fun size(): Int = seeActions().size
 
         override fun seeActions(): List<out Action> {
-            return actions
-        }
-
-        override fun seeInitializingActions(): List<Action> {
-            return initialization
+            return children.filterIsInstance<Action>()
         }
 
         override fun verifyInitializationActions(): Boolean {
@@ -331,37 +328,35 @@ class IndividualGeneImpactTest {
         override fun repairInitializationActions(randomness: Randomness) {}
     }
 
-    class IndAction(private val genes : List<out Gene>) : Action(localId = NONE_ACTION_ID, children = genes){
-
-
+    abstract class IndAction(genes : List<out Gene>) : Action(localId = NONE_ACTION_ID, children = genes){
 
         companion object{
-            fun getIndAction(size: Int = 1): List<IndAction>{
+            fun getIndMainAction(size: Int = 1): List<IndMainAction>{
                 if(size < 1) throw IllegalArgumentException("size should be at least 1, but $size")
                 return (0 until size).map {
-                    IndAction(listOf(StringGene("index1","index1"),
+                    IndMainAction(listOf(StringGene("index1","index1"),
                             StringGene("index2", "index2")))
                             .apply { doInitialize(Randomness().apply { updateSeed(42) }) }}
             }
 
-            fun getSeqIndAction(size : Int) : List<IndAction>{
+            fun getSeqIndInitAction(size : Int) : List<IndInitAction>{
                 if(size < 0) throw IllegalArgumentException("size should not be less than 0, but $size")
                 if (size == 0) return  listOf()
-                return (0 until size).map { IndAction(listOf(IntegerGene(
+                return (0 until size).map { IndInitAction(listOf(IntegerGene(
                         name = "index$it",
                         value = it
                 ))) }
             }
 
-            fun getSeqIndAction(templates : Array<Int>, repeat : Array<Int>) : List<List<IndAction>>{
+            fun getSeqIndInitAction(templates : Array<Int>, repeat : Array<Int>) : List<List<IndInitAction>>{
                 if(templates.any { it < 1 }) throw IllegalArgumentException("size of template should be at least 1")
                 if (repeat.any { it < 0 }) throw IllegalArgumentException("repeat times should not be less than 0")
                 if (templates.size != repeat.size) throw IllegalArgumentException("size of the configuration for template and repeat should be same")
-                val actions = mutableListOf<List<IndAction>>()
+                val actions = mutableListOf<List<IndInitAction>>()
                 templates.forEachIndexed { t, i ->
                     (0..repeat[t]).forEach { _->
                         actions.add((0 until i).map {
-                            IndAction(listOf(IntegerGene(
+                            IndInitAction(listOf(IntegerGene(
                                     name = "index$t$it",
                                     value = it
                             )))
@@ -373,18 +368,28 @@ class IndividualGeneImpactTest {
         }
 
         override fun getName(): String {
-            return genes.joinToString(",") { it.name }
+            return seeTopGenes().joinToString(",") { it.name }
         }
 
         override fun seeTopGenes(): List<out Gene> {
-            return genes
+            return children.filterIsInstance<Gene>()
         }
 
-        override fun copyContent(): Action {
-            return IndAction(genes.map { it.copy() })
-        }
+
 
         override fun shouldCountForFitnessEvaluations(): Boolean = true
 
+    }
+
+    class IndMainAction(genes: List<out Gene>) : IndAction(genes){
+        override fun copyContent(): Action {
+            return IndMainAction(seeTopGenes().map { it.copy() })
+        }
+    }
+
+    class IndInitAction(genes: List<out Gene>) : IndAction(genes){
+        override fun copyContent(): Action {
+            return IndInitAction(seeTopGenes().map { it.copy() })
+        }
     }
 }
