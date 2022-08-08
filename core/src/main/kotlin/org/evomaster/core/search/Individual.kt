@@ -357,6 +357,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     // handle removal based on dependencies among actions
 
+    /**
+     * @param childrenToRemove a list of elements to remove
+     * @return a list of elements together with dependent actions to remove (ie, childrenToRemove plus actions which depends on childrenToRemove)
+     */
     private fun getActionToRemove(childrenToRemove : List<StructuralElement>): MutableList<StructuralElement>{
 
         val allActions = seeActions(ActionFilter.ALL)
@@ -393,9 +397,9 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     override fun killChild(child: StructuralElement) {
-        super.killChild(child)
+        //super.killChild(child)
         if (child is Action){
-            val dependedToRemove = getActionToRemove(listOf(child)).filter { it != child }
+            val dependedToRemove = getActionToRemove(listOf(child))
             if (dependedToRemove.isNotEmpty()){
                 dependedToRemove.filter { children.contains(it) }.forEach {d->
                     super.killChild(d)
