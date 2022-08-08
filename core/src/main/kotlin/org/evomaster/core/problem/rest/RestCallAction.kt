@@ -49,7 +49,7 @@ class RestCallAction(
     val responseRefs : MutableMap<String, String> = mutableMapOf(),
     val skipOracleChecks : Boolean = false,
 
-    localId : String,
+    localId : String = NONE_ACTION_ID,
     dependentActions : MutableList<String> = mutableListOf()
 ) : HttpWsAction(auth, parameters, localId, dependentActions) {
 

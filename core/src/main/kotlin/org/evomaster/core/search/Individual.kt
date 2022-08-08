@@ -66,6 +66,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     var searchGlobalState : SearchGlobalState? = null
 
+
+    /**
+     * get local id based on the given counter
+     */
+    fun getLocalId(counter: Int) : String = "Action_$counter"
+
     /**
      * Make a deep copy of this individual
      */
@@ -87,6 +93,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     fun isInitialized() : Boolean{
         return seeGenes().all { it.initialized }
+                && areAllLocalIdsAssigned() // local ids must be assigned
     }
 
     override fun copyContent(): Individual {
@@ -113,6 +120,8 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * @return actions based on the specified [filter]
      *
      * TODO refactor [seeActions], [seeInitializingActions] and [seeDbActions] based on this fun
+     *
+     * Man: note that seeActions(filter = ActionFilter.ALL) is used to initialize localIds for actions
      */
     open fun seeActions(filter: ActionFilter) : List<out Action>{
         return seeActions()
@@ -126,6 +135,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 //            seeActions()
 //            seeDbActions()
 //        }.toSet().forEach { it.doInitialize(randomness) }
+
+        if (isLocalIdsNotAssigned())
+            setLocalIdsForChildrenAsActions(seeActions(filter = ActionFilter.ALL))
+
 
         seeInitializingActions().plus(seeActions()).plus(seeDbActions())
                 .toSet()
@@ -285,5 +298,26 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         }
         return true
     }
+
+    private fun isValidIds() : Boolean{
+        return isLocalIdsNotAssigned() || areAllLocalIdsAssigned()
+    }
+
+    private fun isLocalIdsNotAssigned() : Boolean{
+        return seeActions(filter = ActionFilter.ALL).all { it.getLocalId() == Action.NONE_ACTION_ID }
+    }
+
+    private fun areAllLocalIdsAssigned() : Boolean{
+        return seeActions(filter = ActionFilter.ALL).none { it.getLocalId() == Action.NONE_ACTION_ID }
+    }
+
+    private fun setLocalIdsForChildrenAsActions(children: List<Action>){
+        children.forEach {
+            counter++
+            it.setId(getLocalId(counter))
+        }
+    }
+
+
 
 }
