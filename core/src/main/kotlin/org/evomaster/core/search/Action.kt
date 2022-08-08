@@ -32,23 +32,44 @@ abstract class Action(
     }
 
     /**
-     * set an id of the action
-     * note that the id can be only assigned once it is not NONE_ACTION_ID
+     * set a local id of the action
+     * note that the id can be assigned only if the current id is NONE_ACTION_ID
      */
-    fun setId(id: String) {
+    fun setLocalId(id: String) {
         if (this.localId == NONE_ACTION_ID)
             this.localId = id
         else
             throw IllegalStateException("cannot re-assign the id of the action, the current id is ${this.localId}")
     }
 
+    /**
+     * return if the action has been assigned with a local id
+     */
     fun hasLocalId() = localId != NONE_ACTION_ID
 
+    /**
+     * reset local id of the action
+     */
     fun resetLocalId() {
         localId = NONE_ACTION_ID
     }
 
     fun getLocalId() = localId
+
+    /**
+     * add actions which depend on this action
+     * if this action is removed, such actions must be removed accordingly
+     */
+    fun addDependedActions(list: List<String>){
+        if (getRoot() is Individual){
+            val all = (getRoot() as Individual).seeActions(ActionFilter.ALL).map { it.localId }
+            val invalid = list.filter { !all.contains(it) }
+            if (invalid.isNotEmpty()){
+                throw IllegalStateException("All depended actions should exist in the same individual, but ids of the actions (${invalid.joinToString(",")}) cannot be found in the individual")
+            }
+        }
+        dependentActions.addAll(list)
+    }
 
     abstract fun getName(): String
 

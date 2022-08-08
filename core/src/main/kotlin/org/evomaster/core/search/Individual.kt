@@ -321,7 +321,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     private fun setLocalIdsForChildrenAsActions(children: List<Action>){
         children.forEach {
             counter++
-            it.setId(getLocalId(counter))
+            it.setLocalId(getLocalId(counter))
         }
     }
 
@@ -353,5 +353,67 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     override fun addChildren(position: Int, list: List<StructuralElement>) {
         handleLocalIdsForAddition(list)
         super.addChildren(position, list)
+    }
+
+    // handle removal based on dependencies among actions
+
+    private fun getActionToRemove(childrenToRemove : List<StructuralElement>): MutableList<StructuralElement>{
+
+        val allActions = seeActions(ActionFilter.ALL)
+
+        val elementsToRemove = mutableListOf<StructuralElement>()
+
+        childrenToRemove.forEach { element->
+
+            if (element is Action){
+                if (elementsToRemove.filterIsInstance<Action>().none { it.getLocalId() ==  element.getLocalId()})
+                    elementsToRemove.add(element)
+
+                element.dependentActions.forEach {r->
+                    if (elementsToRemove.none { it is Action && it.getLocalId() != r }){
+                        val dActions = allActions.filter { it.getLocalId() == r }
+                        getActionToRemove(dActions).forEach {d->
+                            if (d is Action && elementsToRemove.filterIsInstance<Action>().none { it.getLocalId() ==  d.getLocalId()}){
+                                if (!children.contains(d)){
+                                    throw IllegalStateException("the action to remove with id (${d.getLocalId()}) is not part of children of this individual")
+                                }
+                                elementsToRemove.add(element)
+                            }
+                        }
+                    }
+                }
+            }else{
+                // TODO might need to handle other types, eg, RestResourceCall
+                elementsToRemove.add(element)
+            }
+        }
+
+
+        return elementsToRemove
+    }
+
+    override fun killChild(child: StructuralElement) {
+        super.killChild(child)
+        if (child is Action){
+            val dependedToRemove = getActionToRemove(listOf(child)).filter { it != child }
+            if (dependedToRemove.isNotEmpty()){
+                dependedToRemove.filter { children.contains(it) }.forEach {d->
+                    super.killChild(d)
+                }
+            }
+        }
+    }
+
+    override fun killChildByIndex(index: Int): StructuralElement {
+        val removed = super.killChildByIndex(index)
+        if (removed is Action){
+            val dependedToRemove = getActionToRemove(listOf(removed)).filter { it != removed }
+            if (dependedToRemove.isNotEmpty()){
+                dependedToRemove.forEach { d->
+                    super.killChild(d)
+                }
+            }
+        }
+        return removed
     }
 }
