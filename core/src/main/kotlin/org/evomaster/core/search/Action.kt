@@ -102,7 +102,7 @@ abstract class Action(
     }
 
     fun isInitialized(): Boolean {
-        return seeTopGenes().all { it.initialized } && localId != NONE_ACTION_ID
+        return seeTopGenes().all { it.initialized }
     }
 
     /**

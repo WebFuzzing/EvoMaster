@@ -32,7 +32,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     /**
      * this counter is used to generate ids for actions, ie, its children
      */
-    private var counter = 0
+    protected var counter = 0
+
+    init {
+        if (isLocalIdsNotAssigned())
+            setLocalIdsForChildrenAsActions(seeActions(filter = ActionFilter.ALL))
+    }
 
     /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
@@ -80,6 +85,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         val copy = super.copy()
         if (copy !is Individual)
             throw IllegalStateException("mismatched type: the type should be Individual, but it is ${this::class.java.simpleName}")
+
+        // for local ids
+        copy.counter = counter
+
         copy.populationOrigin = this.populationOrigin
         copy.searchGlobalState = this.searchGlobalState
         return copy
@@ -136,10 +145,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 //            seeActions()
 //            seeDbActions()
 //        }.toSet().forEach { it.doInitialize(randomness) }
-
-        if (isLocalIdsNotAssigned())
-            setLocalIdsForChildrenAsActions(seeActions(filter = ActionFilter.ALL))
-
 
         seeInitializingActions().plus(seeActions()).plus(seeDbActions())
                 .toSet()
@@ -327,6 +332,8 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
             if (child is Action && !child.hasLocalId()){
                 setLocalIdsForChildrenAsActions(listOf(child))
             }
+
+            // Man: if remove RestResourceCalls, this is need to be refactored
             if (child is RestResourceCalls && child.seeActions(ActionFilter.ALL).none { it.hasLocalId() })
                 setLocalIdsForChildrenAsActions(child.seeActions(ActionFilter.ALL))
         }

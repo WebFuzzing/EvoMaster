@@ -33,7 +33,7 @@ open class RPCCallAction(
 
     override var auth: RPCAuthenticationInfo = RPCNoAuth(),
 
-    localId : String,
+    localId : String = NONE_ACTION_ID,
     dependentActions : MutableList<String> = mutableListOf()
 
 ) : ApiWsAction(auth, inputParameters, localId, dependentActions)  {
