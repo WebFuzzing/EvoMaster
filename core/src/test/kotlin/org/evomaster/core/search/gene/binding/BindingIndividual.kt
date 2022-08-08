@@ -6,7 +6,7 @@ import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 
-class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = listOf()) {
+class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = listOf(BindingAction(genes))) {
 
     override fun copyContent(): Individual {
         return BindingIndividual(genes.map { it.copy() }.toMutableList())
@@ -22,7 +22,7 @@ class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = l
     override fun repairInitializationActions(randomness: Randomness) {
     }
 
-    override fun seeActions(): List<out Action> = emptyList()
+    override fun seeActions(): List<out Action> = children as List<out Action>
 
     override fun verifyInitializationActions(): Boolean = true
 }
