@@ -387,8 +387,29 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                     }
                 }
             }else{
-                // TODO might need to handle other types, eg, RestResourceCall
-                elementsToRemove.add(element)
+
+                if (!elementsToRemove.contains(element))
+                    elementsToRemove.add(element)
+
+                if (element is RestResourceCalls){
+                    element.seeActions(ActionFilter.ALL).forEach {a->
+                        a.dependentActions.forEach { r->
+                            if (elementsToRemove.none { it is Action && it.getLocalId() != r }){
+                                val dActions = allActions.filter { it.getLocalId() == r }
+                                getActionToRemove(dActions).forEach {d->
+                                    if (d is Action && elementsToRemove.filterIsInstance<Action>().none { it.getLocalId() ==  d.getLocalId()}){
+                                        if (!children.contains(d)){
+                                            throw IllegalStateException("the action to remove with id (${d.getLocalId()}) is not part of children of this individual")
+                                        }
+                                        elementsToRemove.add(element)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // TODO might need to handle it at RestResourceCall level
+                }
             }
         }
 
@@ -397,25 +418,20 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     override fun killChild(child: StructuralElement) {
-        //super.killChild(child)
-        if (child is Action){
-            val dependedToRemove = getActionToRemove(listOf(child))
-            if (dependedToRemove.isNotEmpty()){
-                dependedToRemove.filter { children.contains(it) }.forEach {d->
-                    super.killChild(d)
-                }
+        val dependedToRemove = getActionToRemove(listOf(child))
+        if (dependedToRemove.isNotEmpty()){
+            dependedToRemove.filter { children.contains(it) }.forEach {d->
+                super.killChild(d)
             }
         }
     }
 
     override fun killChildByIndex(index: Int): StructuralElement {
         val removed = super.killChildByIndex(index)
-        if (removed is Action){
-            val dependedToRemove = getActionToRemove(listOf(removed)).filter { it != removed }
-            if (dependedToRemove.isNotEmpty()){
-                dependedToRemove.forEach { d->
-                    super.killChild(d)
-                }
+        val dependedToRemove = getActionToRemove(listOf(removed)).filter { it != removed }
+        if (dependedToRemove.isNotEmpty()){
+            dependedToRemove.forEach { d->
+                super.killChild(d)
             }
         }
         return removed
