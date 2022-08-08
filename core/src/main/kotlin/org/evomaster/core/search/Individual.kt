@@ -305,8 +305,9 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return true
     }
 
-    private fun isValidIds() : Boolean{
-        return isLocalIdsNotAssigned() || areAllLocalIdsAssigned()
+    fun isValidIds() : Boolean{
+        return (areAllLocalIdsAssigned()
+                        && seeActions(ActionFilter.ALL).run { this.map { it.getLocalId() }.toSet().size == this.size })
     }
 
     private fun isLocalIdsNotAssigned() : Boolean{
