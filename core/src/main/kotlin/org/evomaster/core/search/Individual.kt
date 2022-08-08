@@ -2,6 +2,7 @@ package org.evomaster.core.search
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
@@ -319,5 +320,30 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
 
+    // handle local ids in add child and children
 
+    private fun handleLocalIdsForAddition(children: List<StructuralElement>){
+        children.forEach {child->
+            if (child is Action && !child.hasLocalId()){
+                setLocalIdsForChildrenAsActions(listOf(child))
+            }
+            if (child is RestResourceCalls && child.seeActions(ActionFilter.ALL).none { it.hasLocalId() })
+                setLocalIdsForChildrenAsActions(child.seeActions(ActionFilter.ALL))
+        }
+    }
+
+    override fun addChild(child: StructuralElement) {
+        handleLocalIdsForAddition(listOf(child))
+        super.addChild(child)
+    }
+
+    override fun addChild(position: Int, child: StructuralElement) {
+        handleLocalIdsForAddition(listOf(child))
+        super.addChild(position, child)
+    }
+
+    override fun addChildren(position: Int, list: List<StructuralElement>) {
+        handleLocalIdsForAddition(list)
+        super.addChildren(position, list)
+    }
 }

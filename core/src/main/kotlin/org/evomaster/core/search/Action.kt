@@ -42,6 +42,12 @@ abstract class Action(
             throw IllegalStateException("cannot re-assign the id of the action, the current id is ${this.localId}")
     }
 
+    fun hasLocalId() = localId != NONE_ACTION_ID
+
+    fun resetLocalId() {
+        localId = NONE_ACTION_ID
+    }
+
     fun getLocalId() = localId
 
     abstract fun getName(): String
