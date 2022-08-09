@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.GeneUtils
@@ -31,7 +32,7 @@ abstract class ApiWsIndividual (
     /**
      * a list of children of the individual
      */
-    children: List<out StructuralElement>
+    children: List<out ActionComponent>
 ): Individual(trackOperator, index, children){
 
     companion object{

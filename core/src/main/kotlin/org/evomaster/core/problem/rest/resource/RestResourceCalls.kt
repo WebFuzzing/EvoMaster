@@ -6,15 +6,12 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.*
 import org.evomaster.core.search.Individual.GeneFilter
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -33,14 +30,14 @@ import org.slf4j.LoggerFactory
 class RestResourceCalls(
     val template: CallsTemplate? = null,
     val node: RestResourceNode? = null,
-    children: MutableList<out Action>,
+    children: MutableList<out ActionComponent>,
     withBinding: Boolean = false,
     randomness: Randomness? = null
-): StructuralElement(children){
+): ActionTree(children){
 
     constructor(template: CallsTemplate? = null, node: RestResourceNode? = null, actions: List<RestCallAction>,
                 dbActions: List<DbAction>, withBinding: Boolean = false, randomness: Randomness? = null) :
-            this(template, node,mutableListOf<Action>().apply { addAll(dbActions); addAll(actions) }, withBinding, randomness)
+            this(template, node,mutableListOf<ActionComponent>().apply { addAll(dbActions); addAll(actions) }, withBinding, randomness)
 
     companion object{
         private val  log : Logger = LoggerFactory.getLogger(RestResourceCalls::class.java)
