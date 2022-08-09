@@ -97,7 +97,8 @@ class ExternalServiceAction(
      * URL will be used.
      *
      * TODO: This has to moved separetly to have extensive features
-     *  in future.
+     *  in future. For now GET and POST only handled, have to extend to handle other
+     *  verbs.
      */
     fun buildResponse() {
         if (externalService.getWireMockServer().findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.getSignature())))

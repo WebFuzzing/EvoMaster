@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -325,7 +326,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (useWireMock()) {
+            if (useWireMock(solution)) {
                 if (format.isKotlin()) {
                     addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
                 } else if (format.isJava()) {
@@ -441,7 +442,7 @@ class TestSuiteWriter {
         return ""
     }
 
-    private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines) {
+    private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines, solution: Solution<*>) {
 
         val executable = if(controllerInput.isNullOrBlank()) ""
             else "\"$controllerInput\"".replace("\\","\\\\")
@@ -456,7 +457,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
-            if (useWireMock()) {
+            if (useWireMock(solution)) {
                 lines.add("private static WireMockServer wireMockServer;")
             }
         } else if (config.outputFormat.isKotlin()) {
@@ -468,8 +469,11 @@ class TestSuiteWriter {
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
             }
-            if (useWireMock()) {
-                lines.add("private lateinit var wireMockServer: WireMockServer")
+            if (useWireMock(solution)) {
+                getExternalServiceActions(solution).forEach {
+                    val v = getWireMockVariableName(it.externalService.externalServiceInfo.remoteHostname)
+                    lines.add("private lateinit var ${v}: WireMockServer")
+                }
             }
         } else if (config.outputFormat.isJavaScript()) {
 
@@ -574,74 +578,69 @@ class TestSuiteWriter {
             Considering only REST individuals.
              */
 
-            if (useWireMock()) {
-                val wireMockServers: MutableList<String> = mutableListOf()
+            if (useWireMock(solution)) {
+                val actions = getExternalServiceActions(solution)
                if (format.isJavaOrKotlin()) {
-                   solution.individuals.filter { it.individual is RestIndividual }.forEach {
-                       it.individual.seeExternalServiceActions().forEach { action ->
-                           if (!wireMockServers.contains(action.externalService.getWireMockAbsoluteAddress())) {
-                               val es = action.externalService
-                               val address = es.getWireMockAddress()
-                               val port = es.getWireMockPort()
-                               val remoteHostName = es.externalServiceInfo.remoteHostname
-                               addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
-                               if (format.isJava()) {
-                                   lines.add("wireMockServer = new WireMockServer(new WireMockConfiguration()")
-                               } else if (format.isKotlin()) {
-                                   lines.add("wireMockServer = WireMockServer(WireMockConfiguration()")
-                               }
-                               lines.indented {
-                                   lines.add(".bindAddress(\"$address\")")
-                                   lines.add(".port($port)")
-                                   if (format.isJava()) {
-                                       lines.add(".extensions(new ResponseTemplateTransformer(false)")
-                                   } else if (format.isKotlin()) {
-                                       lines.add(".extensions(ResponseTemplateTransformer(false)")
-                                   }
-                               }
-                               addStatement("))", lines)
-                               addStatement("assertNotNull(wireMockServer)", lines)
-                               addStatement("wireMockServer.start()", lines)
-                               lines.add("wireMockServer.stubFor(")
-                               lines.indented {
-                                   lines.add("any(anyUrl()).atPriority(10)")
-                                   lines.add(".willReturn(")
-                                   lines.indented {
-                                       lines.add("aResponse()")
-                                       lines.indented {
-                                           lines.add(".withStatus(500)")
-                                           lines.add(".withBody(\"Internal Server Error\")")
-                                       }
-                                       lines.add(")")
-                                   }
-                               }
-                               addStatement(")", lines)
-
-                               // Since request method ANY used only for fallback purpose. It can be skipped for now to avoid
-                               // null from getUrl()
-                               es.getStubs().filter { s -> s.request.method.toString() != "ANY" }.forEach { map ->
-                                   lines.add("wireMockServer.stubFor(")
-                                   // TODO: urlMatching and urlEqualTo should be handled in future if there is a chance for Regex based url patterns
-                                   lines.indented {
-                                       lines.add("${map.request.method.toString().lowercase()}(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})")
-                                       lines.add(".willReturn(")
-                                       lines.indented {
-                                           lines.add("aResponse()")
-                                           lines.indented {
-                                               lines.add(".withStatus(${map.response.status})")
-                                               lines.add(".withBody(\"${map.response.body}\")")
-                                           }
-                                           lines.add(")")
-                                       }
-                                   }
-                                   addStatement(")", lines)
-                               }
-
-                               lines.addEmpty(1)
-
-                               wireMockServers.add(es.getWireMockAbsoluteAddress())
+                   actions.forEach { action ->
+                       val es = action.externalService
+                       val address = es.getWireMockAddress()
+                       val port = es.getWireMockPort()
+                       val remoteHostName = es.externalServiceInfo.remoteHostname
+                       val v = getWireMockVariableName(remoteHostName)
+                       addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
+                       if (format.isJava()) {
+                           lines.add("$v = new WireMockServer(new WireMockConfiguration()")
+                       } else if (format.isKotlin()) {
+                           lines.add("$v = WireMockServer(WireMockConfiguration()")
+                       }
+                       lines.indented {
+                           lines.add(".bindAddress(\"$address\")")
+                           lines.add(".port($port)")
+                           if (format.isJava()) {
+                               lines.add(".extensions(new ResponseTemplateTransformer(false)")
+                           } else if (format.isKotlin()) {
+                               lines.add(".extensions(ResponseTemplateTransformer(false)")
                            }
                        }
+                       addStatement("))", lines)
+                       addStatement("assertNotNull(wireMockServer)", lines)
+                       addStatement("${v}.start()", lines)
+                       lines.add("${v}.stubFor(")
+                       lines.indented {
+                           lines.add("any(anyUrl()).atPriority(10)")
+                           lines.add(".willReturn(")
+                           lines.indented {
+                               lines.add("aResponse()")
+                               lines.indented {
+                                   lines.add(".withStatus(500)")
+                                   lines.add(".withBody(\"Internal Server Error\")")
+                               }
+                               lines.add(")")
+                           }
+                       }
+                       addStatement(")", lines)
+
+                       // Since request method ANY used only for fallback purpose. It can be skipped for now to avoid
+                       // null from getUrl()
+                       es.getStubs().filter { s -> s.request.method.toString() != "ANY" }.forEach { map ->
+                           lines.add("${v}.stubFor(")
+                           // TODO: urlMatching and urlEqualTo should be handled in future if there is a chance for Regex based url patterns
+                           lines.indented {
+                               lines.add("${map.request.method.toString().lowercase()}(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})")
+                               lines.add(".willReturn(")
+                               lines.indented {
+                                   lines.add("aResponse()")
+                                   lines.indented {
+                                       lines.add(".withStatus(${map.response.status})")
+                                       lines.add(".withBody(\"${map.response.body}\")")
+                                   }
+                                   lines.add(")")
+                               }
+                           }
+                           addStatement(")", lines)
+                       }
+
+                       lines.addEmpty(1)
                    }
                }
             }
@@ -656,7 +655,7 @@ class TestSuiteWriter {
         }
     }
 
-    private fun tearDownMethod(lines: Lines) {
+    private fun tearDownMethod(lines: Lines, solution: Solution<*>) {
 
         if (config.blackBox) {
             return
@@ -687,9 +686,13 @@ class TestSuiteWriter {
                         addStatement("$controller.stopSut()", lines)
 
                         // TODO: Verify the order later
-                        if (useWireMock()) {
+                        if (useWireMock(solution)) {
                             addStatement("DnsCacheManipulator.clearDnsCache()", lines)
-                            addStatement("wireMockServer.stop()", lines)
+                            val actions = getExternalServiceActions(solution)
+                            actions.forEach {
+                                val v = getWireMockVariableName(it.externalService.externalServiceInfo.remoteHostname)
+                                addStatement("${v}.stop()", lines)
+                            }
                         }
                     }
                 }
@@ -759,14 +762,14 @@ class TestSuiteWriter {
         lines.addEmpty()
 
         val staticInit = {
-            staticVariables(controllerName, controllerInput, lines)
+            staticVariables(controllerName, controllerInput, lines, solution)
 
             if (!format.isCsharp()) {
                 lines.addEmpty(2)
                 initClassMethod(solution, lines)
                 lines.addEmpty(2)
 
-                tearDownMethod(lines)
+                tearDownMethod(lines, solution)
             }
         }
 
@@ -855,7 +858,31 @@ class TestSuiteWriter {
 
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
 
-    private fun useWireMock(): Boolean {
-        return config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE
+    private fun useWireMock(solution: Solution<*>): Boolean {
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+            if (getExternalServiceActions(solution).isNotEmpty()) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun getExternalServiceActions(solution: Solution<*>): List<ExternalServiceAction> {
+        val wireMockServers: MutableList<String> = mutableListOf()
+        val actions = mutableListOf<ExternalServiceAction>()
+        solution.individuals.filter { i -> i.individual is RestIndividual }
+            .forEach {
+                it.individual.seeExternalServiceActions().forEach { action ->
+                    if (!wireMockServers.contains(action.externalService.getWireMockAbsoluteAddress())) {
+                        actions.add(action)
+                        wireMockServers.add(action.externalService.getWireMockAbsoluteAddress())
+                    }
+                }
+            }
+        return actions.toList()
+    }
+
+    private fun getWireMockVariableName(name: String): String {
+        return name.replace(".", "").lowercase().plus("WireMockServer")
     }
 }
