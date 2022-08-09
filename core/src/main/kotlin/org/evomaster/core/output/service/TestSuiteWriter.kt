@@ -458,6 +458,10 @@ class TestSuiteWriter {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
             if (useWireMock(solution)) {
+                getExternalServiceActions(solution).forEach {
+                    val v = it.externalService.getSignature().plus("WireMock")
+                    lines.add("private static WireMockServer ${v}")
+                }
                 lines.add("private static WireMockServer wireMockServer;")
             }
         } else if (config.outputFormat.isKotlin()) {
@@ -471,7 +475,7 @@ class TestSuiteWriter {
             }
             if (useWireMock(solution)) {
                 getExternalServiceActions(solution).forEach {
-                    val v = getWireMockVariableName(it.externalService.externalServiceInfo.remoteHostname)
+                    val v = it.externalService.getSignature().plus("WireMock")
                     lines.add("private lateinit var ${v}: WireMockServer")
                 }
             }
@@ -586,7 +590,7 @@ class TestSuiteWriter {
                        val address = es.getWireMockAddress()
                        val port = es.getWireMockPort()
                        val remoteHostName = es.externalServiceInfo.remoteHostname
-                       val v = getWireMockVariableName(remoteHostName)
+                       val v = es.getSignature().plus("WireMockServer")
                        addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
                        if (format.isJava()) {
                            lines.add("$v = new WireMockServer(new WireMockConfiguration()")
@@ -603,7 +607,7 @@ class TestSuiteWriter {
                            }
                        }
                        addStatement("))", lines)
-                       addStatement("assertNotNull(wireMockServer)", lines)
+                       addStatement("assertNotNull($v)", lines)
                        addStatement("${v}.start()", lines)
                        lines.add("${v}.stubFor(")
                        lines.indented {
@@ -690,7 +694,7 @@ class TestSuiteWriter {
                             addStatement("DnsCacheManipulator.clearDnsCache()", lines)
                             val actions = getExternalServiceActions(solution)
                             actions.forEach {
-                                val v = getWireMockVariableName(it.externalService.externalServiceInfo.remoteHostname)
+                                val v = it.externalService.getSignature().plus("WireMock")
                                 addStatement("${v}.stop()", lines)
                             }
                         }
@@ -880,9 +884,5 @@ class TestSuiteWriter {
                 }
             }
         return actions.toList()
-    }
-
-    private fun getWireMockVariableName(name: String): String {
-        return name.replace(".", "").lowercase().plus("WireMockServer")
     }
 }

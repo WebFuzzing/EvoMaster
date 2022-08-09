@@ -206,8 +206,8 @@ class ExternalServiceHandler {
                 .atPriority(10)
                 .willReturn(
                     aResponse()
-                        .withStatus(500)
-                        .withBody("Internal Server Error")
+                        .withStatus(404)
+                        .withBody("Not Found")
                 )
         )
 

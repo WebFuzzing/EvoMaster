@@ -71,11 +71,7 @@ public class ServiceRest {
             responseDto.valid = false;
         }
 
-        if (responseCode == 200) {
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
     @RequestMapping(
@@ -99,11 +95,8 @@ public class ServiceRest {
             responseDto.valid = false;
         }
 
-        if (responseCode == 200) {
-            return new ResponseEntity<>(responseDto, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
     /**

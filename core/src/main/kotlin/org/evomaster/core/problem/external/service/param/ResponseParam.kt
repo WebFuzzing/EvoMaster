@@ -15,10 +15,10 @@ class ResponseParam (
      * Response content type, for now supports only JSON
      */
     val responseType: EnumGene<String> = EnumGene("responseType", listOf("JSON")),
-    val response: OptionalGene = OptionalGene("response", ObjectGene("response", listOf()))
+    val body: OptionalGene = OptionalGene("response", ObjectGene("response", listOf()))
         ): Param("response", mutableListOf(status).plus(responseType).toMutableList()) {
 
     override fun copyContent(): Param {
-        return ResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, response.copy() as OptionalGene)
+        return ResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, body.copy() as OptionalGene)
     }
 }

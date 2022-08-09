@@ -83,4 +83,11 @@ class ExternalService(
         wireMockServer.stop()
     }
 
+    fun getSignature(): String {
+        return externalServiceInfo.remoteHostname
+            .replace(".", "")
+            .lowercase()
+            .plus(externalServiceInfo.remotePort)
+    }
+
 }
