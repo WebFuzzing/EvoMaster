@@ -7,10 +7,11 @@ package org.evomaster.core.search
  *
  * When executing a test case, such tree-structure groups need to be flattened
  */
-abstract class ActionTree(children: MutableList<out ActionComponent>) : ActionComponent(children){
+abstract class ActionTree(
+        children: MutableList<out ActionComponent>,
+        groups : GroupsOfChildren<ActionComponent>? = null) : ActionComponent(children, groups){
 
     override fun flatten(): List<Action> {
         return children.flatMap { (it as ActionComponent).flatten()}
     }
-
 }

@@ -11,11 +11,9 @@ import org.slf4j.LoggerFactory
  */
 abstract class StructuralElement (
     protected open val children : MutableList<out StructuralElement> = mutableListOf(),
+
     private val groups : GroupsOfChildren<StructuralElement>? = null
 ) {
-
-    //FIXME this workaround does not seem to work, see ProcessMonitorTest
-    //constructor() : this(mutableListOf()) //issues with Kotlin compiler
 
     companion object{
         private val log = LoggerFactory.getLogger(StructuralElement::class.java)
