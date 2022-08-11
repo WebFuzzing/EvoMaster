@@ -29,7 +29,7 @@ abstract class StructuralElement (
 
     protected open val children : MutableList<out StructuralElement> = mutableListOf(),
     protected val childTypeVerifier: (Class<*>) -> Boolean = {_ -> true},
-    protected val groups : GroupsOfChildren<StructuralElement>? = null
+    private var groups : GroupsOfChildren<StructuralElement>? = null
 ) {
 
     companion object{
@@ -43,6 +43,7 @@ abstract class StructuralElement (
     var parent : StructuralElement? = null
         private set
 
+    fun groupsView() = groups
 
 
     init {
@@ -88,9 +89,9 @@ abstract class StructuralElement (
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
-        val end = groups.endIndexForGroupInsertionInclusive(groupId)
+        val end = groups!!.endIndexForGroupInsertionInclusive(groupId)
         addChild(end, child) //appending at the end of the group
-        groups.addedToGroup(groupId, child)
+        groups!!.addedToGroup(groupId, child)
     }
 
     fun addChildToGroup(position: Int, child: StructuralElement, groupId: String){
@@ -98,13 +99,13 @@ abstract class StructuralElement (
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
-        val start = groups.startIndexForGroupInsertionInclusive(groupId)
-        val end = groups.endIndexForGroupInsertionInclusive(groupId)
+        val start = groups!!.startIndexForGroupInsertionInclusive(groupId)
+        val end = groups!!.endIndexForGroupInsertionInclusive(groupId)
         if(position < start || position > end){
             throw IllegalArgumentException("Invalid position $position out of [$start,$end] for group $groupId")
         }
         addChild(position,child)
-        groups.addedToGroup(groupId, child)
+        groups!!.addedToGroup(groupId, child)
     }
 
     fun addChildrenToGroup(children : List<StructuralElement>, groupId: String){
@@ -190,7 +191,7 @@ abstract class StructuralElement (
         if(position1 == position2)
             throw IllegalArgumentException("It is not necessary to swap two same positions")
 
-        if(groups != null && ! groups.areChildrenInSameGroup(position1,position2)){
+        if(groups != null && ! groups!!.areChildrenInSameGroup(position1,position2)){
             throw IllegalArgumentException("Cannot swap children in different groups")
         }
 
@@ -218,6 +219,10 @@ abstract class StructuralElement (
             throw IllegalStateException("copy has different size of children compared to original, e.g., copy (${children.size}) vs. original (${original.children.size})")
         children.indices.forEach {
             children[it].postCopy(original.children[it])
+        }
+        if(original.groups != null && this.groups == null){
+            //the copy content didn't setup group, let's do it here
+            groups = original.groups!!.copy(children)
         }
     }
 

@@ -5,9 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.external.service.ExternalServiceAction
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionComponent
-import org.evomaster.core.search.Individual
+import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
@@ -41,7 +39,20 @@ abstract class EnterpriseIndividual(
      * a list of children of the individual
      */
     children: List<out ActionComponent>
-) : Individual(trackOperator, index, children) {
+) : Individual(
+    trackOperator,
+    index,
+    children,
+    GroupsOfChildren(
+        children,
+        listOf(
+            //TODO in future ll need to refactor to handle multiple databases and NoSQL ones
+            ChildGroup(GroupsOfChildren.INITIALIZATION_SQL,{e -> e is ActionComponent && e.flatten().all { a -> a is DbAction }}),
+            // This assumes/requires that all initial children are of type MAIN
+            ChildGroup(GroupsOfChildren.MAIN, {true}, if(children.isEmpty()) -1 else 0, children.size-1)
+        )
+    )
+) {
     companion object{
         private val log : Logger = LoggerFactory.getLogger(ApiWsIndividual::class.java)
     }
@@ -50,11 +61,16 @@ abstract class EnterpriseIndividual(
      * a list of db actions for its Initialization
      */
     private val dbInitialization: List<DbAction>
-        get() {return children.filterIsInstance<DbAction>()}
+        get() {
+            return groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL)
+                .flatMap { (it as ActionComponent).flatten() }
+                .map { it as DbAction }
+        }
 
     /**
      * a list of external service actions for its Initialization
      */
+    @Deprecated("No longer done in initialization")
     private val externalServiceInitialization: List<ExternalServiceAction>
         get() { return children.filterIsInstance<ExternalServiceAction>()}
 
@@ -62,11 +78,16 @@ abstract class EnterpriseIndividual(
         return dbInitialization.plus(externalServiceInitialization)
     }
 
+    @Deprecated("No longer done in initialization")
     override fun seeExternalServiceActions(): List<ExternalServiceAction> {
         return externalServiceInitialization
     }
 
     override fun repairInitializationActions(randomness: Randomness) {
+
+        /*
+            TODO this need updating / refactoring
+         */
 
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
@@ -102,6 +123,7 @@ abstract class EnterpriseIndividual(
      * add [actions] at [position]
      * if [position] = -1, append the [actions] at the end
      */
+    @Deprecated("")
     fun addInitializingActions(position: Int=-1, actions: List<Action>){
         if (position == -1)  {
             addChildren(getLastIndexOfDbActionToAdd(), actions)

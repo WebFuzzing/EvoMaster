@@ -25,7 +25,7 @@ class  GroupsOfChildren<T>(
 
         const val INITIALIZATION_SQL = "INITIALIZATION_SQL"
 
-        const val INITIALIZATION_EXTERNAL_SERVICES = "INITIALIZATION_EXTERNAL_SERVICES"
+        const val EXTERNAL_SERVICES = "EXTERNAL_SERVICES"
 
         const val RESOURCE_SQL = "RESOURCE_SQL"
     }

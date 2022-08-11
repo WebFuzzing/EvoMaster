@@ -25,8 +25,14 @@ import org.evomaster.core.search.tracer.TrackingHistory
  */
 abstract class Individual(override var trackOperator: TrackOperator? = null,
                           override var index: Int = Traceable.DEFAULT_INDEX,
-                          children: List<ActionComponent>
-) : Traceable, StructuralElement(children.toMutableList()), RootElement{
+                          children: List<ActionComponent>,
+                          groups : GroupsOfChildren<StructuralElement>? = null
+) : Traceable,
+    StructuralElement(
+        children.toMutableList(),
+        {k -> ActionComponent::class.java.isAssignableFrom(k)},
+        groups
+    ), RootElement{
 
     /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
