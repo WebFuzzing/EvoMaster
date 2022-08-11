@@ -23,7 +23,7 @@ object CookieWriter {
      *  Return the distinct auth info on cookie-based login in all actions
      *  of this individual
      */
-    fun getCookieLoginAuth(ind: Individual) =  ind.seeActions()
+    fun getCookieLoginAuth(ind: Individual) =  ind.seeAllActions()
             .filterIsInstance<HttpWsAction>()
             .filter { it.auth.cookieLogin != null }
             .map { it.auth.cookieLogin!! }

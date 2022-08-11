@@ -144,7 +144,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         assertEquals(1, insertions.size());
 
         //extract the x/y values from the random call
-        RestCallAction first = (RestCallAction) ind.seeActions().iterator().next();
+        RestCallAction first = (RestCallAction) ind.seeAllActions().iterator().next();
         int x = first.getParameters().stream()
                 .filter(p -> p.getName().equalsIgnoreCase("x"))
                 .map(p -> Integer.parseInt(p.getGene().getValueAsRawString()))

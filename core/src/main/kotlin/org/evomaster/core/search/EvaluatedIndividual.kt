@@ -118,7 +118,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *      Note that if [actions] is null, then we employ individual.seeActions() as default
      */
     fun seeResults(actions: List<Action>? = null): List<ActionResult>{
-        val list = actions?:individual.seeActions()
+        val list = actions?:individual.seeAllActions()
         //TODO Man: need to fix for external services
         val all = individual.seeActions(NO_EXTERNAL_SERVICE)
         val last = results.indexOfFirst { it.stopping }
@@ -139,7 +139,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         val list: MutableList<EvaluatedAction> = mutableListOf()
 
-        val actions = individual.seeActions()
+        val actions = individual.seeAllActions()
         val actionResults = seeResults(actions)
 
         (0 until actionResults.size).forEach { i ->
@@ -520,7 +520,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *  this is to handle unclassified, eg, a gene might be empty gson or a gene constrained with some class
      */
     fun addGeneImpact(individual: Individual, gene: Gene) : GeneImpact?{
-        val actions = if (individual is RestIndividual)  individual.seeActions(NO_INIT) else individual.seeActions()
+        val actions = if (individual is RestIndividual)  individual.seeActions(NO_INIT) else individual.seeAllActions()
 
         val action = actions.find {
             it.seeTopGenes().contains(gene)

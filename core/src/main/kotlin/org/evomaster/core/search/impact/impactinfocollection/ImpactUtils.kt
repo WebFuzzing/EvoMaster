@@ -129,7 +129,7 @@ class ImpactUtils {
         ) : Map<String, MutableList<MutatedGeneWithContext>>{
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
-            if (individual.seeActions().isEmpty()){
+            if (individual.seeAllActions().isEmpty()){
                 individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                     val id = generateGeneId(individual, g)
                     val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
@@ -137,7 +137,7 @@ class ImpactUtils {
                     contexts.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = mutatedGenes.size))
                 }
             }else{
-                individual.seeActions().forEachIndexed { index, action ->
+                individual.seeAllActions().forEachIndexed { index, action ->
                     action.seeTopGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                         val id = generateGeneId(action, g)
                         val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}

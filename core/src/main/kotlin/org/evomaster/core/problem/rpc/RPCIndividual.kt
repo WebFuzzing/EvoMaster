@@ -34,37 +34,19 @@ class RPCIndividual(
      */
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> seeInitializingActions().flatMap(Action::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
-            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
+            GeneFilter.ALL -> seeInitializingActions().flatMap(Action::seeTopGenes).plus(seeAllActions().flatMap(Action::seeTopGenes))
+            GeneFilter.NO_SQL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>().flatMap(ExternalServiceAction::seeTopGenes)
         }
     }
 
     override fun size(): Int {
-        return seeActions().size
+        return seeAllActions().size
     }
 
     override fun canMutateStructure(): Boolean = true
 
-    /**
-     * TODO: Verify the implementation
-     */
-    override fun seeActions(filter: ActionFilter): List<out Action> {
-        return when (filter) {
-            ActionFilter.ALL -> children as List<Action>
-            // TODO Man: need to check NO_SQL which might be replaced with NO_INIT
-            ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
-            ActionFilter.ONLY_SQL -> seeInitializingActions().filterIsInstance<DbAction>()
-            ActionFilter.INIT -> seeInitializingActions()
-            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>()
-            ActionFilter.NO_EXTERNAL_SERVICE -> (children as List<Action>).filter { it !is ExternalServiceAction }
-        }
-    }
-
-    override fun seeActions(): List<RPCCallAction> {
-        return children.filterIsInstance<RPCCallAction>()
-    }
 
      fun seeIndexedRPCCalls() : Map<Int, RPCCallAction> = getIndexedChildren(RPCCallAction::class.java)
 

@@ -149,7 +149,7 @@ object TestSuiteSplitter {
             val inds = solution.individuals.filter { ind ->
                 ind.evaluatedActions().any { ac -> clu.contains(ac.result as HttpWsCallResult) }
             }.toMutableList()
-            inds.sortBy { it.individual.seeActions().size }
+            inds.sortBy { it.individual.seeAllActions().size }
             inds.firstOrNull { execSol.add(it) }
         } }
 

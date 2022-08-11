@@ -419,7 +419,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         if(!ind1With2Resources.isInitialized())
             ind1With2Resources.doInitialize()
 
-        val fake1fitnessValue = FitnessValue(ind1With2Resources!!.seeActions().size.toDouble())
+        val fake1fitnessValue = FitnessValue(ind1With2Resources!!.seeAllActions().size.toDouble())
         targetsOfB.plus(targetsOfA).forEachIndexed { index, i ->
             fake1fitnessValue.updateTarget(i, 0.2, index)
         }
@@ -429,7 +429,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         if(!ind2With2Resources.isInitialized())
             ind2With2Resources.doInitialize()
 
-        val fake2fitnessValue = FitnessValue(ind2With2Resources!!.seeActions().size.toDouble())
+        val fake2fitnessValue = FitnessValue(ind2With2Resources!!.seeAllActions().size.toDouble())
         targetsOfC.plus(targetsOfA).forEachIndexed { index, i ->
             fake2fitnessValue.updateTarget(i, 0.3, index)
         }

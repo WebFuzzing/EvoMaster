@@ -49,7 +49,7 @@ abstract class EnterpriseIndividual(
             //TODO in future ll need to refactor to handle multiple databases and NoSQL ones
             ChildGroup(GroupsOfChildren.INITIALIZATION_SQL,{e -> e is ActionComponent && e.flatten().all { a -> a is DbAction }}),
             // This assumes/requires that all initial children are of type MAIN
-            ChildGroup(GroupsOfChildren.MAIN, {true}, if(children.isEmpty()) -1 else 0, children.size-1)
+            ChildGroup(GroupsOfChildren.MAIN, {e -> e !is DbAction && e !is ExternalServiceAction}, if(children.isEmpty()) -1 else 0, children.size-1)
         )
     )
 ) {
@@ -67,21 +67,23 @@ abstract class EnterpriseIndividual(
                 .map { it as DbAction }
         }
 
-    /**
-     * a list of external service actions for its Initialization
-     */
-    @Deprecated("No longer done in initialization")
-    private val externalServiceInitialization: List<ExternalServiceAction>
-        get() { return children.filterIsInstance<ExternalServiceAction>()}
 
-    override fun seeInitializingActions(): List<Action> {
-        return dbInitialization.plus(externalServiceInitialization)
+    final override fun seeActions(filter: ActionFilter) : List<Action>{
+        return when (filter) {
+            ActionFilter.ALL -> seeAllActions()
+            ActionFilter.MAIN_EXECUTABLE -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN)
+                .flatMap { (it as ActionComponent).flatten() }
+                .filter { it !is DbAction && it !is ExternalServiceAction }
+            ActionFilter.INIT -> seeInitializingActions()
+            // WARNING: this can still return DbAction and External ones...
+            ActionFilter.NO_INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).flatMap { (it as ActionComponent).flatten() }
+            ActionFilter.ONLY_SQL -> seeInitializingActions().filterIsInstance<DbAction>()
+            ActionFilter.NO_SQL -> seeAllActions().filter { it !is DbAction }
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ExternalServiceAction>()
+            ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ExternalServiceAction }
+        }
     }
 
-    @Deprecated("No longer done in initialization")
-    override fun seeExternalServiceActions(): List<ExternalServiceAction> {
-        return externalServiceInitialization
-    }
 
     override fun repairInitializationActions(randomness: Randomness) {
 

@@ -32,7 +32,7 @@ class RPCStructureMutator : ApiWsStructureMutator() {
     }
 
     private fun mutateForRandomType(individual: RPCIndividual, mutatedGenes: MutatedGeneSpecification?) {
-        val size = individual.seeActions().size
+        val size = individual.seeAllActions().size
         if ((size + 1 < config.maxTestSize) && (size == 1 || randomness.nextBoolean())){
             // add
             val sampledAction = sampler.sampleRandomAction()

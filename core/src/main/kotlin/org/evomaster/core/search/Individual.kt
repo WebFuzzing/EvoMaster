@@ -109,16 +109,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     abstract fun size(): Int
 
 
-
-    /**
-     * @return actions based on the specified [filter]
-     *
-     * TODO refactor [seeActions], [seeInitializingActions] and [seeDbActions] based on this fun
-     */
-    open fun seeActions(filter: ActionFilter) : List<out Action>{
-        return seeActions()
-    }
-
     open fun doInitialize(randomness: Randomness? = null){
         //TODO refactor with seeAllActions
 
@@ -128,16 +118,41 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 //            seeDbActions()
 //        }.toSet().forEach { it.doInitialize(randomness) }
 
-        seeInitializingActions().plus(seeActions()).plus(seeDbActions())
+        seeInitializingActions().plus(seeAllActions()).plus(seeDbActions())
                 .toSet()
         .forEach { it.doInitialize(randomness) }
     }
 
     /**
+     * @return actions based on the specified [filter]
+     *
+     * TODO refactor [seeAllActions], [seeInitializingActions] and [seeDbActions] based on this fun
+     */
+    open fun seeActions(filter: ActionFilter) : List<Action>{
+        if(filter != ActionFilter.ALL){
+            throw IllegalArgumentException("Default implementation only support ALL filter")
+        }
+        return seeAllActions()
+    }
+
+
+    /**
      * Return a view of all the "actions" defined in this individual.
      * Note: each action could be composed by 0 or more genes
      */
-    abstract fun seeActions(): List<out Action>
+    fun seeAllActions(): List<Action>{
+        return (children as List<ActionComponent>).flatMap { it.flatten() }
+    }
+
+    /**
+     * return a view of the main actions that are executable, like API calls,
+     * and not setups like DB and external services
+     */
+    fun seeMainExecutableActions() : List<Action>{
+        val list = seeActions(ActionFilter.MAIN_EXECUTABLE)
+        org.evomaster.core.Lazy.assert { list.all { it.shouldCountForFitnessEvaluations() } }
+        return list
+    }
 
     /**
      * Return a view of all initializing actions done before the main
@@ -145,7 +160,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * calls toward the SUT.
      * A test does not require to have initializing actions.
      */
-    open fun seeInitializingActions(): List<Action> = listOf()
+    fun seeInitializingActions(): List<Action> = seeActions(ActionFilter.INIT)
 
     /**
      * return a list of all db actions in [this] individual
@@ -154,14 +169,14 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
      * would be same with [seeInitializingActions]
      */
-    open fun seeDbActions() : List<DbAction> = seeInitializingActions().filterIsInstance<DbAction>()
+    fun seeDbActions() : List<DbAction> = seeActions(ActionFilter.ONLY_SQL) as List<DbAction>
 
     /**
      * return a list of all external service actions in [this] individual
      * that include all the initializing actions plus external service actions
      * among rest actions
      */
-    open fun seeExternalServiceActions() : List<ExternalServiceAction> = seeInitializingActions().filterIsInstance<ExternalServiceAction>()
+     fun seeExternalServiceActions() : List<ExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ExternalServiceAction>
 
     /**
      * Determine if the structure (ie the actions) of this individual
@@ -226,11 +241,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     open fun sameActions(other: Individual, excludeInitialization : Boolean = false) : Boolean{
         if (!excludeInitialization || seeInitializingActions().size != other.seeInitializingActions().size)
             return false
-        if (seeActions().size != other.seeActions().size)
+        if (seeAllActions().size != other.seeAllActions().size)
             return false
         if (!excludeInitialization || (0 until seeInitializingActions().size).any { seeInitializingActions()[it].getName() != other.seeInitializingActions()[it].getName() })
             return false
-        if ((0 until seeActions().size).any { seeActions()[it].getName() != other.seeActions()[it].getName() })
+        if ((0 until seeAllActions().size).any { seeAllActions()[it].getName() != other.seeAllActions()[it].getName() })
             return false
         return true
     }
@@ -240,7 +255,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      *  e.g., if false, the individual might be composed of a sequence of genes.
      */
     @Deprecated("Now individuals always have actions as children")
-    open fun hasAnyAction()  = seeActions().isNotEmpty()
+    open fun hasAnyAction()  = seeAllActions().isNotEmpty()
 
 
     open fun cleanBrokenBindingReference(){

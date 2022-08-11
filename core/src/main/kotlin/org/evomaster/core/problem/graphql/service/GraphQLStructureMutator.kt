@@ -55,18 +55,18 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
 
     private fun mutateForRandomType(ind: GraphQLIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
-        if (ind.seeActions().size == 1) {
+        if (ind.seeAllActions().size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05) as GraphQLAction
 
             //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, ind.seeActions().size, false, ind.seeActions().size)
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, ind.seeAllActions().size, false, ind.seeAllActions().size)
 
             ind.addGQLAction(action= sampledAction)
 
             return
         }
 
-        if (randomness.nextBoolean() || ind.seeActions().size == config.maxTestSize) {
+        if (randomness.nextBoolean() || ind.seeAllActions().size == config.maxTestSize) {
 
             //delete one at random
             log.trace("Deleting action from test")

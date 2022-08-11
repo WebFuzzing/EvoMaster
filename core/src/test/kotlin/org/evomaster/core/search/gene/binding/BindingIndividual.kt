@@ -22,7 +22,7 @@ class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = l
     override fun repairInitializationActions(randomness: Randomness) {
     }
 
-    override fun seeActions(): List<out Action> = children as List<out Action>
+    override fun seeAllActions(): List<out Action> = children as List<out Action>
 
     override fun verifyInitializationActions(): Boolean = true
 }

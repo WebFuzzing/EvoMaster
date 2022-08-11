@@ -39,7 +39,7 @@ public class BranchesRPCEMTest extends SpringRPCTestBase {
                     assertTrue(solution.getIndividuals().size() >= 1);
 
                     int n =solution.getIndividuals().stream().map(EvaluatedIndividual<RPCIndividual>::getIndividual)
-                            .flatMapToInt(i-> i.seeActions().stream().filter(a->
+                            .flatMapToInt(i-> i.seeAllActions().stream().filter(a->
                                     {
                                         if (a.getResponse() == null) return false;
                                         Gene g = ParamUtil.Companion.getValueGene(a.getResponse().getGene());

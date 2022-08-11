@@ -12,11 +12,12 @@ import org.evomaster.core.search.*
  */
 class EnterpriseActionGroup(
     children: MutableList<out Action>,
-    groups: GroupsOfChildren<Action> = GroupsOfChildren(
+    private val mainClass : Class<*>,
+    groups: GroupsOfChildren<out Action> = GroupsOfChildren(
         children,
         listOf(
             ChildGroup(GroupsOfChildren.EXTERNAL_SERVICES, { e -> e is ExternalServiceAction }),
-            ChildGroup(GroupsOfChildren.MAIN, { true }, 0, 1, 1)
+            ChildGroup(GroupsOfChildren.MAIN, { k -> mainClass.isAssignableFrom(k.javaClass) }, 0, 1, 1)
         )
     )
 ) : ActionDependentGroup(
@@ -30,6 +31,7 @@ class EnterpriseActionGroup(
 
         return EnterpriseActionGroup(
             k,
+            mainClass,
             groupsView()!!.copy(k) as GroupsOfChildren<Action>
         )
     }

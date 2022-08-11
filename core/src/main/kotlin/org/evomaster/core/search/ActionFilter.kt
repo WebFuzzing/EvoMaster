@@ -7,7 +7,12 @@ enum class ActionFilter {
     ALL,
 
     /**
-     * actions which are in initialization, e.g., HttpWsIndividual
+     * The main actions that are executable, eg API calls
+     */
+    MAIN_EXECUTABLE,
+
+    /**
+     * actions which are in initialization
      */
     INIT,
 

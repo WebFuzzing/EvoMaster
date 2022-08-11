@@ -81,7 +81,7 @@ class ResourceDepManageService {
         val addedMap = mutableMapOf<String, MutableSet<String>>()
         val removedMap = mutableMapOf<String, MutableSet<String>>()
 
-        restIndividual.seeActions().forEachIndexed { index, action ->
+        restIndividual.seeAllActions().forEachIndexed { index, action ->
             if (config.doesApplyNameMatching) updateParamInfo(action, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {
@@ -304,12 +304,12 @@ class ResourceDepManageService {
     private fun compare(actionName: String, eviA: EvaluatedIndividual<RestIndividual>, eviB: EvaluatedIndividual<RestIndividual>): Int {
         val actionAs = mutableListOf<Int>()
         val actionBs = mutableListOf<Int>()
-        eviA.individual.seeActions().forEachIndexed { index, action ->
+        eviA.individual.seeAllActions().forEachIndexed { index, action ->
             if (action.getName() == actionName)
                 actionAs.add(index)
         }
 
-        eviB.individual.seeActions().forEachIndexed { index, action ->
+        eviB.individual.seeAllActions().forEachIndexed { index, action ->
             if (action.getName() == actionName)
                 actionBs.add(index)
         }

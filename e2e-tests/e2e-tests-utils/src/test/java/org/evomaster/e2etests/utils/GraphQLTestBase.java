@@ -23,7 +23,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
     protected boolean atLeastOneResponseWithData(EvaluatedIndividual<GraphQLIndividual> ind) {
 
-        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+        List<GraphQLAction> actions = ind.getIndividual().seeAllActions();
 
         boolean stopped = false;
 
@@ -61,7 +61,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
     protected boolean noneWithErrors(EvaluatedIndividual<GraphQLIndividual> ind) {
 
-        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+        List<GraphQLAction> actions = ind.getIndividual().seeAllActions();
 
         boolean stopped = false;
 
@@ -116,7 +116,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
     }
 
     protected boolean hasValueInData(EvaluatedIndividual<GraphQLIndividual> ind, String value) {
-        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+        List<GraphQLAction> actions = ind.getIndividual().seeAllActions();
 
         boolean stopped = false;
 
@@ -214,11 +214,11 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
     private boolean hasAtLeastOne(EvaluatedIndividual<GraphQLIndividual> ind, String methodName, GQMethodType type, int expectedStatusCode, String inResponse){
 
-        if (ind.getIndividual().seeActions().size() != ind.seeResults(null).size()){
+        if (ind.getIndividual().seeAllActions().size() != ind.seeResults(null).size()){
             throw new IllegalStateException(String.format("mismatched size of results (%d) with calls (%d) for GraphQLIndividual",
-                    ind.seeResults(null).size(), ind.getIndividual().seeActions().size()));
+                    ind.seeResults(null).size(), ind.getIndividual().seeAllActions().size()));
         }
-        List<GraphQLAction> actions = ind.getIndividual().seeActions();
+        List<GraphQLAction> actions = ind.getIndividual().seeAllActions();
 
         boolean stopped = false;
 

@@ -110,7 +110,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
      * eg a POST followed by a GET on the created resource
      */
     private fun hasChainedLocations(individual: Individual) : Boolean{
-        return individual.seeActions().any { a ->
+        return individual.seeAllActions().any { a ->
             a is RestCallAction && a.isLocationChained()
         }
     }

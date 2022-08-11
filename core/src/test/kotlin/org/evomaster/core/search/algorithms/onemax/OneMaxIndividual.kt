@@ -65,7 +65,7 @@ class OneMaxIndividual(
         return n
     }
 
-    override fun seeActions(): List<out Action> {
+    override fun seeAllActions(): List<out Action> {
         return listOf()
     }
 

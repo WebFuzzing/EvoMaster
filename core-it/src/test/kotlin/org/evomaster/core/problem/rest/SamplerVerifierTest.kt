@@ -95,7 +95,7 @@ class SamplerVerifierTest {
 
         assertTrue(ind.isInitialized(), "Sampled individual is not initialized")
 
-        val actions = ind.seeActions()
+        val actions = ind.seeAllActions()
 
         for(a in actions){
 

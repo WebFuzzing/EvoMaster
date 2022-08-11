@@ -3,7 +3,6 @@ package org.evomaster.core.problem.rest.service
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -50,9 +49,9 @@ class BlackBoxRestFitness : RestFitness() {
         val chainState = mutableMapOf<String, String>()
 
         //run the test, one action at a time
-        for (i in 0 until individual.seeActions().size) {
+        for (i in 0 until individual.seeAllActions().size) {
 
-            val a = individual.seeActions()[i]
+            val a = individual.seeAllActions()[i]
 
             var ok = false
 
@@ -68,7 +67,7 @@ class BlackBoxRestFitness : RestFitness() {
             }
         }
 
-        handleResponseTargets(fv, individual.seeActions(), actionResults, listOf())
+        handleResponseTargets(fv, individual.seeAllActions(), actionResults, listOf())
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

@@ -71,11 +71,11 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
                     RestSampler sampler = injector.getInstance(RestSampler.class);
                     RestIndividual ind = sampler.sample();
                     int count = 0;
-                    while (ind.seeActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)) && count < 3){
+                    while (ind.seeAllActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)) && count < 3){
                         ind = sampler.sample();
                         count++;
                     }
-                    if (ind.seeActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)))
+                    if (ind.seeAllActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)))
                         fail("cannot find any valid individual");
                     archive.addIfNeeded(ff.calculateCoverage(ind, Collections.emptySet()));
 

@@ -58,19 +58,19 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             actionResults: List<ActionResult>
     ) {
 
-        if (individual.seeActions().size < additionalInfoList.size) {
+        if (individual.seeAllActions().size < additionalInfoList.size) {
             /*
                 Note: as not all actions might had been executed, it might happen that
                 there are less Info than declared actions.
                 But the other way round should not really happen
              */
-            log.warn("Length mismatch between ${individual.seeActions().size} actions and ${additionalInfoList.size} info data")
+            log.warn("Length mismatch between ${individual.seeAllActions().size} actions and ${additionalInfoList.size} info data")
             return
         }
 
         for (i in 0 until additionalInfoList.size) {
 
-            val action = individual.seeActions()[i]
+            val action = individual.seeAllActions()[i]
             val info = additionalInfoList[i]
 
             if (action !is RestCallAction) {
@@ -614,7 +614,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         handleExtra(dto, fv)
 
-        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
+        handleResponseTargets(fv, individual.seeAllActions(), actionResults, dto.additionalInfoList)
 
         handleExternalServiceInfo(dto.additionalInfoList)
 

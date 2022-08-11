@@ -104,7 +104,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun mutationPreProcessing(individual: T){
 
-        for(a in individual.seeActions()){
+        for(a in individual.seeAllActions()){
             if(a !is RestCallAction){
                 continue
             }
@@ -201,7 +201,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         Lazy.assert {
-            mutatedIndividual.seeActions()
+            mutatedIndividual.seeAllActions()
                     .flatMap { it.seeTopGenes() }
                     .all {
                         GeneUtils.verifyRootInvariant(it) &&

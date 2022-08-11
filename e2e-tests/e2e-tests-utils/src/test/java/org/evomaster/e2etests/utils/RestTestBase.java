@@ -79,7 +79,7 @@ public abstract class RestTestBase  extends WsTestBase{
     protected List<Integer> getIndexOfHttpCalls(Individual ind, HttpVerb verb) {
 
         List<Integer> indices = new ArrayList<>();
-        List<Action> actions = ind.seeActions();
+        List<Action> actions = ind.seeAllActions();
 
         for (int i = 0; i < actions.size(); i++) {
             if (actions.get(i) instanceof RestCallAction) {
@@ -116,7 +116,7 @@ public abstract class RestTestBase  extends WsTestBase{
                                     String path,
                                     String inResponse) {
 
-        List<RestCallAction> actions = ind.getIndividual().seeActions();
+        List<RestCallAction> actions = ind.getIndividual().seeAllActions();
         List<ActionResult> results = ind.seeResults(actions);
 
         boolean stopped = false;

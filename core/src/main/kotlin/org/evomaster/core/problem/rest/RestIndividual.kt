@@ -91,8 +91,8 @@ class RestIndividual(
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
         return when (filter) {
-            GeneFilter.ALL -> seeDbActions().flatMap(Action::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
-            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
+            GeneFilter.ALL -> seeDbActions().flatMap(Action::seeTopGenes).plus(seeAllActions().flatMap(Action::seeTopGenes))
+            GeneFilter.NO_SQL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ExternalServiceAction::seeTopGenes)
         }
@@ -127,12 +127,12 @@ class RestIndividual(
         need to think about it
      */
 
-    override fun size() = seeActions().size
+    override fun size() = seeAllActions().size
 
     /**
      * @return actions which are REST actions
      */
-    override fun seeActions(): List<RestCallAction> = getResourceCalls().flatMap { it.seeActions(NO_INIT) as List<RestCallAction> }
+    override fun seeAllActions(): List<RestCallAction> = getResourceCalls().flatMap { it.seeActions(NO_INIT) as List<RestCallAction> }
 
     /**
      * @return all Sql actions which could be in initialization or between rest actions.
@@ -326,18 +326,6 @@ class RestIndividual(
                 .any {
                     if(it < position) validateSwap(it, position) else if(it > position) validateSwap(position, it) else false
                 }
-    }
-
-    override fun seeActions(filter: ActionFilter): List<out Action> {
-        return when(filter){
-            ALL-> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ALL) })
-            NO_EXTERNAL_SERVICE-> seeInitializingActions().filter { it !is ExternalServiceAction }.plus(getResourceCalls().flatMap { it.seeActions(ALL) })
-            NO_INIT -> getResourceCalls().flatMap { it.seeActions(ALL) }
-            INIT -> seeInitializingActions()
-            ONLY_SQL -> seeInitializingActions().filterIsInstance<DbAction>().plus(getResourceCalls().flatMap { it.seeActions(ONLY_SQL) })
-            NO_SQL -> getResourceCalls().flatMap { it.seeActions(NO_SQL) }
-            ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().plus(getResourceCalls().flatMap { it.seeActions(ONLY_EXTERNAL_SERVICE) })
-        }
     }
 
 

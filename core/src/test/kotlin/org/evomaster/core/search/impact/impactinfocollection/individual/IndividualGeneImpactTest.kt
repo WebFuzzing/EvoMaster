@@ -188,7 +188,7 @@ class IndividualGeneImpactTest {
         fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification, index: Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
 
-            val mutatedGene = (ind2.seeActions()[mutatedIndex].seeTopGenes()[1] as StringGene)
+            val mutatedGene = (ind2.seeAllActions()[mutatedIndex].seeTopGenes()[1] as StringGene)
 
             mutatedGeneSpecification.addMutatedGene(
                     isDb = false,
@@ -210,10 +210,10 @@ class IndividualGeneImpactTest {
 
         fun fakeStructureMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, remove: Boolean, mutatedGeneSpecification: MutatedGeneSpecification, index : Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
-            if (ind2.seeActions().size == 1 && remove)
+            if (ind2.seeAllActions().size == 1 && remove)
                 throw IllegalArgumentException("action cannot be removed since there is only one action")
             if (remove){
-                val removedAction = ind2.seeActions()[mutatedIndex]
+                val removedAction = ind2.seeAllActions()[mutatedIndex]
 
                 mutatedGeneSpecification.addRemovedOrAddedByAction(
                     removedAction,
@@ -264,7 +264,7 @@ class IndividualGeneImpactTest {
         fun getFakeEvaluatedIndividual() : EvaluatedIndividual<Ind>{
             val ind1 = Ind.getInd()
 
-            val fv1 = FitnessValue(ind1.seeActions().size.toDouble())
+            val fv1 = FitnessValue(ind1.seeAllActions().size.toDouble())
 
             fv1.updateTarget(id = 1, value = 0.1, actionIndex = 0)
             fv1.updateTarget(id = 2, value = 0.1, actionIndex = 1)
@@ -308,15 +308,15 @@ class IndividualGeneImpactTest {
         override fun seeGenes(filter: GeneFilter): List<out Gene> {
            return when(filter){
                GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(Action::seeTopGenes)
-               GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
-               GeneFilter.ALL -> seeInitializingActions().plus(seeActions()).flatMap(Action::seeTopGenes)
+               GeneFilter.NO_SQL -> seeAllActions().flatMap(Action::seeTopGenes)
+               GeneFilter.ALL -> seeInitializingActions().plus(seeAllActions()).flatMap(Action::seeTopGenes)
                else -> throw IllegalArgumentException("$filter is not supported by ImpactTest Individual")
            }
         }
 
-        override fun size(): Int = seeActions().size
+        override fun size(): Int = seeAllActions().size
 
-        override fun seeActions(): List<out Action> {
+        override fun seeAllActions(): List<out Action> {
             return actions
         }
 
