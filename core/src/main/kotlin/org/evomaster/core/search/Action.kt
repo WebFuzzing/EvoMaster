@@ -9,16 +9,14 @@ import org.slf4j.LoggerFactory
  * A variable-length individual will be composed by 1 or more "actions".
  * Actions can be: REST call, setup Wiremock, setup database, etc.
  */
-abstract class Action(children: List<StructuralElement>) : ActionComponent(children.toMutableList()) {
+abstract class Action(children: List<StructuralElement>) : ActionComponent(
+    children.toMutableList(),
+    {k -> !ActionComponent::class.java.isAssignableFrom(k)
+            && !Individual::class.java.isAssignableFrom(k)} //action should not have other actions nor individuals
+) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(Action::class.java)
-    }
-
-    init{
-        if(children.any { it is Action || it is Individual || it is ActionTree}){
-            throw IllegalArgumentException("The children of an action cannot be other actions nor individuals")
-        }
     }
 
     override fun flatten(): List<Action> {

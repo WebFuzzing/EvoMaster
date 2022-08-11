@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.slf4j.LoggerFactory
+import kotlin.reflect.KClass
 
 /**
  * an element which has a structure, i.e., 0..1 [parent] and 0..* children
@@ -10,9 +11,25 @@ import org.slf4j.LoggerFactory
  * @property parent its parent
  */
 abstract class StructuralElement (
-    protected open val children : MutableList<out StructuralElement> = mutableListOf(),
+   /*
+        Unfortunately, Kotlin does not allow to define generics like this
 
-    private val groups : GroupsOfChildren<StructuralElement>? = null
+        StructuralElement<T : StructuralElement<*>>
+
+        as it violates  Finite Bound Restriction constraints.
+        https://stackoverflow.com/questions/46682455/how-to-solve-violation-of-finite-bound-restriction-in-kotlin
+
+        So, we end up using an "out" bound, which forces us to do a runtime upper cast to StructuralElement
+        every time we need to insert new elements in children. It is not ideal, as right insertions of proper
+        types for the children would not be checked at compilation time.
+        A partial workaround is to introduce a type verifier, checked every time a new element is added.
+
+        An extra benefit here is that such verifier can be used to exclude only some specific subtypes.
+    */
+
+    protected open val children : MutableList<out StructuralElement> = mutableListOf(),
+    protected val childTypeVerifier: (Class<*>) -> Boolean = {_ -> true},
+    protected val groups : GroupsOfChildren<StructuralElement>? = null
 ) {
 
     companion object{
@@ -29,7 +46,10 @@ abstract class StructuralElement (
 
 
     init {
-        children.forEach { it.parent = this; }
+        verifyChildrenToInsert(children)
+        children.forEach {
+            it.parent = this;
+        }
         groups?.verifyGroups()
     }
 
@@ -52,7 +72,19 @@ abstract class StructuralElement (
         return m
     }
 
+    private fun verifyChildrenToInsert(e : StructuralElement){
+        if(! childTypeVerifier.invoke(e.javaClass)){
+            throw IllegalArgumentException("Cannot add child due to its class ${e.javaClass}")
+        }
+    }
+
+    private fun verifyChildrenToInsert(c : Collection<StructuralElement>){
+        c.forEach { verifyChildrenToInsert(it) }
+    }
+
+
     fun addChildToGroup(child: StructuralElement, groupId: String){
+        verifyChildrenToInsert(child)
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
@@ -62,6 +94,7 @@ abstract class StructuralElement (
     }
 
     fun addChildToGroup(position: Int, child: StructuralElement, groupId: String){
+        verifyChildrenToInsert(child)
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
@@ -82,19 +115,19 @@ abstract class StructuralElement (
      * add a child of the element
      */
     open fun addChild(child: StructuralElement){
+        verifyChildrenToInsert(child)
         if(children.contains(child)){
             throw IllegalArgumentException("Child already present")
         }
         child.parent = this
-        //TODO re-check proper use of in/out in Kotlin
         (children as MutableList<StructuralElement>).add(child)
         //groups?.addToGroup(GroupsOfChildren.MAIN, child)
     }
 
-    open fun addChild(position: Int, child: StructuralElement){  //TODO check usage
+    open fun addChild(position: Int, child: StructuralElement){
+        verifyChildrenToInsert(child)
         if(children.contains(child)) throw IllegalArgumentException("Child already present")
         child.parent = this
-        //TODO re-check proper use of in/out in Kotlin
         (children as MutableList<StructuralElement>).add(position, child)
     }
 
@@ -106,6 +139,7 @@ abstract class StructuralElement (
     }
 
     open fun addChildren(position: Int, list : List<StructuralElement>){
+        verifyChildrenToInsert(list)
         for(child in list){
             if(children.contains(child)) throw IllegalArgumentException("Child already present")
         }

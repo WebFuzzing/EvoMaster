@@ -118,6 +118,10 @@ class  GroupsOfChildren<T>(
         return g.endIndex + 1
     }
 
+    fun getGroup(id: String) : ChildGroup<T>{
+        return groups[getGroupIndex(id)]
+    }
+
     private fun getGroupIndex(id: String) : Int{
         val index = groups.indexOfFirst { it.id == id }
         if(index < 0){

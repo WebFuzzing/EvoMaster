@@ -6,7 +6,9 @@ package org.evomaster.core.search
  */
 abstract class ActionComponent(
         children: MutableList<out StructuralElement>,
-        groups : GroupsOfChildren<StructuralElement>? = null) : StructuralElement(children, groups){
+        childTypeVerifier: (Class<*>) -> Boolean,
+        groups : GroupsOfChildren<out StructuralElement>? = null
+) : StructuralElement(children, childTypeVerifier, groups as GroupsOfChildren<StructuralElement>){
 
     /**
      * Return a flattened reference to all actions in this component
