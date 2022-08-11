@@ -8,7 +8,7 @@ abstract class ActionComponent(
         children: MutableList<out StructuralElement>,
         childTypeVerifier: (Class<*>) -> Boolean,
         groups : GroupsOfChildren<out StructuralElement>? = null
-) : StructuralElement(children, childTypeVerifier, groups as GroupsOfChildren<StructuralElement>){
+) : StructuralElement(children, childTypeVerifier, groups as GroupsOfChildren<StructuralElement>?){
 
     /**
      * Return a flattened reference to all actions in this component
