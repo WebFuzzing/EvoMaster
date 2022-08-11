@@ -17,12 +17,13 @@ import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.monitor.StepOfSearchProcess
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
-
+@Disabled("Man please look at this one")
 class ProcessMonitorTest{
 
     private lateinit var archive: Archive<OneMaxIndividual>

@@ -233,6 +233,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * @return whether there exist any actions in the individual,
      *  e.g., if false, the individual might be composed of a sequence of genes.
      */
+    @Deprecated("Now individuals always have actions as children")
     open fun hasAnyAction()  = seeActions().isNotEmpty()
 
 
