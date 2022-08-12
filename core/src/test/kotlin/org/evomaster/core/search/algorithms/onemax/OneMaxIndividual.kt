@@ -1,6 +1,7 @@
 package org.evomaster.core.search.algorithms.onemax
 
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.EnumGene
@@ -13,7 +14,7 @@ class OneMaxIndividual(
         val n : Int,
         trackOperator: TrackOperator? = null,
         index : Int = -1)
-    : Individual (trackOperator, index, listOf()) {
+    : Individual (trackOperator, index, listOf(),{k -> EnumGene::class.java.isAssignableFrom(k)}) {
 
     private val list : MutableList<EnumGene<Double>> = mutableListOf()
 

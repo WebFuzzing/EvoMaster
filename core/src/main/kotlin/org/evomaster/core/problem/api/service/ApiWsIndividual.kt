@@ -5,10 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.external.service.ExternalServiceAction
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionComponent
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
@@ -34,8 +31,9 @@ abstract class ApiWsIndividual (
      * a list of children of the individual
      */
     children: List<out ActionComponent>,
-    childTypeVerifier: (Class<*>) -> Boolean
-): EnterpriseIndividual(trackOperator, index, children, childTypeVerifier){
+    childTypeVerifier: (Class<*>) -> Boolean,
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0)
+): EnterpriseIndividual(trackOperator, index, children, childTypeVerifier, groups){
 
 
 }

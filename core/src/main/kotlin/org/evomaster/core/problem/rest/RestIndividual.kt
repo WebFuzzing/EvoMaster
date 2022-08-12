@@ -27,12 +27,15 @@ class RestIndividual(
         val sampleSpec: SamplerSpecification? = null,
         trackOperator: TrackOperator? = null,
         index : Int = -1,
-        allActions : MutableList<out ActionComponent>
+        allActions : MutableList<out ActionComponent>,
+        mainSize : Int = allActions.size,
+        dbSize: Int = 0,
+        groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
 ): ApiWsIndividual(trackOperator, index, allActions,
     childTypeVerifier = {
         RestResourceCalls::class.java.isAssignableFrom(it)
                 || DbAction::class.java.isAssignableFrom(it)
-    }) {
+    }, groups) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -47,7 +50,7 @@ class RestIndividual(
             index : Int = -1
     ) : this(sampleType, sampleSpec, trackOperator, index, mutableListOf<ActionComponent>().apply {
         addAll(dbInitialization); addAll(resourceCalls)
-    })
+    }, resourceCalls.size, dbInitialization.size)
 
     constructor(
             actions: MutableList<out Action>,
@@ -86,18 +89,19 @@ class RestIndividual(
     /**
      * Note that if resource-mio is enabled, [dbInitialization] of a RestIndividual is always empty, since DbActions are created
      * for initializing an resource for a set of actions on the same resource.
+     * TODO is this no longer the case?
+     *
      * This effects on a configuration with respect to  [EMConfig.geneMutationStrategy] is ONE_OVER_N when resource-mio is enabled.
      *
      * In another word, if resource-mio is enabled, whatever [EMConfig.geneMutationStrategy] is, it always follows "GeneMutationStrategy.ONE_OVER_N_BIASED_SQL"
      * strategy.
      *
-     * TODO : modify return genes when GeneFilter is one of [GeneFilter.ALL] and [GeneFilter.ONLY_SQL]
      */
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
         return when (filter) {
-            GeneFilter.ALL -> seeDbActions().flatMap(Action::seeTopGenes).plus(seeAllActions().flatMap(Action::seeTopGenes))
-            GeneFilter.NO_SQL -> seeAllActions().flatMap(Action::seeTopGenes)
+            GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
+            GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ExternalServiceAction::seeTopGenes)
         }

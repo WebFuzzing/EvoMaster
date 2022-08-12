@@ -39,24 +39,45 @@ abstract class EnterpriseIndividual(
      * a list of children of the individual
      */
     children: List<out ActionComponent>,
-    childTypeVerifier: (Class<*>) -> Boolean
+    childTypeVerifier: (Class<*>) -> Boolean,
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0)
 ) : Individual(
     trackOperator,
     index,
     children,
     childTypeVerifier,
-    GroupsOfChildren(
-        children,
-        listOf(
-            //TODO in future ll need to refactor to handle multiple databases and NoSQL ones
-            ChildGroup(GroupsOfChildren.INITIALIZATION_SQL,{e -> e is ActionComponent && e.flatten().all { a -> a is DbAction }}),
-            // This assumes/requires that all initial children are of type MAIN
-            ChildGroup(GroupsOfChildren.MAIN, {e -> e !is DbAction && e !is ExternalServiceAction}, if(children.isEmpty()) -1 else 0, children.size-1)
-        )
-    )
+    groups
 ) {
     companion object{
         private val log : Logger = LoggerFactory.getLogger(ApiWsIndividual::class.java)
+
+        fun getEnterpriseTopGroups(
+            children: List<ActionComponent>,
+            sizeMain: Int,
+            sizeDb: Int
+        ) : GroupsOfChildren<StructuralElement>{
+
+            if(children.size != sizeDb + sizeMain){
+                throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
+                        " got main=$sizeMain and db=$sizeDb")
+            }
+            if(sizeDb < 0){
+                throw IllegalArgumentException("Negative size for sizeDb: $sizeDb")
+            }
+            if(sizeMain < 0){
+                throw IllegalArgumentException("Negative size for sizeMain: $sizeMain")
+            }
+
+            //TODO in future ll need to refactor to handle multiple databases and NoSQL ones
+            val db = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_SQL,{e -> e is ActionComponent && e.flatten().all { a -> a is DbAction }},
+                if(sizeDb==0) -1 else 0 , if(sizeDb==0) -1 else sizeDb-1
+            )
+
+            val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is DbAction && e !is ExternalServiceAction},
+                if(sizeMain == 0) -1 else sizeDb, if(sizeMain == 0) -1 else sizeDb + sizeMain - 1)
+
+            return GroupsOfChildren(children, listOf(db, main))
+        }
     }
 
     /**
