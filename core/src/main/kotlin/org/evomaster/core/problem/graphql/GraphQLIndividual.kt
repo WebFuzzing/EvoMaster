@@ -11,15 +11,21 @@ import org.evomaster.core.search.gene.Gene
 
 class GraphQLIndividual(
         val sampleType: SampleType,
-        allActions : MutableList<EnterpriseActionGroup>
-) : ApiWsIndividual(children = allActions) {
+        allActions : MutableList<out ActionComponent>
+) : ApiWsIndividual(
+    children = allActions,
+    childTypeVerifier = {
+        EnterpriseActionGroup::class.java.isAssignableFrom(it)
+                || DbAction::class.java.isAssignableFrom(it)
+    }
+) {
 
 
     override fun copyContent(): Individual {
 
         return GraphQLIndividual(
                 sampleType,
-                children.map { it.copy() }.toMutableList() as MutableList<EnterpriseActionGroup>
+                children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>
         )
 
     }
@@ -37,19 +43,22 @@ class GraphQLIndividual(
         return seeAllActions().size
     }
 
-    fun getIndexedCalls(): Map<Int,GraphQLAction> = getIndexedChildren(GraphQLAction::class.java)
-
-
     override fun verifyInitializationActions(): Boolean {
         return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
     }
 
-    //TODO refactor to make sure all problem types use same/similar code with checks on indices
 
-    fun addGQLAction(position: Int = -1, action: GraphQLAction){
-        if (position == -1) addChild(action)
-        else{
-            addChild(position, action)
+    fun addGQLAction(relativePosition: Int = -1, action: GraphQLAction){
+
+        val main = GroupsOfChildren.MAIN
+        val g = EnterpriseActionGroup(mutableListOf(action), GraphQLAction::class.java)
+
+        if (relativePosition == -1) {
+            addChildToGroup(g, main)
+        } else{
+            val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
+            val position = base + relativePosition
+            addChildToGroup(position, action, main)
         }
     }
 

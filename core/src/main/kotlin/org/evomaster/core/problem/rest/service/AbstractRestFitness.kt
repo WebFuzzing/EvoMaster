@@ -614,7 +614,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         handleExtra(dto, fv)
 
-        handleResponseTargets(fv, individual.seeAllActions(), actionResults, dto.additionalInfoList)
+        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RestCallAction>(), actionResults, dto.additionalInfoList)
 
         handleExternalServiceInfo(dto.additionalInfoList)
 

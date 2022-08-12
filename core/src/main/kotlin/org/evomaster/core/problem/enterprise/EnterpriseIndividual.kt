@@ -38,11 +38,13 @@ abstract class EnterpriseIndividual(
     /**
      * a list of children of the individual
      */
-    children: List<out ActionComponent>
+    children: List<out ActionComponent>,
+    childTypeVerifier: (Class<*>) -> Boolean
 ) : Individual(
     trackOperator,
     index,
     children,
+    childTypeVerifier,
     GroupsOfChildren(
         children,
         listOf(
@@ -84,6 +86,9 @@ abstract class EnterpriseIndividual(
         }
     }
 
+    fun seeMainActionComponents() : List<ActionComponent>{
+        return groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN) as List<ActionComponent>
+    }
 
     override fun repairInitializationActions(randomness: Randomness) {
 

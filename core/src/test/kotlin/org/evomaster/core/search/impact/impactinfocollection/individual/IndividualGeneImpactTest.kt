@@ -316,14 +316,6 @@ class IndividualGeneImpactTest {
 
         override fun size(): Int = seeAllActions().size
 
-        override fun seeAllActions(): List<out Action> {
-            return actions
-        }
-
-        override fun seeInitializingActions(): List<Action> {
-            return initialization
-        }
-
         override fun verifyInitializationActions(): Boolean {
             return true
         }

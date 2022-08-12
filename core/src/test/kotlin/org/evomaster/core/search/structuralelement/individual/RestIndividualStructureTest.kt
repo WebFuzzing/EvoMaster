@@ -6,6 +6,7 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -80,7 +81,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
         val dbpath = listOf(1, 0)
         assertEquals(barId, root.targetWithIndex(dbpath))
 
-        val floatValue = ((root.seeAllActions()[0].parameters[0] as BodyParam).gene as ObjectGene).fields[3]
+        val floatValue = (((root.seeMainExecutableActions()[0] as RestCallAction).parameters[0] as BodyParam).gene as ObjectGene).fields[3]
         val path = listOf(2, 0, 0, 0, 3)
         assertEquals(floatValue, root.targetWithIndex(path))
 

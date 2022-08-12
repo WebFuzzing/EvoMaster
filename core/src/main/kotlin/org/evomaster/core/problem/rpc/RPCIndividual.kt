@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rpc
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.search.*
@@ -16,7 +17,11 @@ class RPCIndividual(
         trackOperator: TrackOperator? = null,
         index: Int = -1,
         allActions: MutableList<ActionComponent>
-) : ApiWsIndividual(trackOperator, index, allActions) {
+) : ApiWsIndividual(trackOperator, index, allActions,
+    childTypeVerifier = {
+        EnterpriseActionGroup::class.java.isAssignableFrom(it)
+                || DbAction::class.java.isAssignableFrom(it)
+    }) {
 
     constructor(actions: MutableList<RPCCallAction>,
             /*

@@ -382,6 +382,11 @@ class Randomness {
         return list[index]
     }
 
+
+    fun choose(range: IntRange) : Int{
+        return nextInt(range.first, range.last)
+    }
+
     fun <T> choose(list: List<T>): T {
         if (list.isEmpty()) {
             throw IllegalArgumentException("Empty list to choose from")

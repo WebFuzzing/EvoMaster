@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
@@ -27,7 +28,11 @@ class RestIndividual(
         trackOperator: TrackOperator? = null,
         index : Int = -1,
         allActions : MutableList<out ActionComponent>
-): ApiWsIndividual(trackOperator, index, allActions) {
+): ApiWsIndividual(trackOperator, index, allActions,
+    childTypeVerifier = {
+        RestCallAction::class.java.isAssignableFrom(it)
+                || DbAction::class.java.isAssignableFrom(it)
+    }) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -129,17 +134,7 @@ class RestIndividual(
 
     override fun size() = seeAllActions().size
 
-    /**
-     * @return actions which are REST actions
-     */
-    override fun seeAllActions(): List<RestCallAction> = getResourceCalls().flatMap { it.seeActions(NO_INIT) as List<RestCallAction> }
 
-    /**
-     * @return all Sql actions which could be in initialization or between rest actions.
-     */
-    override fun seeDbActions(): List<DbAction> {
-        return seeInitializingActions().filterIsInstance<DbAction>().plus(getResourceCalls().flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
-    }
 
     override fun verifyInitializationActions(): Boolean {
         return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())

@@ -81,13 +81,13 @@ class ResourceDepManageService {
         val addedMap = mutableMapOf<String, MutableSet<String>>()
         val removedMap = mutableMapOf<String, MutableSet<String>>()
 
-        restIndividual.seeAllActions().forEachIndexed { index, action ->
-            if (config.doesApplyNameMatching) updateParamInfo(action, tables)
+        restIndividual.seeMainExecutableActions().forEachIndexed { index, action ->
+            if (config.doesApplyNameMatching) updateParamInfo(action as RestCallAction, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {
                 val dbDto = dto.extraHeuristics[index].databaseExecutionDto
                 if (dbDto != null)
-                    updateResourceToTable(action, dbDto, tables, addedMap, removedMap)
+                    updateResourceToTable(action as RestCallAction, dbDto, tables, addedMap, removedMap)
             }
         }
         if (addedMap.isNotEmpty() || removedMap.isNotEmpty())

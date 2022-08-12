@@ -122,7 +122,6 @@ abstract class StructuralElement (
         }
         child.parent = this
         (children as MutableList<StructuralElement>).add(child)
-        //groups?.addToGroup(GroupsOfChildren.MAIN, child)
     }
 
     open fun addChild(position: Int, child: StructuralElement){

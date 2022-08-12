@@ -33,8 +33,9 @@ abstract class ApiWsIndividual (
     /**
      * a list of children of the individual
      */
-    children: List<out ActionComponent>
-): EnterpriseIndividual(trackOperator, index, children){
+    children: List<out ActionComponent>,
+    childTypeVerifier: (Class<*>) -> Boolean
+): EnterpriseIndividual(trackOperator, index, children, childTypeVerifier){
 
 
 }

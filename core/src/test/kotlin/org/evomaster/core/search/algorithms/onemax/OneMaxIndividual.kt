@@ -65,9 +65,6 @@ class OneMaxIndividual(
         return n
     }
 
-    override fun seeAllActions(): List<out Action> {
-        return listOf()
-    }
 
     override fun verifyInitializationActions(): Boolean {
         return true

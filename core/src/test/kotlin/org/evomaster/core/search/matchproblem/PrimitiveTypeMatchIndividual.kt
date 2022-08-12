@@ -41,8 +41,6 @@ open class PrimitiveTypeMatchIndividual (
         gene.doInitialize(randomness)
     }
 
-    override fun seeAllActions(): List<out Action> = listOf()
-
     override fun verifyInitializationActions(): Boolean {
         //do nothing
         return true

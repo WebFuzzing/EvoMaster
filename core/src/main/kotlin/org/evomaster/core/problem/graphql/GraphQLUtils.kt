@@ -191,7 +191,9 @@ object GraphQLUtils {
 
 
     fun repairIndividual(ind: GraphQLIndividual) {
-        ind.seeAllActions().forEach { a ->
+        ind.seeAllActions()
+            .filterIsInstance<GraphQLAction>()
+            .forEach { a ->
             a.parameters.filterIsInstance<GQReturnParam>().forEach { p ->
                 if (p.gene is ObjectGene ) {
                     p.gene.fields.forEach { if ((it is TupleGene && it.lastElementTreatedSpecially)|| (it is BooleanGene ) || (it is OptionalGene) ) GeneUtils.repairBooleanSelection(p.gene) }

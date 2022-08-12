@@ -43,9 +43,9 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         val chainState = mutableMapOf<String, String>()
 
         //run the test, one action at a time
-        for (i in 0 until individual.seeAllActions().size) {
+        for (i in 0 until individual.seeMainExecutableActions().size) {
 
-            val a = individual.seeAllActions()[i]
+            val a = individual.seeMainExecutableActions()[i] as RestCallAction
 
             if (log.isTraceEnabled){
                 log.trace("handle rest action at index {}, and the action is {}, and the genes are",

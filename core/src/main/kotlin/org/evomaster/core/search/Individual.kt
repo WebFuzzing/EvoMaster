@@ -26,11 +26,12 @@ import org.evomaster.core.search.tracer.TrackingHistory
 abstract class Individual(override var trackOperator: TrackOperator? = null,
                           override var index: Int = Traceable.DEFAULT_INDEX,
                           children: List<ActionComponent>,
+                          childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
                           groups : GroupsOfChildren<StructuralElement>? = null
 ) : Traceable,
     StructuralElement(
         children.toMutableList(),
-        {k -> ActionComponent::class.java.isAssignableFrom(k)},
+        childTypeVerifier,
         groups
     ), RootElement{
 

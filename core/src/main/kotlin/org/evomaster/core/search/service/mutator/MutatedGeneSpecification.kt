@@ -51,6 +51,8 @@ data class MutatedGeneSpecification (
         }).add(MutatedGene(valueBeforeMutation, gene, actionPosition=position, resourcePosition = resourcePosition))
     }
 
+
+    //FIXME: need documentation for these parameters
     fun addRemovedOrAddedByAction(action: Action, position: Int?, removed : Boolean, resourcePosition: Int?){
         mutatedGenes.addAll(
             action.seeTopGenes().map { MutatedGene(null, it, position,

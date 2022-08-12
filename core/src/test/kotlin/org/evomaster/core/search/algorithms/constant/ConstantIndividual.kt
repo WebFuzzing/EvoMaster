@@ -26,9 +26,6 @@ class ConstantIndividual(val gene: IntegerGene) : Individual(children=listOf()) 
         return 1
     }
 
-    override fun seeAllActions(): List<out Action> {
-        return listOf()
-    }
 
     override fun verifyInitializationActions(): Boolean {
         return true
