@@ -77,7 +77,7 @@ public class RPCTestBase extends WsTestBase{
 
     public boolean containsContent(Solution<RPCIndividual> solution, String methodName, String content, List<String> comparedHistory){
         return solution.getIndividuals().stream().anyMatch(s->
-                s.getIndividual().seeAllActions().stream().anyMatch(a-> {
+                s.getIndividual().seeMainExecutableActions().stream().anyMatch(a-> {
                     if (a.getName().equals(methodName)){
                         Gene gene = null;
                         if (a.getResponse() != null)
@@ -99,7 +99,7 @@ public class RPCTestBase extends WsTestBase{
 
     public void assertSizeInResponseForEndpoint(Solution<RPCIndividual> solution, String methodName, Integer min, Integer max){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
-                s.getIndividual().seeAllActions().stream().anyMatch(a-> {
+                s.getIndividual().seeMainExecutableActions().stream().anyMatch(a-> {
                     int size = -1;
                     if (a.getResponse()!=null){
                         size = getCollectionSize( a.getResponse().getGene());

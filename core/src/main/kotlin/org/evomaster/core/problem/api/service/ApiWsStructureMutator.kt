@@ -30,6 +30,8 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
     }
 
+
+    @Deprecated("External Actions will be moved into EnterpriseActionGroup")
     private fun <T : ApiWsIndividual> addInitializingExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         mutatedGenes: MutatedGeneSpecification?,
@@ -95,7 +97,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         }
     }
 
-    fun<T : ApiWsIndividual> handleFailedWhereSQL(
+    private fun<T : ApiWsIndividual> handleFailedWhereSQL(
         ind: T,
         /**
          * Map of FAILED WHERE clauses. from table name key to column name values

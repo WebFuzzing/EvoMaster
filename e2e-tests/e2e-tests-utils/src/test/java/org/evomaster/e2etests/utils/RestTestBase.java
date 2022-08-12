@@ -116,7 +116,7 @@ public abstract class RestTestBase  extends WsTestBase{
                                     String path,
                                     String inResponse) {
 
-        List<RestCallAction> actions = ind.getIndividual().seeAllActions();
+        List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
         List<ActionResult> results = ind.seeResults(actions);
 
         boolean stopped = false;

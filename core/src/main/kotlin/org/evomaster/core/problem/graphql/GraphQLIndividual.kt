@@ -67,4 +67,8 @@ class GraphQLIndividual(
         killChildByIndex(relativePosition)
     }
 
+
+    override fun seeMainExecutableActions() : List<GraphQLAction>{
+        return super.seeMainExecutableActions() as List<GraphQLAction>
+    }
 }

@@ -364,4 +364,8 @@ class RestIndividual(
     override fun getInsertTableNames(): List<String> {
         return seeDbActions().filterNot { it.representExistingData }.map { it.table.name }
     }
+
+    override fun seeMainExecutableActions(): List<RestCallAction> {
+        return super.seeMainExecutableActions() as List<RestCallAction>
+    }
 }

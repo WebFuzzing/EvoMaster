@@ -89,4 +89,8 @@ class RPCIndividual(
                 children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>
         )
     }
+
+    override fun seeMainExecutableActions(): List<RPCCallAction> {
+        return super.seeMainExecutableActions() as List<RPCCallAction>
+    }
 }

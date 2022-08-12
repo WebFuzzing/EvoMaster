@@ -147,9 +147,14 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     /**
      * return a view of the main actions that are executable, like API calls,
-     * and not setups like DB and external services
+     * and not setups like DB and external services.
+     * These actions represent the "calls" made toward the SUT, and define the length
+     * of the test cases (regardless of the other initializing actions).
+     * All these actions are under the child group [ActionFilter.MAIN_EXECUTABLE]
+     *
+     * This method can be overridden to return the concrete action type and not the abstract [Action]
      */
-    fun seeMainExecutableActions() : List<Action>{
+    open fun seeMainExecutableActions() : List<Action>{
         val list = seeActions(ActionFilter.MAIN_EXECUTABLE)
         org.evomaster.core.Lazy.assert { list.all { it.shouldCountForFitnessEvaluations() } }
         return list

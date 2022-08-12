@@ -17,7 +17,7 @@ class EnterpriseActionGroup(
         children,
         listOf(
             ChildGroup(GroupsOfChildren.EXTERNAL_SERVICES, { e -> e is ExternalServiceAction }),
-            ChildGroup(GroupsOfChildren.MAIN, { k -> mainClass.isAssignableFrom(k.javaClass) }, 0, 1, 1)
+            ChildGroup(GroupsOfChildren.MAIN, { k -> mainClass.isAssignableFrom(k.javaClass) }, 0, 0, 1)
         )
     )
 ) : ActionDependentGroup(
