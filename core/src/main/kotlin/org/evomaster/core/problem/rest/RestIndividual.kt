@@ -30,7 +30,7 @@ class RestIndividual(
         allActions : MutableList<out ActionComponent>
 ): ApiWsIndividual(trackOperator, index, allActions,
     childTypeVerifier = {
-        RestCallAction::class.java.isAssignableFrom(it)
+        RestResourceCalls::class.java.isAssignableFrom(it)
                 || DbAction::class.java.isAssignableFrom(it)
     }) {
 

@@ -62,8 +62,9 @@ class GraphQLIndividual(
         }
     }
 
-    fun removeGQLActionAt(position: Int){
-        killChildByIndex(position)
+    fun removeGQLActionAt(relativePosition: Int){
+        //FIXME
+        killChildByIndex(relativePosition)
     }
 
 }

@@ -171,14 +171,14 @@ abstract class StructuralElement (
 
     open fun killChild(child: StructuralElement){
         val index = children.indexOf(child)
-        val groupId = groups?.groupForChild(index)?.id
         killChildByIndex(index)
-        groups?.removedFromGroup(groupId!!)
     }
 
     open fun killChildByIndex(index: Int) : StructuralElement{
+        val groupId = groups?.groupForChild(index)?.id
         val child = children.removeAt(index)
         child.parent = null
+        groups?.removedFromGroup(groupId!!)
         return  child
     }
 

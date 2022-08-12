@@ -165,7 +165,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     /**
      * return a list of all db actions in [this] individual
-     * that include all initializing actions plus db actions among rest actions.
+     * that include all initializing actions plus db actions among main actions.
      *
      * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
      * would be same with [seeInitializingActions]
@@ -174,14 +174,13 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     /**
      * return a list of all external service actions in [this] individual
-     * that include all the initializing actions plus external service actions
-     * among rest actions
+     * that include all the initializing actions among the main actions
      */
      fun seeExternalServiceActions() : List<ExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ExternalServiceAction>
 
     /**
      * Determine if the structure (ie the actions) of this individual
-     * can be mutated (eg, add/remove actions).
+     * can be mutated (eg, add/remove main actions).
      * Note: even if this is false, it would still be possible to
      * mutate the genes in those actions
      */
