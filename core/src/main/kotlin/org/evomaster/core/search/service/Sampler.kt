@@ -61,11 +61,14 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
             log.trace("sampler will be applied")
         }
 
-        if (randomness.nextBoolean(config.probOfSmartSampling)) {
-            return smartSample()
+        val ind = if (randomness.nextBoolean(config.probOfSmartSampling)) {
+             smartSample()
         } else {
-            return sampleAtRandom()
+             sampleAtRandom()
         }
+
+        org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
+        return ind
     }
 
     /**

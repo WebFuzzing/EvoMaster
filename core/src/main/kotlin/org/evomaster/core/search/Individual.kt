@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
@@ -89,6 +90,29 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     fun isInitialized() : Boolean{
         return seeGenes().all { it.initialized }
+    }
+
+
+    /**
+     * Make sure that all invariants in this individual are satisfied, otherwise throw exception.
+     * All invariants should always be satisfied after any modification of the individual.
+     * If not, this is a bug.
+     */
+    fun verifyValidity(){
+
+        groupsView()?.verifyGroups()
+
+        if(!DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())){
+            throw IllegalStateException("Initializing actions break SQL constraints")
+        }
+
+        seeAllActions().forEach { a ->
+            a.seeTopGenes().forEach { g ->
+                if(!g.isGloballyValid()){
+                    throw IllegalStateException("Invalid gene ${g.name} in action ${a.getName()}")
+                }
+            }
+        }
     }
 
     override fun copyContent(): Individual {

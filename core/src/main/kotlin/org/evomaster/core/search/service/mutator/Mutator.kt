@@ -145,7 +145,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val mutatedInd = mutate(current, targets, mutatedGenes)
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
-            Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert{mutatedInd.verifyValidity(); true}
 
             //Shall we prioritize the targets based on mutation sampling strategy eg, feedbackDirectedSampling?
             val mutated = ff.calculateCoverage(mutatedInd, setOf())

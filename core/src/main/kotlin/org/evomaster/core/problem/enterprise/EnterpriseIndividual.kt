@@ -145,18 +145,21 @@ abstract class EnterpriseIndividual(
         return super.hasAnyAction() || dbInitialization.isNotEmpty()
     }
 
-    private fun getLastIndexOfDbActionToAdd(): Int = children.indexOfLast { it is DbAction } + 1
+    private fun getLastIndexOfDbActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
+
+    private fun getFirstIndexOfDbActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
 
     /**
-     * add [actions] at [position]
-     * if [position] = -1, append the [actions] at the end
+     * add [actions] at [relativePosition]
+     * if [relativePosition] = -1, append the [actions] at the end
      */
-    @Deprecated("")
-    fun addInitializingActions(position: Int=-1, actions: List<Action>){
-        if (position == -1)  {
-            addChildren(getLastIndexOfDbActionToAdd(), actions)
+    fun addInitializingDbActions(relativePosition: Int=-1, actions: List<Action>){
+        if (relativePosition < 0)  {
+            addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
         } else{
-            addChildren(position, actions)
+            addChildrenToGroup(getFirstIndexOfDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_SQL)
         }
     }
 

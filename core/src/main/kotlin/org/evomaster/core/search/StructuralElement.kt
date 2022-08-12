@@ -112,6 +112,12 @@ abstract class StructuralElement (
         children.forEach { addChildToGroup(it, groupId) }
     }
 
+    fun addChildrenToGroup(position: Int, children : List<StructuralElement>, groupId: String){
+        var i = position
+        children.forEach { addChildToGroup(i++, it, groupId) }
+    }
+
+
     /**
      * add a child of the element
      */

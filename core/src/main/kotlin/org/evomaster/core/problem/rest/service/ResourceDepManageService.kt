@@ -1107,7 +1107,7 @@ class ResourceDepManageService {
 
         DbActionUtils.repairBrokenDbActionsList(added,randomness)
 
-        ind.addInitializingActions(actions = added)
+        ind.addInitializingDbActions(actions = added)
     }
 
     private fun getAllRelatedTables(ind: RestIndividual) : Set<String>{
