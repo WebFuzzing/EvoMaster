@@ -9,10 +9,11 @@ package org.evomaster.core.search
  */
 abstract class ActionTree(
         children: MutableList<out ActionComponent>,
+        childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
         groups : GroupsOfChildren<out ActionComponent>? = null
 ) : ActionComponent(
     children,
-    {k -> ActionComponent::class.java.isAssignableFrom(k)},
+    childTypeVerifier,
     groups
 ){
 

@@ -13,6 +13,8 @@ import org.evomaster.core.search.*
 class EnterpriseActionGroup(
     children: MutableList<out Action>,
     private val mainClass : Class<*>,
+    //Kotlin does not like a reference of input val in the lambda, resulting in null when call super constructor
+    //childTypeVerifier: (Class<*>) -> Boolean = {k -> ExternalServiceAction::class.java.isAssignableFrom(k) || mainClass.isAssignableFrom(k.javaClass)},
     groups: GroupsOfChildren<out Action> = GroupsOfChildren(
         children,
         listOf(
@@ -22,8 +24,12 @@ class EnterpriseActionGroup(
     )
 ) : ActionDependentGroup(
     children,
-    groups
+    groups = groups
 ) {
+
+     constructor(action: Action): this(mutableListOf(action), action.javaClass)
+
+
 
     override fun copyContent(): EnterpriseActionGroup {
 

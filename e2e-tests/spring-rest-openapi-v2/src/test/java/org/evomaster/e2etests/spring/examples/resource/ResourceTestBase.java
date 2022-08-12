@@ -30,7 +30,7 @@ public class ResourceTestBase extends SpringTestBase {
 
         boolean[] matched = new boolean[verbs.length];
         Arrays.fill(matched, false);
-        List<RestCallAction> actions = ind.getIndividual().seeAllActions();
+        List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
 
         Loop:
         for (int i = 0; i < actions.size(); i++) {

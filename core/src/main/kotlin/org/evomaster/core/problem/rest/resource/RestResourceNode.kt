@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
@@ -358,7 +359,8 @@ open class RestResourceNode(
 
         val template = templates[copy.verb.toString()]
                 ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${this.path}")
-        val call =  RestResourceCalls(template, this, mutableListOf(copy))
+
+        val call =  RestResourceCalls(template, this, mutableListOf(EnterpriseActionGroup(copy)))
 
         if(action.verb == HttpVerb.POST){
             getCreation { c : CreationChain -> (c is PostCreationChain) }.let {
@@ -514,7 +516,13 @@ open class RestResourceNode(
         //TODO unsure about this one
         results.forEach { if(!it.isInitialized()) it.doInitialize(randomness) }
 
-        return RestResourceCalls(templates[template]!!, this, results, withBinding= true, randomness = randomness).apply { this.status = status }
+        return RestResourceCalls(
+            templates[template]!!,
+            this,
+            results.map { EnterpriseActionGroup(it) }.toMutableList(),
+            withBinding= true,
+            randomness = randomness
+        ).apply { this.status = status }
     }
 
 
