@@ -37,6 +37,8 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         if(valueType != null) {
             String name = valueType.getName();
             String schema = ClassToSchema.getOrDeriveSchema(valueType);
+            UnitsInfoRecorder.registerNewParsedDto(name, schema);
+            ExecutionTracer.addParsedDtoName(name);
         }
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_class", caller);
