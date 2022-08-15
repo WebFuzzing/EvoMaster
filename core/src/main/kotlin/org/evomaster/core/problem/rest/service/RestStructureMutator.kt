@@ -147,10 +147,10 @@ class RestStructureMutator : ApiWsStructureMutator() {
 
     private fun mutateForRandomType(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
-        if (ind.seeAllActions().size == 1) {
+        if (ind.seeMainExecutableActions().size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
 
-            val pos = ind.seeAllActions().size
+            val pos = ind.seeMainExecutableActions().size
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(
                 sampledAction,
@@ -166,11 +166,11 @@ class RestStructureMutator : ApiWsStructureMutator() {
             return
         }
 
-        if (randomness.nextBoolean() || ind.seeAllActions().size == config.maxTestSize) {
+        if (randomness.nextBoolean() || ind.seeMainExecutableActions().size == config.maxTestSize) {
 
             //delete one at random
             log.trace("Deleting action from test")
-            val chosen = randomness.nextInt(ind.seeAllActions().size)
+            val chosen = randomness.nextInt(ind.seeMainActionComponents().size)
 
             //save mutated genes
             val removedActions = ind.getResourceCalls()[chosen].seeActions(ActionFilter.NO_SQL)
@@ -190,7 +190,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
             //add one at random
             log.trace("Adding action to test")
             val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
-            val chosen = randomness.nextInt(ind.seeAllActions().size)
+            val chosen = randomness.nextInt(ind.seeMainActionComponents().size)
             //ind.seeActions().add(chosen, sampledAction)
             ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction), dbActions = listOf()))
 

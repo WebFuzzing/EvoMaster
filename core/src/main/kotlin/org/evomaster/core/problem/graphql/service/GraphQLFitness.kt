@@ -47,7 +47,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val fv = FitnessValue(individual.size().toDouble())
 
-        val actions = individual.seeMainExecutableActions() as List<GraphQLAction>
+        val actions = individual.seeMainExecutableActions()
 
         //run the test, one action at a time
         for (i in actions.indices) {

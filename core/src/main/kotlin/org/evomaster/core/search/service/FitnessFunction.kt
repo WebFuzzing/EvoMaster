@@ -47,7 +47,7 @@ abstract class FitnessFunction<T>  where T : Individual {
      */
     fun calculateCoverage(individual: T, targets: Set<Int> = setOf()) : EvaluatedIndividual<T>?{
 
-        val a = individual.seeAllActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
+        val a = individual.seeMainExecutableActions().count()
 
         if(time.averageOverheadMsBetweenTests.isRecordingTimer()){
             time.averageOverheadMsBetweenTests.addElapsedTime()

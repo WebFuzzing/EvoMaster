@@ -147,6 +147,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             Lazy.assert{mutatedInd.verifyValidity(); true}
 
+            //FIXME: why setOf()??? are we skipping coverage collection here???
+            // or always added non-covered from archive? if so, name "targets" is confusing
             //Shall we prioritize the targets based on mutation sampling strategy eg, feedbackDirectedSampling?
             val mutated = ff.calculateCoverage(mutatedInd, setOf())
                     ?: continue
