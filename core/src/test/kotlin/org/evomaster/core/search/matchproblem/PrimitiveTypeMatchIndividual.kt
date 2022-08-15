@@ -10,7 +10,7 @@ import org.evomaster.core.search.service.Randomness
  * created by manzh on 2020-06-16
  */
 open class PrimitiveTypeMatchIndividual (
-        val gene : Gene) :  Individual(children = listOf()){
+        val gene : Gene) :  Individual(children = mutableListOf()){
 
     constructor(value : Any, name : String): this(
             instance(value, name)

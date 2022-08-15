@@ -118,6 +118,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *      Note that if [actions] is null, then we employ individual.seeActions() as default
      */
     fun seeResults(actions: List<Action>? = null): List<ActionResult>{
+        if(results.isEmpty()){
+            return listOf()
+        }
         val list = actions?:individual.seeAllActions()
         //TODO Man: need to fix for external services
         val all = individual.seeActions(NO_EXTERNAL_SERVICE)

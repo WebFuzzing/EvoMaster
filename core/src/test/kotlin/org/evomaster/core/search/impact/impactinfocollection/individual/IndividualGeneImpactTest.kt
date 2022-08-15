@@ -290,7 +290,7 @@ class IndividualGeneImpactTest {
 
     }
 
-    class Ind(val actions : MutableList<IndAction>, val initialization : MutableList<IndAction> = mutableListOf()) : Individual(children = initialization.plus(actions)){
+    class Ind(val actions : MutableList<IndAction>, val initialization : MutableList<IndAction> = mutableListOf()) : Individual(children = initialization.plus(actions).toMutableList()){
         companion object{
             fun getInd() : Ind{
                 return Ind(IndAction.getIndAction(2).toMutableList())

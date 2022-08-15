@@ -140,7 +140,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 log.trace("now it is {}th, do addInitializingActions ends", i)
             }
 
-            Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert{current.individual.verifyValidity(); true}
 
             val mutatedInd = mutate(current, targets, mutatedGenes)
             mutatedGenes.setMutatedIndividual(mutatedInd)

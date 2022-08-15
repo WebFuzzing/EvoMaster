@@ -36,8 +36,6 @@ class  GroupsOfChildren<T>(
         verifyGroups()
     }
 
-    fun copy() = GroupsOfChildren(children, groups.map { it.copy() })
-
     fun copy(children: List<T>) = GroupsOfChildren(children, groups.map { it.copy() })
 
 

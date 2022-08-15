@@ -1,7 +1,9 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
@@ -11,6 +13,7 @@ import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.search.tracer.TrackingHistory
+import org.slf4j.LoggerFactory
 
 /**
  * An individual for the search.
@@ -26,15 +29,20 @@ import org.evomaster.core.search.tracer.TrackingHistory
  */
 abstract class Individual(override var trackOperator: TrackOperator? = null,
                           override var index: Int = Traceable.DEFAULT_INDEX,
-                          children: List<ActionComponent>,
+                          children: MutableList<out ActionComponent>,
                           childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
                           groups : GroupsOfChildren<StructuralElement>? = null
 ) : Traceable,
     StructuralElement(
-        children.toMutableList(),
+        children,
         childTypeVerifier,
         groups
     ), RootElement{
+
+
+    companion object{
+        private val log = LoggerFactory.getLogger(Individual::class.java)
+    }
 
     /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
@@ -154,10 +162,13 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * TODO refactor [seeAllActions], [seeInitializingActions] and [seeDbActions] based on this fun
      */
     open fun seeActions(filter: ActionFilter) : List<Action>{
-        if(filter != ActionFilter.ALL){
-            throw IllegalArgumentException("Default implementation only support ALL filter")
+        if(filter == ActionFilter.ALL || filter == ActionFilter.NO_EXTERNAL_SERVICE || filter == ActionFilter.NO_INIT
+                || filter == ActionFilter.NO_SQL){
+            return seeAllActions()
         }
-        return seeAllActions()
+
+        LoggingUtil.uniqueWarn(log,"Default implementation only support ALL filter")
+        return listOf()
     }
 
 

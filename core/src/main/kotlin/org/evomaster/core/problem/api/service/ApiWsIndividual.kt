@@ -30,7 +30,7 @@ abstract class ApiWsIndividual (
     /**
      * a list of children of the individual
      */
-    children: List<out ActionComponent>,
+    children: MutableList<out ActionComponent>,
     childTypeVerifier: (Class<*>) -> Boolean,
     groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0)
 ): EnterpriseIndividual(trackOperator, index, children, childTypeVerifier, groups){

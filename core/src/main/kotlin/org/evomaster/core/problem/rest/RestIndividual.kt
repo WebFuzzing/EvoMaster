@@ -75,7 +75,9 @@ class RestIndividual(
                 sampleSpec?.copy(),
                 trackOperator,
                 index,
-                children.map { it.copy() }.toMutableList() as MutableList<out ActionComponent>
+                children.map { it.copy() }.toMutableList() as MutableList<out ActionComponent>,
+                mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
+                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL)
         )
     }
 

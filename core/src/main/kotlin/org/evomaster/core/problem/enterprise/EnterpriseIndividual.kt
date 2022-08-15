@@ -38,7 +38,7 @@ abstract class EnterpriseIndividual(
     /**
      * a list of children of the individual
      */
-    children: List<out ActionComponent>,
+    children: MutableList<out ActionComponent>,
     childTypeVerifier: (Class<*>) -> Boolean,
     groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0)
 ) : Individual(
@@ -165,7 +165,7 @@ abstract class EnterpriseIndividual(
 
     private fun resetInitializingActions(actions: List<DbAction>){
         killChildren { it is DbAction }
-        addChildren(getLastIndexOfDbActionToAdd(), actions)
+        addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
     }
 
     /**

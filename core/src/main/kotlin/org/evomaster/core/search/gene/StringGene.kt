@@ -4,6 +4,7 @@ import org.apache.commons.text.StringEscapeUtils
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -555,6 +556,18 @@ class StringGene(
      * Make sure no invalid chars is used
      */
     override fun repair() {
+        repairInvalidChars()
+
+        if(value.length > maxLength){
+            value = value.substring(0, maxLength)
+        } else if(value.length < minLength){
+            value += "_".repeat(minLength - value.length)
+        }
+
+        Lazy.assert { isLocallyValid() }
+    }
+
+    private fun repairInvalidChars() {
         if (invalidChars.isEmpty()) {
             //nothing to do
             return
