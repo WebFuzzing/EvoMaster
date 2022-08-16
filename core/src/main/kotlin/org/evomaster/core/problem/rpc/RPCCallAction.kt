@@ -39,7 +39,7 @@ open class RPCCallAction(
         return id
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<out Gene> {
         // ignore genes in response here
         return parameters.flatMap { it.seeGenes() }
     }

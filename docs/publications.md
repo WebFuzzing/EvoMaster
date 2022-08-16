@@ -13,6 +13,10 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+* M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
+  *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
+  [[arXiv](https://arxiv.org/abs/2208.03988)]
+
 * M. Zhang, A. Arcuri.
   *Open Problems in Fuzzing RESTful APIs: A Comparison of Tools*.
   [[arXiv](https://arxiv.org/abs/2205.05325)]

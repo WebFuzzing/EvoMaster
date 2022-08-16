@@ -52,7 +52,7 @@ class SqlPolygonGene(
         points.randomize(randomness, tryToForceNewValue, allGenes)
         points.killAllChildren()
         pointList.map { points.addChild(it) }
-        assert(isValid())
+        assert(isLocallyValid())
     }
 
     /**
@@ -61,7 +61,7 @@ class SqlPolygonGene(
      * againts each other O(n^2)
      * Source: https://stackoverflow.com/questions/4876065/is-there-an-easy-and-fast-way-of-checking-if-a-polygon-is-self-intersecting
      */
-    override fun isValid(): Boolean {
+    override fun isLocallyValid(): Boolean {
         if (!onlyNonIntersectingPolygons)
             return true
         val pointList = points.getViewOfChildren() as List<SqlPointGene>
@@ -115,7 +115,6 @@ class SqlPolygonGene(
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?

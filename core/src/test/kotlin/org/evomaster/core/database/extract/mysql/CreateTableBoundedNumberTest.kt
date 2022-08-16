@@ -46,7 +46,7 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
 
         val actions = builder.createSqlInsertionAction("BoundedNumberTable", setOf("*"))
 
-        actions[0].seeGenes().apply {
+        actions[0].seeTopGenes().apply {
             assertEquals(8, size)
             assertEquals(listOf("bc", "dd", "dc1", "dc2", "dc3", "dc4", "tc1", "tc2"), map { it.name })
 

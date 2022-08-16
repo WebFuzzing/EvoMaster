@@ -78,7 +78,7 @@ class BigIntegerGene(
         return value.compareTo(other.value)
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         val longValue = NumberMutatorUtils.randomizeLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, tryToForceNewValue)
         setValueWithLong(longValue)
@@ -88,12 +88,11 @@ class BigIntegerGene(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        val mutated = super.shallowMutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        val mutated = super.shallowMutate(randomness, apc, mwc, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (mutated) return true
 
         val longValue = NumberMutatorUtils.mutateLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, apc)
@@ -165,7 +164,7 @@ class BigIntegerGene(
         value = BigInteger.valueOf(longValue)
     }
 
-    override fun isValid(): Boolean {
+    override fun isLocallyValid(): Boolean {
         if (max != null && value > max)
             return false
         if (min != null && value < min)

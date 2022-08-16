@@ -22,6 +22,9 @@ class SqlPointGene(
         val log: Logger = LoggerFactory.getLogger(SqlPointGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene = SqlPointGene(
             name,
@@ -30,18 +33,17 @@ class SqlPointGene(
             databaseType = databaseType
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        x.randomize(randomness, tryToForceNewValue, allGenes)
-        y.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        x.randomize(randomness, tryToForceNewValue)
+        y.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return listOf(x, y)
     }

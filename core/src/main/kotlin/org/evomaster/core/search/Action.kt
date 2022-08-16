@@ -9,21 +9,35 @@ import org.slf4j.LoggerFactory
  * A variable-length individual will be composed by 1 or more "actions".
  * Actions can be: REST call, setup Wiremock, setup database, etc.
  */
-abstract class Action(children: List<StructuralElement>) : StructuralElement(children.toMutableList()) {
+abstract class Action(children: List<StructuralElement>) : ActionComponent(children.toMutableList()) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(Action::class.java)
     }
 
+    init{
+        if(children.any { it is Action || it is Individual || it is ActionTree}){
+            throw IllegalArgumentException("The children of an action cannot be other actions nor individuals")
+        }
+    }
+
+    override fun flatten(): List<Action> {
+        return listOf(this)
+    }
+
     abstract fun getName(): String
 
     /**
-     * Return a view of the genes in the action.
+     * Return a view of the top genes in the action.
      * Those are the actual instances, and not copies.
      *
-     * TODO clarify if these are top-level (i guess?) or not
+     * A top gene is at the root of a gene tree.
+     * Note that top gene might not be mounted directly under an Action, as there can
+     * be other structural elements in between, like Param for REST.
+     * However, these intermediate structures should only impact the phenotype, and not
+     * the genotype
      */
-    abstract fun seeGenes(): List<out Gene>
+    abstract fun seeTopGenes(): List<out Gene>
 
     final override fun copy(): Action {
         val copy = super.copy()
@@ -45,11 +59,11 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
     /**
      * Randomize all genes in this action.
      */
-    fun randomize(randomness: Randomness, forceNewValue: Boolean, all: List<Gene> = listOf()) {
-        seeGenes()
+    fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+        seeTopGenes()
                 .filter { it.isMutable() }
                 .forEach {
-                    it.randomize(randomness, forceNewValue, all)
+                    it.randomize(randomness, forceNewValue)
                 }
         postRandomizedChecks(randomness)
     }
@@ -58,19 +72,19 @@ abstract class Action(children: List<StructuralElement>) : StructuralElement(chi
      * Initialize all the genes in this action
      */
     fun doInitialize(randomness: Randomness? = null) {
-        seeGenes().forEach { it.doInitialize(randomness) }
+        seeTopGenes().forEach { it.doInitialize(randomness) }
         postRandomizedChecks(randomness)
     }
 
     fun isInitialized(): Boolean {
-        return seeGenes().all { it.initialized }
+        return seeTopGenes().all { it.initialized }
     }
 
     /**
      * removing all binding which refers to [this] gene
      */
     fun removeThisFromItsBindingGenes() {
-        seeGenes().forEach { g ->
+        seeTopGenes().forEach { g ->
             g.flatView().forEach { r ->
                 r.removeThisFromItsBindingGenes()
             }

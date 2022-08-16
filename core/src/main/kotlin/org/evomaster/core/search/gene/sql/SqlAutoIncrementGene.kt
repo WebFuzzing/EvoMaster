@@ -9,12 +9,15 @@ import org.evomaster.core.search.service.Randomness
 
 class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
 
+    override fun isLocallyValid() : Boolean{
+        return true
+    }
 
     override fun copyContent(): Gene {
         return SqlAutoIncrementGene(name)
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
 

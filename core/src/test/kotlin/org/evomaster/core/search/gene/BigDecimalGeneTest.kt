@@ -41,7 +41,7 @@ class BigDecimalGeneTest {
             gene.mutateFloatingPointNumber(randomness,
                     apc = apc)
 
-            assertTrue(gene.isValid(), "BigDecimalRange with range [${gene.min},${gene.max}] and initial value ${initialValue} lead to ${gene.value} after ${it} mutations")
+            assertTrue(gene.isLocallyValid(), "BigDecimalRange with range [${gene.min},${gene.max}] and initial value ${initialValue} lead to ${gene.value} after ${it} mutations")
         }
     }
 }

@@ -87,7 +87,7 @@ class DbAction(
         return "SQL_Insert_${table.name}_${selectedColumns.map { it.name }.sorted().joinToString("_")}"
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<out Gene> {
         return genes
     }
 

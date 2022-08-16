@@ -45,7 +45,7 @@ class RangeTypesTest : ExtractTestBasePostgres() {
             )
         )
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(6, genes.size)
         assertTrue(genes[0] is SqlRangeGene<*>)
@@ -83,7 +83,7 @@ class RangeTypesTest : ExtractTestBasePostgres() {
             )
         )
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(6, genes.size)
         assertTrue(genes[0] is SqlRangeGene<*>)

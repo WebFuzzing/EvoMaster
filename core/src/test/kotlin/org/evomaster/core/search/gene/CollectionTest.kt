@@ -18,7 +18,7 @@ internal class CollectionTest {
     fun testMapWithHugeMaxSizeInRandomize(min: Int, max: Int, expected: Int, defaultMax: Int){
         val pairGene = PairGene("template",IntegerGene("key", 1), LongGene("value", 1))
         val mapGene = MapGene("test", pairGene, maxSize = max, minSize = min)
-        mapGene.randomize(Randomness(), false, listOf())
+        mapGene.randomize(Randomness(), false)
         assertEquals(expected, mapGene.getMaxSizeUsedInRandomize())
         assertEquals(defaultMax, mapGene.getDefaultMaxSize())
         assertTrue(mapGene.getAllElements().size <= mapGene.getMaxSizeUsedInRandomize())
@@ -34,7 +34,7 @@ internal class CollectionTest {
     )
     fun testArrayWithHugeMaxSizeInRandomize(min: Int, max: Int, expected: Int, defaultMax: Int){
         val arrayGene = ArrayGene("test", LongGene("element"), maxSize = max, minSize = min)
-        arrayGene.randomize(Randomness(), false, listOf())
+        arrayGene.randomize(Randomness(), false)
         assertEquals(expected, arrayGene.getMaxSizeUsedInRandomize())
         assertEquals(defaultMax, arrayGene.getDefaultMaxSize())
         assertTrue(arrayGene.getViewOfElements().size <= arrayGene.getMaxSizeUsedInRandomize())

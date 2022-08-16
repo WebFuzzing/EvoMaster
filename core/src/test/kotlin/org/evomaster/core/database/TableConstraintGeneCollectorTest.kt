@@ -18,7 +18,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
 
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
@@ -32,7 +32,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
 
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
@@ -45,7 +45,7 @@ class TableConstraintGeneCollectorTest {
         val constraint = RangeConstraint("table0", "column0", -10L, 10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
@@ -64,7 +64,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
@@ -82,7 +82,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
@@ -99,7 +99,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
@@ -154,7 +154,7 @@ class TableConstraintGeneCollectorTest {
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
         val constraint = IsNotNullConstraint("table0", "column0")
 
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
         assertEquals(expectedGenes, collectedGenes)
@@ -181,7 +181,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
 
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
         assertEquals(expectedGenes, collectedGenes)
@@ -208,7 +208,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
 
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
         assertEquals(expectedGenes, collectedGenes)
@@ -240,7 +240,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(statusColumn, pAtColumn), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(statusColumn, pAtColumn), id = 0L)
 
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
         val collector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(collector, action)
         assertEquals(expectedGenes, collectedGenes)
@@ -268,7 +268,7 @@ class TableConstraintGeneCollectorTest {
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
 
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
         assertEquals(expectedGenes, collectedGenes)
@@ -297,7 +297,7 @@ class TableConstraintGeneCollectorTest {
 
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
 
-        val expectedGenes = action.seeGenes().toSet()
+        val expectedGenes = action.seeTopGenes().toSet()
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
         assertEquals(expectedGenes, collectedGenes)

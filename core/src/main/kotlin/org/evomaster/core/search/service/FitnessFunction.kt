@@ -96,7 +96,7 @@ abstract class FitnessFunction<T>  where T : Individual {
 
     private fun calculateIndividualWithPostHandling(individual: T, targets: Set<Int>, actionsSize: Int) : EvaluatedIndividual<T>?{
 
-        val ei = time.measureTimeMillis(
+        val ei = SearchTimeController.measureTimeMillis(
                 { t, ind ->
                     time.reportExecutedIndividualTime(t, actionsSize)
                     ind?.executionTimeMs = t

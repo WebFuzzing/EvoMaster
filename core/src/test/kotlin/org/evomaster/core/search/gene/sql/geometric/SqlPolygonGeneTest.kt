@@ -14,7 +14,7 @@ class SqlPolygonGeneTest {
     fun testRandomizePolygonSize3() {
         val gene = SqlPolygonGene(name = "polygon", minLengthOfPolygonRing = 3, onlyNonIntersectingPolygons = true)
         gene.randomize(rand, false)
-        assertTrue(gene.isValid())
+        assertTrue(gene.isLocallyValid())
         assertTrue(gene.points.getViewOfChildren().size >= 3)
     }
 
@@ -22,7 +22,7 @@ class SqlPolygonGeneTest {
     fun testRandomizePolygonSize6() {
         val gene = SqlPolygonGene(name = "polygon", minLengthOfPolygonRing = 6, onlyNonIntersectingPolygons = true)
         gene.randomize(rand, false)
-        assertTrue(gene.isValid())
+        assertTrue(gene.isLocallyValid())
         assertTrue(gene.points.getViewOfChildren().size >= 6)
     }
 
@@ -41,7 +41,7 @@ class SqlPolygonGeneTest {
         gene.points.addElement(SqlPointGene("p",
                 x = FloatGene("x", value = 0.11125329f),
                 y = FloatGene("y", value = 0.8111974f)))
-        assertFalse(gene.isValid())
+        assertFalse(gene.isLocallyValid())
 
     }
 
@@ -60,7 +60,7 @@ class SqlPolygonGeneTest {
         gene.points.addElement(SqlPointGene("p",
                 x = FloatGene("x", value = 0f),
                 y = FloatGene("y", value = 1f)))
-        assertTrue(gene.isValid())
+        assertTrue(gene.isLocallyValid())
     }
 
     @Test
@@ -78,7 +78,7 @@ class SqlPolygonGeneTest {
         gene.points.addElement(SqlPointGene("p",
                 x = FloatGene("x", value = 0f),
                 y = FloatGene("y", value = 1f)))
-        assertFalse(gene.isValid())
+        assertFalse(gene.isLocallyValid())
     }
 
     @Test

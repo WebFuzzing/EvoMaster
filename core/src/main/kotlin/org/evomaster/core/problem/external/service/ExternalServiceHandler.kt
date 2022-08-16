@@ -21,14 +21,14 @@ class ExternalServiceHandler {
      * AbstractRestFitness and AbstractRestSample for further use.
      *
      * TODO: This is not the final implementation need to refactor but
-     * the concept is working.
+     *  the concept is working.
      */
 
     @Inject
     private lateinit var randomness: Randomness
 
     @Inject
-    private lateinit var config : EMConfig
+    private lateinit var config: EMConfig
 
     /**
      * Contains the information about external services as map.
@@ -41,7 +41,14 @@ class ExternalServiceHandler {
      * Contains last used loopback address for reference when creating
      * a new address
      */
-    private var lastIPAddress : String = ""
+    private var lastIPAddress: String = ""
+
+    private var counter: Long = 0
+
+    /**
+     * Collection of captured external service requests under SUT
+     */
+    private val externalServiceRequests: MutableList<ExternalServiceRequest> = mutableListOf()
 
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
@@ -54,14 +61,14 @@ class ExternalServiceHandler {
             if (!externalServices.containsKey(externalServiceInfo.remoteHostname)) {
                 val ip = getIP(externalServiceInfo.remotePort)
                 lastIPAddress = ip
-                val wm : WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
+                val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
 
                 externalServices[externalServiceInfo.remoteHostname] = ExternalService(externalServiceInfo, wm)
             }
         }
     }
 
-    fun getExternalServiceMappings() : Map<String, String> {
+    fun getExternalServiceMappings(): Map<String, String> {
         return externalServices.mapValues { it.value.getWireMockAddress() }
     }
 
@@ -69,7 +76,7 @@ class ExternalServiceHandler {
      * Will return the next available IP address from the last know IP address
      * used for external service.
      */
-    private fun getNextAvailableAddress(port: Int) : String {
+    private fun getNextAvailableAddress(port: Int): String {
         val nextAddress: String = nextIPAddress(lastIPAddress)
 
         if (isAddressAvailable(nextAddress, port)) {
@@ -84,7 +91,7 @@ class ExternalServiceHandler {
      * while checking the availability. If not available will
      * generate a new one.
      */
-    private fun generateRandomAvailableAddress(port: Int) : String {
+    private fun generateRandomAvailableAddress(port: Int): String {
         val ip = generateRandomIPAddress(randomness)
         if (isAddressAvailable(ip, port)) {
             return ip
@@ -92,8 +99,46 @@ class ExternalServiceHandler {
         return generateRandomAvailableAddress(port)
     }
 
-    fun getExternalServices() : Map<String, ExternalService> {
+    fun getExternalServices(): Map<String, ExternalService> {
         return externalServices
+    }
+
+    fun reset() {
+        externalServices.forEach {
+            it.value.stopWireMockServer()
+        }
+    }
+
+    /**
+     * This takes all the served requests from WireMock server and creates them
+     * as ExternalServiceAction. It ignores if the same absolute URL is added
+     * already.
+     *
+     * This is not perfect yet, have to explore more scenarios and perfect the
+     * implementation.
+     */
+    fun getExternalServiceActions(): MutableList<ExternalServiceAction> {
+        val actions = mutableListOf<ExternalServiceAction>()
+        externalServices.forEach { (_, u) ->
+            u.getAllServedRequests().forEach {
+                // TODO: This needs to be revised to make it nicer
+                if (externalServiceRequests.none { r -> r.absoluteURL == it.absoluteURL }) {
+                    externalServiceRequests.add(it)
+                }
+                if (actions.none { a -> a.request.url == it.url }) {
+                    actions.add(
+                        ExternalServiceAction(
+                            it,
+                            "",
+                            u,
+                            counter++
+                        )
+                    )
+                }
+
+            }
+        }
+        return actions
     }
 
     /**
@@ -102,20 +147,20 @@ class ExternalServiceHandler {
      * If user provided IP address isn't available on the port
      * IllegalStateException will be thrown.
      */
-    private fun getIP(port: Int) : String {
+    private fun getIP(port: Int): String {
         val ip: String
         when (config.externalServiceIPSelectionStrategy) {
             // Although the default address will be a random, this
             // option allows selecting explicitly
             EMConfig.ExternalServiceIPSelectionStrategy.RANDOM -> {
-                ip = if (externalServices.size > 0) {
+                ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
                 } else {
                     generateRandomAvailableAddress(port)
                 }
             }
             EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
-                ip = if (externalServices.size > 0) {
+                ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
                 } else {
                     if (!isReservedIP(config.externalServiceIP)) {
@@ -130,7 +175,7 @@ class ExternalServiceHandler {
                 }
             }
             else -> {
-                ip = if (externalServices.size > 0) {
+                ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
                 } else {
                     generateRandomAvailableAddress(port)
@@ -139,28 +184,38 @@ class ExternalServiceHandler {
         }
         return ip
     }
+
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
      */
     private fun initWireMockServer(address: String, port: Int): WireMockServer {
         // TODO: Port need to be changed to the remote service port
-        // In CI also using remote ports as 80 and 443 fails
+        //  In CI also using remote ports as 80 and 443 fails
         val wm = WireMockServer(
             WireMockConfiguration()
                 .bindAddress(address)
                 .port(port)
-                .extensions(ResponseTemplateTransformer(false)))
+                .extensions(ResponseTemplateTransformer(false))
+        )
         wm.start()
 
         // to prevent from the 404 when no matching stub below stub is added
         // TODO: Need to decide what should be the default behaviour
-        wm.stubFor(get(urlMatching("/.*"))
-            .atPriority(2)
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withBody("{\"message\": \"Fake endpoint.\"}")))
+        wm.stubFor(
+            any(anyUrl())
+                .atPriority(10)
+                .willReturn(
+                    aResponse()
+                        .withStatus(500)
+                        .withBody("Internal Server Error")
+                )
+        )
 
         return wm
+    }
+
+    fun getExternalServiceRequests(): MutableList<ExternalServiceRequest> {
+        return externalServiceRequests
     }
 
 }

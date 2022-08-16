@@ -3,11 +3,9 @@ package org.evomaster.core.problem.rpc
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.StructuralElement
+
+import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TrackOperator
 
@@ -17,7 +15,7 @@ import org.evomaster.core.search.tracer.TrackOperator
 class RPCIndividual(
         trackOperator: TrackOperator? = null,
         index: Int = -1,
-        allActions: MutableList<StructuralElement>
+        allActions: MutableList<ActionComponent>
 ) : ApiWsIndividual(trackOperator, index, allActions) {
 
     constructor(actions: MutableList<RPCCallAction>,
@@ -27,16 +25,19 @@ class RPCIndividual(
                 dbInitialization: MutableList<DbAction> = mutableListOf(),
                 trackOperator: TrackOperator? = null,
                 index: Int = -1
-    ) : this(trackOperator, index, mutableListOf<StructuralElement>().apply {
+    ) : this(trackOperator, index, mutableListOf<ActionComponent>().apply {
         addAll(dbInitialization); addAll(actions)
     })
 
-
+    /**
+     * TODO: Verify the implementation
+     */
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> seeInitializingActions().flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
-            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
-            GeneFilter.ONLY_SQL -> seeInitializingActions().flatMap(DbAction::seeGenes)
+            GeneFilter.ALL -> seeInitializingActions().flatMap(Action::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
+            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
+            GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
+            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>().flatMap(ExternalServiceAction::seeTopGenes)
         }
     }
 
@@ -46,11 +47,18 @@ class RPCIndividual(
 
     override fun canMutateStructure(): Boolean = true
 
+    /**
+     * TODO: Verify the implementation
+     */
     override fun seeActions(filter: ActionFilter): List<out Action> {
         return when (filter) {
             ActionFilter.ALL -> children as List<Action>
+            // TODO Man: need to check NO_SQL which might be replaced with NO_INIT
             ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
-            ActionFilter.ONLY_SQL, ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.ONLY_SQL -> seeInitializingActions().filterIsInstance<DbAction>()
+            ActionFilter.INIT -> seeInitializingActions()
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>()
+            ActionFilter.NO_EXTERNAL_SERVICE -> (children as List<Action>).filter { it !is ExternalServiceAction }
         }
     }
 
@@ -61,7 +69,7 @@ class RPCIndividual(
      fun seeIndexedRPCCalls() : Map<Int, RPCCallAction> = getIndexedChildren(RPCCallAction::class.java)
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeInitializingActions())
+        return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
     }
 
 
@@ -91,7 +99,7 @@ class RPCIndividual(
         return RPCIndividual(
                 trackOperator,
                 index,
-                children.map { it.copy() }.toMutableList()
+                children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>
         )
     }
 }

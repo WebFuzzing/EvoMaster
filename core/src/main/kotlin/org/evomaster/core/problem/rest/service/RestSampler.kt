@@ -335,7 +335,7 @@ class RestSampler : AbstractRestSampler(){
 
         val res = template.copy() as RestCallAction
         if(res.isInitialized()){
-            res.seeGenes().forEach { it.randomize(randomness, false) }
+            res.seeTopGenes().forEach { it.randomize(randomness, false) }
         } else {
             res.doInitialize(randomness)
         }

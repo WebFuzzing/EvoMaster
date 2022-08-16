@@ -197,7 +197,7 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
                 existing data (which of course should not be re-inserted...)
              */
             // other dbactions might bind with the representExistingData, so we still need to record sqlId here.
-            allDbActions.filter { it.representExistingData }.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
+            allDbActions.filter { it.representExistingData }.flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
                 sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
             }
             previous.addAll(allDbActions)
@@ -234,7 +234,7 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
             return false
         }else{
             val expected = allDbActions.filter { !it.representExistingData }
-                .flatMap { it.seeGenes() }.flatMap { it.flatView() }
+                .flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
                 .filterIsInstance<SqlPrimaryKeyGene>()
                 .filter { it.gene is SqlAutoIncrementGene }
                 .filterNot { it.gene is SqlForeignKeyGene }
@@ -257,7 +257,7 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
         return ActionDto().apply {
             this.index = index
             //for now, we only include specialized regex
-            this.inputVariables = action.seeGenes()
+            this.inputVariables = action.seeTopGenes()
                 .flatMap { it.flatView() }
                 .filterIsInstance<StringGene>()
                 .filter { it.getSpecializationGene() != null && it.getSpecializationGene() is RegexGene }

@@ -20,7 +20,7 @@ class LikeCheckTest : ExtractTestBaseMySQL() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("f_id"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is RegexGene)
@@ -34,11 +34,11 @@ class LikeCheckTest : ExtractTestBaseMySQL() {
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("f_id"))
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
         val regexGene = genes.firstIsInstance<RegexGene>()
 
         for (i in 1..100) {
-            regexGene.randomize(randomness, false, listOf())
+            regexGene.randomize(randomness, false)
 
 
             val dbCommandDto = DbActionTransformer.transform(actions)

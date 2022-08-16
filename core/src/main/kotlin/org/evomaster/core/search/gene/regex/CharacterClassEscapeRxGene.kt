@@ -36,13 +36,17 @@ class CharacterClassEscapeRxGene(
         }
     }
 
+    override fun isLocallyValid() : Boolean{
+        return value.matches(Regex("\\$type"))
+    }
+
     override fun copyContent(): Gene {
         val copy = CharacterClassEscapeRxGene(type)
         copy.value = this.value
         return copy
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         val previous = value
 
@@ -59,11 +63,11 @@ class CharacterClassEscapeRxGene(
         }.toString()
 
         if(tryToForceNewValue && previous == value){
-            randomize(randomness, tryToForceNewValue, allGenes)
+            randomize(randomness, tryToForceNewValue)
         }
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         if (value=="") {
             // if standardMutation was invoked before calling to randomize
             // then we signal an exception

@@ -271,9 +271,10 @@ object GeneSamplerForTests {
     private fun sampleSqlMultidimensionalArrayGene(rand: Randomness): SqlMultidimensionalArrayGene<*> {
 
         val selection = selectionForArrayTemplate()
+        val template = samplePrintableTemplate(selection, rand)
 
         return SqlMultidimensionalArrayGene("rand SqlMultidimensionalArrayGene",
-                template = sample(rand.choose(selection), rand),
+                template = template,
                 numberOfDimensions = rand.nextInt(1, MAX_NUMBER_OF_DIMENSIONS))
     }
 
@@ -461,6 +462,18 @@ object GeneSamplerForTests {
         )
     }
 
+    fun samplePrintablePairGene(rand: Randomness): PairGene<*,*> {
+
+        val selection = geneClasses.filter { !it.isAbstract }
+
+        return PairGene(
+            name = "rand PairGene",
+            first = samplePrintableTemplate(selection, rand),
+            second = samplePrintableTemplate(selection, rand),
+            isFirstMutable = rand.nextBoolean()
+        )
+    }
+
     fun sampleOptionalGene(rand: Randomness): OptionalGene {
 
         val selection = geneClasses.filter { !it.isAbstract }
@@ -512,7 +525,7 @@ object GeneSamplerForTests {
                 name = "rand MapGene",
                 minSize = rand.choose(listOf(null, min)),
                 maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3))),
-                template = sample(PairGene::class, rand)
+                template = samplePrintablePairGene(rand)
         )
     }
 
@@ -725,10 +738,18 @@ object GeneSamplerForTests {
         )
     }
 
+    private fun samplePrintableTemplate(selection: List<KClass<out Gene>>,rand: Randomness) : Gene{
+        var chosen = sample(rand.choose(selection), rand)
+        while(!chosen.isPrintable()){
+            chosen = sample(rand.choose(selection), rand)
+        }
+        return chosen
+    }
+
     fun sampleArrayGene(rand: Randomness): ArrayGene<*> {
 
         val selection = selectionForArrayTemplate()
-        val chosen = sample(rand.choose(selection), rand)
+        val chosen = samplePrintableTemplate(selection, rand)
 
         return ArrayGene("rand array ${rand.nextInt()}", chosen)
     }

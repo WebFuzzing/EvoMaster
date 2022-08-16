@@ -43,7 +43,7 @@ class QuantifierRxGene(
      */
     private val LIMIT = 2
 
-    val limitedMax: Int
+    private val limitedMax: Int
 
     init {
         if (min < 0) {
@@ -73,6 +73,10 @@ class QuantifierRxGene(
         }
     }
 
+    override fun isLocallyValid() : Boolean{
+        val n = getViewOfChildren().size
+        return n in min..limitedMax &&  getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene {
 
@@ -94,7 +98,7 @@ class QuantifierRxGene(
 
 
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         val length = randomness.nextInt(min, limitedMax)
 
@@ -106,7 +110,7 @@ class QuantifierRxGene(
         }
 
         for (i in 0 until length) {
-           addNewAtom(randomness, tryToForceNewValue, allGenes)
+           addNewAtom(randomness, tryToForceNewValue)
         }
     }
 
@@ -114,7 +118,7 @@ class QuantifierRxGene(
         return min != limitedMax || template.isMutable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         val length = atoms.size
 
         return if( length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
@@ -137,7 +141,7 @@ class QuantifierRxGene(
         return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(null, s))
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         val length = atoms.size
 
         if (length < min || length > limitedMax)
@@ -159,16 +163,16 @@ class QuantifierRxGene(
             killChildByIndex(randomness.nextInt(length))
         }
         if(add){
-            addNewAtom(randomness, false, listOf())
+            addNewAtom(randomness, false)
         }
 
         return true
     }
 
-    fun addNewAtom(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>){
+    fun addNewAtom(randomness: Randomness, forceNewValue: Boolean){
         val base = template.copy()
         if (base.isMutable()) {
-            base.randomize(randomness, forceNewValue, allGenes)
+            base.randomize(randomness, forceNewValue)
         }
         addChild(base)
     }

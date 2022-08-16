@@ -87,7 +87,7 @@ class BasicEMTest : RestTestBase() {
 
             assertEquals(1, dbactions.size)
 
-            val genes = dbactions[0].seeGenes()
+            val genes = dbactions[0].seeTopGenes()
 
             val a = genes.find { it.name.equals("a", ignoreCase = true) }
             assertTrue(a is IntegerGene)

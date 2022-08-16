@@ -47,6 +47,11 @@ class DisjunctionRxGene(
         private val log : Logger = LoggerFactory.getLogger(DisjunctionRxGene::class.java)
     }
 
+
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     /**
      *  to handle "term*", as * can be empty, representing an empty string ""
      */
@@ -59,9 +64,9 @@ class DisjunctionRxGene(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         terms.filter { it.isMutable() }
-                .forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue) }
 
         if (!matchStart) {
             extraPrefix = randomness.nextBoolean()
@@ -76,7 +81,7 @@ class DisjunctionRxGene(
         return !matchStart || !matchEnd || terms.any { it.isMutable() }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return if(!matchStart && randomness.nextBoolean(APPEND)){
             emptyList()
         } else if(!matchEnd && randomness.nextBoolean(APPEND)){
@@ -107,7 +112,7 @@ class DisjunctionRxGene(
         return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(impacts[internalGenes.indexOf(it)], it) }.toList()
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         if(!matchStart){
             extraPrefix = ! extraPrefix
         } else {

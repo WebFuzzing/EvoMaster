@@ -20,6 +20,19 @@ class SearchTimeController {
 
     companion object{
         private val log = LoggerFactory.getLogger(SearchTimeController::class.java)
+
+        /**
+         * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
+         */
+        inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
+                                         function: () -> T): T {
+
+            val startTime = System.currentTimeMillis()
+            val result: T = function.invoke()
+            loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
+
+            return result
+        }
     }
 
 
@@ -133,18 +146,6 @@ class SearchTimeController {
         averageTestTimeMs.addValue(ms)
     }
 
-    /**
-     * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
-     */
-    inline fun <T> measureTimeMillis(loggingFunction: (Long, T) -> Unit,
-                                    function: () -> T): T {
-
-        val startTime = System.currentTimeMillis()
-        val result: T = function.invoke()
-        loggingFunction.invoke(System.currentTimeMillis() - startTime, result)
-
-        return result
-    }
 
     fun computeExecutedIndividualTimeStatistics() : Pair<Double,Double>{
 

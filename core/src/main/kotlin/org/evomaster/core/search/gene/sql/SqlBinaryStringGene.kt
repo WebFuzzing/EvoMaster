@@ -38,11 +38,15 @@ class SqlBinaryStringGene(
 
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        binaryArrayGene.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        binaryArrayGene.randomize(randomness, tryToForceNewValue)
+    }
+
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return listOf(binaryArrayGene)
     }
 
@@ -98,12 +102,11 @@ class SqlBinaryStringGene(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true, allGenes)
+        this.randomize(randomness, true)
         return true
     }
 }

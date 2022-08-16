@@ -59,7 +59,7 @@ object SqlWriter {
                     }
 
                     lines.indented {
-                        evaluatedDbAction.action.seeGenes()
+                        evaluatedDbAction.action.seeTopGenes()
                                 .filter { it.isPrintable() }
                                 .forEach { g ->
                                     when {
@@ -135,7 +135,7 @@ object SqlWriter {
          */
         val pkExisting = allActions
                 .filter { it.representExistingData }
-                .flatMap { it.seeGenes() }
+                .flatMap { it.seeTopGenes() }
                 .filterIsInstance<SqlPrimaryKeyGene>()
                 .find { it.uniqueId == uniqueIdOfPrimaryKey }
 
@@ -164,7 +164,7 @@ object SqlWriter {
 
 
         val pkg = allActions
-                .flatMap { it.seeGenes() }
+                .flatMap { it.seeTopGenes() }
                 .filterIsInstance<SqlPrimaryKeyGene>()
                 .find { it.uniqueId == uniqueIdOfPrimaryKey }!!
 

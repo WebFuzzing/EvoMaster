@@ -60,7 +60,7 @@ class IntegerGene(
         return this.value == other.value
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         value = randomness.randomizeBoundedIntAndLong(value.toLong(), getMinimum().toLong(), getMaximum().toLong(), tryToForceNewValue).toInt()
     }
@@ -69,13 +69,12 @@ class IntegerGene(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
 
-        val mutated = super.shallowMutate(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        val mutated = super.shallowMutate(randomness, apc, mwc, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (mutated) return true
 
         //check maximum range. no point in having a delta greater than such range
