@@ -30,6 +30,7 @@ class ProcessMonitorTest{
     private lateinit var ff : OneMaxFitness
     private lateinit var config: EMConfig
     private lateinit var processMonitor : SearchProcessMonitor
+    private lateinit var randomness: Randomness
 
     @BeforeEach
     fun init(){
@@ -42,6 +43,7 @@ class ProcessMonitorTest{
         archive = injector.getInstance(Key.get(
                 object : TypeLiteral<Archive<OneMaxIndividual>>() {}))
         processMonitor = injector.getInstance(Key.get(SearchProcessMonitor::class.java))
+        randomness = injector.getInstance(Key.get(Randomness::class.java))
 
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
@@ -61,6 +63,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(config.processFiles)))
 
         val a = OneMaxIndividual(2)
+        a.doInitialize(randomness)
         a.setValue(0, 1.0)
 
         val eval = ff.calculateCoverage(a)!!
@@ -85,6 +88,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
         val a = OneMaxIndividual(2)
+        a.doInitialize(randomness)
         a.setValue(0, 1.0)
 
         val eval = ff.calculateCoverage(a)!!
@@ -112,6 +116,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
         val individual = OneMaxIndividual(2)
+        individual.doInitialize(randomness)
         individual.setValue(0, 1.0)
 
         val eval = ff.calculateCoverage(individual)!!
@@ -149,7 +154,10 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(config.processFiles)))
         assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
+        assertEquals(0, archive.getSnapshotOfBestIndividuals().size)
+
         val a = OneMaxIndividual(2)
+        a.doInitialize(randomness)
         a.setValue(0, 1.0)
         val evalA = ff.calculateCoverage(a)!!
         processMonitor.eval = evalA
@@ -161,6 +169,7 @@ class ProcessMonitorTest{
 
         assertEquals(1, archive.getSnapshotOfBestIndividuals().size)
         val b = OneMaxIndividual(2)
+        b.doInitialize(randomness)
         b.setValue(1, 1.0)
         val evalB = ff.calculateCoverage(b)!!
         processMonitor.eval = evalB
@@ -186,7 +195,7 @@ class ProcessMonitorTest{
         val dataB = String(Files.readAllBytes(Paths.get(processMonitor.getStepAsPath(2) )))
         gson.fromJson<StepOfSearchProcess<OneMaxIndividual>>(dataB, turnsType)
                 .apply {
-                    assertEquals(1, populations.size)
+                    assertEquals(2, populations.size)
                     assertEquals(0, samplingCounter.size)
                  }
 
