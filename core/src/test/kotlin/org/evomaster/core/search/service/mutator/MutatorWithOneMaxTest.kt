@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Disabled
 import java.nio.file.Files
 import java.nio.file.Paths
 
-@Disabled("some issues with update of impact")
+
 class MutatorWithOneMaxTest {
 
     private lateinit var injector: Injector

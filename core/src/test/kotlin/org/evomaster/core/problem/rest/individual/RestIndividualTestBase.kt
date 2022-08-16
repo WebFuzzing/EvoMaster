@@ -207,7 +207,7 @@ abstract class RestIndividualTestBase {
     open fun extraSampledIndividualCheck(index: Int, individual: RestIndividual){}
 
 
-    @Disabled("due to action refactoring")
+
     @ParameterizedTest
     @MethodSource("getBudgetAndNumOfResourceForMutator")
     fun testMutatedIndividual(iteration: Int, numResource: Int){

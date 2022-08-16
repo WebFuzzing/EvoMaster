@@ -23,7 +23,7 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
-@Disabled("Man please look at this one")
+
 class ProcessMonitorTest{
 
     private lateinit var archive: Archive<OneMaxIndividual>

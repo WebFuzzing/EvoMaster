@@ -39,7 +39,7 @@ class RestResourceCallPostGetStructureTest : StructuralElementBaseTest(){
     override fun getExpectedChildrenSize(): Int = 2
 
 
-    @Disabled("due to tree refactoring")
+
     @Test
     fun testTraverseBackIndex(){
         val root = getStructuralElement()

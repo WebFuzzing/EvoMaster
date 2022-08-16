@@ -73,7 +73,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
     override fun getExpectedChildrenSize(): Int = 2 + 2
 
 
-    @Disabled("due to action refactoring. need to check")
+
     @Test
     fun testTraverseBackIndex(){
         val root = getStructuralElementAndIdentifyAsRoot() as RestIndividual
