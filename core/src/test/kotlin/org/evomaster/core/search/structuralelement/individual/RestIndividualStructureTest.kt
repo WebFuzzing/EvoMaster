@@ -83,8 +83,9 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
         val dbpath = listOf(1, 0)
         assertEquals(barId, root.targetWithIndex(dbpath))
 
+        // root.seeMainExecutableActions()[0] is obtained with 2-> 0-> 0, i.e., 2nd children (resourceCall) -> 0th group -> 0th action
         val floatValue = (((root.seeMainExecutableActions()[0]).parameters[0] as BodyParam).gene as ObjectGene).fields[3]
-        val path = listOf(2, 0, 0, 0, 3)
+        val path = listOf(2, 0, 0, 0, 0, 3)
         assertEquals(floatValue, root.targetWithIndex(path))
 
         val actualPath = mutableListOf<Int>()
