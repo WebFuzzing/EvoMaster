@@ -59,19 +59,23 @@ class SqlTextSearchQueryGene(
         const val BLANK_CHAR = ' '
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlTextSearchQueryGene(
             name,
             queryLexemes.copy() as ArrayGene<StringGene>
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        queryLexemes.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        queryLexemes.randomize(randomness, tryToForceNewValue)
         /*
          *  A geometric polygon must be always a non-empty list
          */
-        if (queryLexemes.getAllElements().isEmpty()) {
+        if (queryLexemes.getViewOfElements().isEmpty()) {
             val stringGene = StringGene("lexeme")
-            stringGene.randomize(randomness, tryToForceNewValue, allGenes)
+            stringGene.randomize(randomness, tryToForceNewValue)
             queryLexemes.addElement(stringGene)
         }
     }
@@ -79,7 +83,6 @@ class SqlTextSearchQueryGene(
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -94,7 +97,7 @@ class SqlTextSearchQueryGene(
             extraCheck: Boolean
     ): String {
         val queryStr =
-                queryLexemes.getAllElements()
+                queryLexemes.getViewOfElements()
                         .map {
                             removeEnclosedQuotationMarks(
                                     it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck))
@@ -104,7 +107,7 @@ class SqlTextSearchQueryGene(
     }
 
     override fun getValueAsRawString(): String {
-        return queryLexemes.getAllElements()
+        return queryLexemes.getViewOfElements()
                 .map { it.getValueAsRawString() }
                 .joinToString(" $AMPERSAND_CHAR ")
 

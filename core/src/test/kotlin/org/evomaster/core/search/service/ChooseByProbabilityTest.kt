@@ -8,7 +8,7 @@ internal class MapGeneTest{
     @Test
     fun test(){
         val randomness = Randomness()
-        val map = mutableMapOf("x" to 0.5.toFloat(), "y" to 0.3.toFloat(), "z" to 0.2.toFloat())
+        val map = mutableMapOf("x" to 0.5, "y" to 0.3, "z" to 0.2)
         var x = 0.0
         var y = 0.0
         var z = 0.0

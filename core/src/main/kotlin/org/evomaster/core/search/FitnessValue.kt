@@ -72,6 +72,12 @@ class FitnessValue(
     private val aggregatedFailedWhere: MutableMap<String, Set<String>> = mutableMapOf()
 
     /**
+     * To keep track of accessed external services prevent from adding them again
+     * TODO: This is not completed, not need to consider for review for now
+     */
+    private val accessedExternalServiceRequests: MutableList<String> = mutableListOf()
+
+    /**
     * How long it took to evaluate this fitness value.
     */
     var executionTimeMs : Long = Long.MAX_VALUE
@@ -654,5 +660,19 @@ class FitnessValue(
      */
     fun getTargetsByAction(actionIndex : Int) : Set<Int> {
         return targets.filterValues { it.actionIndex == actionIndex }.keys
+    }
+
+    fun getAccessedExternalServiceRequests() = accessedExternalServiceRequests
+
+    /**
+     * Collect external service requests made by the SUT from ExternalServiceHandler
+     * and store it to prevent from adding them again
+     *
+     * TODO: This is not completed, not need to consider for review for now. Still under
+     *  development. Since it's not crashing left it as it is.
+     */
+    fun aggregateExternalServiceRequests() {
+        accessedExternalServiceRequests.clear()
+        accessedExternalServiceRequests.addAll(mutableListOf())
     }
 }

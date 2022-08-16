@@ -110,6 +110,12 @@ class StringGene(
     val specializationGenes: List<Gene>
         get() {return children}
 
+    override fun isLocallyValid() : Boolean{
+        return value.length in minLength..maxLength
+                && invalidChars.none { value.contains(it) }
+                && getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene {
         val copy = StringGene(name, value, minLength, maxLength, invalidChars, this.specializationGenes.map { g -> g.copy() }.toMutableList())
                 .also {
@@ -138,28 +144,42 @@ class StringGene(
         return true
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-
-        /*
-            TODO weirdly we did not do taint on sampling!!! we must do it, and evaluate it
-
-        if(!tainted){
-            redoTaint()
-        }
-         */
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
         repair()
         selectedSpecialization = -1
-        handleBinding(allGenes)
+        handleBinding(getAllGenesInIndividual())
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun applyGlobalUpdates() {
+        assert(!tainted)
+
+        //check if starting directly with a tainted value
+        val state = getSearchGlobalState()!! //cannot be null when this method is called
+        if(state.config.taintOnSampling){
+
+            if(state.spa.hasInfoFor(name) && state.randomness.nextDouble() < state.config.useGlobalTaintInfoProbability){
+                val spec = state.spa.chooseSpecialization(name, state.randomness)!!
+                assert(specializations.size == 0)
+                addSpecializations("", listOf(spec),state.randomness, false)
+                assert(specializationGenes.size == 1)
+                selectedSpecialization = specializationGenes.lastIndex
+            } else {
+                redoTaint(state.apc, state.randomness, listOf())
+            }
+        }
+    }
+
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return listOf()
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>,
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,
                                selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+
+        val allGenes = getAllGenesInIndividual()
+
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
             additionalGeneMutationInfo.archiveGeneMutator.mutateStringGene(
@@ -221,7 +241,7 @@ class StringGene(
                     (additionalGeneMutationInfo?.impact as? StringGeneImpact)?.hierarchySpecializationImpactInfo?.flattenImpacts()?.get(selectedSpecialization) as? GeneImpact
                 else null
                 //just mutate current selection
-                specializationGene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo?.copyFoInnerGene(impact = impact, gene = specializationGene))
+                specializationGene.standardMutation(randomness, apc, mwc, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo?.copyFoInnerGene(impact = impact, gene = specializationGene))
             }
             selectionUpdatedSinceLastMutation = false
             handleBinding(allGenes)
@@ -329,7 +349,7 @@ class StringGene(
         }
 
         if (tainted && randomness.nextBoolean(0.5) && TaintInputName.isTaintInput(value)) {
-            randomize(randomness, true, allGenes)
+            randomize(randomness, true)
             return true
         }
 
@@ -369,7 +389,15 @@ class StringGene(
         }
     }
 
-    fun addSpecializations(key: String, specs: Collection<StringSpecializationInfo>, randomness: Randomness) {
+    fun addSpecializations(
+            /**
+             * TODO what whas this? does not seem to be used
+             */
+            key: String,
+            specs: Collection<StringSpecializationInfo>,
+            randomness: Randomness,
+            updateGlobalInfo: Boolean = true
+    ) {
 
         val toAddSpecs = specs
                 //don't add the same specialization twice
@@ -458,7 +486,8 @@ class StringGene(
         if (toAddGenes.size > 0) {
             selectionUpdatedSinceLastMutation = true
             toAddGenes.forEach {
-                it.randomize(randomness, false, listOf())
+                //it.randomize(randomness, false, listOf())
+                it.doInitialize(randomness)
             }
             log.trace("in total added specification size: {}", toAddGenes.size)
             addChildren(toAddGenes)
@@ -473,6 +502,11 @@ class StringGene(
              */
             val ids = toAddSpecs.filter { it.stringSpecialization == EQUAL }.map { it.value }
             bindingIds.addAll(ids)
+        }
+
+        if(updateGlobalInfo) {
+            val state = getSearchGlobalState()!! //cannot be null when this method is called
+            state.spa.updateStats(name, toAddSpecs)
         }
     }
 
@@ -648,6 +682,10 @@ class StringGene(
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
+
+        org.evomaster.core.Lazy.assert{isLocallyValid()};
+        val current = value
+
         when(gene){
             //shall I add the specification into the string if it applies?
             is StringGene -> value = gene.value
@@ -682,6 +720,13 @@ class StringGene(
                 }
             }
         }
+
+        if(!isLocallyValid()){
+            //this actually can happen when binding to Long, and goes above lenght limit of String
+            value = current
+            //TODO should we rather enforce this to never happen?
+        }
+
         return true
     }
 

@@ -18,7 +18,7 @@ object DbActionUtils {
 
         for (i in 0 until actions.size) {
 
-            val fks = actions[i].seeGenes()
+            val fks = actions[i].seeTopGenes()
                     .flatMap { it.flatView() }
                     .filterIsInstance<SqlForeignKeyGene>()
 
@@ -43,7 +43,7 @@ object DbActionUtils {
                     .map { it.uniqueIdOfPrimaryKey }
                     .forEach { id ->
                         val match = previous.asSequence()
-                                .flatMap { it.seeGenes().asSequence() }
+                                .flatMap { it.seeTopGenes().asSequence() }
                                 .filterIsInstance<SqlPrimaryKeyGene>()
                                 .any { it.uniqueId == id }
 
@@ -62,8 +62,13 @@ object DbActionUtils {
             references to each other (eg Foreign Keys)
          */
 
+        /*
+            TODO do we need this method? or shall have it as general global post-processing?
+         */
+
+
         actions.forEach {
-            it.randomize(randomness, false, actions.flatMap { a -> a.seeGenes()})
+            it.randomize(randomness, false)
         }
 
         Lazy.assert { verifyForeignKeys(actions) }
@@ -91,6 +96,11 @@ object DbActionUtils {
                                   maxNumberOfAttemptsToRepairAnAction: Int = DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS
     ): Boolean {
 
+        //FIXME: quite bit of code now would break this invariant. fix once refactor post-processing
+        //if(actions.map { it.getRoot() }.toSet().size != 1){
+        //    throw IllegalArgumentException("All DB actions should be mounted under same root")
+        //}
+
         if (log.isTraceEnabled){
             log.trace("before repairBrokenDbActionsList, the actions are {}", actions.joinToString(",") { it.getResolvedName() })
         }
@@ -108,13 +118,13 @@ object DbActionUtils {
 
         while (geneToRepair != null && attemptCounter < maxNumberOfAttemptsToRepairAnAction) {
 
-            val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeGenes() }
-            //Please check this. there throw java.lang.IllegalStateException: Not supposed to modify an immutable gene
+            //TODO check if this will still be needed after refactoring
+            val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeTopGenes() }
+
             if (geneToRepair.isMutable())
-                geneToRepair.randomize(randomness, true, previousGenes)
+                geneToRepair.randomize(randomness, true)
 
             if (actionIndexToRepair == previousActionIndexToRepair) {
-                //
                 attemptCounter++
             } else if (actionIndexToRepair > previousActionIndexToRepair) {
                 attemptCounter = 0
@@ -236,7 +246,7 @@ object DbActionUtils {
          */
         val pksValues = mutableMapOf<String, MutableSet<String>>()
 
-        val allGenes = actions.flatMap { it.seeGenes() }
+        val allGenes = actions.flatMap { it.seeTopGenes() }
 
         val dbActions = mutableListOf<DbAction>()
         for ((actionIndex, action) in actions.withIndex().sortedBy { it.index }) {
@@ -261,7 +271,7 @@ object DbActionUtils {
 
     private fun handleFKs(action: DbAction, actionIndex: Int): Pair<Gene?, Int>? {
 
-        action.seeGenes().flatMap { it.flatView() }
+        action.seeTopGenes().flatMap { it.flatView() }
                 .filterIsInstance<SqlForeignKeyGene>()
                 .firstOrNull { !it.hasValidUniqueIdOfPrimaryKey() }?.let { return Pair(it,actionIndex) }
                 ?: return null
@@ -278,7 +288,7 @@ object DbActionUtils {
         val tableName = action.table.name
 
         //handle unique constraint
-        action.seeGenes().forEach { g ->
+        action.seeTopGenes().forEach { g ->
             val columnName = g.name
 
             /*
@@ -336,7 +346,7 @@ object DbActionUtils {
            to check for uniqueness
          */
 
-        val pkGenes = action.seeGenes()
+        val pkGenes = action.seeTopGenes()
                 .filterIsInstance<SqlPrimaryKeyGene>()
 
         val pk = pkGenes.sortedBy { it.name }
@@ -385,17 +395,17 @@ object DbActionUtils {
      * @return whether fk is fixed
      */
     fun repairFk(dbAction: DbAction, previous: MutableList<DbAction>) : Pair<Boolean, List<DbAction>?>{
-        val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+        val pks = previous.flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
         val referDbActions = mutableListOf<DbAction>()
 
-        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().forEach {fk->
+        dbAction.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().forEach { fk->
 
             val needToFix = pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey && p.tableName == fk.targetTable }
             if (needToFix){
                 val found = pks.find { fk.targetTable == it.tableName }
                 if (found != null){
                     fk.uniqueIdOfPrimaryKey = found.uniqueId
-                    referDbActions.add(previous.find { it.seeGenes().contains(found) }!!)
+                    referDbActions.add(previous.find { it.seeTopGenes().contains(found) }!!)
                 }else
                     return Pair(false, null)
             }
@@ -439,8 +449,8 @@ object DbActionUtils {
         if(dbAction.table.foreignKeys.isEmpty())
             return repaired
 
-        val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
-        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().filter { fk-> pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey } }.forEach { fk->
+        val pks = previous.flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+        dbAction.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().filter { fk-> pks.none { p-> p.uniqueId == fk.uniqueIdOfPrimaryKey } }.forEach { fk->
             var found = pks.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
             if (found == null){
                 val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())?.toMutableList()
@@ -450,13 +460,13 @@ object DbActionUtils {
                         created.joinToString(",") { it.getResolvedName() })
                 }
                 randomizeDbActionGenes(created, randomness)
-                found = created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>().find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
+                found = created.flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>().find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
                     ?:throw IllegalStateException("fail to create target table (${fk.targetTable}) for ${fk.name}")
 
                 repairFkForInsertions(created)
                 createdDbActions.addAll(created)
                 previous.addAll(created)
-                repaired.addAll(created.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>())
+                repaired.addAll(created.flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>())
             }
             fk.uniqueIdOfPrimaryKey = found.uniqueId
             repaired.add(found)
@@ -467,10 +477,10 @@ object DbActionUtils {
 
     fun repairFkForInsertions(dbActions: List<DbAction>){
         dbActions.forEachIndexed { index, dbAction ->
-            val fks = dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>()
+            val fks = dbAction.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>()
             if (fks.any { !it.nullable && !it.isBound() } && index == 0)
                 throw IllegalStateException("invalid insertion, there exists invalid fk at $index")
-            val pks = dbActions.subList(0, index).flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+            val pks = dbActions.subList(0, index).flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
             fks.filter { !it.nullable && !it.isBound() || pks.none { p->p.uniqueId == it.uniqueIdOfPrimaryKey }}.forEach {fk->
                 val found = pks.find { pk -> pk.tableName.equals(fk.targetTable, ignoreCase = true) }
                     ?: throw IllegalStateException("fail to target table ${fk.targetTable} for the fk ${fk.name}")

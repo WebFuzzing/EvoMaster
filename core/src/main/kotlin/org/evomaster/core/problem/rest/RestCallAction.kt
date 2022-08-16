@@ -76,7 +76,7 @@ class RestCallAction(
         return "$verb:$path"
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeTopGenes(): List<out Gene> {
         return parameters.flatMap { it.seeGenes() }
     }
 
@@ -160,18 +160,22 @@ class RestCallAction(
      * bind [parameters] based on [other]
      * @return whether any of param is bound with [other]
      */
-    fun bindBasedOn(other: RestCallAction) : Boolean{
+    fun bindBasedOn(other: RestCallAction, randomness: Randomness?) : Boolean{
         var dependent = false
         parameters.forEach { p->
-            dependent = BindingBuilder.bindRestAction(p, path, other.path, other.parameters, doBuildBindingGene = true) || dependent
+            dependent = BindingBuilder.bindRestAction(p, path, other.path, other.parameters, doBuildBindingGene = true, randomness = randomness) || dependent
         }
         return dependent
     }
 
     /**
      * it is used to bind [this] action regarding values of [params]
+     * @param otherPath is the path of the [params]
+     * @param params to bind
+     * @param randomness is the randomness used in binding,
+     *              if the randomness is null, all params are completely bound, ie, all fields of two ObjectGene will be completely bound
      */
-    fun bindBasedOn(otherPath : RestPath, params : List<Param>) {
+    fun bindBasedOn(otherPath : RestPath, params : List<Param>, randomness: Randomness?) {
 
         if(params.isEmpty()){
             //no param is required to bind
@@ -184,11 +188,11 @@ class RestCallAction(
          */
         if(!ParamUtil.isAllBodyParam(parameters)){
             parameters.filterNot { param -> param is BodyParam }.forEach { param->
-                BindingBuilder.bindRestAction(param, this.path, otherPath, params)
+                BindingBuilder.bindRestAction(param, this.path, otherPath, params, randomness = randomness)
             }
         }else{
             parameters.forEach {param->
-                BindingBuilder.bindRestAction(param, this.path, otherPath, params)
+                BindingBuilder.bindRestAction(param, this.path, otherPath, params, randomness = randomness)
             }
         }
     }
@@ -202,8 +206,8 @@ class RestCallAction(
     }
 
 
-    override fun postRandomizedChecks(){
+    override fun postRandomizedChecks(randomness: Randomness?) {
         // binding params in this action, e.g., path param with body param if there exists
-        BindingBuilder.bindParamsInRestAction(this)
+        BindingBuilder.bindParamsInRestAction(this, randomness = randomness)
     }
 }

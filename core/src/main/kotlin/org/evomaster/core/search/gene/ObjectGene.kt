@@ -25,6 +25,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     /*
         In theory, it is possible to have an object with no fields...
      */
@@ -83,13 +87,13 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         }.all { it == true }
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         fields.filter { it.isMutable() }
-                .forEach { it.randomize(randomness, tryToForceNewValue, allGenes) }
+                .forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return fields.filter { it.isMutable() }
     }
 

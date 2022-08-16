@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
@@ -172,7 +173,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         val candidates = if (doesApplyDependencyHeuristics())
             dm.identifyRelatedSQL(ind)
         else
-            ind.seeInitializingActions().map { it.table.name }.toSet() // adding an unrelated table would waste budget, then we add existing ones
+            ind.seeInitializingActions().filterIsInstance<DbAction>().map { it.table.name }.toSet() // adding an unrelated table would waste budget, then we add existing ones
 
         val selectedAdded = if (config.enableAdaptiveResourceStructureMutation){
             adaptiveSelectResource(evaluatedIndividual, bySQL = true, candidates.toList(), targets)
@@ -211,7 +212,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
      * It might be useful to reduce the useless db genes.
      */
     private fun handleRemoveSQL(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?, evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, targets: Set<Int>?){
-        val availableToRemove = ind.seeInitializingActions().filterNot { it.representExistingData }
+        val availableToRemove = ind.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }
 
         // remove unrelated tables
         val candidates = if (doesApplyDependencyHeuristics())
@@ -386,7 +387,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             var addPos : Int? = null
             if(pair.first != null){
                 val pos = ind.getResourceCalls().indexOf(pair.first!!)
-                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true, randomness = randomness)
                 addPos = randomness.nextInt(0, pos)
             }
             if (addPos == null) addPos = randomness.nextInt(0, ind.getResourceCalls().size)
@@ -449,7 +450,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             call =  rm.handleAddResource(ind, max)
         }else{
             if(pair.first != null){
-                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true)
+                pair.first!!.bindWithOtherRestResourceCalls(mutableListOf(pair.second), rm.cluster,true, randomness = randomness)
             }
         }
 

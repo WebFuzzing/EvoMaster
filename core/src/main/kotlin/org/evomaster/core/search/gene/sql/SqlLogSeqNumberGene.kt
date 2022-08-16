@@ -58,6 +58,9 @@ class SqlLogSeqNumberGene(
 
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene {
         return SqlLogSeqNumberGene(
@@ -86,11 +89,11 @@ class SqlLogSeqNumberGene(
     }
 
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         log.trace("Randomizing ${this::class.java.simpleName}")
         val genes: List<Gene> = listOf(leftPart, rightPart)
         val index = randomness.nextInt(genes.size)
-        genes[index].randomize(randomness, tryToForceNewValue, allGenes)
+        genes[index].randomize(randomness, tryToForceNewValue)
     }
 
     /**
@@ -100,7 +103,6 @@ class SqlLogSeqNumberGene(
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -144,12 +146,11 @@ class SqlLogSeqNumberGene(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true, allGenes)
+        this.randomize(randomness, true)
         return true
     }
 

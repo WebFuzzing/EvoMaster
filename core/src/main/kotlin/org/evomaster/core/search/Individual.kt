@@ -1,7 +1,10 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -22,7 +25,7 @@ import org.evomaster.core.search.tracer.TrackingHistory
  */
 abstract class Individual(override var trackOperator: TrackOperator? = null,
                           override var index: Int = Traceable.DEFAULT_INDEX,
-                          children: List<StructuralElement>
+                          children: List<ActionComponent>
 ) : Traceable, StructuralElement(children.toMutableList()), RootElement{
 
     /**
@@ -47,6 +50,16 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     var populationOrigin : String? = null
 
+    /**
+     * Reference of the singleton in this search for global state.
+     *
+     * Note: due to avoiding major refactoring of all samplers and places where individual are instantiated,
+     * eg, in unit tests, this is a nullable ref. ie, in some cases, it can be missing, and the code
+     * does not assume its presence.
+     *
+     * However, when running actual search with MIO, its presence is checked
+     */
+    var searchGlobalState : SearchGlobalState? = null
 
     /**
      * Make a deep copy of this individual
@@ -56,7 +69,15 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         if (copy !is Individual)
             throw IllegalStateException("mismatched type: the type should be Individual, but it is ${this::class.java.simpleName}")
         copy.populationOrigin = this.populationOrigin
+        copy.searchGlobalState = this.searchGlobalState
         return copy
+    }
+
+    fun doGlobalInitialize(){
+
+        //TODO make sure that seeded individual get skipped here
+
+        seeGenes().forEach { it.doGlobalInitialize() }
     }
 
     fun isInitialized() : Boolean{
@@ -67,7 +88,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
-    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
+    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_EXTERNAL_SERVICE }
 
     /**
      * Return a view of all the Genes in this chromosome/individual
@@ -127,7 +148,14 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
      * would be same with [seeInitializingActions]
      */
-    open fun seeDbActions() : List<Action> = seeInitializingActions()
+    open fun seeDbActions() : List<DbAction> = seeInitializingActions().filterIsInstance<DbAction>()
+
+    /**
+     * return a list of all external service actions in [this] individual
+     * that include all the initializing actions plus external service actions
+     * among rest actions
+     */
+    open fun seeExternalServiceActions() : List<ExternalServiceAction> = seeInitializingActions().filterIsInstance<ExternalServiceAction>()
 
     /**
      * Determine if the structure (ie the actions) of this individual

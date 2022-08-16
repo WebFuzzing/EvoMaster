@@ -44,7 +44,7 @@ class SQLGenerator{
          */
         fun genConditions(cols: Array<String>, values: List<String>, table: Table) : List<String>{
             if(cols.size != values.size)
-                IllegalArgumentException("sizes of values ${values.size} and columns ${cols.size} are not matched")
+                throw IllegalArgumentException("sizes of values ${values.size} and columns ${cols.size} are not matched")
 
             val array = mutableListOf<String>()
 
@@ -69,6 +69,7 @@ class SQLGenerator{
                 ColumnDataType.INT8,
                 ColumnDataType.BIGINT,
                 ColumnDataType.DOUBLE,
+                ColumnDataType.DOUBLE_PRECISION,
                 ColumnDataType.SMALLINT,
                 ColumnDataType.MEDIUMINT,
                 ColumnDataType.REAL,
@@ -77,6 +78,10 @@ class SQLGenerator{
                 ColumnDataType.NUMERIC
                 -> equalCondition(col.name, value)
                 ColumnDataType.CHAR,
+                ColumnDataType.CHARACTER,
+                ColumnDataType.CHARACTER_LARGE_OBJECT,
+                ColumnDataType.CHARACTER_VARYING,
+                ColumnDataType.VARCHAR_IGNORECASE,
                 ColumnDataType.VARCHAR -> equalCondition(col.name, "\'$value\'")
                 else -> {
                     ""

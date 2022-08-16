@@ -10,10 +10,8 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionFilter
+import org.evomaster.core.search.*
 import org.evomaster.core.search.Individual.GeneFilter
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -26,26 +24,30 @@ import org.slf4j.LoggerFactory
  * @property actions is a sequence of actions in the [RestResourceCalls] that follows [template]
  * @property dbActions are used to initialize data for rest actions, either select from db or insert new data into db
  * @param withBinding specifies whether to build binding between rest genes
+ * @param randomness is required when [withBinding] is true
  *
  */
 class RestResourceCalls(
     val template: CallsTemplate? = null,
     val node: RestResourceNode? = null,
-    children: MutableList<out Action>,
-    withBinding: Boolean = false
-): StructuralElement(children){
+    children: MutableList<out ActionComponent>,
+    withBinding: Boolean = false,
+    randomness: Randomness? = null
+): ActionTree(children){
 
     constructor(template: CallsTemplate? = null, node: RestResourceNode? = null, actions: List<RestCallAction>,
-                dbActions: List<DbAction>, withBinding: Boolean = false) :
-            this(template, node,mutableListOf<Action>().apply { addAll(dbActions); addAll(actions) }, withBinding)
+                dbActions: List<DbAction>, withBinding: Boolean = false, randomness: Randomness? = null) :
+            this(template, node,mutableListOf<ActionComponent>().apply { addAll(dbActions); addAll(actions) }, withBinding, randomness)
 
     companion object{
         private val  log : Logger = LoggerFactory.getLogger(RestResourceCalls::class.java)
     }
 
     init {
-        if (withBinding)
-            buildBindingGene()
+        if (withBinding){
+            Lazy.assert { randomness != null }
+            buildBindingGene(randomness)
+        }
     }
 
     fun doInitialize(randomness: Randomness? = null){
@@ -67,10 +69,10 @@ class RestResourceCalls(
      *     3, GET /A/{a}/B/{b}
      * (0-2) actions bind values based on the action at 3
      */
-    private fun buildBindingGene(){
+    private fun buildBindingGene(randomness: Randomness?){
         if (actions.size == 1) return
         (0 until actions.size-1).forEach {
-            actions[it].bindBasedOn(actions.last())
+            actions[it].bindBasedOn(actions.last(), randomness)
         }
     }
 
@@ -116,7 +118,7 @@ class RestResourceCalls(
             template,
             node,
             children.map { it.copy() as Action}.toMutableList(),
-            withBinding = false
+            withBinding = false, randomness = null
         )
 
         copy.isDeletable = isDeletable
@@ -132,9 +134,9 @@ class RestResourceCalls(
      */
     fun seeGenes(filter : GeneFilter = GeneFilter.NO_SQL) : List<out Gene>{
         return when(filter){
-            GeneFilter.NO_SQL -> actions.flatMap(RestCallAction::seeGenes)
+            GeneFilter.NO_SQL -> actions.flatMap(RestCallAction::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeMutableSQLGenes()
-            GeneFilter.ALL-> seeMutableSQLGenes().plus(actions.flatMap(RestCallAction::seeGenes))
+            GeneFilter.ALL-> seeMutableSQLGenes().plus(actions.flatMap(RestCallAction::seeTopGenes))
             else -> throw IllegalArgumentException("there is no initialization in an ResourceCall")
         }
     }
@@ -144,10 +146,13 @@ class RestResourceCalls(
      */
     fun seeActions(filter: ActionFilter) : List<out Action>{
         return when(filter){
+            ActionFilter.NO_EXTERNAL_SERVICE,
             ActionFilter.ALL-> dbActions.plus(actions)
             ActionFilter.INIT, ActionFilter.ONLY_SQL -> dbActions
             ActionFilter.NO_INIT,
             ActionFilter.NO_SQL -> actions
+            // there is no external service action in RestResourceCall
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> emptyList()
         }
     }
 
@@ -176,9 +181,9 @@ class RestResourceCalls(
     }
 
     private fun removeDbActions(remove: List<DbAction>){
-        val removedGenes = remove.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val removedGenes = remove.flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
         killChildren(remove)
-        (dbActions.plus(actions).flatMap { it.seeGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }.forEach {
+        (dbActions.plus(actions).flatMap { it.seeTopGenes() }).flatMap { it.flatView() }.filter { it.isBoundGene() }.forEach {
             it.cleanRemovedGenes(removedGenes)
         }
     }
@@ -198,7 +203,7 @@ class RestResourceCalls(
      *      e.g., for resource C, table C is created, in addition, A and B are also created since B refers to them,
      *      in this case, if the following handling is related to A and B, we do not further create A and B once [doRemoveDuplicatedTable] is true
      */
-    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, cluster: ResourceCluster, doRemoveDuplicatedTable: Boolean){
+    fun bindWithOtherRestResourceCalls(relatedResourceCalls: MutableList<RestResourceCalls>, cluster: ResourceCluster, doRemoveDuplicatedTable: Boolean, randomness: Randomness?){
         // handling [this.dbActions]
         if (this.dbActions.isNotEmpty() && doRemoveDuplicatedTable){
             removeDuplicatedDbActions(relatedResourceCalls, cluster, doRemoveDuplicatedTable)
@@ -209,7 +214,7 @@ class RestResourceCalls(
             relatedResourceCalls.forEach { call->
                 call.seeActions(ActionFilter.NO_SQL).forEach { previous->
                     if (previous is RestCallAction){
-                        val dependent = current.bindBasedOn(previous)
+                        val dependent = current.bindBasedOn(previous, randomness = randomness)
                         if (dependent){
                             setDependentCall(call)
                         }
@@ -228,8 +233,8 @@ class RestResourceCalls(
         verify the binding which is only useful for debugging
      */
     fun verifyBindingGenes(other : List<RestResourceCalls>): Boolean{
-        val currentAll = seeActions(ActionFilter.ALL).flatMap { it.seeGenes() }.flatMap { it.flatView() }
-        val otherAll = other.flatMap { it.seeActions(ActionFilter.ALL) }.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val currentAll = seeActions(ActionFilter.ALL).flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
+        val otherAll = other.flatMap { it.seeActions(ActionFilter.ALL) }.flatMap { it.seeTopGenes() }.flatMap { it.flatView() }
 
         currentAll.forEach { g->
             val root = g.getRoot()
@@ -269,7 +274,7 @@ class RestResourceCalls(
      */
     private fun syncValues(withRest: Boolean = true){
         (if (withRest) actions else dbActions).forEach {
-            it.seeGenes().flatMap { i-> i.flatView() }.forEach { g->
+            it.seeTopGenes().flatMap { i-> i.flatView() }.forEach { g->
                 g.syncBindingGenesBasedOnThis()
             }
         }
@@ -332,7 +337,8 @@ class RestResourceCalls(
         }
 
         if (this.dbActions.isNotEmpty()) throw IllegalStateException("dbactions of this RestResourceCall is not empty")
-        addChildren(dbActions)
+        // db action should add in the front of rest actions
+        addChildren(0, dbActions)
 
         bindRestActionBasedOnDbActions(dbActions, cluster, forceBindParamBasedOnDB, dbRemovedDueToRepair)
 
@@ -361,13 +367,13 @@ class RestResourceCalls(
     /**
      * build the binding between [this] with other [restResourceCalls]
      */
-    fun bindRestActionsWith(restResourceCalls: RestResourceCalls){
+    fun bindRestActionsWith(restResourceCalls: RestResourceCalls, randomness: Randomness?){
         if (restResourceCalls.getResourceNode().path != getResourceNode().path)
             throw IllegalArgumentException("target to bind refers to a different resource node, i.e., target (${restResourceCalls.getResourceNode().path}) vs. this (${getResourceNode().path})")
         val params = restResourceCalls.actions.flatMap { it.parameters }
         actions.forEach { ac ->
             if(ac.parameters.isNotEmpty()){
-                ac.bindBasedOn(ac.path, params)
+                ac.bindBasedOn(ac.path, params, randomness)
             }
         }
     }

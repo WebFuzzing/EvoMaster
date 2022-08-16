@@ -20,7 +20,7 @@ object DbActionTransformer {
         val previous = mutableListOf<Gene>()
 
         previous.addAll(
-            previousDbActions.flatMap(DbAction::seeGenes)
+            previousDbActions.flatMap(DbAction::seeTopGenes)
         )
         for (i in 0 until insertions.size) {
 
@@ -30,14 +30,14 @@ object DbActionTransformer {
                     Even if not going to be part of the DTO, should still be able
                     to point to it with FKs
                  */
-                previous.addAll(action.seeGenes())
+                previous.addAll(action.seeTopGenes())
                 continue
             }
 
 
             val insertion = InsertionDto().apply { targetTable = action.table.name }
 
-            for (g in action.seeGenes()) {
+            for (g in action.seeTopGenes()) {
                 if (g is SqlPrimaryKeyGene) {
                     /*
                         If there is more than one primary key field, this
@@ -81,7 +81,7 @@ object DbActionTransformer {
             }
 
             list.add(insertion)
-            previous.addAll(action.seeGenes())
+            previous.addAll(action.seeTopGenes())
         }
 
         return DatabaseCommandDto().apply { this.insertions = list }

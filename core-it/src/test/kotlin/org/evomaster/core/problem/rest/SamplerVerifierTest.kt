@@ -17,6 +17,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.evomaster.core.search.gene.Gene
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
@@ -63,7 +64,7 @@ class SamplerVerifierTest {
     }
 
     private fun scanForSchemas() : List<String>{
-        val relativePath = "./src/test/resources/APIs_guru"
+        val relativePath = "../core/src/test/resources/swagger"
         val target = File(relativePath)
         if (!target.exists()) {
             throw IllegalStateException("Swagger resource folder does not exist: ${target.absolutePath}")
@@ -72,6 +73,7 @@ class SamplerVerifierTest {
         return target.walk()
                 .filter { it.isFile }
                 .filter { !it.name.endsWith("features_service_null.json") } //issue with parser
+                .filter { !it.name.endsWith("trace_v2.json") } // no actions are parsed
                 .map {
                     val s = it.path.replace("\\", "/")
                             //.replace(relativePath, "swagger")
@@ -106,6 +108,19 @@ class SamplerVerifierTest {
     private fun checkInvariant(ind: Individual){
 
         assertTrue(ind.isInitialized(), "Sampled individual is not initialized")
+
+        val actions = ind.seeActions()
+
+        for(a in actions){
+
+            val topGenes = a.seeTopGenes()
+            for(tg in topGenes) {
+                assertTrue(tg.isLocallyValid())
+                assertTrue(tg.parent !is Gene)
+            }
+        }
+
+        //TODO check global validity
 
         //TODO more checks, eg validity
     }
@@ -187,6 +202,10 @@ class SamplerVerifierTest {
 
         override fun executeNewRPCActionAndGetResponse(actionDto: ActionDto): ActionResponseDto? {
             return null
+        }
+
+        override fun postSearchAction(postSearchActionDto: PostSearchActionDto): Boolean {
+            return true
         }
 
         override fun registerNewAction(actionDto: ActionDto): Boolean {

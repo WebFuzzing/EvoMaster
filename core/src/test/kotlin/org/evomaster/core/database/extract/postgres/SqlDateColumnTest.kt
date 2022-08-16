@@ -25,7 +25,7 @@ class SqlDateColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("logins", setOf("userId", "lastLogin"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(2, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
@@ -39,7 +39,7 @@ class SqlDateColumnTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("logins", setOf("userId", "lastLogin"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
         val userIdValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
         val lastLoginDayValue = (genes[1] as DateGene).day.value
         val lastLoginMonthValue = (genes[1] as DateGene).month.value

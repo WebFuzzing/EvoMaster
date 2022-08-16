@@ -34,7 +34,9 @@ class RestSampler : AbstractRestSampler(){
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05) as RestCallAction)
         }
-        return RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
+        val ind = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
+        ind.searchGlobalState = searchGlobalState
+        return ind
     }
 
 
@@ -57,7 +59,7 @@ class RestSampler : AbstractRestSampler(){
         /*
             At the beginning, sample from this set, until it is empty
          */
-        if (!adHocInitialIndividuals.isEmpty()) {
+        if (adHocInitialIndividuals.isNotEmpty()) {
             return adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
         }
 
@@ -100,6 +102,7 @@ class RestSampler : AbstractRestSampler(){
                     ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
 
             //usedObjects.clear()
+            objInd.searchGlobalState = searchGlobalState
             return objInd
         }
         //usedObjects.clear()
@@ -332,7 +335,7 @@ class RestSampler : AbstractRestSampler(){
 
         val res = template.copy() as RestCallAction
         if(res.isInitialized()){
-            res.seeGenes().forEach { it.randomize(randomness, false) }
+            res.seeTopGenes().forEach { it.randomize(randomness, false) }
         } else {
             res.doInitialize(randomness)
         }
@@ -411,6 +414,7 @@ class RestSampler : AbstractRestSampler(){
                     copy.auth = auth
                     copy.doInitialize(randomness)
                     val ind = createIndividual(mutableListOf(copy))
+                    ind.searchGlobalState = searchGlobalState
                     adHocInitialIndividuals.add(ind)
                 }
     }

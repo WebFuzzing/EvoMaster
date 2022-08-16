@@ -244,7 +244,7 @@ class ResourceNodeWithDbTest {
         getBar.initDbActions(dbBar, cluster, false, false)
         assertEquals(2, getBar.seeActionSize(ActionFilter.ONLY_SQL))
 
-        getBar.bindWithOtherRestResourceCalls(mutableListOf(getXYZ), cluster,true)
+        getBar.bindWithOtherRestResourceCalls(mutableListOf(getXYZ), cluster,true, randomness = null)
         assertEquals(0, getBar.seeActionSize(ActionFilter.ONLY_SQL))
 
         assertFalse(getXYZ.isDeletable)
@@ -263,7 +263,7 @@ class ResourceNodeWithDbTest {
     }
 
     private fun getGenePredict(action: Action, name: String, predict: (Gene) -> Boolean) : Gene?{
-        return action.seeGenes().flatMap { it.flatView() }.find { g-> predict(g) && g.name.equals(name, ignoreCase = true) }
+        return action.seeTopGenes().flatMap { it.flatView() }.find { g-> predict(g) && g.name.equals(name, ignoreCase = true) }
     }
 
     private class DbExecutor : DatabaseExecutor {

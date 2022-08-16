@@ -37,7 +37,7 @@ class BitStringTypesTest : ExtractTestBasePostgres() {
         )
         )
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(2, genes.size)
         assertTrue(genes[0] is SqlBitStringGene) //character varying

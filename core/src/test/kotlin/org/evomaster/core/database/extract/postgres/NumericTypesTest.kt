@@ -43,7 +43,7 @@ class NumericTypesTest : ExtractTestBasePostgres() {
                 "serialColumn",
                 "bigserialColumn"))
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(10, genes.size)
         assertTrue(genes[0] is IntegerGene) //smallint
@@ -84,7 +84,7 @@ class NumericTypesTest : ExtractTestBasePostgres() {
                 "serialColumn",
                 "bigserialColumn"))
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(10, genes.size)
         assertTrue(genes[5] is DoubleGene)

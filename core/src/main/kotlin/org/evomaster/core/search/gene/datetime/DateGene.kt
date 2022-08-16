@@ -28,7 +28,7 @@ class DateGene(
     val year: IntegerGene = IntegerGene("year", 2016, MIN_YEAR, MAX_YEAR),
     val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
     val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
-    val onlyValidDates: Boolean = false,
+    val onlyValidDates: Boolean = false, //TODO refactor once dealing with Robustness Testing
     val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
 ) : ComparableGene, CompositeFixedGene(name, listOf(year, month, day)) {
 
@@ -51,6 +51,10 @@ class DateGene(
         ISO_LOCAL_DATE_FORMAT
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = DateGene(
         name,
         year.copy() as IntegerGene,
@@ -60,18 +64,17 @@ class DateGene(
         onlyValidDates = this.onlyValidDates
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         do {
-            year.randomize(randomness, tryToForceNewValue, allGenes)
-            month.randomize(randomness, tryToForceNewValue, allGenes)
-            day.randomize(randomness, tryToForceNewValue, allGenes)
+            year.randomize(randomness, tryToForceNewValue)
+            month.randomize(randomness, tryToForceNewValue)
+            day.randomize(randomness, tryToForceNewValue)
         } while (onlyValidDates && !isValidDate())
     }
 
     override fun candidatesInternalGenes(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?

@@ -45,6 +45,8 @@ class MutationWeightControlTest {
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
         config.maxActionEvaluations = 10
+        config.useTimeInFeedbackSampling = false
+        config.seed = 42
 
     }
 
@@ -143,7 +145,7 @@ class MutationWeightControlTest {
     private fun selectField(obj: ObjectGene, indexOfField : Int, times : Int, selectionStrategy: SubsetGeneSelectionStrategy) : Boolean{
         val mutatedWH = obj.copy()
         mutatedWH.standardMutation(
-                randomness, apc = apc, mwc = mwc, allGenes = listOf(), internalGeneSelectionStrategy = selectionStrategy
+                randomness, apc = apc, mwc = mwc, internalGeneSelectionStrategy = selectionStrategy
         )
 
         var result = false

@@ -272,7 +272,7 @@ class SqlInsertBuilder(
         return tableConstraints
                 .asSequence()
                 .filterIsInstance<LowerBoundConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
+                .filter { c -> c.columnName.equals(columnName, ignoreCase = true) }
                 .toList()
     }
 
@@ -283,7 +283,7 @@ class SqlInsertBuilder(
         return tableConstraints
                 .asSequence()
                 .filterIsInstance<SimilarToConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
+                .filter { c -> c.columnName.equals(columnName, ignoreCase = true) }
                 .toList()
     }
 
@@ -294,7 +294,7 @@ class SqlInsertBuilder(
         return tableConstraints
                 .asSequence()
                 .filterIsInstance<LikeConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
+                .filter { c -> c.columnName.equals(columnName, ignoreCase = true) }
                 .toList()
     }
 
@@ -306,7 +306,7 @@ class SqlInsertBuilder(
         return tableConstraints
                 .asSequence()
                 .filterIsInstance<UpperBoundConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
+                .filter { c -> c.columnName.equals(columnName, ignoreCase = true) }
                 .toList()
 
     }
@@ -318,7 +318,7 @@ class SqlInsertBuilder(
         return tableConstraints
                 .asSequence()
                 .filterIsInstance<RangeConstraint>()
-                .filter { c -> c.columnName.equals(columnName, true) }
+                .filter { c -> c.columnName.equals(columnName, ignoreCase = true) }
                 .toList()
 
     }
@@ -331,7 +331,7 @@ class SqlInsertBuilder(
         return tableConstraints
                 .filter { c -> c is EnumConstraint }
                 .map { c -> c as EnumConstraint }
-                .filter { c -> c.columnName.equals(columnName, true) }
+                .filter { c -> c.columnName.equals(columnName, ignoreCase = true) }
                 .toList()
     }
 
@@ -360,13 +360,19 @@ class SqlInsertBuilder(
         return tableConstraints
     }
 
-    fun isTable(tableName: String) = tables[tableName.uppercase()] != null || tables[tableName.lowercase()] != null
+    /**
+     * SQL is not case sensitivity.
+     * Therefore, table/column must ignore case sensitivity.
+     */
+    fun isTable(tableName: String) = tables.keys.any { it.equals(tableName, ignoreCase = true) }
 
-    private fun getTable(tableName: String): Table {
-        return tables[tableName]
-                ?: tables[tableName.uppercase()]
-                ?: tables[tableName.lowercase()]
-                ?: throw IllegalArgumentException("No table called $tableName")
+    fun getTable(tableName: String): Table {
+        /**
+         * SQL is not case sensitivity, table/column must ignore case sensitivity.
+         */
+        val tableNameKey = tables.keys.find() { tableName.equals(it, ignoreCase = true) }
+        return tables[tableNameKey] ?: throw IllegalArgumentException("No table called $tableName")
+
     }
 
     /**
@@ -418,7 +424,7 @@ class SqlInsertBuilder(
         }
 
         for (cn in columnNames) {
-            if (cn != "*" && !table.columns.any { it.name.equals(cn, true) }) {
+            if (cn != "*" && !table.columns.any { it.name.equals(cn, ignoreCase =true) }) {
                 throw IllegalArgumentException("No column called $cn in table $tableName")
             }
         }
@@ -433,7 +439,7 @@ class SqlInsertBuilder(
                 store it, as we can have other Foreign Key genes pointing to it
              */
 
-            if (takeAll || columnNames.any { it.equals(c.name, true) } || !c.nullable || c.primaryKey) {
+            if (takeAll || columnNames.any { it.equals(c.name, ignoreCase =true) } || !c.nullable || c.primaryKey) {
                 //TODO are there also other constraints to consider?
                 selectedColumns.add(c)
             }
@@ -449,7 +455,7 @@ class SqlInsertBuilder(
         for (fk in table.foreignKeys) {
 
             val target = fk.targetTable
-            val n = history.filter { it.equals(target, true) }.count()
+            val n = history.filter { it.equals(target, ignoreCase =true) }.count()
             if (n >= 3 && fk.sourceColumns.all { it.nullable }) {
                 //TODO as a configurable parameter in EMConfig?
                 continue
@@ -609,8 +615,10 @@ class SqlInsertBuilder(
             }
         }
 
-        return DbAction(table, pks.toSet(), id, genes, true)
+        val db = DbAction(table, pks.toSet(), id, genes, true)
 
+        db.doInitialize()
+        return db
     }
 
 

@@ -49,11 +49,11 @@ public class JSqlConditionParser implements SqlConditionParser {
     /**
      * replaces unsupported grammar of JSQLParser with equivalent supported constructs
      *
-     * @param originalSqlStr
-     * @return
+     * @param originalSqlStr original string before transforming dialect primitives
+     * @return the transformed SQL so JSQLParser can handle it
      */
     private String transformDialect(String originalSqlStr, ConstraintDatabaseType databaseType) {
-        /**
+        /*
          * The JSQL parser does not properly parse the Postgresql SQL dialect function "ANY"
          * We can work aroung this limitation by replacing the "= ANY (...)" with a valid " IN (...)"
          * string
@@ -61,17 +61,26 @@ public class JSqlConditionParser implements SqlConditionParser {
         String transformedStr = originalSqlStr.replaceAll("=\\s*ANY\\s*\\(([^<]*)\\)", " IN ($1)");
 
 
-        /**
+        /*
          * The JSQL parser does not properly handle the Postgres "ARRAY[...]" construct. Since
          * the ARRAY is used within a enumeration, we can simply drop the "ARRAY[...]"
          */
         transformedStr =  transformedStr.replaceAll("ARRAY\\s*\\[([^<]*)\\]", "$1");
 
-        /**
+        /*
          * MySQL Enum
          */
         if (databaseType == ConstraintDatabaseType.MYSQL)
             transformedStr = transformedStr.replaceAll("\\s*[E|e][N|n][U|u][M|m]\\s*\\(([^<]*)\\)", " IN ($1)");
+
+        /*
+         * H2 CASTS expressions to [CHARACTER LARGE OBJECT] instead of [VARCHAR]
+         * We replace CHARACTER LARGE OBJECT to VARCHAR (this could faild if
+         * CHARACTER LARGE OBJECT is used in the string expeession
+         */
+        if (databaseType ==ConstraintDatabaseType.H2) {
+            transformedStr = transformedStr.replaceAll("CHARACTER LARGE OBJECT","VARCHAR");
+        }
 
         return transformedStr;
     }

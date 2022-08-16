@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import javax.ws.rs.core.MediaType;
-import java.util.*;
+
 /** automatically created on 2019-08-29 */
 @RestController
 @RequestMapping(path = "/api/rd")
@@ -19,7 +19,7 @@ public class RdRestAPI {
     RdEntity node = new RdEntity();
     node.setId(rd.id);
     node.setName(rd.name);
-    node.setValue(rd.value);
+    node.setValue(rd.valueInt);
     rdRepository.save(node);
     return ResponseEntity.status(201).build();
   }

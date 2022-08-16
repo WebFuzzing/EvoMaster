@@ -76,25 +76,28 @@ public class SetParam extends CollectionParam<Set<NamedTypedValue>>{
 
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
-        NamedTypedValue t = getType().getTemplate();
 
-        if (json instanceof String){
-            // employ linked hash set to avoid flaky tests
-            Set<NamedTypedValue> values = new LinkedHashSet<>();
+        Object instance = json;
+        if (json instanceof String)
+            instance = parseValueWithJson((String) json);
 
-            Object instance = parseValueWithJson((String) json);
-
-            for (Object e : (Set) instance){
-                NamedTypedValue copy = t.copyStructureWithProperties();
-                copy.setValueBasedOnInstanceOrJson(e);
-                values.add(copy);
-            }
-            setValue(values);
-        } else if (isValidInstance(json)){
-            setValueBasedOnValidInstance(json);
-        } else {
-            throw new RuntimeException("Cannot parse set param "+getName()+ " with the type "+ json.getClass().getName());
+        if (instance == null){
+            setValue(null); return;
         }
+
+        if (!isValidInstance(instance))
+            throw new RuntimeException("cannot parse Set param "+getName()+" with the type "+json.getClass().getName());
+
+        NamedTypedValue t = getType().getTemplate();
+        Set<NamedTypedValue> values = new LinkedHashSet<>();
+
+
+        for (Object e : (Set) instance){
+            NamedTypedValue copy = t.copyStructureWithProperties();
+            copy.setValueBasedOnInstanceOrJson(e);
+            values.add(copy);
+        }
+        setValue(values);
 
 
     }

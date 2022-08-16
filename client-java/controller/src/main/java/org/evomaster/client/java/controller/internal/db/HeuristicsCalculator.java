@@ -110,17 +110,19 @@ public class HeuristicsCalculator {
              //   this deals with 6 subclasses:
             return computeComparisonOperator((ComparisonOperator) exp, data);
         }
-        if(exp instanceof ExistsExpression){
-            //TODO
-        }
-        if(exp instanceof ExpressionList){
-            //TODO
-        }
+
         if (exp instanceof InExpression) {
             return computeInExpression((InExpression) exp, data);
         }
         if (exp instanceof IsNullExpression) {
             return computeIsNull((IsNullExpression) exp, data);
+        }
+
+        if(exp instanceof ExistsExpression){
+            //TODO
+        }
+        if(exp instanceof ExpressionList){
+            //TODO
         }
         if(exp instanceof JsonOperator){
             //TODO
@@ -140,7 +142,6 @@ public class HeuristicsCalculator {
         if(exp instanceof RegExpMatchOperator){
             //TODO
         }
-
         return cannotHandle(exp);
     }
 
@@ -222,7 +223,7 @@ public class HeuristicsCalculator {
 
     private double cannotHandle(Expression exp) {
         SimpleLogger.uniqueWarn("WARNING, cannot handle SQL expression type '" + exp.getClass().getSimpleName() +
-                "' with value: " + exp.toString());
+                "' with value: " + exp);
         return Double.MAX_VALUE;
     }
 
@@ -274,7 +275,7 @@ public class HeuristicsCalculator {
 
             List<Function<String, Instant>> parsers = Arrays.asList(
                     s ->  ZonedDateTime.parse(s).toInstant(),
-                    s -> Instant.parse(s),
+                    Instant::parse,
                     s -> OffsetDateTime.parse( s , DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSX")).toInstant(),
                     s -> {
                         /*
@@ -307,6 +308,7 @@ public class HeuristicsCalculator {
                 try{
                     return p.apply(s);
                 } catch (DateTimeParseException t) {
+                    // Do nothing
                 }
             }
 
@@ -385,18 +387,18 @@ public class HeuristicsCalculator {
         return (exp instanceof EqualsTo) || (exp instanceof NotEqualsTo);
     }
 
-    private double computeNullComparison(Object x, Object y, ComparisonOperator exp) {
+    private double computeNullComparison(Object left, Object right, ComparisonOperator exp) {
 
-        assert x == null || y == null;
+        assert left == null || right == null;
 
         if (!checkEqualOrNotOperator(exp)) {
             return cannotHandle(exp);
         }
 
-        if (exp instanceof EqualsTo && x == y) {
+        if (exp instanceof EqualsTo && left == right) {
             return 0d;
         }
-        if (exp instanceof NotEqualsTo && x != y) {
+        if (exp instanceof NotEqualsTo && left != right) {
             return 0d;
         }
         return Double.MAX_VALUE;
@@ -487,6 +489,9 @@ public class HeuristicsCalculator {
                     return null;
                 }
             }
+        } else if (exp instanceof CastExpression) {
+            CastExpression castExpression =(CastExpression)exp;
+            return getValue(castExpression.getLeftExpression(), data);
         } else {
             cannotHandle(exp);
             return null;

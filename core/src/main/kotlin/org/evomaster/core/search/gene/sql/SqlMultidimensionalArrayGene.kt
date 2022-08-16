@@ -120,15 +120,15 @@ class SqlMultidimensionalArrayGene<T>(
 
         var current = getArray()
         ((0..(dimensionIndexes.size - 2))).forEach {
-            checkIndexWithinRange(dimensionIndexes[it], current.elements.indices)
-            current = current.elements[dimensionIndexes[it]] as ArrayGene<*>
+            checkIndexWithinRange(dimensionIndexes[it], current.getViewOfElements().indices)
+            current = current.getViewOfElements()[dimensionIndexes[it]] as ArrayGene<*>
         }
-        checkIndexWithinRange(dimensionIndexes.last(), current.elements.indices)
-        return current.elements[dimensionIndexes.last()] as T
+        checkIndexWithinRange(dimensionIndexes.last(), current.getViewOfElements().indices)
+        return current.getViewOfElements()[dimensionIndexes.last()] as T
     }
 
     private fun isValid(currentArrayGene: ArrayGene<*>, currentDimensionIndex: Int): Boolean {
-        return if (!currentArrayGene.isValid())
+        return if (!currentArrayGene.isLocallyValid())
             false
         else if (currentArrayGene.getViewOfChildren().size != this.dimensionSizes[currentDimensionIndex]) {
             false
@@ -145,7 +145,7 @@ class SqlMultidimensionalArrayGene<T>(
      * Check that the nested arraygenes equal the number of dimensions, check that each
      * dimension length is preserved.
      */
-    override fun isValid(): Boolean {
+    override fun isLocallyValid(): Boolean {
         return if (this.children.size != 1) {
             false
         } else {
@@ -178,15 +178,15 @@ class SqlMultidimensionalArrayGene<T>(
         }
 
         var current = getArray()
-        if (current.elements.isEmpty()) {
+        if (current.getViewOfElements().isEmpty()) {
             checkIndexWithinRange(dimensionIndex, IntRange(0, numberOfDimensions - 1))
             return 0
         }
 
         repeat(dimensionIndex) {
-            current = current.elements[0] as ArrayGene<*>
+            current = current.getViewOfElements()[0] as ArrayGene<*>
         }
-        return current.elements.size
+        return current.getViewOfElements().size
     }
 
 
@@ -194,14 +194,14 @@ class SqlMultidimensionalArrayGene<T>(
      * Randomizes the whole multidimensional array by removing all dimensions, and then
      * creating new sizes for each dimension, and new gene elements from the template.
      */
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         val newDimensionSizes: List<Int> = buildNewDimensionSizes(randomness)
         val newChild = buildNewElements(newDimensionSizes, template.copy())
 
         killAllChildren()
         addChild(newChild)
         this.dimensionSizes = newDimensionSizes
-        newChild.randomize(randomness, tryToForceNewValue, allGenes)
+        newChild.randomize(randomness, tryToForceNewValue)
     }
 
     /**
@@ -333,7 +333,6 @@ class SqlMultidimensionalArrayGene<T>(
 
     override fun candidatesInternalGenes(randomness: Randomness,
                                          apc: AdaptiveParameterControl,
-                                         allGenes: List<Gene>,
                                          selectionStrategy: SubsetGeneSelectionStrategy,
                                          enableAdaptiveGeneMutation: Boolean,
                                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -369,12 +368,11 @@ class SqlMultidimensionalArrayGene<T>(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
             mwc: MutationWeightControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true, allGenes)
+        this.randomize(randomness, true)
         return true
     }
 

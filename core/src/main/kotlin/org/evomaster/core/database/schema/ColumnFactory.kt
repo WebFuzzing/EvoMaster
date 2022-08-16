@@ -4,9 +4,14 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.CompositeTypeColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.CompositeTypeDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.core.database.schema.h2.H2GeometryType
+import org.evomaster.core.database.schema.h2.H2GeometryTypeParser
 
 object ColumnFactory {
 
+    const val BLANK_SPACE: String = " "
+
+    const val UNDERSCORE: String = "_"
 
     fun createColumnFromCompositeTypeDto(
             columnDto: CompositeTypeColumnDto,
@@ -91,10 +96,19 @@ object ColumnFactory {
         return parseColumnDataType(typeAsString)
     }
 
+    private fun isH2GeometryType(typeAsString: String):Boolean {
+        val parser = H2GeometryTypeParser()
+        return parser.isParsable(typeAsString)
+    }
+
+    private fun parseH2GeometryType(typeAsString: String): H2GeometryType {
+        val parser = H2GeometryTypeParser()
+        return parser.parse(typeAsString)
+    }
+
     private fun parseColumnDataType(typeAsString: String): ColumnDataType {
         try {
-            val t =
-                    if (typeAsString.startsWith("_")) typeAsString.substring(1).uppercase() else typeAsString.uppercase()
+            val t = prepareTypeString(typeAsString)
             return ColumnDataType.valueOf(t)
         } catch (e: Exception) {
             throw IllegalArgumentException(
@@ -110,6 +124,33 @@ object ColumnFactory {
                     )
             )
         }
+    }
+
+    /**
+     * This function normalizes several details of
+     * the typeAsString before converting it to a ColumnDataType
+     * (e.g. replaces blank spaces, removes underscores, handles
+     * H2 geometric type definitions, etc.)
+     */
+    private fun prepareTypeString(typeAsString: String): String {
+        var t = typeAsString
+        if (isH2GeometryType(t)) {
+            val h2GeometryType = parseH2GeometryType(t)
+            if (h2GeometryType.geometricDimensionString != null || h2GeometryType.spatialReferenceSystemIdentifierInt != null) {
+                throw IllegalArgumentException("Cannot handle H2 geometry type with specific  dimension or spatial reference system Identifier: $t")
+            }
+            t = h2GeometryType.geometricObjectString
+        }
+
+        t = if (typeAsString.startsWith(UNDERSCORE))
+            t.substring(1).uppercase()
+        else
+            t.uppercase()
+
+        if (t.contains(BLANK_SPACE)) {
+            t = t.replace(BLANK_SPACE, UNDERSCORE)
+        }
+        return t
     }
 
 }

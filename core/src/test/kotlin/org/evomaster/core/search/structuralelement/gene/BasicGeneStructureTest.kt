@@ -167,7 +167,7 @@ class ArrayGeneIntStructureTest : GeneStructuralElementBaseTest() {
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is ArrayGene<*>)
-        assertEquals(copyFromTemplateSize, (base as ArrayGene<*>).getAllElements().size)
+        assertEquals(copyFromTemplateSize, (base as ArrayGene<*>).getViewOfElements().size)
     }
 }
 
@@ -194,7 +194,7 @@ class ArrayGeneObjStructureTest : GeneStructuralElementBaseTest() {
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is ArrayGene<*>)
-        assertEquals(copyFromTemplateSize, (base as ArrayGene<*>).getAllElements().size)
+        assertEquals(copyFromTemplateSize, (base as ArrayGene<*>).getViewOfElements().size)
         assertChildren(base, 5)
     }
 }

@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql.geometric
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -9,14 +10,18 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.awt.geom.Line2D
 
 class SqlPolygonGene(
     name: String,
+    val databaseType: DatabaseType = DatabaseType.POSTGRES,
+    val minLengthOfPolygonRing: Int = 2,
+    val onlyNonIntersectingPolygons: Boolean = false,
     val points: ArrayGene<SqlPointGene> = ArrayGene(
             name = "points",
             // polygons have at least 2 points
-            minSize = 2,
-            template = SqlPointGene("p"))
+            minSize = minLengthOfPolygonRing,
+            template = SqlPointGene("p", databaseType = databaseType))
 ) : CompositeFixedGene(name, mutableListOf(points)) {
 
     companion object {
@@ -25,46 +30,116 @@ class SqlPolygonGene(
 
     override fun copyContent(): Gene = SqlPolygonGene(
         name,
-        points.copy() as ArrayGene<SqlPointGene>
+        minLengthOfPolygonRing = minLengthOfPolygonRing,
+        onlyNonIntersectingPolygons = onlyNonIntersectingPolygons,
+        points = points.copy() as ArrayGene<SqlPointGene>,
+        databaseType = databaseType
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         /*
-         *  A geometric polygon must be always a non-empty list
+            FIXME this code is problematic
          */
-        if (points.getAllElements().isEmpty()) {
-            points.addElement(SqlPointGene("p"))
+        do {
+            points.randomize(randomness, tryToForceNewValue)
+        } while (!isLocallyValid())
+    }
+
+    /**
+     * If [onlyNonIntersectingPolygons] is enabled, checks if the
+     * linestring has an intersection by checking all segments
+     * againts each other O(n^2)
+     * Source: https://stackoverflow.com/questions/4876065/is-there-an-easy-and-fast-way-of-checking-if-a-polygon-is-self-intersecting
+     */
+    override fun isLocallyValid(): Boolean {
+        if (!onlyNonIntersectingPolygons)
+            return true
+
+        val len = points.getViewOfChildren().size
+
+        /*
+         * No cross-over if len < 4
+         */
+        if (len < 4) {
+            return true
         }
+
+        for (i in 0 until (len - 1)) {
+            for (j in (i + 2) until len) {
+                /*
+                 * Eliminate combinations already checked
+                 * or not valid
+                 */
+                if ((i == 0) && (j == (len - 1))) {
+                    continue
+                }
+
+                val cut = Line2D.linesIntersect(
+                        points.getViewOfElements()[i].x.value.toDouble(),
+                        points.getViewOfElements()[i].y.value.toDouble(),
+                        points.getViewOfElements()[i + 1].x.value.toDouble(),
+                        points.getViewOfElements()[i + 1].y.value.toDouble(),
+                        points.getViewOfElements()[j].x.value.toDouble(),
+                        points.getViewOfElements()[j].y.value.toDouble(),
+                        points.getViewOfElements()[(j + 1) % len].x.value.toDouble(),
+                        points.getViewOfElements()[(j + 1) % len].y.value.toDouble())
+
+                if (cut) {
+                    return false
+                }
+            }
+        }
+        return true
     }
 
     override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        allGenes: List<Gene>,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            selectionStrategy: SubsetGeneSelectionStrategy,
+            enableAdaptiveGeneMutation: Boolean,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return listOf(points)
     }
 
     override fun getValueAsPrintableString(
-        previousGenes: List<Gene>,
-        mode: GeneUtils.EscapeMode?,
-        targetFormat: OutputFormat?,
-        extraCheck: Boolean
+            previousGenes: List<Gene>,
+            mode: GeneUtils.EscapeMode?,
+            targetFormat: OutputFormat?,
+            extraCheck: Boolean
     ): String {
-        return "\" (  ${
-            points.getAllElements()
-                .map { it.getValueAsRawString() }
-                .joinToString(" , ")
-        } ) \""
+        return when (databaseType) {
+            /*
+             * In MySQL, the first and the last point of
+             * the polygon should be equal. We enforce
+             * this by repeating the first point at the
+             * end of the list
+             */
+            DatabaseType.MYSQL -> {
+                "POLYGON(" + points.getViewOfElements()
+                        .joinToString(" , ")
+                        { it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) } + "," +
+                        points.getViewOfElements().get(0).getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                        ")"
+            }
+            /*
+             * In PostgreSQL, the (..) denotes a closed path
+             */
+            DatabaseType.POSTGRES -> {
+                "\" (  ${
+                    points.getViewOfElements().joinToString(" , ")
+                    { it.getValueAsRawString() }
+                } ) \""
+            }
+            else -> {
+                throw IllegalArgumentException("Unsupported SqlPolygonGene.getValueAsPrintableString() for ${databaseType}")
+            }
+        }
     }
 
     override fun getValueAsRawString(): String {
         return "( ${
-            points.getAllElements()
+            points.getViewOfElements()
                 .map { it.getValueAsRawString() }
                 .joinToString(" , ")
         } ) "

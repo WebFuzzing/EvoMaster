@@ -233,7 +233,7 @@ class ParamUtil {
         }
 
         private fun extractPathFromRoot(comGene: ArrayGene<*>, gene: Gene, names: MutableList<String>): Boolean {
-            comGene.getAllElements().forEach {
+            comGene.getViewOfElements().forEach {
                 if (extractPathFromRoot(it, gene, names)) {
                     return true
                 }

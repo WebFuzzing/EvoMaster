@@ -51,7 +51,7 @@ class PgLsnTest : ExtractTestBasePostgres() {
             )
         )
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(2, genes.size)
         assertTrue(genes[0] is IntegerGene)
@@ -84,7 +84,7 @@ class PgLsnTest : ExtractTestBasePostgres() {
                 )
         )
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
         val pglsnColumn = genes[1] as SqlLogSeqNumberGene
         val leftPartGene = pglsnColumn.innerGene()[0] as LongGene
         val rightPartGene = pglsnColumn.innerGene()[1] as LongGene

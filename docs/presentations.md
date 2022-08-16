@@ -1,5 +1,9 @@
 # Seminars/Presentations
 
+* 2022: *Search-Based Fuzzing of Web APIs with EvoMaster*.
+  Presentation given at IBM.
+  [[PDF](slides/2022_em_ibm.pdf)]
+
 * 2022: *SBST Workshop*.
   Workshop given at Huawei.
   [[PDF](slides/2022_sbst_huawei.pdf)]

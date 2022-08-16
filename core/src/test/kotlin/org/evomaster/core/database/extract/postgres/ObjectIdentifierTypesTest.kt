@@ -103,7 +103,7 @@ class ObjectIdentifierTypesTest : ExtractTestBasePostgres() {
                 )
         )
 
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeTopGenes()
 
         assertEquals(13, genes.size)
         assertTrue(genes[0] is IntegerGene)

@@ -11,7 +11,6 @@ import org.evomaster.core.problem.rest.RestCallAction;
 import org.evomaster.core.problem.rest.RestCallResult;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
-import org.evomaster.core.problem.rest.service.RestSampler;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.EvaluatedAction;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -19,7 +18,6 @@ import org.evomaster.core.search.FitnessValue;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.IntegerGene;
 import org.evomaster.core.search.service.FitnessFunction;
-import org.evomaster.core.search.tracer.Traceable;
 import org.evomaster.ci.utils.CIUtils;
 import org.junit.jupiter.api.Test;
 
@@ -158,7 +156,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         //update SQL insertion with values close to the requested x/y
         insertions.stream()
-                .flatMap(a -> a.seeGenes().stream())
+                .flatMap(a -> a.seeTopGenes().stream())
                 .forEach(g -> {
                     if (g.getName().equalsIgnoreCase("x")) {
                         IntegerGene gene = (IntegerGene) g;
@@ -192,7 +190,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         //finally, with correct data
         insertions.stream()
-                .flatMap(a -> a.seeGenes().stream())
+                .flatMap(a -> a.seeTopGenes().stream())
                 .forEach(g -> {
                     if (g.getName().equalsIgnoreCase("x")) {
                         IntegerGene gene = (IntegerGene) g;

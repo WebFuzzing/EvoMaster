@@ -5,6 +5,10 @@ import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ResponseBodyExtractionOptions;
+import org.apache.thrift.TApplicationException;
+import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TProtocolException;
+import org.apache.thrift.transport.TTransportException;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
@@ -12,6 +16,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -97,7 +102,7 @@ public class RPCSutControllerTest {
     @Test
     public void testSeedcheck(){
 
-        assertEquals(1, seededTestDtos.size());
+        assertEquals(2, seededTestDtos.size());
         assertEquals(1, seededTestDtos.get(0).size());
 
         RPCActionDto test_1 = seededTestDtos.get(0).get(0);
@@ -115,8 +120,23 @@ public class RPCSutControllerTest {
         String expectedResponse = "1;2;3;" + System.lineSeparator()+
                 "1;2;3;" + System.lineSeparator()+
                 "BigNumberObj{bdPositiveFloat=10.12, bdNegativeFloat=-10.12, bdPositiveOrZeroFloat=0.00, bdNegativeOrZeroFloat=-2.16, biPositive=10, biPositiveOrZero=0, biNegative=-10, biNegativeOrZero=-2};" + System.lineSeparator()+
-                "1:1;2:2;";
+                "1:1;2:2;" + System.lineSeparator();
         assertEquals(expectedResponse, responseDto.rpcResponse.stringValue);
+
+
+        RPCActionDto test_2 = seededTestDtos.get(1).get(0);
+        RPCActionDto dto2 = test_2.copy();
+
+        dto2.doGenerateAssertions = true;
+        dto2.doGenerateTestScript = true;
+        dto2.controllerVariable = "rpcController";
+        dto2.responseVariable = "res1";
+        dto2.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto2 = new ActionResponseDto();
+        rpcController.executeAction(dto2, responseDto2);
+
+        assertEquals("", responseDto2.rpcResponse.stringValue);
     }
 
     @Test
@@ -220,6 +240,69 @@ public class RPCSutControllerTest {
                 "assertEquals(\"42.42\", res1.get(\"foo\").getBigDecimalValue());";
 
         assertEquals(expectedAssertions, String.join("\n", responseDto.assertionScript));
+    }
+
+    @Test
+    public void testThriftException(){
+        List<RPCActionDto> dtos = interfaceSchemas.get(0).endpoints.stream().filter(s-> s.actionName.equals("throwTException")).collect(Collectors.toList());
+        assertEquals(1, dtos.size());
+
+        RPCActionDto dto = dtos.get(0).copy();
+        assertEquals(1, dto.requestParams.size());
+        dto.doGenerateAssertions = true;
+        dto.doGenerateTestScript = true;
+        dto.controllerVariable = "rpcController";
+        dto.responseVariable = "res1";
+        dto.maxAssertionForDataInCollection = -1;
+
+        ActionResponseDto responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "0";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("Base-TException", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.CUSTOMIZED_EXCEPTION, responseDto.exceptionInfoDto.type);
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "1";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TApplicationException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("TAPP-internal", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.APP_INTERNAL_ERROR, responseDto.exceptionInfoDto.type);
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "2";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TApplicationException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("TAPP-protocol", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.APP_PROTOCOL_ERROR, responseDto.exceptionInfoDto.type);
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "3";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TProtocolException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("TProtocol", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.PROTO_UNKNOWN, responseDto.exceptionInfoDto.type);
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "4";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(TTransportException.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("TTransport", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.TRANS_UNKNOWN, responseDto.exceptionInfoDto.type);
+
+
+        responseDto = new ActionResponseDto();
+        dto.requestParams.get(0).stringValue = "-1";
+        rpcController.executeAction(dto, responseDto);
+        assertNotNull(responseDto.exceptionInfoDto);
+        assertEquals(Exception.class.getName(), responseDto.exceptionInfoDto.exceptionName);
+        assertEquals("general", responseDto.exceptionInfoDto.exceptionMessage);
+        assertEquals(RPCExceptionType.CUSTOMIZED_EXCEPTION, responseDto.exceptionInfoDto.type);
     }
 
     @Test
@@ -420,9 +503,17 @@ public class RPCSutControllerTest {
         dto.controllerVariable = "rpcController";
         dto.responseVariable = "res1";
         dto.maxAssertionForDataInCollection = 4;
-        dto.requestParams.get(0).innerContent.get(0).innerContent = null;
-        dto.requestParams.get(0).innerContent.get(1).innerContent = null;
-        dto.requestParams.get(0).innerContent.get(2).innerContent = null;
+
+        ParamDto request = dto.requestParams.get(0);
+        request.stringValue = "{}";
+
+        responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        request.stringValue = "{}";
+        request.innerContent.get(0).innerContent = null;
+        request.innerContent.get(1).innerContent = null;
+        request.innerContent.get(2).innerContent = null;
         rpcController.executeAction(dto, responseDto);
 
 
@@ -463,6 +554,23 @@ public class RPCSutControllerTest {
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
 
+        assertEquals(5, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.GenericDto<java.lang.Integer, java.lang.String> res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" com.thrift.example.artificial.GenericDto<java.lang.Integer, java.lang.String> arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handleGenericIntString(arg0);", responseDto.testScript.get(3));
+        assertEquals("}", responseDto.testScript.get(4));
+
+        assertEquals(1, responseDto.assertionScript.size());
+        assertEquals("assertNull(res1);", responseDto.assertionScript.get(0));
+
+        ParamDto request = dto.requestParams.get(0);
+        request.stringValue = "{}";
+
+        responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+
         assertEquals(10, responseDto.testScript.size());
         assertEquals("com.thrift.example.artificial.GenericDto<java.lang.Integer, java.lang.String> res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
@@ -494,6 +602,22 @@ public class RPCSutControllerTest {
         dto.responseVariable = "res1";
 
         ActionResponseDto responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+        assertEquals(5, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.GenericDto<com.thrift.example.artificial.StringChildDto, java.lang.String> res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" com.thrift.example.artificial.GenericDto<com.thrift.example.artificial.StringChildDto, java.lang.String> arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handleGenericObjectString(arg0);", responseDto.testScript.get(3));
+        assertEquals("}", responseDto.testScript.get(4));
+
+        assertEquals(1, responseDto.assertionScript.size());
+        assertEquals("assertNull(res1);", responseDto.assertionScript.get(0));
+
+        ParamDto request = dto.requestParams.get(0);
+        request.stringValue = "{}";
+        request.innerContent.get(0).stringValue ="{}";
+        responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
 
         assertEquals(15, responseDto.testScript.size());
@@ -534,6 +658,23 @@ public class RPCSutControllerTest {
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
 
+
+        assertEquals(5, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.StringChildDto res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" com.thrift.example.artificial.StringChildDto arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handledInheritedGenericStringDto(arg0);", responseDto.testScript.get(3));
+        assertEquals("}", responseDto.testScript.get(4));
+
+        assertEquals(1, responseDto.assertionScript.size());
+        assertEquals("assertNull(res1);", responseDto.assertionScript.get(0));
+
+        ParamDto request = dto.requestParams.get(0);
+        request.stringValue = "{}";
+
+        responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
         assertEquals(10, responseDto.testScript.size());
         assertEquals("com.thrift.example.artificial.StringChildDto res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
@@ -550,7 +691,7 @@ public class RPCSutControllerTest {
         assertEquals("assertEquals(\"child\", res1.getCode());", responseDto.assertionScript.get(0));
         assertEquals("assertEquals(\"child\", res1.getMessage());", responseDto.assertionScript.get(1));
 
-        ParamDto request = dto.requestParams.get(0);
+        request = dto.requestParams.get(0);
         assertEquals(2, request.innerContent.size());
         request.innerContent.get(0).stringValue = "ppcode";
         request.innerContent.get(1).stringValue = "pmsg";
@@ -590,6 +731,26 @@ public class RPCSutControllerTest {
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
 
+
+        assertEquals(5, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.IntChildDto res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" com.thrift.example.artificial.IntChildDto arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handledInheritedGenericIntDto(arg0);", responseDto.testScript.get(3));
+        assertEquals("}", responseDto.testScript.get(4));
+
+        assertEquals(1, responseDto.assertionScript.size());
+        assertEquals("assertNull(res1);", responseDto.assertionScript.get(0));
+
+
+        ParamDto request = dto.requestParams.get(0);
+        assertEquals(2, request.innerContent.size());
+        request.stringValue = "{}";
+
+        responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
+
         assertEquals(10, responseDto.testScript.size());
         assertEquals("com.thrift.example.artificial.IntChildDto res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
@@ -606,7 +767,7 @@ public class RPCSutControllerTest {
         assertEquals("assertEquals(0, res1.getCode().intValue());", responseDto.assertionScript.get(0));
         assertEquals("assertEquals(0, res1.getMessage().intValue());", responseDto.assertionScript.get(1));
 
-        ParamDto request = dto.requestParams.get(0);
+        request = dto.requestParams.get(0);
         assertEquals(2, request.innerContent.size());
         request.innerContent.get(0).stringValue = "1";
         request.innerContent.get(1).stringValue = "2";
@@ -647,6 +808,23 @@ public class RPCSutControllerTest {
         ActionResponseDto responseDto = new ActionResponseDto();
         rpcController.executeAction(dto, responseDto);
 
+
+        assertEquals(5, responseDto.testScript.size());
+        assertEquals("com.thrift.example.artificial.ListChildDto res1 = null;", responseDto.testScript.get(0));
+        assertEquals("{", responseDto.testScript.get(1));
+        assertEquals(" com.thrift.example.artificial.ListChildDto arg0 = null;", responseDto.testScript.get(2));
+        assertEquals(" res1 = ((com.thrift.example.artificial.RPCInterfaceExampleImpl)(controller.getRPCClient(\"com.thrift.example.artificial.RPCInterfaceExample\"))).handledInheritedGenericListDto(arg0);", responseDto.testScript.get(3));
+        assertEquals("}", responseDto.testScript.get(4));
+
+        assertEquals(1, responseDto.assertionScript.size());
+        assertEquals("assertNull(res1);", responseDto.assertionScript.get(0));
+
+        ParamDto request = dto.requestParams.get(0);
+        request.stringValue = "{}";
+
+        responseDto = new ActionResponseDto();
+        rpcController.executeAction(dto, responseDto);
+
         assertEquals(12, responseDto.testScript.size());
         assertEquals("com.thrift.example.artificial.ListChildDto res1 = null;", responseDto.testScript.get(0));
         assertEquals("{", responseDto.testScript.get(1));
@@ -667,7 +845,7 @@ public class RPCSutControllerTest {
         assertEquals("assertEquals(1, res1.getMessage().size());", responseDto.assertionScript.get(2));
         assertEquals("assertEquals(0, res1.getMessage().get(0).intValue());", responseDto.assertionScript.get(3));
 
-        ParamDto request = dto.requestParams.get(0);
+        request = dto.requestParams.get(0);
         assertEquals(2, request.innerContent.size());
         ParamDto innerCode = request.innerContent.get(0).type.example.copy();
         innerCode.stringValue = "1";

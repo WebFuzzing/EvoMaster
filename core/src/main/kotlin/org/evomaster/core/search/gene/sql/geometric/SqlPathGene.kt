@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.sql.geometric
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -12,31 +13,35 @@ import org.slf4j.LoggerFactory
 
 class SqlPathGene(
         name: String,
+        val databaseType: DatabaseType = DatabaseType.POSTGRES,
         val points: ArrayGene<SqlPointGene> = ArrayGene(
                 name = "points",
                 // paths are lists of at least 2 points
                 minSize = 2,
-                template = SqlPointGene("p"))
+                template = SqlPointGene("p", databaseType=databaseType))
 ) : CompositeGene(name, mutableListOf(points)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlPathGene::class.java)
     }
 
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
 
     override fun copyContent(): Gene = SqlPathGene(
             name,
-            points.copy() as ArrayGene<SqlPointGene>
+            points = points.copy() as ArrayGene<SqlPointGene>,
+            databaseType = this.databaseType
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        points.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -50,16 +55,30 @@ class SqlPathGene(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\" ( ${
-            points.getAllElements()
-                    .map { it.getValueAsRawString() }
-                    .joinToString(" , ")
-        } ) \""
+        return when (databaseType) {
+            DatabaseType.POSTGRES -> {"\" ( ${
+                points.getViewOfElements().joinToString(" , ") { it.getValueAsRawString() }
+            } ) \""}
+            DatabaseType.H2 -> {
+                "\"LINESTRING(${
+                    points.getViewOfElements().joinToString(" , ") {
+                        it.x.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
+                                " " + it.y.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+                    }
+                })\""
+            }
+            DatabaseType.MYSQL -> {
+                "LINESTRING(${points.getViewOfElements()
+                        .joinToString(" , ")
+                        { it.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck) }})"
+            }
+            else -> { throw IllegalArgumentException("Unsupported SqlPathGene.getValueAsPrintableString() for $databaseType")}
+        }
     }
 
     override fun getValueAsRawString(): String {
         return "( ${
-            points.getAllElements()
+            points.getViewOfElements()
                     .map { it.getValueAsRawString() }
                     .joinToString(" , ")
         } ) "
@@ -94,6 +113,5 @@ class SqlPathGene(
             }
         }
     }
-
 
 }

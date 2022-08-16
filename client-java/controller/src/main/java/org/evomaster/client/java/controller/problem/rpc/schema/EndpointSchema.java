@@ -206,7 +206,10 @@ public class EndpointSchema {
         String client = clientVariable;
         if (client == null)
             client = CodeJavaGenerator.castToType(clientTypeName, CodeJavaGenerator.getGetClientMethod(controllerVarName,"\""+interfaceName+"\""));
-        assert client != null;
+
+        if (client == null){
+            throw new IllegalArgumentException("fail to generate code for accessing client :"+clientTypeName);
+        }
 
         CodeJavaGenerator.addCode(
                 javaCode,

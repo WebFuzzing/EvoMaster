@@ -15,6 +15,11 @@ class SqlBoxGene(
         val log: Logger = LoggerFactory.getLogger(SqlBoxGene::class.java)
     }
 
+
+    override fun isLocallyValid() : Boolean{
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
     override fun copyContent(): Gene = SqlBoxGene(
         name,
         p.copy() as SqlPointGene,

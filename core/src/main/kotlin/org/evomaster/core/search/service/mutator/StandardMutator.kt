@@ -115,7 +115,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 a.addChild(update.body)
             }
 
-            a.seeGenes().flatMap { it.flatView()}
+            a.seeTopGenes().flatMap { it.flatView()}
                     .filterIsInstance<OptionalGene>()
                     .filter { it.selectable && it.requestSelection }
                     .forEach{ it.isActive = true; it.requestSelection = false}
@@ -174,8 +174,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                     mutatedGene = mutatedGene
             )
 
-            gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAGM, additionalGeneMutationInfo = additionInfo)
+            gene.standardMutation(randomness, apc, mwc, selectionStrategy, enableAGM, additionalGeneMutationInfo = additionInfo)
         }
+
+        if (config.trackingEnabled()) tag(copy, time.evaluatedIndividuals)
         return copy
     }
 
@@ -186,7 +188,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         postActionAfterMutation(mutatedIndividual, mutatedGenes)
 
-        if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
+//        if (config.trackingEnabled()) tag(mutatedIndividual, time.evaluatedIndividuals)
 
         return mutatedIndividual
     }
@@ -200,7 +202,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         Lazy.assert {
             mutatedIndividual.seeActions()
-                    .flatMap { it.seeGenes() }
+                    .flatMap { it.seeTopGenes() }
                     .all {
                         GeneUtils.verifyRootInvariant(it) &&
                                 !GeneUtils.hasNonHandledCycles(it)
@@ -245,9 +247,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             enableAGM: Boolean,
             targets: Set<Int>, mutatedGene: MutatedGeneSpecification?, includeSameValue : Boolean = false) : AdditionalGeneMutationInfo?{
 
-        val isFromInit = individual.seeInitializingActions().any { it.seeGenes().contains(gene) }
+        val isFromInit = individual.seeInitializingActions().any { it.seeTopGenes().contains(gene) }
         val isDbInResourceCall = (individual as? RestIndividual)?.getResourceCalls()?.any {
-            it.seeActions(ActionFilter.ONLY_SQL).any { d-> d.seeGenes().contains(gene) }
+            it.seeActions(ActionFilter.ONLY_SQL).any { d-> d.seeTopGenes().contains(gene) }
         }?:false
 
         val filter = if (isFromInit) ActionFilter.INIT else ActionFilter.NO_INIT
@@ -258,12 +260,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             "exception"
         }
         val position = when {
-            isFromInit -> individual.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
-            else -> individual.seeActions(ActionFilter.NO_INIT).indexOfFirst { it.seeGenes().contains(gene) }
+            isFromInit -> individual.seeInitializingActions().indexOfFirst { it.seeTopGenes().contains(gene) }
+            else -> individual.seeActions(ActionFilter.NO_INIT).indexOfFirst { it.seeTopGenes().contains(gene) }
         }
 
         val resourcePosition = (individual as? RestIndividual)?.getResourceCalls()?.indexOfFirst {
-            it.seeActions(ActionFilter.ALL).any { d-> d.seeGenes().contains(gene) }
+            it.seeActions(ActionFilter.ALL).any { d-> d.seeTopGenes().contains(gene) }
         }
 
         mutatedGene?.addMutatedGene(isDb = isDbInResourceCall, isInit = isFromInit, valueBeforeMutation = value, gene = gene, position = position, resourcePosition = resourcePosition)

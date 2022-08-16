@@ -180,9 +180,19 @@ The issue could arise when using `spring-boot-maven-plugin` to start the applica
 
 ## SQL Databases
 
-If the application is using a SQL database, you must configure `getConnection()` and `getDatabaseDriverName()`,
-instead of leaving their returned values as `null`.
-For example, if you are using _H2_, then the driver name would be `org.h2.Driver`.
+If the application is using a SQL database, you must configure 
+`getDbSpecifications()`, instead of leaving its returned value as `null`.
+For example:
+
+```
+@Override
+public List<DbSpecification> getDbSpecifications() {
+   return Arrays.asList(new DbSpecification(DatabaseType.H2, sqlConnection));
+}
+```
+Here, you can specify how to connect to 1 or more SQL databases.
+You need to specify the type of database, and a `Connection` object for it. 
+
 In _SpringBoot_, you can extract a connection object in the `startSut()` method (and save it in a variable),
 by simply using:
 
@@ -191,11 +201,16 @@ JdbcTemplate jdbc = ctx.getBean(JdbcTemplate.class);
 connection = jdbc.getDataSource().getConnection();
 ```
 
+Note that, since version `1.5.0`, the methods `getConnection()` and  `getDatabaseDriverName()` have been removed.
+
+
+## Independent Tests
+
 Test cases must be __independent__ from each other.
 Otherwise, you could get different results based on their execution order.
 To enforce such independence, you must clean the state of the SUT in the `resetStateOfSUT()` method.
 In theory, RESTful APIs should be _stateless_.
-If indeed stateless, resetting the state would be just a matter of cleaning the database.
+If indeed stateless, resetting the state would be just a matter of cleaning the database (if any).
 For this purpose, we provide the `DbCleaner` utility class 
 (used to delete data without recreating the database schema).
 There might be some tables that you might not want to clean, like for example if you are using 
@@ -213,6 +228,11 @@ where the content of the table `schema_version` is left untouched.
 If your application uses some caches, those might be reset at each test execution.
 However, an easier approach could be to just start the SUT without the caches, for example using
 the option `--spring.cache.type=NONE`.
+
+__IMPORTANT__: since version `1.5.0` we automatically infer which SQL tables and databases to clean after each test execution. 
+Setting up `resetStateOfSUT()` for SQL databases is no longer necessary.
+However, if for any reason this behavior needs to be changed (e.g., due to issues), it can be deactivated with `DbSpecification.withDisabledSmartClean()`.
+
 
 Whenever possible, it would be best to use an embedded database such as _H2_.
 However, if you need to rely on a specific database such as _Postgres_, we recommend starting
@@ -259,7 +279,7 @@ public void resetStateOfSUT() {
 }        
 ```
 
-As for any external service, we reccomend to start them with Docker.
+As for any external service, we recommend to start them with Docker.
 For example:
 
 ```
@@ -297,12 +317,19 @@ If your RESTful API does not have an _OpenApi/Swagger_ schema, this can be autom
 libraries such as [SpringDoc](https://github.com/springdoc/springdoc-openapi).
 
 
+## GRAPHQL Schema
+
+To test a GraphQL API, in the the `getProblemInfo()`, you need to return an instance of the
+`GraphQlProblem` class.
+Here, you need to specify the endpoint of where the GraphQL API can be accessed. Default value is `/graphql`.
+Note: must be able to do an _introspective query_ on such API to fetch its schema. If this is disabled for security reasons, _EvoMaster_ will fail.  
+
 ## Security
 
 The SUT might require authenticated requests (e.g., when _Spring Security_ is used).
 How to do it must be specified in the `getInfoForAuthentication()`.
 We support auth based on authentication headers and cookies.
-Unfortunately, at the moment we do not support OAuth (we will in the future).
+
 
 The `org.evomaster.client.java.controller.AuthUtils` can be used to simplify the creation of such
 configuration objects, e.g., by using methods like `getForDefaultSpringFormLogin()`.
@@ -341,6 +368,10 @@ in `resetStateOfSUT()` execute:
 DbCleaner.clearDatabase_H2(connection);
 SqlScriptRunnerCached.runScriptFromResourceFile(connection,"/init_db.sql");
 ```     
+
+__IMPORTANT__: since version `1.5.0`, if delegating the resetting of SQL database to _EvoMaster_ (i.e., without `withDisabledSmartClean()`), then initializing scripts should be set directly on the `DbSpecification` object, e.g., `new DbSpecification(DatabaseType.H2,sqlConnection)
+.withInitSqlOnResourcePath("/init_db.sql")`.
+Look at the JavaDocs of `DbSpecification` to see all the available utility methods. 
 
 Note: at the moment _EvoMaster_ is not able to register new users on the fly with HTTP requests, 
 and use such info to authenticate its following requests. 

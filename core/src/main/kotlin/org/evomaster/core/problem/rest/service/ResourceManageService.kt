@@ -172,13 +172,13 @@ class ResourceManageService {
             val call = ar.sampleIndResourceCall(randomness,size)
             calls.add(call)
             //TODO shall we control the probability to sample GET with an existing resource.
-            if(hasDBHandler() && config.probOfApplySQLActionToCreateResources > 0 && call.template?.template == HttpVerb.GET.toString() && randomness.nextBoolean(0.5)){
+            if(config.shouldGenerateSqlData() && hasDBHandler() && config.probOfApplySQLActionToCreateResources > 0 && call.template?.template == HttpVerb.GET.toString() && randomness.nextBoolean(0.5)){
                 val created = handleDbActionForCall(call, false, true, false)
             }
             return
         }
 
-        var employSQL = hasDBHandler() && ar.getDerivedTables().isNotEmpty()
+        var employSQL = config.shouldGenerateSqlData() && hasDBHandler() && ar.getDerivedTables().isNotEmpty()
                 && (forceSQLInsert || randomness.nextBoolean(config.probOfApplySQLActionToCreateResources))
 
         var candidate = template
@@ -207,7 +207,7 @@ class ResourceManageService {
         val call = ar.createRestResourceCallBasedOnTemplate(candidate, randomness, size)
         calls.add(call)
 
-        if(hasDBHandler() && config.probOfApplySQLActionToCreateResources > 0){
+        if(config.shouldGenerateSqlData() && hasDBHandler() && config.probOfApplySQLActionToCreateResources > 0){
             if(call.status != ResourceStatus.CREATED_REST
                     || dm.checkIfDeriveTable(call)
                     || employSQL
@@ -242,7 +242,7 @@ class ResourceManageService {
         }
 
         if(bindWith != null){
-            call.bindWithOtherRestResourceCalls(bindWith, cluster,true)
+            call.bindWithOtherRestResourceCalls(bindWith, cluster,true, randomness = randomness)
         }
     }
 
@@ -267,10 +267,19 @@ class ResourceManageService {
             randomness = randomness)
 
         if(dbActions.isNotEmpty()){
-
-            val removed = repairDbActionsForResource(dbActions)
+            //FIXME cannot repair before it is mounted
+            var removed = false; //repairDbActionsForResource(dbActions)
             call.initDbActions(dbActions, cluster, false, removed, bindWith = null)
-
+            removed = !repairDbActionsForResource(dbActions) // FIXME
+            if(removed){
+                call.resetDbAction(dbActions)
+                /*
+                    FIXME this breaks things with binding...
+                    however, as we are going to refactor DB actions, we can ignored for now.
+                    TODO once refactored, need to put back the disabled test:
+                    ResourceBasedTestInterface.testWithDatabaseAndNameAnalysis
+                 */
+            }
         }
         return paramToTables.isNotEmpty()
     }
@@ -300,7 +309,7 @@ class ResourceManageService {
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
          */
-        GeneUtils.repairGenes(dbActions.flatMap { it.seeGenes() })
+        GeneUtils.repairGenes(dbActions.flatMap { it.seeTopGenes() })
 
         return DbActionUtils.repairBrokenDbActionsList(dbActions, randomness)
     }

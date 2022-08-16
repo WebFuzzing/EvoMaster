@@ -22,7 +22,7 @@ public class HypermutationController extends SpringController {
 
     @Override
     public ProblemInfo getProblemInfo() {
-        return new RPCProblem(HypermutationService.Iface.class, client, RPCType.THRIFT);
+        return new RPCProblem(HypermutationService.Iface.class, client, RPCType.GENERAL);
     }
 
     @Override

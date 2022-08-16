@@ -3,8 +3,11 @@ package org.evomaster.core.problem.rpc.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
+import org.evomaster.client.java.controller.api.dto.PostSearchActionDto
+import org.evomaster.client.java.controller.api.dto.RPCTestDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.EvaluatedRPCActionDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType
@@ -15,12 +18,15 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rpc.RPCCallAction
+import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -43,6 +49,9 @@ class RPCEndpointsHandler {
 
     @Inject
     private lateinit var randomness: Randomness
+
+    @Inject(optional = true)
+    private lateinit var remoteController: RemoteController
 
 
     /**
@@ -96,6 +105,29 @@ class RPCEndpointsHandler {
      */
     fun getActionDto(actionId : String) : RPCActionDto{
         return actionSchemaCluster[actionId]?: throw IllegalStateException("could not find the $actionId")
+    }
+
+    /**
+     * handle customized tests with post actions after search
+     */
+    fun handleCustomizedTests(individuals : List<EvaluatedIndividual<RPCIndividual>>){
+        val postSearchActionDto = PostSearchActionDto()
+        postSearchActionDto.rpcTests = individuals.map {eval->
+            val test = RPCTestDto()
+            test.actions = eval.evaluatedActions().map {eval->
+                val call = eval.action as RPCCallAction
+                val res = eval.result as RPCCallResult
+                val evaluatedRPCActionDto = transformResponseDto(call)
+                if (res.isExceptionThrown()){
+                    evaluatedRPCActionDto.exceptionMessage = res.getErrorMessage()
+                    evaluatedRPCActionDto.exceptionName = res.getExceptionTypeName()
+                }
+                evaluatedRPCActionDto
+            }
+            // TODO for sql insertion
+            test
+        }
+        remoteController.postSearchAction(postSearchActionDto)
     }
 
     /**
@@ -199,7 +231,7 @@ class RPCEndpointsHandler {
 
 
     private fun handleActionWithSeededCandidates(action: RPCCallAction, candidateKey: String){
-        action.seeGenes().flatMap { it.flatView() }.filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
+        action.seeTopGenes().flatMap { it.flatView() }.filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
             val index = ((g as DisruptiveGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it is Gene && it.name == candidateKey }
             if (index != -1){
                 (g.gene as SeededGene<*>).employSeeded = true
@@ -209,7 +241,7 @@ class RPCEndpointsHandler {
     }
 
     private fun handleActionNoSeededCandidates(action: RPCCallAction){
-        action.seeGenes().filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
+        action.seeTopGenes().filter { it is DisruptiveGene<*> && it.gene is SeededGene<*> }.forEach { g->
             ((g as DisruptiveGene<*>).gene as SeededGene<*>).employSeeded = false
             ((g.gene as SeededGene<*>).gene as Gene).randomize(randomness, false)
         }
@@ -226,9 +258,8 @@ class RPCEndpointsHandler {
         problem.schemas.forEach { i->
             i.types.sortedBy { it.type.depth }
                 .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
-                typeCache[t.type.fullTypeNameWithGenericType] = handleObjectType(t)
+                buildTypeCache(t)
             }
-
         }
 
         actionCluster.clear()
@@ -277,6 +308,12 @@ class RPCEndpointsHandler {
         reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 })
     }
 
+    private fun buildTypeCache(type: ParamDto){
+        if (type.type.type == RPCSupportedDataType.CUSTOM_OBJECT && !typeCache.containsKey(type.type.fullTypeNameWithGenericType)){
+            typeCache[type.type.fullTypeNameWithGenericType] = handleObjectType(type, true)
+        }
+    }
+
     private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_client${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
 
     private fun reportEndpointsStatistics(numSchema: Int, skipped: Int){
@@ -309,6 +346,18 @@ class RPCEndpointsHandler {
         setGenerationConfiguration(rpcAction, index, generateResponseVariable(index))
 
         return rpcAction
+    }
+
+    private fun transformResponseDto(action: RPCCallAction) : EvaluatedRPCActionDto{
+        // generate RPCActionDto
+        val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
+        val rpcResponseDto = rpcAction.responseParam
+        if (action.response != null) transformGeneToParamDto(action.response!!.gene, rpcResponseDto)
+
+        val evaluatedDto = EvaluatedRPCActionDto()
+        evaluatedDto.rpcAction = transformActionDto(action)
+        evaluatedDto.response = rpcResponseDto
+        return evaluatedDto
     }
 
     private fun setGenerationConfiguration(action: RPCActionDto, index: Int, responseVarName: String){
@@ -375,11 +424,14 @@ class RPCEndpointsHandler {
         if (gene is OptionalGene && !gene.isActive){
             // set null value
             if (gene.gene is ObjectGene || gene.gene is DateTimeGene){
-                dto.innerContent = null
-                dto.stringValue = null
+//                dto.innerContent = null
+//                dto.stringValue = null
+                dto.setNullValue()
             }
             return
         }
+
+        dto.setNotNullValue()
 
         when(val valueGene = ParamUtil.getValueGene(gene)){
             is IntegerGene -> dto.stringValue = valueGene.value.toString()
@@ -396,7 +448,7 @@ class RPCEndpointsHandler {
             is BigIntegerGene -> dto.stringValue = valueGene.getValueAsRawString()
             is ArrayGene<*> -> {
                 val template = dto.type.example?.copy()?:throw IllegalStateException("a template for a collection is null")
-                val innerContent = valueGene.getAllElements().map {
+                val innerContent = valueGene.getViewOfElements().map {
                     val copy = template.copy()
                     transformGeneToParamDto(it, copy)
                     copy
@@ -615,7 +667,7 @@ class RPCEndpointsHandler {
 
     private fun actionName(interfaceName: String, endpointName: String) = "$interfaceName:$endpointName"
 
-    private fun handleDtoParam(param: ParamDto): Gene{
+    private fun handleDtoParam(param: ParamDto, building: Boolean = false): Gene{
         val gene = when(param.type.type){
             RPCSupportedDataType.P_INT, RPCSupportedDataType.INT ->
                 IntegerGene(param.name, min = param.minValue?.toInt()?: Int.MIN_VALUE, max = param.maxValue?.toInt()?:Int.MAX_VALUE,
@@ -685,8 +737,8 @@ class RPCEndpointsHandler {
                 }
             }
             RPCSupportedDataType.ENUM -> handleEnumParam(param)
-            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param)
-            RPCSupportedDataType.MAP -> handleMapParam(param)
+            RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> handleCollectionParam(param, building)
+            RPCSupportedDataType.MAP -> handleMapParam(param, building)
             RPCSupportedDataType.UTIL_DATE -> handleUtilDate(param)
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> CycleObjectGene(param.name)
@@ -797,25 +849,27 @@ class RPCEndpointsHandler {
 
     }
 
-    private fun handleMapParam(param: ParamDto) : Gene{
+    private fun handleMapParam(param: ParamDto, building: Boolean) : Gene{
         val pair = param.type.example
         Lazy.assert { pair.innerContent.size == 2 }
-        val keyTemplate = handleDtoParam(pair.innerContent[0])
-        val valueTemplate = handleDtoParam(pair.innerContent[1])
+        val keyTemplate = handleDtoParam(pair.innerContent[0], building)
+        val valueTemplate = handleDtoParam(pair.innerContent[1], building)
 
         return MapGene(param.name, keyTemplate, valueTemplate, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt())
     }
 
-    private fun handleCollectionParam(param: ParamDto) : Gene{
+    private fun handleCollectionParam(param: ParamDto, building: Boolean) : Gene{
         val templateParam = when(param.type.type){
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST -> param.type.example
             else -> throw IllegalStateException("do not support the collection type: "+ param.type.type)
         }
+        if (building)
+            buildTypeCache(templateParam)
         val template = handleDtoParam(templateParam)
         return ArrayGene(param.name, template, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt())
     }
 
-    private fun handleObjectType(type: ParamDto): Gene{
+    private fun handleObjectType(type: ParamDto, building: Boolean): Gene{
         val typeName = type.type.fullTypeNameWithGenericType
         if (type.innerContent.isEmpty()){
             LoggingUtil.uniqueWarn(log, "Object with name (${type.type.fullTypeNameWithGenericType}) has empty fields")
@@ -823,7 +877,11 @@ class RPCEndpointsHandler {
             return ObjectGene(typeName, listOf(), refType = typeName)
         }
 
-        val fields = type.innerContent.map { f-> handleDtoParam(f) }
+        val fields = type.innerContent.map { f->
+            if (building)
+                buildTypeCache(f)
+            handleDtoParam(f, building)
+        }
 
         return ObjectGene(typeName, fields, refType = typeName)
     }

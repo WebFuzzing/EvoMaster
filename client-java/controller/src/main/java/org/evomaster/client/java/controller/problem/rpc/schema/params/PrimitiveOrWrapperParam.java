@@ -198,7 +198,9 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
         } else if (Long.class.equals(type) || long.class.equals(type)) {
             return Long.valueOf(value.toString());
         }  else if (Character.class.equals(type) || char.class.equals(type)) {
-            assert s.length() == 1;
+//            assert s.length() == 1;
+            if (s.length() != 1)
+                throw new IllegalArgumentException("it cannot be recognized as a char:"+s);
             return s.charAt(0);
         } else if (Byte.class.equals(type) || byte.class.equals(type)) {
             return Byte.valueOf(s);

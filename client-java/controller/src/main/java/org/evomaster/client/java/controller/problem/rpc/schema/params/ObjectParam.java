@@ -90,7 +90,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
         if (getValue() != null){
             dto.innerContent = getValue().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
-            dto.stringValue = NOT_NULL_MARK_OBJ_DATE;
+            dto.setNotNullValue();
         } else
             dto.innerContent = getType().getFields().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;
@@ -98,6 +98,11 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
 
     @Override
     public void setValueBasedOnDto(ParamDto dto) {
+
+        if (dto.stringValue == null){
+            setValue(null);
+            return;
+        }
 
         if (dto.innerContent!=null && !dto.innerContent.isEmpty()){
             List<NamedTypedValue> fields = getType().getFields();
@@ -152,32 +157,36 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
 
         Object instance = json;
-
         if (json instanceof String)
             instance = parseValueWithJson((String) json);
 
-        if (isValidInstance(instance)){
-            setValueBasedOnInstance(instance);
-        } else {
-            List<NamedTypedValue> values = new ArrayList<>();
-            List<NamedTypedValue> fields = getType().getFields();
-
-            /*
-                in jackson, object would be extracted as a map
-             */
-            if (!(instance instanceof Map))
-                throw new RuntimeException("cannot parse the map param "+getName()+ " with the type" + instance.getClass().getName());
-
-            for (NamedTypedValue f: fields){
-                NamedTypedValue copy = f.copyStructureWithProperties();
-                Object fiv = ((Map)instance).get(f.getName());
-                copy.setValueBasedOnInstanceOrJson(fiv);
-
-                values.add(copy);
-            }
-
-            setValue(values);
+        if (instance == null){
+            setValue(null); return;
         }
+
+        if (isValidInstance(instance)){
+            setValueBasedOnValidInstance(instance);
+            return;
+        }
+
+        List<NamedTypedValue> values = new ArrayList<>();
+        List<NamedTypedValue> fields = getType().getFields();
+
+        /*
+            in jackson, object would be extracted as a map
+         */
+        if (!(instance instanceof Map))
+            throw new RuntimeException("cannot parse the map param "+getName()+ " with the type" + instance.getClass().getName());
+
+        for (NamedTypedValue f: fields){
+            NamedTypedValue copy = f.copyStructureWithProperties();
+            Object fiv = ((Map)instance).get(f.getName());
+            copy.setValueBasedOnInstanceOrJson(fiv);
+
+            values.add(copy);
+        }
+
+        setValue(values);
 
     }
 

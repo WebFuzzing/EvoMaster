@@ -79,7 +79,9 @@ class DbActionGeneBuilder {
                  * A StringGene of length 1 is used to represent the data.
                  *
                  */
-                ColumnDataType.CHAR ->
+                ColumnDataType.CHAR,
+                ColumnDataType.CHARACTER,
+                ColumnDataType.CHARACTER_LARGE_OBJECT ->
                     handleCharColumn(column)
 
                 /**
@@ -101,7 +103,8 @@ class DbActionGeneBuilder {
                  *
                  */
 
-                ColumnDataType.DOUBLE ->
+                ColumnDataType.DOUBLE,
+                ColumnDataType.DOUBLE_PRECISION ->
                     handleDoubleColumn(column)
 
                 /**
@@ -112,6 +115,8 @@ class DbActionGeneBuilder {
                 ColumnDataType.TEXT,
                 ColumnDataType.LONGTEXT,
                 ColumnDataType.VARCHAR,
+                ColumnDataType.CHARACTER_VARYING,
+                ColumnDataType.VARCHAR_IGNORECASE,
                 ColumnDataType.CLOB,
                 ColumnDataType.MEDIUMTEXT,
                 ColumnDataType.LONGBLOB,
@@ -120,14 +125,20 @@ class DbActionGeneBuilder {
                     handleTextColumn(column)
 
                 //TODO normal TIME, and add tests for it. this is just a quick workaround for patio-api
-                ColumnDataType.TIMETZ, ColumnDataType.TIME ->
-                    TimeGene(column.name)
+                ColumnDataType.TIME ->
+                    buildSqlTimeGene(column)
+
+                ColumnDataType.TIMETZ,
+                ColumnDataType.TIME_WITH_TIME_ZONE ->
+                    buildSqlTimeWithTimeZoneGene(column)
 
 
                 /**
                  * TIMESTAMP is assumed to be a Date field
                  */
-                ColumnDataType.TIMESTAMP, ColumnDataType.TIMESTAMPTZ ->
+                ColumnDataType.TIMESTAMP,
+                ColumnDataType.TIMESTAMPTZ,
+                ColumnDataType.TIMESTAMP_WITH_TIME_ZONE ->
                     handleTimestampColumn(column)
 
                 /**
@@ -148,20 +159,28 @@ class DbActionGeneBuilder {
                 ColumnDataType.YEAR ->
                     handleYearColumn(column)
 
-                //column.type.equals("VARBINARY", ignoreCase = true) ->
-                //handleVarBinary(it)
-
                 /**
                  * Could be any kind of binary data... so let's just use a string,
                  * which also simplifies when needing generate the test files
                  */
-                ColumnDataType.BLOB ->
+                ColumnDataType.BLOB,
+                ColumnDataType.BINARY_LARGE_OBJECT ->
                     handleBLOBColumn(column)
 
+                ColumnDataType.BINARY ->
+                    handleMySqlBinaryColumn(column)
+
+                ColumnDataType.BINARY_VARYING,
+                ColumnDataType.VARBINARY,
+                ColumnDataType.JAVA_OBJECT ->
+                    handleMySqlVarBinaryColumn(column)
+
+
                 ColumnDataType.BYTEA ->
-                    handleBinaryStringColumn(column)
+                    handlePostgresBinaryStringColumn(column)
 
 
+                ColumnDataType.FLOAT,
                 ColumnDataType.REAL,
                 ColumnDataType.FLOAT4 ->
                     handleFloatColumn(column, MIN_FLOAT4_VALUE, MAX_FLOAT4_VALUE)
@@ -187,7 +206,7 @@ class DbActionGeneBuilder {
                     SqlJSONGene(column.name)
 
                 /**
-                 * Postgres XML column type
+                 * PostgreSQL XML column type
                  */
                 ColumnDataType.XML ->
                     SqlXMLGene(column.name)
@@ -204,24 +223,47 @@ class DbActionGeneBuilder {
                 ColumnDataType.INTERVAL ->
                     SqlTimeIntervalGene(column.name)
 
+                /*
+                 * MySQL and PostgreSQL Point column data type
+                 */
                 ColumnDataType.POINT ->
-                    SqlPointGene(column.name)
+                    SqlPointGene(column.name, databaseType = column.databaseType)
 
+                /*
+                 * PostgreSQL LINE Column data type
+                 */
                 ColumnDataType.LINE ->
                     SqlLineGene(column.name)
 
+                /*
+                 * PostgreSQL LSEG (line segment) column data type
+                 */
                 ColumnDataType.LSEG ->
                     SqlLineSegmentGene(column.name)
 
+                /*
+                 * PostgreSQL BOX column data type
+                 */
                 ColumnDataType.BOX ->
                     SqlBoxGene(column.name)
 
+                /*
+                 * MySQL LINESTRING and PostgreSQL PATH
+                 * column data types
+                 */
+                ColumnDataType.LINESTRING,
                 ColumnDataType.PATH ->
-                    SqlPathGene(column.name)
+                    SqlPathGene(column.name, databaseType = column.databaseType)
 
+                /* MySQL and PostgreSQL POLYGON
+                 * column data type
+                 */
                 ColumnDataType.POLYGON ->
-                    SqlPolygonGene(column.name)
+                    buildSqlPolygonGene(column)
 
+                /*
+                 * PostgreSQL CIRCLE column data type
+                 */
                 ColumnDataType.CIRCLE ->
                     SqlCircleGene(column.name)
 
@@ -319,8 +361,29 @@ class DbActionGeneBuilder {
         return gene
     }
 
+    private fun buildSqlPolygonGene(column: Column): SqlPolygonGene {
+        return when (column.databaseType) {
+            /*
+             * TODO: Uncomment this option when the [isValid()]
+             * method is ensured after each mutation of the
+             * children of the SqlPolygonGene.
+             */
+//            DatabaseType.MYSQL -> {
+//                SqlPolygonGene(column.name, minLengthOfPolygonRing=3, onlyNonIntersectingPolygons = true, databaseType = column.databaseType)
+//            }
+            DatabaseType.POSTGRES -> {
+                SqlPolygonGene(column.name, minLengthOfPolygonRing = 2, onlyNonIntersectingPolygons = false, databaseType = column.databaseType)
+
+            }
+            else -> {
+                throw IllegalArgumentException("Must define minLengthOfPolygonRing for database ${column.databaseType}")
+            }
+        }
+    }
+
+
     private fun buildSqlTimestampRangeGene(column: Column) =
-            SqlRangeGene(column.name, template = buildSqlTimestampGene("bound"))
+            SqlRangeGene(column.name, template = buildSqlTimestampGene("bound", databaseType = column.databaseType))
 
     private fun buildSqlDateRangeGene(column: Column) =
             SqlRangeGene(column.name, template = DateGene("bound"))
@@ -407,7 +470,19 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings)
         } else {
-            StringGene(name = column.name, value = "f", minLength = 0, maxLength = 1)
+            val minLength: Int
+            val maxLength: Int
+            when (column.databaseType) {
+                DatabaseType.H2 -> {
+                    minLength = column.size
+                    maxLength = column.size
+                }
+                else -> {
+                    minLength = 0
+                    maxLength = 1
+                }
+            }
+            StringGene(name = column.name, value = "f", minLength = minLength, maxLength = maxLength)
         }
     }
 
@@ -421,12 +496,37 @@ class DbActionGeneBuilder {
         }
     }
 
-    private fun handleBinaryStringColumn(column: Column): Gene {
+    private fun handleMySqlBinaryColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings)
         } else {
-            SqlBinaryStringGene(name = column.name)
+            SqlBinaryStringGene(name = column.name,
+                    minSize = column.size,
+                    maxSize = column.size,
+                    databaseType = column.databaseType)
+        }
+    }
+
+    private fun handleMySqlVarBinaryColumn(column: Column): Gene {
+        return if (column.enumValuesAsStrings != null) {
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings)
+        } else {
+            SqlBinaryStringGene(name = column.name,
+                    minSize = 0,
+                    maxSize = column.size,
+                    databaseType = column.databaseType)
+        }
+    }
+
+    private fun handlePostgresBinaryStringColumn(column: Column): Gene {
+        return if (column.enumValuesAsStrings != null) {
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings)
+        } else {
+            SqlBinaryStringGene(name = column.name,
+                    databaseType = column.databaseType)
         }
     }
 
@@ -561,12 +661,45 @@ class DbActionGeneBuilder {
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
-    fun buildSqlTimestampGene(name: String): DateTimeGene {
+    private fun buildSqlTimeWithTimeZoneGene(column: Column): TimeGene {
+        return TimeGene(
+                column.name,
+                hour = IntegerGene("hour", 0, 0, 23),
+                minute = IntegerGene("minute", 0, 0, 59),
+                second = IntegerGene("second", 0, 0, 59),
+                timeGeneFormat = TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+        )
+    }
+
+
+    private fun buildSqlTimeGene(column: Column): TimeGene {
+        return TimeGene(
+                column.name,
+                hour = IntegerGene("hour", 0, 0, 23),
+                minute = IntegerGene("minute", 0, 0, 59),
+                second = IntegerGene("second", 0, 0, 59),
+                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
+        )
+    }
+
+    fun buildSqlTimestampGene(name: String, databaseType: DatabaseType = DatabaseType.H2): DateTimeGene {
+        val minYear: Int
+        val maxYear: Int
+        when (databaseType) {
+            DatabaseType.MYSQL -> {
+                minYear = 1970
+                maxYear = 2037
+            }
+            else -> {
+                minYear = 1900
+                maxYear = 2100
+            }
+        }
         return DateTimeGene(
                 name = name,
                 date = DateGene(
                         "date",
-                        year = IntegerGene("year", 2016, 1900, 2100),
+                        year = IntegerGene("year", 2016, minYear, maxYear),
                         month = IntegerGene("month", 3, 1, 12),
                         day = IntegerGene("day", 12, 1, 31),
                         onlyValidDates = true
@@ -586,7 +719,7 @@ class DbActionGeneBuilder {
         if (column.enumValuesAsStrings != null) {
             throw RuntimeException("Unsupported enum in TIMESTAMP. Please implement")
         } else {
-            return buildSqlTimestampGene(column.name)
+            return buildSqlTimestampGene(column.name, databaseType = column.databaseType)
         }
     }
 
@@ -631,6 +764,7 @@ class DbActionGeneBuilder {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
+
             if (column.scale != null && column.scale >= 0) {
                 /*
                     set precision and boundary for DECIMAL
@@ -693,7 +827,6 @@ class DbActionGeneBuilder {
         return if (column.enumValuesAsStrings != null) {
             checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toBoolean() })
-
         } else {
             BooleanGene(column.name)
         }

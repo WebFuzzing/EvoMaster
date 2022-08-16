@@ -354,6 +354,10 @@ class EMConfig {
         if(!jaCoCo_on && ! jaCoCo_off){
             throw IllegalArgumentException("JaCoCo location for agent/cli and output options must be all set or all left empty")
         }
+
+        if(!taintOnSampling && useGlobalTaintInfoProbability > 0){
+            throw IllegalArgumentException("Need to activate taintOnSampling to use global taint info")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1493,6 +1497,15 @@ class EMConfig {
     @Probability
     var baseTaintAnalysisProbability = 0.9
 
+    @Experimental
+    @Cfg("Whether input tracking is used on sampling time, besides mutation time")
+    var taintOnSampling = false
+
+    @Probability
+    @Experimental
+    @Cfg("When sampling new individual, check whether to use already existing info on tainted values")
+    var useGlobalTaintInfoProbability = 0.0
+
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
 
@@ -1560,11 +1573,11 @@ class EMConfig {
      *  but there are issues of performance (time and memory) in analysis of large graphs, that
      *  would need to be optimized
      */
-    val defaultTreeDepth = 5
+    val defaultTreeDepth = 3
 
     @Experimental
-    @Cfg("Maximum tree depth in mutations/queries to be evaluated;" +
-            "this is to avoid issues when dealing with huge graphs in GraphQL")
+    @Cfg("Maximum tree depth in mutations/queries to be evaluated." +
+            " This is to avoid issues when dealing with huge graphs in GraphQL")
     @Min(1.0)
     var treeDepth = defaultTreeDepth
 
@@ -1613,6 +1626,10 @@ class EMConfig {
     @Experimental
     @Cfg("Whether to generate RPC Assertions based on response instance")
     var enableRPCAssertionWithInstance = false
+
+    @Experimental
+    @Cfg("Whether to enable customized RPC Test output if 'customizeRPCTestOutput' is implemented")
+    var enableRPCCustomizedTestOutput = false
 
     @Experimental
     @Cfg("Specify a maximum number of data in a collection to be asserted in the generated tests." +
