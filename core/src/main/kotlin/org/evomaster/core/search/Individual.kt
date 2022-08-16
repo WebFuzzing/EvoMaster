@@ -371,11 +371,16 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     private fun isLocalIdsNotAssigned() : Boolean{
-        return seeActions(filter = ActionFilter.ALL).all { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID}
+        return flatView().all { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID}
+    }
+
+    private fun flatView() : List<ActionComponent>{
+        return children
+            .flatMap { (it as? ActionComponent)?.flatView() ?: throw IllegalStateException("children of individual must be ActionComponent, but it is ${it::class.java.name}") }
     }
 
     private fun areAllLocalIdsAssigned() : Boolean{
-        return seeActions(filter = ActionFilter.ALL).none { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID }
+        return  flatView().none { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID }
     }
 
     /**
@@ -402,6 +407,8 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
                     if (tree.flatten().none { it.hasLocalId() })
                         setLocalIdsForChildren(child.flatten())
+                    }else if (!tree.flatten().all { it.hasLocalId() }){
+                        throw IllegalStateException("local ids of ActionTree are partially assigned")
                     }
                 }
             }else

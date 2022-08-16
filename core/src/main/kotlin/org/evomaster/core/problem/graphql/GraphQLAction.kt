@@ -20,7 +20,7 @@ class GraphQLAction(
     val methodType: GQMethodType,
     parameters: MutableList<Param>,
     auth: HttpWsAuthenticationInfo = NoAuth(),
-    localId : String
+    localId : String = NONE_ACTION_COMPONENT_ID
         ) : HttpWsAction(auth, parameters, localId) {
 
     override fun getName(): String {

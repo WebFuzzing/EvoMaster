@@ -48,7 +48,7 @@ class RestCallAction(
     val produces: List<String> = listOf(),
     val responseRefs : MutableMap<String, String> = mutableMapOf(),
     val skipOracleChecks : Boolean = false,
-    localId : String
+    localId : String = NONE_ACTION_COMPONENT_ID
 ) : HttpWsAction(auth, parameters, localId) {
 
     /**

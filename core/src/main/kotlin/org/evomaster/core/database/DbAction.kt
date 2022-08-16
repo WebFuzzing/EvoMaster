@@ -30,7 +30,7 @@ class DbAction(
          * This is very helpful when dealing with Foreign Keys.
          */
         val representExistingData: Boolean = false,
-        localId : String
+        localId : String = NONE_ACTION_COMPONENT_ID
 ) : Action(listOf(), localId) {
 
     init {

@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
@@ -35,7 +36,8 @@ class ExternalServiceAction(
      */
     val externalService: ExternalService,
     private val id: Long,
-) : Action(listOf(response)) {
+    localId : String
+) : Action(listOf(response), localId) {
 
     companion object {
         private fun buildResponse(template: String): ResponseParam {
@@ -44,8 +46,8 @@ class ExternalServiceAction(
         }
     }
 
-    constructor(request: ExternalServiceRequest, template: String, externalService: ExternalService, id: Long) :
-            this(request, buildResponse(template), externalService, id)
+    constructor(request: ExternalServiceRequest, template: String, externalService: ExternalService, id: Long, localId: String = NONE_ACTION_COMPONENT_ID) :
+            this(request, buildResponse(template), externalService, id, localId = localId)
 
     init {
         // TODO: This is not the correct way to do this, but for now
@@ -82,7 +84,8 @@ class ExternalServiceAction(
             request,
             response.copy() as ResponseParam,
             externalService,
-            id
+            id,
+            localId = getLocalId()
         )
     }
 

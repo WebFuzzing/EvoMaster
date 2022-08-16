@@ -22,7 +22,7 @@ class EnterpriseActionGroup(
             ChildGroup(GroupsOfChildren.MAIN, { k -> mainClass.isAssignableFrom(k.javaClass) }, 0, 0, 1)
         )
     ),
-    localId : String
+    localId : String = NONE_ACTION_COMPONENT_ID
 ) : ActionDependentGroup(
     children,
     groups = groups,

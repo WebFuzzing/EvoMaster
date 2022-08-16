@@ -34,7 +34,7 @@ class RestResourceCalls(
     children: MutableList<out ActionComponent>,
     withBinding: Boolean = false,
     randomness: Randomness? = null,
-    localId : String
+    localId : String = NONE_ACTION_COMPONENT_ID
 ) : ActionTree(
     children,
     { k -> DbAction::class.java.isAssignableFrom(k) || EnterpriseActionGroup::class.java.isAssignableFrom(k) },
