@@ -164,7 +164,7 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
     /**
      * add impacts of newly added insertions at the beginning of the initalization (ie index is 0)
      */
-    fun updateInitializationImpactsAtBeginning(addedInsertions: List<List<Action>>, existingDataSize : Int){
+    fun updateInitializationImpactsAtEnd(addedInsertions: List<List<Action>>, existingDataSize : Int){
         updateSizeOfExistingData(existingDataSize)
 
         val newCompleteSequence =  mutableListOf<ImpactsOfAction>()
@@ -172,8 +172,8 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         addedInsertions.forEach { t->
             addedInitialization(t, newCompleteSequence, newIndex)
         }
-        indexMap.addAll(0, newIndex)
-        completeSequence.addAll(0, newCompleteSequence)
+        indexMap.addAll(newIndex)
+        completeSequence.addAll(newCompleteSequence)
     }
 
     /**

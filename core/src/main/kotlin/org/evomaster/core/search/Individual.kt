@@ -365,9 +365,27 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
 
-    fun isValidIds() : Boolean{
-        return (areAllLocalIdsAssigned()
-                && seeActions(ActionFilter.ALL).run { this.map { it.getLocalId() }.toSet().size == this.size })
+    override fun addChild(child: StructuralElement) {
+        handleLocalIdsForAddition(listOf(child))
+        super.addChild(child)
+    }
+
+    override fun addChild(position: Int, child: StructuralElement) {
+        handleLocalIdsForAddition(listOf(child))
+        super.addChild(position, child)
+    }
+
+    override fun addChildren(position: Int, list: List<StructuralElement>) {
+        handleLocalIdsForAddition(list)
+        super.addChildren(position, list)
+    }
+
+    /**
+     * @return whether all action components are assigned with valid local ids
+     */
+    fun areValidLocalIds() : Boolean{
+        return areAllLocalIdsAssigned()
+                && flatView().run { this.map { it.getLocalId() }.toSet().size == this.size }
     }
 
     private fun isLocalIdsNotAssigned() : Boolean{
@@ -414,20 +432,5 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
             }else
                 throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
         }
-    }
-
-    override fun addChild(child: StructuralElement) {
-        handleLocalIdsForAddition(listOf(child))
-        super.addChild(child)
-    }
-
-    override fun addChild(position: Int, child: StructuralElement) {
-        handleLocalIdsForAddition(listOf(child))
-        super.addChild(position, child)
-    }
-
-    override fun addChildren(position: Int, list: List<StructuralElement>) {
-        handleLocalIdsForAddition(list)
-        super.addChildren(position, list)
     }
 }

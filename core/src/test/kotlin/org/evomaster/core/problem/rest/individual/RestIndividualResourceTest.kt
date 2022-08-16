@@ -77,7 +77,7 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
         val existingData = mutatedImpact.getSQLExistingData()
         assertEquals(existingData, mutated.individual.seeInitializingActions().filterIsInstance<DbAction>().count { it.representExistingData })
 
-        val currentInit = mutatedImpact.initializationGeneImpacts.getOriginalSize(includeExistingSQLData = true)
+        val currentInit = mutatedImpact.initializationImpacts.getOriginalSize(includeExistingSQLData = true)
 
         val origInit = original.individual.seeInitializingActions()
         val mutatedInit = mutated.individual.seeInitializingActions()
@@ -87,13 +87,13 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
         // check whether impact info is consistent with individual after mutation
         mutated.individual.seeInitializingActions().filterIsInstance<DbAction>().forEachIndexed { index, dbAction ->
             if (!dbAction.representExistingData){
-                val impact = mutatedImpact.initializationGeneImpacts.getImpactOfAction(dbAction.getName(), index)
+                val impact = mutatedImpact.initializationImpacts.getImpactOfAction(dbAction.getName(), index)
                 assertNotNull(impact)
             }
         }
 
         mutated.individual.seeActions(ActionFilter.NO_INIT).forEachIndexed { index, action ->
-            val impact = mutatedImpact.actionGeneImpacts[index]
+            val impact = mutatedImpact.mainActionsImpacts[index]
             assertEquals(action.getName(), impact.actionName)
             action.seeTopGenes().forEach { g->
                 val geneId = ImpactUtils.generateGeneId(mutated.individual, g)

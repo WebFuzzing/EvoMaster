@@ -92,6 +92,10 @@ class ImpactUtils {
         private const val SEPARATOR_GENE = ";"
         private const val SEPARATOR_GENE_WITH_TYPE = ">"
 
+        /**
+         * TODO
+         * Man: might employ local id of the action, check it later
+         */
         fun generateGeneId(action: Action, gene : Gene) : String = "${action.getName()}$SEPARATOR_ACTION_TO_GENE${generateGeneId(gene)}$SEPARATOR_ACTION_TO_GENE${action.seeTopGenes().indexOf(gene)}"
 
         fun extractActionName(geneId : String) : String?{

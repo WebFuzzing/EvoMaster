@@ -76,8 +76,8 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
      */
     override fun copy(): ResourceImpactOfIndividual {
         return ResourceImpactOfIndividual(
-                initializationGeneImpacts.copy(),
-                actionGeneImpacts.map { it.copy() }.toMutableList(),
+                initializationImpacts.copy(),
+                mainActionsImpacts.map { it.copy() }.toMutableList(),
                 impactsOfStructure.copy(),
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(resourceSizeImpact.map { it.key to it.value.copy() })
@@ -95,8 +95,8 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
      */
     override fun clone(): ResourceImpactOfIndividual {
         return ResourceImpactOfIndividual(
-                initializationGeneImpacts.clone(),
-                actionGeneImpacts.map { it.clone() }.toMutableList(),
+                initializationImpacts.clone(),
+                mainActionsImpacts.map { it.clone() }.toMutableList(),
                 impactsOfStructure.clone(),
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(resourceSizeImpact.map { it.key to it.value.clone() })
