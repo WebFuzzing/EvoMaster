@@ -40,8 +40,18 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     ), RootElement{
 
 
+    /**
+     * this counter is used to generate ids for actions, ie, its children
+     */
+    protected var counter = 0
+
     companion object{
         private val log = LoggerFactory.getLogger(Individual::class.java)
+    }
+
+    init {
+        if (isLocalIdsNotAssigned())
+            setLocalIdsForChildren(children.flatMap { it.flatView() })
     }
 
     /**
@@ -77,6 +87,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     var searchGlobalState : SearchGlobalState? = null
 
+
+    /**
+     * get local id based on the given counter
+     */
+    fun getLocalId(counter: Int) : String = "Action_COMPONENT_$counter"
+
     /**
      * Make a deep copy of this individual
      */
@@ -84,6 +100,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         val copy = super.copy()
         if (copy !is Individual)
             throw IllegalStateException("mismatched type: the type should be Individual, but it is ${this::class.java.simpleName}")
+
+        // for local ids
+        copy.counter = counter
+
         copy.populationOrigin = this.populationOrigin
         copy.searchGlobalState = this.searchGlobalState
         return copy
@@ -98,6 +118,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     fun isInitialized() : Boolean{
         return seeGenes().all { it.initialized }
+                && areAllLocalIdsAssigned() // local ids must be assigned
     }
 
 
@@ -343,4 +364,63 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return true
     }
 
+
+    fun isValidIds() : Boolean{
+        return (areAllLocalIdsAssigned()
+                && seeActions(ActionFilter.ALL).run { this.map { it.getLocalId() }.toSet().size == this.size })
+    }
+
+    private fun isLocalIdsNotAssigned() : Boolean{
+        return seeActions(filter = ActionFilter.ALL).all { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID}
+    }
+
+    private fun areAllLocalIdsAssigned() : Boolean{
+        return seeActions(filter = ActionFilter.ALL).none { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID }
+    }
+
+    /**
+     * set local ids for all ActionComponents
+     */
+    private fun setLocalIdsForChildren(children: List<ActionComponent>){
+        children.forEach {
+            counter++
+            it.setLocalId(getLocalId(counter))
+        }
+    }
+
+
+    // handle local ids in add child and children
+    private fun handleLocalIdsForAddition(children: List<StructuralElement>){
+        children.forEach {child->
+            if (child is ActionComponent){
+                if (child is Action && !child.hasLocalId())
+                    setLocalIdsForChildren(listOf(child))
+
+                child.flatView().filterIsInstance<ActionTree>().forEach { tree->
+                    if (!tree.hasLocalId()){
+                        setLocalIdsForChildren(listOf(tree))
+
+                    if (tree.flatten().none { it.hasLocalId() })
+                        setLocalIdsForChildren(child.flatten())
+                    }
+                }
+            }else
+                throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
+        }
+    }
+
+    override fun addChild(child: StructuralElement) {
+        handleLocalIdsForAddition(listOf(child))
+        super.addChild(child)
+    }
+
+    override fun addChild(position: Int, child: StructuralElement) {
+        handleLocalIdsForAddition(listOf(child))
+        super.addChild(position, child)
+    }
+
+    override fun addChildren(position: Int, list: List<StructuralElement>) {
+        handleLocalIdsForAddition(list)
+        super.addChildren(position, list)
+    }
 }

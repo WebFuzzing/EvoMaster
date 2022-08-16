@@ -7,5 +7,6 @@ import org.evomaster.core.problem.api.service.param.Param
 
 abstract class HttpWsAction(
     override var auth: HttpWsAuthenticationInfo = NoAuth(),
-    parameters: MutableList<Param>
-) : ApiWsAction(auth, parameters)
+    parameters: MutableList<Param>,
+    localId : String
+) : ApiWsAction(auth, parameters, localId)

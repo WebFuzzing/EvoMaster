@@ -5,7 +5,7 @@ import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 
-class OneMaxAction(val list : MutableList<EnumGene<Double>> = mutableListOf()) : Action(list) {
+class OneMaxAction(val list : MutableList<EnumGene<Double>> = mutableListOf()) : Action(list, localId = NONE_ACTION_COMPONENT_ID) {
     override fun getName(): String {
         return "OneMax Action"
     }

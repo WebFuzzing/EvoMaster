@@ -3,8 +3,9 @@ package org.evomaster.core.search
 open class ActionDependentGroup(
     children: MutableList<out Action>,
     childTypeVerifier: (Class<*>) -> Boolean = {k -> Action::class.java.isAssignableFrom(k)},
-    groups: GroupsOfChildren<out ActionComponent>
-) : ActionTree(children, childTypeVerifier, groups) {
+    groups: GroupsOfChildren<out ActionComponent>,
+    localId : String
+) : ActionTree(children, childTypeVerifier, groups, localId = localId) {
 
     init {
         val main = groups.getGroup(GroupsOfChildren.MAIN)
@@ -20,7 +21,8 @@ open class ActionDependentGroup(
         return ActionDependentGroup(
             k,
             childTypeVerifier,
-            groupsView()!!.copy(k) as GroupsOfChildren<out ActionComponent>
+            groupsView()!!.copy(k) as GroupsOfChildren<out ActionComponent>,
+            localId = getLocalId()
         )
     }
 }
