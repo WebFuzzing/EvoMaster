@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
@@ -205,6 +206,7 @@ class GeneTest {
         }
     }
 
+    @Disabled
     @TestFactory
     fun testRandomized(): Collection<DynamicTest> {
         return (1000..2000L).map {
