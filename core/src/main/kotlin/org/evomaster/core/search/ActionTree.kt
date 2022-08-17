@@ -10,14 +10,20 @@ package org.evomaster.core.search
 abstract class ActionTree(
         children: MutableList<out ActionComponent>,
         childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
-        groups : GroupsOfChildren<out ActionComponent>? = null
+        groups : GroupsOfChildren<out ActionComponent>? = null,
+        localId : String
 ) : ActionComponent(
     children,
     childTypeVerifier,
-    groups
+    groups,
+    localId = localId
 ){
 
     override fun flatten(): List<Action> {
         return children.flatMap { (it as ActionComponent).flatten()}
+    }
+
+    override fun flatView(): List<ActionComponent> {
+        return listOf(this).plus(children.flatMap { (it as ActionComponent).flatView() })
     }
 }

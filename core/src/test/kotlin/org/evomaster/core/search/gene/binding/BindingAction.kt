@@ -5,7 +5,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
-class BindingAction(genes: List<out Gene>) : Action(genes) {
+class BindingAction(genes: List<out Gene>) : Action(genes, localId = NONE_ACTION_COMPONENT_ID) {
 
     override fun getName(): String {
         return "Binding action"

@@ -16,8 +16,9 @@ abstract class ApiWsAction(
     /**
      * a list of param could be manipulated by evomaster
      */
-    parameters: List<Param>
-) : Action(parameters){
+    parameters: List<Param>,
+    localId : String
+) : Action(parameters, localId){
 
     val parameters : List<Param>
         get() { return children as List<Param>}

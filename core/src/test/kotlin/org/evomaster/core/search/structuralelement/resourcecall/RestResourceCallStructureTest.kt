@@ -47,7 +47,7 @@ class RestResourceCallPostGetStructureTest : StructuralElementBaseTest(){
 
         val id = (root.seeActions(ActionFilter.NO_SQL)[1] as RestCallAction).parameters[0].gene
 
-        val path = listOf(1, 0, 0)
+        val path = listOf(1, 0, 0, 0)
         assertEquals(id, root.targetWithIndex(path))
 
         val actualPath = mutableListOf<Int>()

@@ -9,10 +9,11 @@ import org.slf4j.LoggerFactory
  * A variable-length individual will be composed by 1 or more "actions".
  * Actions can be: REST call, setup Wiremock, setup database, etc.
  */
-abstract class Action(children: List<StructuralElement>) : ActionComponent(
+abstract class Action(children: List<StructuralElement>, localId : String) : ActionComponent(
     children.toMutableList(),
     {k -> !ActionComponent::class.java.isAssignableFrom(k)
-            && !Individual::class.java.isAssignableFrom(k)} //action should not have other actions nor individuals
+            && !Individual::class.java.isAssignableFrom(k)}, //action should not have other actions nor individuals
+    localId = localId
 ) {
 
     companion object {
@@ -87,6 +88,10 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
                 r.removeThisFromItsBindingGenes()
             }
         }
+    }
+
+    override fun flatView(): List<ActionComponent> {
+        return listOf(this)
     }
 
 }

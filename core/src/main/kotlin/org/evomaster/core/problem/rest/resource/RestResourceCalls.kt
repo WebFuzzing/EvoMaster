@@ -33,21 +33,23 @@ class RestResourceCalls(
     val node: RestResourceNode? = null,
     children: MutableList<out ActionComponent>,
     withBinding: Boolean = false,
-    randomness: Randomness? = null
+    randomness: Randomness? = null,
+    localId : String = NONE_ACTION_COMPONENT_ID
 ) : ActionTree(
     children,
     { k -> DbAction::class.java.isAssignableFrom(k) || EnterpriseActionGroup::class.java.isAssignableFrom(k) },
+    localId = localId
 ) {
 
     constructor(
         template: CallsTemplate? = null, node: RestResourceNode? = null, actions: List<RestCallAction>,
-        dbActions: List<DbAction>, withBinding: Boolean = false, randomness: Randomness? = null
+        dbActions: List<DbAction>, withBinding: Boolean = false, randomness: Randomness? = null, localId: String = NONE_ACTION_COMPONENT_ID
     ) :
             this(template, node,
                 mutableListOf<ActionComponent>().apply {
                     addAll(dbActions);
-                    addAll(actions.map { a -> EnterpriseActionGroup(mutableListOf(a), RestCallAction::class.java) })
-                }, withBinding, randomness)
+                    addAll(actions.map { a -> EnterpriseActionGroup(mutableListOf(a), RestCallAction::class.java, localId = NONE_ACTION_COMPONENT_ID) })
+                }, withBinding, randomness, localId = localId)
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestResourceCalls::class.java)
@@ -134,7 +136,7 @@ class RestResourceCalls(
             template,
             node,
             children.map { it.copy() as ActionComponent }.toMutableList(),
-            withBinding = false, randomness = null
+            withBinding = false, randomness = null, localId = getLocalId()
         )
 
         copy.isDeletable = isDeletable

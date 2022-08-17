@@ -31,9 +31,11 @@ open class RPCCallAction(
      */
     var response : RPCParam?,
 
-    override var auth: RPCAuthenticationInfo = RPCNoAuth()
+    override var auth: RPCAuthenticationInfo = RPCNoAuth(),
 
-) : ApiWsAction(auth, inputParameters)  {
+    localId : String = NONE_ACTION_COMPONENT_ID
+
+) : ApiWsAction(auth, inputParameters, localId)  {
 
     override fun getName(): String {
         return id
@@ -50,7 +52,7 @@ open class RPCCallAction(
 
     override fun copyContent(): RPCCallAction {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RPCCallAction(id, p, responseTemplate?.copy() as RPCParam?, response?.copy() as RPCParam?, auth)
+        return RPCCallAction(id, p, responseTemplate?.copy() as RPCParam?, response?.copy() as RPCParam?, auth, localId = getLocalId())
     }
 
     /**

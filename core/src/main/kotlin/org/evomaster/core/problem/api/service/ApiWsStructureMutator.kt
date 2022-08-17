@@ -163,7 +163,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
                     log.trace("{} insertions are added", insertions.size)
 
                 //record newly added insertions
-                addedInsertions?.add(0, insertions)
+                addedInsertions?.add(insertions)
             }
 
             /*

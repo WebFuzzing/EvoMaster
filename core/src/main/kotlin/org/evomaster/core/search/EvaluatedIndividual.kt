@@ -620,7 +620,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if(old.isEmpty()){
             initAddedInitializationGenes(modified, allExistingData.size)
         }else{
-            impactInfo.updateInitializationImpactsAtBeginning(modified, allExistingData.size)
+            impactInfo.updateInitializationImpactsAtEnd(modified, allExistingData.size)
         }
 
         mutatedGenes.addedInitializationGroup.addAll(modified)
