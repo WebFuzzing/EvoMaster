@@ -21,7 +21,7 @@ class SqlMultiPolygonGene(
         /**
          * The database type of the source column for this gene
          */
-        val databaseType: DatabaseType = DatabaseType.POSTGRES,
+        val databaseType: DatabaseType = DatabaseType.H2,
         val polygons: ArrayGene<SqlPolygonGene> = ArrayGene(
                 name = "polygons",
                 minSize = 1,
@@ -34,6 +34,11 @@ class SqlMultiPolygonGene(
         val log: Logger = LoggerFactory.getLogger(SqlMultiPolygonGene::class.java)
     }
 
+    init {
+        if (databaseType!=DatabaseType.H2 && databaseType!=DatabaseType.MYSQL) {
+            IllegalArgumentException("Cannot create a SqlMultiPolygonGene with database type ${databaseType}")
+        }
+    }
     override fun copyContent(): Gene = SqlMultiPolygonGene(
             name,
             databaseType = this.databaseType,
@@ -65,7 +70,7 @@ class SqlMultiPolygonGene(
         return when (databaseType) {
             DatabaseType.H2 -> "\"${getValueAsRawString()}\""
             DatabaseType.MYSQL -> getValueAsRawString()
-            else -> throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsPrintableString() for $databaseType")
+            else -> throw IllegalArgumentException("Unsupported SqlMultiPolygonGene.getValueAsPrintableString() for $databaseType")
         }
     }
 

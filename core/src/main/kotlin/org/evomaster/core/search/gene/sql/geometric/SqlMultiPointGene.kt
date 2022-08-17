@@ -29,6 +29,12 @@ class SqlMultiPointGene(
     )
 ) : CompositeFixedGene(name, mutableListOf(points)) {
 
+    init {
+        if (databaseType!=DatabaseType.H2 && databaseType!=DatabaseType.MYSQL) {
+            IllegalArgumentException("Cannot create a SqlMultiPointGene with database type ${databaseType}")
+        }
+    }
+
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlMultiPointGene::class.java)
     }
