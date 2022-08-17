@@ -35,6 +35,12 @@ class OneMaxIndividual(
         children.forEach{a -> (a as Action).doInitialize(rand)}
     }
 
+    fun resetAllToZero(){
+        (0 until size()).forEach {
+            setValue(it, 0.0)
+        }
+    }
+
     override fun copyContent(): Individual {
         return OneMaxIndividual(n, trackOperator, index, children[0].copy() as OneMaxAction)
     }

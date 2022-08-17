@@ -8,14 +8,12 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
-import org.evomaster.core.search.tracer.Traceable
-import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.utils.ReportWriter.writeByChannel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -85,10 +83,11 @@ class SearchProcessMonitor: SearchListener {
 
         private val skippedClasses = listOf(
             StructuralElement::class.java.name,
-            Action::class.java.name,
-            ActionComponent::class.java,
-            TrackOperator::class.java,
-            Traceable::class.java, "kotlin.jvm.functions.Function1")
+            /*
+                https://github.com/JetBrains/kotlin/blob/master/spec-docs/function-types.md
+             */
+            "kotlin.jvm.functions.Function1"
+        )
 
         private val strategy: ExclusionStrategy = object : ExclusionStrategy {
             //TODO systematic way to configure the skipped field
@@ -243,6 +242,7 @@ class SearchProcessMonitor: SearchListener {
     private fun getGsonBuilder() : Gson? {
         if (config.enableProcessMonitor && config.processFormat == EMConfig.ProcessDataFormat.JSON_ALL)
             if (gson == null) gson = GsonBuilder().registerTypeAdapter(RestCallAction::class.java, InterfaceAdapter<RestCallAction>())
+                    .registerTypeAdapter(ActionComponent::class.java, InterfaceAdapter<ActionComponent>())
                     .registerTypeAdapter(Param::class.java, InterfaceAdapter<Param>())
                     .registerTypeAdapter(Gene::class.java, InterfaceAdapter<Gene>())
                     .setExclusionStrategies(strategy)
