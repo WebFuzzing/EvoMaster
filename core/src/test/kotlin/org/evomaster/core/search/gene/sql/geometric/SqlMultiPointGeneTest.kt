@@ -4,11 +4,17 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.FloatGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class SqlMultiPointGeneTest {
 
-    val rand = Randomness().apply { updateSeed(42) }
+    val rand = Randomness()
+
+    @BeforeEach
+    fun resetSeed() {
+        rand.apply { updateSeed(42) }
+    }
 
     @Test
     fun testGetValueForEmptyH2() {
