@@ -15,9 +15,10 @@ import org.slf4j.LoggerFactory
  * of gene choices cannot be empty.
  */
 
-class ChoiceGene<T>(name: String,
-                    private val geneChoices: List<T>,
-                    activeChoice: Int = 0
+class ChoiceGene<T>(
+    name: String,
+    private val geneChoices: List<T>,
+    activeChoice: Int = 0
 
 ) : CompositeFixedGene(name, geneChoices) where T : Gene {
 
@@ -44,34 +45,42 @@ class ChoiceGene<T>(name: String,
      */
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         activeGeneIndex = randomness.nextInt(geneChoices.size)
-        if (geneChoices[activeGeneIndex].isMutable()) {
-            geneChoices[activeGeneIndex].randomize(randomness, tryToForceNewValue)
-        }
+
+        geneChoices
+            .filter { it.isMutable() }
+            .forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
     /**
      * TODO This method must be implemented to reflect usage
      * of the selectionStrategy and the additionalGeneMutationInfo
      */
-    override fun candidatesInternalGenes(randomness: Randomness,
-                                         apc: AdaptiveParameterControl,
-                                         selectionStrategy: SubsetGeneSelectionStrategy,
-                                         enableAdaptiveGeneMutation: Boolean,
-                                         additionalGeneMutationInfo: AdditionalGeneMutationInfo?) = innerGene()
+    override fun candidatesInternalGenes(
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) = innerGene()
 
     /**
      * Returns only the active gene.
      */
     override fun innerGene() =
-            listOf(geneChoices[activeGeneIndex])
+        listOf(geneChoices[activeGeneIndex])
 
 
     /**
      * Returns the value of the active gene as a printable string
      */
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+    override fun getValueAsPrintableString(
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
+    ): String {
         return geneChoices[activeGeneIndex]
-                .getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+            .getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
     }
 
     /**
@@ -79,7 +88,7 @@ class ChoiceGene<T>(name: String,
      */
     override fun getValueAsRawString(): String {
         return geneChoices[activeGeneIndex]
-                .getValueAsRawString()
+            .getValueAsRawString()
     }
 
     /**
@@ -114,7 +123,7 @@ class ChoiceGene<T>(name: String,
         }
 
         return this.geneChoices[activeGeneIndex]
-                .containsSameValueAs(other.geneChoices[activeGeneIndex])
+            .containsSameValueAs(other.geneChoices[activeGeneIndex])
     }
 
     /**
@@ -145,16 +154,17 @@ class ChoiceGene<T>(name: String,
      * all gene choices.
      */
     override fun copyContent(): Gene = ChoiceGene(
-            name,
-            activeChoice = this.activeGeneIndex,
-            geneChoices = this.geneChoices.map { it.copy() }.toList()
+        name,
+        activeChoice = this.activeGeneIndex,
+        geneChoices = this.geneChoices.map { it.copy() }.toList()
     )
 
     /**
      * Checks that the active gene is the one locally valid
      */
-    override fun isLocallyValid() = geneChoices[activeGeneIndex].isLocallyValid()
+    override fun isLocallyValid() = geneChoices.all { it.isLocallyValid() }
 
+    override fun isPrintable() = this.geneChoices[activeGeneIndex].isPrintable()
 
 
 }
