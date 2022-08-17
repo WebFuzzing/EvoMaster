@@ -23,7 +23,7 @@ class SqlGeometryCollectionGene(
         template: Gene,
         val elements: ArrayGene<Gene> = ArrayGene(
                 name = "points",
-                minSize = 0,
+                minSize = 1,
                 template = template)
 ) : CompositeFixedGene(name, mutableListOf(elements)) {
 
