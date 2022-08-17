@@ -118,7 +118,7 @@ public class RPCActionDto {
         copy.clientInfo = clientInfo;
         copy.clientVariable = clientVariable;
         copy.actionName = actionName;
-        copy.responseParam = responseParam;
+        copy.responseParam = responseParam.copy();
         if (requestParams != null)
             copy.requestParams = requestParams.stream().map(ParamDto::copy).collect(Collectors.toList());
         copy.responseVariable = responseVariable;
