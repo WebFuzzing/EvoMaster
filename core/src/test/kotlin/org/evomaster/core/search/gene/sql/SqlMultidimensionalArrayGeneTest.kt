@@ -443,7 +443,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(0)).value = "Hello"
         gene.getElement(listOf(1)).value = "World"
         assertEquals("ARRAY[SINGLE_APOSTROPHE_PLACEHOLDERHelloSINGLE_APOSTROPHE_PLACEHOLDER, SINGLE_APOSTROPHE_PLACEHOLDERWorldSINGLE_APOSTROPHE_PLACEHOLDER]", gene.getValueAsPrintableString())
-        assertTrue(gene.isValid())
+        assertTrue(gene.isLocallyValid())
     }
 
     @Test
@@ -453,7 +453,7 @@ class SqlMultidimensionalArrayGeneTest {
         gene.getElement(listOf(1, 0)).value = 2
         gene.getElement(listOf(2, 0)).value = 3
         assertEquals("ARRAY[ARRAY[1], ARRAY[2], ARRAY[3]]", gene.getValueAsPrintableString())
-        assertTrue(gene.isValid())
+        assertTrue(gene.isLocallyValid())
     }
 
 }

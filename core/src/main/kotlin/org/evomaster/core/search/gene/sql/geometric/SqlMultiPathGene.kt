@@ -12,15 +12,16 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class SqlMultiPathGene(
-        name: String,
-        /**
-         * The database type of the source column for this gene
-         */
-        val databaseType: DatabaseType = DatabaseType.MYSQL,
-        val paths: ArrayGene<SqlPathGene> = ArrayGene(
-                name = "points",
-                minSize = 1,
-                template = SqlPathGene("p", databaseType = databaseType))
+    name: String,
+    /**
+     * The database type of the source column for this gene
+     */
+    val databaseType: DatabaseType = DatabaseType.MYSQL,
+    val paths: ArrayGene<SqlPathGene> = ArrayGene(
+        name = "points",
+        minSize = 1,
+        template = SqlPathGene("p", databaseType = databaseType)
+    )
 ) : CompositeFixedGene(name, mutableListOf(paths)) {
 
     companion object {
@@ -28,31 +29,32 @@ class SqlMultiPathGene(
     }
 
     override fun copyContent(): Gene = SqlMultiPathGene(
-            name,
-            databaseType = this.databaseType,
-            paths = paths.copy() as ArrayGene<SqlPathGene>
+        name,
+        databaseType = this.databaseType,
+        paths = paths.copy() as ArrayGene<SqlPathGene>
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        paths.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun isLocallyValid() = paths.isLocallyValid()
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        paths.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return listOf(paths)
     }
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         return when (databaseType) {
             DatabaseType.H2,

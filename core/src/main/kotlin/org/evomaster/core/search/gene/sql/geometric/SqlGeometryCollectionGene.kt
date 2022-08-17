@@ -41,14 +41,16 @@ class SqlGeometryCollectionGene(
         )
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        elements.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun isLocallyValid()= elements.isLocallyValid()
+
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        elements.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?

@@ -17,15 +17,16 @@ import org.slf4j.LoggerFactory
  * this gene.
  */
 class SqlMultiPointGene(
-        name: String,
-        /**
-         * The database type of the source column for this gene
-         */
-        val databaseType: DatabaseType = DatabaseType.H2,
-        val points: ArrayGene<SqlPointGene> = ArrayGene(
-                name = "points",
-                minSize = 0,
-                template = SqlPointGene("p", databaseType = databaseType))
+    name: String,
+    /**
+     * The database type of the source column for this gene
+     */
+    val databaseType: DatabaseType = DatabaseType.H2,
+    val points: ArrayGene<SqlPointGene> = ArrayGene(
+        name = "points",
+        minSize = 0,
+        template = SqlPointGene("p", databaseType = databaseType)
+    )
 ) : CompositeFixedGene(name, mutableListOf(points)) {
 
     companion object {
@@ -33,31 +34,32 @@ class SqlMultiPointGene(
     }
 
     override fun copyContent(): Gene = SqlMultiPointGene(
-            name,
-            databaseType = this.databaseType,
-            points = points.copy() as ArrayGene<SqlPointGene>
+        name,
+        databaseType = this.databaseType,
+        points = points.copy() as ArrayGene<SqlPointGene>
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        points.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun isLocallyValid() = points.isLocallyValid()
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        points.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
         return listOf(points)
     }
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         return when (databaseType) {
             DatabaseType.H2 -> "\"${getValueAsRawString()}\""
@@ -79,11 +81,11 @@ class SqlMultiPointGene(
                     })"
             }
             DatabaseType.MYSQL -> {
-                    "MULTIPOINT(${
-                        points.getViewOfElements().joinToString(", ") {
-                            it.getValueAsRawString() 
-                        }
-                    })"
+                "MULTIPOINT(${
+                    points.getViewOfElements().joinToString(", ") {
+                        it.getValueAsRawString()
+                    }
+                })"
             }
             else -> throw IllegalArgumentException("Unsupported SqlMultiPointGene.getValueAsRawString() for $databaseType")
 

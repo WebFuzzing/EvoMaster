@@ -42,10 +42,10 @@ class ChoiceGene<T>(name: String,
      * Randomizes the active gene index, and if the newly selected active gene index
      * is mutable, the active gene is also randomized.
      */
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         activeGeneIndex = randomness.nextInt(geneChoices.size)
         if (geneChoices[activeGeneIndex].isMutable()) {
-            geneChoices[activeGeneIndex].randomize(randomness, tryToForceNewValue, allGenes)
+            geneChoices[activeGeneIndex].randomize(randomness, tryToForceNewValue)
         }
     }
 
@@ -55,7 +55,6 @@ class ChoiceGene<T>(name: String,
      */
     override fun candidatesInternalGenes(randomness: Randomness,
                                          apc: AdaptiveParameterControl,
-                                         allGenes: List<Gene>,
                                          selectionStrategy: SubsetGeneSelectionStrategy,
                                          enableAdaptiveGeneMutation: Boolean,
                                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?) = innerGene()
@@ -150,6 +149,12 @@ class ChoiceGene<T>(name: String,
             activeChoice = this.activeGeneIndex,
             geneChoices = this.geneChoices.map { it.copy() }.toList()
     )
+
+    /**
+     * Checks that the active gene is the one locally valid
+     */
+    override fun isLocallyValid() = geneChoices[activeGeneIndex].isLocallyValid()
+
 
 
 }

@@ -40,16 +40,16 @@ class SqlPolygonGene(
             databaseType = databaseType
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         val pointList = mutableListOf<SqlPointGene>()
         repeat(minLengthOfPolygonRing) {
             val newGene = points.template.copy() as SqlPointGene
             pointList.add(newGene)
             do {
-                newGene.randomize(randomness, tryToForceNewValue, allGenes)
+                newGene.randomize(randomness, tryToForceNewValue)
             } while (onlyNonIntersectingPolygons && !noCrossOvers(pointList))
         }
-        points.randomize(randomness, tryToForceNewValue, allGenes)
+        points.randomize(randomness, tryToForceNewValue)
         points.killAllChildren()
         pointList.map { points.addChild(it) }
         assert(isLocallyValid())

@@ -40,14 +40,15 @@ class SqlMultiPolygonGene(
             polygons = polygons.copy() as ArrayGene<SqlPolygonGene>
     )
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean, allGenes: List<Gene>) {
-        polygons.randomize(randomness, tryToForceNewValue, allGenes)
+    override fun isLocallyValid() = polygons.isLocallyValid()
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        polygons.randomize(randomness, tryToForceNewValue)
     }
 
     override fun candidatesInternalGenes(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene>,
             selectionStrategy: SubsetGeneSelectionStrategy,
             enableAdaptiveGeneMutation: Boolean,
             additionalGeneMutationInfo: AdditionalGeneMutationInfo?
