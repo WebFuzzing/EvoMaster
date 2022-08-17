@@ -242,7 +242,6 @@ class SearchProcessMonitor: SearchListener {
     private fun getGsonBuilder() : Gson? {
         if (config.enableProcessMonitor && config.processFormat == EMConfig.ProcessDataFormat.JSON_ALL)
             if (gson == null) gson = GsonBuilder().registerTypeAdapter(RestCallAction::class.java, InterfaceAdapter<RestCallAction>())
-                    .registerTypeAdapter(ActionComponent::class.java, InterfaceAdapter<ActionComponent>())
                     .registerTypeAdapter(Param::class.java, InterfaceAdapter<Param>())
                     .registerTypeAdapter(Gene::class.java, InterfaceAdapter<Gene>())
                     .setExclusionStrategies(strategy)
