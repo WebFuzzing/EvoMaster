@@ -12,7 +12,7 @@ class SqlPointGeneTest {
 
     @BeforeEach
     fun resetSeed() {
-        rand.apply { updateSeed(42) }
+        rand.updateSeed(42)
     }
     @Test
     fun testGetValueH2() {

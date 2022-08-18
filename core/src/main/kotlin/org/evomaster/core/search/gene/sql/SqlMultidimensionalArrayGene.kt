@@ -290,7 +290,7 @@ class SqlMultidimensionalArrayGene<T>(
         if (!initialized) {
             throw IllegalStateException("Cannot call to getValueAsPrintableString() using an unitialized multidimensional array")
         }
-        val printableString = getValueAsPrintableString(this.children[0], previousGenes, mode, targetFormat, extraCheck)
+        val printableString = getValueAsPrintableString(this.children[0], previousGenes, mode,targetFormat  , extraCheck)
         return when (databaseType) {
             DatabaseType.H2 -> printableString
             DatabaseType.POSTGRES -> "\"$printableString\""
