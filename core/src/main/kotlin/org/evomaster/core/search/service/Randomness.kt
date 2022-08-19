@@ -217,6 +217,9 @@ class Randomness {
     }
 
     fun randomizeBoundedIntAndLong(value: Long, min: Long, max: Long, forceNewValue: Boolean) : Long{
+
+        if (min == max) return min
+
         val z = 1000L
         val range = calculateIncrement(min, max, 1L)
 
@@ -240,11 +243,10 @@ class Randomness {
             b = max
         }
 
-        return if (forceNewValue && a != b) {
+
+        return if (forceNewValue) {
             nextLong(a, b, value)
         } else {
-            if (forceNewValue)
-                log.warn("since min and max are same ($min), then cannot produce a new value which differs from the current value")
             nextLong(a, b)
         }
     }
