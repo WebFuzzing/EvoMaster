@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.rpc.examples.branches;
 
 import com.foo.rpc.examples.spring.branches.BranchesRPCController;
+import org.evomaster.core.problem.rpc.RPCCallAction;
 import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -41,13 +42,14 @@ public class BranchesRPCEMTest extends SpringRPCTestBase {
                     int n =solution.getIndividuals().stream().map(EvaluatedIndividual<RPCIndividual>::getIndividual)
                             .flatMapToInt(i-> i.seeAllActions().stream().filter(a->
                                     {
-                                        if (a.getResponse() == null) return false;
-                                        Gene g = ParamUtil.Companion.getValueGene(a.getResponse().getGene());
+                                        RPCCallAction action = (RPCCallAction) a;
+                                        if (action.getResponse() == null) return false;
+                                        Gene g = ParamUtil.Companion.getValueGene(action.getResponse().getGene());
                                         if (g instanceof ObjectGene){
                                             return ((ObjectGene)g).getFields().size() == 1 && ((ObjectGene)g).getFields().get(0) instanceof IntegerGene;
                                         }else return false;
                                     }
-                            ).mapToInt(a->  ((IntegerGene)((ObjectGene)ParamUtil.Companion.getValueGene(a.getResponse().getGene())).getFields().get(0)).getValue()))
+                            ).mapToInt(a->  ((IntegerGene)((ObjectGene)ParamUtil.Companion.getValueGene(((RPCCallAction)a).getResponse().getGene())).getFields().get(0)).getValue()))
                             .distinct()
                             .sorted().toArray().length;
 
