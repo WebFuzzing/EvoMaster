@@ -605,7 +605,9 @@ open class RestResourceNode(
         if (action.parameters.size > org.parameters.size){
             originalActions.add(org)
             actions.remove(org)
-            actions.add(action)
+            val example = action.copy() as RestCallAction
+            example.resetLocalId()
+            actions.add(example)
         }
     }
 
