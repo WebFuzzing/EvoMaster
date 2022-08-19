@@ -11,13 +11,17 @@ import org.evomaster.core.search.gene.Gene
 
 class GraphQLIndividual(
         val sampleType: SampleType,
-        allActions : MutableList<out ActionComponent>
+        allActions : MutableList<out ActionComponent>,
+        mainSize : Int = allActions.size,
+        dbSize: Int = 0,
+        groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
 ) : ApiWsIndividual(
     children = allActions,
     childTypeVerifier = {
         EnterpriseActionGroup::class.java.isAssignableFrom(it)
                 || DbAction::class.java.isAssignableFrom(it)
-    }
+    },
+    groups = groups
 ) {
 
 
@@ -25,7 +29,9 @@ class GraphQLIndividual(
 
         return GraphQLIndividual(
                 sampleType,
-                children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>
+                children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>,
+                mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
+                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL)
         )
 
     }
