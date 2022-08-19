@@ -206,7 +206,7 @@ class GeneTest {
         }
     }
 
-    @Disabled("seed 1796 is still failing")
+   // @Disabled("seed 1796 is still failing")
     @TestFactory
     fun testRandomized(): Collection<DynamicTest> {
         return (1000..2000L).map {

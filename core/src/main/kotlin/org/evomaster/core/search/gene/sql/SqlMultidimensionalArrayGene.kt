@@ -414,4 +414,8 @@ class SqlMultidimensionalArrayGene<T>(
         return true
     }
 
+
+    override fun isPrintable(): Boolean {
+        return getViewOfChildren().all { it.isPrintable() }
+    }
 }
