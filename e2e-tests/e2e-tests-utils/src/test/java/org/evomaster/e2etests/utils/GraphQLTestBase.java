@@ -29,7 +29,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(actions).get(i);
             stopped = res.getStopping();
 
             Integer statusCode = res.getStatusCode();
@@ -67,7 +67,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(actions).get(i);
             stopped = res.getStopping();
 
             Integer statusCode = res.getStatusCode();
@@ -122,7 +122,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(actions).get(i);
             stopped = res.getStopping();
 
             if (hasValueInData(res, value)){
@@ -224,7 +224,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
-            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(null).get(i);
+            GraphQlCallResult res = (GraphQlCallResult) ind.seeResults(actions).get(i);
             stopped = res.getStopping();
 
             boolean matched = actions.get(i).getMethodName().equals(methodName) &&
