@@ -59,11 +59,13 @@ class EnumGene<T : Comparable<T>>(
                we need to make sure that, if we are adding a list that has content equal to
                an already present list in the cache, we only use this latter
              */
-            values = if (cache.contains(list)) {
-                cache.find { it == list }!! as List<T> // equality based on content, not reference
-            } else {
-                cache.add(list)
-                list
+            synchronized(cache) {
+                values = if (cache.contains(list)) {
+                    cache.find { it == list }!! as List<T> // equality based on content, not reference
+                } else {
+                    cache.add(list)
+                    list
+                }
             }
 
             if (index < 0 || index >= values.size) {

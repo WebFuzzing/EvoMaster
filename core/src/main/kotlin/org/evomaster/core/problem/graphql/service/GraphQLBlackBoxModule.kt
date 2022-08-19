@@ -6,6 +6,7 @@ import org.evomaster.core.output.service.GraphQLTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.Sampler
@@ -38,7 +39,8 @@ class GraphQLBlackBoxModule(
 
         if(usingRemoteController) {
             bind(RemoteController::class.java)
-                    .asEagerSingleton()
+                .to(RemoteControllerImplementation::class.java)
+                .asEagerSingleton()
         }
 
         bind(TestCaseWriter::class.java)
