@@ -262,7 +262,10 @@ class GeneTest {
         //must be locally valid once gene has been randomized
         assertTrue(gene.isLocallyValid(), msg)
         //all tree must be valid, regardless of impact on phenotype
-        assertTrue(gene.flatView().all { it.isLocallyValid() })
+        assertTrue(gene.flatView().all {
+                it.isLocallyValid()
+            }
+        )
 
         //TODO add more invariants here
     }

@@ -240,9 +240,11 @@ class Randomness {
             b = max
         }
 
-        return if (forceNewValue) {
+        return if (forceNewValue && a != b) {
             nextLong(a, b, value)
         } else {
+            if (forceNewValue)
+                log.warn("since min and max are same ($min), then cannot produce a new value which differs from the current value")
             nextLong(a, b)
         }
     }
