@@ -134,7 +134,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         //as no data in database, should get worst heuristic value
         assertEquals(Double.MAX_VALUE, noDataFV.averageExtraDistancesToMinimize(0));
 
-        RestCallResult result = (RestCallResult) ((EvaluatedAction) ei.evaluatedActions().get(0)).getResult();
+        RestCallResult result = (RestCallResult) ((EvaluatedAction) ei.evaluatedMainActions().get(0)).getResult();
         assertEquals(400, result.getStatusCode().intValue());
 
 
@@ -184,7 +184,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         }
 
         //but still not reaching target
-        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedActions().get(0)).getResult();
+        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedMainActions().get(0)).getResult();
         assertEquals(400, result.getStatusCode().intValue());
 
 
@@ -211,7 +211,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 //            assertTrue(rightDataFV.compareExtraToMinimize(target, closeDataFV) >= 0);
 //        }
 
-        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedActions().get(0)).getResult();
+        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedMainActions().get(0)).getResult();
         assertEquals(200, result.getStatusCode().intValue());
     }
 

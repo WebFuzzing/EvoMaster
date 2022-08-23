@@ -1,6 +1,5 @@
 package org.evomaster.core.output.oracles
 
-import io.swagger.v3.oas.models.PathItem
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
@@ -109,7 +108,7 @@ class SupportedCodeOracle : ImplementedOracle() {
     override fun generatesExpectation(individual: EvaluatedIndividual<*>): Boolean {
         if(individual.individual !is RestIndividual) return false
         if(!this::objectGenerator.isInitialized) return false
-        val gens = individual.evaluatedActions().any {
+        val gens = individual.evaluatedMainActions().any {
             !supportedCode(it.action as RestCallAction, it.result as HttpWsCallResult)
         }
         return gens

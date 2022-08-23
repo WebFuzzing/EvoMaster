@@ -63,7 +63,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
              */
             lines.addEmpty()
 
-            ind.evaluatedActions().asSequence()
+            ind.evaluatedMainActions().asSequence()
                     .map { it.action }
                     .filterIsInstance(RestCallAction::class.java)
                     .filter { it.locationId != null }

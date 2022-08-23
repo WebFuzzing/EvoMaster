@@ -244,7 +244,7 @@ public abstract class GraphQLTestBase extends WsTestBase {
     protected String graphActions(Solution<GraphQLIndividual> solution) {
         StringBuffer msg = new StringBuffer("Graph calls:\n");
 
-        solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
+        solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedMainActions().stream())
                 .filter(ea -> ea.getAction() instanceof GraphQLAction)
                 .map(ea -> {
                     GraphQlCallResult res = (GraphQlCallResult)ea.getResult();

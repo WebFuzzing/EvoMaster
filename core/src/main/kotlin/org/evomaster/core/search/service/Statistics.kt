@@ -286,7 +286,7 @@ class Statistics : SearchListener {
 
         //count the distinct number of API paths for which we have a 5xx
         return solution.individuals
-                .flatMap { it.evaluatedActions() }
+                .flatMap { it.evaluatedMainActions() }
                 .filter {
                     it.result is HttpWsCallResult && (it.result as HttpWsCallResult).hasErrorCode()
                 }
@@ -300,7 +300,7 @@ class Statistics : SearchListener {
         //count the distinct number of API paths for which we have a failed oracle
         // NOTE: calls with an error code (5xx) are excluded from this count.
         return solution.individuals
-                .flatMap { it.evaluatedActions() }
+                .flatMap { it.evaluatedMainActions() }
                 .filter {
                     it.result is HttpWsCallResult
                             && it.action is RestCallAction
@@ -316,7 +316,7 @@ class Statistics : SearchListener {
 
         //count the distinct number of API paths for which we have a 2xx
         return solution.individuals
-                .flatMap { it.evaluatedActions() }
+                .flatMap { it.evaluatedMainActions() }
                 .filter {
                     it.result is HttpWsCallResult && (it.result as HttpWsCallResult).getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
@@ -328,13 +328,13 @@ class Statistics : SearchListener {
     private fun codes(solution: Solution<*>): List<Int> {
 
         return solution.individuals
-                .flatMap { it.evaluatedActions() }
+                .flatMap { it.evaluatedMainActions() }
                 .filter { it.result is HttpWsCallResult }
                 .map { it.action.getName() }
                 .distinct() //distinct names of actions, ie VERB:PATH
                 .map { name ->
                     solution.individuals
-                            .flatMap { it.evaluatedActions() }
+                            .flatMap { it.evaluatedMainActions() }
                             .filter { it.action.getName() == name }
                             .map { (it.result as HttpWsCallResult).getStatusCode() }
                             .distinct()

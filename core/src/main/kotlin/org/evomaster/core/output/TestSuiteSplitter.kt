@@ -52,7 +52,7 @@ object TestSuiteSplitter {
         val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
         val errs = sol.individuals.filter {ind ->
             if (ind.individual is RestIndividual) {
-                ind.evaluatedActions().any {ac ->
+                ind.evaluatedMainActions().any { ac ->
                     assessFailed(ac, oracles, config)
                 }
             }
@@ -83,13 +83,13 @@ object TestSuiteSplitter {
 
         val clusteringStart = System.currentTimeMillis()
         val errs = solution.individuals.filter {
-            it.evaluatedActions().any { ac ->
+            it.evaluatedMainActions().any { ac ->
                 assessFailed(ac, oracles, config)
             }
         }.toMutableList()
 
         val clusterableActions = errs.flatMap {
-            it.evaluatedActions().filter { ac ->
+            it.evaluatedMainActions().filter { ac ->
                 TestSuiteSplitter.assessFailed(ac, oracles, config)
             }
         }.map { ac -> ac.result }
@@ -147,7 +147,7 @@ object TestSuiteSplitter {
         val execSol = mutableSetOf<EvaluatedIndividual<RestIndividual>>()
         clusters.values.forEach { it.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
-                ind.evaluatedActions().any { ac -> clu.contains(ac.result as HttpWsCallResult) }
+                ind.evaluatedMainActions().any { ac -> clu.contains(ac.result as HttpWsCallResult) }
             }.toMutableList()
             inds.sortBy { it.individual.seeAllActions().size }
             inds.firstOrNull { execSol.add(it) }
@@ -169,7 +169,7 @@ object TestSuiteSplitter {
                                config: EMConfig) : SplitResult {
 
         val errs = solution.individuals.filter {
-            it.evaluatedActions().any { ac ->
+            it.evaluatedMainActions().any { ac ->
                 assessFailed(ac, oracles, config)
             }
         }.toMutableList()
@@ -177,7 +177,7 @@ object TestSuiteSplitter {
         //Successes
         val successses = solution.individuals.filter {
             !errs.contains(it) &&
-                    it.evaluatedActions().all { ac ->
+                    it.evaluatedMainActions().all { ac ->
                         val code = (ac.result as HttpWsCallResult).getStatusCode()
                         (code != null && code < 400)
                     }
@@ -196,11 +196,11 @@ object TestSuiteSplitter {
         sumSol.addAll(solution.individuals.filter { it.clusterAssignments.size > 0 })
 
         val skipped = solution.individuals.filter { ind ->
-            ind.evaluatedActions().any { ac ->
+            ind.evaluatedMainActions().any { ac ->
                 assessFailed(ac, oracles, config)
             }
         }.filterNot { ind ->
-            ind.evaluatedActions().any { ac ->
+            ind.evaluatedMainActions().any { ac ->
                 clusters.any {
                     it.value.any { va -> va.contains(ac.result as HttpWsCallResult) } }
             }
@@ -233,7 +233,7 @@ object TestSuiteSplitter {
      */
     private fun <T:Individual> splitByCode(solution: Solution<T>, config: EMConfig): List<Solution<T>>{
         val s500 = solution.individuals.filter {
-            it.evaluatedActions().any { ac ->
+            it.evaluatedMainActions().any { ac ->
                 assessFailed(ac, null, config)
 
             }
@@ -241,7 +241,7 @@ object TestSuiteSplitter {
 
         val successses = solution.individuals.filter {
             !s500.contains(it) &&
-            it.evaluatedActions().all { ac ->
+            it.evaluatedMainActions().all { ac ->
                 val code = (ac.result as HttpWsCallResult).getStatusCode()
                 (code != null && code < 400)
             }
@@ -307,7 +307,7 @@ object TestSuiteSplitter {
                                               oracles: PartialOracles = PartialOracles(),
                                               config: EMConfig): List<Solution<T>>{
         val s500 = solution.individuals.filter {
-            it.evaluatedActions().any { ac ->
+            it.evaluatedMainActions().any { ac ->
                 assessFailed(ac, oracles, config)
 
             }
@@ -315,7 +315,7 @@ object TestSuiteSplitter {
 
         val successses = solution.individuals.filter {
             !s500.contains(it) &&
-                    it.evaluatedActions().all { ac ->
+                    it.evaluatedMainActions().all { ac ->
                         val code = (ac.result as HttpWsCallResult).getStatusCode()
                         (code != null && code < 400)
                     }

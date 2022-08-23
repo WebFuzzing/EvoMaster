@@ -23,7 +23,7 @@ public class RPCTestBase extends WsTestBase{
 
     public void assertResponseContainCustomizedException(Solution<RPCIndividual> solution, String exceptionName, String content){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
-                s.evaluatedActions().stream().anyMatch(e-> {
+                s.evaluatedMainActions().stream().anyMatch(e-> {
                     String body = ((RPCCallResult)e.getResult()).getCustomizedExceptionBody();
                     return body != null && body.contains(exceptionName) && body.contains(content);
                 }));
@@ -32,7 +32,7 @@ public class RPCTestBase extends WsTestBase{
 
     public static void assertResponseContainException(Solution<RPCIndividual> solution, String exceptionName){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
-                s.evaluatedActions().stream().anyMatch(e-> {
+                s.evaluatedMainActions().stream().anyMatch(e-> {
                     String code = ((RPCCallResult)e.getResult()).getExceptionCode();
                     return code != null && code.equals(exceptionName);
                 }));
@@ -89,7 +89,7 @@ public class RPCTestBase extends WsTestBase{
 
     public void assertRPCEndpointResult(Solution<RPCIndividual> solution, String methodName, String result){
         boolean ok = solution.getIndividuals().stream().anyMatch(s->
-                s.evaluatedActions().stream().anyMatch(e->{
+                s.evaluatedMainActions().stream().anyMatch(e->{
                     String code = ((RPCCallResult)e.getResult()).getInvocationCode();
                     return e.getAction().getName().equals(methodName) && code!=null && code.equals(result);
                 }));

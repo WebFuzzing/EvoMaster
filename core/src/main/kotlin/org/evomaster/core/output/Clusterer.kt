@@ -34,7 +34,7 @@ object Clusterer {
         In order to be clustered, an individual must have at least one failed result.
          */
         val sol1 = solution.individuals.filter{
-            it.evaluatedActions().any{ ac ->
+            it.evaluatedMainActions().any{ ac ->
                 TestSuiteSplitter.assessFailed(ac, oracles, config)
             }
         }
@@ -45,7 +45,7 @@ object Clusterer {
          */
 
         val clusterableActions = sol1.flatMap {
-            it.evaluatedActions().filter { ac ->
+            it.evaluatedMainActions().filter { ac ->
                 TestSuiteSplitter.assessFailed(ac, oracles, config)
             }
         }.map { ac -> ac.result }
@@ -67,7 +67,7 @@ object Clusterer {
         val clusters = clu.performCLustering()
         clusters.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
-                ind.evaluatedActions().any { ac ->
+                ind.evaluatedMainActions().any { ac ->
                     clu.contains(ac.result as HttpWsCallResult)
                 }
             }.map {

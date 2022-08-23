@@ -17,7 +17,6 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -115,7 +114,7 @@ class RPCEndpointsHandler {
         val postSearchActionDto = PostSearchActionDto()
         postSearchActionDto.rpcTests = individuals.map {eval->
             val test = RPCTestDto()
-            test.actions = eval.evaluatedActions().map {eval->
+            test.actions = eval.evaluatedMainActions().map { eval->
                 val call = eval.action as RPCCallAction
                 val res = eval.result as RPCCallResult
                 val evaluatedRPCActionDto = transformResponseDto(call)

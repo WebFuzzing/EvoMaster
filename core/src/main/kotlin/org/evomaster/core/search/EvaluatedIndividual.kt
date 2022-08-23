@@ -138,11 +138,15 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      * the number of evaluated actions would be lower than
      * the total number of actions
      */
-    fun evaluatedActions() : List<EvaluatedAction>{
+    fun evaluatedMainActions() : List<EvaluatedAction>{
 
         val list: MutableList<EvaluatedAction> = mutableListOf()
 
-        val actions = individual.seeAllActions()
+        /*
+            TODO unclear whether here we just need main actions, are all (eg for DB)
+         */
+
+        val actions = individual.seeMainExecutableActions()
         val actionResults = seeResults(actions)
 
         (0 until actionResults.size).forEach { i ->

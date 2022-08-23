@@ -198,7 +198,7 @@ public abstract class RestTestBase  extends WsTestBase{
     protected String restActions(Solution<RestIndividual> solution) {
         StringBuffer msg = new StringBuffer("REST calls:\n");
 
-        solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
+        solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedMainActions().stream())
                 .filter(ea -> ea.getAction() instanceof RestCallAction)
                 .map(ea -> {
                     String s = ((RestCallResult)ea.getResult()).getStatusCode() + " ";
@@ -221,7 +221,7 @@ public abstract class RestTestBase  extends WsTestBase{
 
         StringBuffer msg = new StringBuffer("REST calls:\n");
         if (!ok) {
-            solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
+            solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedMainActions().stream())
                     .map(ea -> ea.getAction())
                     .filter(a -> a instanceof RestCallAction)
                     .forEach(a -> msg.append(a.toString() + "\n"));
