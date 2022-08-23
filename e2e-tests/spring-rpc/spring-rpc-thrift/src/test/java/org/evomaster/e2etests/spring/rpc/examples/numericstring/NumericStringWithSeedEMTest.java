@@ -71,7 +71,7 @@ public class NumericStringWithSeedEMTest extends SpringRPCTestBase {
         Path customizedTests = Paths.get(CUSTOMIZED_FILE);
         assertTrue(Files.exists(customizedTests));
 
-        List<String> content = solution.getIndividuals().stream().flatMap(s-> s.getIndividual().seeAllActions().stream().map(RPCCallAction::getName)).collect(Collectors.toList());
+        List<String> content = solution.getIndividuals().stream().flatMap(s-> s.getIndividual().seeAllActions().stream().map(a-> ((RPCCallAction)a).getName())).collect(Collectors.toList());
 
         try {
             assertTrue(Files.readAllLines(customizedTests).containsAll(content));

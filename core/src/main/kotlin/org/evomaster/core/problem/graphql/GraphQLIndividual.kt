@@ -38,10 +38,10 @@ class GraphQLIndividual(
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> seeInitializingActions().flatMap(Action::seeTopGenes).plus(seeAllActions().flatMap(Action::seeTopGenes))
-            GeneFilter.NO_SQL -> seeAllActions().flatMap(Action::seeTopGenes)
+            GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
+            GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
-            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>().flatMap(ExternalServiceAction::seeTopGenes)
+            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ExternalServiceAction::seeTopGenes)
         }
     }
 
