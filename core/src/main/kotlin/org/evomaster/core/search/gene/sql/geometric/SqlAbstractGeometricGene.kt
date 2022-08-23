@@ -9,9 +9,8 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 
 abstract class SqlAbstractGeometricGene(
     name: String,
-    protected val p: SqlPointGene,
-    protected val q: SqlPointGene,
-    val doNotAllowSamePoints: Boolean = false
+    val p: SqlPointGene,
+    val q: SqlPointGene
 ) : CompositeFixedGene(name, mutableListOf(p, q)) {
 
 
@@ -37,11 +36,11 @@ abstract class SqlAbstractGeometricGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return "\" ( ${p.getValueAsRawString()} , ${q.getValueAsRawString()} ) \""
+        return "\"${getValueAsRawString()}\""
     }
 
     override fun getValueAsRawString(): String {
-        return "( ${p.getValueAsRawString()} , ${q.getValueAsRawString()} )"
+        return "(${p.getValueAsRawString()}, ${q.getValueAsRawString()})"
     }
 
 

@@ -32,7 +32,7 @@ public class MySQLInsertionTest extends DatabaseMySQLTestInit implements Databas
     @Test
     public void testInsertNegPoint() throws Exception {
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE SpatialTable(pointcolumn POINT NOT NULL)");
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO SpatialTable(pointcolumn) VALUES (POINT(-1,-1))");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO SpatialTable(pointcolumn) VALUES (POINT(-1, -1))");
     }
 
 
@@ -47,6 +47,9 @@ public class MySQLInsertionTest extends DatabaseMySQLTestInit implements Databas
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE SpatialTable(multipointcolumn MULTIPOINT NOT NULL)");
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO SpatialTable(multipointcolumn) VALUES (MULTIPOINT(POINT(0,0),POINT(1,1)))");
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO SpatialTable(multipointcolumn) VALUES (MULTIPOINT(POINT(0,0)))");
+        assertThrows(SQLException.class, () ->
+                SqlScriptRunner.execCommand(getConnection(), "INSERT INTO SpatialTable(multipointcolumn) VALUES (MULTIPOINT())")
+        );
     }
 
     @Test

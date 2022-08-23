@@ -597,6 +597,7 @@ class StringGene(
         val specializationGene = getSpecializationGene()
 
         if (specializationGene != null) {
+            // TODO: Don't we need to escape the raw string?
             return "\"" + specializationGene.getValueAsRawString() + "\""
         }
 
@@ -607,7 +608,8 @@ class StringGene(
             when {
                 (mode == EscapeMode.GQL_INPUT_MODE)-> "\"${rawValue.replace("\\", "\\\\\\\\")}\""
                 // TODO this code should be refactored with other getValueAsPrintableString() methods
-                (targetFormat == null) -> "\"${rawValue}\""
+                // JP: It makes no sense to me if we enclose with quotes, we need to escape them
+                (targetFormat == null) -> "\"${rawValue.replace("\"", "\\\"")}\""
                 //"\"${rawValue.replace("\"", "\\\"")}\""
                 (mode != null) -> "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
                 else -> "\"${GeneUtils.applyEscapes(rawValue, EscapeMode.TEXT, targetFormat)}\""
@@ -696,7 +698,7 @@ class StringGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
 
-        org.evomaster.core.Lazy.assert{isLocallyValid()};
+        org.evomaster.core.Lazy.assert{isLocallyValid()}
         val current = value
 
         when(gene){
