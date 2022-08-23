@@ -185,7 +185,11 @@ class RestResourceCalls(
      */
     fun resetDbAction(actions: List<DbAction>) {
         killChildren { it is DbAction }
-        addChildren(actions)
+        /*
+            keep db action in the front of rest resource call,
+            otherwise it might be a problem to get corresponding action result
+         */
+        addChildren(0, actions)
         (getRoot() as? RestIndividual)?.cleanBrokenBindingReference()
     }
 
