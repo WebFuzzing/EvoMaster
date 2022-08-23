@@ -164,17 +164,9 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
 
     open fun doInitialize(randomness: Randomness? = null){
-        //TODO refactor with seeAllActions
 
-//        sequence<Action> {
-//            seeInitializingActions()
-//            seeActions()
-//            seeDbActions()
-//        }.toSet().forEach { it.doInitialize(randomness) }
-
-        seeInitializingActions().plus(seeAllActions()).plus(seeDbActions())
-                .toSet()
-        .forEach { it.doInitialize(randomness) }
+        seeAllActions()
+            .forEach { it.doInitialize(randomness) }
     }
 
     /**
