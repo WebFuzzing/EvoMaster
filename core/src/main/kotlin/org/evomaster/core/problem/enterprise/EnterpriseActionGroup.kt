@@ -32,6 +32,8 @@ class EnterpriseActionGroup(
      constructor(action: Action, localId: String = NONE_ACTION_COMPONENT_ID): this(mutableListOf(action), action.javaClass, localId = localId)
 
 
+    fun getMainAction() = children[groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.MAIN)]
+        as Action
 
     override fun copyContent(): EnterpriseActionGroup {
 

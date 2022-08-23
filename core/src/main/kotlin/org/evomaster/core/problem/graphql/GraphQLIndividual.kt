@@ -46,7 +46,7 @@ class GraphQLIndividual(
     }
 
     override fun size(): Int {
-        return seeAllActions().size
+        return seeMainExecutableActions().size
     }
 
     override fun verifyInitializationActions(): Boolean {
