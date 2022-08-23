@@ -54,16 +54,12 @@ class SqlMacAddrGene(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\"${
-            octets
-                    .map { String.format("%02X", it.value) }
-                    .joinToString(":")
-        }\""
+        return "\"${getValueAsRawString()}\""
     }
 
     override fun getValueAsRawString(): String {
         return octets
-                .map { Integer.toHexString(it.value) }
+                .map { String.format("%02X", it.value) }
                 .joinToString(":")
 
     }
