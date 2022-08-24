@@ -22,13 +22,13 @@ class JacksonEMTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "JacksonEM",
             "org.foo.JacksonEM",
-            1000
+            3000
         ) { args: List<String> ->
 
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
-//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/generic", "Hello World!!!")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/generic", "Hello World!!!")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/type", "Hello World!!!")
         }
     }
