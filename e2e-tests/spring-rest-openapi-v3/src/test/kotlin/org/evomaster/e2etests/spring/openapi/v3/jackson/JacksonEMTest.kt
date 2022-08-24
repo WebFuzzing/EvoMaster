@@ -18,17 +18,31 @@ class JacksonEMTest: SpringTestBase() {
     }
 
     @Test
-    fun testRunEM() {
+    fun testGenericReadValue() {
         runTestHandlingFlakyAndCompilation(
             "JacksonEM",
             "org.foo.JacksonEM",
-            3000
+            500
         ) { args: List<String> ->
 
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/generic", "Hello World!!!")
+        }
+    }
+
+    @Test
+    fun testTypeReadValue() {
+        runTestHandlingFlakyAndCompilation(
+            "JacksonEM",
+            "org.foo.JacksonEM",
+            500
+        ) { args: List<String> ->
+
+            val solution = initAndRun(args)
+
+            Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/type", "Hello World!!!")
         }
     }
