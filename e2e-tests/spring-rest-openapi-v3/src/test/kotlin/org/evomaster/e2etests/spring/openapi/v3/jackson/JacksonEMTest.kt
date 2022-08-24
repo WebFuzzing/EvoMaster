@@ -20,8 +20,8 @@ class JacksonEMTest: SpringTestBase() {
     @Test
     fun testGenericReadValue() {
         runTestHandlingFlakyAndCompilation(
-            "JacksonEM",
-            "org.foo.JacksonEM",
+            "JacksonGenericEM",
+            "org.foo.JacksonGenericEM",
             500
         ) { args: List<String> ->
 
@@ -35,8 +35,8 @@ class JacksonEMTest: SpringTestBase() {
     @Test
     fun testTypeReadValue() {
         runTestHandlingFlakyAndCompilation(
-            "JacksonEM",
-            "org.foo.JacksonEM",
+            "JacksonTypeEM",
+            "org.foo.JacksonTypeEM",
             500
         ) { args: List<String> ->
 
