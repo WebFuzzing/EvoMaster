@@ -15,26 +15,26 @@ import javax.servlet.http.HttpServletRequest
 @RequestMapping(path = ["/api/jackson"])
 class JacksonRest {
 
-    @PostMapping(path = ["/generic"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    @PostMapping(path = ["/generic"], consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE])
     open fun generic(request: HttpServletRequest): ResponseEntity<String> {
 
         val json = IOUtils.toString(request.inputStream, StandardCharsets.UTF_8)
         val mapper = jacksonObjectMapper()
 
         val dto = mapper.readValue(json, FooDto::class.java)
-        if (dto.x > 0) return ResponseEntity.ok("Hello World!!!")
-        else throw IllegalArgumentException("Failed Call")
+        return if (dto.x > 0) ResponseEntity.ok().body("Hello World!!!")
+        else ResponseEntity.badRequest().body("Failed Call")
     }
 
-    @PostMapping(path = ["/type"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    @PostMapping(path = ["/type"], consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE])
     open fun typeReference(request: HttpServletRequest): ResponseEntity<String> {
 
         val json = IOUtils.toString(request.inputStream, StandardCharsets.UTF_8)
         val mapper = jacksonObjectMapper()
 
         val dto: FooDto = mapper.readValue(json)
-        if (dto.x > 0) return ResponseEntity.ok("Hello World!!!")
-        else throw IllegalArgumentException("Failed Call")
+        return if (dto.x > 0) ResponseEntity.ok().body("Hello World!!!")
+        else ResponseEntity.badRequest().body("Failed Call")
     }
 }
 
