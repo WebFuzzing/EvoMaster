@@ -114,7 +114,7 @@ class RPCEndpointsHandler {
         val postSearchActionDto = PostSearchActionDto()
         postSearchActionDto.rpcTests = individuals.map {eval->
             val test = RPCTestDto()
-            test.actions = eval.evaluatedActions().map {eval->
+            test.actions = eval.evaluatedMainActions().map { eval->
                 val call = eval.action as RPCCallAction
                 val res = eval.result as RPCCallResult
                 val evaluatedRPCActionDto = transformResponseDto(call)

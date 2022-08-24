@@ -12,8 +12,10 @@ import org.evomaster.core.search.algorithms.onemax.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import java.nio.file.Files
 import java.nio.file.Paths
+
 
 class MutatorWithOneMaxTest {
 

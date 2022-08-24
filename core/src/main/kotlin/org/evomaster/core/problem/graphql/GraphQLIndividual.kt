@@ -3,6 +3,7 @@ package org.evomaster.core.problem.graphql
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.*
@@ -10,71 +11,70 @@ import org.evomaster.core.search.gene.Gene
 
 class GraphQLIndividual(
         val sampleType: SampleType,
-        allActions : MutableList<out ActionComponent>
-) : ApiWsIndividual(children = allActions) {
+        allActions : MutableList<out ActionComponent>,
+        mainSize : Int = allActions.size,
+        dbSize: Int = 0,
+        groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
+) : ApiWsIndividual(
+    children = allActions,
+    childTypeVerifier = {
+        EnterpriseActionGroup::class.java.isAssignableFrom(it)
+                || DbAction::class.java.isAssignableFrom(it)
+    },
+    groups = groups
+) {
 
-
-    constructor(actions: MutableList<GraphQLAction>,
-                sampleType: SampleType,
-                dbInitialization: MutableList<DbAction> = mutableListOf()
-    ) : this(sampleType, dbInitialization.plus(actions).toMutableList())
 
     override fun copyContent(): Individual {
 
         return GraphQLIndividual(
                 sampleType,
-                children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>
+                children.map { it.copy() }.toMutableList() as MutableList<ActionComponent>,
+                mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
+                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL)
         )
 
     }
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return when (filter) {
-            GeneFilter.ALL -> seeInitializingActions().flatMap(Action::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
-            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
+            GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
+            GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
-            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeInitializingActions().filterIsInstance<ExternalServiceAction>().flatMap(ExternalServiceAction::seeTopGenes)
+            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ExternalServiceAction::seeTopGenes)
         }
     }
 
     override fun size(): Int {
-        return seeActions().size
-    }
-
-    override fun seeActions(): List<GraphQLAction> {
-        return children.filterIsInstance<GraphQLAction>()
-    }
-
-    fun getIndexedCalls(): Map<Int,GraphQLAction> = getIndexedChildren(GraphQLAction::class.java)
-
-    override fun seeActions(filter: ActionFilter): List<out Action> {
-        // FIXME: This menthod requires refactoring, has duplicate under RPC and REST
-        return when(filter){
-            ActionFilter.ALL -> children as List<Action>
-            ActionFilter.ONLY_SQL ->(children as List<Action>).filterIsInstance<DbAction>()
-            ActionFilter.INIT -> seeInitializingActions()
-            // TODO Man: need to systematically check NO_SQL that might be replaced with NO_INIT
-            ActionFilter.NO_INIT, ActionFilter.NO_SQL -> seeActions()
-            ActionFilter.ONLY_EXTERNAL_SERVICE -> (children as List<Action>).filterIsInstance<ExternalServiceAction>()
-            ActionFilter.NO_EXTERNAL_SERVICE -> (children as List<Action>).filter { it !is ExternalServiceAction }
-        }
+        return seeMainExecutableActions().size
     }
 
     override fun verifyInitializationActions(): Boolean {
         return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
     }
 
-    //TODO refactor to make sure all problem types use same/similar code with checks on indices
 
-    fun addGQLAction(position: Int = -1, action: GraphQLAction){
-        if (position == -1) addChild(action)
-        else{
-            addChild(position, action)
+    fun addGQLAction(relativePosition: Int = -1, action: GraphQLAction){
+
+        val main = GroupsOfChildren.MAIN
+        val g = EnterpriseActionGroup(mutableListOf(action), GraphQLAction::class.java)
+
+        if (relativePosition == -1) {
+            addChildToGroup(g, main)
+        } else{
+            val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
+            val position = base + relativePosition
+            addChildToGroup(position, action, main)
         }
     }
 
-    fun removeGQLActionAt(position: Int){
-        killChildByIndex(position)
+    fun removeGQLActionAt(relativePosition: Int){
+        //FIXME
+        killChildByIndex(relativePosition)
     }
 
+
+    override fun seeMainExecutableActions() : List<GraphQLAction>{
+        return super.seeMainExecutableActions() as List<GraphQLAction>
+    }
 }

@@ -132,7 +132,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         //as no data in database, should get worst heuristic value
         assertEquals(Double.MAX_VALUE, noDataFV.averageExtraDistancesToMinimize(0));
 
-        RestCallResult result = (RestCallResult) ( ei.evaluatedActions().get(0)).getResult();
+        RestCallResult result = (RestCallResult) ( ei.evaluatedMainActions().get(0)).getResult();
         assertNotNull(result.getStatusCode());
         assertEquals(400, result.getStatusCode().intValue());
 
@@ -143,7 +143,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         assertEquals(1, insertions.size());
 
         //extract the x/y values from the random call
-        RestCallAction first = ind.seeActions().iterator().next();
+        RestCallAction first = (RestCallAction) ind.seeAllActions().iterator().next();
         Optional<Integer> findAnyX = first.getParameters().stream()
                 .filter(p -> p.getName().equalsIgnoreCase("x"))
                 .map(p -> Integer.parseInt(p.getGene().getValueAsRawString()))
@@ -172,7 +172,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 });
 
         RestIndividual withSQL = (RestIndividual) ind.copy(); //new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, Traceable.DEFAULT_INDEX);
-        withSQL.addInitializingActions(0,insertions);
+        withSQL.addInitializingDbActions(0,insertions);
 
         ei = ff.calculateCoverage(withSQL, noDataFV.getViewOfData().keySet());
         assertNotNull(ei);
@@ -188,7 +188,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         }
 
         //but still not reaching target
-        result = (RestCallResult) ( ei.evaluatedActions().get(0)).getResult();
+        result = (RestCallResult) ( ei.evaluatedMainActions().get(0)).getResult();
         assertNotNull(result.getStatusCode());
         assertEquals(400, result.getStatusCode().intValue());
 
@@ -216,7 +216,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 //            assertTrue(rightDataFV.compareExtraToMinimize(target, closeDataFV) >= 0);
 //        }
 
-        result = (RestCallResult) ( ei.evaluatedActions().get(0)).getResult();
+        result = (RestCallResult) ( ei.evaluatedMainActions().get(0)).getResult();
         assertNotNull(result.getStatusCode());
         assertEquals(200, result.getStatusCode().intValue());
     }

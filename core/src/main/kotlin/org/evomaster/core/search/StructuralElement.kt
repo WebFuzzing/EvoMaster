@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.slf4j.LoggerFactory
+import kotlin.reflect.KClass
 
 /**
  * an element which has a structure, i.e., 0..1 [parent] and 0..* children
@@ -10,12 +11,26 @@ import org.slf4j.LoggerFactory
  * @property parent its parent
  */
 abstract class StructuralElement (
-    protected open val children : MutableList<out StructuralElement> = mutableListOf(),
-    private val groups : GroupsOfChildren<StructuralElement>? = null
-) {
+   /*
+        Unfortunately, Kotlin does not allow to define generics like this
 
-    //FIXME this workaround does not seem to work, see ProcessMonitorTest
-    //constructor() : this(mutableListOf()) //issues with Kotlin compiler
+        StructuralElement<T : StructuralElement<*>>
+
+        as it violates  Finite Bound Restriction constraints.
+        https://stackoverflow.com/questions/46682455/how-to-solve-violation-of-finite-bound-restriction-in-kotlin
+
+        So, we end up using an "out" bound, which forces us to do a runtime upper cast to StructuralElement
+        every time we need to insert new elements in children. It is not ideal, as right insertions of proper
+        types for the children would not be checked at compilation time.
+        A partial workaround is to introduce a type verifier, checked every time a new element is added.
+
+        An extra benefit here is that such verifier can be used to exclude only some specific subtypes.
+    */
+
+    protected open val children : MutableList<out StructuralElement> = mutableListOf(),
+    protected val childTypeVerifier: (Class<*>) -> Boolean = {_ -> true},
+    private var groups : GroupsOfChildren<StructuralElement>? = null
+) {
 
     companion object{
         private val log = LoggerFactory.getLogger(StructuralElement::class.java)
@@ -28,10 +43,14 @@ abstract class StructuralElement (
     var parent : StructuralElement? = null
         private set
 
+    fun groupsView() = groups
 
 
     init {
-        children.forEach { it.parent = this; }
+        verifyChildrenToInsert(children)
+        children.forEach {
+            it.parent = this;
+        }
         groups?.verifyGroups()
     }
 
@@ -54,49 +73,67 @@ abstract class StructuralElement (
         return m
     }
 
+    private fun verifyChildrenToInsert(e : StructuralElement){
+        if(! childTypeVerifier.invoke(e.javaClass)){
+            throw IllegalArgumentException("Cannot add child due to its class ${e.javaClass}")
+        }
+    }
+
+    private fun verifyChildrenToInsert(c : Collection<StructuralElement>){
+        c.forEach { verifyChildrenToInsert(it) }
+    }
+
+
     fun addChildToGroup(child: StructuralElement, groupId: String){
+        verifyChildrenToInsert(child)
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
-        val end = groups.endIndexForGroupInsertionInclusive(groupId)
+        val end = groups!!.endIndexForGroupInsertionInclusive(groupId)
         addChild(end, child) //appending at the end of the group
-        groups.addedToGroup(groupId, child)
+        groups!!.addedToGroup(groupId, child)
     }
 
     fun addChildToGroup(position: Int, child: StructuralElement, groupId: String){
+        verifyChildrenToInsert(child)
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
-        val start = groups.startIndexForGroupInsertionInclusive(groupId)
-        val end = groups.endIndexForGroupInsertionInclusive(groupId)
+        val start = groups!!.startIndexForGroupInsertionInclusive(groupId)
+        val end = groups!!.endIndexForGroupInsertionInclusive(groupId)
         if(position < start || position > end){
             throw IllegalArgumentException("Invalid position $position out of [$start,$end] for group $groupId")
         }
         addChild(position,child)
-        groups.addedToGroup(groupId, child)
+        groups!!.addedToGroup(groupId, child)
     }
 
     fun addChildrenToGroup(children : List<StructuralElement>, groupId: String){
         children.forEach { addChildToGroup(it, groupId) }
     }
 
+    fun addChildrenToGroup(position: Int, children : List<StructuralElement>, groupId: String){
+        var i = position
+        children.forEach { addChildToGroup(i++, it, groupId) }
+    }
+
+
     /**
      * add a child of the element
      */
     open fun addChild(child: StructuralElement){
+        verifyChildrenToInsert(child)
         if(children.contains(child)){
             throw IllegalArgumentException("Child already present")
         }
         child.parent = this
-        //TODO re-check proper use of in/out in Kotlin
         (children as MutableList<StructuralElement>).add(child)
-        //groups?.addToGroup(GroupsOfChildren.MAIN, child)
     }
 
-    open fun addChild(position: Int, child: StructuralElement){  //TODO check usage
+    open fun addChild(position: Int, child: StructuralElement){
+        verifyChildrenToInsert(child)
         if(children.contains(child)) throw IllegalArgumentException("Child already present")
         child.parent = this
-        //TODO re-check proper use of in/out in Kotlin
         (children as MutableList<StructuralElement>).add(position, child)
     }
 
@@ -108,6 +145,7 @@ abstract class StructuralElement (
     }
 
     open fun addChildren(position: Int, list : List<StructuralElement>){
+        verifyChildrenToInsert(list)
         for(child in list){
             if(children.contains(child)) throw IllegalArgumentException("Child already present")
         }
@@ -139,14 +177,14 @@ abstract class StructuralElement (
 
     open fun killChild(child: StructuralElement){
         val index = children.indexOf(child)
-        val groupId = groups?.groupForChild(index)?.id
         killChildByIndex(index)
-        groups?.removedFromGroup(groupId!!)
     }
 
     open fun killChildByIndex(index: Int) : StructuralElement{
+        val groupId = groups?.groupForChild(index)?.id
         val child = children.removeAt(index)
         child.parent = null
+        groups?.removedFromGroup(groupId!!)
         return  child
     }
 
@@ -158,7 +196,7 @@ abstract class StructuralElement (
         if(position1 == position2)
             throw IllegalArgumentException("It is not necessary to swap two same positions")
 
-        if(groups != null && ! groups.areChildrenInSameGroup(position1,position2)){
+        if(groups != null && ! groups!!.areChildrenInSameGroup(position1,position2)){
             throw IllegalArgumentException("Cannot swap children in different groups")
         }
 
@@ -186,6 +224,10 @@ abstract class StructuralElement (
             throw IllegalStateException("copy has different size of children compared to original, e.g., copy (${children.size}) vs. original (${original.children.size})")
         children.indices.forEach {
             children[it].postCopy(original.children[it])
+        }
+        if(original.groups != null && this.groups == null){
+            //the copy content didn't setup group, let's do it here
+            groups = original.groups!!.copy(children)
         }
     }
 

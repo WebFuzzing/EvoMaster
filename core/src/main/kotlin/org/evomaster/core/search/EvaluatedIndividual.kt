@@ -118,7 +118,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *      Note that if [actions] is null, then we employ individual.seeActions() as default
      */
     fun seeResults(actions: List<Action>? = null): List<ActionResult>{
-        val list = actions?:individual.seeActions()
+        if(results.isEmpty()){
+            return listOf()
+        }
+        val list = actions?:individual.seeAllActions()
         //TODO Man: need to fix for external services
         val all = individual.seeActions(NO_EXTERNAL_SERVICE)
         val last = results.indexOfFirst { it.stopping }
@@ -135,11 +138,15 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      * the number of evaluated actions would be lower than
      * the total number of actions
      */
-    fun evaluatedActions() : List<EvaluatedAction>{
+    fun evaluatedMainActions() : List<EvaluatedAction>{
 
         val list: MutableList<EvaluatedAction> = mutableListOf()
 
-        val actions = individual.seeActions()
+        /*
+            TODO unclear whether here we just need main actions, are all (eg for DB)
+         */
+
+        val actions = individual.seeMainExecutableActions()
         val actionResults = seeResults(actions)
 
         (0 until actionResults.size).forEach { i ->
@@ -520,7 +527,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *  this is to handle unclassified, eg, a gene might be empty gson or a gene constrained with some class
      */
     fun addGeneImpact(individual: Individual, gene: Gene) : GeneImpact?{
-        val actions = if (individual is RestIndividual)  individual.seeActions(NO_INIT) else individual.seeActions()
+        val actions = if (individual is RestIndividual)  individual.seeActions(NO_INIT) else individual.seeAllActions()
 
         val action = actions.find {
             it.seeTopGenes().contains(gene)
@@ -617,7 +624,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if(old.isEmpty()){
             initAddedInitializationGenes(modified, allExistingData.size)
         }else{
-            impactInfo.updateInitializationImpactsAtBeginning(modified, allExistingData.size)
+            impactInfo.updateInitializationImpactsAtEnd(modified, allExistingData.size)
         }
 
         mutatedGenes.addedInitializationGroup.addAll(modified)

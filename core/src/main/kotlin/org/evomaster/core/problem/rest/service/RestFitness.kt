@@ -28,7 +28,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         if (log.isTraceEnabled){
             log.trace("do evaluate the individual, which contains {} dbactions and {} rest actions",
                 individual.seeInitializingActions().size,
-                individual.seeActions().size)
+                individual.seeAllActions().size)
         }
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
@@ -43,9 +43,9 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         val chainState = mutableMapOf<String, String>()
 
         //run the test, one action at a time
-        for (i in 0 until individual.seeActions().size) {
+        for (i in 0 until individual.seeMainExecutableActions().size) {
 
-            val a = individual.seeActions()[i]
+            val a = individual.seeMainExecutableActions()[i] as RestCallAction
 
             if (log.isTraceEnabled){
                 log.trace("handle rest action at index {}, and the action is {}, and the genes are",

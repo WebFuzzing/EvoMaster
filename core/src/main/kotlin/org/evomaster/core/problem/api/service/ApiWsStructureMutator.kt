@@ -30,6 +30,8 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
     }
 
+
+    @Deprecated("External Actions will be moved into EnterpriseActionGroup")
     private fun <T : ApiWsIndividual> addInitializingExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         mutatedGenes: MutatedGeneSpecification?,
@@ -52,7 +54,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
                 sampler.getExternalService().getExternalServiceActions()
             )
 
-            ind.addInitializingActions(0, actions)
+            ind.addInitializingDbActions(0, actions)
 
             if (log.isTraceEnabled)
                 log.trace("{} existingExternalServiceData are added", actions)
@@ -95,7 +97,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         }
     }
 
-    fun<T : ApiWsIndividual> handleFailedWhereSQL(
+    private fun<T : ApiWsIndividual> handleFailedWhereSQL(
         ind: T,
         /**
          * Map of FAILED WHERE clauses. from table name key to column name values
@@ -118,12 +120,15 @@ abstract class ApiWsStructureMutator : StructureMutator(){
             /*
                 tmp solution to set maximum size of executing existing data in sql
              */
-            val existing = if (config.maximumExistingDataToSampleInDb > 0 && sampler.existingSqlData.size > config.maximumExistingDataToSampleInDb)
-                        randomness.choose(sampler.existingSqlData, config.maximumExistingDataToSampleInDb)
-                    else sampler.existingSqlData
+            val existing = if (config.maximumExistingDataToSampleInDb > 0
+                && sampler.existingSqlData.size > config.maximumExistingDataToSampleInDb) {
+                randomness.choose(sampler.existingSqlData, config.maximumExistingDataToSampleInDb)
+            } else {
+                sampler.existingSqlData
+            }
 
             //add existing data only once
-            ind.addInitializingActions(0, existing)
+            ind.addInitializingDbActions(0, existing)
 
             //record newly added existing sql data
             mutatedGenes?.addedExistingDataInitialization?.addAll(0, existing)
@@ -152,15 +157,13 @@ abstract class ApiWsStructureMutator : StructureMutator(){
                     New action should be before existing one, but still after the
                     initializing ones
                  */
-                //TODO check position after new changes in handling of children
-                val position = ind.seeInitializingActions().indexOfLast { it is DbAction && it.representExistingData } + 1
-                ind.addInitializingActions(position, insertions)
+                ind.addInitializingDbActions(actions = insertions)
 
                 if (log.isTraceEnabled)
                     log.trace("{} insertions are added", insertions.size)
 
                 //record newly added insertions
-                addedInsertions?.add(0, insertions)
+                addedInsertions?.add(insertions)
             }
 
             /*
@@ -236,7 +239,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
      * add specified actions (i.e., [add]) into initialization of [individual]
      */
     fun handleInitSqlAddition(individual: ApiWsIndividual, add: List<List<DbAction>>, mutatedGenes: MutatedGeneSpecification?){
-        individual.addInitializingActions(actions = add.flatten())
+        individual.addInitializingDbActions(actions = add.flatten())
         mutatedGenes?.addedDbActions?.addAll(add)
     }
 

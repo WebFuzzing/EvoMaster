@@ -3,6 +3,7 @@ package org.evomaster.core.problem.graphql.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
@@ -106,13 +107,14 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
 
     override fun sampleAtRandom(): GraphQLIndividual {
-        val actions = mutableListOf<GraphQLAction>()
+        val actions = mutableListOf<EnterpriseActionGroup>()
         val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
 
         (0 until n).forEach {
-            actions.add(sampleRandomAction(0.05) as GraphQLAction)
+            val a = sampleRandomAction(0.05) as GraphQLAction
+            actions.add(EnterpriseActionGroup(mutableListOf(a),GraphQLAction::class.java))
         }
-        val ind =  GraphQLIndividual(actions, SampleType.RANDOM, mutableListOf())
+        val ind =  GraphQLIndividual(SampleType.RANDOM, actions)
         GraphQLUtils.repairIndividual(ind)
         ind.searchGlobalState = searchGlobalState
         ind.doGlobalInitialize()

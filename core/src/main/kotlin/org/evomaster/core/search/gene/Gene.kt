@@ -56,7 +56,10 @@ abstract class Gene(
          * Note that children while have links back to their "parents".
          */
         children: MutableList<out Gene>
-) : StructuralElement(children){
+) : StructuralElement(
+    children,
+    {k -> Gene::class.java.isAssignableFrom(k)}
+    ){
 
     /*
         TODO Major refactoring still to do:

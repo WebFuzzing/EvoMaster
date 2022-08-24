@@ -32,7 +32,8 @@ class RPCStructureMutator : ApiWsStructureMutator() {
     }
 
     private fun mutateForRandomType(individual: RPCIndividual, mutatedGenes: MutatedGeneSpecification?) {
-        val size = individual.seeActions().size
+
+        val size = individual.seeMainExecutableActions().size
         if ((size + 1 < config.maxTestSize) && (size == 1 || randomness.nextBoolean())){
             // add
             val sampledAction = sampler.sampleRandomAction()
@@ -42,8 +43,8 @@ class RPCStructureMutator : ApiWsStructureMutator() {
             individual.addAction(action = sampledAction)
         }else{
             // remove
-            val chosen = randomness.choose(individual.seeIndexedRPCCalls().keys)
-            val removed = individual.seeIndexedRPCCalls()[chosen]!!
+            val chosen = randomness.choose(individual.seeMainActionComponents().indices)
+            val removed = individual.seeMainExecutableActions()[chosen]
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(removed, size, true, size)
             individual.removeAction(chosen)

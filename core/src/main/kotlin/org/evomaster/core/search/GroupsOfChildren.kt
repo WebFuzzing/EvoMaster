@@ -25,7 +25,7 @@ class  GroupsOfChildren<T>(
 
         const val INITIALIZATION_SQL = "INITIALIZATION_SQL"
 
-        const val INITIALIZATION_EXTERNAL_SERVICES = "INITIALIZATION_EXTERNAL_SERVICES"
+        const val EXTERNAL_SERVICES = "EXTERNAL_SERVICES"
 
         const val RESOURCE_SQL = "RESOURCE_SQL"
     }
@@ -35,8 +35,6 @@ class  GroupsOfChildren<T>(
     init {
         verifyGroups()
     }
-
-    fun copy() = GroupsOfChildren(children, groups.map { it.copy() })
 
     fun copy(children: List<T>) = GroupsOfChildren(children, groups.map { it.copy() })
 
@@ -116,6 +114,10 @@ class  GroupsOfChildren<T>(
             return startIndexForGroupInsertionInclusive(id)
         }
         return g.endIndex + 1
+    }
+
+    fun getGroup(id: String) : ChildGroup<T>{
+        return groups[getGroupIndex(id)]
     }
 
     private fun getGroupIndex(id: String) : Int{

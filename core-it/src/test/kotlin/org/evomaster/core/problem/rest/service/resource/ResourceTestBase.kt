@@ -372,7 +372,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val callA = rm.getResourceNodeFromCluster(resource).run {
             createRestResourceCallBasedOnTemplate(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
         }
-        val ind = RestIndividual(mutableListOf(callA), SampleType.SMART_RESOURCE)
+        val ind = RestIndividual(mutableListOf(callA.copy()), SampleType.SMART_RESOURCE)
 
         TestUtils.handleFlaky {
             structureMutator.mutateRestResourceCalls(ind, RestResourceStructureMutator.MutationType.ADD)
@@ -415,21 +415,21 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
         val targetsOfC = callC.seeActions(ActionFilter.NO_SQL).mapIndexed { index, _ -> targetsOfB.last() + 1 + index  }
 
-        val ind1With2Resources = RestIndividual(mutableListOf(callB, callA), SampleType.SMART_RESOURCE)
+        val ind1With2Resources = RestIndividual(mutableListOf(callB.copy(), callA.copy()), SampleType.SMART_RESOURCE)
         if(!ind1With2Resources.isInitialized())
             ind1With2Resources.doInitialize()
 
-        val fake1fitnessValue = FitnessValue(ind1With2Resources!!.seeActions().size.toDouble())
+        val fake1fitnessValue = FitnessValue(ind1With2Resources!!.seeAllActions().size.toDouble())
         targetsOfB.plus(targetsOfA).forEachIndexed { index, i ->
             fake1fitnessValue.updateTarget(i, 0.2, index)
         }
         val fakeEvalInd1 = EvaluatedIndividual(fake1fitnessValue, ind1With2Resources, generateIndividualResults(ind1With2Resources))
 
-        val ind2With2Resources = RestIndividual(mutableListOf(callC, callA), SampleType.SMART_RESOURCE)
+        val ind2With2Resources = RestIndividual(mutableListOf(callC.copy(), callA.copy()), SampleType.SMART_RESOURCE)
         if(!ind2With2Resources.isInitialized())
             ind2With2Resources.doInitialize()
 
-        val fake2fitnessValue = FitnessValue(ind2With2Resources!!.seeActions().size.toDouble())
+        val fake2fitnessValue = FitnessValue(ind2With2Resources!!.seeAllActions().size.toDouble())
         targetsOfC.plus(targetsOfA).forEachIndexed { index, i ->
             fake2fitnessValue.updateTarget(i, 0.3, index)
         }

@@ -10,7 +10,7 @@ import org.evomaster.core.search.service.Randomness
  * created by manzh on 2020-06-16
  */
 open class PrimitiveTypeMatchIndividual (
-        val gene : Gene) :  Individual(children = listOf()){
+        val gene : Gene) :  Individual(children = mutableListOf()){
 
     constructor(value : Any, name : String): this(
             instance(value, name)
@@ -40,8 +40,6 @@ open class PrimitiveTypeMatchIndividual (
     override fun doInitialize(randomness: Randomness?) {
         gene.doInitialize(randomness)
     }
-
-    override fun seeActions(): List<out Action> = listOf()
 
     override fun verifyInitializationActions(): Boolean {
         //do nothing

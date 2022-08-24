@@ -99,7 +99,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         /*
             TODO: Man shall we update the action cluster based on expanded action?
          */
-        individual.seeActions().forEach {
+        individual.seeMainExecutableActions().forEach {
             val node = rm.getResourceNodeFromCluster(it.path.toString())
             node.updateActionsWithAdditionalParams(it)
         }

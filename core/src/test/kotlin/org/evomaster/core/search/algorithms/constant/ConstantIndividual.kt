@@ -11,7 +11,7 @@ import org.evomaster.core.search.service.Randomness
 /**
  * Created by arcuri82 on 20-Feb-17.
  */
-class ConstantIndividual(val gene: IntegerGene) : Individual(children=listOf()) {
+class ConstantIndividual(val gene: IntegerGene) : Individual(children= mutableListOf()) {
 
     override fun copyContent(): Individual {
         return ConstantIndividual(gene.copy() as IntegerGene)
@@ -26,9 +26,6 @@ class ConstantIndividual(val gene: IntegerGene) : Individual(children=listOf()) 
         return 1
     }
 
-    override fun seeActions(): List<out Action> {
-        return listOf()
-    }
 
     override fun verifyInitializationActions(): Boolean {
         return true

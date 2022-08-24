@@ -6,6 +6,7 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -16,6 +17,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.evomaster.core.search.structuralelement.resourcecall.ResourceNodeCluster
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class RestIndividualStructureTest : StructuralElementBaseTest(){
@@ -71,6 +73,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
     override fun getExpectedChildrenSize(): Int = 2 + 2
 
 
+
     @Test
     fun testTraverseBackIndex(){
         val root = getStructuralElementAndIdentifyAsRoot() as RestIndividual
@@ -80,8 +83,9 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
         val dbpath = listOf(1, 0)
         assertEquals(barId, root.targetWithIndex(dbpath))
 
-        val floatValue = ((root.seeActions()[0].parameters[0] as BodyParam).gene as ObjectGene).fields[3]
-        val path = listOf(2, 0, 0, 0, 3)
+        // root.seeMainExecutableActions()[0] is obtained with 2-> 0-> 0, i.e., 2nd children (resourceCall) -> 0th group -> 0th action
+        val floatValue = (((root.seeMainExecutableActions()[0]).parameters[0] as BodyParam).gene as ObjectGene).fields[3]
+        val path = listOf(2, 0, 0, 0, 0, 3)
         assertEquals(floatValue, root.targetWithIndex(path))
 
         val actualPath = mutableListOf<Int>()

@@ -1,7 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.boottimetargets
 
 import com.foo.rest.examples.spring.openapi.v3.boottimetargets.BootTimeTargetsController
-import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -45,7 +44,7 @@ class BootTimeTargetsEMTest : SpringTestBase() {
             val done = LocalDateTime.now()
             assertTrue(solution.individuals.size >= 1)
 
-            val ok = solution.individuals.all { e-> e.evaluatedActions().filter {
+            val ok = solution.individuals.all { e-> e.evaluatedMainActions().filter {
                 // skip call to get swagger
                 it.action.getName().startsWith("/api")
             }.all { r-> (r.result as? RestCallResult)?.getBody()?.split(";")?.run {

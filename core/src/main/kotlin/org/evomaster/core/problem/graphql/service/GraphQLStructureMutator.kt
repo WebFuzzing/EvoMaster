@@ -2,6 +2,7 @@ package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.Inject
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.httpws.service.ApiWsStructureMutator
@@ -55,27 +56,33 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
 
     private fun mutateForRandomType(ind: GraphQLIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
-        if (ind.seeActions().size == 1) {
+        val main = ind.seeMainActionComponents() as List<EnterpriseActionGroup>
+
+        if (main.size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05) as GraphQLAction
 
             //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, ind.seeActions().size, false, ind.seeActions().size)
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, ind.seeAllActions().size, false, ind.seeAllActions().size)
 
             ind.addGQLAction(action= sampledAction)
 
             return
         }
 
-        if (randomness.nextBoolean() || ind.seeActions().size == config.maxTestSize) {
+        if (randomness.nextBoolean() || main.size == config.maxTestSize) {
 
             //delete one at random
             log.trace("Deleting action from test")
-            val chosen = randomness.choose(ind.getIndexedCalls().keys)
+            val chosen = randomness.choose(main.indices)
 
             //save mutated genes
-            val removedActions = ind.getIndexedCalls()[chosen]!!
-            mutatedGenes?.addRemovedOrAddedByAction(removedActions, chosen, true, chosen)
-
+            val removedActions = main[chosen].flatten()
+            for(a in removedActions) {
+                /*
+                    FIXME: how does position work when adding/removing a subtree?
+                 */
+                mutatedGenes?.addRemovedOrAddedByAction(a, chosen, true, chosen)
+            }
             ind.removeGQLActionAt(chosen)
 
         } else {
@@ -84,7 +91,7 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
             log.trace("Adding action to test")
             val sampledAction = sampler.sampleRandomAction(0.05) as GraphQLAction
 
-            val chosen = randomness.choose(ind.getIndexedCalls().keys)
+            val chosen = randomness.choose(main.indices)
             ind.addGQLAction(chosen, sampledAction)
 
             //save mutated genes

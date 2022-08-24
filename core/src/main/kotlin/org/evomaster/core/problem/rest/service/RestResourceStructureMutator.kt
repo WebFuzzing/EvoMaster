@@ -106,7 +106,7 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             MutationType.SWAP -> ind.extractSwapCandidates().isNotEmpty() && (!handleSize)
             MutationType.REPLACE -> !rm.cluster.doesCoverAll(ind) && delSize > 0 && (!handleSize)
             MutationType.MODIFY -> delSize > 0 && (!handleSize)
-            MutationType.ADD -> ind.seeActions().size < config.maxTestSize && (!rm.cluster.doesCoverAll(ind) || handleSize) && (config.maxResourceSize == 0 || (ind.getResourceCalls().size < config.maxResourceSize) )
+            MutationType.ADD -> ind.seeAllActions().size < config.maxTestSize && (!rm.cluster.doesCoverAll(ind) || handleSize) && (config.maxResourceSize == 0 || (ind.getResourceCalls().size < config.maxResourceSize) )
             MutationType.DELETE -> delSize > 0 && ind.getResourceCalls().size >=2
         }
     }
@@ -310,7 +310,10 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
      * the added resource can be its dependent resource with a probability i.e.,[config.probOfEnablingResourceDependencyHeuristics]
      */
     private fun handleAdd(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?, evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, targets: Set<Int>?, dohandleSize: Boolean){
-        val auth = ind.seeActions().map { it.auth }.run {
+
+        val actions = ind.seeMainExecutableActions() as List<RestCallAction>
+
+        val auth = actions.map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
         }
@@ -414,7 +417,10 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
      * replace one of resource call with other resource
      */
     private fun handleReplace(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
-        val auth = ind.seeActions().map { it.auth }.run {
+
+        val actions = ind.seeMainExecutableActions() as List<RestCallAction>
+
+        val auth = actions.map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
         }
@@ -482,7 +488,10 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
      *  modify one of resource call with other template
      */
     private fun handleModify(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
-        val auth = ind.seeActions().map { it.auth }.run {
+
+        val actions = ind.seeMainExecutableActions() as List<RestCallAction>
+
+        val auth = actions.map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
         }

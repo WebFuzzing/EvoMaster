@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.examples.resource;
 
 import com.foo.rest.examples.spring.resource.ResourceRestController;
 import org.evomaster.core.problem.rest.*;
+import org.evomaster.core.search.ActionResult;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,8 +31,8 @@ public class ResourceTestBase extends SpringTestBase {
 
         boolean[] matched = new boolean[verbs.length];
         Arrays.fill(matched, false);
-        List<RestCallAction> actions = ind.getIndividual().seeActions();
-
+        List<RestCallAction> actions = ind.getIndividual().seeMainExecutableActions();
+        List<ActionResult> actionResults = ind.seeResults(actions);
         Loop:
         for (int i = 0; i < actions.size(); i++) {
             RestCallAction action = actions.get(i);
@@ -39,7 +40,7 @@ public class ResourceTestBase extends SpringTestBase {
             if (index == matched.length) break Loop;
             if (action.getVerb() == verbs[index]
                     && action.getPath().isEquivalent(new RestPath(paths[index]))
-                    && ((RestCallResult) ind.seeResults(null).get(i)).getStatusCode() == expectedStatusCodes[index]){
+                    && ((RestCallResult) actionResults.get(i)).getStatusCode() == expectedStatusCodes[index]){
                 matched[index] = true;
             }
         }
