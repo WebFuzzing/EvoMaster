@@ -70,7 +70,8 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Objects.requireNonNull(caller);
 
         if(valueTypeRef != null) {
-            // TODO: Not sure about the implementation to get schema, confirm it later
+            // To make things work, same approach in Jackson is used to get the
+            //  information about the class.
             Type genericType  = valueTypeRef.getType();
             TypeFactory _typeFactory = TypeFactory.defaultInstance();
             JavaType _javaType = _typeFactory.constructType(genericType);
