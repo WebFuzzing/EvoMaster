@@ -22,8 +22,8 @@ class JacksonRest {
         val mapper = jacksonObjectMapper()
 
         val dto = mapper.readValue(json, FooDto::class.java)
-        return if (dto.x > 0) ResponseEntity.ok().body("Hello World!!!")
-        else ResponseEntity.badRequest().body("Failed Call")
+        return if (dto.x > 0) ResponseEntity.ok().body("Working")
+        else ResponseEntity.badRequest().body("Failed")
     }
 
     @PostMapping(path = ["/type"], consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE])
@@ -33,8 +33,8 @@ class JacksonRest {
         val mapper = jacksonObjectMapper()
 
         val dto: FooDto = mapper.readValue(json)
-        return if (dto.x > 0) ResponseEntity.ok().body("Hello World!!!")
-        else ResponseEntity.badRequest().body("Failed Call")
+        return if (dto.x > 0) ResponseEntity.ok().body("Working")
+        else ResponseEntity.badRequest().body("Failed")
     }
 }
 
