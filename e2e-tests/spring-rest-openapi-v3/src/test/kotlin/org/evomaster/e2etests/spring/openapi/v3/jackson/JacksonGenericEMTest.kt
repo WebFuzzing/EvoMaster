@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class JacksonEMTest: SpringTestBase() {
+class JacksonGenericEMTest: SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -29,21 +29,6 @@ class JacksonEMTest: SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/generic", "Working")
-        }
-    }
-
-    @Test
-    fun testTypeReadValue() {
-        runTestHandlingFlakyAndCompilation(
-            "JacksonTypeEM",
-            "org.foo.JacksonTypeEM",
-            500
-        ) { args: List<String> ->
-
-            val solution = initAndRun(args)
-
-            Assertions.assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/type", "Working")
         }
     }
 }
