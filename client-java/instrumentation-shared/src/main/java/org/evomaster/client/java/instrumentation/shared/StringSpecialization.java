@@ -86,5 +86,10 @@ public enum StringSpecialization implements Serializable {
      *  ie 2 (or more) different variables should be keep their
      *  value in sync
      */
-    EQUAL
+    EQUAL,
+
+    /**
+     * A 128-bit Universal Unique Identifier (UUID)
+     */
+    UUID
 }
