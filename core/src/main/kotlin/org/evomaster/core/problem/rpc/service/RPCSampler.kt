@@ -106,8 +106,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
             EnterpriseActionGroup(mutableListOf(a), RPCCallAction::class.java)
         }
         val ind = createRPCIndividual(actions.toMutableList())
-        ind.searchGlobalState = searchGlobalState
-        ind.doGlobalInitialize()
+        ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
 
@@ -129,8 +128,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         }
 
         adHocInitialIndividuals.forEach {
-            it.searchGlobalState = searchGlobalState
-            it.doGlobalInitialize()
+            it.doGlobalInitialize(searchGlobalState)
         }
     }
 

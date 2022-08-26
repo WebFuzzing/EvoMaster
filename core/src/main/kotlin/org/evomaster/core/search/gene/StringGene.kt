@@ -75,7 +75,7 @@ class StringGene(
          * TODO: this is not really true, as by default . does not match line breakers like \n
          * So, although they are not important, they are technically not "meaningless"
          */
-        private val meaninglesRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
+        private val meaninglessRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
     }
 
     private var validChar: String? = null
@@ -188,6 +188,9 @@ class StringGene(
                 redoTaint(state.apc, state.randomness, listOf())
             }
         }
+
+        //config might have stricter limits for length
+        repair()
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -566,7 +569,7 @@ class StringGene(
 
     private fun isMeaningfulRegex(regex: String):  Boolean {
 
-        return ! meaninglesRegex.contains(regex)
+        return ! meaninglessRegex.contains(regex)
     }
 
 

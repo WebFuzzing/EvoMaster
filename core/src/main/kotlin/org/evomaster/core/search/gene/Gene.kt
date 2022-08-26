@@ -192,6 +192,8 @@ abstract class Gene(
             throw IllegalStateException("Search Global State was not setup for the individual")
         }
         applyGlobalUpdates()
+
+        children.forEach { it.doGlobalInitialize() }
     }
 
     /**

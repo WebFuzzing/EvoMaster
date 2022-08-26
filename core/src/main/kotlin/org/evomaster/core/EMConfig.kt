@@ -1525,7 +1525,6 @@ class EMConfig {
     var maxLengthForStrings = 16
 
 
-    @Experimental
     @Min(0.0)
     @Cfg("Maximum length when sampling a new random string. Such limit can be bypassed when a string is mutated.")
     var maxLengthForStringsAtSamplingTime = 16
