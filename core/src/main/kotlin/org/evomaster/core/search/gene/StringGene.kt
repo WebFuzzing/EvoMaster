@@ -122,8 +122,13 @@ class StringGene(
     }
 
 
+    override fun checkForGloballyValid() : Boolean{
+        return value.length <= actualMaxLength()
+    }
+
     override fun isLocallyValid() : Boolean{
-        return value.length in minLength..actualMaxLength()
+        //note, here we do not check actualMaxLength(), as it imply a global initialization
+        return value.length in minLength..maxLength
                 && invalidChars.none { value.contains(it) }
                 && getViewOfChildren().all { it.isLocallyValid() }
     }
