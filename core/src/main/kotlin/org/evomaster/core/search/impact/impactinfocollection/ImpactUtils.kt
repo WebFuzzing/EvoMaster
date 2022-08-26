@@ -69,7 +69,7 @@ class ImpactUtils {
                 is SqlNullableGene -> SqlNullableImpact(id, gene)
                 is SqlJSONGene -> SqlJsonGeneImpact(id, gene)
                 is SqlXMLGene -> SqlXmlGeneImpact(id, gene)
-                is SqlUUIDGene -> SqlUUIDGeneImpact(id, gene)
+                is UUIDGene -> SqlUUIDGeneImpact(id, gene)
                 is SqlPrimaryKeyGene -> SqlPrimaryKeyGeneImpact(id, gene)
                 is SqlForeignKeyGene -> SqlForeignKeyGeneImpact(id)
                 is SqlAutoIncrementGene -> GeneImpact(id)

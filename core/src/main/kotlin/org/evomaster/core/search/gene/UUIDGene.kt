@@ -1,8 +1,7 @@
-package org.evomaster.core.search.gene.sql
+package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlUUIDGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -20,20 +19,20 @@ import java.util.*
  *
  * https://www.postgresql.org/docs/9.1/datatype-uuid.html
  */
-class SqlUUIDGene(
+class UUIDGene(
     name: String,
     val mostSigBits: LongGene = LongGene("mostSigBits", 0L),
     val leastSigBits: LongGene = LongGene("leastSigBits", 0L)
 ) : CompositeFixedGene(name, mutableListOf(mostSigBits, leastSigBits)) {
 
-    override fun copyContent(): Gene = SqlUUIDGene(
-            name,
-            mostSigBits.copy() as LongGene,
-            leastSigBits.copy() as LongGene
+    override fun copyContent(): Gene = UUIDGene(
+        name,
+        mostSigBits.copy() as LongGene,
+        leastSigBits.copy() as LongGene
     )
 
     companion object{
-        private val log: Logger = LoggerFactory.getLogger(SqlUUIDGene::class.java)
+        private val log: Logger = LoggerFactory.getLogger(UUIDGene::class.java)
     }
 
     override fun isLocallyValid() : Boolean{
@@ -45,7 +44,7 @@ class SqlUUIDGene(
         leastSigBits.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
         return listOf(mostSigBits, leastSigBits)
     }
 
@@ -72,7 +71,7 @@ class SqlUUIDGene(
     fun getValueAsUUID(): UUID = UUID(mostSigBits.value, leastSigBits.value)
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlUUIDGene) {
+        if (other !is UUIDGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.mostSigBits.copyValueFrom(other.mostSigBits)
@@ -80,7 +79,7 @@ class SqlUUIDGene(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlUUIDGene) {
+        if (other !is UUIDGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.mostSigBits.containsSameValueAs(other.mostSigBits)
@@ -92,14 +91,14 @@ class SqlUUIDGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when{
-            gene is SqlUUIDGene ->{
+            gene is UUIDGene ->{
                 mostSigBits.bindValueBasedOn(gene.mostSigBits) && leastSigBits.bindValueBasedOn(gene.leastSigBits)
             }
             gene is StringGene && gene.getSpecializationGene() != null ->{
                 bindValueBasedOn(gene.getSpecializationGene()!!)
             }
             else->{
-                LoggingUtil.uniqueWarn(log,"cannot bind SqlUUIDGene with ${gene::class.java.simpleName}")
+                LoggingUtil.uniqueWarn(log, "cannot bind UUIDGene with ${gene::class.java.simpleName}")
                 false
             }
         }

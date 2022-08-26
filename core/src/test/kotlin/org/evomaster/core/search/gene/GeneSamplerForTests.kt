@@ -145,15 +145,15 @@ object GeneSamplerForTests {
             SqlXMLGene::class -> sampleSqlXMLGene(rand) as T
             SqlMultiRangeGene::class -> sampleSqlMultiRangeGene(rand) as T
             SqlBinaryStringGene::class -> sampleSqlBinaryStringGene(rand) as T
-            SqlUUIDGene::class -> sampleSqlUUIDGene(rand) as T
+            UUIDGene::class -> sampleSqlUUIDGene(rand) as T
             SqlGeometryCollectionGene::class -> sampleSqlGeometryCollectionGene(rand) as T
 
             else -> throw IllegalStateException("No sampler for $klass")
         }
     }
 
-    private fun sampleSqlUUIDGene(rand: Randomness): SqlUUIDGene {
-        return SqlUUIDGene("rand SqlUUIDGene ${rand.nextInt()}")
+    private fun sampleSqlUUIDGene(rand: Randomness): UUIDGene {
+        return UUIDGene("rand SqlUUIDGene ${rand.nextInt()}")
     }
 
     private fun sampleSqlBinaryStringGene(rand: Randomness): SqlBinaryStringGene {

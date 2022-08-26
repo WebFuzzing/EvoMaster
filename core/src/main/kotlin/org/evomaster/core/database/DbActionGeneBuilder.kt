@@ -197,7 +197,7 @@ class DbActionGeneBuilder {
                  * Postgres UUID column type
                  */
                 ColumnDataType.UUID ->
-                    SqlUUIDGene(column.name)
+                    UUIDGene(column.name)
 
                 /**
                  * Postgres JSONB column type

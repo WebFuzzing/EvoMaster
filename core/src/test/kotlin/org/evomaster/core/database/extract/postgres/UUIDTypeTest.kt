@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.sql.SqlUUIDGene
+import org.evomaster.core.search.gene.UUIDGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -38,7 +38,7 @@ class UUIDTypeTest : ExtractTestBasePostgres() {
 
         assertEquals(1, genes.size)
 
-        assertTrue(genes[0] is SqlUUIDGene)
+        assertTrue(genes[0] is UUIDGene)
 
         val dbCommandDto = DbActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
