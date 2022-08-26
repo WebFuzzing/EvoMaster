@@ -173,14 +173,6 @@
                                     <pattern>com.github.jsqlparser</pattern>
                                     <shadedPattern>shaded.com.github.jsqlparser</shadedPattern>
                                 </relocation>
-                                <relocation>
-                                    <pattern>com.fasterxml.jackson.core</pattern>
-                                    <shadedPattern>jackson-core</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.fasterxml.jackson.core</pattern>
-                                    <shadedPattern>jackson-databind</shadedPattern>
-                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
