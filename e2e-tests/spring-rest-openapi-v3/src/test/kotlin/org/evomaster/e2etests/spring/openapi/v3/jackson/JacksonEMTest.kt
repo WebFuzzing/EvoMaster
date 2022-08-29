@@ -5,9 +5,9 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
-class JacksonGenericEMTest: SpringTestBase() {
+class JacksonEMTest: SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -17,7 +17,22 @@ class JacksonGenericEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("Give up")
+    @Test
+    fun testTypeReadValue() {
+        runTestHandlingFlakyAndCompilation(
+            "JacksonTypeEM",
+            "org.foo.JacksonTypeEM",
+            500
+        ) { args: List<String> ->
+
+            val solution = initAndRun(args)
+
+            Assertions.assertTrue(solution.individuals.size >= 1)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/jackson/type", "Working")
+        }
+    }
+
+    @Test
     fun testGenericReadValue() {
         runTestHandlingFlakyAndCompilation(
             "JacksonGenericEM",

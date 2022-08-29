@@ -14,6 +14,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,10 +37,10 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             id = "Jackson_ObjectMapper_readValue_InputStream_class",
             usageFilter = UsageFilter.ONLY_SUT,
             category = ReplacementCategory.NET)
-    public static <T> T readValue(Object caller, InputStream src, Class<T> valueType)
-            throws IOException, JsonParseException, JsonMappingException
-    {
+    public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) {
         Objects.requireNonNull(caller);
+
+        SimpleLogger.info("Jackson method invoked, InputStream");
 
         if(valueType != null) {
             String name = valueType.getName();
@@ -64,10 +65,10 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             id = "Jackson_ObjectMapper_readValue_TypeReference_class",
             usageFilter = UsageFilter.ONLY_SUT,
             category = ReplacementCategory.BASE)
-    public static <T> T readValue(Object caller, String content, TypeReference<T> valueTypeRef)
-            throws JsonProcessingException, JsonMappingException
-    {
+    public static <T> T readValue(Object caller, String content, TypeReference<T> valueTypeRef) {
         Objects.requireNonNull(caller);
+
+        SimpleLogger.info("Jackson method invoked, InputStream");
 
         if(valueTypeRef != null) {
             // To make things work, same approach in Jackson is used to get the
@@ -98,10 +99,10 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             id = "Jackson_ObjectMapper_readValue_Generic_class",
             usageFilter = UsageFilter.ONLY_SUT,
             category = ReplacementCategory.BASE)
-    public static <T> T readValue(Object caller, String content, Class<T> valueType)
-            throws JsonProcessingException, JsonMappingException
-    {
+    public static <T> T readValue(Object caller, String content, Class<T> valueType) {
         Objects.requireNonNull(caller);
+
+        SimpleLogger.info("Jackson method invoked, InputStream");
 
         if(valueType != null) {
             String name = valueType.getName();
