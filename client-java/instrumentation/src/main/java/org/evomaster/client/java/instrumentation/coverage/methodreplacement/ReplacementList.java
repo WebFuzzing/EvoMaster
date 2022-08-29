@@ -50,7 +50,8 @@ public class ReplacementList {
                     new ShortClassReplacement(),
                     new ServletRequestClassReplacement(),
                     new WebRequestClassReplacement(),
-                    new URLClassReplacement()
+                    new URLClassReplacement(),
+                    new UUIDClassReplacement()
             );
         }
 
