@@ -86,7 +86,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * However, when running actual search with MIO, its presence is checked
      */
     var searchGlobalState : SearchGlobalState? = null
-
+        private set
 
     /**
      * get local id based on the given counter
@@ -109,9 +109,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return copy
     }
 
-    fun doGlobalInitialize(){
+    fun doGlobalInitialize(searchGlobalState : SearchGlobalState){
 
         //TODO make sure that seeded individual get skipped here
+
+        this.searchGlobalState = searchGlobalState
 
         seeGenes().forEach { it.doGlobalInitialize() }
     }

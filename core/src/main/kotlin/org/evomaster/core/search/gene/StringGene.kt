@@ -4,6 +4,7 @@ import org.apache.commons.text.StringEscapeUtils
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import kotlin.math.min
 
 
 class StringGene(
@@ -31,8 +33,13 @@ class StringGene(
         var value: String = "foo",
         /** Inclusive */
         val minLength: Int = 0,
-        /** Inclusive */
-        val maxLength: Int = 16,
+        /** Inclusive.
+         * Constraint on maximum lenght of the string. This could had been specified as
+         * a constraint in the schema, or specific for the represented data type.
+         * Note: further limits could be imposed to avoid too large strings that would
+         * hamper the search process, which can be set via [EMConfig] options
+         */
+        val maxLength: Int = EMConfig.stringLengthHardLimit,
         /**
          * Depending on what a string is representing, there might be some chars
          * we do not want to use.
@@ -68,14 +75,8 @@ class StringGene(
          * TODO: this is not really true, as by default . does not match line breakers like \n
          * So, although they are not important, they are technically not "meaningless"
          */
-        private val meaninglesRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
+        private val meaninglessRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
     }
-
-    /*
-        Even if through mutation we can get large string, we should
-        avoid sampling very large strings by default
-     */
-    private val maxForRandomization = 16
 
     private var validChar: String? = null
 
@@ -111,7 +112,22 @@ class StringGene(
     val specializationGenes: List<Gene>
         get() {return children}
 
+
+    fun actualMaxLength() : Int {
+
+        val state = getSearchGlobalState()
+            ?: return maxLength
+
+        return min(maxLength, state.config.maxLengthForStrings)
+    }
+
+
+    override fun checkForGloballyValid() : Boolean{
+        return value.length <= actualMaxLength()
+    }
+
     override fun isLocallyValid() : Boolean{
+        //note, here we do not check actualMaxLength(), as it imply a global initialization
         return value.length in minLength..maxLength
                 && invalidChars.none { value.contains(it) }
                 && getViewOfChildren().all { it.isLocallyValid() }
@@ -147,7 +163,14 @@ class StringGene(
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
-        value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
+        /*
+            Even if through mutation we can get large string, we should
+            avoid sampling very large strings by default
+        */
+        val maxForRandomization = getSearchGlobalState()?.config?.maxLengthForStringsAtSamplingTime ?: 16
+
+
+        value = randomness.nextWordString(minLength, min(maxLength, maxForRandomization))
         repair()
         selectedSpecialization = -1
         handleBinding(getAllGenesInIndividual())
@@ -170,6 +193,9 @@ class StringGene(
                 redoTaint(state.apc, state.randomness, listOf())
             }
         }
+
+        //config might have stricter limits for length
+        repair()
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
@@ -296,7 +322,7 @@ class StringGene(
                 s.dropLast(1)
             }
             //append new
-            s.length < maxLength -> {
+            s.length < actualMaxLength() -> {
                 if (s.isEmpty() || randomness.nextBoolean(0.8)) {
                     s + randomness.nextWordChar()
                 } else {
@@ -321,7 +347,7 @@ class StringGene(
 
     fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness, allGenes: List<Gene>) : Boolean{
 
-        if(TaintInputName.getTaintNameMaxLength() > maxLength){
+        if(TaintInputName.getTaintNameMaxLength() > actualMaxLength()){
             return false
         }
 
@@ -553,7 +579,7 @@ class StringGene(
 
     private fun isMeaningfulRegex(regex: String):  Boolean {
 
-        return ! meaninglesRegex.contains(regex)
+        return ! meaninglessRegex.contains(regex)
     }
 
 
@@ -563,8 +589,8 @@ class StringGene(
     override fun repair() {
         repairInvalidChars()
 
-        if(value.length > maxLength){
-            value = value.substring(0, maxLength)
+        if(value.length > actualMaxLength()){
+            value = value.substring(0, actualMaxLength())
         } else if(value.length < minLength){
             value += "_".repeat(minLength - value.length)
         }

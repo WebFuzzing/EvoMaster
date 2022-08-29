@@ -12,7 +12,7 @@ class ConstantSampler : Sampler<ConstantIndividual>() {
         val gene = IntegerGene("value", 0, 0, 1000)
         gene.doInitialize(randomness)
         val ind = ConstantIndividual(gene)
-        ind.searchGlobalState = searchGlobalState
+        ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
 }
