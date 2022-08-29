@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.jackson
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.JacksonController
+import org.evomaster.client.java.utils.SimpleLogger
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -19,6 +20,7 @@ class JacksonEMTest: SpringTestBase() {
 
     @Test
     fun testTypeReadValue() {
+        SimpleLogger.info("Test init")
         runTestHandlingFlakyAndCompilation(
             "JacksonTypeEM",
             "org.foo.JacksonTypeEM",
