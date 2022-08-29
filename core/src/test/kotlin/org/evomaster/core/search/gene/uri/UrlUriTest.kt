@@ -15,6 +15,10 @@ internal class UrlUriTest{
         assertThrows<Exception>{ URL("foo.com")}
 
         URL("http://foo.com")
+        URL("http:///foo")
+        URL("http:////foo")
+        URL("http:////foo//")
+        URL("http:///foo.com")
         URL("http://@foo.com")
         URL("http://hi@foo.com")
         URL("http://hi:secret@bar.no.co.foo")
