@@ -6,9 +6,9 @@ import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.gene.sql.geometric.*
-import org.evomaster.core.search.gene.sql.network.SqlCidrGene
-import org.evomaster.core.search.gene.sql.network.SqlInetGene
-import org.evomaster.core.search.gene.sql.network.SqlMacAddrGene
+import org.evomaster.core.search.gene.network.CidrGene
+import org.evomaster.core.search.gene.network.InetGene
+import org.evomaster.core.search.gene.network.MacAddrGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.evomaster.core.search.gene.sql.time.SqlTimeIntervalGene
@@ -130,9 +130,9 @@ object GeneSamplerForTests {
             SqlPrimaryKeyGene::class -> sampleSqlPrimaryKeyGene(rand) as T
             SqlNullableGene::class -> sampleSqlNullableGene(rand) as T
             SqlMultidimensionalArrayGene::class -> sampleSqlMultidimensionalArrayGene(rand) as T
-            SqlMacAddrGene::class -> sampleSqlMacAddrGene(rand) as T
-            SqlInetGene::class -> sampleSqlInetGene(rand) as T
-            SqlCidrGene::class -> sampleSqlCidrGene(rand) as T
+            MacAddrGene::class -> sampleSqlMacAddrGene(rand) as T
+            InetGene::class -> sampleSqlInetGene(rand) as T
+            CidrGene::class -> sampleSqlCidrGene(rand) as T
             SqlAutoIncrementGene::class -> sampleSqlAutoIncrementGene(rand) as T
             SqlPathGene::class -> sampleSqlPathGene(rand) as T
             SqlMultiPointGene::class -> sampleSqlMultiPointGene(rand) as T
@@ -261,16 +261,16 @@ object GeneSamplerForTests {
         return SqlAutoIncrementGene("rand SqlAutoIncrementGene ${rand.nextInt()}")
     }
 
-    private fun sampleSqlCidrGene(rand: Randomness): SqlCidrGene {
-        return SqlCidrGene("rand SqlCidrGene ${rand.nextInt()}")
+    private fun sampleSqlCidrGene(rand: Randomness): CidrGene {
+        return CidrGene("rand SqlCidrGene ${rand.nextInt()}")
     }
 
-    private fun sampleSqlInetGene(rand: Randomness): SqlInetGene {
-        return SqlInetGene("rand SqlInetGene ${rand.nextInt()}")
+    private fun sampleSqlInetGene(rand: Randomness): InetGene {
+        return InetGene("rand SqlInetGene ${rand.nextInt()}")
     }
 
-    private fun sampleSqlMacAddrGene(rand: Randomness): SqlMacAddrGene {
-        return SqlMacAddrGene("rand SqlMacAddrGene ${rand.nextInt()}",
+    private fun sampleSqlMacAddrGene(rand: Randomness): MacAddrGene {
+        return MacAddrGene("rand SqlMacAddrGene ${rand.nextInt()}",
                 numberOfOctets = rand.nextInt(1, MAX_NUMBER_OF_OCTETS))
     }
 
