@@ -12,6 +12,9 @@ import org.evomaster.core.search.gene.sql.network.SqlMacAddrGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.evomaster.core.search.gene.sql.time.SqlTimeIntervalGene
+import org.evomaster.core.search.gene.uri.UrlDataGene
+import org.evomaster.core.search.gene.uri.UrlGene
+import org.evomaster.core.search.gene.uri.UrlHttpGene
 import org.evomaster.core.search.service.Randomness
 import java.io.File
 import java.math.BigDecimal
@@ -147,9 +150,24 @@ object GeneSamplerForTests {
             SqlBinaryStringGene::class -> sampleSqlBinaryStringGene(rand) as T
             UUIDGene::class -> sampleSqlUUIDGene(rand) as T
             SqlGeometryCollectionGene::class -> sampleSqlGeometryCollectionGene(rand) as T
+            UrlGene::class -> sampleUrlGene(rand) as T
+            UrlHttpGene::class -> sampleUrlHttpGene(rand) as T
+            UrlDataGene::class -> sampleUrlDataGene(rand) as T
 
             else -> throw IllegalStateException("No sampler for $klass")
         }
+    }
+
+    private fun sampleUrlDataGene(rand: Randomness): UrlDataGene {
+        return UrlDataGene("rand UrlDataGene ${rand.nextInt()}")
+    }
+
+    private fun sampleUrlHttpGene(rand: Randomness): UrlHttpGene {
+        return UrlHttpGene("rand UrlHttpGene ${rand.nextInt()}")
+    }
+
+    private fun sampleUrlGene(rand: Randomness): UrlGene {
+        return UrlGene("rand UrlGene ${rand.nextInt()}")
     }
 
     private fun sampleSqlUUIDGene(rand: Randomness): UUIDGene {
