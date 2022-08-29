@@ -497,6 +497,11 @@ class StringGene(
             log.trace("DOUBLE, added specification size: {}", toAddGenes.size)
         }
 
+        if(toAddSpecs.any { it.stringSpecialization == UUID }){
+            toAddGenes.add(UUIDGene(name))
+            log.trace("UUID, added specification size: {}", toAddGenes.size)
+        }
+
         //all regex are combined with disjunction in a single gene
         handleRegex(key, toAddSpecs, toAddGenes)
 
