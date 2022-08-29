@@ -374,7 +374,7 @@ abstract class Gene(
         val root = getRoot()
         if(root is Individual) {
             val sgt =  root.searchGlobalState
-            assert(sgt != null) //TODO check if fails, eg in tests where individuals are created without a sampler
+            //assert(sgt != null) //these would fail in integration tests where individuals are created without a sampler
             return sgt
         }
         return null
