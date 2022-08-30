@@ -6,12 +6,13 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import java.net.URI
 
 
 /**
  *  https://en.wikipedia.org/wiki/Data_URI_scheme
  */
-class UrlDataGene(
+class UriDataGene(
     name: String,
     //TODO could support more types
     val type : EnumGene<String> = EnumGene("type", listOf("","text/plain")),
@@ -23,7 +24,7 @@ class UrlDataGene(
 
 
     override fun copyContent(): Gene {
-        return UrlDataGene(
+        return UriDataGene(
             name,
             type.copy() as EnumGene<String>,
             base64.copy() as BooleanGene,
@@ -33,6 +34,7 @@ class UrlDataGene(
 
     override fun isLocallyValid(): Boolean {
         return getViewOfChildren().all { it.isLocallyValid() }
+                && try{ URI(getValueAsRawString()); true}catch (e: Exception){false}
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -68,7 +70,7 @@ class UrlDataGene(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is UrlDataGene) {
+        if (other !is UriDataGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         type.copyValueFrom(other.type)
@@ -77,7 +79,7 @@ class UrlDataGene(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is UrlDataGene) {
+        if (other !is UriDataGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return type.containsSameValueAs(other.type)

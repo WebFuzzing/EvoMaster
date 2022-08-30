@@ -8,6 +8,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import java.net.URI
+import java.net.URL
 
 
 /**
@@ -32,10 +33,10 @@ class UrlHttpGene(
             template = StringGene("path", invalidChars = invalidChars)
         )
     //TODO query params ?x=y and fragment #
-) : CompositeFixedGene(name, mutableListOf()) {
+) : CompositeFixedGene(name, mutableListOf(scheme,host,port,path)) {
 
     companion object{
-         val invalidChars = listOf('*','+','\\','/','#','$','!','?','[',']','{','}','(',')')
+         val invalidChars = listOf('*','+','\\','/','#','$','!','?','[',']','{','}','(',')','\'','"')
     }
 
     override fun copyContent(): Gene {
@@ -50,7 +51,7 @@ class UrlHttpGene(
 
     override fun isLocallyValid(): Boolean {
         return getViewOfChildren().all { it.isLocallyValid() }
-                && try{URI(getValueAsRawString()); true}catch (e: Exception){false}
+                && try{URL(getValueAsRawString()); true}catch (e: Exception){false}
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -81,7 +82,7 @@ class UrlHttpGene(
         val s = scheme.getValueAsRawString()
         val h = host.getValueAsRawString()
         val p = if(port.isActive) ":${port.gene.getValueAsRawString()}" else ""
-        val e = path.getValueAsRawString()
+        val e = path.getValueAsRawString().replace("\"","")
 
         return "$s://$h$p/$e"
     }

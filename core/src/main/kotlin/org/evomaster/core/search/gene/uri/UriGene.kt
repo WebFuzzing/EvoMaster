@@ -34,16 +34,17 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
  *     file                    Host-specific file names
  *     prospero                Prospero Directory Service
  *
- *     Another one is "data"
+ *     Another one is "data", but it is not considered a valid URL scheme (at least for JDK).
+ *     Need to use URI for it
  */
-class UrlGene(name: String,
-            val gene : ChoiceGene<Gene> = ChoiceGene(name, listOf(
-                UrlHttpGene(name), UrlDataGene(name)
+class UriGene(name: String,
+              val gene : ChoiceGene<Gene> = ChoiceGene(name, listOf(
+                UrlHttpGene(name), UriDataGene(name)
             ))
               ) : CompositeFixedGene(name, mutableListOf(gene)) {
 
     override fun copyContent(): Gene {
-       return UrlGene(name, gene.copy() as ChoiceGene<Gene>)
+       return UriGene(name, gene.copy() as ChoiceGene<Gene>)
     }
 
     override fun isLocallyValid(): Boolean {
@@ -79,14 +80,14 @@ class UrlGene(name: String,
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is UrlGene) {
+        if (other !is UriGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         gene.copyValueFrom(other.gene)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if(other !is UrlGene){
+        if(other !is UriGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return gene.containsSameValueAs(other.gene)
