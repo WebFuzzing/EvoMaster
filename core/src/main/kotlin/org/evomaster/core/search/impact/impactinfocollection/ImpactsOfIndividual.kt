@@ -40,7 +40,10 @@ open class ImpactsOfIndividual(
 
     constructor(individual: Individual, abstractInitializationGeneToMutate: Boolean,  fitnessValue: FitnessValue?) : this(
             initializationImpacts = InitializationActionImpacts(abstractInitializationGeneToMutate),//individual.seeInitializingActions().map { a -> ImpactsOfAction(a) }.toMutableList(),
-            mainActionsImpacts = if (individual.seeActions(ActionFilter.NO_INIT).isEmpty()) mutableListOf(ImpactsOfAction(individual, individual.seeGenes())) else individual.seeActions(ActionFilter.NO_INIT).map { a -> ImpactsOfAction(a) }.toMutableList()
+            mainActionsImpacts = if (individual.seeActions(ActionFilter.NO_INIT).isEmpty())
+//                mutableListOf(ImpactsOfAction(individual, individual.seeGenes()))
+                throw IllegalStateException("there is no main actions in this individual")
+            else individual.seeActions(ActionFilter.NO_INIT).map { a -> ImpactsOfAction(a) }.toMutableList()
     ) {
         if (fitnessValue != null) {
             impactsOfStructure.updateStructure(individual, fitnessValue)
@@ -123,11 +126,26 @@ open class ImpactsOfIndividual(
     /**
      * @param actionIndex is null when there is no action in the individual, then return the first GeneImpact
      */
+    @Deprecated("It can be replaced with [getGene(actionName: String?, geneId: String, actionLocalId: String, fromInitialization: Boolean)]")
     fun getGene(actionName: String?, geneId: String, actionIndex: Int?, fromInitialization: Boolean): GeneImpact? {
         if (actionIndex == null || (actionIndex == -1 && noneActionIndividual())) return mainActionsImpacts.first().geneImpacts[geneId]
         val impactsOfAction =
                 if (fromInitialization) initializationImpacts.getImpactOfAction(actionName, actionIndex)
                 else getImpactsAction(actionName, actionIndex)
+        impactsOfAction ?: return null
+        return impactsOfAction.get(geneId, actionName)
+    }
+
+    /**
+     * @param actionName the name of action which contains the gene
+     * @param geneId is the id of the gene to get
+     * @param actionLocalId local id of the action which contains the gene
+     * @param fromInitialization represents whether the action is part of initialization
+     */
+    fun getGene(actionName: String?, geneId: String, actionLocalId: String, fromInitialization: Boolean): GeneImpact? {
+        val impactsOfAction =
+            if (fromInitialization) initializationImpacts.getImpactOfAction(actionName, actionLocalId)
+            else getImpactsAction(actionName, actionLocalId)
         impactsOfAction ?: return null
         return impactsOfAction.get(geneId, actionName)
     }
@@ -277,14 +295,20 @@ open class ImpactsOfIndividual(
      * @param newAction specifies whether the action is newly added
      * @param impacts specifies the impacts of the actions to be added/updated
      */
-    fun addOrUpdateActionGeneImpacts(actionName: String?, actionIndex: Int, newAction: Boolean, impacts: MutableMap<String, GeneImpact>): Boolean {
+    fun addOrUpdateActionGeneImpacts(action: Action, newAction: Boolean, impacts: MutableMap<String, GeneImpact>): Boolean {
+        val impactOfAction = mainActionsImpacts.find { it.localId == action.getLocalId() }
+
         if (newAction) {
-            if (actionIndex > mainActionsImpacts.size) return false
-            mainActionsImpacts.add(actionIndex, ImpactsOfAction(actionName, impacts))
+            if (impactOfAction != null) {
+                log.warn("An impact for the action with id (${action.getLocalId()}) has been added")
+                return false
+            }
+            mainActionsImpacts.add(ImpactsOfAction(action.getLocalId(), action.getName(), impacts))
             return true
         }
-        if (actionIndex >= mainActionsImpacts.size) return false
-        return mainActionsImpacts[actionIndex].addGeneImpact(actionName, impacts)
+
+        impactOfAction?: return false
+        return impactOfAction.addGeneImpact(action.getName(), impacts)
     }
 
     /**
@@ -344,6 +368,34 @@ open class ImpactsOfIndividual(
      */
     fun anyImpactInfo(): Boolean = initializationImpacts.getSize() > 0 || mainActionsImpacts.isNotEmpty()
 
+
+    fun findImpactsByAction(actionName: String, actionLocalId: String, fromInitialization: Boolean): MutableMap<String, GeneImpact>? {
+        val found = findImpactsAction(actionName, actionLocalId, fromInitialization) ?: return null
+        return found.geneImpacts
+    }
+
+    private fun findImpactsAction(actionName: String, actionLocalId: String, fromInitialization: Boolean): ImpactsOfAction? {
+        return try {
+            if (fromInitialization) initializationImpacts.getImpactOfAction(actionName, actionLocalId)
+            else getImpactsAction(actionName, actionLocalId)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
+    }
+
+    private fun getImpactsAction(actionName: String?, actionLocalId: String): ImpactsOfAction {
+
+        val actionImpacts = mainActionsImpacts.filter { it.localId == actionLocalId }
+        if (actionImpacts.isEmpty())
+            throw IllegalStateException("Cannot find any impact with the actionLocalId")
+        if (actionImpacts.size > 1)
+            throw IllegalStateException("there exist more than one impacts (${actionImpacts.size}) whose local id is $actionLocalId")
+        if (actionName != null && actionImpacts.first().actionName != actionName)
+            throw IllegalArgumentException("mismatched action name, i.e., current is ${actionImpacts.first().actionName}, but $actionName")
+        return actionImpacts.first()
+    }
+
+    @Deprecated("It is replaced by [getImpactsAction(actionName: String?, actionLocalId: String)]")
     private fun getImpactsAction(actionName: String?, actionIndex: Int): ImpactsOfAction {
         if (actionIndex >= mainActionsImpacts.size)
             throw IllegalArgumentException("exceed the boundary of impacts regarding actions, i.e., size of actions is ${mainActionsImpacts.size}, but asking index is $actionIndex")
@@ -359,11 +411,13 @@ open class ImpactsOfIndividual(
      * @param actionIndex specifies the index of the actions in the initialization or not from the individual
      * @param fromInitialization specifies whether the actions are in the initialization
      */
+    @Deprecated("It is replaced by [findImpactsByAction(actionName: String, actionLocalId: String, fromInitialization: Boolean)]")
     fun findImpactsByAction(actionName: String, actionIndex: Int, fromInitialization: Boolean): MutableMap<String, GeneImpact>? {
         val found = findImpactsAction(actionName, actionIndex, fromInitialization) ?: return null
         return found.geneImpacts
     }
 
+    @Deprecated("It is replaced by [findImpactsAction(actionName: String, actionLocalId: String, fromInitialization: Boolean)]")
     private fun findImpactsAction(actionName: String, actionIndex: Int, fromInitialization: Boolean): ImpactsOfAction? {
         return try {
             if (fromInitialization) initializationImpacts.getImpactOfAction(actionName, actionIndex)

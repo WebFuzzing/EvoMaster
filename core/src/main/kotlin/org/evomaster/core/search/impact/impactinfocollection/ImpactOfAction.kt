@@ -8,34 +8,40 @@ import org.evomaster.core.search.gene.Gene
  * @property actionName name of action if action exists, versus null
  * @property geneImpacts impact info of genes of the action or the individual (actionName == null)
  */
-data class ImpactsOfAction(val actionName: String?, val geneImpacts: MutableMap<String, GeneImpact> = mutableMapOf()) {
+data class ImpactsOfAction(
+    val localId : String,
+    val actionName: String?,
+    val geneImpacts: MutableMap<String, GeneImpact> = mutableMapOf()) {
+
     fun copy(): ImpactsOfAction {
-        return ImpactsOfAction(actionName, geneImpacts.map { it.key to it.value.copy() }.toMap().toMutableMap())
+        return ImpactsOfAction(localId, actionName, geneImpacts.map { it.key to it.value.copy() }.toMap().toMutableMap())
     }
 
     fun clone(): ImpactsOfAction {
-        return ImpactsOfAction(actionName, geneImpacts.map { it.key to it.value.clone() }.toMap().toMutableMap())
+        return ImpactsOfAction(localId, actionName, geneImpacts.map { it.key to it.value.clone() }.toMap().toMutableMap())
     }
 
     constructor(action: Action) : this(
+            localId = action.getLocalId(),
             actionName = action.getName(),
             geneImpacts = action.seeTopGenes().map {
                 val id = ImpactUtils.generateGeneId(action, it)
                 id to ImpactUtils.createGeneImpact(it, id)
             }.toMap().toMutableMap())
 
-    constructor(individual: Individual, genes: List<Gene>) : this(
-            actionName = null,
-            geneImpacts = genes.map {
-                val id = ImpactUtils.generateGeneId(individual, it)
-                id to ImpactUtils.createGeneImpact(it, id)
-            }.toMap().toMutableMap()
-    )
-
-    constructor(actionName: String?, geneImpacts: List<GeneImpact>) : this(
-            actionName = actionName,
-            geneImpacts = geneImpacts.map { it.getId() to it }.toMap().toMutableMap()
-    )
+    // Man: might remove since there does not exist any individual which does not have action structures
+//    constructor(individual: Individual, genes: List<Gene>) : this(
+//            actionName = null,
+//            geneImpacts = genes.map {
+//                val id = ImpactUtils.generateGeneId(individual, it)
+//                id to ImpactUtils.createGeneImpact(it, id)
+//            }.toMap().toMutableMap()
+//    )
+//
+//    constructor(actionName: String?, geneImpacts: List<GeneImpact>) : this(
+//            actionName = actionName,
+//            geneImpacts = geneImpacts.map { it.getId() to it }.toMap().toMutableMap()
+//    )
 
     /**
      * @return false mismatched action name

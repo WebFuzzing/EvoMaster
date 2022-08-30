@@ -375,8 +375,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 addedGenes.mapNotNull { it.actionPosition }.toSet().sorted().forEach { actionIndex->
                       if (emptyActions.contains(actionIndex)){
                           impactInfo!!.addOrUpdateActionGeneImpacts(
-                              actionName = individual.seeActions(NO_INIT)[actionIndex].getName(),
-                              actionIndex = actionIndex,
+                              action = individual.seeActions(NO_INIT)[actionIndex],
                               newAction = true,
                               impacts = mutableMapOf()
                           )
@@ -386,8 +385,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                           if (index.size != 1 || index.first() != actionIndex)
                               throw IllegalArgumentException("mismatched impact info: genes should be mutated at $index action, but actually the index is $actionIndex")
                           impactInfo!!.addOrUpdateActionGeneImpacts(
-                              actionIndex = actionIndex,
-                              actionName = individual.seeActions(NO_INIT)[actionIndex].getName(),
+                              action = individual.seeActions(NO_INIT)[actionIndex],
                               impacts = mgenes.map {g->
                                   g.gene?:throw IllegalStateException("Added gene is not recorded")
                                   val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, g.gene)
@@ -423,8 +421,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                     impactInfo.deleteActionGeneImpacts(setOf(fix.first))
                 }else{
                     impactInfo.addOrUpdateActionGeneImpacts(
-                        actionName = individual.seeActions(NO_INIT)[fix.first].getName(),
-                        actionIndex = fix.first,
+                        action = individual.seeActions(NO_INIT)[fix.first],
                         newAction = true,
                         impacts = mutableMapOf()
                     )
@@ -534,13 +531,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
         if (action == null && !individual.seeGenes().contains(gene)) return null
 
-        val index = actions.indexOf(action)
-
         val geneId = ImpactUtils.generateGeneId(individual, gene)
         val impact = ImpactUtils.createGeneImpact(gene,geneId)
         impactInfo?.addOrUpdateActionGeneImpacts(
-                actionName = action?.getName(),
-                actionIndex = index,
+                action = action!!,
                 newAction = false,
                 impacts = mutableMapOf(geneId to ImpactUtils.createGeneImpact(gene,geneId))
         )
@@ -654,12 +648,22 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return impactInfo.getSizeOfActionImpacts(fromInitialization)
     }
 
+    @Deprecated("It is replaced by [getImpactByAction(actionLocalId : String, fromInitialization: Boolean)]")
     fun getImpactByAction(actionIndex : Int, fromInitialization: Boolean) : MutableMap<String, GeneImpact>?{
         impactInfo?:return null
         return impactInfo.findImpactsByAction(
                 actionIndex = actionIndex,
                 actionName = if (fromInitialization) individual.seeInitializingActions()[actionIndex].getName() else individual.seeActions(ActionFilter.NO_INIT)[actionIndex].getName(),
                 fromInitialization = fromInitialization
+        )
+    }
+
+    fun getImpactByAction(action: Action, fromInitialization: Boolean) : MutableMap<String, GeneImpact>?{
+        impactInfo?:return null
+        return impactInfo.findImpactsByAction(
+            actionLocalId = action.getLocalId(),
+            actionName = action.getName(),
+            fromInitialization = fromInitialization
         )
     }
 

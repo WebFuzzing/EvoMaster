@@ -304,6 +304,7 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
      * @param actionName is a name of action
      * @param actionIndex index of action in a test
      */
+    @Deprecated("Not Needed. getting impact of action could be achieved by [getImpactOfAction] with actionLocalId")
     fun getImpactOfAction(actionName: String?, actionIndex: Int): ImpactsOfAction? {
         val mIndex = actionIndex - existingSQLData
         if (mIndex >= completeSequence.size)
@@ -319,6 +320,15 @@ class InitializationActionImpacts(val abstract: Boolean, val enableImpactOnDupli
         else
             throw IllegalArgumentException()
         return template[templateInfo.first]?.get(templateInfo.second)
+    }
+
+    fun getImpactOfAction(actionName: String?, actionLocalId : String) : ImpactsOfAction?{
+        val impact = completeSequence.find { it.localId == actionLocalId }?:return null
+
+        if (actionName != null && impact.actionName != actionName)
+            throw IllegalArgumentException("mismatched action name, i.e., current is ${impact.actionName}, but $actionName")
+
+        return impact
     }
 
     /**
