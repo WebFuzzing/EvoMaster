@@ -40,8 +40,6 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) {
         Objects.requireNonNull(caller);
 
-        SimpleLogger.info("Jackson method invoked, InputStream");
-
         if(valueType != null) {
             String name = valueType.getName();
             String schema = ClassToSchema.getOrDeriveSchema(valueType);
@@ -67,8 +65,6 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             category = ReplacementCategory.BASE)
     public static <T> T readValue(Object caller, String content, TypeReference<T> valueTypeRef) {
         Objects.requireNonNull(caller);
-
-        SimpleLogger.info("Jackson method invoked, InputStream");
 
         if(valueTypeRef != null) {
             // To make things work, same approach in Jackson is used to get the
@@ -101,8 +97,6 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             category = ReplacementCategory.BASE)
     public static <T> T readValue(Object caller, String content, Class<T> valueType) {
         Objects.requireNonNull(caller);
-
-        SimpleLogger.info("Jackson method invoked, InputStream");
 
         if(valueType != null) {
             String name = valueType.getName();
