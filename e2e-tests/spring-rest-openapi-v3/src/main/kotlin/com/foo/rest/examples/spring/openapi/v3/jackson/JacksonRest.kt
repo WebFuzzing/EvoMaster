@@ -1,7 +1,6 @@
 package com.foo.rest.examples.spring.openapi.v3.jackson
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import org.apache.commons.io.IOUtils
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -16,24 +15,34 @@ import javax.servlet.http.HttpServletRequest
 class JacksonRest {
 
     @PostMapping(path = ["/generic"], consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE])
-    open fun generic(request: HttpServletRequest): ResponseEntity<String> {
+    fun generic(request: HttpServletRequest): ResponseEntity<String> {
 
         val json = IOUtils.toString(request.inputStream, StandardCharsets.UTF_8)
-        val mapper = jacksonObjectMapper()
-
-        val dto = mapper.readValue(json, FooDto::class.java)
-        return if (dto.x > 0) ResponseEntity.ok().body("Working")
+        val x: Int
+        try {
+            val mapper = jacksonObjectMapper()
+            val dto = mapper.readValue(json, FooDto::class.java)
+            x = dto.x
+        } catch (e: Exception) {
+            return ResponseEntity.badRequest().body("Failed")
+        }
+        return if (x > 0) ResponseEntity.ok().body("Working")
         else ResponseEntity.badRequest().body("Failed")
     }
 
     @PostMapping(path = ["/type"], consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE])
-    open fun typeReference(request: HttpServletRequest): ResponseEntity<String> {
+    fun typeReference(request: HttpServletRequest): ResponseEntity<String> {
 
         val json = IOUtils.toString(request.inputStream, StandardCharsets.UTF_8)
-        val mapper = jacksonObjectMapper()
-
-        val dto: FooDto = mapper.readValue(json)
-        return if (dto.x > 0) ResponseEntity.ok().body("Working")
+        val x: Int
+        try {
+            val mapper = jacksonObjectMapper()
+            val dto = mapper.readValue(json, FooDto::class.java)
+            x = dto.x
+        } catch (e: Exception) {
+            return ResponseEntity.badRequest().body("Failed")
+        }
+        return if (x > 0) ResponseEntity.ok().body("Working")
         else ResponseEntity.badRequest().body("Failed")
     }
 }

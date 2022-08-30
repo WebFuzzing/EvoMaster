@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
@@ -17,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JacksonObjectMapperTest {
 
-    @Disabled
+    @Test
     public void testReadValue() throws JsonProcessingException {
         String json = "{\n\"count\": 10\n}";
         ObjectMapper objectMapper = new ObjectMapper();

@@ -26,7 +26,7 @@ class JacksonEMTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "JacksonTypeEM",
             "org.foo.JacksonTypeEM",
-            5000
+            1000
         ) { args: List<String> ->
 
             val solution = initAndRun(args)
@@ -36,12 +36,12 @@ class JacksonEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+    @Test
     fun testGenericReadValue() {
         runTestHandlingFlakyAndCompilation(
             "JacksonGenericEM",
             "org.foo.JacksonGenericEM",
-            500
+            1000
         ) { args: List<String> ->
 
             val solution = initAndRun(args)
