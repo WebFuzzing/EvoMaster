@@ -123,6 +123,18 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                 && areAllLocalIdsAssigned() // local ids must be assigned
     }
 
+    fun getActionIndexByLocalId(localId : String, actionFilter: ActionFilter, isNullable: Boolean = true) : Int{
+        val all = seeActions(actionFilter)
+        val found = all.find { it.getLocalId() == localId }
+        if (found!= null || isNullable) return all.indexOf(found)
+        throw IllegalStateException("cannot find any action whose local id is $localId")
+    }
+
+    fun findActionByLocalId(localId : String, isNullable: Boolean = true) : Action?{
+        val found = seeAllActions().find { it.getLocalId() == localId }
+        if (found!= null || isNullable) return found
+        throw IllegalStateException("cannot find any action whose local id is $localId")
+    }
 
     /**
      * Make sure that all invariants in this individual are satisfied, otherwise throw exception.

@@ -1,6 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.graphql.schema.ofType
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
@@ -169,8 +170,8 @@ open class ImpactsOfIndividual(
     /**
      * synchronize the impacts based on the [individual] and [mutatedGene]
      */
+    @Deprecated("It is replaced by [syncBasedOnIndividual(individual: Individual) ]")
     fun syncBasedOnIndividual(individual: Individual, mutatedGene: MutatedGeneSpecification) {
-        // TODO Man fix external services
         val initActions = individual.seeInitializingActions().filterIsInstance<DbAction>()
         //for initialization due to db action fixing
         val diff = initActions.size - initializationImpacts.getOriginalSize()//mutatedGene.addedExistingDataInitialization.size - initializationGeneImpacts.getOriginalSize()
@@ -203,9 +204,53 @@ open class ImpactsOfIndividual(
     }
 
     /**
+     * the actions such as external action and db actions might be removed and added
+     * then we need to sync impacts for handling these updates
+     *
+     * in addition, genes might be updated e.g., additionalInfo, then sync impacts of all genes
+     */
+    fun syncBasedOnIndividual(individual: Individual) {
+        val initActions = individual.seeInitializingActions().filterIsInstance<DbAction>()
+        //for initialization due to db action fixing
+        val diff = initActions.size - initializationImpacts.getOriginalSize()
+        if (diff < 0) { //truncation
+            initializationImpacts.truncation(individual.seeInitializingActions())
+        }else if (diff > 0){
+            throw IllegalArgumentException("impact is out of sync")
+        }
+        if (initializationImpacts.getOriginalSize() != initActions.size){
+            throw IllegalStateException("inconsistent impact for SQL genes")
+        }
+
+        // for external service action, even it was removed in the current individual, we still keep the impact
+        individual.seeExternalServiceActions().forEach {ea->
+            val impactOfAction = findImpactsAction(ea.getName(), ea.getLocalId(), false)
+            if (impactOfAction == null){
+                mainActionsImpacts.add(ImpactsOfAction(ea))
+            }
+        }
+
+        individual.seeMainExecutableActions().forEach { action ->
+            val actionName = action.getName()
+            val impactOfAction = findImpactsAction(actionName, action.getLocalId(), false)
+                ?:throw IllegalStateException("cannot find the impact of action with a local id, ie, ${action.getLocalId()}")
+            //root genes might be changed e.g., additionalInfo, so sync impacts of all genes
+            action.seeTopGenes().forEach { g ->
+                val id = ImpactUtils.generateGeneId(action, g)
+                if (getGene(actionName, id, action.getLocalId(), false) == null) {
+                    val impact = ImpactUtils.createGeneImpact(g, id)
+                    impactOfAction.addGeneImpact(actionName, impact)
+                }
+            }
+        }
+
+    }
+
+    /**
      * remove impacts for actions based on their index [actionIndex]
      * @return whether the removal performs successfully
      */
+    @Deprecated("It is replaced by [deleteActionGeneImpacts(actions: List<Action>)]")
     fun deleteActionGeneImpacts(actionIndex: Set<Int>): Boolean {
         if (actionIndex.isEmpty()) return false
         if (actionIndex.maxOrNull()!! >= mainActionsImpacts.size)
@@ -214,6 +259,13 @@ open class ImpactsOfIndividual(
             mainActionsImpacts.removeAt(it)
         }
         return true
+    }
+
+    fun deleteActionGeneImpacts(actions: List<Action>): Boolean {
+        if (actions.isEmpty()) return false
+        return mainActionsImpacts.removeAll {
+            actions.any { a-> a.getLocalId() == it.localId }
+        }
     }
 
 
@@ -374,7 +426,7 @@ open class ImpactsOfIndividual(
         return found.geneImpacts
     }
 
-    private fun findImpactsAction(actionName: String, actionLocalId: String, fromInitialization: Boolean): ImpactsOfAction? {
+    fun findImpactsAction(actionName: String, actionLocalId: String, fromInitialization: Boolean): ImpactsOfAction? {
         return try {
             if (fromInitialization) initializationImpacts.getImpactOfAction(actionName, actionLocalId)
             else getImpactsAction(actionName, actionLocalId)

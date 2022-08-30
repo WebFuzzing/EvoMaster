@@ -247,6 +247,7 @@ class RestIndividual(
         seeActions(actionFilter).indexOf(it)
     }
 
+
     private fun validateSwap(first : Int, second : Int) : Boolean{
         //TODO need update, although currently not in use
         val position = getResourceCalls()[first].shouldBefore.map { r ->

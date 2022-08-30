@@ -254,13 +254,13 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         removes.forEach { removed->
             val pos = ind.getResourceCalls().indexOf(removed)
 
-            val removedActions = ind.getResourceCalls()[pos].seeActions(ALL)
+            val removedCall = ind.getResourceCalls()[pos]
+            val removedActions = removedCall.seeActions(ALL)
             removedActions.forEach {
                 mutatedGenes?.addRemovedOrAddedByAction(
                         it,
-                        ind.seeActions(NO_INIT).indexOf(it),
                         true,
-                        resourcePosition = pos
+                        resourceLocalId = removedCall.getLocalId()
                 )
             }
         }
@@ -282,8 +282,14 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         if(fromDependency){
             val pair = dm.handleSwapDepResource(ind, candidates)
             if(pair!=null){
-                mutatedGenes?.swapAction(pair.first, ind.getActionIndexes(NO_INIT, pair.first), ind.getActionIndexes(NO_INIT, pair.second))
+                val fR = ind.getIndexedResourceCalls()[pair.first] ?:throw IllegalStateException("cannot get resource call with the index ${pair.first}")
+                val sR = ind.getIndexedResourceCalls()[pair.second] ?:throw IllegalStateException("cannot get resource call with the index ${pair.second}")
+                mutatedGenes?.swapAction(fR.getLocalId(),
+                    fR.seeActions(ALL).map { it.getLocalId() },
+                    sR.seeActions(ALL).map { it.getLocalId() })
+
                 ind.swapResourceCall(pair.first, pair.second)
+
                 return
             }
         }
@@ -291,7 +297,13 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         val randPair = randomizeSwapCandidates(candidates)
         val chosen = randPair.first
         val moveTo = randPair.second
-        mutatedGenes?.swapAction(moveTo, ind.getActionIndexes(NO_INIT, chosen), ind.getActionIndexes(NO_INIT, moveTo))
+
+        val fR = ind.getIndexedResourceCalls()[chosen] ?:throw IllegalStateException("cannot get resource call with the index $chosen")
+        val sR = ind.getIndexedResourceCalls()[moveTo] ?:throw IllegalStateException("cannot get resource call with the index $moveTo")
+
+        mutatedGenes?.swapAction(fR.getLocalId(),
+            fR.seeActions(ALL).map { it.getLocalId() },
+            sR.seeActions(ALL).map { it.getLocalId() })
         if(chosen < moveTo) ind.swapResourceCall(chosen, moveTo)
         else ind.swapResourceCall(moveTo, chosen)
 
@@ -351,9 +363,8 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
                             seeActions(ALL).forEach {
                                 mutatedGenes?.addRemovedOrAddedByAction(
                                         it,
-                                        ind.seeActions(NO_INIT).indexOf(it),
                                         false,
-                                        resourcePosition = pos
+                                        resourceLocalId = getLocalId()
                                 )
                             }
                         }
@@ -380,9 +391,8 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             randomCall.seeActions(ALL).forEach {
                 mutatedGenes?.addRemovedOrAddedByAction(
                     it,
-                    ind.seeActions(NO_INIT).indexOf(it),
                     false,
-                    resourcePosition = pos
+                    resourceLocalId = randomCall.getLocalId()
                 )
             }
 
@@ -402,9 +412,8 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
                 seeActions(ALL).forEach {
                     mutatedGenes?.addRemovedOrAddedByAction(
                         it,
-                        ind.seeActions(NO_INIT).indexOf(it),
                         false,
-                        resourcePosition = addPos
+                        resourceLocalId = getLocalId()
                     )
                 }
             }
@@ -460,13 +469,14 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
             }
         }
 
-       ind.getIndexedResourceCalls()[pos]!!.seeActions(ALL).forEach {
+       ind.getIndexedResourceCalls()[pos]!!.apply {
+           seeActions(ALL).forEach {
            mutatedGenes?.addRemovedOrAddedByAction(
                it,
-               ind.seeActions(NO_INIT).indexOf(it),
                true,
-               resourcePosition = pos
+               resourceLocalId = getLocalId()
            )
+       }
        }
 
         ind.removeResourceCall(pos)
@@ -474,13 +484,14 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         maintainAuth(auth, call!!)
         ind.addResourceCall(pos, call)
 
-        call.seeActions(ALL).forEach {
-            mutatedGenes?.addRemovedOrAddedByAction(
-                it,
-                ind.seeActions(NO_INIT).indexOf(it),
-                false,
-                resourcePosition = pos
-            )
+        call.apply {
+            seeActions(ALL).forEach {
+                mutatedGenes?.addRemovedOrAddedByAction(
+                    it,
+                    false,
+                    resourceLocalId = getLocalId()
+                )
+            }
         }
     }
 
@@ -511,25 +522,27 @@ class RestResourceStructureMutator : ApiWsStructureMutator() {
         maintainAuth(auth, new)
 
         //record removed
-        old.seeActions(ALL).forEach {
-            mutatedGenes?.addRemovedOrAddedByAction(
-                it,
-                ind.seeActions(NO_INIT).indexOf(it),
-                true,
-                resourcePosition = pos
-            )
+        old.apply {
+            seeActions(ALL).forEach {
+                mutatedGenes?.addRemovedOrAddedByAction(
+                    it,
+                   true,
+                    resourceLocalId = getLocalId()
+                )
+            }
         }
 
         ind.replaceResourceCall(pos, new)
 
         //record replaced
-        new.seeActions(ALL).forEach {
-            mutatedGenes?.addRemovedOrAddedByAction(
-                it,
-                ind.seeActions(NO_INIT).indexOf(it),
-                false,
-                resourcePosition = pos
-            )
+        new.apply {
+            seeActions(ALL).forEach {
+                mutatedGenes?.addRemovedOrAddedByAction(
+                    it,
+                    false,
+                    resourceLocalId = getLocalId()
+                )
+            }
         }
     }
 

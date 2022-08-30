@@ -11,7 +11,7 @@ import org.evomaster.core.search.gene.Gene
 data class ImpactsOfAction(
     val localId : String,
     val actionName: String?,
-    val geneImpacts: MutableMap<String, GeneImpact> = mutableMapOf()) {
+    val geneImpacts: MutableMap<String, GeneImpact>) {
 
     fun copy(): ImpactsOfAction {
         return ImpactsOfAction(localId, actionName, geneImpacts.map { it.key to it.value.copy() }.toMap().toMutableMap())

@@ -41,41 +41,51 @@ data class MutatedGeneSpecification (
         mutatedIndividual = individual
     }
 
-    fun addMutatedGene(isDb : Boolean, isInit : Boolean, valueBeforeMutation : String, gene : Gene, position : Int?, resourcePosition: Int? = null){
+    fun addMutatedGene(isDb : Boolean, isInit : Boolean, valueBeforeMutation : String, gene : Gene, actionLocalId: String, resourceLocalId: String? = null){
         (if (isInit)
             mutatedInitGenes
         else if (isDb){
             mutatedDbGenes
         }else{
             mutatedGenes
-        }).add(MutatedGene(valueBeforeMutation, gene, actionPosition=position, resourcePosition = resourcePosition))
+        }).add(MutatedGene(valueBeforeMutation, gene, actionLocalId=actionLocalId, resourceLocalId = resourceLocalId))
     }
 
 
-    //FIXME: need documentation for these parameters
-    fun addRemovedOrAddedByAction(action: Action, position: Int?, removed : Boolean, resourcePosition: Int?){
+    /**
+     * record addition and removal action structure mutator
+     * @param action to be removed or added
+     * @param removed represents if [action] is removed from the individual (true). false means that [action] is added into the individual
+     * @param resourceLocalId represents a resource local id of the actions to be removed/added if it has
+     *
+     */
+    fun addRemovedOrAddedByAction(action: Action, removed : Boolean, resourceLocalId: String?){
         mutatedGenes.addAll(
-            action.seeTopGenes().map { MutatedGene(null, it, position,
-                    if (removed) MutatedType.REMOVE else MutatedType.ADD, resourcePosition = resourcePosition) }
+            action.seeTopGenes().map { MutatedGene(null, it, action.getLocalId(),
+                    if (removed) MutatedType.REMOVE else MutatedType.ADD, resourceLocalId = resourceLocalId) }
         )
         if (action.seeTopGenes().isEmpty()){
-            mutatedGenes.add(MutatedGene(null, null, position,
-                    if (removed) MutatedType.REMOVE else MutatedType.ADD, resourcePosition = resourcePosition))
+            mutatedGenes.add(MutatedGene(null, null, action.getLocalId(),
+                    if (removed) MutatedType.REMOVE else MutatedType.ADD, resourceLocalId = resourceLocalId))
         }
     }
 
-    fun swapAction(resourcePosition: Int, from: List<Int>, to: List<Int>){
+
+    fun swapAction(resourceLocalId: String?, from: List<String>, to: List<String>){
         mutatedGenes.add(
-            MutatedGene(previousValue = null, gene = null, actionPosition =null, type = MutatedType.SWAP,
-                resourcePosition = resourcePosition, from = from, to = to)
+            MutatedGene(previousValue = null, gene = null, actionLocalId =null, type = MutatedType.SWAP,
+                resourceLocalId = resourceLocalId, from = from, to = to)
         )
     }
 
-    fun isActionMutated(actionIndex : Int, isInit: Boolean) : Boolean{
+    /**
+     * @return whether the action specified with the [actionLocalId] is mutated
+     */
+    fun isActionMutated(actionLocalId: String, isInit: Boolean) : Boolean{
         if (isInit)
-            return mutatedInitGenes.any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
+            return mutatedInitGenes.any { it.type == MutatedType.MODIFY && it.actionLocalId == actionLocalId }
 
-        return (mutatedGenes.plus(mutatedDbGenes)).any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
+        return (mutatedGenes.plus(mutatedDbGenes)).any { it.type == MutatedType.MODIFY && it.actionLocalId == actionLocalId }
     }
 
     fun getRemoved(isRest : Boolean) =
@@ -97,11 +107,11 @@ data class MutatedGeneSpecification (
     data class MutatedGene(
         val previousValue : String? = null,
         val gene:  Gene?,
-        val actionPosition: Int?,
+        val actionLocalId: String?,
         val type : MutatedType = MutatedType.MODIFY,
-        val resourcePosition: Int? = actionPosition,
-        val from : List<Int>? = null,
-        val to : List<Int>? = null
+        val resourceLocalId : String?,
+        val from : List<String>? = null,
+        val to : List<String>? = null
     )
 
     enum class MutatedType{

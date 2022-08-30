@@ -141,12 +141,12 @@ class ImpactUtils {
                     contexts.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = mutatedGenes.size))
                 }
             }else{
-                individual.seeAllActions().forEachIndexed { index, action ->
+                individual.seeAllActions().forEach { action ->
                     action.seeTopGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                         val id = generateGeneId(action, g)
                         val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
-                        val previous = findGeneById(previousIndividual, id, action.getName(), index, false)?: throw IllegalArgumentException("mismatched previous individual")
-                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous, mutatedGenes.size))
+                        val previous = findGeneById(previousIndividual, id, action.getName(), action.getLocalId(), false)?: throw IllegalArgumentException("mismatched previous individual")
+                        contexts.add(MutatedGeneWithContext(g, action.getName(), action.getLocalId(), previous, mutatedGenes.size))
                     }
                 }
             }
@@ -163,9 +163,9 @@ class ImpactUtils {
                                                   previousIndividual: Individual,
                                                   isInit : Boolean, list: MutableList<MutatedGeneWithContext>, num : Int) {
 
-            actions.forEachIndexed { index, a ->
+            actions.forEach { a ->
 
-                val manipulated = mutatedGeneSpecification.isActionMutated(index, isInit)
+                val manipulated = mutatedGeneSpecification.isActionMutated(a.getLocalId(), isInit)
                 if (manipulated){
                     a.seeTopGenes().filter {
                         if (isInit)
@@ -178,7 +178,7 @@ class ImpactUtils {
                            index for db gene might be changed if new insertions are added.
                            then there is a need to update the index in previous based on the number of added
                          */
-                        val indexInPrevious = index - (if (isInit && !mutatedGeneSpecification.addedExistingDataInitialization.contains(a)) mutatedGeneSpecification.addedExistingDataInitialization.size else 0)
+                        val indexInPrevious = actions.indexOf(a) - (if (isInit && !mutatedGeneSpecification.addedExistingDataInitialization.contains(a)) mutatedGeneSpecification.addedExistingDataInitialization.size else 0)
                         val previous = findGeneById(
                                 individual=previousIndividual,
                                 id = id,
@@ -186,7 +186,7 @@ class ImpactUtils {
                                 indexOfAction = indexInPrevious,
                                 isDb = isInit
                         )
-                        list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName(), numOfMutatedGene = num))
+                        list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, actionLocalId = a.getLocalId(), action = a.getName(), numOfMutatedGene = num))
                     }
                 }
             }
@@ -220,7 +220,14 @@ class ImpactUtils {
             return list
         }
 
+        private fun findGeneById(individual: Individual, id : String, actionName : String, actionLocalId : String, isDb : Boolean):Gene?{
+            val action = individual.findActionByLocalId(actionLocalId, false)!!
+            if (action.getName() != actionName)
+                throw IllegalArgumentException("mismatched gene mutated info ${action.getName()} vs. $actionName")
+            return action.seeTopGenes().find { generateGeneId(action, it) == id }
+        }
 
+        @Deprecated("It was replaced by [findGeneById(individual: Individual, id : String, actionName : String, actionLocalId : String, isDb : Boolean)]")
         private fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int, isDb : Boolean):Gene?{
             if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)).size) return null
             val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
