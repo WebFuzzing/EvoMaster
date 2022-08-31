@@ -7,7 +7,6 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import java.net.URI
 import java.net.URL
 
 
@@ -39,6 +38,7 @@ class UrlHttpGene(
          val invalidChars = listOf('*','+','\\','/','#','$','!','?','[',']','{','}','(',')','\'','"')
     }
 
+
     override fun copyContent(): Gene {
         return UrlHttpGene(
             name,
@@ -65,7 +65,12 @@ class UrlHttpGene(
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        return innerGene()
+
+        /*
+            FIXME
+         */
+        return listOf();
+        //return innerGene()
     }
 
     override fun innerGene(): List<Gene> {
