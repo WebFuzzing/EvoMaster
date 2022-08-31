@@ -1,7 +1,9 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
@@ -84,7 +86,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             id = "Jackson_ObjectMapper_readValue_TypeReference_class",
             usageFilter = UsageFilter.ONLY_SUT,
             category = ReplacementCategory.EXT_0)
-    public static <T> T readValue(Object caller, String content, TypeReference<T> valueTypeRef) {
+    public static <T> T readValue(Object caller, String content, TypeReference<T> valueTypeRef) throws JsonProcessingException, JsonMappingException {
         Objects.requireNonNull(caller);
 
         if (valueTypeRef != null) {
