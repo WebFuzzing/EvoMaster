@@ -4,10 +4,17 @@ import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
 
+/**
+ * this impact could be applied to CompositeFixedGene in general that only handles impacts of children
+ * however, you could also create a specific impact for the gene, such as DateGeneImpact, ObjectGeneImpact
+ */
 class CompositeFixedGeneImpact(
     sharedImpactInfo: SharedImpactInfo,
     specificImpactInfo: SpecificImpactInfo,
-    // key is index_name of the gene
+    /**
+     * key is index_name of the gene
+     * value is the impact for the corresponding child gene
+     */
     val childrenImpacts : MutableMap<String, Impact> = mutableMapOf()
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
