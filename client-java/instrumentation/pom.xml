@@ -100,12 +100,10 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -174,6 +172,10 @@
                                 <relocation>
                                     <pattern>com.github.jsqlparser</pattern>
                                     <shadedPattern>shaded.com.github.jsqlparser</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.fasterxml.jackson.core</pattern>
+                                    <shadedPattern>shaded.com.fasterxml.jackson.core</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

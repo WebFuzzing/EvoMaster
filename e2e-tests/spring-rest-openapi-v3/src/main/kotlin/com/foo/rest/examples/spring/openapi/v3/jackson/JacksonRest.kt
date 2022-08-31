@@ -1,6 +1,7 @@
 package com.foo.rest.examples.spring.openapi.v3.jackson
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.apache.commons.io.IOUtils
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -21,6 +22,7 @@ class JacksonRest {
         val x: Int
         try {
             val mapper = jacksonObjectMapper()
+
             val dto = mapper.readValue(json, FooDto::class.java)
             x = dto.x
         } catch (e: Exception) {
@@ -37,7 +39,7 @@ class JacksonRest {
         val x: Int
         try {
             val mapper = jacksonObjectMapper()
-            val dto = mapper.readValue(json, FooDto::class.java)
+            val dto: FooDto = mapper.readValue(json)
             x = dto.x
         } catch (e: Exception) {
             return ResponseEntity.badRequest().body("Failed")

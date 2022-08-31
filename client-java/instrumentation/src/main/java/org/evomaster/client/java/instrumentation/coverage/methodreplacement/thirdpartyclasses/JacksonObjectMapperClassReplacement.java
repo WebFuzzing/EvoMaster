@@ -1,5 +1,8 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
@@ -12,6 +15,7 @@ import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.Objects;
 
 public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplacementClass {
@@ -27,7 +31,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_InputStream_class",
             usageFilter = UsageFilter.ONLY_SUT,
-            category = ReplacementCategory.NET)
+            category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) {
         Objects.requireNonNull(caller);
 
@@ -53,7 +57,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_Generic_class",
             usageFilter = UsageFilter.ONLY_SUT,
-            category = ReplacementCategory.BASE)
+            category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, String content, Class<T> valueType) {
         Objects.requireNonNull(caller);
 
@@ -71,6 +75,42 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);
         } catch (InvocationTargetException e){
+            throw (RuntimeException) e.getCause();
+        }
+    }
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_readValue_TypeReference_class",
+            usageFilter = UsageFilter.ONLY_SUT,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T readValue(Object caller, String content, TypeReference<T> valueTypeRef) {
+        Objects.requireNonNull(caller);
+
+        if (valueTypeRef != null) {
+            // To make things work, same approach in Jackson is used to get the
+            //  information about the class.
+            // JSON can be unwrapped using different approaches
+            // val dto: FooDto = mapper.readValue(json)
+            // To support this way, Jackson should be used inside the instrumentation
+            // as shaded dependency
+            Type genericType = valueTypeRef.getType();
+            TypeFactory _typeFactory = TypeFactory.defaultInstance();
+            JavaType _javaType = _typeFactory.constructType(genericType);
+
+            String name = genericType.getTypeName();
+            String schema = ClassToSchema.getOrDeriveSchema(_javaType.getRawClass());
+            UnitsInfoRecorder.registerNewParsedDto(name, schema);
+            ExecutionTracer.addParsedDtoName(name);
+        }
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_TypeReference_class", caller);
+
+        try {
+            return (T) original.invoke(caller, content, valueTypeRef);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
         }
     }

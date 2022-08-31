@@ -2,7 +2,6 @@ package org.evomaster.e2etests.spring.openapi.v3.jackson
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.JacksonController
 import org.evomaster.ci.utils.CIUtils
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -21,7 +20,7 @@ class JacksonEMTest: SpringTestBase() {
                  Mac and Windows machines locally.
                 Could be an issue with Linux or used JDK
              */
-            CIUtils.skipIfOnGA()
+//            CIUtils.skipIfOnGA()
 
             initClass(JacksonController())
         }
@@ -29,7 +28,6 @@ class JacksonEMTest: SpringTestBase() {
 
     @Test
     fun testTypeReadValue() {
-        LoggingUtil.getInfoLogger().info("Test init");
         runTestHandlingFlakyAndCompilation(
             "JacksonTypeEM",
             "org.foo.JacksonTypeEM",
