@@ -1,12 +1,13 @@
 package org.evomaster.e2etests.spring.openapi.v3.jackson
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.JacksonController
+import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 class JacksonEMTest: SpringTestBase() {
 
@@ -14,11 +15,19 @@ class JacksonEMTest: SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
+
+            /*
+                TODO for some weird reason, this fails on CI, although it pass on different
+                 Mac and Windows machines locally.
+                Could be an issue with Linux or used JDK
+             */
+            CIUtils.skipIfOnGA()
+
             initClass(JacksonController())
         }
     }
 
-    @Disabled("Still failing in CI, so temporarily disabled")
+    @Test
     fun testTypeReadValue() {
         LoggingUtil.getInfoLogger().info("Test init");
         runTestHandlingFlakyAndCompilation(
@@ -34,7 +43,7 @@ class JacksonEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("Still failing in CI, so temporarily disabled")
+    @Test
     fun testGenericReadValue() {
         runTestHandlingFlakyAndCompilation(
             "JacksonGenericEM",
