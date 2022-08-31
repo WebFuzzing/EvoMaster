@@ -34,9 +34,9 @@ object ArchiveMutationUtils {
                 geneInfo.previousValue,
                 geneInfo.gene?.getValueAsPrintableString(),
                 "#${targets.joinToString("#")}",
-                geneInfo.actionPosition,
-                if (geneInfo.actionPosition!=null)
-                    getActionInfo(individual.seeActions(ActionFilter.NO_INIT)[geneInfo.actionPosition])
+                geneInfo.actionLocalId,
+                if (geneInfo.actionLocalId!=null)
+                    getActionInfo(individual.findActionByLocalId(localId = geneInfo.actionLocalId, false)!!)
                 else "").joinToString(",")} )
 
         content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, geneInfo -> listOf(
@@ -46,9 +46,9 @@ object ArchiveMutationUtils {
                 geneInfo.previousValue,
                 geneInfo.gene?.getValueAsPrintableString(),
                 "#${targets.joinToString("#")}",
-                geneInfo.actionPosition,
-                if (geneInfo.actionPosition != null)
-                    getActionInfo(individual.seeInitializingActions()[geneInfo.actionPosition])
+                geneInfo.actionLocalId,
+                if (geneInfo.actionLocalId != null)
+                    getActionInfo(individual.findActionByLocalId(localId = geneInfo.actionLocalId, false)!!)
                 else "" ).joinToString(",")})
 
         if (content.isNotEmpty()) {

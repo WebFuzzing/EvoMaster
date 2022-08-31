@@ -41,7 +41,7 @@ class TupleGeneImpact (
         if (gc.previous == null){
             gc.current.elements.forEach { gene ->
                 val fImpact = elements.getValue(gene.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
-                val mutatedGeneWithContext = MutatedGeneWithContext(previous = null, current =  gene, action = "none", position = -1, numOfMutatedGene = gc.current.elements.size)
+                val mutatedGeneWithContext = MutatedGeneWithContext(previous = null, current =  gene, action = "none", actionLocalId = gc.actionLocalId, numOfMutatedGene = gc.current.elements.size)
                 fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             }
             return
@@ -57,7 +57,7 @@ class TupleGeneImpact (
 
         mutatedElements.forEach { g->
             val fImpact = elements.getValue(g.first.name) as? GeneImpact ?:throw IllegalArgumentException("impact should be gene impact")
-            val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1, numOfMutatedGene = gc.numOfMutatedGene * mutatedElements.size)
+            val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", actionLocalId = gc.actionLocalId, numOfMutatedGene = gc.numOfMutatedGene * mutatedElements.size)
             fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
     }

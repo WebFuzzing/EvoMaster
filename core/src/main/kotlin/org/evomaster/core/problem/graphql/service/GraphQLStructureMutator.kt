@@ -61,10 +61,10 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
         if (main.size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05) as GraphQLAction
 
-            //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, ind.seeAllActions().size, false, ind.seeAllActions().size)
-
             ind.addGQLAction(action= sampledAction)
+
+            //save mutated genes
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, false, null)
 
             return
         }
@@ -81,7 +81,7 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
                 /*
                     FIXME: how does position work when adding/removing a subtree?
                  */
-                mutatedGenes?.addRemovedOrAddedByAction(a, chosen, true, chosen)
+                mutatedGenes?.addRemovedOrAddedByAction(a,  true, null)
             }
             ind.removeGQLActionAt(chosen)
 
@@ -95,7 +95,7 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
             ind.addGQLAction(chosen, sampledAction)
 
             //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, chosen, false, chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, false, null)
         }
 
     }
