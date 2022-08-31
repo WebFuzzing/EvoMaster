@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Collection;
@@ -19,6 +20,28 @@ public abstract class CollectionsDistanceUtils {
         } else {
             return;
         }
+
+        if(inputString.equals(TaintInputName.EXTRA_PARAM_TAINT)){
+            for(Object value : c){
+                if(value instanceof String){
+                    ExecutionTracer.addQueryParameter((String) value);
+                } else {
+                    return;
+                }
+            }
+        }
+
+        if(c.size() <= 20){
+            /*
+                cannot search indiscriminately, as we do not know performance of search, eg could be O(n),
+                making this a major a bottleneck.
+                As anyway should not have too many query params, the size of collection should be short
+             */
+            if(c.contains(TaintInputName.EXTRA_PARAM_TAINT)){
+                ExecutionTracer.addQueryParameter(inputString);
+            }
+        }
+
 
         if (ExecutionTracer.isTaintInput(inputString)) {
             int counter = 0;

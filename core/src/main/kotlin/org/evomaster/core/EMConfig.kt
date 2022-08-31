@@ -1138,6 +1138,12 @@ class EMConfig {
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
 
+
+    @Experimental
+    @Cfg("Add an extra query param, to analyze how it is used/read by the SUT. Needed to discover new query params" +
+            " that were not specified in the schema.")
+    var extraQueryParam = false
+
     enum class ResourceSamplingStrategy(val requiredArchive: Boolean = false) {
         NONE,
         /**

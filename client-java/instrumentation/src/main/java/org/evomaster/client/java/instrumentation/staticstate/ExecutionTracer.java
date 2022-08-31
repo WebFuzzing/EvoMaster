@@ -172,6 +172,29 @@ public class ExecutionTracer {
         return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
     }
 
+    public static void handleExtraParamTaint(String left, String right){
+
+        if (left == null || left.isEmpty() || right == null || right.isEmpty()) {
+            //nothing to do?
+            return;
+        }
+
+        boolean taintedLeft = left.equals(TaintInputName.EXTRA_PARAM_TAINT);
+        boolean taintedRight = right.equals(TaintInputName.EXTRA_PARAM_TAINT);
+
+        if(taintedLeft && taintedRight){
+            //nothing to do?
+            return;
+        }
+
+        if(taintedLeft){
+            ExecutionTracer.addQueryParameter(right);
+        }
+        if(taintedRight){
+            ExecutionTracer.addQueryParameter(left);
+        }
+    }
+
     public static void handleTaintForStringEquals(String left, String right, boolean ignoreCase) {
 
         if (left == null || right == null) {
