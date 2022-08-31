@@ -63,7 +63,6 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             UnitsInfoRecorder.registerNewParsedDto(name, schema);
             ExecutionTracer.addParsedDtoName(name);
         }
-
         // JSON can be unwrapped using different approaches
         // val dto: FooDto = mapper.readValue(json)
         // To support this way, Jackson should be used inside the instrumentation
