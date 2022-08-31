@@ -70,47 +70,16 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             ExecutionTracer.addParsedDtoName(name);
         }
 
+        // JSON can be unwrapped using different approaches
+        // val dto: FooDto = mapper.readValue(json)
+        // To support this way, Jackson should be used inside the instrumentation
+        // as shaded dependency. And that crates new problems.
+        // Note: For now it's not supported
+
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_Generic_class", caller);
 
         try {
             return (T) original.invoke(caller, content, valueType);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw (RuntimeException) e.getCause();
-        }
-    }
-
-    @Replacement(replacingStatic = false,
-            type = ReplacementType.TRACKER,
-            id = "Jackson_ObjectMapper_readValue_TypeReference_class",
-            usageFilter = UsageFilter.ONLY_SUT,
-            category = ReplacementCategory.EXT_0)
-    public static <T> T readValue(Object caller, String content, TypeReference<T> valueTypeRef)
-            throws JsonMappingException, JsonProcessingException {
-        Objects.requireNonNull(caller);
-
-        if (valueTypeRef != null) {
-            // To make things work, same approach in Jackson is used to get the
-            //  information about the class.
-            // JSON can be unwrapped using different approaches
-            // val dto: FooDto = mapper.readValue(json)
-            // To support this way, Jackson should be used inside the instrumentation
-            // as shaded dependency
-            Type genericType = valueTypeRef.getType();
-            TypeFactory _typeFactory = TypeFactory.defaultInstance();
-            JavaType _javaType = _typeFactory.constructType(genericType);
-
-            String name = genericType.getTypeName();
-            String schema = ClassToSchema.getOrDeriveSchema(_javaType.getRawClass());
-            UnitsInfoRecorder.registerNewParsedDto(name, schema);
-            ExecutionTracer.addParsedDtoName(name);
-        }
-
-        Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_TypeReference_class", caller);
-
-        try {
-            return (T) original.invoke(caller, content, valueTypeRef);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {

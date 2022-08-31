@@ -31,22 +31,6 @@ class JacksonRest {
         return if (x > 0) ResponseEntity.ok().body("Working")
         else ResponseEntity.badRequest().body("Failed")
     }
-
-    @PostMapping(path = ["/type"], consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE])
-    fun typeReference(request: HttpServletRequest): ResponseEntity<String> {
-
-        val json = IOUtils.toString(request.inputStream, StandardCharsets.UTF_8)
-        val x: Int
-        try {
-            val mapper = jacksonObjectMapper()
-            val dto: FooDto = mapper.readValue(json)
-            x = dto.x
-        } catch (e: Exception) {
-            return ResponseEntity.badRequest().body("Failed")
-        }
-        return if (x > 0) ResponseEntity.ok().body("Working")
-        else ResponseEntity.badRequest().body("Failed")
-    }
 }
 
 
