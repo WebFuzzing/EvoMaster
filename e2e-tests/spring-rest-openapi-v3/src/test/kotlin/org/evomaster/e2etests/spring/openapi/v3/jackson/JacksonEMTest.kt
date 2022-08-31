@@ -20,7 +20,7 @@ class JacksonEMTest: SpringTestBase() {
                  Mac and Windows machines locally.
                 Could be an issue with Linux or used JDK
              */
-//            CIUtils.skipIfOnGA()
+            CIUtils.skipIfOnGA()
 
             initClass(JacksonController())
         }
