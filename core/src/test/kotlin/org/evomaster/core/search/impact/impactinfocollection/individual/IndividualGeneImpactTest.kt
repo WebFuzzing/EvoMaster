@@ -51,15 +51,15 @@ class IndividualGeneImpactTest {
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividual()
         evi_ind1.wrapWithTracking(null, 10, mutableListOf(evi_ind1.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT)))
 
-        assert(evi_ind1.getSizeOfImpact(fromInitialization = false) == 2)
+        assertEquals(2, evi_ind1.getSizeOfImpact(fromInitialization = false))
         val mutatedIndex = 1
         val spec = MutatedGeneSpecification()
 
         val evi_ind2 = simulatedMutator.fakeMutator(evi_ind1, mutatedIndex, spec, 1)
         val mutatedAction = evi_ind2.individual.seeAllActions()[mutatedIndex]
 
-        assert(spec.mutatedIndividual != null)
-        assert(spec.mutatedGenes.size == 1)
+        assertNotNull(spec.mutatedIndividual)
+        assertEquals(1, spec.mutatedGenes.size)
         val mutatedGeneId = ImpactUtils.generateGeneId(spec.mutatedIndividual!!, spec.mutatedGenes.first().gene!!)
 
         val evaluatedTargets = mutableMapOf<Int, EvaluatedMutation>()
@@ -79,8 +79,8 @@ class IndividualGeneImpactTest {
         assertEquals(2, impactTarget.size)
         assertEquals(2, improvedTarget.size)
 
-        assert(improvedTarget.keys.containsAll(setOf(2,3)))
-        assert(impactTarget.keys.containsAll(setOf(2,3)))
+        assertTrue(improvedTarget.keys.containsAll(setOf(2,3)))
+        assertTrue(impactTarget.keys.containsAll(setOf(2,3)))
 
         val tracked_evi_ind2 = evi_ind1.next(
                 next = evi_ind2,
@@ -88,7 +88,7 @@ class IndividualGeneImpactTest {
                 evaluatedResult = EvaluatedMutation.BETTER_THAN
         )
 
-        assert(tracked_evi_ind2 != null)
+        assertNotNull(tracked_evi_ind2)
 
         tracked_evi_ind2!!.updateImpactOfGenes(
                 previous = evi_ind1,
@@ -97,32 +97,32 @@ class IndividualGeneImpactTest {
                 targetsInfo = evaluatedTargets
         )
 
-        assert(tracked_evi_ind2.getSizeOfImpact(false) == 2)
+        assertEquals(2, tracked_evi_ind2.getSizeOfImpact(false))
         val evi_ind1impactInfo = evi_ind1.getImpactByAction(mutatedAction, false)
-        assert(evi_ind1impactInfo!= null)
+        assertNotNull(evi_ind1impactInfo)
         val ind1impact = evi_ind1impactInfo!![mutatedGeneId]
-        assert(ind1impact != null)
+        assertNotNull(ind1impact)
 
-        assert(ind1impact!!.getTimesOfImpacts().containsKey(2))
-        assert(ind1impact.getTimesOfImpacts().containsKey(3))
+        assertTrue(ind1impact!!.getTimesOfImpacts().containsKey(2))
+        assertTrue(ind1impact.getTimesOfImpacts().containsKey(3))
 
         val tracked_evi_ind2impactInfo = tracked_evi_ind2.getImpactByAction(mutatedAction, false)
-        assert(tracked_evi_ind2impactInfo!=null)
+        assertNotNull(tracked_evi_ind2impactInfo)
         val ind2impact = tracked_evi_ind2impactInfo!![mutatedGeneId]
 
         val tracked_evi_ind2impactInfo_otheer = tracked_evi_ind2.getImpactByAction(tracked_evi_ind2.individual.seeAllActions()[0], false)
-        assert(tracked_evi_ind2impactInfo_otheer!=null)
+        assertNotNull(tracked_evi_ind2impactInfo_otheer)
         val ind2impactdifAction = tracked_evi_ind2impactInfo_otheer!![mutatedGeneId]
 
-        assert(ind2impact != null)
-        assert(ind1impact.shared == ind2impact!!.shared)
+        assertNotNull(ind2impact)
+        assertTrue(ind1impact.shared == ind2impact!!.shared)
 
-        assert(ind2impact.getTimesOfImpacts().containsKey(2))
-        assert(ind2impact.getTimesOfImpacts().containsKey(3))
+        assertTrue(ind2impact.getTimesOfImpacts().containsKey(2))
+        assertTrue(ind2impact.getTimesOfImpacts().containsKey(3))
 
-        assert(ind2impactdifAction != null)
-        assert(ind2impactdifAction!!.getTimesOfImpacts().isEmpty())
-        assert(ind2impactdifAction.getTimesToManipulate() == 0)
+        assertNotNull(ind2impactdifAction)
+        assertTrue(ind2impactdifAction!!.getTimesOfImpacts().isEmpty())
+        assertEquals(0, ind2impactdifAction.getTimesToManipulate())
     }
 
     @Test
@@ -132,7 +132,7 @@ class IndividualGeneImpactTest {
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividual()
         evi_ind1.wrapWithTracking(null, 10, mutableListOf(evi_ind1.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT)))
 
-        assert(evi_ind1.getSizeOfImpact(false) == 2)
+        assertEquals(2, evi_ind1.getSizeOfImpact(false))
         val mutatedIndex = 1
         val spec = MutatedGeneSpecification()
 
@@ -154,15 +154,15 @@ class IndividualGeneImpactTest {
         assertEquals(2, impactTarget.size)
         assertEquals(2, improvedTarget.size)
 
-        assert(improvedTarget.keys.containsAll(setOf(2,3)))
-        assert(impactTarget.keys.containsAll(setOf(2,3)))
+        assertTrue(improvedTarget.keys.containsAll(setOf(2,3)))
+        assertTrue(impactTarget.keys.containsAll(setOf(2,3)))
 
 
         val tracked_evi_ind2 = evi_ind1.next(
                 next = evi_ind2, copyFilter = TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT, evaluatedResult = EvaluatedMutation.BETTER_THAN
         )
 
-        assert(tracked_evi_ind2 != null)
+        assertNotNull(tracked_evi_ind2)
 
         tracked_evi_ind2!!.updateImpactOfGenes(
                 previous = evi_ind1,
@@ -189,12 +189,13 @@ class IndividualGeneImpactTest {
         fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification, index: Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
 
-            val mutatedGene = (ind2.seeAllActions()[mutatedIndex].seeTopGenes()[1] as StringGene)
+            val action = ind2.seeAllActions()[mutatedIndex]
+            val mutatedGene = action.seeTopGenes()[1] as StringGene
 
             mutatedGeneSpecification.addMutatedGene(
                     isDb = false,
                     isInit = false,
-                    position = mutatedIndex,
+                    actionLocalId = action.getLocalId(),
                     valueBeforeMutation = mutatedGene.value,
                     gene = mutatedGene
             )
@@ -218,8 +219,7 @@ class IndividualGeneImpactTest {
 
                 mutatedGeneSpecification.addRemovedOrAddedByAction(
                     removedAction,
-                    mutatedIndex,
-                    true,mutatedIndex
+                    true,null
                 )
 
                 //ind2.actions.removeAt(mutatedIndex)
@@ -228,14 +228,15 @@ class IndividualGeneImpactTest {
             }else{
                 val action = IndAction.getIndMainAction(1).first()
 
-                mutatedGeneSpecification.addRemovedOrAddedByAction(
-                    action,
-                    mutatedIndex,
-                    false,mutatedIndex
-                )
-
                 //ind2.actions.add(mutatedIndex, action)
                 ind2.addChild(mutatedIndex, action)
+
+                mutatedGeneSpecification.addRemovedOrAddedByAction(
+                    action,
+                    false,null
+                )
+
+
             }
 
             mutatedGeneSpecification.setMutatedIndividual(ind2)

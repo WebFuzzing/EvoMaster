@@ -355,7 +355,7 @@ class EvaluatedIndividual<T>(
         }
 
         if (!didStructureMutation) {
-            impactInfo!!.syncBasedOnIndividual(individual, mutatedGenes)
+            impactInfo!!.syncBasedOnIndividual(individual)
         }
 
         if (mutatedGenes.addedInitializationGenes.isNotEmpty()) {
@@ -406,7 +406,7 @@ class EvaluatedIndividual<T>(
                 impactInfo!!.deleteActionGeneImpacts(
                     actions = mutatedGenes.getRemoved(true)
                         .mapNotNull { it.actionLocalId }
-                        .map { mutatedGenes.mutatedIndividual!!.findActionByLocalId(it, false)!! })
+                        .map { previous.findActionByLocalId(it, false)!! })
             }
 
             //handle added
