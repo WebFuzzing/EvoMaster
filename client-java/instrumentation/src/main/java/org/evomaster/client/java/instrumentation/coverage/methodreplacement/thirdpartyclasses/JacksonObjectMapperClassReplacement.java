@@ -37,7 +37,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) {
         Objects.requireNonNull(caller);
 
-        if(valueType != null) {
+        if (valueType != null) {
             String name = valueType.getName();
             String schema = ClassToSchema.getOrDeriveSchema(valueType);
             UnitsInfoRecorder.registerNewParsedDto(name, schema);
@@ -48,9 +48,9 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
         try {
             return (T) original.invoke(caller, src, valueType);
-        } catch (IllegalAccessException e){
+        } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
-        } catch (InvocationTargetException e){
+        } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
         }
     }
@@ -63,7 +63,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     public static <T> T readValue(Object caller, String content, Class<T> valueType) {
         Objects.requireNonNull(caller);
 
-        if(valueType != null) {
+        if (valueType != null) {
             String name = valueType.getName();
             String schema = ClassToSchema.getOrDeriveSchema(valueType);
             UnitsInfoRecorder.registerNewParsedDto(name, schema);
@@ -74,9 +74,9 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
         try {
             return (T) original.invoke(caller, content, valueType);
-        } catch (IllegalAccessException e){
+        } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
-        } catch (InvocationTargetException e){
+        } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
         }
     }
@@ -86,7 +86,8 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             id = "Jackson_ObjectMapper_readValue_TypeReference_class",
             usageFilter = UsageFilter.ONLY_SUT,
             category = ReplacementCategory.EXT_0)
-    public static <T> T readValue(Object caller, String content, TypeReference<T> valueTypeRef) throws JsonProcessingException, JsonMappingException {
+    public static <T> T readValue(Object caller, String content, TypeReference<T> valueTypeRef)
+            throws JsonMappingException, JsonProcessingException {
         Objects.requireNonNull(caller);
 
         if (valueTypeRef != null) {
