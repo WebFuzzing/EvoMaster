@@ -2,7 +2,6 @@ package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.gene.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
 
 /**
  * this impact could be applied to CompositeFixedGene in general that only handles impacts of children
@@ -31,18 +30,18 @@ class CompositeFixedGeneImpact(
         childrenImpacts= gene.getViewOfChildren().mapIndexed { index, g ->  Pair(getKey(index, g.name), ImpactUtils.createGeneImpact(g, g.name)) }.toMap().toMutableMap())
 
 
-    override fun copy(): ObjectGeneImpact {
-        return ObjectGeneImpact(
+    override fun copy(): CompositeFixedGeneImpact {
+        return CompositeFixedGeneImpact(
             shared.copy(),
             specific.copy(),
-            fields = childrenImpacts.map { Pair(it.key, it.value.copy()) }.toMap().toMutableMap())
+            childrenImpacts = childrenImpacts.map { Pair(it.key, it.value.copy()) }.toMap().toMutableMap())
     }
 
-    override fun clone(): ObjectGeneImpact {
-        return ObjectGeneImpact(
+    override fun clone(): CompositeFixedGeneImpact {
+        return CompositeFixedGeneImpact(
             shared.clone(),
             specific.clone(),
-            childrenImpacts.map { it.key to it.value.clone() }.toMap().toMutableMap()
+            childrenImpacts = childrenImpacts.map { it.key to it.value.clone() }.toMap().toMutableMap()
         )
     }
 
