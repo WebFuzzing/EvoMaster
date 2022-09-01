@@ -12,6 +12,7 @@ import org.evomaster.core.problem.external.service.ExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
+import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
@@ -98,6 +99,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         if(config.extraQueryParam){
             addExtraQueryParam(actionCluster)
         }
+        if(config.extraHeader){
+            addExtraHeader(actionCluster)
+        }
 
         setupAuthentication(infoDto)
         initSqlInfo(infoDto)
@@ -128,6 +132,18 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             ))
         }
     }
+
+    private fun addExtraHeader(actionCluster: Map<String, Action>){
+
+        val key = TaintInputName.EXTRA_HEADER_TAINT
+
+        actionCluster.values.forEach {
+            (it as RestCallAction).addParam(HeaderParam(key,
+                OptionalGene(key, DisruptiveGene(key, StringGene(key, "42"), 0.0))
+            ))
+        }
+    }
+
 
     /**
      * create AdHocInitialIndividuals

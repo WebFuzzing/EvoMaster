@@ -23,6 +23,14 @@ public class TaintInputName {
      */
     public static final String EXTRA_PARAM_TAINT = "EMextraParam123";
 
+
+    /**
+     * Name of special HTTP Header used by EM, to discover new headers not in the schema (eg OpenAPI for REST),
+     * based on what it is compared to
+     */
+    public static final String EXTRA_HEADER_TAINT = "x-EMextraHeader123";
+
+
     /**
      * Check if a given string value is a tainted value
      */

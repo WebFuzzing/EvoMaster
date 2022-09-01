@@ -31,6 +31,16 @@ public abstract class CollectionsDistanceUtils {
             }
         }
 
+        if(inputString.equals(TaintInputName.EXTRA_HEADER_TAINT)){
+            for(Object value : c){
+                if(value instanceof String){
+                    ExecutionTracer.addHeader((String) value);
+                } else {
+                    return; //collections is not of strings
+                }
+            }
+        }
+
         if(c.size() <= 16){
             /*
                 cannot search indiscriminately, as we do not know performance of search, eg could be O(n),
@@ -50,6 +60,10 @@ public abstract class CollectionsDistanceUtils {
                 } else {
                     if(value.equals(TaintInputName.EXTRA_PARAM_TAINT)) {
                         ExecutionTracer.addQueryParameter(inputString);
+                        break;
+                    }
+                    if(value.equals(TaintInputName.EXTRA_HEADER_TAINT)) {
+                        ExecutionTracer.addHeader(inputString);
                         break;
                     }
                 }

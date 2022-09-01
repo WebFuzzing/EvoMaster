@@ -195,6 +195,29 @@ public class ExecutionTracer {
         }
     }
 
+    public static void handleExtraHeaderTaint(String left, String right){
+
+        if (left == null || left.isEmpty() || right == null || right.isEmpty()) {
+            //nothing to do?
+            return;
+        }
+
+        boolean taintedLeft = left.equals(TaintInputName.EXTRA_HEADER_TAINT);
+        boolean taintedRight = right.equals(TaintInputName.EXTRA_HEADER_TAINT);
+
+        if(taintedLeft && taintedRight){
+            //nothing to do?
+            return;
+        }
+
+        if(taintedLeft){
+            ExecutionTracer.addHeader(right);
+        }
+        if(taintedRight){
+            ExecutionTracer.addHeader(left);
+        }
+    }
+
     public static void handleTaintForStringEquals(String left, String right, boolean ignoreCase) {
 
         if (left == null || right == null) {

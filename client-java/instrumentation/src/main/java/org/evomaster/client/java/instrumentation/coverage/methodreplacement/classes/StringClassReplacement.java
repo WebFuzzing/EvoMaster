@@ -26,6 +26,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         String right = anObject == null ? null : anObject.toString();
         ExecutionTracer.handleTaintForStringEquals(left, right, false);
         ExecutionTracer.handleExtraParamTaint(left, right);
+        ExecutionTracer.handleExtraHeaderTaint(left, right);
 
         //not important if NPE
         boolean result = caller.equals(anObject);

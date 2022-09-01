@@ -1144,6 +1144,13 @@ class EMConfig {
             " that were not specified in the schema.")
     var extraQueryParam = false
 
+
+    @Experimental
+    @Cfg("Add an extra HTTP header, to analyze how it is used/read by the SUT. Needed to discover new headers" +
+            " that were not specified in the schema.")
+    var extraHeader = false
+
+
     enum class ResourceSamplingStrategy(val requiredArchive: Boolean = false) {
         NONE,
         /**
