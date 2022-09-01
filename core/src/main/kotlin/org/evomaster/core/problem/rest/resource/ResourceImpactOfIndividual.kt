@@ -40,15 +40,16 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
     val anySqlTableSizeImpact : IntegerGeneImpact
 
     constructor(
-            initializationGeneImpacts: InitializationActionImpacts,
-            actionGeneImpacts: MutableList<ImpactsOfAction>,
-            impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),
-            resourceSizeImpact: MutableMap<String, IntegerGeneImpact>,
-            sqlTableImpact: MutableMap<String, IntegerGeneImpact>,
-            anyResourceSizeImpact: IntegerGeneImpact,
-            anySqlTableSizeImpact: IntegerGeneImpact
+        initActionImpacts: InitializationActionImpacts,
+        fixedMainActionImpacts: MutableList<ImpactsOfAction>,
+        dynamicMainActionImpacts: MutableList<ImpactsOfAction>,
+        impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize"),
+        resourceSizeImpact: MutableMap<String, IntegerGeneImpact>,
+        sqlTableImpact: MutableMap<String, IntegerGeneImpact>,
+        anyResourceSizeImpact: IntegerGeneImpact,
+        anySqlTableSizeImpact: IntegerGeneImpact
 
-    ) : super(initializationGeneImpacts, actionGeneImpacts, impactsOfStructure) {
+    ) : super(initActionImpacts, fixedMainActionImpacts, dynamicMainActionImpacts, impactsOfStructure) {
         this.resourceSizeImpact = resourceSizeImpact
         this.sqlTableSizeImpact = sqlTableImpact
         this.anyResourceSizeImpact = anyResourceSizeImpact
@@ -78,6 +79,7 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
         return ResourceImpactOfIndividual(
                 initActionImpacts.copy(),
                 fixedMainActionImpacts.map { it.copy() }.toMutableList(),
+                dynamicMainActionImpacts.map { it.copy() }.toMutableList(),
                 impactsOfStructure.copy(),
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(resourceSizeImpact.map { it.key to it.value.copy() })
@@ -97,6 +99,7 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
         return ResourceImpactOfIndividual(
                 initActionImpacts.clone(),
                 fixedMainActionImpacts.map { it.clone() }.toMutableList(),
+                dynamicMainActionImpacts.map { it.clone() }.toMutableList(),
                 impactsOfStructure.clone(),
                 mutableMapOf<String, IntegerGeneImpact>().apply {
                     putAll(resourceSizeImpact.map { it.key to it.value.clone() })
