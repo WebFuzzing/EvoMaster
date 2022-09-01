@@ -64,7 +64,7 @@ class IndividualImpactTest {
 
         val impactInfo = ImpactsOfIndividual(ind, false, null)
 
-        impactInfo.mainActionsImpacts.apply {
+        impactInfo.fixedMainActionImpacts.apply {
             assertEquals(2, size)
             assertEquals(2, this[0].geneImpacts.size)
             assertEquals(1, this[1].geneImpacts.size)

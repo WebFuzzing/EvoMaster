@@ -233,6 +233,29 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
      fun seeExternalServiceActions() : List<ExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ExternalServiceAction>
 
+
+    /**
+     * @return a sequence of actions which are not in initialization and
+     * except structure mutator, an index of any action in this sequence is determinate after the construction
+     *
+     * Note that the method is particular used by impact collections for the individual
+     */
+    fun seeFixedMainActions() = seeActions(ActionFilter.NO_INIT).filterNot { it is ExternalServiceAction }
+
+
+    /**
+     * @return a view of actions which are not in initialization and
+     * the index of the action is dynamic without mutation, such as external service
+     *
+     * for an individual, the external service could be updated based on fitness evaluation,
+     * then newly added external service could result in a dynamic index for the actions.
+     * then we categorize all such actions as a return of the method
+     *
+     * Note that the method is particular used by impact collections for the individual
+     */
+    fun seeDynamicMainActions() = seeActions(ActionFilter.NO_INIT).filterIsInstance<ExternalServiceAction>()
+
+
     /**
      * Determine if the structure (ie the actions) of this individual
      * can be mutated (eg, add/remove main actions).

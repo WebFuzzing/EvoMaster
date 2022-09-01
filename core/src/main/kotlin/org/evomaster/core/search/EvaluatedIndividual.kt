@@ -374,7 +374,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
                 addedGenes.mapNotNull { it.actionPosition }.toSet().sorted().forEach { actionIndex->
                       if (emptyActions.contains(actionIndex)){
-                          impactInfo!!.addOrUpdateActionGeneImpacts(
+                          impactInfo!!.addOrUpdateMainActionGeneImpacts(
                               actionName = individual.seeActions(NO_INIT)[actionIndex].getName(),
                               actionIndex = actionIndex,
                               newAction = true,
@@ -385,7 +385,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                           val index = mgenes.mapNotNull { it.actionPosition }.toSet()
                           if (index.size != 1 || index.first() != actionIndex)
                               throw IllegalArgumentException("mismatched impact info: genes should be mutated at $index action, but actually the index is $actionIndex")
-                          impactInfo!!.addOrUpdateActionGeneImpacts(
+                          impactInfo!!.addOrUpdateMainActionGeneImpacts(
                               actionIndex = actionIndex,
                               actionName = individual.seeActions(NO_INIT)[actionIndex].getName(),
                               impacts = mgenes.map {g->
@@ -417,19 +417,19 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 in this case, we might remove second table_a, thus the mutated ind A becomes
                 (table_a, resource_a, table_b, resource_b), and the table_b refers to the table_a in the front of resource_a
              */
-            var fix = impactInfo!!.findFirstMismatchedIndex(individual.seeActions(NO_INIT))
+            var fix = impactInfo!!.findFirstMismatchedIndexForFixedMainActions(individual.seeActions(NO_INIT))
             while (fix.first != -1){
                 if (fix.second!!){
                     impactInfo.deleteActionGeneImpacts(setOf(fix.first))
                 }else{
-                    impactInfo.addOrUpdateActionGeneImpacts(
+                    impactInfo.addOrUpdateMainActionGeneImpacts(
                         actionName = individual.seeActions(NO_INIT)[fix.first].getName(),
                         actionIndex = fix.first,
                         newAction = true,
                         impacts = mutableMapOf()
                     )
                 }
-                val nextFix = impactInfo.findFirstMismatchedIndex(individual.seeActions(NO_INIT))
+                val nextFix = impactInfo.findFirstMismatchedIndexForFixedMainActions(individual.seeActions(NO_INIT))
                 if (nextFix.first < fix.first){
                     if (nextFix.first != -1)
                         log.warn("the fix at {} with remove/add ({}) does not work, and the next fix is at {}", fix.first, fix.second, nextFix.first)
@@ -538,7 +538,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         val geneId = ImpactUtils.generateGeneId(individual, gene)
         val impact = ImpactUtils.createGeneImpact(gene,geneId)
-        impactInfo?.addOrUpdateActionGeneImpacts(
+        impactInfo?.addOrUpdateMainActionGeneImpacts(
                 actionName = action?.getName(),
                 actionIndex = index,
                 newAction = false,
