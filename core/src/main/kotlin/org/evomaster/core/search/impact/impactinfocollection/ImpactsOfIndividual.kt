@@ -341,13 +341,18 @@ open class ImpactsOfIndividual(
 
         if (newAction) {
             if (fixedIndexedAction && actionIndex > fixedMainActionImpacts.size) return false
-            if (!fixedIndexedAction)
-
-
-
-            fixedMainActionImpacts.add(actionIndex, ImpactsOfAction(localId, actionName, impacts))
+            if (!fixedIndexedAction && findDynamicImpactActionByLocalId(localId) != null) return false
+            if (fixedIndexedAction)
+                fixedMainActionImpacts.add(actionIndex, ImpactsOfAction(localId, actionName, impacts))
+            else
+                dynamicMainActionImpacts.add(ImpactsOfAction(localId, actionName, impacts))
             return true
         }
+
+        if (!fixedIndexedAction){
+            return findDynamicImpactActionByLocalId(localId)!!.addGeneImpact(actionName, impacts)
+        }
+
         if (actionIndex >= fixedMainActionImpacts.size) return false
         return fixedMainActionImpacts[actionIndex].addGeneImpact(actionName, impacts)
     }
@@ -437,18 +442,20 @@ open class ImpactsOfIndividual(
      * @param fixedIndexedAction specifies whether the action is from fixed action group of the individual
      * @param fromInitialization specifies whether the actions are in the initialization
      */
-    fun findImpactsByAction(actionName: String, actionIndex: Int, localId: String, fixedIndexedAction: Boolean, fromInitialization: Boolean): MutableMap<String, GeneImpact>? {
+    fun findImpactsByAction(actionName: String, actionIndex: Int, localId: String?, fixedIndexedAction: Boolean, fromInitialization: Boolean): MutableMap<String, GeneImpact>? {
         val found = findImpactsAction(actionName, actionIndex, localId, fixedIndexedAction, fromInitialization) ?: return null
         return found.geneImpacts
     }
 
-    private fun findImpactsAction(actionName: String, actionIndex: Int, localId: String, fixedIndexedAction: Boolean, fromInitialization: Boolean): ImpactsOfAction? {
+    private fun findImpactsAction(actionName: String, actionIndex: Int, localId: String?, fixedIndexedAction: Boolean, fromInitialization: Boolean): ImpactsOfAction? {
         return try {
             if (fromInitialization)
                 initActionImpacts.getImpactOfAction(actionName, actionIndex)
             else if (fixedIndexedAction)
                 findImpactOfFixedAction(actionName, actionIndex)
             else {
+                if (localId == null)
+                    throw IllegalArgumentException("local id must be specified in order to find the gene")
                 findDynamicImpactActionByLocalId(localId)
             }
         } catch (e: IllegalArgumentException) {

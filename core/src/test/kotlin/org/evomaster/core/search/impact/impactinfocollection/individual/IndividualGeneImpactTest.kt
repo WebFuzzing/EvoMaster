@@ -97,7 +97,7 @@ class IndividualGeneImpactTest {
         )
 
         assert(tracked_evi_ind2.getSizeOfImpact(false) == 2)
-        val evi_ind1impactInfo = evi_ind1.getImpactByAction(mutatedIndex, false)
+        val evi_ind1impactInfo = evi_ind1.getImpactOfFixedAction(mutatedIndex, false)
         assert(evi_ind1impactInfo!= null)
         val ind1impact = evi_ind1impactInfo!![mutatedGeneId]
         assert(ind1impact != null)
@@ -105,11 +105,11 @@ class IndividualGeneImpactTest {
         assert(ind1impact!!.getTimesOfImpacts().containsKey(2))
         assert(ind1impact.getTimesOfImpacts().containsKey(3))
 
-        val tracked_evi_ind2impactInfo = tracked_evi_ind2.getImpactByAction(mutatedIndex, false)
+        val tracked_evi_ind2impactInfo = tracked_evi_ind2.getImpactOfFixedAction(mutatedIndex, false)
         assert(tracked_evi_ind2impactInfo!=null)
         val ind2impact = tracked_evi_ind2impactInfo!![mutatedGeneId]
 
-        val tracked_evi_ind2impactInfo_otheer = tracked_evi_ind2.getImpactByAction(0, false)
+        val tracked_evi_ind2impactInfo_otheer = tracked_evi_ind2.getImpactOfFixedAction(0, false)
         assert(tracked_evi_ind2impactInfo_otheer!=null)
         val ind2impactdifAction = tracked_evi_ind2impactInfo_otheer!![mutatedGeneId]
 

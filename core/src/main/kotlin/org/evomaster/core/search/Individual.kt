@@ -381,6 +381,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return true
     }
 
+    /**
+     * @return an action based on the specified [localId]
+     */
+    fun findActionByLocalId(localId : String): Action?{
+        return seeAllActions().find { it.getLocalId() == localId }
+    }
 
     override fun addChild(child: StructuralElement) {
         handleLocalIdsForAddition(listOf(child))
