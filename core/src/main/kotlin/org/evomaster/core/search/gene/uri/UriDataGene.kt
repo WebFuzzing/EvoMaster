@@ -48,10 +48,7 @@ class UriDataGene(
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
-        /*
-        FIXME
-        */
-        return listOf();
+        return innerGene().filter { it.isMutable() }
     }
 
     override fun innerGene(): List<Gene> {

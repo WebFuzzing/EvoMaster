@@ -51,7 +51,7 @@ class ImpactUtils {
                 is DoubleGene -> DoubleGeneImpact(id)
                 is FloatGene -> FloatGeneImpact(id)
                 is StringGene -> StringGeneImpact(id, gene)
-                is Base64StringGene -> StringGeneImpact(id, gene.data)
+                //is Base64StringGene -> StringGeneImpact(id, gene.data)
                 is ObjectGene -> ObjectGeneImpact(id, gene)
                 is TupleGene -> TupleGeneImpact(id, gene)
                 is MapGene<*, *>-> MapGeneImpact(id)
@@ -81,6 +81,8 @@ class ImpactUtils {
                 is QuantifierRxGene -> QuantifierRxGeneImpact(id, gene)
                 is RxAtom -> RxAtomImpact(id)
                 is RxTerm -> RxTermImpact(id)
+                // general for composite fixed gene
+                is CompositeFixedGene -> CompositeFixedGeneImpact(id, gene)
                 else ->{
                     LoggingUtil.uniqueWarn(log, "the impact of {} was collected in a general manner, i.e., GeneImpact", gene::class.java.simpleName)
                     GeneImpact(id)

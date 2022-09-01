@@ -66,11 +66,7 @@ class UrlHttpGene(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
 
-        /*
-            FIXME
-         */
-        return listOf();
-        //return innerGene()
+        return innerGene().filter { it.isMutable() }
     }
 
     override fun innerGene(): List<Gene> {
