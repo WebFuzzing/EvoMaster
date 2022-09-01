@@ -46,8 +46,8 @@ class ExternalServiceAction(
      *
      * Note that it should be always re-assigned based on [used] before fitness evaluation, see [resetActive]
      */
-    private var active : Boolean = active
-        get() = this.active
+    var active : Boolean = active
+        private set
 
 
     /**
@@ -55,8 +55,8 @@ class ExternalServiceAction(
      *
      * Note that it should be updated after the fitness evaluation based on whether the external service is used during the API execution
      */
-    private var used : Boolean = used
-        get() = this.active
+    var used : Boolean = used
+        private set
 
     companion object {
         private fun buildResponse(template: String): ResponseParam {
