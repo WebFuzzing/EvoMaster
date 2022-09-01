@@ -5,7 +5,6 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -109,14 +108,24 @@ open class ImpactsOfIndividual(
 
 
     /**
-     * verify action gene impacts based on the given [actions]
+     * verify fixed action impacts based on the given [individual]
      */
-    fun verifyActionGeneImpacts(actions : List<Action>){
-        if (actions.size != fixedMainActionImpacts.size)
-            throw IllegalStateException("mismatched size of impacts according to actions: ${actions.size} (actions) vs. ${fixedMainActionImpacts.size} (impacts)")
-        actions.forEachIndexed { index, action ->
+    fun verifyFixedActionGeneImpacts(individual: Individual){
+        // fixed
+        val fixed = individual.seeFixedMainActions()
+        if (fixed.size != fixedMainActionImpacts.size)
+            throw IllegalStateException("mismatched size of impacts according to actions: ${fixed.size} (actions) vs. ${fixedMainActionImpacts.size} (impacts)")
+        fixed.forEachIndexed { index, action ->
             if (action.getName() != fixedMainActionImpacts[index].actionName)
                 throw IllegalStateException("mismatched impact info at $index index: actual action is ${action.getName()}, but the impact info is ${fixedMainActionImpacts[index].actionName}")
+        }
+
+        // dynamic
+        individual.seeDynamicMainActions().forEach { d->
+            dynamicMainActionImpacts.filter { it.localId == d.getLocalId() }.apply {
+                if (size != 1)
+                    throw IllegalStateException("there should be only one impact, but there exist $size impacts for an action with local id ${d.getLocalId()}")
+            }
         }
     }
 
@@ -130,16 +139,26 @@ open class ImpactsOfIndividual(
      * @return size of action impacts
      * @param fromInitialization specifies whether the actions are in the initialization or not
      */
-    fun getSizeOfActionImpacts(fromInitialization: Boolean) = if (fromInitialization) initActionImpacts.getSize() else fixedMainActionImpacts.size
+    fun getSizeOfActionImpacts(fromInitialization: Boolean) =
+        if (fromInitialization) initActionImpacts.getSize() else (fixedMainActionImpacts.size + dynamicMainActionImpacts.size)
 
     /**
      * @param actionIndex is null when there is no action in the individual, then return the first GeneImpact
      */
-    fun getGene(actionName: String?, geneId: String, actionIndex: Int?, fromInitialization: Boolean): GeneImpact? {
-        if (actionIndex == null || (actionIndex == -1 && noneActionIndividual())) return fixedMainActionImpacts.first().geneImpacts[geneId]
+    fun getGene(actionName: String?, geneId: String, actionIndex: Int?, localId: String?, fixedIndexedAction: Boolean, fromInitialization: Boolean): GeneImpact? {
+        // all individual should have at leadt one action, then remove this condition
+        //if (actionIndex == null || (actionIndex == -1 && noneActionIndividual())) return fixedMainActionImpacts.first().geneImpacts[geneId]
+
+        if (actionIndex == null && (fromInitialization || fixedIndexedAction))
+            throw IllegalArgumentException("an index of the action must be given in order to get the gene")
+
+        if (localId == null && !fixedIndexedAction)
+            throw IllegalArgumentException("local id must be specified in order to get the gene")
+
         val impactsOfAction =
-                if (fromInitialization) initActionImpacts.getImpactOfAction(actionName, actionIndex)
-                else findImpactOfFixedAction(actionName, actionIndex)
+                if (fromInitialization) initActionImpacts.getImpactOfAction(actionName, actionIndex!!)
+                else if (fixedIndexedAction) findImpactOfFixedAction(actionName, actionIndex!!)
+                else findDynamicImpactActionByLocalId(localId!!)
         impactsOfAction ?: return null
         return impactsOfAction.get(geneId, actionName)
     }
@@ -150,21 +169,23 @@ open class ImpactsOfIndividual(
     fun getGeneImpact(geneId: String): List<GeneImpact> {
         val list = mutableListOf<GeneImpact>()
 
-        initActionImpacts.getAll().plus(fixedMainActionImpacts).forEach {
+        initActionImpacts.getAll().plus(fixedMainActionImpacts).plus(dynamicMainActionImpacts).forEach {
             if (it.geneImpacts.containsKey(geneId))
                 list.add(it.geneImpacts[geneId]!!)
         }
         return list
     }
 
-
-    private fun noneActionIndividual() : Boolean = fixedMainActionImpacts.size == 1 && fixedMainActionImpacts.first().actionName == null
+    @Deprecated("now the indiviual should have at least one action")
+    private fun noneActionIndividual() = fixedMainActionImpacts.size == 1 && fixedMainActionImpacts.first().actionName == null
 
     /**
-     * synchronize the impacts based on the [individual] and [mutatedGene]
+     * except the structure mutator,
+     * the actions might be updated due to,
+     *      eg, repair Db actions, new genes for the rest action with additional info, new external service actions
+     * thus, we need to synchronize the action impacts based on the [individual]
      */
-    fun syncBasedOnIndividual(individual: Individual, mutatedGene: MutatedGeneSpecification) {
-        // TODO Man fix external services
+    fun syncBasedOnIndividual(individual: Individual) {
         val initActions = individual.seeInitializingActions().filterIsInstance<DbAction>()
         //for initialization due to db action fixing
         val diff = initActions.size - initActionImpacts.getOriginalSize()
@@ -177,20 +198,40 @@ open class ImpactsOfIndividual(
             throw IllegalStateException("inconsistent impact for SQL genes")
         }
 
-        //for action
-        if ((individual.seeActions(ActionFilter.NO_INIT).isNotEmpty() && individual.seeActions(ActionFilter.NO_INIT).size != fixedMainActionImpacts.size) ||
-                (individual.seeActions(ActionFilter.NO_INIT).isEmpty() && !noneActionIndividual()))
+        //for fixed action
+        val fixed = individual.seeFixedMainActions()
+        if ((fixed.isNotEmpty() && fixed.size != fixedMainActionImpacts.size) ||
+                (fixed.isEmpty() && !noneActionIndividual()))
             throw IllegalArgumentException("inconsistent size of actions and impacts")
 
-        individual.seeActions(ActionFilter.NO_INIT).forEach { action ->
+        fixed.forEach { action ->
             val actionName = action.getName()
-            val index = individual.seeActions(ActionFilter.NO_INIT).indexOf(action)
+            val index = fixed.indexOf(action)
             //root genes might be changed e.g., additionalInfo, so sync impacts of all genes
             action.seeTopGenes().forEach { g ->
                 val id = ImpactUtils.generateGeneId(action, g)
-                if (getGene(actionName, id, index, false) == null) {
+                if (getGene(actionName, id, index, localId = null, fixedIndexedAction = true, false) == null) {
                     val impact = ImpactUtils.createGeneImpact(g, id)
                     fixedMainActionImpacts[index].addGeneImpact(actionName, impact)
+                }
+            }
+        }
+
+        // for dynamic action
+        individual.seeDynamicMainActions().forEach { c->
+            val impact = findDynamicImpactActionByLocalId(c.getLocalId())
+            if (impact == null){
+                dynamicMainActionImpacts.add(ImpactsOfAction(c.getLocalId(), c.getName()))
+            }else{
+                /*
+                    root gene for the external service might be updated during evaluation
+                 */
+                c.seeTopGenes().forEach { g ->
+                    val id = ImpactUtils.generateGeneId(c, g)
+                    if (getGene(c.getName(), id, null, localId = c.getLocalId(), fixedIndexedAction = false, false) == null) {
+                        val gimpact = ImpactUtils.createGeneImpact(g, id)
+                        impact.addGeneImpact(c.getName(), gimpact)
+                    }
                 }
             }
         }
@@ -200,7 +241,7 @@ open class ImpactsOfIndividual(
      * remove impacts for actions based on their index [actionIndex]
      * @return whether the removal performs successfully
      */
-    fun deleteActionGeneImpacts(actionIndex: Set<Int>): Boolean {
+    fun deleteFixedActionGeneImpacts(actionIndex: Set<Int>): Boolean {
         if (actionIndex.isEmpty()) return false
         if (actionIndex.maxOrNull()!! >= fixedMainActionImpacts.size)
             return false
@@ -214,7 +255,7 @@ open class ImpactsOfIndividual(
     /**
      * swap gene impacts based on their index
      */
-    fun swapActionGeneImpact(actionIndex: List<Int>, swapTo: List<Int>){
+    fun swapFixedActionGeneImpact(actionIndex: List<Int>, swapTo: List<Int>){
         var a = actionIndex
         var b = swapTo
 
@@ -316,7 +357,7 @@ open class ImpactsOfIndividual(
      *     e.g., time of manipulation is more than one for any gene/action
      */
     fun anyImpactfulInfo(): Boolean {
-        for (a in initActionImpacts.getAll().plus(fixedMainActionImpacts)) {
+        for (a in initActionImpacts.getAll().plus(fixedMainActionImpacts).plus(dynamicMainActionImpacts)) {
             if (a.anyImpactfulInfo()) return true
         }
         return false
@@ -326,7 +367,7 @@ open class ImpactsOfIndividual(
      * @return all flatten gene impacts for the individual
      */
     fun flattenAllGeneImpact(): List<GeneImpact> {
-        return initActionImpacts.getAll().plus(fixedMainActionImpacts).flatMap { it.geneImpacts.values }
+        return initActionImpacts.getAll().plus(fixedMainActionImpacts).plus(dynamicMainActionImpacts).flatMap { it.geneImpacts.values }
     }
 
     /**
@@ -343,9 +384,9 @@ open class ImpactsOfIndividual(
      * export impacts info to [content] for the given targets [targets]
      * @param areInitializationGeneImpact specifies whether the impacts are in the initialization
      */
-    fun exportImpactInfo(areInitializationGeneImpact: Boolean, content : MutableList<String>, targets : Set<Int>? = null){
-        val impacts = if (areInitializationGeneImpact) getInitializationGeneImpact() else getActionGeneImpact()
-        val prefix = if (areInitializationGeneImpact) "Initialization" else "Action"
+    fun exportImpactInfo(areInitializationGeneImpact: Boolean, isFixed: Boolean, content : MutableList<String>, targets : Set<Int>? = null){
+        val impacts = if (areInitializationGeneImpact) getInitializationGeneImpact() else getMainActionGeneImpact(isFixed)
+        val prefix = if (areInitializationGeneImpact) "Initialization" else "${if (isFixed) "Fixed" else "Dynamic"}_Action"
         impacts.forEachIndexed { aindex, mutableMap ->
             mutableMap.forEach { (t, geneImpact) ->
                 content.add(mutableListOf("$prefix$aindex", t).plus(geneImpact.toCSVCell(targets)).joinToString(","))
@@ -357,27 +398,28 @@ open class ImpactsOfIndividual(
     }
 
     /**
-     * @return all genes of the actions in the indiviudal
+     * @return all genes of the actions in the individual
      */
-    fun getActionGeneImpact(): List<MutableMap<String, GeneImpact>> {
-        return fixedMainActionImpacts.map { it.geneImpacts }
+    fun getMainActionGeneImpact(isFixed : Boolean = true): List<MutableMap<String, GeneImpact>> {
+        return (if (isFixed) fixedMainActionImpacts else dynamicMainActionImpacts).map { it.geneImpacts }
     }
+
 
     /**
      * @return whether there exist any impact
      */
-    fun anyImpactInfo(): Boolean = initActionImpacts.getSize() > 0 || fixedMainActionImpacts.isNotEmpty()
+    fun anyImpactInfo(): Boolean = initActionImpacts.getSize() > 0 || fixedMainActionImpacts.isNotEmpty() || dynamicMainActionImpacts.isNotEmpty()
 
-    fun findImpactOfActionByLocalId(localId: String) : ImpactsOfAction?{
-        var found =dynamicMainActionImpacts.find { it.localId == localId }
-        if (found != null) return found
-
-        found = fixedMainActionImpacts.find { it.localId == localId }
-        if (found != null) return found
-
-        return initActionImpacts.getAll().find { it.localId == localId }
+    /**
+     * @return an impact of action which is from dynamic action group of the individual
+     */
+    fun findDynamicImpactActionByLocalId(localId: String) : ImpactsOfAction?{
+        return dynamicMainActionImpacts.find { it.localId == localId }
     }
 
+    /**
+     * @return an impact of action which is from fixed action group of the individual
+     */
     fun findImpactOfFixedAction(actionName: String?, actionIndex: Int): ImpactsOfAction {
         if (actionIndex >= fixedMainActionImpacts.size)
             throw IllegalArgumentException("exceed the boundary of impacts regarding actions, i.e., size of actions is ${fixedMainActionImpacts.size}, but asking index is $actionIndex")
@@ -391,6 +433,8 @@ open class ImpactsOfIndividual(
      * @return impact of action based on
      * @param actionName specifies the name of the action
      * @param actionIndex specifies the index of the actions in the initialization or not from the individual
+     * @param localId specifies the local id of the action
+     * @param fixedIndexedAction specifies whether the action is from fixed action group of the individual
      * @param fromInitialization specifies whether the actions are in the initialization
      */
     fun findImpactsByAction(actionName: String, actionIndex: Int, localId: String, fixedIndexedAction: Boolean, fromInitialization: Boolean): MutableMap<String, GeneImpact>? {
@@ -405,7 +449,7 @@ open class ImpactsOfIndividual(
             else if (fixedIndexedAction)
                 findImpactOfFixedAction(actionName, actionIndex)
             else {
-                findImpactOfActionByLocalId(localId)
+                findDynamicImpactActionByLocalId(localId)
             }
         } catch (e: IllegalArgumentException) {
             null
