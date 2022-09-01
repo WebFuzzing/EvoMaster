@@ -26,19 +26,33 @@ public abstract class CollectionsDistanceUtils {
                 if(value instanceof String){
                     ExecutionTracer.addQueryParameter((String) value);
                 } else {
-                    return;
+                    return; //collections is not of strings
                 }
             }
         }
 
-        if(c.size() <= 20){
+        if(c.size() <= 16){
             /*
                 cannot search indiscriminately, as we do not know performance of search, eg could be O(n),
                 making this a major a bottleneck.
                 As anyway should not have too many query params, the size of collection should be short
              */
-            if(c.contains(TaintInputName.EXTRA_PARAM_TAINT)){
-                ExecutionTracer.addQueryParameter(inputString);
+            /*
+                Cannot call c.contains, as could be a delegate which is instrumented, which would end up
+                always adding the content as an extra param
+             */
+//            if(c.contains(TaintInputName.EXTRA_PARAM_TAINT)){
+//                ExecutionTracer.addQueryParameter(inputString);
+//            }
+            for(Object value : c){
+                if(! (value instanceof String)){
+                    return;
+                } else {
+                    if(value.equals(TaintInputName.EXTRA_PARAM_TAINT)) {
+                        ExecutionTracer.addQueryParameter(inputString);
+                        break;
+                    }
+                }
             }
         }
 

@@ -122,7 +122,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         val key = TaintInputName.EXTRA_PARAM_TAINT
 
-        actionCluster.entries.forEach {
+        actionCluster.values.forEach {
             (it as RestCallAction).addParam(QueryParam(key,
                 OptionalGene(key, DisruptiveGene(key, StringGene(key, "42"), 0.0))
             ))
