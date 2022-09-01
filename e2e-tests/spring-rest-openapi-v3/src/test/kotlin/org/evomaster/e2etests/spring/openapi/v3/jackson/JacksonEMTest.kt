@@ -20,19 +20,19 @@ class JacksonEMTest : SpringTestBase() {
                  Mac and Windows machines locally.
                 Could be an issue with Linux or used JDK
              */
-//            CIUtils.skipIfOnGA()
+            CIUtils.skipIfOnGA()
         }
     }
 
     @Test
     fun testGenericReadValue() {
 
-//        CIUtils.skipIfOnGA()
+        CIUtils.skipIfOnGA()
 
         runTestHandlingFlakyAndCompilation(
             "JacksonGenericEM",
             "org.foo.JacksonGenericEM",
-            50000
+            1000
         ) { args: List<String> ->
 
             val solution = initAndRun(args)
