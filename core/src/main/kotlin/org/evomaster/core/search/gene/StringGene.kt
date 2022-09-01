@@ -16,6 +16,8 @@ import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.uri.UriGene
+import org.evomaster.core.search.gene.uri.UrlHttpGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -505,6 +507,16 @@ class StringGene(
         if(toAddSpecs.any { it.stringSpecialization == UUID }){
             toAddGenes.add(UUIDGene(name))
             log.trace("UUID, added specification size: {}", toAddGenes.size)
+        }
+
+        if(toAddSpecs.any { it.stringSpecialization == URL }){
+            toAddGenes.add(UrlHttpGene(name))
+            log.trace("URL, added specification size: {}", toAddGenes.size)
+        }
+
+        if(toAddSpecs.any { it.stringSpecialization == URI }){
+            toAddGenes.add(UriGene(name))
+            log.trace("URI, added specification size: {}", toAddGenes.size)
         }
 
         //all regex are combined with disjunction in a single gene

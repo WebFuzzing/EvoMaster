@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.sql.network
+package org.evomaster.core.search.gene.network
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory
  * all of the octets written in the input. It is an error to specify a network address
  * that has bits set to the right of the specified netmask.
  */
-class SqlCidrGene(
+class CidrGene(
         name: String,
         private val octets: List<IntegerGene> = List(INET_SIZE)
         { i -> IntegerGene("b$i", min = 0, max = 255) }
@@ -35,7 +35,7 @@ class SqlCidrGene(
 
     companion object {
         const val INET_SIZE = 4
-        val log: Logger = LoggerFactory.getLogger(SqlCidrGene::class.java)
+        val log: Logger = LoggerFactory.getLogger(CidrGene::class.java)
     }
 
     override fun isLocallyValid() : Boolean{
@@ -73,7 +73,7 @@ class SqlCidrGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is SqlCidrGene -> {
+            gene is CidrGene -> {
                 var result = true
                 repeat(octets.size) {
                     result = result && octets[it].bindValueBasedOn(gene.octets[it])
@@ -88,7 +88,7 @@ class SqlCidrGene(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlCidrGene) {
+        if (other !is CidrGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         if (octets.size != other.octets.size) {
@@ -102,7 +102,7 @@ class SqlCidrGene(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlCidrGene) {
+        if (other !is CidrGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         if (octets.size != other.octets.size) {
@@ -115,5 +115,5 @@ class SqlCidrGene(
         return result
     }
 
-    override fun copyContent() = SqlCidrGene(name, octets.map { it.copy() as IntegerGene }.toList())
+    override fun copyContent() = CidrGene(name, octets.map { it.copy() as IntegerGene }.toList())
 }

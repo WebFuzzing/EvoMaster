@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.sql.network
+package org.evomaster.core.search.gene.network
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -10,24 +10,15 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectio
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-/**
- * https://www.postgresql.org/docs/14/datatype-net-types.html#DATATYPE-MACADDR
- * Gene type for 6 and 8 byte MAC addresses.
- */
-class SqlMacAddrGene(
+class InetGene(
         name: String,
-        numberOfOctets: Int = MACADDR6_SIZE,
-        private val octets: List<IntegerGene> = List(numberOfOctets)
+        private val octets: List<IntegerGene> = List(INET_SIZE)
         { i -> IntegerGene("b$i", min = 0, max = 255) }
 ) : CompositeFixedGene(name, octets.toMutableList()) {
 
     companion object {
-
-        const val MACADDR6_SIZE = 6
-
-        const val MACADDR8_SIZE = 8
-
-        val log: Logger = LoggerFactory.getLogger(SqlMacAddrGene::class.java)
+        const val INET_SIZE = 4
+        val log: Logger = LoggerFactory.getLogger(InetGene::class.java)
     }
 
     override fun isLocallyValid() : Boolean{
@@ -53,16 +44,11 @@ class SqlMacAddrGene(
             mode: GeneUtils.EscapeMode?,
             targetFormat: OutputFormat?,
             extraCheck: Boolean
-    ): String {
-        return "\"${getValueAsRawString()}\""
-    }
+    ): String = "\"${getValueAsRawString()}\""
 
-    override fun getValueAsRawString(): String {
-        return octets
-                .map { String.format("%02X", it.value) }
-                .joinToString(":")
-
-    }
+    override fun getValueAsRawString() = this.octets
+            .map { it.value }
+            .joinToString(".")
 
 
 
@@ -70,7 +56,7 @@ class SqlMacAddrGene(
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
-            gene is SqlMacAddrGene -> {
+            gene is InetGene -> {
                 var result = true
                 repeat(octets.size) {
                     result = result && octets[it].bindValueBasedOn(gene.octets[it])
@@ -85,7 +71,7 @@ class SqlMacAddrGene(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlMacAddrGene) {
+        if (other !is InetGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         if (octets.size != other.octets.size) {
@@ -99,7 +85,7 @@ class SqlMacAddrGene(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlMacAddrGene) {
+        if (other !is InetGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         if (octets.size != other.octets.size) {
@@ -112,7 +98,6 @@ class SqlMacAddrGene(
         return result
     }
 
-    fun size() = octets.size
+    override fun copyContent() = InetGene(name, octets.map { it.copy() as IntegerGene }.toList())
 
-    override fun copyContent() = SqlMacAddrGene(name, numberOfOctets = octets.size, octets.map { it.copy() as IntegerGene }.toList())
 }
