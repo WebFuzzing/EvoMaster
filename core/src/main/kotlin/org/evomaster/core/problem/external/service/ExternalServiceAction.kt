@@ -4,7 +4,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
@@ -113,6 +112,7 @@ class ExternalServiceAction(
 
     /**
      * reset active based on [used]
+     * it should be used before fitness evaluation
      */
     fun resetActive() {
         this.active = this.used
