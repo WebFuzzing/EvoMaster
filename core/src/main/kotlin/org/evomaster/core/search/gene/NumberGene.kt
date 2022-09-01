@@ -45,7 +45,7 @@ abstract class NumberGene<T : Number>(name: String,
                                        * 5.2 and 0.1 are considered as `valid`
                                        */
                                       val scale: Int?
-                                      ) : ComparableGene, SimpleGene(name) {
+                                      ) : ComparableGene, HistoryBasedMutation, SimpleGene(name) {
 
 
     var value : T

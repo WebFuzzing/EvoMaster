@@ -92,8 +92,10 @@ class BigIntegerGene(
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        val mutated = super.shallowMutate(randomness, apc, mwc, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
-        if (mutated) return true
+        if(enableAdaptiveGeneMutation){
+            val mutated = applyHistoryBasedMutation(this, additionalGeneMutationInfo!!)
+            if (mutated) return true
+        }
 
         val longValue = NumberMutatorUtils.mutateLong(value.toLong(), getMinUsedInSearch(), getMaxUsedInSearch(), randomness, apc)
         setValueWithLong(longValue)

@@ -65,9 +65,9 @@ abstract class Gene(
         TODO Major refactoring still to do:
         - mutation of gene (including hypermutation and innerGene)
         - impact of genes
-        - validity / robustness testing (will need new ChoiceGene)
-
         - for binding, we ll need tests on Individual (started in core-it)
+        - how to print (this is going to be painful...)
+        - validity / robustness testing (will need new ChoiceGene)
      */
 
     companion object{
@@ -406,6 +406,8 @@ abstract class Gene(
     ){
         checkInitialized()
 
+        //FIXME move selection logic out of candidatesInternalGenes
+
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
         val internalGenes = candidatesInternalGenes(randomness, apc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
         if (internalGenes.isEmpty()){
@@ -542,28 +544,15 @@ abstract class Gene(
      * mutate the current gene (and NONE of its children directly, if any) if there is no need to apply selection,
      * i.e., when [candidatesInternalGenes] is empty.
      * Note though that this method might add/remove children
+     *
+     * @return whether the mutation was successful
      */
-    protected open fun shallowMutate(randomness: Randomness,
+    protected  open fun shallowMutate(randomness: Randomness,
                            apc: AdaptiveParameterControl,
                            mwc: MutationWeightControl,
                            selectionStrategy: SubsetGeneSelectionStrategy,
                            enableAdaptiveGeneMutation: Boolean,
                            additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
-        if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additional gene mutation info should not be null when adaptive gene mutation is enabled")
-            if (additionalGeneMutationInfo.hasHistory()){
-                try {
-                    additionalGeneMutationInfo.archiveGeneMutator.historyBasedValueMutation(
-                        additionalGeneMutationInfo,
-                        this,
-                        getAllGenesInIndividual()
-                    )
-                    return true
-                }catch (e: DifferentGeneInHistory){
-                    LoggingUtil.uniqueWarn(log, e.message?:"Fail to employ adaptive gene value mutation due to failure in handling its history")
-                }
-            }
-        }
 
         return false
     }

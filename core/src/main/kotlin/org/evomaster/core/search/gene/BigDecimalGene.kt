@@ -171,15 +171,10 @@ class BigDecimalGene(
         if (isFloatingPointMutable && !floatingPointMode && !withinLongRange())
             floatingPointMode = true
 
-        val mutated = super.shallowMutate(
-            randomness,
-            apc,
-            mwc,
-            selectionStrategy,
-            enableAdaptiveGeneMutation,
-            additionalGeneMutationInfo
-        )
-        if (mutated) return true
+        if(enableAdaptiveGeneMutation){
+            val mutated = applyHistoryBasedMutation(this, additionalGeneMutationInfo!!)
+            if (mutated) return true
+        }
 
         if (floatingPointMode){
             setValueWithDouble(mutateFloatingPointNumber(randomness, apc = apc, value = value.toDouble(), smin = getMinUsedInSearch().toDouble(), smax = getMaxUsedInSearch().toDouble(), scale=scale))

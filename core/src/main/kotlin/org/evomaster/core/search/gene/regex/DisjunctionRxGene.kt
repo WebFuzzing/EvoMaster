@@ -87,7 +87,7 @@ class DisjunctionRxGene(
         } else if(!matchEnd && randomness.nextBoolean(APPEND)){
             emptyList()
         } else {
-            terms.filter { it.isMutable() }
+            innerGene()
         }
     }
 
@@ -170,7 +170,7 @@ class DisjunctionRxGene(
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
 
-    override fun innerGene(): List<Gene> = terms
+    override fun innerGene(): List<Gene> = terms.filter { it.isMutable() }
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

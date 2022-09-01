@@ -74,8 +74,10 @@ class IntegerGene(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
 
-        val mutated = super.shallowMutate(randomness, apc, mwc, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
-        if (mutated) return true
+        if(enableAdaptiveGeneMutation){
+            val mutated = applyHistoryBasedMutation(this, additionalGeneMutationInfo!!)
+            if (mutated) return true
+        }
 
         //check maximum range. no point in having a delta greater than such range
         val range = getMaximum().toLong() - getMinimum().toLong()

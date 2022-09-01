@@ -45,8 +45,10 @@ class FloatGene(name: String,
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        val mutated = super.shallowMutate(randomness, apc, mwc, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
-        if (mutated) return true
+        if(enableAdaptiveGeneMutation){
+            val mutated = applyHistoryBasedMutation(this, additionalGeneMutationInfo!!)
+            if (mutated) return true
+        }
 
         value = mutateFloatingPointNumber(randomness, apc).run {
             // it is weird, value sometimes becomes Double with genrric function
