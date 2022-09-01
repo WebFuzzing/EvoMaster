@@ -8,30 +8,31 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class JacksonEMTest: SpringTestBase() {
+class JacksonEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-
+            initClass(JacksonController())
             /*
                 TODO for some weird reason, this fails on CI, although it pass on different
                  Mac and Windows machines locally.
                 Could be an issue with Linux or used JDK
              */
-            CIUtils.skipIfOnGA()
-
-            initClass(JacksonController())
+//            CIUtils.skipIfOnGA()
         }
     }
 
     @Test
     fun testGenericReadValue() {
+
+//        CIUtils.skipIfOnGA()
+
         runTestHandlingFlakyAndCompilation(
             "JacksonGenericEM",
             "org.foo.JacksonGenericEM",
-            1000
+            50000
         ) { args: List<String> ->
 
             val solution = initAndRun(args)
