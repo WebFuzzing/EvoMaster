@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.objectweb.asm.Type;
@@ -12,6 +13,10 @@ import java.util.stream.Stream;
 public class ReplacementUtils {
 
     public static String getDescriptor(Method m, int skipFirsts, int skipLast) {
+        return getDescriptor(m,skipFirsts,skipLast,Type.getDescriptor(m.getReturnType()));
+    }
+
+    public static String getDescriptor(Method m, int skipFirsts, int skipLast, String returnType) {
         Class<?>[] parameters = m.getParameterTypes();
         StringBuilder buf = new StringBuilder();
         buf.append('(');
@@ -28,7 +33,7 @@ public class ReplacementUtils {
             buf.append(Type.getDescriptor(parameters[i]));
         }
         buf.append(')');
-        buf.append(Type.getDescriptor(m.getReturnType()));
+        buf.append(returnType);
 
         return buf.toString();
     }
@@ -74,7 +79,6 @@ public class ReplacementUtils {
                 })
                 .flatMap(i -> Stream.of(i.getClass().getDeclaredMethods()))
                 .filter(m -> m.getDeclaredAnnotation(Replacement.class) != null)
-                .filter(m -> m.getName().equals(name))
                 .filter(m -> {
                     Replacement br = m.getAnnotation(Replacement.class);
                     if(isInSUT && br.usageFilter() == UsageFilter.ONLY_THIRD_PARTY){
@@ -92,9 +96,26 @@ public class ReplacementUtils {
                         return false;
                     }
 
-                    int skipFirst = br.replacingStatic() ? 0 : 1;
-                    int skipLast = br.type() == ReplacementType.TRACKER ? 0 : 1;
-                    return desc.equals(getDescriptor(m, skipFirst, skipLast));
+                    boolean isConstructor = name.equals(Constants.INIT_METHOD);
+
+                    if(isConstructor){
+
+                        //int skipFirst = 2;
+                        int skipFirst = 0;
+                        int skipLast = br.type() == ReplacementType.TRACKER ? 0 : 1;
+                        //return desc.equals(getDescriptor(m, skipFirst, skipLast, "V"));
+                        return desc.equals(getDescriptor(m, skipFirst, skipLast));
+
+                    } else {
+
+                        if(! m.getName().equals(name)){
+                            return false;
+                        }
+
+                        int skipFirst = br.replacingStatic() ? 0 : 1;
+                        int skipLast = br.type() == ReplacementType.TRACKER ? 0 : 1;
+                        return desc.equals(getDescriptor(m, skipFirst, skipLast));
+                    }
                 })
                 .findAny();
         return r;
