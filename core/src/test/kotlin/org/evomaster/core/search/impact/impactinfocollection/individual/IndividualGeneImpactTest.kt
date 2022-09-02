@@ -188,12 +188,13 @@ class IndividualGeneImpactTest {
         fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification, index: Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
 
-            val mutatedGene = (ind2.seeAllActions()[mutatedIndex].seeTopGenes()[1] as StringGene)
+            val mutatedGene = (ind2.seeFixedMainActions()[mutatedIndex].seeTopGenes()[1] as StringGene)
 
             mutatedGeneSpecification.addMutatedGene(
                     isDb = false,
                     isInit = false,
                     position = mutatedIndex,
+                    localId = null,
                     valueBeforeMutation = mutatedGene.value,
                     gene = mutatedGene
             )
@@ -210,14 +211,15 @@ class IndividualGeneImpactTest {
 
         fun fakeStructureMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, remove: Boolean, mutatedGeneSpecification: MutatedGeneSpecification, index : Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
-            if (ind2.seeAllActions().size == 1 && remove)
+            if (ind2.seeFixedMainActions().size == 1 && remove)
                 throw IllegalArgumentException("action cannot be removed since there is only one action")
             if (remove){
-                val removedAction = ind2.seeAllActions()[mutatedIndex]
+                val removedAction = ind2.seeFixedMainActions()[mutatedIndex]
 
                 mutatedGeneSpecification.addRemovedOrAddedByAction(
                     removedAction,
                     mutatedIndex,
+                    localId = null,
                     true,mutatedIndex
                 )
 
@@ -230,6 +232,7 @@ class IndividualGeneImpactTest {
                 mutatedGeneSpecification.addRemovedOrAddedByAction(
                     action,
                     mutatedIndex,
+                    localId = null,
                     false,mutatedIndex
                 )
 
