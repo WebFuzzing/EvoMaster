@@ -4,6 +4,9 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -12,10 +15,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class SqlPointGene(
-        name: String,
-        val x: FloatGene = FloatGene(name = "x"),
-        val y: FloatGene = FloatGene(name = "y"),
-        val databaseType: DatabaseType = DatabaseType.POSTGRES
+    name: String,
+    val x: FloatGene = FloatGene(name = "x"),
+    val y: FloatGene = FloatGene(name = "y"),
+    val databaseType: DatabaseType = DatabaseType.POSTGRES
 ) : CompositeFixedGene(name, mutableListOf(x, y)) {
 
     companion object {
@@ -49,10 +52,10 @@ class SqlPointGene(
     }
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         return when (databaseType) {
             DatabaseType.POSTGRES,

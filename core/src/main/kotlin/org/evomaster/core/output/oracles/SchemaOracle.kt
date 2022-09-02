@@ -13,7 +13,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType

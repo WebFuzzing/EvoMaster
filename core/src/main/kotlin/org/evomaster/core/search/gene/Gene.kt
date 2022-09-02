@@ -8,12 +8,12 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.DifferentGeneInHistory
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
 import org.evomaster.core.search.RootElement
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.SearchGlobalState
 
 
@@ -624,10 +624,10 @@ abstract class Gene(
      * If the [targetFormat] is set to null, no characters are escaped.
      */
     abstract fun getValueAsPrintableString(
-            previousGenes: List<Gene> = listOf(),
-            mode: GeneUtils.EscapeMode? = null,
-            targetFormat: OutputFormat? = null,
-            /**
+        previousGenes: List<Gene> = listOf(),
+        mode: GeneUtils.EscapeMode? = null,
+        targetFormat: OutputFormat? = null,
+        /**
              * Generic boolean, used for extra info, if needed.
              *
              * This was introduced mainly to deal with the printing of objects in GraphQL.

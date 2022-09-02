@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.regex
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.impact.impactinfocollection.*
 

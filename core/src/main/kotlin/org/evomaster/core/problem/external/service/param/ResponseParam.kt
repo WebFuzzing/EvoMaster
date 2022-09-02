@@ -1,9 +1,9 @@
 package org.evomaster.core.problem.external.service.param
 
 import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.search.gene.EnumGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 
 
 class ResponseParam (

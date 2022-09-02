@@ -3,6 +3,9 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -22,12 +25,12 @@ import kotlin.math.pow
  *  Max value is FFFFFFFF/FFFFFFFF
  */
 class SqlLogSeqNumberGene(
-        /**
+    /**
          * The name of this gene
          */
         name: String,
 
-        /**
+    /**
          * The left part of 32 bits
          */
         val leftPart: LongGene = LongGene("leftPart",
@@ -37,7 +40,7 @@ class SqlLogSeqNumberGene(
                 minInclusive = true,
                 maxInclusive = true),
 
-        /**
+    /**
          * The right part of 32 bits
          */
         val rightPart: LongGene = LongGene("rightPart",
@@ -47,7 +50,7 @@ class SqlLogSeqNumberGene(
                 minInclusive = true,
                 maxInclusive = true),
 
-        ) : CompositeFixedGene(name, mutableListOf(leftPart, rightPart)) {
+    ) : CompositeFixedGene(name, mutableListOf(leftPart, rightPart)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlLogSeqNumberGene::class.java)
@@ -112,10 +115,10 @@ class SqlLogSeqNumberGene(
 
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         return String.format(
                 "\"%s/%s\"",

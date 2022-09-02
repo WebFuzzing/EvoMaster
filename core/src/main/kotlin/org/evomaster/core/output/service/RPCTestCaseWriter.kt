@@ -11,7 +11,7 @@ import org.evomaster.core.problem.rpc.service.RPCEndpointsHandler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -118,7 +118,7 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
             if (authAction!=null){
                 // check if it is local
                 if (authAction.clientInfo == null){
-                    val authInfo = "\"" +GeneUtils.applyEscapes(authAction.requestParams[0].stringValue, GeneUtils.EscapeMode.JSON, format) +"\""
+                    val authInfo = "\"" + GeneUtils.applyEscapes(authAction.requestParams[0].stringValue, GeneUtils.EscapeMode.JSON, format) +"\""
 
                     if (format.isJavaOrKotlin()){
                         lines.add(TestSuiteWriter.controller+"."+authAction.actionName+"("+authInfo+")")

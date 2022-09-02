@@ -3,7 +3,10 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -16,16 +19,16 @@ import org.slf4j.LoggerFactory
  * Bit strings are strings of 1's and 0's.
  */
 class SqlBitStringGene(
-        /**
+    /**
          * The name of this gene
          */
         name: String,
 
-        val minSize: Int = 0,
+    val minSize: Int = 0,
 
-        val maxSize: Int = ArrayGene.MAX_SIZE,
+    val maxSize: Int = ArrayGene.MAX_SIZE,
 
-        private val booleanArrayGene: ArrayGene<BooleanGene> = ArrayGene(name, template = BooleanGene(name), minSize = minSize, maxSize = maxSize)
+    private val booleanArrayGene: ArrayGene<BooleanGene> = ArrayGene(name, template = BooleanGene(name), minSize = minSize, maxSize = maxSize)
 
 ) :  CompositeFixedGene(name, mutableListOf( booleanArrayGene)) {
 

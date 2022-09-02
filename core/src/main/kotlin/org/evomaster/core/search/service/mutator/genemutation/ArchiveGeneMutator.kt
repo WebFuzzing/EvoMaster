@@ -7,6 +7,9 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
@@ -291,8 +294,8 @@ class ArchiveGeneMutator{
      * @param additionalGeneMutationInfo contains addtional info for applying archive-based gene mutation, e.g., impact, history of the gene
      */
     fun mutateStringGene(
-            gene: StringGene, targets: Set<Int>,
-            allGenes : List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo){
+        gene: StringGene, targets: Set<Int>,
+        allGenes : List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo){
         var employBinding = true
         if (additionalGeneMutationInfo.impact == null){
             val ds = gene.standardSpecializationMutation(

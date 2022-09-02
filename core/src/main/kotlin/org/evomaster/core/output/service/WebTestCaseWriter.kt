@@ -9,7 +9,7 @@ import org.evomaster.core.output.SqlWriter
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.search.EvaluatedDbAction
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 
 abstract class WebTestCaseWriter : TestCaseWriter() {
 
