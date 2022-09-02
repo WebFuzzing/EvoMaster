@@ -55,7 +55,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
                 sampler.getExternalService().getExternalServiceActions()
             )
 
-            ind.addInitializingDbActions(0, actions)
+            ind.addInitializingExternalServiceActions(0, actions)
 
             if (log.isTraceEnabled)
                 log.trace("{} existingExternalServiceData are added", actions)

@@ -90,6 +90,13 @@ abstract class EnterpriseIndividual(
                 .map { it as DbAction }
         }
 
+    private val externalServiceInitialization: List<ExternalServiceAction>
+        get() {
+            return groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+                .flatMap { (it as ActionComponent).flatten() }
+                .map { it as ExternalServiceAction }
+        }
+
 
     final override fun seeActions(filter: ActionFilter) : List<Action>{
         return when (filter) {
@@ -142,7 +149,7 @@ abstract class EnterpriseIndividual(
     }
 
     override fun hasAnyAction(): Boolean {
-        return super.hasAnyAction() || dbInitialization.isNotEmpty()
+        return super.hasAnyAction() || dbInitialization.isNotEmpty() || externalServiceInitialization.isEmpty()
     }
 
     private fun getLastIndexOfDbActionToAdd(): Int =
@@ -163,9 +170,33 @@ abstract class EnterpriseIndividual(
         }
     }
 
+    private fun getLastIndexOfExternalServiceActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.EXTERNAL_SERVICES)
+
+    private fun getFirstIndexOfExternalServiceActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.EXTERNAL_SERVICES)
+
+    fun addInitializingExternalServiceActions(relativePosition: Int=-1, actions: List<ExternalServiceAction>) {
+        if (relativePosition < 0) {
+            addChildrenToGroup(getLastIndexOfExternalServiceActionToAdd(), actions, GroupsOfChildren.EXTERNAL_SERVICES)
+        } else {
+            addChildrenToGroup(getFirstIndexOfExternalServiceActionToAdd(), actions, GroupsOfChildren.EXTERNAL_SERVICES)
+        }
+    }
+
     private fun resetInitializingActions(actions: List<DbAction>){
         killChildren { it is DbAction }
+        // TODO: Can be merged with DbAction later
+        killChildren { it is ExternalServiceAction }
         addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
+    }
+
+    /**
+     * Remove list of ExternalServiceActions from [externalServiceInitialization]
+     */
+
+    fun removeInitExternalServiceAction(actions: List<ExternalServiceAction>) {
+        killChildren { it is ExternalServiceAction && actions.contains(it) }
     }
 
     /**
