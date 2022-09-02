@@ -157,19 +157,32 @@ class ArrayGene<T>(
         assert(maxSize==null || (elements.size <= maxSize!!))
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        if(!isMutable()){
-            throw IllegalStateException("Cannot mutate a immutable array")
-        }
-        val mutable = elements.filter { it.isMutable() }
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
+
+        //shallow mutation changes the size
+
         // if min == max, the size is not mutable
-        if(getMinSizeOrDefault() == getMaxSizeOrDefault() && elements.size == getMinSizeOrDefault())
-            return mutable
-        // if mutable is empty, modify size
-        if (mutable.isEmpty()) return listOf()
+        if(getMinSizeOrDefault() == getMaxSizeOrDefault() && elements.size == getMinSizeOrDefault()){
+            return false
+        }
 
         val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
-        return if (randomness.nextBoolean(p)) listOf() else mutable
+        return randomness.nextBoolean(p)
+    }
+
+    override fun candidatesInternalGenes(
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): List<Gene> {
+
+        return elements.filter { it.isMutable() }
     }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {

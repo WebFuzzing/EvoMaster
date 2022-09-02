@@ -13,6 +13,9 @@ import org.slf4j.LoggerFactory
 /**
  * A gene that has a major, disruptive impact on the whole chromosome.
  * As such, it should be mutated only with low probability
+ *
+ * @param probability of the gene can be mutated. 0 means it is impossible to mutate,
+ *                      whereas 1 means can always be mutated
  */
 class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
 ) : CompositeFixedGene(name, gene)
@@ -43,10 +46,34 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
         gene.randomize(randomness, tryToForceNewValue)
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
+
+        /*
+            This is a bit convoluted... but Disruptive gene is rather special.
+            Whether it can be mutated is based on a probability, so it is not deterministic.
+            Applying "shallow mutate" here actually means not mutating...
+            So, the "higher" probability of mutate, the "lower" the probability of shallow mutate
+         */
+
+        return randomness.nextBoolean(1 - probability)
+    }
+
+    /**
+     *  mutation of inside gene in DisruptiveGene is based on the probability.
+     *  If not mutating internal gene, then shallow does nothing
+     */
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+        // do nothing, but still not crash EM. this is an expected behaviour, see customShouldApplyShallowMutation
+        return true
+    }
+
+
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if(randomness.nextBoolean(probability)){
-           listOf(gene)
-        }else emptyList()
+        return  listOf(gene)
     }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
@@ -58,15 +85,6 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
         throw IllegalArgumentException("impact is null or not DisruptiveGeneImpact")
     }
 
-    /**
-     *  mutation of inside gene in DisruptiveGene is based on the probability.
-     *  In [candidatesInternalGenes], we decide whether to return the inside gene .
-     *  if the return is empty, [shallowMutate] will be invoked
-     */
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        // do nothing due to rand() > probability
-        return true
-    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat)

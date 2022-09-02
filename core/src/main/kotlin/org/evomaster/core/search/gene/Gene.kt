@@ -380,6 +380,38 @@ abstract class Gene(
         return null
     }
 
+
+    /**
+     * When mutating a gene, we could mutate its fields (ie shallow mutation) or mutate some of its
+     * children (if any).
+     */
+    private fun shouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
+
+        if(children.none { it.isMutable() }){
+            //no mutable child, so always apply shallow mutate
+            return true
+        }
+
+       return customShouldApplyShallowMutation(randomness, selectionStrategy, additionalGeneMutationInfo)
+    }
+
+    protected open fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
+        //50-50 chances, by default. this can be overriden to consider different strategies
+        return randomness.nextBoolean(0.5)
+
+        //TODO maybe this should be abstract?
+        //Note default implementation of shallowMutate would lead to throw exception
+    }
+
+
     /**
      * A mutation is just a small change.
      * Apply a mutation to the current gene.
@@ -405,16 +437,34 @@ abstract class Gene(
             additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
     ){
         checkInitialized()
-
-        //FIXME move selection logic out of candidatesInternalGenes
+        Lazy.assert { this.isMutable() }
 
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
-        val internalGenes = candidatesInternalGenes(randomness, apc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
-        if (internalGenes.isEmpty()){
+        val applyShallow = shouldApplyShallowMutation(randomness, internalGeneSelectionStrategy, additionalGeneMutationInfo)
+
+        if (applyShallow){
             val mutated = shallowMutate(randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             if (!mutated)
                 throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
+
+            /*
+                TODO should default implementation of candidatesInternalGenes return all mutable children?
+                 with overriden version to return only children that impact phenotype? (eg for Optional and Choice)
+             */
+
+            //TODO likely, then no need for innerGene method, or candidateInternalGene
+            val internalGenes = candidatesInternalGenes(randomness, apc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            Lazy.assert {
+                internalGenes.isNotEmpty() // otherwise shallow mutation should had applied
+                        && internalGenes.none { it == this } // cannot return this gene an internal candidate
+                        //candidate internal genes must be subset of children
+                        && internalGenes.size <= children.size
+                        && internalGenes.all { children.contains(it) }
+                        //everything returned should be mutable
+                        && internalGenes.all {it.isMutable()}
+            }
+
             val selected = selectSubset(internalGenes, randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
 
             selected.forEach{

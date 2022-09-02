@@ -61,6 +61,8 @@ abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
         return listOf()
     }
 
+
+
     final override fun adaptiveSelectSubset(randomness: Randomness,
                                             internalGenes: List<Gene>,
                                             mwc: MutationWeightControl,
