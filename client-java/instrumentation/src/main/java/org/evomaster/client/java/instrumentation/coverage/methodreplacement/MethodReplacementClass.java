@@ -5,6 +5,18 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
  */
 public interface MethodReplacementClass {
 
+
+    /**
+     * When replacing constructors, instance is not returned (due to needed POP on stack),
+     * and rather saved internally.
+     * We then need a method to retrieve such instance.
+     *
+     * Note: this is not made as a method in this interface, because possible issues with
+     * return types, and the fact it is not needed if constructor does not need to be replaced.
+     * Furthermore, it is static in the subclasses.
+     */
+    public static final String CONSUME_INSTANCE_METHOD_NAME = "consumeInstance";
+
     /**
      * The target class in the JDK this class provides replacements for
      */

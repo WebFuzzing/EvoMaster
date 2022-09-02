@@ -91,5 +91,17 @@ public enum StringSpecialization implements Serializable {
     /**
      * A 128-bit Universal Unique Identifier (UUID)
      */
-    UUID
+    UUID,
+
+    /**
+     *  String should be a valid URL.
+     *  All valid URLs are valid URIs, but vice-versa is not true
+     */
+    URL,
+
+    /**
+     *  String should be a valid URI
+     */
+    URI
+
 }

@@ -12,6 +12,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +40,43 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
         this.isInSUT = isInSUT;
         currentLine = 0;
     }
+
+
+    /*
+        Replacing a method is relatively simple... what is tricky is replacing constructors.
+        A call like
+
+        new URL(s)
+
+        would generate:
+
+         NEW java/net/URL
+         DUP
+         ALOAD 1
+         INVOKESPECIAL java/net/URL.<init> (Ljava/lang/String;)V
+         POP
+
+         the actual creation is done in 2 parts: the instantiation with NEW, and then the actual constructor
+         call with <init>.
+         The object seems duplicated with DUP, as it is popped by the INVOKESPECIAL.
+
+         So, an approach here would be to delete the NEW, delete the first following DUP, and then replace the
+         INVOKESPECIAL with our replacement that return an instance of the object.
+
+         One issue though is that we might not replace all constructors for a given class, based on signature.
+         The signature is available on INVOKESPECIAL, but not on NEW.
+
+         Maybe an alternative approach would be for replacement method to get as inputs both instances, ie
+         the one created by NEW and the one created by DUP.
+         But that does not work, as "uninitialized" objects fail the bytecode verifier when given as input
+         to a method :(
+
+         In the end, we did the following:
+         - replaced INVOKESPECIAL with a call that does NOT return instance
+         - POP2 (to remove NEW and DUP refs from stack)
+         - call to consumeInstance() (which push instance from previous call onto stack)
+     */
+
 
     @Override
     public void visitLineNumber(int line, Label start) {
@@ -71,8 +109,10 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
          * we can do it for later. Eg, it would mainly affect the use of special containers like
          * in Guava when they have "super.()" calls.
          * For now, we just skip them.
+         *
+         * Still, we do instrument constructors, which uses INVOKESPECIAL
          */
-        if (opcode == Opcodes.INVOKESPECIAL) {
+        if (opcode == Opcodes.INVOKESPECIAL && !name.equals(Constants.INIT_METHOD)) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
             return;
         }
@@ -95,7 +135,9 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 //            throw new RuntimeException(e);
 //        }
 
-        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(owner);
+        boolean isConstructor = name.equals(Constants.INIT_METHOD);
+
+        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(owner, isConstructor);
 
         if (candidateClasses.isEmpty()) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
@@ -111,8 +153,11 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
         Method m = r.get();
         replaceMethod(m);
-        Replacement a = m.getAnnotation(Replacement.class);
+        if(isConstructor){
+            handleConstruct(candidateClasses.get(0).getClass());
+        }
 
+        Replacement a = m.getAnnotation(Replacement.class);
         if (a.type() == ReplacementType.TRACKER) {
             UnitsInfoRecorder.markNewTrackedMethod();
         } else {
@@ -122,6 +167,27 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
                 UnitsInfoRecorder.markNewReplacedMethodInThirdParty();
             }
         }
+    }
+
+
+    private void handleConstruct(Class<? extends MethodReplacementClass> mrc){
+
+        /*
+            This seems working, but need to watch out for possible side-effects
+         */
+        this.visitInsn(Opcodes.POP2); //pop NEW and DUP refs
+
+        Method consumeInstance = Arrays.stream(mrc.getDeclaredMethods())
+                        .filter(it -> it.getName().equals(MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME))
+                                .findFirst().get();
+
+        //call method to retrieve the instance saved inside the replacement class
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                Type.getInternalName(consumeInstance.getDeclaringClass()),
+                consumeInstance.getName(),
+                Type.getMethodDescriptor(consumeInstance),
+                false);
     }
 
     private void replaceMethod(Method m) {
