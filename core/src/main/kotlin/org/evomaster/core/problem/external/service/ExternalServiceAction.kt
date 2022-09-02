@@ -4,7 +4,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
@@ -35,9 +34,29 @@ class ExternalServiceAction(
      * WireMock server which received the request
      */
     val externalService: ExternalService,
+    active : Boolean = false,
+    used : Boolean = false,
     private val id: Long,
     localId : String
 ) : Action(listOf(response), localId) {
+
+
+    /**
+     * it represents whether the external service is instanced before executing the corresponding API call
+     *
+     * Note that it should be always re-assigned based on [used] before fitness evaluation, see [resetActive]
+     */
+    var active : Boolean = active
+        private set
+
+
+    /**
+     * it represents whether the external service is used when executing the corresponding API call
+     *
+     * Note that it should be updated after the fitness evaluation based on whether the external service is used during the API execution
+     */
+    var used : Boolean = used
+        private set
 
     companion object {
         private fun buildResponse(template: String): ResponseParam {
@@ -47,7 +66,7 @@ class ExternalServiceAction(
     }
 
     constructor(request: ExternalServiceRequest, template: String, externalService: ExternalService, id: Long, localId: String = NONE_ACTION_COMPONENT_ID) :
-            this(request, buildResponse(template), externalService, id, localId = localId)
+            this(request, buildResponse(template), externalService, id = id, localId = localId)
 
     init {
         // TODO: This is not the correct way to do this, but for now
@@ -84,9 +103,35 @@ class ExternalServiceAction(
             request,
             response.copy() as ResponseParam,
             externalService,
+            active,
+            used,
             id,
             localId = getLocalId()
         )
+    }
+
+    /**
+     * reset active based on [used]
+     * it should be used before fitness evaluation
+     */
+    fun resetActive() {
+        this.active = this.used
+    }
+
+    /**
+     * based on the feedback from the mocked service,
+     * the external service is confirmed that it is used during the API execution
+     */
+    fun confirmUsed()  {
+        this.used = true
+    }
+
+    /**
+     * based on the feedback from the mocked service,
+     * the external service is confirmed that it is not used during the API execution
+     */
+    fun confirmNotUsed() {
+        this.used = false
     }
 
     /**
