@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.binding
 
-import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene

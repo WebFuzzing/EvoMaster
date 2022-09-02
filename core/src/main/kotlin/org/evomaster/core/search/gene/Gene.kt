@@ -456,8 +456,8 @@ abstract class Gene(
             //TODO likely, then no need for innerGene method, or candidateInternalGene
             val internalGenes = candidatesInternalGenes(randomness, apc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             Lazy.assert {
-                internalGenes.isNotEmpty() // otherwise shallow mutation should had applied
-                        && internalGenes.none { it == this } // cannot return this gene an internal candidate
+                internalGenes.isNotEmpty() // otherwise shallow mutation should had been applied
+                        && internalGenes.none { it == this } // cannot return this gene as an internal candidate
                         //candidate internal genes must be subset of children
                         && internalGenes.size <= children.size
                         && internalGenes.all { children.contains(it) }

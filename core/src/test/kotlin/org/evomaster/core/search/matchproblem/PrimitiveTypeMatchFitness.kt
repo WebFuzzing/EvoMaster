@@ -3,7 +3,6 @@ package org.evomaster.core.search.matchproblem
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
