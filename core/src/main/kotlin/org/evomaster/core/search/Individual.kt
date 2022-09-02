@@ -402,7 +402,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
             if (actionIndex == null) {
                 throw IllegalArgumentException("actionIndex must be specified in order to find the action from init")
             }
-            return if (seeInitializingActions().size < actionIndex)
+            return if (seeInitializingActions().size > actionIndex)
                  seeInitializingActions()[actionIndex]
             else
 //                throw IllegalArgumentException("the specified actionIndex ($actionIndex) exceeds the existing init actions(${seeInitializingActions().size})")
@@ -410,7 +410,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         }else {
             return if (actionIndex == null)
                 findActionByLocalId(localId!!)
-            else if (seeFixedMainActions().size < actionIndex)
+            else if (seeFixedMainActions().size > actionIndex)
                 seeFixedMainActions()[actionIndex]
             else null
         }
