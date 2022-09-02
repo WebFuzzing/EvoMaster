@@ -10,8 +10,8 @@ class PrimitiveTypeMatchSampler: Sampler<PrimitiveTypeMatchIndividual>() {
     var template : PrimitiveTypeMatchIndividual? = null
 
     override fun sampleAtRandom(): PrimitiveTypeMatchIndividual {
-        val gene = template?.gene?.copy() ?: throw IllegalArgumentException("")
-        gene.doInitialize(randomness)
-        return PrimitiveTypeMatchIndividual(gene)
+        val action = (template?.seeAllActions()?.get(0)?.copy() ?: throw IllegalArgumentException("there is no action")) as PrimitiveTypeMatchAction
+        action.doInitialize(randomness)
+        return PrimitiveTypeMatchIndividual(action)
     }
 }
