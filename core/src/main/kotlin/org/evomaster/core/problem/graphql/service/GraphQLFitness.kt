@@ -396,7 +396,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val builder = client.target(fullUri).request("application/json")
 
-        handleAuth(a, builder, cookies, tokens)
+        handleHeaders(a, builder, cookies, tokens)
 
         val bodyEntity = GraphQLUtils.generateGQLBodyEntity(a, config.outputFormat) ?: Entity.json(" ")
         val invocation = builder.buildPost(bodyEntity)

@@ -25,7 +25,7 @@ public class FormParamEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "FormParamEM",
                 "org.FormParamEM",
-                100,
+                200,
                 (args) -> {
 
                     Solution<RestIndividual> solution = initAndRun(args);
