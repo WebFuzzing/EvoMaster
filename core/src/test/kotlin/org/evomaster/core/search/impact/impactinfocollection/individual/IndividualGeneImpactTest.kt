@@ -97,7 +97,7 @@ class IndividualGeneImpactTest {
         )
 
         assert(tracked_evi_ind2.getSizeOfImpact(false) == 2)
-        val evi_ind1impactInfo = evi_ind1.getImpactByAction(mutatedIndex, false)
+        val evi_ind1impactInfo = evi_ind1.getImpactOfFixedAction(mutatedIndex, false)
         assert(evi_ind1impactInfo!= null)
         val ind1impact = evi_ind1impactInfo!![mutatedGeneId]
         assert(ind1impact != null)
@@ -105,11 +105,11 @@ class IndividualGeneImpactTest {
         assert(ind1impact!!.getTimesOfImpacts().containsKey(2))
         assert(ind1impact.getTimesOfImpacts().containsKey(3))
 
-        val tracked_evi_ind2impactInfo = tracked_evi_ind2.getImpactByAction(mutatedIndex, false)
+        val tracked_evi_ind2impactInfo = tracked_evi_ind2.getImpactOfFixedAction(mutatedIndex, false)
         assert(tracked_evi_ind2impactInfo!=null)
         val ind2impact = tracked_evi_ind2impactInfo!![mutatedGeneId]
 
-        val tracked_evi_ind2impactInfo_otheer = tracked_evi_ind2.getImpactByAction(0, false)
+        val tracked_evi_ind2impactInfo_otheer = tracked_evi_ind2.getImpactOfFixedAction(0, false)
         assert(tracked_evi_ind2impactInfo_otheer!=null)
         val ind2impactdifAction = tracked_evi_ind2impactInfo_otheer!![mutatedGeneId]
 
@@ -188,12 +188,13 @@ class IndividualGeneImpactTest {
         fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification, index: Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
 
-            val mutatedGene = (ind2.seeAllActions()[mutatedIndex].seeTopGenes()[1] as StringGene)
+            val mutatedGene = (ind2.seeFixedMainActions()[mutatedIndex].seeTopGenes()[1] as StringGene)
 
             mutatedGeneSpecification.addMutatedGene(
                     isDb = false,
                     isInit = false,
                     position = mutatedIndex,
+                    localId = null,
                     valueBeforeMutation = mutatedGene.value,
                     gene = mutatedGene
             )
@@ -210,14 +211,15 @@ class IndividualGeneImpactTest {
 
         fun fakeStructureMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, remove: Boolean, mutatedGeneSpecification: MutatedGeneSpecification, index : Int) : EvaluatedIndividual<Ind>{
             val ind2 = evaluatedIndividual.individual.copy() as Ind
-            if (ind2.seeAllActions().size == 1 && remove)
+            if (ind2.seeFixedMainActions().size == 1 && remove)
                 throw IllegalArgumentException("action cannot be removed since there is only one action")
             if (remove){
-                val removedAction = ind2.seeAllActions()[mutatedIndex]
+                val removedAction = ind2.seeFixedMainActions()[mutatedIndex]
 
                 mutatedGeneSpecification.addRemovedOrAddedByAction(
                     removedAction,
                     mutatedIndex,
+                    localId = null,
                     true,mutatedIndex
                 )
 
@@ -230,6 +232,7 @@ class IndividualGeneImpactTest {
                 mutatedGeneSpecification.addRemovedOrAddedByAction(
                     action,
                     mutatedIndex,
+                    localId = null,
                     false,mutatedIndex
                 )
 

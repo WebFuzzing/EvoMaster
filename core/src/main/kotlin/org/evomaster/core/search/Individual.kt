@@ -233,6 +233,29 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
      fun seeExternalServiceActions() : List<ExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ExternalServiceAction>
 
+
+    /**
+     * @return a sequence of actions which are not in initialization and
+     * except structure mutator, an index of any action in this sequence is determinate after the construction
+     *
+     * Note that the method is particular used by impact collections for the individual
+     */
+    fun seeFixedMainActions() = seeActions(ActionFilter.NO_INIT).filterNot { it is ExternalServiceAction }
+
+
+    /**
+     * @return a view of actions which are not in initialization and
+     * the index of the action is dynamic without mutation, such as external service
+     *
+     * for an individual, the external service could be updated based on fitness evaluation,
+     * then newly added external service could result in a dynamic index for the actions.
+     * then we categorize all such actions as a return of the method
+     *
+     * Note that the method is particular used by impact collections for the individual
+     */
+    fun seeDynamicMainActions() = seeActions(ActionFilter.NO_INIT).filterIsInstance<ExternalServiceAction>()
+
+
     /**
      * Determine if the structure (ie the actions) of this individual
      * can be mutated (eg, add/remove main actions).
@@ -358,6 +381,40 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return true
     }
 
+    /**
+     * @return an action based on the specified [localId]
+     */
+    fun findActionByLocalId(localId : String): Action?{
+        return seeAllActions().find { it.getLocalId() == localId }
+    }
+
+    /**
+     * @param isFromInit represents whether the action to target is from init
+     * @param actionIndex represents whether the action to target is part of fixedIndexMain group otherwise it is null
+     * @param localId represents whether the action to target is part of dynamicMain group otherwise it is null
+     * @return an action based on the given info
+     */
+    fun findAction(isFromInit: Boolean, actionIndex: Int?, localId: String?): Action?{
+        if (actionIndex == null && localId == null)
+            throw IllegalArgumentException("the actionIndex or localId must be specified to find the action")
+
+        if (isFromInit){
+            if (actionIndex == null) {
+                throw IllegalArgumentException("actionIndex must be specified in order to find the action from init")
+            }
+            return if (seeInitializingActions().size > actionIndex)
+                 seeInitializingActions()[actionIndex]
+            else
+//                throw IllegalArgumentException("the specified actionIndex ($actionIndex) exceeds the existing init actions(${seeInitializingActions().size})")
+                null
+        }else {
+            return if (actionIndex == null)
+                findActionByLocalId(localId!!)
+            else if (seeFixedMainActions().size > actionIndex)
+                seeFixedMainActions()[actionIndex]
+            else null
+        }
+    }
 
     override fun addChild(child: StructuralElement) {
         handleLocalIdsForAddition(listOf(child))

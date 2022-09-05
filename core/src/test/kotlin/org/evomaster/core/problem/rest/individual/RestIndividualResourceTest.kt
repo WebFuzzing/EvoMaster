@@ -16,18 +16,17 @@ import kotlin.math.min
 /**
  * tests are for checking resource-based solution with enabled hypermutation
  */
-class RestIndividualResourceTest : RestIndividualTestBase(){
+class RestIndividualResourceTest : RestIndividualTestBase() {
 
-    private lateinit var sampler : ResourceSampler
-    private lateinit var mutator : ResourceRestMutator
-    private lateinit var rm : ResourceManageService
-    private lateinit var ff : RestResourceFitness
+    private lateinit var sampler: ResourceSampler
+    private lateinit var mutator: ResourceRestMutator
+    private lateinit var rm: ResourceManageService
+    private lateinit var ff: RestResourceFitness
 
     override fun getProblemModule() = ResourceRestModule(false)
     override fun getMutator(): StandardMutator<RestIndividual> = mutator
     override fun getFitnessFunction(): AbstractRestFitness<RestIndividual> = ff
     override fun getSampler(): AbstractRestSampler = sampler
-
 
 
     override fun initService(injector: Injector) {
@@ -45,8 +44,10 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
     }
 
 
-    override fun extraMutatedIndividualCheck(evaluated: Int, copyOfImpact: ImpactsOfIndividual?,
-                                             original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>) {
+    override fun extraMutatedIndividualCheck(
+        evaluated: Int, copyOfImpact: ImpactsOfIndividual?,
+        original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>
+    ) {
         assertTrue(mutated.individual.isInitialized())
 
         checkTracking(evaluated + 1, mutated)
@@ -54,18 +55,20 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
         checkImpactUpdate(evaluated, copyOfImpact, original, mutated)
     }
 
-    private fun checkTracking(evaluated: Int, mutated: EvaluatedIndividual<RestIndividual>){
+    private fun checkTracking(evaluated: Int, mutated: EvaluatedIndividual<RestIndividual>) {
         mutated.tracking.apply {
             assertNotNull(this)
             assertEquals(min(evaluated, config.maxLengthOfTraces), this!!.history.size)
             assertNotNull(this.history.last().evaluatedResult)
             // with faked remote controller, it should always return better results
-            assertEquals(EvaluatedMutation.BETTER_THAN,this.history.last().evaluatedResult)
+            assertEquals(EvaluatedMutation.BETTER_THAN, this.history.last().evaluatedResult)
         }
     }
 
-    private fun checkImpactUpdate(evaluated: Int, copyOfImpact: ImpactsOfIndividual?,
-                                  original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>){
+    private fun checkImpactUpdate(
+        evaluated: Int, copyOfImpact: ImpactsOfIndividual?,
+        original: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>
+    ) {
 
         if (evaluated <= 1) return
 
@@ -75,9 +78,11 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
         val mutatedImpact = mutated.impactInfo!!
 
         val existingData = mutatedImpact.getSQLExistingData()
-        assertEquals(existingData, mutated.individual.seeInitializingActions().filterIsInstance<DbAction>().count { it.representExistingData })
+        assertEquals(
+            existingData,
+            mutated.individual.seeInitializingActions().filterIsInstance<DbAction>().count { it.representExistingData })
 
-        val currentInit = mutatedImpact.initializationImpacts.getOriginalSize(includeExistingSQLData = true)
+        val currentInit = mutatedImpact.initActionImpacts.getOriginalSize(includeExistingSQLData = true)
 
         val origInit = original.individual.seeInitializingActions()
         val mutatedInit = mutated.individual.seeInitializingActions()
@@ -86,16 +91,16 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
 
         // check whether impact info is consistent with individual after mutation
         mutated.individual.seeInitializingActions().filterIsInstance<DbAction>().forEachIndexed { index, dbAction ->
-            if (!dbAction.representExistingData){
-                val impact = mutatedImpact.initializationImpacts.getImpactOfAction(dbAction.getName(), index)
+            if (!dbAction.representExistingData) {
+                val impact = mutatedImpact.initActionImpacts.getImpactOfAction(dbAction.getName(), index)
                 assertNotNull(impact)
             }
         }
 
         mutated.individual.seeActions(ActionFilter.NO_INIT).forEachIndexed { index, action ->
-            val impact = mutatedImpact.mainActionsImpacts[index]
+            val impact = mutatedImpact.fixedMainActionImpacts[index]
             assertEquals(action.getName(), impact.actionName)
-            action.seeTopGenes().forEach { g->
+            action.seeTopGenes().forEach { g ->
                 val geneId = ImpactUtils.generateGeneId(mutated.individual, g)
                 val geneImpact = impact.get(geneId, action.getName())
                 assertNotNull(geneImpact)
@@ -103,27 +108,44 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
         }
 
         val anyNewDbActions = mutatedInit.size - origInit.size
-        assertFalse( anyNewDbActions < 0, "DbAction should not be removed with the current strategy for REST problem")
+        assertFalse(anyNewDbActions < 0, "DbAction should not be removed with the current strategy for REST problem")
 
-        if (anyNewDbActions == 0){
+        if (anyNewDbActions == 0) {
 
-            if (mutated.trackOperator?.operatorTag() == RestResourceStructureMutator::class.java.simpleName){
+            if (mutated.trackOperator?.operatorTag() == RestResourceStructureMutator::class.java.simpleName) {
                 //TODO might check the structure impact
-            }else if (mutated.trackOperator?.operatorTag() == ResourceRestMutator::class.java.simpleName){
+            } else if (mutated.trackOperator?.operatorTag() == ResourceRestMutator::class.java.simpleName) {
                 var improved = 0
                 var anyMutated = 0
                 mutated.individual.seeActions(ActionFilter.ALL).forEachIndexed { index, action ->
-                    if (action !is DbAction || !action.representExistingData){
-                        action.seeTopGenes().filter { it.isMutable() }.forEach { g->
+                    if (action !is DbAction || !action.representExistingData) {
+                        action.seeTopGenes().filter { it.isMutable() }.forEach { g ->
                             val impactId = ImpactUtils.generateGeneId(mutated.individual, g)
                             val fromInit = mutatedInit.contains(action)
                             val actionIndex = if (fromInit) index else (index - mutatedInit.size)
-                            val ogeneImpact = copyOfImpact!!.getGene(actionName = action.getName(), geneId = impactId, actionIndex = actionIndex, fromInitialization = fromInit)
+                            val fixed = mutated.individual.seeFixedMainActions().contains(action)
+                            val ogeneImpact = copyOfImpact!!.getGene(
+                                localId = action.getLocalId(),
+                                fixedIndexedAction = fixed,
+                                actionName = action.getName(),
+                                geneId = impactId,
+                                actionIndex = actionIndex,
+                                fromInitialization = fromInit
+                            )
                             assertNotNull(ogeneImpact)
-                            val mgeneImpact = mutatedImpact.getGene(actionName = action.getName(), geneId = impactId, actionIndex = actionIndex, fromInitialization = fromInit)
+                            val mgeneImpact = mutatedImpact.getGene(
+                                localId = action.getLocalId(),
+                                fixedIndexedAction = fixed,
+                                actionName = action.getName(),
+                                geneId = impactId,
+                                actionIndex = actionIndex,
+                                fromInitialization = fromInit
+                            )
                             assertNotNull(impactId)
-                            val mutatedTimes = mgeneImpact!!.shared.timesToManipulate - ogeneImpact!!.shared.timesToManipulate
-                            val impactTimes = mgeneImpact.shared.timesOfImpact.size - ogeneImpact.shared.timesOfImpact.size
+                            val mutatedTimes =
+                                mgeneImpact!!.shared.timesToManipulate - ogeneImpact!!.shared.timesToManipulate
+                            val impactTimes =
+                                mgeneImpact.shared.timesOfImpact.size - ogeneImpact.shared.timesOfImpact.size
                             assertTrue(mutatedTimes == 1 || mutatedTimes == 0)
                             assertTrue(impactTimes >= 0)
                             improved += impactTimes
@@ -134,12 +156,12 @@ class RestIndividualResourceTest : RestIndividualTestBase(){
                 if (anyMutated > 0)
                     assertTrue(improved > 0)
 
-            }else{
-                fail("the operator (${mutated.trackOperator?.operatorTag()?:"null"}) is not expected")
+            } else {
+                fail("the operator (${mutated.trackOperator?.operatorTag() ?: "null"}) is not expected")
             }
         }
 
-        if (searchTimeController.evaluatedActions > 20 || searchTimeController.percentageUsedBudget() >= 0.1){
+        if (searchTimeController.evaluatedActions > 20 || searchTimeController.percentageUsedBudget() >= 0.1) {
             /*
                 newly additional dbaction would affect the impact collections
                 then disable after 10% used budget or after 20 rest action evaluations

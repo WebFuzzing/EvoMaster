@@ -3,7 +3,6 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
@@ -242,10 +241,14 @@ class RestIndividual(
         swapChildren(getFirstIndexOfRestResourceCalls() + position1, getFirstIndexOfRestResourceCalls() + position2)
     }
 
-    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int)
-    = getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).map {
-        seeActions(actionFilter).indexOf(it)
+
+    fun getFixedActionIndexes(resourcePosition: Int)
+    = getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).filter { seeMainExecutableActions().contains(it) }.map {
+        seeFixedMainActions().indexOf(it)
     }
+
+    fun getDynamicActionLocalIds(resourcePosition: Int) =
+        getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).filter { seeDynamicMainActions().contains(it) }.map { it.getLocalId() }
 
     private fun validateSwap(first : Int, second : Int) : Boolean{
         //TODO need update, although currently not in use
