@@ -33,7 +33,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
 
 
     @Deprecated("External Actions will be moved into EnterpriseActionGroup")
-    private fun <T : ApiWsIndividual> addInitializingExternalServiceActions(
+    private fun <T : ApiWsIndividual> addExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         mutatedGenes: MutatedGeneSpecification?,
         sampler: ApiWsSampler<T>
@@ -55,16 +55,14 @@ abstract class ApiWsStructureMutator : StructureMutator(){
                 sampler.getExternalService().getExternalServiceActions()
             )
 
-            ind.addInitializingExternalServiceActions(0, actions)
-
             if (log.isTraceEnabled)
                 log.trace("{} existingExternalServiceData are added", actions)
         }
     }
 
     fun<T : ApiWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
-        addInitializingExternalServiceActions(individual, mutatedGenes, sampler)
         addInitializingDbActions(individual, mutatedGenes, sampler)
+//        addExternalServiceActions(individual, mutatedGenes, sampler)
     }
 
     private fun<T : ApiWsIndividual> addInitializingDbActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
