@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rpc
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
@@ -32,6 +33,7 @@ class RPCIndividual(
 
     constructor(
         actions: MutableList<RPCCallAction>,
+        externalServicesActions: MutableList<List<ExternalServiceAction>> = mutableListOf(),
         /*
             TODO might add sample type here as REST (check later)
          */
@@ -39,7 +41,15 @@ class RPCIndividual(
         trackOperator: TrackOperator? = null,
         index: Int = -1
     ) : this(trackOperator, index, mutableListOf<ActionComponent>().apply {
-        addAll(dbInitialization); addAll(actions.map { EnterpriseActionGroup(it) })
+        addAll(dbInitialization);
+        addAll(actions.mapIndexed { index, rpcCallAction ->
+            if (externalServicesActions.isNotEmpty())
+                Lazy.assert { actions.size == externalServicesActions.size }
+            EnterpriseActionGroup(rpcCallAction).apply {
+                if(externalServicesActions.isNotEmpty()){
+                addChildren(0, externalServicesActions[index])
+            }
+        } })
     }, actions.size, dbInitialization.size)
 
     /**

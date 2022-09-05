@@ -14,11 +14,6 @@ public class SeededRPCTestDto {
     public String testName;
 
     /**
-     * a list of info to setup responses of external services with mocking if exists
-     */
-    public List<MockRPCExternalServiceDto> mockRPCExternalServiceDtos;
-
-    /**
      * a list of rpc functions in the test
      */
     public List<SeededRPCActionDto> rpcFunctions;

@@ -574,7 +574,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                             String.format("Seeded Test Error: cannot parse the seeded test %s at the parameter %d with error msg: %s", actionDto, i, e.getMessage()));
                                 }
                             }
-                            test.add(copy.getDto());
+                            RPCActionDto rpcActionDto = copy.getDto();
+                            rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
+                            test.add(rpcActionDto);
                         }else {
                             throw new IllegalStateException("Seeded Test Error: cannot find the action "+actionDto.functionName);
                         }
