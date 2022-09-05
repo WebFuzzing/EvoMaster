@@ -6,6 +6,8 @@ import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.api.service.ApiWsAction
+import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.RestCallAction
@@ -150,15 +152,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun mutationPreProcessing(individual: T) {
 
-        for (a in individual.seeAllActions()) {
-            if (a !is RestCallAction) {
-                continue
-            }
-            val update = a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
-            if (update != null) {
-                a.killChildren { it is BodyParam }
-                a.killChildren { it is UpdateForBodyParam }
-                a.addChild(update.body)
+        for(a in individual.seeAllActions()){
+            if(a is ApiWsAction) {
+                val update = a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
+                if (update != null) {
+                    a.killChildren { it is BodyParam }
+                    a.killChildren { it is UpdateForBodyParam }
+                    a.addChild(update.body)
+                }
             }
 
             a.seeTopGenes().flatMap { it.flatView() }
@@ -176,9 +177,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         val copy = individual.individual.copy() as T
 
-
-        if (doesStructureMutation(individual)) {
-            if (log.isTraceEnabled) {
+        if(doesStructureMutation(individual)){
+            if (log.isTraceEnabled){
                 log.trace("structure mutator will be applied")
             }
             if (doesInitStructureMutation(individual))
@@ -189,8 +189,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         mutationPreProcessing(copy)
-
-        val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
         val selectGeneToMutate = selectGenesToMutate(copy, individual, targets, mutatedGene)
 
