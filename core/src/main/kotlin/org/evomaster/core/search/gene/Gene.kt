@@ -388,6 +388,7 @@ abstract class Gene(
     private fun shouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean {
 
@@ -396,20 +397,26 @@ abstract class Gene(
             return true
         }
 
-       return customShouldApplyShallowMutation(randomness, selectionStrategy, additionalGeneMutationInfo)
+       return customShouldApplyShallowMutation(randomness, selectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
     }
 
-    protected open fun customShouldApplyShallowMutation(
+    /**
+     * Determine whether should apply a shallow mutation.
+     * Note at this point it has already been checked if there is any child.
+     * If there is no child, this method is never called.
+     *
+     * If the gene has no internal state besides children, then this method should always return false.
+     * Otherwise, it should non-deterministically decide whether a shallow mutation (ie mutation
+     * of internal variables) is applied or a mutation of children.
+     *
+     * Note: if the implementation of this method can return true, then must override shallowMutation
+     */
+    abstract fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ) : Boolean {
-        //50-50 chances, by default. this can be overriden to consider different strategies
-        return randomness.nextBoolean(0.5)
-
-        //TODO maybe this should be abstract?
-        //Note default implementation of shallowMutate would lead to throw exception
-    }
+    ) : Boolean
 
 
     /**
@@ -440,7 +447,7 @@ abstract class Gene(
         Lazy.assert { this.isMutable() }
 
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
-        val applyShallow = shouldApplyShallowMutation(randomness, internalGeneSelectionStrategy, additionalGeneMutationInfo)
+        val applyShallow = shouldApplyShallowMutation(randomness, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
 
         if (applyShallow){
             val mutated = shallowMutate(randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)

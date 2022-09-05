@@ -119,4 +119,14 @@ class PairGene<F,S>(
     override fun mutationWeight(): Double {
         return (if (isFirstMutable) first.mutationWeight() else 0.0) + second.mutationWeight()
     }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

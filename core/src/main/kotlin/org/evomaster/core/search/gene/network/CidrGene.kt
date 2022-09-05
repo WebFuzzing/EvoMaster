@@ -107,4 +107,14 @@ class CidrGene(
     }
 
     override fun copyContent() = CidrGene(name, octets.map { it.copy() as IntegerGene }.toList())
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

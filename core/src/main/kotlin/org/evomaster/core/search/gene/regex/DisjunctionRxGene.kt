@@ -83,6 +83,7 @@ class DisjunctionRxGene(
 
     override fun customShouldApplyShallowMutation(randomness: Randomness,
                                                   selectionStrategy: SubsetGeneSelectionStrategy,
+                                                  enableAdaptiveGeneMutation: Boolean,
                                                   additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean {
         if(!matchStart && randomness.nextBoolean(APPEND)){

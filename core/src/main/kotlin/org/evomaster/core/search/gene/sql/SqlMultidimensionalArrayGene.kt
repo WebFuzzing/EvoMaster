@@ -397,4 +397,14 @@ class SqlMultidimensionalArrayGene<T>(
     override fun isPrintable(): Boolean {
         return getViewOfChildren().all { it.isPrintable() }
     }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

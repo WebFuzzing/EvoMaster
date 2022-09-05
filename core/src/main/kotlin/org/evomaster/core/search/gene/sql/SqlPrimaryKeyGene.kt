@@ -68,10 +68,6 @@ class SqlPrimaryKeyGene(name: String,
 
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        //do nothing since the gene is not mutable
-        return true
-    }
 
     override fun copyValueFrom(other: Gene) {
         if (other !is SqlPrimaryKeyGene) {
@@ -117,6 +113,15 @@ class SqlPrimaryKeyGene(name: String,
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing
         return true
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
 
 }

@@ -94,4 +94,13 @@ class InetGene(
 
     override fun copyContent() = InetGene(name, octets.map { it.copy() as IntegerGene }.toList())
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

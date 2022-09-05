@@ -89,17 +89,13 @@ class SqlBitStringGene(
 
     override fun copyContent() = SqlBitStringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copy() as ArrayGene<BooleanGene>)
 
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true)
-        return true
+        return false
     }
-
 
 }

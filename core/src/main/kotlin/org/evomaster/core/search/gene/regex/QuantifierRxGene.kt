@@ -120,6 +120,7 @@ class QuantifierRxGene(
 
     override fun customShouldApplyShallowMutation(randomness: Randomness,
                                                   selectionStrategy: SubsetGeneSelectionStrategy,
+                                                  enableAdaptiveGeneMutation: Boolean,
                                                   additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean {
         val length = atoms.size

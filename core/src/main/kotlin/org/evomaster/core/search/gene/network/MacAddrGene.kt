@@ -108,4 +108,14 @@ class MacAddrGene(
     fun size() = octets.size
 
     override fun copyContent() = MacAddrGene(name, numberOfOctets = octets.size, octets.map { it.copy() as IntegerGene }.toList())
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

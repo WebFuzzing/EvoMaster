@@ -111,15 +111,14 @@ class OptionalGene(name: String,
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean {
 
         if (!isActive) return true
 
-        if (additionalGeneMutationInfo?.impact == null){
-            if (randomness.nextBoolean(INACTIVE)) {
-                return true
-            }
+        if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
+            return randomness.nextBoolean(INACTIVE)
         }
 
         if (additionalGeneMutationInfo?.impact is OptionalGeneImpact){

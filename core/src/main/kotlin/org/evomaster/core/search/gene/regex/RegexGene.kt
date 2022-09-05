@@ -31,6 +31,15 @@ class RegexGene(
         disjunctions.randomize(randomness, tryToForceNewValue)
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
     override fun isMutable(): Boolean {
         return disjunctions.isMutable()
     }

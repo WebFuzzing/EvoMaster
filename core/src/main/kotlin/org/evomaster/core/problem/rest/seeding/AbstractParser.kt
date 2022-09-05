@@ -86,7 +86,7 @@ abstract class AbstractParser(
             is ArrayGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is MapGene<*, *> -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is CycleObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue) // Same as ObjectGene, should it differ?
+            //is CycleObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue) // Same as ObjectGene, should it differ?
 
             else -> {
                 // ImmutableDataHolderGene should never happen

@@ -87,4 +87,14 @@ class UriGene(name: String,
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return gene.bindValueBasedOn(gene)
     }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

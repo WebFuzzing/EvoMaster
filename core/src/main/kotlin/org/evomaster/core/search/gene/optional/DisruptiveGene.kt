@@ -53,6 +53,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean {
 

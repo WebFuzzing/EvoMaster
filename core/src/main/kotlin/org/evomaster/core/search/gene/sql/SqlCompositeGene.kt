@@ -38,6 +38,14 @@ class SqlCompositeGene(
                 .forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
 
 
     private val QUOTATION_MARK = "\""
@@ -99,18 +107,5 @@ class SqlCompositeGene(
 
     override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copy() }.toList(), this.compositeTypeName)
 
-    /**
-     * Dummy mutation for composite genes
-     */
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        this.randomize(randomness, true)
-        return true
-    }
+
 }

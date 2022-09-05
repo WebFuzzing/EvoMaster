@@ -270,4 +270,14 @@ class TupleGene(
     override fun copyContent(): Gene {
         return TupleGene(name, elements.map(Gene::copy), lastElementTreatedSpecially)
     }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

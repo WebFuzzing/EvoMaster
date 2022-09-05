@@ -108,6 +108,16 @@ class ChoiceGene<T>(
         return true
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return randomness.nextBoolean(0.1) //TODO check for proper value
+    }
+
+
     /**
      * Returns the value of the active gene as a printable string
      */

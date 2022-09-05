@@ -158,7 +158,15 @@ class SeededGene<T>(
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
 
-        //FIXME after refactoring
+        return listOf((if (employSeeded) seeded else gene))
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
 
         var changeEmploySeed = false
         if (isEmploySeededMutable){
@@ -178,11 +186,8 @@ class SeededGene<T>(
             }
         }
 
-        if (changeEmploySeed)
-            return emptyList()
-        return listOf((if (employSeeded) seeded else gene))
+        return changeEmploySeed
     }
-
 
     override fun shallowMutate(
         randomness: Randomness,
