@@ -43,7 +43,6 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
         throw IllegalStateException("CycleObjectGene has no value")
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun isPrintable(): Boolean {
         return false
