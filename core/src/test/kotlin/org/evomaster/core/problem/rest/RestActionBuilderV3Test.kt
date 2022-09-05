@@ -124,8 +124,8 @@ class RestActionBuilderV3Test{
 
         cluster.values.forEach { a->
             numOfRG += a.seeTopGenes().size
-            numOfIG0 += a.seeTopGenes().count { g-> g.innerGene().isEmpty() }
-            numOfIGM += a.seeTopGenes().count { g-> g.innerGene().isNotEmpty() }
+            numOfIG0 += a.seeTopGenes().count { g-> g.getViewOfChildren().isEmpty() }
+            numOfIGM += a.seeTopGenes().count { g-> g.getViewOfChildren().isNotEmpty() }
             numOfObjOfIGM += a.seeTopGenes().count { g-> ParamUtil.getValueGene(g) is ObjectGene }
         }
         assertEquals(expectedNumOfRootGene, numOfRG)

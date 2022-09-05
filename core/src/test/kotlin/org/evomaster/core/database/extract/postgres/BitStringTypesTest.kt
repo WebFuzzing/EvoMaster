@@ -45,7 +45,7 @@ class BitStringTypesTest : ExtractTestBasePostgres() {
         assertEquals(5, bitColumnGene.minSize)
         assertEquals(5, bitColumnGene.maxSize)
 
-        val arrayGene = bitColumnGene.innerGene()[0] as ArrayGene<BooleanGene>
+        val arrayGene = bitColumnGene.getViewOfChildren()[0] as ArrayGene<BooleanGene>
         repeat(bitColumnGene.minSize) {
             arrayGene.addElement(BooleanGene("booleanGene"))
         }

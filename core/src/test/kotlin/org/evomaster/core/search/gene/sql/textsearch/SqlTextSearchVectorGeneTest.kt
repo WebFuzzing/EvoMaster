@@ -10,14 +10,14 @@ class SqlTextSearchVectorGeneTest {
     @Test
     fun testEmptyTextSearchVector() {
         val gene = SqlTextSearchVectorGene("textSearchVector")
-        (gene.innerGene()[0] as StringGene).value =""
+        (gene.getViewOfChildren()[0] as StringGene).value =""
         Assertions.assertEquals("to_tsvector(${SINGLE_APOSTROPHE_PLACEHOLDER}${SINGLE_APOSTROPHE_PLACEHOLDER})", gene.getValueAsPrintableString())
     }
 
     @Test
     fun testTextSearchVector() {
         val gene = SqlTextSearchVectorGene("textSearchVector")
-        val textLexemes = gene.innerGene()[0] as StringGene
+        val textLexemes = gene.getViewOfChildren()[0] as StringGene
         textLexemes.value = "foo bar"
         Assertions.assertEquals("to_tsvector(${SINGLE_APOSTROPHE_PLACEHOLDER}foo bar${SINGLE_APOSTROPHE_PLACEHOLDER})", gene.getValueAsPrintableString())
     }

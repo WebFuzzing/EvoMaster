@@ -18,7 +18,7 @@ class SqlTextSearchQueryGeneTest {
     fun testOneElementTextSearchQuery() {
         val gene = SqlTextSearchQueryGene("textSearchVector")
 
-        val textLexemes = gene.innerGene()[0] as ArrayGene<StringGene>
+        val textLexemes = gene.getViewOfChildren()[0] as ArrayGene<StringGene>
         val stringGene = textLexemes.template.copy() as StringGene
         stringGene.value = "foo"
         textLexemes.addElement(stringGene)
@@ -28,7 +28,7 @@ class SqlTextSearchQueryGeneTest {
     fun testManyElementTextSearchQuery() {
         val gene = SqlTextSearchQueryGene("textSearchVector")
 
-        val textLexemes = gene.innerGene()[0] as ArrayGene<StringGene>
+        val textLexemes = gene.getViewOfChildren()[0] as ArrayGene<StringGene>
         val stringGene0 = textLexemes.template.copy() as StringGene
         stringGene0.value = "foo"
 
