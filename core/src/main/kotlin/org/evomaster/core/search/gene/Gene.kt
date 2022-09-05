@@ -175,6 +175,28 @@ abstract class Gene(
     }
 
 
+    override fun addChild(child: StructuralElement){
+        checkChildGeneToAdd(child)
+        super.addChild(child)
+    }
+
+    override fun addChild(position: Int, child: StructuralElement){
+        checkChildGeneToAdd(child)
+        super.addChild(position, child)
+    }
+
+    override fun addChildren(position: Int, list : List<StructuralElement>){
+        list.forEach { checkChildGeneToAdd(it) }
+        super.addChildren(position, list)
+    }
+
+    private fun checkChildGeneToAdd(child: StructuralElement) {
+        if (this.initialized && !(child as Gene).initialized) {
+            throw IllegalArgumentException("Trying to add non-initialized gene inside an initialized gene")
+        }
+    }
+
+
     /**
      *  this is done once a gene is already initialized, and mounted inside an individual.
      *  this is to deal with all intra-gene dependencies (eg. foreign keys) or when needing

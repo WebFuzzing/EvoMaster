@@ -69,6 +69,9 @@ class ArrayGene<T>(
             throw IllegalArgumentException(
                 "ArrayGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
         }
+        if(initialized && elements.any { !it.initialized }){
+            throw IllegalArgumentException("Creating array marked as initialized but at least one child is not")
+        }
     }
 
     companion object{
@@ -148,7 +151,9 @@ class ArrayGene<T>(
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         repeat(n) {
             val gene = template.copy() as T
-            if(gene.isMutable()) {
+            if(this.initialized){
+                gene.doInitialize(randomness)
+            } else if(gene.isMutable()) {
                 gene.randomize(randomness, false)
             }
             addChild(gene)
@@ -191,11 +196,10 @@ class ArrayGene<T>(
 
         if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
             val gene = template.copy() as T
-//            gene.randomize(randomness, false)
             gene.doInitialize(randomness)
             addElement(gene)
         }else{
-            log.trace("Remvoving gene in mutation")
+            log.trace("Removing gene in mutation")
             val removed = elements.removeAt(randomness.nextInt(elements.size))
             // remove binding if any other bound with
             removed.removeThisFromItsBindingGenes()
@@ -264,9 +268,10 @@ class ArrayGene<T>(
      * add an element [element] to [elements]
      */
     fun addElement(element: T){
+        if(!element.initialized){
+            throw IllegalArgumentException("Adding non-initialized element")
+        }
         checkConstraintsForAdd()
-
-        //elements.add(element)
         addChild(element)
     }
 
@@ -278,6 +283,9 @@ class ArrayGene<T>(
      *
      */
     fun addElement(element: Gene) : Boolean{
+        if(!element.initialized){
+            throw IllegalArgumentException("Adding non-initialized element")
+        }
         element as? T ?: return false
         checkConstraintsForAdd()
         addChild(element)
