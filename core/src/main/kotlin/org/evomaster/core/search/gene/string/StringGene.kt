@@ -212,6 +212,9 @@ class StringGene(
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+       /*
+            Specializations are children... but here the shallow mutation deal with them.
+        */
         return listOf()
     }
 
@@ -730,7 +733,7 @@ class StringGene(
         return if(specializationGenes.isEmpty()) 1.0 else (specializationGenes.map { it.mutationWeight() }.sum() * PROB_CHANGE_SPEC + 1.0)
     }
 
-    /**
+    /*
      * TODO
      * string mutation is complex including
      *  -- (taint analysis) on [specializationGenes] whether to employ the specification if exists
@@ -748,7 +751,7 @@ class StringGene(
      *  since the [innerGene] is used to identify a history of gene for archive-based gene mutation,
      *  [specializationGenes] is not considered as part of its inner genes.
      */
-    override fun innerGene(): List<Gene> = listOf()
+
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

@@ -47,15 +47,7 @@ class SqlTextSearchVectorGene(
         textLexeme.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(textLexeme)
-    }
+
 
 
     override fun getValueAsPrintableString(
@@ -87,8 +79,6 @@ class SqlTextSearchVectorGene(
         return this.textLexeme.containsSameValueAs(other.textLexeme)
     }
 
-
-    override fun innerGene(): List<Gene> = listOf(textLexeme)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

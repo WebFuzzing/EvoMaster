@@ -46,15 +46,7 @@ class SqlPathGene(
         points.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(points)
-    }
+
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -112,8 +104,6 @@ class SqlPathGene(
         return this.points.containsSameValueAs(other.points)
     }
 
-
-    override fun innerGene(): List<Gene> = listOf(points)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

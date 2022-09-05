@@ -43,15 +43,6 @@ class SqlMultiPathGene(
         paths.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(paths)
-    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -112,8 +103,6 @@ class SqlMultiPathGene(
         return this.paths.containsSameValueAs(other.paths)
     }
 
-
-    override fun innerGene(): List<Gene> = listOf(paths)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

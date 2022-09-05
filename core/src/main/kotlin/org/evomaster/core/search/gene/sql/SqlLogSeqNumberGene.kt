@@ -99,21 +99,6 @@ class SqlLogSeqNumberGene(
         genes[index].randomize(randomness, tryToForceNewValue)
     }
 
-    /**
-     * Forbid explicitly individual mutation
-     * of these genes
-     */
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf()
-    }
-
-
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
         mode: GeneUtils.EscapeMode?,
@@ -128,10 +113,6 @@ class SqlLogSeqNumberGene(
     }
 
 
-
-    override fun innerGene(): List<Gene> =
-            listOf(leftPart, rightPart)
-
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlLogSeqNumberGene) {
             this.leftPart.bindValueBasedOn(gene.leftPart)
@@ -145,16 +126,6 @@ class SqlLogSeqNumberGene(
     }
 
 
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        this.randomize(randomness, true)
-        return true
-    }
+
 
 }

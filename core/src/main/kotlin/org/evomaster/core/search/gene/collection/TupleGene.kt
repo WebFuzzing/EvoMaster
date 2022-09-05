@@ -199,7 +199,6 @@ class TupleGene(
         }.all { it }
     }
 
-    override fun innerGene(): List<Gene> = elements
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
@@ -236,15 +235,6 @@ class TupleGene(
         return elements.sumOf { it.mutationWeight() }
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return elements.filter { it.isMutable() }
-    }
 
 
     override fun adaptiveSelectSubset(

@@ -50,10 +50,6 @@ class SqlBitStringGene(
         booleanArrayGene.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-       return listOf(booleanArrayGene)
-    }
-
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return buildString {
@@ -79,9 +75,7 @@ class SqlBitStringGene(
         return booleanArrayGene.containsSameValueAs(other.booleanArrayGene)
     }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(booleanArrayGene)
-    }
+
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlBitStringGene) {

@@ -54,15 +54,7 @@ class SqlMultiPolygonGene(
         polygons.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(polygons)
-    }
+
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -117,7 +109,6 @@ class SqlMultiPolygonGene(
     }
 
 
-    override fun innerGene(): List<Gene> = listOf(polygons)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

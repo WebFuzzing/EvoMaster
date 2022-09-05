@@ -40,15 +40,6 @@ class SqlCircleGene(
         r.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(c, r)
-    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -79,9 +70,6 @@ class SqlCircleGene(
                 && this.r.containsSameValueAs(other.r)
     }
 
-
-
-    override fun innerGene(): List<Gene> = listOf(c, r)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

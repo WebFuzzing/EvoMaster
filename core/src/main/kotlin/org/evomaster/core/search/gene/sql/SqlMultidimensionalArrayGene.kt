@@ -256,9 +256,6 @@ class SqlMultidimensionalArrayGene<T>(
         return this.getViewOfChildren()[0].containsSameValueAs(other.getViewOfChildren()[0])
     }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(getArray())
-    }
 
     /**
      * A multidimensional array gene can only bind to other multidimensional array genes
@@ -371,15 +368,6 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
 
-    override fun candidatesInternalGenes(randomness: Randomness,
-                                         apc: AdaptiveParameterControl,
-                                         selectionStrategy: SubsetGeneSelectionStrategy,
-                                         enableAdaptiveGeneMutation: Boolean,
-                                         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        //TODO
-        return listOf()
-    }
 
 
     override fun copyContent(): Gene {
@@ -403,18 +391,6 @@ class SqlMultidimensionalArrayGene<T>(
         }
         copy.dimensionSizes = this.dimensionSizes
         return copy
-    }
-
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        this.randomize(randomness, true)
-        return true
     }
 
 

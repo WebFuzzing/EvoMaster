@@ -48,9 +48,6 @@ class UUIDGene(
         leastSigBits.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return listOf(mostSigBits, leastSigBits)
-    }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlUUIDGeneImpact){
@@ -91,7 +88,6 @@ class UUIDGene(
     }
 
 
-    override fun innerGene(): List<Gene> = listOf(mostSigBits, leastSigBits)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when{

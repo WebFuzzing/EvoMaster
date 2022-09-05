@@ -38,9 +38,7 @@ class SqlCompositeGene(
                 .forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return listOf()
-    }
+
 
     private val QUOTATION_MARK = "\""
 
@@ -79,8 +77,6 @@ class SqlCompositeGene(
             thisField.containsSameValueAs(otherField)
         }.all { it })
     }
-
-    override fun innerGene(): List<Gene> = fields
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

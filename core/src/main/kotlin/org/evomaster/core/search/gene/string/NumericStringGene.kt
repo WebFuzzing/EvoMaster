@@ -85,15 +85,6 @@ class NumericStringGene(
         number.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(number)
-    }
 
     override fun adaptiveSelectSubset(
         randomness: Randomness,
@@ -117,9 +108,6 @@ class NumericStringGene(
         return "\"" + number.value.toPlainString() + "\""
     }
 
-
-
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when(gene){

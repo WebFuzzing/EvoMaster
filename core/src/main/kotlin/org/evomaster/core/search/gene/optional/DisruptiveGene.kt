@@ -76,10 +76,6 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
     }
 
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return  listOf(gene)
-    }
-
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DisruptiveGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(gene))
@@ -131,7 +127,6 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
         return 1.0 + gene.mutationWeight() * probability
     }
 
-    override fun innerGene(): List<Gene> = listOf(gene)
 
     override fun possiblySame(gene: Gene): Boolean {
         return gene is DisruptiveGene<*> && gene.name == this.name && this.gene.possiblySame((gene as DisruptiveGene<T>).gene)

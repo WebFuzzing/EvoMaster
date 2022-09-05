@@ -118,19 +118,20 @@ class QuantifierRxGene(
         return min != limitedMax || template.isMutable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun customShouldApplyShallowMutation(randomness: Randomness,
+                                                  selectionStrategy: SubsetGeneSelectionStrategy,
+                                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
         val length = atoms.size
 
-        return if( length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
-            log.trace("Removing atom")
-            emptyList()
-        } else if(length < limitedMax && randomness.nextBoolean(MODIFY_LENGTH)){
-            emptyList()
-        } else {
-            atoms.filter { it.isMutable() }
+        if(length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
+            return true
         }
+        if(length < limitedMax && randomness.nextBoolean(MODIFY_LENGTH)){
+            return true
+        }
+        return false
     }
-
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         /*
@@ -227,7 +228,6 @@ class QuantifierRxGene(
         return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0
     }
 
-    override fun innerGene(): List<Gene> = atoms
 
     /*
         Note that value binding cannot be performed on the [atoms]

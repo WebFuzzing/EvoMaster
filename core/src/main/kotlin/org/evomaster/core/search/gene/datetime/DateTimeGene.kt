@@ -68,15 +68,7 @@ open class DateTimeGene(
         time.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(date, time)
-    }
+
 
     override fun adaptiveSelectSubset(
         randomness: Randomness,
@@ -158,12 +150,6 @@ open class DateTimeGene(
 
 
 
-    /*
-     override fun mutationWeight(): Int
-     weight for date time gene might be 1 as default since it is simple to solve
-    */
-
-    override fun innerGene(): List<Gene> = listOf(date, time)
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

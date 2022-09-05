@@ -181,17 +181,6 @@ class ArrayGene<T>(
         return randomness.nextBoolean(p)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-
-        return elements.filter { it.isMutable() }
-    }
-
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         /*
             element is dynamically modified, then we do not collect impacts for it now.
@@ -249,7 +238,6 @@ class ArrayGene<T>(
         return 1.0 + elements.map { it.mutationWeight() }.sum()
     }
 
-    override fun innerGene(): List<Gene> = elements
 
     /*
         Note that value binding cannot be performed on the [elements]

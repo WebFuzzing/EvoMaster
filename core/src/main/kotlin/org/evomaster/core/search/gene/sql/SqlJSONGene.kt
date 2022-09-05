@@ -51,10 +51,7 @@ class SqlJSONGene(name: String,
         throw IllegalArgumentException("impact is null or not SqlJsonGeneImpact")
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        // do nothing since the objectGene is not mutable
-        return true
-    }
+
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         val rawValue = objectGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.JSON, targetFormat)
@@ -93,8 +90,6 @@ class SqlJSONGene(name: String,
     override fun mutationWeight(): Double {
         return objectGene.mutationWeight()
     }
-
-    override fun innerGene(): List<Gene> = listOf(objectGene)
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

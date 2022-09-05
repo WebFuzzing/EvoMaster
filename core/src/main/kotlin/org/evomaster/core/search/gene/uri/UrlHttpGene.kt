@@ -66,21 +66,6 @@ class UrlHttpGene(
         getViewOfChildren().forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-
-        return innerGene().filter { it.isMutable() }
-    }
-
-    override fun innerGene(): List<Gene> {
-        return listOf(scheme, host, port, path)
-    }
-
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
         mode: GeneUtils.EscapeMode?,

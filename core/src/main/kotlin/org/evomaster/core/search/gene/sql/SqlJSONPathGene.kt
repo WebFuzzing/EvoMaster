@@ -53,15 +53,6 @@ class SqlJSONPathGene(
         pathExpression.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return if (pathExpression.isMutable()) listOf(pathExpression) else emptyList()
-    }
 
     override fun adaptiveSelectSubset(
         randomness: Randomness,
@@ -82,17 +73,6 @@ class SqlJSONPathGene(
         throw IllegalArgumentException("impact is null or not SqlJsonGeneImpact")
     }
 
-    override fun shallowMutate(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        mwc: MutationWeightControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        // do nothing since the objectGene is not mutable
-        return true
-    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -136,8 +116,6 @@ class SqlJSONPathGene(
     override fun mutationWeight(): Double {
         return pathExpression.mutationWeight()
     }
-
-    override fun innerGene(): List<Gene> = listOf(pathExpression)
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

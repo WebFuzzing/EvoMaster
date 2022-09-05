@@ -5,8 +5,10 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionListRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
@@ -42,16 +44,24 @@ class ChoiceGene<T>(
         }
     }
 
-    /**
-     * Randomizes the active gene index, and if the newly selected active gene index
-     * is mutable, the active gene is also randomized.
-     */
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         activeGeneIndex = randomness.nextInt(geneChoices.size)
 
+        /*
+            Even the non-selected genes need to be randomized, otherwise could be let in
+            a inconsistent state
+         */
+        if(!initialized){
         geneChoices
             .filter { it.isMutable() }
             .forEach { it.randomize(randomness, tryToForceNewValue) }
+        } else {
+            val g = geneChoices[activeGeneIndex]
+            if(g.isMutable()){
+                g.randomize(randomness, tryToForceNewValue)
+            }
+        }
     }
 
     /**
@@ -64,14 +74,39 @@ class ChoiceGene<T>(
         selectionStrategy: SubsetGeneSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ) = innerGene()
+    ) : List<Gene> {
+        return listOf(geneChoices[activeGeneIndex])
+    }
 
-    /**
-     * Returns only the active gene.
-     */
-    override fun innerGene() =
-        listOf(geneChoices[activeGeneIndex])
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
 
+      // TODO
+        // select another disjunction based on impact
+//        if (enableAdaptiveGeneMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
+//            additionalGeneMutationInfo?:throw IllegalStateException("")
+//            if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DisjunctionListRxGeneImpact){
+//                val candidates = disjunctions.filterIndexed { index, _ -> index != activeDisjunction  }
+//                val impacts = candidates.map {
+//                    additionalGeneMutationInfo.impact.disjunctions[disjunctions.indexOf(it)]
+//                }
+//
+//                val selected = mwc.selectSubGene(
+//                    candidateGenesToMutate = candidates,
+//                    impacts = impacts,
+//                    targets = additionalGeneMutationInfo.targets,
+//                    forceNotEmpty = true,
+//                    adaptiveWeight = true
+//                )
+//                activeDisjunction = disjunctions.indexOf(randomness.choose(selected))
+//                return true
+//            }
+//            //throw IllegalArgumentException("mismatched gene impact")
+//        }
+
+        //activate the next disjunction
+        activeGeneIndex = (activeGeneIndex + 1) % geneChoices.size
+        return true
+    }
 
     /**
      * Returns the value of the active gene as a printable string

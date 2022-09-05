@@ -19,6 +19,8 @@ class DisjunctionListRxGene(
         val disjunctions: List<DisjunctionRxGene>
 ) : RxAtom, CompositeFixedGene("disjunction_list", disjunctions) {
 
+    //FIXME refactor with ChoiceGene
+
     var activeDisjunction: Int = 0
 
     companion object{
@@ -58,6 +60,9 @@ class DisjunctionListRxGene(
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+
+        //FIXME
+
         if(disjunctions.size > 1
                 && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(PROB_NEXT))){
             //activate the next disjunction
@@ -154,7 +159,6 @@ class DisjunctionListRxGene(
 
     override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
 
-    override fun innerGene(): List<Gene> = disjunctions
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is DisjunctionListRxGene && gene.disjunctions.size == disjunctions.size){

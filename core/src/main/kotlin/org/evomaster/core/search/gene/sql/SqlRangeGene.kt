@@ -109,19 +109,7 @@ class SqlRangeGene<T>(
         repairGeneIfNeeded()
     }
 
-    /**
-     * Forbid explicitly individual mutation
-     * of these genes
-     */
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf()
-    }
+
 
     private fun isLeftOpen(): Boolean {
         return !isLeftClosed.value
@@ -155,11 +143,6 @@ class SqlRangeGene<T>(
     }
 
 
-
-
-    override fun innerGene(): List<Gene> =
-            listOf(isLeftClosed, left, right, isRightClosed)
-
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
             this.isLeftClosed.bindValueBasedOn(gene.isLeftClosed)
@@ -175,16 +158,5 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        this.randomize(randomness, true)
-        return true
-    }
 
 }

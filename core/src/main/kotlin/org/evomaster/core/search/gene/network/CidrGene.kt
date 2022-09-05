@@ -46,15 +46,7 @@ class CidrGene(
         octets.forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return octets.toList()
-    }
+
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -69,7 +61,6 @@ class CidrGene(
 
 
 
-    override fun innerGene(): List<Gene> = octets.toList()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

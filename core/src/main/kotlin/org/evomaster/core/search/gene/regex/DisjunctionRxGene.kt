@@ -58,7 +58,7 @@ class DisjunctionRxGene(
     override fun canBeChildless() = true
 
     override fun copyContent(): Gene {
-        val copy = DisjunctionRxGene(name, terms.map { it.copy() as Gene }, matchStart, matchEnd)
+        val copy = DisjunctionRxGene(name, terms.map { it.copy() }, matchStart, matchEnd)
         copy.extraPrefix = this.extraPrefix
         copy.extraPostfix = this.extraPostfix
         return copy
@@ -81,14 +81,17 @@ class DisjunctionRxGene(
         return !matchStart || !matchEnd || terms.any { it.isMutable() }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if(!matchStart && randomness.nextBoolean(APPEND)){
-            emptyList()
-        } else if(!matchEnd && randomness.nextBoolean(APPEND)){
-            emptyList()
-        } else {
-            innerGene()
+    override fun customShouldApplyShallowMutation(randomness: Randomness,
+                                                  selectionStrategy: SubsetGeneSelectionStrategy,
+                                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
+        if(!matchStart && randomness.nextBoolean(APPEND)){
+            return true
         }
+        if(!matchEnd && randomness.nextBoolean(APPEND)){
+            return true
+        }
+        return false
     }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
@@ -169,9 +172,6 @@ class DisjunctionRxGene(
     override fun mutationWeight(): Double {
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
-
-    override fun innerGene(): List<Gene> = terms.filter { it.isMutable() }
-
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is DisjunctionRxGene && terms.size == gene.terms.size){

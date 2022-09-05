@@ -108,25 +108,39 @@ class OptionalGene(name: String,
         }
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
+
+        if (!isActive) return true
+
+        if (additionalGeneMutationInfo?.impact == null){
+            if (randomness.nextBoolean(INACTIVE)) {
+                return true
+            }
+        }
+
+        if (additionalGeneMutationInfo?.impact is OptionalGeneImpact){
+            //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
+            val inactive = additionalGeneMutationInfo.impact.activeImpact.determinateSelect(
+                minManipulatedTimes = 5,
+                times = 1.5,
+                preferTrue = true,
+                targets = additionalGeneMutationInfo.targets,
+                selector = additionalGeneMutationInfo.archiveGeneSelector
+            )
+            return if (inactive) true else return false
+        }
+        throw IllegalArgumentException("impact is null or not OptionalGeneImpact ${additionalGeneMutationInfo?.impact}")
+    }
+
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
 
         if (!isActive || !gene.isMutable()) return emptyList()
 
-        if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
-            return if (randomness.nextBoolean(INACTIVE)) emptyList() else listOf(gene)
-        }
-        if (additionalGeneMutationInfo.impact is OptionalGeneImpact){
-            //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
-            val inactive = additionalGeneMutationInfo.impact.activeImpact.determinateSelect(
-                    minManipulatedTimes = 5,
-                    times = 1.5,
-                    preferTrue = true,
-                    targets = additionalGeneMutationInfo.targets,
-                    selector = additionalGeneMutationInfo.archiveGeneSelector
-            )
-            return if (inactive) emptyList() else listOf(gene)
-        }
-        throw IllegalArgumentException("impact is null or not OptionalGeneImpact ${additionalGeneMutationInfo?.impact}")
+        return listOf(gene)
     }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
@@ -143,7 +157,6 @@ class OptionalGene(name: String,
         isActive = !isActive
         if (enableAdaptiveGeneMutation){
             //TODO MAN further check
-
         }
 
         return true
@@ -165,8 +178,6 @@ class OptionalGene(name: String,
     override fun mutationWeight(): Double {
         return 1.0 + gene.mutationWeight()
     }
-
-    override fun innerGene(): List<Gene> = listOf(gene)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is OptionalGene) isActive = gene.isActive

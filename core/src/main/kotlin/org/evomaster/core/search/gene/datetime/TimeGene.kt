@@ -79,15 +79,7 @@ class TimeGene(
         second.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(hour, minute, second)
-    }
+
 
     override fun adaptiveSelectSubset(
         randomness: Randomness,
@@ -190,12 +182,7 @@ class TimeGene(
                 && isValidSecondRange(this.second)
 
 
-    /*
-     override fun mutationWeight(): Int
-     weight for time gene might be 1 as default since it is simple to solve
-    */
 
-    override fun innerGene(): List<Gene> = listOf(hour, minute, second)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

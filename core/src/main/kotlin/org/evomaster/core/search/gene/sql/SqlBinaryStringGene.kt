@@ -84,9 +84,7 @@ class SqlBinaryStringGene(
         return binaryArrayGene.containsSameValueAs(other.binaryArrayGene)
     }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(binaryArrayGene)
-    }
+
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlBinaryStringGene) {

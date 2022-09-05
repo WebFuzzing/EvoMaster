@@ -29,16 +29,12 @@ class LimitObjectGene(name: String) : ObjectGene(name, listOf()) {
         //nothing to do
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        randomize(randomness, true)
-        return true
-    }
+
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         throw IllegalStateException("LimitObjectGene has no value")
     }
 
-    override fun innerGene(): List<Gene> = listOf()
 
     override fun isPrintable(): Boolean {
         return false

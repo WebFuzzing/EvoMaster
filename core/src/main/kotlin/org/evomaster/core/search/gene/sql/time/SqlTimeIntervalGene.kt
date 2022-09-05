@@ -50,15 +50,7 @@ class SqlTimeIntervalGene(
         time.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(days, time)
-    }
+
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -90,8 +82,6 @@ class SqlTimeIntervalGene(
     }
 
 
-
-    override fun innerGene(): List<Gene> = listOf(days, time)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

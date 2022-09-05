@@ -45,19 +45,8 @@ class UriDataGene(
         getViewOfChildren().forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return innerGene().filter { it.isMutable() }
-    }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(type, base64, data)
-    }
+
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,

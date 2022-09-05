@@ -37,10 +37,6 @@ class SqlXMLGene(name: String,
     }
 
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if (objectGene.isMutable()) listOf(objectGene) else emptyList()
-    }
-
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlXmlGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(objectGene))
@@ -50,10 +46,6 @@ class SqlXMLGene(name: String,
         throw IllegalArgumentException("impact is null or not SqlXmlGeneImpact")
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        // do nothing since the objectGene is not mutable
-        return true
-    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         val rawValue = objectGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML , targetFormat)
@@ -94,7 +86,6 @@ class SqlXMLGene(name: String,
         return  objectGene.mutationWeight()
     }
 
-    override fun innerGene(): List<Gene> = listOf(objectGene)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when(gene){

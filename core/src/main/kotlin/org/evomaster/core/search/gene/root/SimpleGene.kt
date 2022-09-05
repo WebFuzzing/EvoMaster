@@ -72,5 +72,4 @@ abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
         throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
     }
 
-    final override fun innerGene(): List<Gene> = listOf()
 }

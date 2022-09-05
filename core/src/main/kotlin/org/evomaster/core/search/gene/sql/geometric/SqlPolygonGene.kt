@@ -115,15 +115,7 @@ class SqlPolygonGene(
         return true
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(points)
-    }
+
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -199,7 +191,6 @@ class SqlPolygonGene(
     }
 
 
-    override fun innerGene(): List<Gene> = listOf(points)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

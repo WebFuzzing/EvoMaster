@@ -77,15 +77,7 @@ class DateGene(
         } while (onlyValidDates && !isValidDate())
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(year, month, day)
-    }
+
 
     override fun mutationCheck(): Boolean {
         return !onlyValidDates || isValidDate()
@@ -176,13 +168,6 @@ class DateGene(
                 && this.day.containsSameValueAs(other.day)
     }
 
-
-    /*
-     override fun mutationWeight(): Int
-     weight for date gene might be 1 as default since it is simple to solve
-    */
-
-    override fun innerGene(): List<Gene> = listOf(year, month, day)
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

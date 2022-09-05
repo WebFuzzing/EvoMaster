@@ -20,6 +20,8 @@ class SqlNullableGene(name: String,
                       var isPresent: Boolean = true
 ) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
+    //FIXME need a generic NullableGene. some code seems same as Optional
+
     init{
         if(gene is SqlWrapperGene && gene.getForeignKey() != null){
             throw IllegalStateException("SqlNullable should not contain a FK, " +
@@ -55,26 +57,41 @@ class SqlNullableGene(name: String,
             gene.randomize(randomness, tryToForceNewValue)
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneSelectionStrategy,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
+
+        if (!isPresent) return true
+
+        //FIXME
+//        if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
+//            return if (randomness.nextBoolean(ABSENT)) emptyList() else listOf(gene)
+//        }
+//        if (additionalGeneMutationInfo.impact is SqlNullableImpact){
+//            //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
+//            val inactive = additionalGeneMutationInfo.impact.presentImpact.determinateSelect(
+//                minManipulatedTimes = 5,
+//                times = 1.5,
+//                preferTrue = true,
+//                targets = additionalGeneMutationInfo.targets,
+//                selector = additionalGeneMutationInfo.archiveGeneSelector
+//            )
+//
+//            return if (inactive)  emptyList() else listOf(gene)
+//        }
+//        throw IllegalArgumentException("impact is not SqlNullableImpact ${additionalGeneMutationInfo.impact::class.java.simpleName}")
+//
+
+        return false;
+    }
+
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
 
         if (!isPresent) return emptyList()
 
-        if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
-            return if (randomness.nextBoolean(ABSENT)) emptyList() else listOf(gene)
-        }
-        if (additionalGeneMutationInfo.impact is SqlNullableImpact){
-            //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
-            val inactive = additionalGeneMutationInfo.impact.presentImpact.determinateSelect(
-                    minManipulatedTimes = 5,
-                    times = 1.5,
-                    preferTrue = true,
-                    targets = additionalGeneMutationInfo.targets,
-                    selector = additionalGeneMutationInfo.archiveGeneSelector
-            )
-
-            return if (inactive)  emptyList() else listOf(gene)
-        }
-        throw IllegalArgumentException("impact is not SqlNullableImpact ${additionalGeneMutationInfo.impact::class.java.simpleName}")
+        return listOf(gene)
     }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
@@ -124,7 +141,6 @@ class SqlNullableGene(name: String,
         return 1.0 + gene.mutationWeight()
     }
 
-    override fun innerGene(): List<Gene> = listOf(gene)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlNullableGene) isPresent = gene.isPresent

@@ -58,19 +58,6 @@ class UriGene(name: String,
         gene.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(gene)
-    }
-
-    override fun innerGene(): List<Gene> {
-        return listOf(gene)
-    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,

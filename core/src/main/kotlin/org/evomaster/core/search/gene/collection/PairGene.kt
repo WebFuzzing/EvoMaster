@@ -76,9 +76,6 @@ class PairGene<F,S>(
         return first.containsSameValueAs(other.first) && second.containsSameValueAs(other.second)
     }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(first, second)
-    }
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene !is PairGene<*, *>) {
@@ -95,7 +92,7 @@ class PairGene<F,S>(
     override fun isMutable(): Boolean {
         /*
             Can be tricky... assume a first that is mutable, but we do not want to change it.
-            we still need to intialize with randomize, otherwise its constraints might fail
+            we still need to initialize with randomize, otherwise its constraints might fail
          */
         return (first.isMutable() && (isFirstMutable || !first.initialized)) || second.isMutable()
     }
@@ -105,6 +102,12 @@ class PairGene<F,S>(
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+
+        /*
+            FIXME what is the role of isFirstMutable???
+            couldn't had used a DisruptiveGene instead?
+         */
+
         val list = mutableListOf<Gene>()
         if (first.isMutable() && isFirstMutable)
             list.add(first)

@@ -51,15 +51,6 @@ class SqlGeometryCollectionGene(
         elements.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(elements)
-    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -105,8 +96,6 @@ class SqlGeometryCollectionGene(
         return this.elements.containsSameValueAs(other.elements)
     }
 
-
-    override fun innerGene(): List<Gene> = listOf(elements)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when (gene) {

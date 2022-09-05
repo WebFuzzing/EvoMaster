@@ -55,15 +55,6 @@ class SqlMultiRangeGene<T>(
         rangeGenes.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(rangeGenes)
-    }
 
     override fun getValueAsRawString(): String {
         return "{ ${
@@ -88,8 +79,6 @@ class SqlMultiRangeGene<T>(
     }
 
 
-
-    override fun innerGene(): List<Gene> = listOf(rangeGenes)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {

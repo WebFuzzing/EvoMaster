@@ -448,12 +448,6 @@ abstract class Gene(
                 throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
 
-            /*
-                TODO should default implementation of candidatesInternalGenes return all mutable children?
-                 with overriden version to return only children that impact phenotype? (eg for Optional and Choice)
-             */
-
-            //TODO likely, then no need for innerGene method, or candidateInternalGene
             val internalGenes = candidatesInternalGenes(randomness, apc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
             Lazy.assert {
                 internalGenes.isNotEmpty() // otherwise shallow mutation should had been applied
@@ -463,6 +457,7 @@ abstract class Gene(
                         && internalGenes.all { children.contains(it) }
                         //everything returned should be mutable
                         && internalGenes.all {it.isMutable()}
+                        && internalGenes.all { it.parent == this }
             }
 
             val selected = selectSubset(internalGenes, randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
@@ -487,34 +482,31 @@ abstract class Gene(
 
 
     /**
-     * @return a list of internal gene to be selected for mutation, eg, weight-based or adaptive weight-based gene selection.
+     * @return a list of internal genes (direct children) that can be selected for hyper-mutation.
+     * These could then be further selected based on weight-based or adaptive weight-based gene selection.
      * Note that if return an empty list, [shallowMutate] will be applied to mutate this gene.
      *
-     * For instance, see [ArrayGene.candidatesInternalGenes], with a probability, it returns an empty list.
-     * The empty list means (see [ArrayGene.shallowMutate]) that the mutation is applied to change the size of this array gene.
-     *
      * The default implementation for "simple" genes would be to return "listOf<Gene>()", ie an empty list.
+     * In general, all children that are mutable will be returned, as long as they do have IMPACT on the
+     * phenotype of the individual.
+     * There is no point in mutating a gene that will not change the fitness.
      *
      * Note that the current gene must never be returned in this method
-     * TODO add test for it
      *
-     * What returned here is a subset (possibly not strict) of children, based on some criteria.
+     * What returned here is a subset (possibly not strict) of children.
      *
-     * TODO add invariant test for it
-     *
-     * TODO are we guaranteed that the selected genes do have impact on the phenotype?
-     * we should!!! TODO add tests for invariants (eg, an easy way is to see if, after mutation, the string
+     * TODO add tests for invariants (eg, an easy way is to see if, after mutation, the string
      * representation of the test is changed).
      *
-     * TODO also add method to check if gene is currently affecting the phenotype. For example,
-     * a gene inside Optional, and that is off, then we know it is not part of phenotype for sure.
      */
-    protected abstract fun candidatesInternalGenes(randomness: Randomness,
+    protected open fun candidatesInternalGenes(randomness: Randomness,
                                          apc: AdaptiveParameterControl,
                                          selectionStrategy: SubsetGeneSelectionStrategy,
                                          enableAdaptiveGeneMutation: Boolean,
                                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene>
+    ): List<Gene> {
+        return children.filter { it.isMutable() }
+    }
 
 
     /**
@@ -534,26 +526,6 @@ abstract class Gene(
     ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
     }
-
-    /**
-     * TODO is this necessary considering children and flatView???
-     * TODO need documentation if we keep it
-     *
-     *  likely not needed fo binding
-     *  TODO check if really needed for impact, as string specialization can be mutated.
-     *  if so, can get rid of it, and use children
-     *  TODO need to go through implementation of Impact before changing this
-     *
-     *  TODO as this is supposed to be called only from candidatesInternalGenes,
-     *   it should be protected. And such call should be there in this Gene class, ie
-     *   candidatesInternalGenes should have a defualt implementation where this method call.
-     *
-     *   TODO or maybe even remove it, as not used it so much. need to double-check
-     *
-     *   TODO or refactor into a method that guarantee that the returned genes DO impact the phenotype
-     * @return internal genes
-     */
-    abstract fun innerGene() : List<Gene>
 
     /**
      * @return a subset of internal genes to apply mutations
@@ -734,8 +706,7 @@ abstract class Gene(
             b.syncBindingGenesBasedOnThis(all)
         }
 
-        //TODO likely innegerGene() can be replaced with children
-        innerGene().filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
+        children.filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
     }
 
     /**
@@ -757,9 +728,8 @@ abstract class Gene(
         }
         /*
             TODO if [this] is bound, can any of its children be bound??? likely not
-            TODO likey can replace innerGene() with children
          */
-        innerGene().filterNot { all.contains(it) }.forEach { it.computeTransitiveBindingGenes(all) }
+        children.filterNot { all.contains(it) }.forEach { it.computeTransitiveBindingGenes(all) }
     }
 
     /**

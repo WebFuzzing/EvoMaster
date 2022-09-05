@@ -99,9 +99,6 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 .forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return fields.filter { it.isMutable() }
-    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
@@ -372,8 +369,6 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
 
     override fun mutationWeight(): Double = fields.map { it.mutationWeight() }.sum()
-
-    override fun innerGene(): List<Gene> = fields
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {

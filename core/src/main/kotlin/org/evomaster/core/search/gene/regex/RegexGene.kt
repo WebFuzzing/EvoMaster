@@ -35,9 +35,6 @@ class RegexGene(
         return disjunctions.isMutable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if (!isMutable()) emptyList() else listOf(disjunctions)
-    }
 
     override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is RegexGeneImpact){
@@ -48,10 +45,6 @@ class RegexGene(
         throw IllegalArgumentException("mismatched gene impact")
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        // do nothing since disjunctions is not mutable
-        return true
-    }
 
     override fun getValueAsRawString(): String {
         return disjunctions.getValueAsPrintableString(targetFormat = null)
@@ -97,7 +90,6 @@ class RegexGene(
      */
     override fun mutationWeight(): Double = disjunctions.mutationWeight()
 
-    override fun innerGene(): List<Gene> = listOf(disjunctions)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is RegexGene){

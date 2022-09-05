@@ -114,9 +114,7 @@ class SeededGene<T>(
         else this.gene.containsSameValueAs(other.gene as Gene))
     }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(gene, seeded)
-    }
+
 
     override fun possiblySame(gene : Gene) : Boolean =
             super.possiblySame(gene) && this.gene.possiblySame((gene as SeededGene<*>).gene as Gene)
@@ -159,6 +157,9 @@ class SeededGene<T>(
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Gene> {
+
+        //FIXME after refactoring
+
         var changeEmploySeed = false
         if (isEmploySeededMutable){
             if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
