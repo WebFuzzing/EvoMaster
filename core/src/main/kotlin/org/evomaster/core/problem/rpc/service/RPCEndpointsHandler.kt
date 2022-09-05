@@ -7,16 +7,15 @@ import org.evomaster.client.java.controller.api.dto.PostSearchActionDto
 import org.evomaster.client.java.controller.api.dto.RPCTestDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.EvaluatedRPCActionDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType
+import org.evomaster.client.java.controller.api.dto.problem.rpc.*
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -26,7 +25,9 @@ import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -135,11 +136,23 @@ class RPCEndpointsHandler {
      */
     fun handledSeededTests(tests: List<List<RPCActionDto>>): List<RPCIndividual>{
         return tests.map {td->
-            RPCIndividual(actions = td.map { d->
+            val rpcActions = td.map { d->
                 val name = actionName(d.interfaceId, d.actionName)
                 processEndpoint(name, d, true)
-            }.toMutableList())
+            }.toMutableList()
+
+            val exActions = td.map { d-> if (d.mockRPCExternalServiceDtos.isNotEmpty()) d.mockRPCExternalServiceDtos.map { e-> handleMockRPCExternalServiceDto(e) } else emptyList() }.toMutableList()
+            RPCIndividual(actions = rpcActions, externalServicesActions = exActions)
         }
+    }
+
+    private fun handleMockRPCExternalServiceDto(dto: MockRPCExternalServiceDto) : ExternalServiceAction{
+        TODO()
+
+    }
+
+    private fun transformMockRPCExternalServiceDto(action: ExternalServiceAction) : MockRPCExternalServiceDto{
+        TODO()
     }
 
     private fun setAuthInfo(infoDto: SutInfoDto){
@@ -344,6 +357,16 @@ class RPCEndpointsHandler {
         }
 
         setGenerationConfiguration(rpcAction, index, generateResponseVariable(index))
+
+        // get external action
+        if (action.parent is EnterpriseActionGroup){
+            val exActions = (action.parent as EnterpriseActionGroup)
+                .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+                .flatMap { (it as ActionComponent).flatten() }
+                .map { e-> transformMockRPCExternalServiceDto((e as ExternalServiceAction)) }
+            if (exActions.isNotEmpty())
+                rpcAction.mockRPCExternalServiceDtos = exActions
+        }
 
         return rpcAction
     }
