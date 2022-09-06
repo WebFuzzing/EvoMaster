@@ -3,7 +3,7 @@ package org.evomaster.core.problem.external.service.httpws
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
-import org.evomaster.core.problem.external.service.param.ResponseParam
+import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
@@ -28,7 +28,7 @@ class ExternalServiceAction(
      * then use ObjectGene now,
      * might extend it later
      */
-    response: ResponseParam = ResponseParam(),
+    response: HttpWsResponseParam = HttpWsResponseParam(),
 
     /**
      * WireMock server which received the request
@@ -44,9 +44,9 @@ class ExternalServiceAction(
 
 
     companion object {
-        private fun buildResponse(template: String): ResponseParam {
+        private fun buildResponse(template: String): HttpWsResponseParam {
             // TODO: refactor later
-            return ResponseParam()
+            return HttpWsResponseParam()
         }
     }
 
@@ -86,7 +86,7 @@ class ExternalServiceAction(
     override fun copyContent(): StructuralElement {
         return ExternalServiceAction(
             request,
-            response.copy() as ResponseParam,
+            response.copy() as HttpWsResponseParam,
             externalService,
             active,
             used,
