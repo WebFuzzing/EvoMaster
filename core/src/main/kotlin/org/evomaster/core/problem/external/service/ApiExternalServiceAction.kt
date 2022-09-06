@@ -1,15 +1,10 @@
 package org.evomaster.core.problem.external.service
 
-import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
+import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.Action
 
 abstract class ApiExternalServiceAction(
-    /**
-     * currently, we support response with json format
-     * then use ObjectGene now,
-     * might extend it later
-     */
-    val response: HttpWsResponseParam = HttpWsResponseParam(),
+    val response: ResponseParam,
     active : Boolean = false,
     used : Boolean = false,
     localId : String

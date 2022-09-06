@@ -124,7 +124,7 @@ class ExternalServiceAction(
     }
 
     private fun viewStatus(): Int {
-        return response.status.getValueAsRawString().toInt()
+        return (response as HttpWsResponseParam).status.getValueAsRawString().toInt()
     }
 
     private fun viewResponse(): String {
