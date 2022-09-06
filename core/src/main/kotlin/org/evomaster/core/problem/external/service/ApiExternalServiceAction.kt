@@ -4,6 +4,15 @@ import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.Action
 
 abstract class ApiExternalServiceAction(
+    /**
+     * response to return if the external service is accessed
+     *
+     * To Andrea,
+     * a type of external service might contain a certain type of response
+     * eg, HTTP response
+     * Do we need to make the response as a generic type T where T extends ResponseParam
+     * and bind the ApiExternalServiceAction with the T?
+     */
     val response: ResponseParam,
     active : Boolean = false,
     used : Boolean = false,
