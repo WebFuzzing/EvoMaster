@@ -110,6 +110,13 @@ class ExternalServiceHandler {
     }
 
     /**
+     * Reset all the served requests
+     */
+    fun resetServedRequests() {
+        externalServices.forEach { it.value.reset() }
+    }
+
+    /**
      * This takes all the served requests from WireMock server and creates them
      * as ExternalServiceAction. It ignores if the same absolute URL is added
      * already.
@@ -131,7 +138,8 @@ class ExternalServiceHandler {
                             it,
                             "",
                             u,
-                            counter++
+                            counter++,
+                            it.getId()
                         )
                     )
                 }

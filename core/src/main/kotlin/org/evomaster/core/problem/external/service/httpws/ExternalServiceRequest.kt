@@ -15,4 +15,8 @@ class ExternalServiceRequest(
     val absoluteURL: String,
     val wasMatched: Boolean,
 ) {
+
+    fun getId() : String {
+        return id.toString()
+    }
 }
