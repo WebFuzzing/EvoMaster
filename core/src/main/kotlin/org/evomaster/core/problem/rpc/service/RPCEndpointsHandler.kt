@@ -15,7 +15,7 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -141,17 +141,17 @@ class RPCEndpointsHandler {
                 processEndpoint(name, d, true)
             }.toMutableList()
 
-            val exActions = td.map { d-> if (d.mockRPCExternalServiceDtos.isNotEmpty()) d.mockRPCExternalServiceDtos.map { e-> handleMockRPCExternalServiceDto(e) } else emptyList() }.toMutableList()
+            val exActions = td.map { d-> if (d.mockRPCExternalServiceDtos != null && d.mockRPCExternalServiceDtos.isNotEmpty()) d.mockRPCExternalServiceDtos.map { e-> handleMockRPCExternalServiceDto(e) } else emptyList() }.toMutableList()
             RPCIndividual(actions = rpcActions, externalServicesActions = exActions)
         }
     }
 
-    private fun handleMockRPCExternalServiceDto(dto: MockRPCExternalServiceDto) : ExternalServiceAction{
+    private fun handleMockRPCExternalServiceDto(dto: MockRPCExternalServiceDto) : ApiExternalServiceAction{
         TODO()
 
     }
 
-    private fun transformMockRPCExternalServiceDto(action: ExternalServiceAction) : MockRPCExternalServiceDto{
+    private fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
         TODO()
     }
 
@@ -363,7 +363,7 @@ class RPCEndpointsHandler {
             val exActions = (action.parent as EnterpriseActionGroup)
                 .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
                 .flatMap { (it as ActionComponent).flatten() }
-                .map { e-> transformMockRPCExternalServiceDto((e as ExternalServiceAction)) }
+                .map { e-> transformMockRPCExternalServiceDto((e as ApiExternalServiceAction)) }
             if (exActions.isNotEmpty())
                 rpcAction.mockRPCExternalServiceDtos = exActions
         }

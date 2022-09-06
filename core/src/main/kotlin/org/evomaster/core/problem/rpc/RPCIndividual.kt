@@ -33,7 +33,7 @@ class RPCIndividual(
 
     constructor(
         actions: MutableList<RPCCallAction>,
-        externalServicesActions: MutableList<List<ExternalServiceAction>> = mutableListOf(),
+        externalServicesActions: MutableList<List<ApiExternalServiceAction>> = mutableListOf(),
         /*
             TODO might add sample type here as REST (check later)
          */
