@@ -58,7 +58,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             ind.seeMainExecutableActions().forEach { action ->
                 if (actions.isNotEmpty()) {
                     val enterpriseActionGroup = action.parent as EnterpriseActionGroup
-                    enterpriseActionGroup.addChildrenToGroup(actions, GroupsOfChildren.EXTERNAL_SERVICES)
+                    enterpriseActionGroup.addChildrenToGroup(0, actions, GroupsOfChildren.EXTERNAL_SERVICES)
                 }
             }
 
