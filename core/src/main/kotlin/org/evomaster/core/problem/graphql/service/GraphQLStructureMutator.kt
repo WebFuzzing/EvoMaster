@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.graphql.service
 
 import com.google.inject.Inject
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.graphql.GraphQLAction
@@ -61,10 +62,13 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
         if (main.size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05) as GraphQLAction
 
-            //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, ind.seeAllActions().size, false, ind.seeAllActions().size)
-
             ind.addGQLAction(action= sampledAction)
+
+            Lazy.assert {
+                sampledAction.hasLocalId()
+            }
+            //save mutated genes
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, ind.seeAllActions().size, localId = sampledAction.getLocalId(), false, ind.seeAllActions().size)
 
             return
         }
@@ -81,7 +85,7 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
                 /*
                     FIXME: how does position work when adding/removing a subtree?
                  */
-                mutatedGenes?.addRemovedOrAddedByAction(a, chosen, true, chosen)
+                mutatedGenes?.addRemovedOrAddedByAction(a, chosen, localId = main[chosen].getLocalId(),true, chosen)
             }
             ind.removeGQLActionAt(chosen)
 
@@ -94,8 +98,13 @@ class GraphQLStructureMutator : ApiWsStructureMutator() {
             val chosen = randomness.choose(main.indices)
             ind.addGQLAction(chosen, sampledAction)
 
+
+            Lazy.assert {
+                sampledAction.hasLocalId()
+            }
+
             //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, chosen, false, chosen)
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, chosen, localId = sampledAction.getLocalId(), false, chosen)
         }
 
     }

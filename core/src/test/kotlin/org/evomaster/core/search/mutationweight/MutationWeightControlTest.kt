@@ -9,7 +9,6 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.mutationweight.individual.IndividualMutationweightTest
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
@@ -72,7 +71,7 @@ class MutationWeightControlTest {
                 forceNotEmpty = true
         ))
 
-        assert(selected.size >= 2)
+        assertTrue(selected.size >= 2)
     }
 
     @Test
@@ -100,7 +99,7 @@ class MutationWeightControlTest {
                     forceNotEmpty = true
             ))
         }
-        assert(selected.count { it == obj } >= 1)
+        assertTrue(selected.count { it == obj } >= 1)
     }
 
     @Test
@@ -122,7 +121,7 @@ class MutationWeightControlTest {
             thus when executing 2 times, we assume that 7rd field is selected at least one time
          */
         val resultHW = selectField(obj as ObjectGene, 6, 2, SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT)
-        assert(resultHW)
+        assertTrue(resultHW)
 
         config.weightBasedMutationRate = false
 

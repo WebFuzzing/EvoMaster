@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
@@ -77,6 +78,11 @@ class RestResourceCalls(
     private val dbActions: List<DbAction>
         get() {
             return children.flatMap { it.flatten() }.filterIsInstance<DbAction>()
+        }
+
+    private val externalServiceActions: List<ExternalServiceAction>
+        get() {
+            return children.flatMap { it.flatten() }.filterIsInstance<ExternalServiceAction>()
         }
 
     /**
@@ -165,11 +171,12 @@ class RestResourceCalls(
      */
     fun seeActions(filter: ActionFilter): List<out Action> {
         return when (filter) {
-            ActionFilter.NO_EXTERNAL_SERVICE, ActionFilter.ALL -> dbActions.plus(mainActions)
+            ActionFilter.ALL -> dbActions.plus(externalServiceActions).plus(mainActions)
             ActionFilter.INIT, ActionFilter.ONLY_SQL -> dbActions
-            ActionFilter.MAIN_EXECUTABLE, ActionFilter.NO_INIT, ActionFilter.NO_SQL -> mainActions
-            // there is no external service action in RestResourceCall
-            ActionFilter.ONLY_EXTERNAL_SERVICE -> emptyList()
+            ActionFilter.NO_INIT, ActionFilter.NO_SQL -> externalServiceActions.plus(mainActions)
+            ActionFilter.MAIN_EXECUTABLE -> mainActions
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> externalServiceActions
+            ActionFilter.NO_EXTERNAL_SERVICE -> dbActions.plus(mainActions)
         }
     }
 

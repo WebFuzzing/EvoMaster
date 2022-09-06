@@ -680,6 +680,9 @@ class EvaluatedIndividual<T>(
             )
         }
 
+        /*
+            if there exist other types of action (ie, not DbAction), this might need to be extended
+         */
         action = individual.seeInitializingActions().filterIsInstance<DbAction>().find { it.seeTopGenes().contains(gene) }
 
         if (action != null) {

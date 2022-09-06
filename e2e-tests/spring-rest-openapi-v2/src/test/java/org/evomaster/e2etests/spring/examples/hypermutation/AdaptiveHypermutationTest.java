@@ -23,9 +23,6 @@ public class AdaptiveHypermutationTest extends HypermutationTestBase {
     @Test
     public void testRunAdaptiveHypermutation() throws Throwable {
 
-
-        defaultSeed = 0;
-
         runTestHandlingFlakyAndCompilation(
                 "hypermtation/TestLowWeightHighImpact",
                 "org.adaptivehypermuation.LowWeightHighImpactTest",
