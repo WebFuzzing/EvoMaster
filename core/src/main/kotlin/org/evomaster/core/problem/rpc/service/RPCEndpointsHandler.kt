@@ -16,6 +16,7 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
+import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -89,6 +90,13 @@ class RPCEndpointsHandler {
      * - value is the action for auth setup
      */
     private val authEndpointCluster = mutableMapOf<Int, RPCActionDto>()
+
+    /**
+     * a map of seeded external services for RPC-based SUT
+     * - key is the id of action (which is consistent with key of [actionSchemaCluster])
+     * - value is a list of seeded api external services for the RPC action
+     */
+    private val seededExternalServiceCluster = mutableMapOf<String, List<ApiExternalServiceAction>>()
 
 
     /**

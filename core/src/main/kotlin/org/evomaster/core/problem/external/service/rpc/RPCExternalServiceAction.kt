@@ -29,10 +29,12 @@ class RPCExternalServiceAction(
 
     companion object{
         private const val RPC_EX_NAME_SEPARATOR =":::"
+
+        fun getRPCExternalServiceActionName(interfaceName: String, functionName: String, requestRuleIdentifier: String?) = "$interfaceName$RPC_EX_NAME_SEPARATOR$functionName$RPC_EX_NAME_SEPARATOR${requestRuleIdentifier?:"ANY"}"
     }
 
     override fun getName(): String {
-        return "$interfaceName$RPC_EX_NAME_SEPARATOR$functionName$RPC_EX_NAME_SEPARATOR${requestRuleIdentifier?:"ANY"}"
+        return getRPCExternalServiceActionName(interfaceName, functionName, requestRuleIdentifier)
     }
 
     override fun seeTopGenes(): List<out Gene> {
