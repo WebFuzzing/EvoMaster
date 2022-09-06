@@ -7,7 +7,8 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.api.service.ApiWsSampler
-import org.evomaster.core.problem.external.service.ExternalServiceAction
+// here, we might need to use ApiExternalServiceAction instead of ExternalServiceAction
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceAction
 import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual

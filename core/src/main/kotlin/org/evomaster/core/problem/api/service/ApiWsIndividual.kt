@@ -1,17 +1,8 @@
 package org.evomaster.core.problem.api.service
 
-import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
-import org.evomaster.core.problem.external.service.ExternalServiceAction
 import org.evomaster.core.search.*
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import kotlin.math.max
 
 /**
  * the abstract individual for API based SUT, such as REST, GraphQL, RPC
