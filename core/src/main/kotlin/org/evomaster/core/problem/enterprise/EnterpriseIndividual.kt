@@ -4,7 +4,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -73,7 +73,7 @@ abstract class EnterpriseIndividual(
                 if(sizeDb==0) -1 else 0 , if(sizeDb==0) -1 else sizeDb-1
             )
 
-            val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is DbAction && e !is ExternalServiceAction},
+            val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is DbAction && e !is ApiExternalServiceAction },
                 if(sizeMain == 0) -1 else sizeDb, if(sizeMain == 0) -1 else sizeDb + sizeMain - 1)
 
             return GroupsOfChildren(children, listOf(db, main))
@@ -96,14 +96,14 @@ abstract class EnterpriseIndividual(
             ActionFilter.ALL -> seeAllActions()
             ActionFilter.MAIN_EXECUTABLE -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN)
                 .flatMap { (it as ActionComponent).flatten() }
-                .filter { it !is DbAction && it !is ExternalServiceAction }
+                .filter { it !is DbAction && it !is ApiExternalServiceAction }
             ActionFilter.INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL).flatMap { (it as ActionComponent).flatten() }
             // WARNING: this can still return DbAction and External ones...
             ActionFilter.NO_INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).flatMap { (it as ActionComponent).flatten() }
             ActionFilter.ONLY_SQL -> seeAllActions().filterIsInstance<DbAction>()
             ActionFilter.NO_SQL -> seeAllActions().filter { it !is DbAction }
-            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ExternalServiceAction>()
-            ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ExternalServiceAction }
+            ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
+            ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }
         }
     }
 

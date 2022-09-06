@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.external.service
+package org.evomaster.core.problem.external.service.httpws
 
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
