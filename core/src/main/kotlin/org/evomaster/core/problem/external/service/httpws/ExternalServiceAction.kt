@@ -60,7 +60,7 @@ class ExternalServiceAction(
     /**
      * Holds the ID for the WireMock stub
      */
-    var studIb: UUID = UUID.fromString("")
+    var studIb: UUID = UUID(0,0)
         private set
 
     /**
