@@ -4,7 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
@@ -231,7 +231,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * return a list of all external service actions in [this] individual
      * that include all the initializing actions among the main actions
      */
-     fun seeExternalServiceActions() : List<ExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ExternalServiceAction>
+     fun seeExternalServiceActions() : List<ApiExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ApiExternalServiceAction>
 
 
     /**
@@ -240,7 +240,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      *
      * Note that the method is particular used by impact collections for the individual
      */
-    fun seeFixedMainActions() = seeActions(ActionFilter.NO_INIT).filterNot { it is ExternalServiceAction }
+    fun seeFixedMainActions() = seeActions(ActionFilter.NO_INIT).filterNot { it is ApiExternalServiceAction }
 
 
     /**
@@ -253,7 +253,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      *
      * Note that the method is particular used by impact collections for the individual
      */
-    fun seeDynamicMainActions() = seeActions(ActionFilter.NO_INIT).filterIsInstance<ExternalServiceAction>()
+    fun seeDynamicMainActions() = seeActions(ActionFilter.NO_INIT).filterIsInstance<ApiExternalServiceAction>()
 
 
     /**
