@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rpc.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto
@@ -17,6 +18,7 @@ import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
+import org.evomaster.core.problem.external.service.rpc.parm.RPCResponseParam
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -96,7 +98,7 @@ class RPCEndpointsHandler {
      * - key is the id of action (which is consistent with key of [actionSchemaCluster])
      * - value is a list of seeded api external services for the RPC action
      */
-    private val seededExternalServiceCluster = mutableMapOf<String, List<ApiExternalServiceAction>>()
+    private val seededExternalServiceCluster = mutableMapOf<String, MutableList<ApiExternalServiceAction>>()
 
 
     /**
@@ -144,19 +146,75 @@ class RPCEndpointsHandler {
      */
     fun handledSeededTests(tests: List<List<RPCActionDto>>): List<RPCIndividual>{
         return tests.map {td->
+            val exActions = mutableListOf<List<ApiExternalServiceAction>>()
             val rpcActions = td.map { d->
                 val name = actionName(d.interfaceId, d.actionName)
+                val ex = if (d.mockRPCExternalServiceDtos != null && d.mockRPCExternalServiceDtos.isNotEmpty())
+                    d.mockRPCExternalServiceDtos.map { e-> handleMockRPCExternalServiceDto(e) }.toMutableList()
+                else mutableListOf()
+
+                seededExternalServiceCluster.merge(name, ex){old, new-> old.plus(new).toMutableList()}
+
+                exActions.add(ex.map { it.copy() as ApiExternalServiceAction })
                 processEndpoint(name, d, true)
             }.toMutableList()
 
-            val exActions = td.map { d-> if (d.mockRPCExternalServiceDtos != null && d.mockRPCExternalServiceDtos.isNotEmpty()) d.mockRPCExternalServiceDtos.map { e-> handleMockRPCExternalServiceDto(e) } else emptyList() }.toMutableList()
             RPCIndividual(actions = rpcActions, externalServicesActions = exActions)
         }
     }
 
-    private fun handleMockRPCExternalServiceDto(dto: MockRPCExternalServiceDto) : ApiExternalServiceAction{
-        TODO()
+    private fun readJson(response: String) : JsonNode?{
+        return try {
+            objectMapper.readTree(response)
+        }catch (e: Exception){
+            null
+        }
+    }
 
+    private fun jsonNodeAsObjectGene(name: String, jsonNode: JsonNode): Gene{
+        val gene = when{
+            jsonNode.isBoolean -> BooleanGene(name, jsonNode.booleanValue())
+            jsonNode.isBigDecimal -> BigDecimalGene(name, jsonNode.decimalValue())
+            jsonNode.isDouble -> DoubleGene(name, jsonNode.doubleValue())
+            jsonNode.isFloat -> FloatGene(name, jsonNode.floatValue())
+            jsonNode.isInt -> IntegerGene(name, jsonNode.intValue())
+            jsonNode.isLong -> LongGene(name, jsonNode.longValue())
+            jsonNode.isShort -> IntegerGene(name, jsonNode.shortValue().toInt(), min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
+            jsonNode.isObject ->{
+                val fields = jsonNode.fields().asSequence().map { jsonNodeAsObjectGene(it.key, it.value) }.toMutableList()
+                ObjectGene(name, fields)
+            }
+            jsonNode.isArray -> {
+                val elements = jsonNode.map { jsonNodeAsObjectGene(name + "_item", it) }
+                if (elements.isNotEmpty())
+                    ArrayGene(name, template = elements.first().copy(), elements = elements.toMutableList())
+                else
+                    ArrayGene(name, template = StringGene(name + "_item"))
+            }
+            else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
+        }
+        return OptionalGene(name, gene)
+    }
+
+    private fun handleMockRPCExternalServiceDto(dto: MockRPCExternalServiceDto) : ApiExternalServiceAction{
+        if (dto.requests.isNotEmpty() && dto.requests != dto.responses)
+            throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requests.size} vs. ${dto.responses.size}")
+        if (dto.responses.size > 1){
+            TODO("NOT SUPPORT RULE-based Responses")
+        }else{
+            val node = readJson(dto.responses.first())
+            val rgene = if (node != null){
+                jsonNodeAsObjectGene("return", node) as OptionalGene
+            }else{
+                OptionalGene("return",StringGene("return", value = dto.responses.first()))
+            }
+
+            val response = RPCResponseParam(EnumGene("responseType", listOf("JSON")),rgene)
+            return RPCExternalServiceAction(
+                    interfaceName = dto.interfaceFullName,functionName = dto.functionName, requestRuleIdentifier = dto.requests?.first(),responseParam = response, localId = ActionComponent.NONE_ACTION_COMPONENT_ID)
+
+
+        }
     }
 
     private fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
