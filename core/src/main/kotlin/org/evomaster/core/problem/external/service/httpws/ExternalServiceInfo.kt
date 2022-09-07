@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.external.service
+package org.evomaster.core.problem.external.service.httpws
 
 
 class ExternalServiceInfo(

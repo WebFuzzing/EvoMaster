@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.external.service
+package org.evomaster.core.problem.external.service.httpws
 
 import com.github.tomakehurst.wiremock.WireMockServer
 
