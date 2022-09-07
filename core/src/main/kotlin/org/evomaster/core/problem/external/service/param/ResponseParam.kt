@@ -17,4 +17,4 @@ abstract class ResponseParam(
     val responseType: EnumGene<String>,
     val response: OptionalGene,
     val extraProperties: List<Gene>
-) : Param(name, extraProperties.plus(response).toMutableList())
+) : Param(name, extraProperties.plus(responseType).plus(response).toMutableList())
