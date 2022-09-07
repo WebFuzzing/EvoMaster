@@ -17,4 +17,8 @@ abstract class ResponseParam(
     val responseType: EnumGene<String>,
     val response: OptionalGene,
     val extraProperties: List<Gene>
-) : Param(name, extraProperties.plus(responseType).plus(response).toMutableList())
+) : Param(name, extraProperties.plus(responseType).plus(response).toMutableList()){
+
+    fun isJson() = responseType.getValueAsRawString().contains("json", ignoreCase = true)
+
+}

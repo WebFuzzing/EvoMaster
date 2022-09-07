@@ -211,14 +211,23 @@ class RPCEndpointsHandler {
 
             val response = RPCResponseParam(EnumGene("responseType", listOf("JSON")),rgene)
             return RPCExternalServiceAction(
-                    interfaceName = dto.interfaceFullName,functionName = dto.functionName, requestRuleIdentifier = dto.requests?.first(),responseParam = response, localId = ActionComponent.NONE_ACTION_COMPONENT_ID)
-
-
+                    interfaceName = dto.interfaceFullName,functionName = dto.functionName, descriptiveInfo = dto.appKey, requestRuleIdentifier = dto.requests?.first(),responseParam = response, localId = ActionComponent.NONE_ACTION_COMPONENT_ID)
         }
     }
 
     private fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
-        TODO()
+        if (action !is RPCExternalServiceAction)
+            throw IllegalStateException("only support RPC external service action for the moment")
+
+        val mode = if (action.response.isJson()) GeneUtils.EscapeMode.JSON else throw IllegalStateException("only support response with json type for the monument")
+
+        return MockRPCExternalServiceDto().apply {
+            interfaceFullName = action.interfaceName
+            functionName = action.functionName
+            appKey = action.descriptiveInfo
+            requests = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
+            responses = listOf(action.response.gene.getValueAsPrintableString(mode = mode))
+        }
     }
 
     private fun setAuthInfo(infoDto: SutInfoDto){

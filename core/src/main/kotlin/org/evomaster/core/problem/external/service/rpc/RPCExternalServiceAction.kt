@@ -13,6 +13,13 @@ class RPCExternalServiceAction(
      * the method name
      */
     val functionName: String,
+
+    /**
+     * descriptive info for the external service if needed
+     * eg, app key for identifying the external service
+     */
+    val descriptiveInfo : String? = null,
+
     /**
      * response might be decided based on requests
      * such as x > 1 return A, otherwise return B (could exist in the seeded test)
@@ -46,6 +53,6 @@ class RPCExternalServiceAction(
     }
 
     override fun copyContent(): RPCExternalServiceAction {
-        return RPCExternalServiceAction(interfaceName, functionName, requestRuleIdentifier, response.copy() as RPCResponseParam, active, used, getLocalId())
+        return RPCExternalServiceAction(interfaceName, functionName, descriptiveInfo, requestRuleIdentifier, response.copy() as RPCResponseParam, active, used, getLocalId())
     }
 }
