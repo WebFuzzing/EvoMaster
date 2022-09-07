@@ -10,17 +10,18 @@ import org.evomaster.core.search.gene.Gene
 
 class GraphQLAction(
     /**
-         * A unique id to identify this action
-         */
-        val id: String,
+     * A unique id to identify this action
+     */
+    val id: String,
     /**
-         * the name of the Query or Mutation in the schema
-         */
-        val methodName: String,
+     * the name of the Query or Mutation in the schema
+     */
+    val methodName: String,
     val methodType: GQMethodType,
     parameters: MutableList<Param>,
-    auth: HttpWsAuthenticationInfo = NoAuth()
-        ) : HttpWsAction(auth, parameters) {
+    auth: HttpWsAuthenticationInfo = NoAuth(),
+    localId : String = NONE_ACTION_COMPONENT_ID
+        ) : HttpWsAction(auth, parameters, localId) {
 
     override fun getName(): String {
         //TODO what if have same name but different inputs? need to add input list as well
@@ -35,7 +36,7 @@ class GraphQLAction(
 
     override fun copyContent(): Action {
 
-        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(), auth )
+        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(), auth, localId= getLocalId())
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {

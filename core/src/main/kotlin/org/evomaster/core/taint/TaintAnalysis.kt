@@ -29,7 +29,7 @@ object TaintAnalysis {
             Then, we would extend the genotype (but not the phenotype!!!) of this test.
          */
 
-        if (individual.seeActions().size < additionalInfoList.size) {
+        if (individual.seeAllActions().size < additionalInfoList.size) {
             throw IllegalArgumentException("Less actions than info entries")
         }
 
@@ -38,7 +38,7 @@ object TaintAnalysis {
                 individual.seeInitializingActions().joinToString(",") {
                     if (it is DbAction) it.getResolvedName() else it.getName()
                 },
-                individual.seeActions().joinToString(","){
+                individual.seeAllActions().joinToString(","){
                     if (it is RestCallAction) it.resolvedPath() else it.getName()
                 }
             )
@@ -53,7 +53,7 @@ object TaintAnalysis {
                 continue
             }
 
-            val action = individual.seeActions()[i]
+            val action = individual.seeAllActions()[i]
 
             val specsMap = dto.stringSpecializations.entries
                     .map {

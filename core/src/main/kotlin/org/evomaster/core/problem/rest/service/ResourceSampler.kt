@@ -72,25 +72,26 @@ open class ResourceSampler : AbstractRestSampler() {
         var left = n
         while(left > 0){
             val call = sampleRandomResourceAction(0.05, left)
-            left -= call.seeActionSize(ActionFilter.NO_SQL)
+            left -= call.seeActionSize(ActionFilter.MAIN_EXECUTABLE)
             restCalls.add(call)
         }
 
         val ind = RestIndividual(
                 resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
-        ind.searchGlobalState = searchGlobalState
-        ind.doGlobalInitialize()
+        ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
 
 
     private fun sampleRandomResourceAction(noAuthP: Double, left: Int) : RestResourceCalls{
         val r = randomness.choose(rm.getResourceCluster().filter { it.value.isAnyAction() })
-        val rc = if (randomness.nextBoolean()) r.sampleOneAction(null, randomness) else r.randomRestResourceCalls(randomness,left)
-        rc.seeActions(ActionFilter.NO_SQL).forEach {
-            if(it is RestCallAction){
-                it.auth = getRandomAuth(noAuthP)
-            }
+        val rc = if (randomness.nextBoolean()){
+            r.sampleOneAction(null, randomness)
+        } else{
+            r.randomRestResourceCalls(randomness,left)
+        }
+        rc.seeActions(ActionFilter.MAIN_EXECUTABLE).forEach {
+            (it as RestCallAction).auth = getRandomAuth(noAuthP)
         }
         return rc
     }
@@ -113,8 +114,7 @@ open class ResourceSampler : AbstractRestSampler() {
             sampleWithMethodAndDependencyOption(method, withDependency)
                     ?: return sampleAtRandom()
         }
-        ind.searchGlobalState = searchGlobalState
-        ind.doGlobalInitialize()
+        ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
 
@@ -130,18 +130,14 @@ open class ResourceSampler : AbstractRestSampler() {
         }
 
         //auth management
-        if(authentications.isNotEmpty()){
-            val auth = getRandomAuth(0.0)
-            restCalls.flatMap { it.seeActions(ActionFilter.NO_SQL) }.forEach {
-                if(it is RestCallAction)
-                    it.auth = auth
-            }
+        val auth = if(authentications.isNotEmpty()){
+            getRandomAuth(0.0)
+
         }else{
-            val auth = NoAuth()
-            restCalls.flatMap { it.seeActions(ActionFilter.NO_SQL) }.forEach {
-                if(it is RestCallAction)
-                    it.auth = auth
-            }
+            NoAuth()
+        }
+        restCalls.flatMap { it.seeActions(ActionFilter.MAIN_EXECUTABLE) }.forEach {
+            (it as RestCallAction).auth = auth
         }
 
         if (restCalls.isNotEmpty()) {
@@ -241,7 +237,7 @@ open class ResourceSampler : AbstractRestSampler() {
                 sampleType = SampleType.SMART_RESOURCE,
                 trackOperator = if (config.trackingEnabled()) this else null,
                 index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
-        ind.searchGlobalState = searchGlobalState
+        ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
 }

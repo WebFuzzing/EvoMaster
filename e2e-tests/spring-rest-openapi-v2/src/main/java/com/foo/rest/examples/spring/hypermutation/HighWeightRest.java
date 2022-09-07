@@ -28,6 +28,10 @@ public class HighWeightRest {
     @PostMapping(value = "/lowWeightHighCoverage/{x}", consumes = "application/json")
     public ResponseEntity lowWeightHighCoverage(@PathVariable(name = "x") Integer x, @RequestParam(required = true) String y, @RequestBody HighWeightDto z){
 
+        /*
+            based on the implementation,
+            modifying x should have higher impacts than y and z
+         */
         String response = "";
         if (x == 42){
             response = "x1";
@@ -39,7 +43,15 @@ public class HighWeightRest {
             response = "x4";
         }else if(x == 10000){
             response = "x5";
+        }else{
+            /*
+                should have covered at least one branch related to x
+                then reach the branch related to y and z
+             */
+            return ResponseEntity.notFound().build();
         }
+
+
         if (y.equalsIgnoreCase("foo")){
             response += "y";
         }

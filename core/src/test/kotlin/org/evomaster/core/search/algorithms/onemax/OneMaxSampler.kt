@@ -10,8 +10,8 @@ class OneMaxSampler : Sampler<OneMaxIndividual>(){
     override fun sampleAtRandom(): OneMaxIndividual {
 
         val sampled =  OneMaxIndividual(n, if(config.trackingEnabled()) this else null)
-        sampled.searchGlobalState = searchGlobalState
         sampled.initialize(randomness)
+        sampled.doGlobalInitialize( searchGlobalState)
 
         return sampled
     }

@@ -12,16 +12,20 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.geom.Line2D
 
+/**
+ * Represents a polygon (closed area).
+ * It does not contain more than a single linestring.
+ */
 class SqlPolygonGene(
-    name: String,
-    val databaseType: DatabaseType = DatabaseType.POSTGRES,
-    val minLengthOfPolygonRing: Int = 2,
-    val onlyNonIntersectingPolygons: Boolean = false,
-    val points: ArrayGene<SqlPointGene> = ArrayGene(
-            name = "points",
-            // polygons have at least 2 points
-            minSize = minLengthOfPolygonRing,
-            template = SqlPointGene("p", databaseType = databaseType))
+        name: String,
+        val databaseType: DatabaseType = DatabaseType.POSTGRES,
+        val minLengthOfPolygonRing: Int = 2,
+        val onlyNonIntersectingPolygons: Boolean = false,
+        val points: ArrayGene<SqlPointGene> = ArrayGene(
+                name = "points",
+                // polygons have at least 2 points
+                minSize = minLengthOfPolygonRing,
+                template = SqlPointGene("p", databaseType = databaseType))
 ) : CompositeFixedGene(name, mutableListOf(points)) {
 
     companion object {
@@ -29,20 +33,26 @@ class SqlPolygonGene(
     }
 
     override fun copyContent(): Gene = SqlPolygonGene(
-        name,
-        minLengthOfPolygonRing = minLengthOfPolygonRing,
-        onlyNonIntersectingPolygons = onlyNonIntersectingPolygons,
-        points = points.copy() as ArrayGene<SqlPointGene>,
-        databaseType = databaseType
+            name,
+            minLengthOfPolygonRing = minLengthOfPolygonRing,
+            onlyNonIntersectingPolygons = onlyNonIntersectingPolygons,
+            points = points.copy() as ArrayGene<SqlPointGene>,
+            databaseType = databaseType
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        /*
-            FIXME this code is problematic
-         */
-        do {
-            points.randomize(randomness, tryToForceNewValue)
-        } while (!isLocallyValid())
+        val pointList = mutableListOf<SqlPointGene>()
+        repeat(minLengthOfPolygonRing) {
+            val newGene = points.template.copy() as SqlPointGene
+            pointList.add(newGene)
+            do {
+                newGene.randomize(randomness, tryToForceNewValue)
+            } while (onlyNonIntersectingPolygons && !noCrossOvers(pointList))
+        }
+        points.randomize(randomness, tryToForceNewValue)
+        points.killAllChildren()
+        pointList.map { points.addChild(it) }
+        assert(isLocallyValid())
     }
 
     /**
@@ -54,13 +64,23 @@ class SqlPolygonGene(
     override fun isLocallyValid(): Boolean {
         if (!onlyNonIntersectingPolygons)
             return true
+        val pointList = points.getViewOfChildren() as List<SqlPointGene>
+        return noCrossOvers(pointList)
+    }
 
-        val len = points.getViewOfChildren().size
+    /**
+     * checks if the
+     * linestring has an intersection by checking all segments
+     * againts each other O(n^2)
+     * Source: https://stackoverflow.com/questions/4876065/is-there-an-easy-and-fast-way-of-checking-if-a-polygon-is-self-intersecting
+     */
+    private fun noCrossOvers(pointList: List<SqlPointGene>): Boolean {
+        val len = pointList.size
 
         /*
-         * No cross-over if len < 4
+         * No cross-over if len <= 3
          */
-        if (len < 4) {
+        if (len <= 3) {
             return true
         }
 
@@ -75,14 +95,14 @@ class SqlPolygonGene(
                 }
 
                 val cut = Line2D.linesIntersect(
-                        points.getViewOfElements()[i].x.value.toDouble(),
-                        points.getViewOfElements()[i].y.value.toDouble(),
-                        points.getViewOfElements()[i + 1].x.value.toDouble(),
-                        points.getViewOfElements()[i + 1].y.value.toDouble(),
-                        points.getViewOfElements()[j].x.value.toDouble(),
-                        points.getViewOfElements()[j].y.value.toDouble(),
-                        points.getViewOfElements()[(j + 1) % len].x.value.toDouble(),
-                        points.getViewOfElements()[(j + 1) % len].y.value.toDouble())
+                        pointList[i].x.value.toDouble(),
+                        pointList[i].y.value.toDouble(),
+                        pointList[i + 1].x.value.toDouble(),
+                        pointList[i + 1].y.value.toDouble(),
+                        pointList[j].x.value.toDouble(),
+                        pointList[j].y.value.toDouble(),
+                        pointList[(j + 1) % len].x.value.toDouble(),
+                        pointList[(j + 1) % len].y.value.toDouble())
 
                 if (cut) {
                     return false
@@ -109,6 +129,16 @@ class SqlPolygonGene(
             extraCheck: Boolean
     ): String {
         return when (databaseType) {
+            DatabaseType.POSTGRES,
+            DatabaseType.H2 -> "\"${getValueAsRawString()}\""
+            DatabaseType.MYSQL -> getValueAsRawString()
+            else ->
+                throw IllegalArgumentException("Unsupported SqlPolygonGene.getValueAsPrintableString() for ${databaseType}")
+        }
+    }
+
+    override fun getValueAsRawString(): String {
+        return when (databaseType) {
             /*
              * In MySQL, the first and the last point of
              * the polygon should be equal. We enforce
@@ -116,33 +146,39 @@ class SqlPolygonGene(
              * end of the list
              */
             DatabaseType.MYSQL -> {
-                "POLYGON(" + points.getViewOfElements()
-                        .joinToString(" , ")
-                        { it.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) } + "," +
-                        points.getViewOfElements().get(0).getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck) +
-                        ")"
+                "POLYGON(LINESTRING(" + points.getViewOfElements()
+                        .joinToString(", ")
+                        { it.getValueAsRawString() } + ", " +
+                        points.getViewOfElements()[0].getValueAsRawString() +
+                        "))"
             }
             /*
              * In PostgreSQL, the (..) denotes a closed path
              */
             DatabaseType.POSTGRES -> {
-                "\" (  ${
-                    points.getViewOfElements().joinToString(" , ")
+                "(${
+                    points.getViewOfElements().joinToString(", ")
                     { it.getValueAsRawString() }
-                } ) \""
+                })"
             }
-            else -> {
-                throw IllegalArgumentException("Unsupported SqlPolygonGene.getValueAsPrintableString() for ${databaseType}")
-            }
-        }
-    }
 
-    override fun getValueAsRawString(): String {
-        return "( ${
-            points.getViewOfElements()
-                .map { it.getValueAsRawString() }
-                .joinToString(" , ")
-        } ) "
+            /*
+             * In H2, polygon's last point must be equal to
+             * first point, we enforce that by repeating the
+             * first point.
+             */
+            DatabaseType.H2 -> {
+                "POLYGON((${
+                    points.getViewOfElements().joinToString(", ") {
+                        it.x.getValueAsRawString() +
+                                " " + it.y.getValueAsRawString()
+                    } + ", " + points.getViewOfElements()[0].x.getValueAsRawString() +
+                            " " + points.getViewOfElements()[0].y.getValueAsRawString()
+                }))"
+            }
+            else -> throw IllegalArgumentException("Unsupported SqlPolygonGene.getValueAsRawString() for ${databaseType}")
+
+        }
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -158,7 +194,6 @@ class SqlPolygonGene(
         }
         return this.points.containsSameValueAs(other.points)
     }
-
 
 
     override fun innerGene(): List<Gene> = listOf(points)

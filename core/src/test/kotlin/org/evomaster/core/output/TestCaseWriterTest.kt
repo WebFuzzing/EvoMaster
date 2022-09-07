@@ -20,7 +20,7 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.sql.SqlUUIDGene
+import org.evomaster.core.search.gene.UUIDGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType
@@ -734,7 +734,7 @@ class TestCaseWriterTest {
 
         val autoGene = SqlAutoIncrementGene(table.name)
         val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
-        val uuidGene = SqlUUIDGene(uuidColumn.name)
+        val uuidGene = UUIDGene(uuidColumn.name)
         val insert = DbAction(table, setOf(idColumn, uuidColumn), 0L, listOf(pkGene0, uuidGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))

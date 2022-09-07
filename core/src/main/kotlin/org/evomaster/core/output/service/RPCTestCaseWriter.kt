@@ -36,7 +36,7 @@ class RPCTestCaseWriter : WebTestCaseWriter() {
     ) {
 
         if (ind.individual is RPCIndividual){
-            ind.evaluatedActions().forEach { evaluatedAction->
+            ind.evaluatedMainActions().forEach { evaluatedAction->
 
                 lines.addEmpty()
 

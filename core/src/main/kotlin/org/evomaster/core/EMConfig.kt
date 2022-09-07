@@ -41,6 +41,12 @@ class EMConfig {
 
         private const val maxTcpPort = 65535.0
 
+        /**
+         * Maximum possible length for strings.
+         * Really, having something longer would make little to no sense
+         */
+        const val stringLengthHardLimit = 20_000
+
         fun validateOptions(args: Array<String>): OptionParser {
 
             val config = EMConfig()
@@ -357,6 +363,11 @@ class EMConfig {
 
         if(!taintOnSampling && useGlobalTaintInfoProbability > 0){
             throw IllegalArgumentException("Need to activate taintOnSampling to use global taint info")
+        }
+
+        if(maxLengthForStringsAtSamplingTime > maxLengthForStrings){
+            throw IllegalArgumentException("Max length at sampling time $maxLengthForStringsAtSamplingTime" +
+                    " cannot be greater than maximum string length $maxLengthForStrings")
         }
     }
 
@@ -1127,6 +1138,19 @@ class EMConfig {
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
 
+
+    @Experimental
+    @Cfg("Add an extra query param, to analyze how it is used/read by the SUT. Needed to discover new query params" +
+            " that were not specified in the schema.")
+    var extraQueryParam = false
+
+
+    @Experimental
+    @Cfg("Add an extra HTTP header, to analyze how it is used/read by the SUT. Needed to discover new headers" +
+            " that were not specified in the schema.")
+    var extraHeader = false
+
+
     enum class ResourceSamplingStrategy(val requiredArchive: Boolean = false) {
         NONE,
         /**
@@ -1505,6 +1529,19 @@ class EMConfig {
     @Experimental
     @Cfg("When sampling new individual, check whether to use already existing info on tainted values")
     var useGlobalTaintInfoProbability = 0.0
+
+
+    @Min(0.0)
+    @Max(stringLengthHardLimit.toDouble())
+    @Cfg("The maximum length allowed for evolved strings. Without this limit, strings could in theory be" +
+            " billions of characters long")
+    var maxLengthForStrings = 200
+
+
+    @Min(0.0)
+    @Cfg("Maximum length when sampling a new random string. Such limit can be bypassed when a string is mutated.")
+    var maxLengthForStringsAtSamplingTime = 16
+
 
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false

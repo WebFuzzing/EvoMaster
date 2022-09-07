@@ -88,6 +88,8 @@ There are 3 types of options:
 |`instrumentMR_SQL`| __Boolean__. Execute instrumentation for method replace with category SQL. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `true`.|
 |`killSwitch`| __Boolean__. Try to enforce the stopping of SUT business-level code. This is needed when TCP connections timeouts, to avoid thread executions from previous HTTP calls affecting the current one. *Default value*: `true`.|
 |`maxActionEvaluations`| __Int__. Maximum number of action evaluations for the search. A fitness evaluation can be composed of 1 or more actions, like for example REST calls or SQL setups. The more actions are allowed, the better results one can expect. But then of course the test generation will take longer. Only applicable depending on the stopping criterion. *Constraints*: `min=1.0`. *Default value*: `1000`.|
+|`maxLengthForStrings`| __Int__. The maximum length allowed for evolved strings. Without this limit, strings could in theory be billions of characters long. *Constraints*: `min=0.0, max=20000.0`. *Default value*: `200`.|
+|`maxLengthForStringsAtSamplingTime`| __Int__. Maximum length when sampling a new random string. Such limit can be bypassed when a string is mutated. *Constraints*: `min=0.0`. *Default value*: `16`.|
 |`maxResponseByteSize`| __Int__. Maximum size (in bytes) that EM handles response payloads in the HTTP responses. If larger than that, a response will not be stored internally in EM during the test generation. This is needed to avoid running out of memory. *Default value*: `1000000`.|
 |`maxSearchSuiteSize`| __Int__. Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS. *Constraints*: `min=1.0`. *Default value*: `50`.|
 |`maxSqlInitActionsPerMissingData`| __Int__. When generating SQL data, how many new rows (max) to generate for each specific SQL Select. *Constraints*: `min=1.0`. *Default value*: `5`.|
@@ -161,6 +163,8 @@ There are 3 types of options:
 |`exportImpacts`| __Boolean__. Specify whether to export derived impacts among genes. *Default value*: `false`.|
 |`externalServiceIP`| __String__. User provided external service IP. *Constraints*: `regex ^127\.((25[0-5]\|2[0-4][0-9]\|[01]?[0-9][0-9]?)\.){2}(25[0-5]\|2[0-4][0-9]\|[01]?[0-9][0-9]?)$`. *Default value*: `127.0.0.2`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
+|`extraHeader`| __Boolean__. Add an extra HTTP header, to analyze how it is used/read by the SUT. Needed to discover new headers that were not specified in the schema. *Default value*: `false`.|
+|`extraQueryParam`| __Boolean__. Add an extra query param, to analyze how it is used/read by the SUT. Needed to discover new query params that were not specified in the schema. *Default value*: `false`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *Default value*: `impactSnapshot.csv`.|
 |`impactFile`| __String__. Specify a path to save derived genes. *Default value*: `impact.csv`.|

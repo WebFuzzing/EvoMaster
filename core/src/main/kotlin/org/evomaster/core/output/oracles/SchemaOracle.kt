@@ -16,8 +16,6 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
-import java.security.InvalidParameterException
 import javax.ws.rs.core.MediaType
 
 
@@ -367,7 +365,7 @@ class SchemaOracle : ImplementedOracle() {
 
         if(!::objectGenerator.isInitialized) return false
 
-        return individual.evaluatedActions().any {
+        return individual.evaluatedMainActions().any {
             val call = it.action as RestCallAction
             val res = it.result as HttpWsCallResult
             generatesExpectation(call, res)

@@ -140,13 +140,15 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 log.trace("now it is {}th, do addInitializingActions ends", i)
             }
 
-            Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert{current.individual.verifyValidity(); true}
 
             val mutatedInd = mutate(current, targets, mutatedGenes)
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
-            Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert{mutatedInd.verifyValidity(); true}
 
+            //FIXME: why setOf()??? are we skipping coverage collection here???
+            // or always added non-covered from archive? if so, name "targets" is confusing
             //Shall we prioritize the targets based on mutation sampling strategy eg, feedbackDirectedSampling?
             val mutated = ff.calculateCoverage(mutatedInd, setOf())
                     ?: continue

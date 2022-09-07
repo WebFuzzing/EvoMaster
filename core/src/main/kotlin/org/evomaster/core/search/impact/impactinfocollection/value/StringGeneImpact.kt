@@ -65,7 +65,8 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
-        if(gc.current !is StringGene) throw IllegalArgumentException("incorrect mutation info for the gene")
+        if(gc.current !is StringGene)
+            throw IllegalArgumentException("incorrect mutation info for the gene")
 
         if (gc.previous != null){
             if (gc.previous !is StringGene)

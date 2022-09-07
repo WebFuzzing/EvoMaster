@@ -51,7 +51,7 @@ class ImpactUtils {
                 is DoubleGene -> DoubleGeneImpact(id)
                 is FloatGene -> FloatGeneImpact(id)
                 is StringGene -> StringGeneImpact(id, gene)
-                is Base64StringGene -> StringGeneImpact(id, gene.data)
+                //is Base64StringGene -> StringGeneImpact(id, gene.data)
                 is ObjectGene -> ObjectGeneImpact(id, gene)
                 is TupleGene -> TupleGeneImpact(id, gene)
                 is MapGene<*, *>-> MapGeneImpact(id)
@@ -69,7 +69,7 @@ class ImpactUtils {
                 is SqlNullableGene -> SqlNullableImpact(id, gene)
                 is SqlJSONGene -> SqlJsonGeneImpact(id, gene)
                 is SqlXMLGene -> SqlXmlGeneImpact(id, gene)
-                is SqlUUIDGene -> SqlUUIDGeneImpact(id, gene)
+                is UUIDGene -> SqlUUIDGeneImpact(id, gene)
                 is SqlPrimaryKeyGene -> SqlPrimaryKeyGeneImpact(id, gene)
                 is SqlForeignKeyGene -> SqlForeignKeyGeneImpact(id)
                 is SqlAutoIncrementGene -> GeneImpact(id)
@@ -81,6 +81,8 @@ class ImpactUtils {
                 is QuantifierRxGene -> QuantifierRxGeneImpact(id, gene)
                 is RxAtom -> RxAtomImpact(id)
                 is RxTerm -> RxTermImpact(id)
+                // general for composite fixed gene
+                is CompositeFixedGene -> CompositeFixedGeneImpact(id, gene)
                 else ->{
                     LoggingUtil.uniqueWarn(log, "the impact of {} was collected in a general manner, i.e., GeneImpact", gene::class.java.simpleName)
                     GeneImpact(id)
@@ -92,6 +94,10 @@ class ImpactUtils {
         private const val SEPARATOR_GENE = ";"
         private const val SEPARATOR_GENE_WITH_TYPE = ">"
 
+        /**
+         * TODO
+         * Man: might employ local id of the action, check it later
+         */
         fun generateGeneId(action: Action, gene : Gene) : String = "${action.getName()}$SEPARATOR_ACTION_TO_GENE${generateGeneId(gene)}$SEPARATOR_ACTION_TO_GENE${action.seeTopGenes().indexOf(gene)}"
 
         fun extractActionName(geneId : String) : String?{
@@ -129,7 +135,7 @@ class ImpactUtils {
         ) : Map<String, MutableList<MutatedGeneWithContext>>{
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
-            if (individual.seeActions().isEmpty()){
+            if (individual.seeAllActions().isEmpty()){
                 individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                     val id = generateGeneId(individual, g)
                     val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
@@ -137,7 +143,7 @@ class ImpactUtils {
                     contexts.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = mutatedGenes.size))
                 }
             }else{
-                individual.seeActions().forEachIndexed { index, action ->
+                individual.seeAllActions().forEachIndexed { index, action ->
                     action.seeTopGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                         val id = generateGeneId(action, g)
                         val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}

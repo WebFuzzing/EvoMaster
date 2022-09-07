@@ -73,20 +73,20 @@ class RestStructureMutator : ApiWsStructureMutator() {
             to setup the intermediary resources
          */
 
-        (0 until ind.seeActions().size - 1).forEach {
-            val a = ind.seeActions()[it]
-            Lazy.assert{a !is RestCallAction || a.verb == HttpVerb.POST}
+        (0 until ind.seeMainExecutableActions().size - 1).forEach {
+            val a = ind.seeMainExecutableActions()[it]
+            Lazy.assert{a.verb == HttpVerb.POST}
         }
-        Lazy.assert{ val a = ind.seeActions().last(); a is RestCallAction && a.verb == HttpVerb.GET }
+        Lazy.assert{ val a = ind.seeAllActions().last(); a is RestCallAction && a.verb == HttpVerb.GET }
 
-        val indices = ind.seeActions().indices
+        val indices = ind.seeMainExecutableActions().indices
                 .filter { i ->
-                    val a = ind.seeActions()[i]
+                    val a = ind.seeMainExecutableActions()[i]
                     /*
                         one simple way to distinguish the POST on collection is that
                         they are not chaining a location, as GET is on same endpoint
                     */
-                    a is RestCallAction && !a.saveLocation && a.verb == HttpVerb.POST
+                    !a.saveLocation && a.verb == HttpVerb.POST
                 }
 
         if (indices.isEmpty()) {
@@ -100,7 +100,7 @@ class RestStructureMutator : ApiWsStructureMutator() {
 
         if (indices.size > 1 &&
                 (randomness.nextBoolean() ||
-                        ind.seeActions().size == config.maxTestSize)) {
+                        ind.seeMainExecutableActions().size == config.maxTestSize)) {
 
             //delete one POST, but NOT the GET
             val chosen = randomness.choose(indices)
@@ -109,31 +109,28 @@ class RestStructureMutator : ApiWsStructureMutator() {
             val removedActions = ind.getResourceCalls()[chosen].seeActions(ActionFilter.NO_SQL)
             Lazy.assert { removedActions.size == 1 }
 
+
+
             mutatedGenes?.addRemovedOrAddedByAction(
                 removedActions.first(),
-                chosen,
+                ind.seeFixedMainActions().indexOf(removedActions.first()),
+                localId = null,
                 true,
-                chosen
+                resourcePosition = chosen
             )
 
             ind.removeResourceCall(chosen)
+
 
         } else {
             //insert a new POST on the collection
             val idx = indices.last()
 
-            val postTemplate = ind.seeActions()[idx] as RestCallAction
+            val postTemplate = ind.seeMainExecutableActions()[idx]
             Lazy.assert{postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation}
 
-            val post = sampler.createActionFor(postTemplate, ind.seeActions().last() as RestCallAction)
+            val post = sampler.createActionFor(postTemplate, ind.seeAllActions().last() as RestCallAction)
 
-            //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(
-                post,
-                idx,
-                false,
-                idx
-            )
 
             /*
                 where it is inserted should not matter, as long as
@@ -142,42 +139,55 @@ class RestStructureMutator : ApiWsStructureMutator() {
              */
             //ind.seeActions().add(idx, post)
             ind.addResourceCall(idx, RestResourceCalls(actions = mutableListOf(post), dbActions = listOf()))
+
+            //save mutated genes
+            mutatedGenes?.addRemovedOrAddedByAction(
+                post,
+                ind.seeFixedMainActions().indexOf(post),
+                localId = null,
+                false,
+                resourcePosition = idx
+            )
         }
     }
 
     private fun mutateForRandomType(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
-        if (ind.seeActions().size == 1) {
+        if (ind.seeMainExecutableActions().size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
 
-            val pos = ind.seeActions().size
-            //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(
-                sampledAction,
-                pos,
-                false,
-                pos
-            )
+            val pos = ind.seeMainExecutableActions().size
+
 
             //ind.seeActions().add(sampledAction)
             ind.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(sampledAction), dbActions = listOf()))
+
+            //save mutated genes
+            mutatedGenes?.addRemovedOrAddedByAction(
+                sampledAction,
+                ind.seeFixedMainActions().indexOf(sampledAction),
+                localId = null,
+                false,
+                pos
+            )
 
             //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             return
         }
 
-        if (randomness.nextBoolean() || ind.seeActions().size == config.maxTestSize) {
+        if (randomness.nextBoolean() || ind.seeMainExecutableActions().size == config.maxTestSize) {
 
             //delete one at random
             log.trace("Deleting action from test")
-            val chosen = randomness.nextInt(ind.seeActions().size)
+            val chosen = randomness.nextInt(ind.seeMainActionComponents().size)
 
             //save mutated genes
             val removedActions = ind.getResourceCalls()[chosen].seeActions(ActionFilter.NO_SQL)
             Lazy.assert { removedActions.size == 1 }
             mutatedGenes?.addRemovedOrAddedByAction(
                 removedActions.first(),
-                chosen,
+               ind.seeFixedMainActions().indexOf(removedActions.first()),
+                null,
                 true,
                 chosen
             )
@@ -190,14 +200,15 @@ class RestStructureMutator : ApiWsStructureMutator() {
             //add one at random
             log.trace("Adding action to test")
             val sampledAction = sampler.sampleRandomAction(0.05) as RestCallAction
-            val chosen = randomness.nextInt(ind.seeActions().size)
+            val chosen = randomness.nextInt(ind.seeMainActionComponents().size)
             //ind.seeActions().add(chosen, sampledAction)
             ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction), dbActions = listOf()))
 
             //save mutated genes
             mutatedGenes?.addRemovedOrAddedByAction(
                 sampledAction,
-                chosen,
+                ind.seeFixedMainActions().indexOf(sampledAction),
+                null,
                 false,
                 chosen
             )

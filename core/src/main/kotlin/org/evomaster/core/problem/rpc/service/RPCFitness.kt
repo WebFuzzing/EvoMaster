@@ -45,7 +45,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val fv = FitnessValue(individual.size().toDouble())
 
         run loop@{
-            individual.seeActions().forEachIndexed { index, action->
+            individual.seeAllActions().filterIsInstance<RPCCallAction>().forEachIndexed { index, action->
                 val ok = executeNewAction(action, index, actionResults)
                 if (!ok) return@loop
             }
@@ -63,7 +63,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 status info in GRPC, see https://grpc.github.io/grpc/core/md_doc_statuscodes.html
          */
         val rpcActionResults = actionResults.filterIsInstance<RPCCallResult>()
-        handleResponseTargets(fv, individual.seeActions(), rpcActionResults, dto.additionalInfoList)
+        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, dto.additionalInfoList)
 
         if (config.baseTaintAnalysisProbability > 0) {
             Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }

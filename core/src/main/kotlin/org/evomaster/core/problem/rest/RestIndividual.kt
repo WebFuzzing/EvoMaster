@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.*
@@ -26,8 +26,15 @@ class RestIndividual(
         val sampleSpec: SamplerSpecification? = null,
         trackOperator: TrackOperator? = null,
         index : Int = -1,
-        allActions : MutableList<out ActionComponent>
-): ApiWsIndividual(trackOperator, index, allActions) {
+        allActions : MutableList<out ActionComponent>,
+        mainSize : Int = allActions.size,
+        dbSize: Int = 0,
+        groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,dbSize)
+): ApiWsIndividual(trackOperator, index, allActions,
+    childTypeVerifier = {
+        RestResourceCalls::class.java.isAssignableFrom(it)
+                || DbAction::class.java.isAssignableFrom(it)
+    }, groups) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestIndividual::class.java)
@@ -42,7 +49,7 @@ class RestIndividual(
             index : Int = -1
     ) : this(sampleType, sampleSpec, trackOperator, index, mutableListOf<ActionComponent>().apply {
         addAll(dbInitialization); addAll(resourceCalls)
-    })
+    }, resourceCalls.size, dbInitialization.size)
 
     constructor(
             actions: MutableList<out Action>,
@@ -67,7 +74,9 @@ class RestIndividual(
                 sampleSpec?.copy(),
                 trackOperator,
                 index,
-                children.map { it.copy() }.toMutableList() as MutableList<out ActionComponent>
+                children.map { it.copy() }.toMutableList() as MutableList<out ActionComponent>,
+                mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
+                dbSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL)
         )
     }
 
@@ -81,20 +90,21 @@ class RestIndividual(
     /**
      * Note that if resource-mio is enabled, [dbInitialization] of a RestIndividual is always empty, since DbActions are created
      * for initializing an resource for a set of actions on the same resource.
+     * TODO is this no longer the case?
+     *
      * This effects on a configuration with respect to  [EMConfig.geneMutationStrategy] is ONE_OVER_N when resource-mio is enabled.
      *
      * In another word, if resource-mio is enabled, whatever [EMConfig.geneMutationStrategy] is, it always follows "GeneMutationStrategy.ONE_OVER_N_BIASED_SQL"
      * strategy.
      *
-     * TODO : modify return genes when GeneFilter is one of [GeneFilter.ALL] and [GeneFilter.ONLY_SQL]
      */
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
         return when (filter) {
-            GeneFilter.ALL -> seeDbActions().flatMap(Action::seeTopGenes).plus(seeActions().flatMap(Action::seeTopGenes))
-            GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeTopGenes)
+            GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
+            GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
-            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ExternalServiceAction::seeTopGenes)
+            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
         }
     }
 
@@ -121,26 +131,11 @@ class RestIndividual(
         }
     }
 
-    /*
-        TODO Tricky... should dbInitialization somehow be part of the size?
-        But they are merged in a single operation in a single call...
-        need to think about it
-     */
 
-    override fun size() = seeActions().size
+    override fun size() = seeMainExecutableActions().size
 
-    /**
-     * @return actions which are REST actions
-     */
-    override fun seeActions(): List<RestCallAction> = getResourceCalls().flatMap { it.seeActions(NO_INIT) as List<RestCallAction> }
 
-    /**
-     * @return all Sql actions which could be in initialization or between rest actions.
-     */
-    override fun seeDbActions(): List<DbAction> {
-        return seeInitializingActions().filterIsInstance<DbAction>().plus(getResourceCalls().flatMap { c-> c.seeActions(ONLY_SQL) as List<DbAction> })
-    }
-
+    //FIXME refactor
     override fun verifyInitializationActions(): Boolean {
         return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
     }
@@ -155,48 +150,6 @@ class RestIndividual(
         }
         return copy
     }
-
-    /**
-     * During mutation, the values used for parameters are changed, but the values attached to the respective used objects are not.
-     * This function copies the new (mutated) values of the parameters into the respective used objects, to ensure that the objects and parameters are coherent.
-     * The return value is true if everything went well, and false if some values could not be copied. It is there for debugging only.
-     */
-
-    /*
-    fun enforceCoherence(): Boolean {
-
-        //BMR: not sure I can use flatMap here. I am using a reference to the action object to get the relevant gene.
-        seeActions().forEach { action ->
-            action.seeGenes().forEach { gene ->
-                try {
-                    val innerGene = when (gene::class) {
-                        OptionalGene::class -> (gene as OptionalGene).gene
-                        DisruptiveGene::class -> (gene as DisruptiveGene<*>).gene
-                        else -> gene
-                    }
-                    val relevantGene = usedObjects.getRelevantGene((action as RestCallAction), innerGene)
-                    when (action::class) {
-                        RestCallAction::class -> {
-                            when (relevantGene::class) {
-                                OptionalGene::class -> (relevantGene as OptionalGene).gene.copyValueFrom(innerGene)
-                                DisruptiveGene::class -> (relevantGene as DisruptiveGene<*>).gene.copyValueFrom(innerGene)
-                                ObjectGene::class -> relevantGene.copyValueFrom(innerGene)
-                                else -> relevantGene.copyValueFrom(innerGene)
-                            }
-                        }
-                    }
-                }
-                catch (e: Exception){
-                    // TODO BMR: EnumGene is not handled well and ends up here.
-                     return false
-                }
-            }
-        }
-        return true
-    }
-
-     */
-
 
     /**
      * for each call, there exist db actions for preparing resources.
@@ -255,11 +208,11 @@ class RestIndividual(
      */
     fun addResourceCall(position: Int = -1, restCalls : RestResourceCalls) {
         if (position == -1){
-            addChild(restCalls)
+            addChildToGroup(restCalls, GroupsOfChildren.MAIN)
         }else{
             if(position > children.size)
                 throw IllegalArgumentException("position is out of range of list")
-            addChild(getFirstIndexOfRestResourceCalls() + position, restCalls)
+            addChildToGroup(getFirstIndexOfRestResourceCalls() + position, restCalls, GroupsOfChildren.MAIN)
         }
     }
 
@@ -288,10 +241,14 @@ class RestIndividual(
         swapChildren(getFirstIndexOfRestResourceCalls() + position1, getFirstIndexOfRestResourceCalls() + position2)
     }
 
-    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int)
-    = getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).map {
-        seeActions(actionFilter).indexOf(it)
+
+    fun getFixedActionIndexes(resourcePosition: Int)
+    = getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).filter { seeMainExecutableActions().contains(it) }.map {
+        seeFixedMainActions().indexOf(it)
     }
+
+    fun getDynamicActionLocalIds(resourcePosition: Int) =
+        getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).filter { seeDynamicMainActions().contains(it) }.map { it.getLocalId() }
 
     private fun validateSwap(first : Int, second : Int) : Boolean{
         //TODO need update, although currently not in use
@@ -326,18 +283,6 @@ class RestIndividual(
                 .any {
                     if(it < position) validateSwap(it, position) else if(it > position) validateSwap(position, it) else false
                 }
-    }
-
-    override fun seeActions(filter: ActionFilter): List<out Action> {
-        return when(filter){
-            ALL-> seeInitializingActions().plus(getResourceCalls().flatMap { it.seeActions(ALL) })
-            NO_EXTERNAL_SERVICE-> seeInitializingActions().filter { it !is ExternalServiceAction }.plus(getResourceCalls().flatMap { it.seeActions(ALL) })
-            NO_INIT -> getResourceCalls().flatMap { it.seeActions(ALL) }
-            INIT -> seeInitializingActions()
-            ONLY_SQL -> seeInitializingActions().filterIsInstance<DbAction>().plus(getResourceCalls().flatMap { it.seeActions(ONLY_SQL) })
-            NO_SQL -> getResourceCalls().flatMap { it.seeActions(NO_SQL) }
-            ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().plus(getResourceCalls().flatMap { it.seeActions(ONLY_EXTERNAL_SERVICE) })
-        }
     }
 
 
@@ -380,5 +325,9 @@ class RestIndividual(
 
     override fun getInsertTableNames(): List<String> {
         return seeDbActions().filterNot { it.representExistingData }.map { it.table.name }
+    }
+
+    override fun seeMainExecutableActions(): List<RestCallAction> {
+        return super.seeMainExecutableActions() as List<RestCallAction>
     }
 }

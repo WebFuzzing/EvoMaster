@@ -307,4 +307,7 @@ class ArrayGene<T>(
 
     override fun getDefaultMaxSize() = (if (getMinSizeOrDefault() >= MAX_SIZE) (getMinSizeOrDefault() + MAX_SIZE) else MAX_SIZE)
 
+    override fun isPrintable(): Boolean {
+        return getViewOfChildren().all { it.isPrintable() }
+    }
 }

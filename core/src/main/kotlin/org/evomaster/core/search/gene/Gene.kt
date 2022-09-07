@@ -56,7 +56,10 @@ abstract class Gene(
          * Note that children while have links back to their "parents".
          */
         children: MutableList<out Gene>
-) : StructuralElement(children){
+) : StructuralElement(
+    children,
+    {k -> Gene::class.java.isAssignableFrom(k)}
+    ){
 
     /*
         TODO Major refactoring still to do:
@@ -189,6 +192,8 @@ abstract class Gene(
             throw IllegalStateException("Search Global State was not setup for the individual")
         }
         applyGlobalUpdates()
+
+        children.forEach { it.doGlobalInitialize() }
     }
 
     /**
@@ -369,7 +374,7 @@ abstract class Gene(
         val root = getRoot()
         if(root is Individual) {
             val sgt =  root.searchGlobalState
-            assert(sgt != null) //TODO check if fails, eg in tests where individuals are created without a sampler
+            //assert(sgt != null) //these would fail in integration tests where individuals are created without a sampler
             return sgt
         }
         return null

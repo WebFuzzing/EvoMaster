@@ -3,6 +3,7 @@ package org.evomaster.core.database.extract.postgres
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
@@ -70,7 +71,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("id"))
         val genes = actions[0].seeTopGenes()
-        assertTrue(genes.firstIsInstance<SqlPrimaryKeyGene>().gene is SqlUUIDGene)
+        assertTrue(genes.firstIsInstance<SqlPrimaryKeyGene>().gene is UUIDGene)
     }
 
     @Test

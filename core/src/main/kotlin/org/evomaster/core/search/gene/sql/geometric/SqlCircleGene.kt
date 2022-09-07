@@ -53,11 +53,11 @@ class SqlCircleGene(
             targetFormat: OutputFormat?,
             extraCheck: Boolean
     ): String {
-        return "\" ( ${c.getValueAsRawString()} , ${r.getValueAsRawString()} ) \""
+        return "\"${getValueAsRawString()}\""
     }
 
     override fun getValueAsRawString(): String {
-        return "(${c.getValueAsRawString()} , ${r.getValueAsRawString()})"
+        return "(${c.getValueAsRawString()}, ${r.getValueAsRawString()})"
     }
 
     override fun copyValueFrom(other: Gene) {

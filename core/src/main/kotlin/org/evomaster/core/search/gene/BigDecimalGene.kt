@@ -137,6 +137,14 @@ class BigDecimalGene(
             floatingPointMode = randomness.nextBoolean()
         }
 
+
+        if (getMaxUsedInSearchAsLong() < getMinUsedInSearchAsLong()){
+            if (isFloatingPointMutable)
+                floatingPointMode = true
+            else if (!floatingPointMode)
+                throw IllegalStateException("cannot randomize the value in non-floatingPointMode, since the MaxValueAsLong (${getMaxUsedInSearchAsLong()}) < MinValueAsLong(${getMinUsedInSearchAsLong()})")
+        }
+
         if (floatingPointMode){
             val dValue = randomizeDouble(getMinUsedInSearch().toDouble(), getMaxUsedInSearch().toDouble(), scale, randomness)
             setValueWithDouble(dValue)
@@ -258,7 +266,13 @@ class BigDecimalGene(
     private fun getMaxUsedInSearchAsLong() : Long{
         val maxInSearch = getMaxUsedInSearch()
         if (maxInSearch > MAX_IN_LONG) return MAX_IN_LONG.toLong()
-        return maxInSearch.toLong()
+        val maxLongInSearch = maxInSearch.setScale(0, RoundingMode.DOWN)
+        /*
+            if the scale part is too small (eg, 0.000000000001), there could exist error, thus
+            maxInSearch.setScale(0, RoundingMode.DOWN) could result a value which is higher than maxInSearch
+            then need an additional handling, ie, minus one
+         */
+        return (if (maxLongInSearch > maxInSearch) maxLongInSearch.minus(BigDecimal.ONE) else maxLongInSearch).toLong()
     }
 
     private fun getMinUsedInSearchAsLong() : Long{
@@ -271,7 +285,8 @@ class BigDecimalGene(
             then before converting the value to long, handle it within long value range
          */
         if (minInSearch < MIN_IN_LONG) return MIN_IN_LONG.toLong()
-        return  minInSearch.toLong()
+        val minLongInSearch =  minInSearch.setScale(0, RoundingMode.UP)
+        return (if (minLongInSearch < minInSearch) minLongInSearch.plus(BigDecimal.ONE) else minLongInSearch).toLong()
     }
 
     private fun getMinUsedInSearch() : BigDecimal {
@@ -329,7 +344,8 @@ class BigDecimalGene(
     }
 
     override fun isLocallyValid(): Boolean {
-        if (!super.isLocallyValid()) return false
+        if (!super.isLocallyValid())
+            return false
         if (max != null && value > getMaximum())
             return false
         if (min != null && value < getMinimum())
