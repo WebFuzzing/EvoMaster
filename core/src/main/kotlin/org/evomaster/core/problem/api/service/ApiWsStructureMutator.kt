@@ -7,7 +7,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.api.service.ApiWsSampler
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceAction
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.search.Action
@@ -51,7 +51,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             // TODO: Under review
 //            val fw = individual.fitness.getAccessedExternalServiceRequests()
 
-            val actions = mutableListOf<ExternalServiceAction>().plus(
+            val actions = mutableListOf<HttpExternalServiceAction>().plus(
                 sampler.getExternalService().getExternalServiceActions()
             )
 

@@ -8,7 +8,7 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceInfo
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.*
@@ -746,7 +746,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         infoDto.forEach { info ->
             info.externalServices.forEach { es ->
                 externalServiceHandler.addExternalService(
-                    ExternalServiceInfo(
+                    HttpExternalServiceInfo(
                         es.protocol,
                         es.remoteHostname,
                         es.remotePort

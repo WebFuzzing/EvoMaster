@@ -8,7 +8,7 @@ import java.util.UUID
  *
  * TODO: Properties have to extended further based on the need
  */
-class ExternalServiceRequest(
+class HttpExternalServiceRequest(
     val id: UUID,
     val method: String,
     val url: String,

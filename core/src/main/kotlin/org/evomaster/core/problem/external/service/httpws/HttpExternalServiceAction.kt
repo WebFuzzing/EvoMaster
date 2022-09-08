@@ -14,7 +14,7 @@ import java.util.UUID
  *
  * Typically, handle WireMock responses
  */
-class ExternalServiceAction(
+class HttpExternalServiceAction(
 
     /**
      * Received request to the respective WireMock instance
@@ -22,7 +22,7 @@ class ExternalServiceAction(
      * TODO: Need to expand the properties further in future
      *  depending on the need
      */
-    val request: ExternalServiceRequest,
+    val request: HttpExternalServiceRequest,
 
     /**
      * currently, we support response with json format
@@ -48,7 +48,7 @@ class ExternalServiceAction(
         }
     }
 
-    constructor(request: ExternalServiceRequest, template: String, externalService: ExternalService, id: Long, localId: String = NONE_ACTION_COMPONENT_ID) :
+    constructor(request: HttpExternalServiceRequest, template: String, externalService: ExternalService, id: Long, localId: String = NONE_ACTION_COMPONENT_ID) :
             this(request, buildResponse(template), externalService, id = id, localId = localId)
 
     init {
@@ -88,7 +88,7 @@ class ExternalServiceAction(
      * same external service.
      */
     override fun copyContent(): StructuralElement {
-        return ExternalServiceAction(
+        return HttpExternalServiceAction(
             request,
             response.copy() as HttpWsResponseParam,
             externalService,

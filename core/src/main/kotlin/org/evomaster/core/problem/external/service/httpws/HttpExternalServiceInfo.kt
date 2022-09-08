@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.external.service.httpws
 
 
-class ExternalServiceInfo(
+class HttpExternalServiceInfo(
     val protocol: String,
     val remoteHostname: String,
     val remotePort: Int
@@ -20,7 +20,7 @@ class ExternalServiceInfo(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as ExternalServiceInfo
+        other as HttpExternalServiceInfo
 
         if (protocol != other.protocol) return false
         if (remoteHostname != other.remoteHostname) return false

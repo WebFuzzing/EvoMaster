@@ -10,7 +10,7 @@ class ExternalService(
     /**
      * External service information collected from SUT
      */
-    val externalServiceInfo: ExternalServiceInfo,
+    val externalServiceInfo: HttpExternalServiceInfo,
     /**
      * Initiated WireMock server for the external service
      */
@@ -34,9 +34,9 @@ class ExternalService(
      * TODO: For now watMatched serves no purpose. Should be handled when
      *  handling diff for the received requests
      */
-    fun getAllServedRequests(): List<ExternalServiceRequest> {
+    fun getAllServedRequests(): List<HttpExternalServiceRequest> {
         return wireMockServer.allServeEvents.map {
-                ExternalServiceRequest(
+                HttpExternalServiceRequest(
                     it.id,
                     it.request.method.value(),
                     it.request.url,

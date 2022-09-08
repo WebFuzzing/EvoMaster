@@ -48,7 +48,7 @@ class ExternalServiceHandler {
     /**
      * Collection of captured external service requests under SUT
      */
-    private val externalServiceRequests: MutableList<ExternalServiceRequest> = mutableListOf()
+    private val externalServiceRequests: MutableList<HttpExternalServiceRequest> = mutableListOf()
 
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
@@ -56,7 +56,7 @@ class ExternalServiceHandler {
      * If there is a WireMock instance is available for the hostname,
      * it will be skipped from creating a new one.
      */
-    fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
+    fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (!externalServices.containsKey(externalServiceInfo.remoteHostname)) {
                 val ip = getIP(externalServiceInfo.remotePort)
@@ -124,8 +124,8 @@ class ExternalServiceHandler {
      * This is not perfect yet, have to explore more scenarios and perfect the
      * implementation.
      */
-    fun getExternalServiceActions(): MutableList<ExternalServiceAction> {
-        val actions = mutableListOf<ExternalServiceAction>()
+    fun getExternalServiceActions(): MutableList<HttpExternalServiceAction> {
+        val actions = mutableListOf<HttpExternalServiceAction>()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
                 // TODO: This needs to be revised to make it nicer
@@ -136,12 +136,11 @@ class ExternalServiceHandler {
                     counter++
                     val localId = "ExternalServiceAction_$counter"
                     actions.add(
-                        ExternalServiceAction(
+                        HttpExternalServiceAction(
                             it,
                             "",
                             u,
-                            counter,
-                            localId
+                            counter
                         )
                     )
                 }
@@ -224,7 +223,7 @@ class ExternalServiceHandler {
         return wm
     }
 
-    fun getExternalServiceRequests(): MutableList<ExternalServiceRequest> {
+    fun getExternalServiceRequests(): MutableList<HttpExternalServiceRequest> {
         return externalServiceRequests
     }
 
