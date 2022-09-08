@@ -37,4 +37,10 @@ public class MockRPCExternalServiceDto {
      * there could exist multiples if there exist rules
      */
     public List<String> responses;
+
+
+    /**
+     * type info of the responses
+     */
+    public List<String> responseTypes;
 }
