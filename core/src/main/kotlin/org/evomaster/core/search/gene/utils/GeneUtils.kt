@@ -554,7 +554,7 @@ object GeneUtils {
                                 gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last())),
                                 lastElementTreatedSpecially = true
                             ) else if (gene.gene is TupleGene)
-                            gene.gene
+                            gene.gene else if (gene.gene is LimitObjectGene)  gene
                         else
                         // on by default, but can be deselected during the search
                             BooleanGene(gene.name, true)
