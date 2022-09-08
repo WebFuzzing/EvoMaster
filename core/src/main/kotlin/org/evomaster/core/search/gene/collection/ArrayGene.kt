@@ -71,10 +71,6 @@ class ArrayGene<T>(
             throw IllegalArgumentException(
                 "ArrayGene "+name+": minSize (${minSize}) is greater than maxSize ($maxSize)") }
 
-        if (maxSize != null && elements.size > maxSize!!) {
-            throw IllegalArgumentException(
-                "ArrayGene "+name+": More elements (${elements.size}) than allowed ($maxSize)")
-        }
     }
 
     companion object{

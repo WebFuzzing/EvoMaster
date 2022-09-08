@@ -182,8 +182,21 @@ class StringGene(
         */
         val maxForRandomization = getSearchGlobalState()?.config?.maxLengthForStringsAtSamplingTime ?: 16
 
+        val adjustedMin = minLength
+        val adjustedMax = min(maxLength, maxForRandomization)
 
-        value = randomness.nextWordString(minLength, min(maxLength, maxForRandomization))
+        if(adjustedMax == 0 && adjustedMin == adjustedMax){
+            //only empty string is allowed
+            value = ""
+        } else {
+            val x = randomness.nextWordString(adjustedMin, adjustedMax)
+            if(tryToForceNewValue && value == x){
+                //this should be rare, but can happen when max is low
+                randomize(randomness, true)
+                return
+            }
+            value = x
+        }
         repair()
         selectedSpecialization = -1
         handleBinding(getAllGenesInIndividual())
