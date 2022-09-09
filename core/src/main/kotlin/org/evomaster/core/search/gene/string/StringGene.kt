@@ -300,10 +300,10 @@ class StringGene(
                     point is, switching is not always going to be beneficial
                  */
                 selectedSpecialization = specializationGenes.lastIndex
-            } else if (specializationGenes.size > 1 && randomness.nextBoolean(PROB_CHANGE_SPEC)) {
+            } else if (specializationGenes.size > 1 && (!specializationGene.isMutable() ||randomness.nextBoolean(PROB_CHANGE_SPEC))) {
                 //choose another specialization, but with low probability
                 selectedSpecialization = randomness.nextInt(0, specializationGenes.size - 1, selectedSpecialization)
-            } else if(randomness.nextBoolean(PROB_CHANGE_SPEC)){
+            } else if(!specializationGene.isMutable() || randomness.nextBoolean(PROB_CHANGE_SPEC)){
                 //not all specializations are useful
                 selectedSpecialization = -1
             } else {
