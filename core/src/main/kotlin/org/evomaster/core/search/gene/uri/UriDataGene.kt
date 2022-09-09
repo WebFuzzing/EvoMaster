@@ -6,10 +6,9 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import java.net.URI
 
 
@@ -86,7 +85,7 @@ class UriDataGene(
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {

@@ -9,7 +9,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -119,7 +119,7 @@ class QuantifierRxGene(
     }
 
     override fun customShouldApplyShallowMutation(randomness: Randomness,
-                                                  selectionStrategy: SubsetGeneSelectionStrategy,
+                                                  selectionStrategy: SubsetGeneMutationSelectionStrategy,
                                                   enableAdaptiveGeneMutation: Boolean,
                                                   additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean {
@@ -134,7 +134,7 @@ class QuantifierRxGene(
         return false
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         /*
             atoms is dynamically modified, then we do not collect impacts for it now.
             thus for the internal genes, adaptive gene selection for mutation is not applicable
@@ -143,7 +143,7 @@ class QuantifierRxGene(
         return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(null, s))
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         val length = atoms.size
 
         if (length < min || length > limitedMax)

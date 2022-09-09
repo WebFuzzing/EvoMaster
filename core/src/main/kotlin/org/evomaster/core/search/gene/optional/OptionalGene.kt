@@ -10,7 +10,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -110,7 +110,7 @@ class OptionalGene(name: String,
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean {
@@ -135,14 +135,14 @@ class OptionalGene(name: String,
         throw IllegalArgumentException("impact is null or not OptionalGeneImpact ${additionalGeneMutationInfo?.impact}")
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun mutablePhenotypeChildren(): List<Gene> {
 
         if (!isActive || !gene.isMutable()) return emptyList()
 
         return listOf(gene)
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is OptionalGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(gene))
                 throw IllegalStateException("mismatched input: the internalGenes should only contain gene")
@@ -151,7 +151,7 @@ class OptionalGene(name: String,
         throw IllegalArgumentException("impact is null or not OptionalGeneImpact")
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         isActive = !isActive
         if (enableAdaptiveGeneMutation){

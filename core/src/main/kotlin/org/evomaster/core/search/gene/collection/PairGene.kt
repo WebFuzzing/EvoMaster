@@ -5,10 +5,9 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
 /**
  * handling pair type or Map.Entry type
@@ -101,7 +100,7 @@ class PairGene<F,S>(
         return first.isPrintable() && second.isPrintable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun mutablePhenotypeChildren(): List<Gene> {
 
         /*
             FIXME what is the role of isFirstMutable???
@@ -122,7 +121,7 @@ class PairGene<F,S>(
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {

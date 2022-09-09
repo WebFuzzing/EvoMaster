@@ -2,14 +2,9 @@ package org.evomaster.core.search.gene.placeholder
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.root.SimpleGene
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
 
 /**
  * It might happen that object A has reference to B,

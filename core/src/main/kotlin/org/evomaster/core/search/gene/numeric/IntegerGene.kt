@@ -14,7 +14,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.evomaster.core.utils.NumberCalculationUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -87,7 +87,7 @@ class IntegerGene(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {

@@ -19,7 +19,7 @@ interface HistoryBasedMutationGene {
 
 
     fun applyHistoryBasedMutation(
-        gene: Gene, //| HistoryBasedMutation
+        gene: Gene, //| HistoryBasedMutation   //FIXME remove this input
         additionalGeneMutationInfo: AdditionalGeneMutationInfo
     ): Boolean {
 

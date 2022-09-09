@@ -295,7 +295,7 @@ class ArchiveGeneMutator{
      */
     fun mutateStringGene(
         gene: StringGene, targets: Set<Int>,
-        allGenes : List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo){
+        allGenes : List<Gene>, selectionStrategy: SubsetGeneMutationSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo){
         var employBinding = true
         if (additionalGeneMutationInfo.impact == null){
             val ds = gene.standardSpecializationMutation(

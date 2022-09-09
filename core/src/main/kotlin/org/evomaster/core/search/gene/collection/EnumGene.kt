@@ -10,7 +10,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -107,10 +107,21 @@ class EnumGene<T : Comparable<T>>(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
+
+        /*
+            FIXME
+            we need to make a decision here...
+            should we check enableAdaptiveGeneMutation here???
+            point is, this is a value mutation, with no child involved.
+            however, this is exactly the same behavior as in ChoiceGene, although there there are children.
+            we shouldn't re-invent the wheel...
+            so here we are re-using impact collection instead of ArchiveMutation just for simplicity, as we can
+            get more info from each selected enum value that impacted the fitness.
+         */
 
         if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is EnumGeneImpact) {
             val candidates = (0 until values.size).filter { index != it }

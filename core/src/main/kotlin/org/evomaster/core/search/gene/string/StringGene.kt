@@ -29,7 +29,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.min
@@ -229,7 +229,7 @@ class StringGene(
         repair()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun mutablePhenotypeChildren(): List<Gene> {
        /*
             Specializations are children... but here the shallow mutation deal with them.
         */
@@ -238,7 +238,7 @@ class StringGene(
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
@@ -247,7 +247,7 @@ class StringGene(
 
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,
-                               selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+                               selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         val allGenes = getAllGenesInIndividual()
 
@@ -277,7 +277,7 @@ class StringGene(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         allGenes: List<Gene>,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
@@ -308,7 +308,7 @@ class StringGene(
                 selectedSpecialization = -1
             } else {
                 //extract impact of specialization of String
-                val impact = if (enableAdaptiveGeneMutation || selectionStrategy != SubsetGeneSelectionStrategy.DEFAULT)
+                val impact = if (enableAdaptiveGeneMutation || selectionStrategy != SubsetGeneMutationSelectionStrategy.DEFAULT)
                     (additionalGeneMutationInfo?.impact as? StringGeneImpact)?.hierarchySpecializationImpactInfo?.flattenImpacts()?.get(selectedSpecialization) as? GeneImpact
                 else null
                 //just mutate current selection

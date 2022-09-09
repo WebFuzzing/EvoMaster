@@ -2,7 +2,7 @@ package org.evomaster.core.search.gene.interfaces
 
 import org.evomaster.core.search.impact.impactinfocollection.CollectionImpact
 import org.evomaster.core.search.impact.impactinfocollection.Impact
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import kotlin.math.min
 
 /**
@@ -25,8 +25,8 @@ interface CollectionGene {
     /**
      * a impact-based probability fo modifying size of the gene
      */
-    fun probabilityToModifySize(selectionStrategy: SubsetGeneSelectionStrategy, impact: Impact?) : Double {
-        if (selectionStrategy != SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT) return defaultProbabilityToModifySize()
+    fun probabilityToModifySize(selectionStrategy: SubsetGeneMutationSelectionStrategy, impact: Impact?) : Double {
+        if (selectionStrategy != SubsetGeneMutationSelectionStrategy.ADAPTIVE_WEIGHT) return defaultProbabilityToModifySize()
         impact?:return  defaultProbabilityToModifySize()
         if (impact !is CollectionImpact) return  defaultProbabilityToModifySize()
 

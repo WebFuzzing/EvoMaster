@@ -58,7 +58,7 @@ abstract class CompositeFixedGene(
         throw IllegalStateException(errorChildMsg)
     }
 
-    override fun adaptiveSelectSubset(
+    override fun adaptiveSelectSubsetToMutate(
         randomness: Randomness,
         internalGenes: List<Gene>,
         mwc: MutationWeightControl,

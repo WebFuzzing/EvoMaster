@@ -8,7 +8,7 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
@@ -37,11 +37,11 @@ import org.evomaster.core.search.service.SearchGlobalState
  *  we collect impacts for each field, then could guide on which field to be selected for mutation.
  * See more details in comments of [org.evomaster.core.search.impact.impactinfocollection.GeneImpact]
  *
- * 3. override [candidatesInternalGenes] to decide 1) whether to apply selection for the internal genes
+ * 3. override [mutablePhenotypeChildren] to decide 1) whether to apply selection for the internal genes
  *  2) what candidates are in [this] gene to be selected for mutation, eg, mutable fields for ObjectGene.
  *      More info could be found with comments of the method.
  *
- * 4. with the collected impact info, override [adaptiveSelectSubset] to decide which gene to be selected
+ * 4. with the collected impact info, override [adaptiveSelectSubsetToMutate] to decide which gene to be selected
  *
  */
 abstract class Gene(
@@ -387,10 +387,15 @@ abstract class Gene(
      */
     private fun shouldApplyShallowMutation(
         randomness: Randomness,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean {
+
+        if(selectionStrategy == SubsetGeneMutationSelectionStrategy.ADAPTIVE_WEIGHT &&
+                additionalGeneMutationInfo == null){
+            throw IllegalArgumentException("Trying adaptive weight selection, but with no info as input")
+        }
 
         if(children.none { it.isMutable() }){
             //no mutable child, so always apply shallow mutate
@@ -410,11 +415,19 @@ abstract class Gene(
      * of internal variables) is applied or a mutation of children.
      *
      * Note: if the implementation of this method can return true, then must override shallowMutation
+     *
+     * To get better results, would be important to implement the logic for adaptive mutation, for all genes that
+     * need it. But not necessary in first implementation of a new gene.
+     * TODO go through every single gene...
+     *
+     * @param selectionStrategy a strategy to select internal genes to mutate
+     * @param enableAdaptiveGeneMutation whether apply adaptive gene mutation, e.g., archive-based gene mutation
+     * @param additionalGeneMutationInfo contains additional info for gene mutation
      */
     abstract fun customShouldApplyShallowMutation(
         randomness: Randomness,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean, //FIXME this might not be needed here
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean
 
@@ -422,57 +435,70 @@ abstract class Gene(
     /**
      * A mutation is just a small change.
      * Apply a mutation to the current gene.
-     * Regarding the gene,
-     * 1) there might exist multiple internal genes i.e.,[candidatesInternalGenes].
-     *  In this case, we first apply [selectSubset] to select a subset of internal genes.
+     * Regarding the gene:
+     * 1) there might exist multiple internal genes, i.e.,[mutablePhenotypeChildren].
+     *  In this case, we first apply [selectSubsetToMutate] to select a subset of internal genes.
      *  then apply mutation on each of the selected genes.
      * 2) When there is no need to do further selection, we apply [shallowMutate] on the current gene.
+     * 3) if either internal genes (ie children impacting phenotype) or current gene (ie with shallowMutate)
+     *   can be mutated, the choice is based with different strategies
      *
      *   @param randomness the source of non-determinism
-     *   @param apc parameter control
+     *   @param apc adatpive parameter control singleton
      *   @param mwc mutation weight control
-     *   @param interalGeneSelectionStrategy a strategy to select internal genes to mutate
-     *   @param enableAdaptiveMutation whether apply adaptive gene mutation, e.g., archive-based gene mutation
+     *   @param interalGeneSelectionStrategy a strategy to select internal genes to mutate.
+     *          In hypermutation, several genes could be mutated at same time.
+     *          The choice of what to mutate depends on the "weight" of the genes, and possible on historical data
+     *   @param enableAdaptiveGeneValueMutation whether to apply adaptive gene mutation for values (ie, not for choice
+     *          of children to mutate with hypermutation), e.g., archive-based gene mutation.
+     *          This is the case when using history data when mutating number and string values,
+     *          e.g., [HistoryBasedMutationGene]
      *   @param additionalGeneMutationInfo contains additional info for gene mutation
+     *          TODO what are the cases in which it is expected to be null? when should it NEVER be null?
      */
     fun standardMutation(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
-            enableAdaptiveGeneMutation: Boolean = false,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        mwc: MutationWeightControl,
+        childrenToMutateSelectionStrategy: SubsetGeneMutationSelectionStrategy = SubsetGeneMutationSelectionStrategy.DEFAULT,
+        enableAdaptiveGeneValueMutation: Boolean = false,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
     ){
         checkInitialized()
         Lazy.assert { this.isMutable() }
 
         //if impact is not able to obtain, adaptive-gene-mutation should also be disabled
-        val applyShallow = shouldApplyShallowMutation(randomness, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        val applyShallow = shouldApplyShallowMutation(randomness, childrenToMutateSelectionStrategy, enableAdaptiveGeneValueMutation, additionalGeneMutationInfo)
 
         if (applyShallow){
-            val mutated = shallowMutate(randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val mutated = shallowMutate(randomness, apc, mwc, childrenToMutateSelectionStrategy, enableAdaptiveGeneValueMutation, additionalGeneMutationInfo)
             if (!mutated)
                 throw IllegalStateException("leaf mutation is not implemented for ${this::class.java.simpleName}")
         }else{
 
-            val internalGenes = candidatesInternalGenes(randomness, apc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            val mutablePhenotypeGenes = mutablePhenotypeChildren()
             Lazy.assert {
-                internalGenes.isNotEmpty() // otherwise shallow mutation should had been applied
-                        && internalGenes.none { it == this } // cannot return this gene as an internal candidate
+                mutablePhenotypeGenes.isNotEmpty() // otherwise shallow mutation should had been applied
+                        && mutablePhenotypeGenes.none { it == this } // cannot return this gene as an internal candidate
                         //candidate internal genes must be subset of children
-                        && internalGenes.size <= children.size
-                        && internalGenes.all { children.contains(it) }
+                        && mutablePhenotypeGenes.size <= children.size
+                        && mutablePhenotypeGenes.all { children.contains(it) }
                         //everything returned should be mutable
-                        && internalGenes.all {it.isMutable()}
-                        && internalGenes.all { it.parent == this }
+                        && mutablePhenotypeGenes.all {it.isMutable()}
+                        && mutablePhenotypeGenes.all { it.parent == this }
             }
 
-            val selected = selectSubset(internalGenes, randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            /*
+                In hypermutation, we might mutate more than 1 gene at a time
+             */
+            val selected = selectSubsetToMutate(mutablePhenotypeGenes, randomness, mwc, childrenToMutateSelectionStrategy, additionalGeneMutationInfo)
+
+            Lazy.assert { selected.isNotEmpty() }
 
             selected.forEach{
                 var mutateCounter = 0
                 do {
-                    it.first.standardMutation(randomness, apc, mwc, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
+                    it.first.standardMutation(randomness, apc, mwc, childrenToMutateSelectionStrategy, enableAdaptiveGeneValueMutation, it.second)
                     mutateCounter +=1
                 }while (!mutationCheck() && mutateCounter <=3)
                 if (!mutationCheck()){
@@ -489,9 +515,10 @@ abstract class Gene(
 
 
     /**
-     * @return a list of internal genes (direct children) that can be selected for hyper-mutation.
-     * These could then be further selected based on weight-based or adaptive weight-based gene selection.
-     * Note that if return an empty list, [shallowMutate] will be applied to mutate this gene.
+     * @return a list of internal genes (direct children) that can be selected for mutation.
+     * These could then be further selected based on weight-based or adaptive weight-based gene selection
+     * when applying hyper-mutation.
+     * Note that, if return an empty list, [shallowMutate] will be applied to mutate this gene.
      *
      * The default implementation for "simple" genes would be to return "listOf<Gene>()", ie an empty list.
      * In general, all children that are mutable will be returned, as long as they do have IMPACT on the
@@ -506,12 +533,7 @@ abstract class Gene(
      * representation of the test is changed).
      *
      */
-    protected open fun candidatesInternalGenes(randomness: Randomness,
-                                         apc: AdaptiveParameterControl,
-                                         selectionStrategy: SubsetGeneSelectionStrategy,
-                                         enableAdaptiveGeneMutation: Boolean,
-                                         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
+    protected open fun mutablePhenotypeChildren(): List<Gene> {
         return children.filter { it.isMutable() }
     }
 
@@ -526,10 +548,10 @@ abstract class Gene(
      * @return a subset of [internalGenes] with corresponding impact info
      */
     //TODO abstract
-    protected open fun adaptiveSelectSubset(randomness: Randomness,
-                                  internalGenes: List<Gene>,
-                                  mwc: MutationWeightControl,
-                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    protected open fun adaptiveSelectSubsetToMutate(randomness: Randomness,
+                                                    internalGenes: List<Gene>,
+                                                    mwc: MutationWeightControl,
+                                                    additionalGeneMutationInfo: AdditionalGeneMutationInfo
     ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
     }
@@ -537,31 +559,33 @@ abstract class Gene(
     /**
      * @return a subset of internal genes to apply mutations
      */
-    private fun selectSubset(internalGenes: List<Gene>,
-                          randomness: Randomness,
-                          apc: AdaptiveParameterControl,
-                          mwc: MutationWeightControl,
-                          selectionStrategy: SubsetGeneSelectionStrategy,
-                          enableAdaptiveGeneMutation: Boolean,
-                          additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    private fun selectSubsetToMutate(mutablePhenotypeChildren: List<Gene>,
+                                     randomness: Randomness,
+                                     mwc: MutationWeightControl,
+                                     selectionStrategy: SubsetGeneMutationSelectionStrategy,
+                                     additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         return  when(selectionStrategy){
-            SubsetGeneSelectionStrategy.DEFAULT -> {
-                val s = randomness.choose(internalGenes)
+            SubsetGeneMutationSelectionStrategy.DEFAULT -> {
+                //No hypermutation... return just 1 gene, at random
+                val s = randomness.choose(mutablePhenotypeChildren)
                 listOf( s to additionalGeneMutationInfo?.copyFoInnerGene( null,s))
             }
-            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT ->
-                mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo?.copyFoInnerGene(null, it) }
-            SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
+            SubsetGeneMutationSelectionStrategy.DETERMINISTIC_WEIGHT -> {
+                mwc.selectSubGene(candidateGenesToMutate = mutablePhenotypeChildren, adaptiveWeight = false)
+                    .map { it to additionalGeneMutationInfo?.copyFoInnerGene(null, it) }
+            }
+            SubsetGeneMutationSelectionStrategy.ADAPTIVE_WEIGHT -> {
                 additionalGeneMutationInfo?: throw IllegalArgumentException("additionalGeneSelectionInfo should not be null")
                 if (additionalGeneMutationInfo.impact == null)
-                    mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo.copyFoInnerGene(null, it) }
+                    //if no impact info, still apply hypermutation
+                    selectSubsetToMutate(mutablePhenotypeChildren, randomness, mwc, SubsetGeneMutationSelectionStrategy.DETERMINISTIC_WEIGHT, additionalGeneMutationInfo)
                 else
-                    adaptiveSelectSubset(randomness, internalGenes, mwc, additionalGeneMutationInfo)
+                    adaptiveSelectSubsetToMutate(randomness, mutablePhenotypeChildren, mwc, additionalGeneMutationInfo)
             }
         }.also {
             if (it.isEmpty())
-                throw IllegalStateException("with $selectionStrategy strategy and ${internalGenes.size} candidates, none is selected to mutate")
+                throw IllegalStateException("with $selectionStrategy strategy and ${mutablePhenotypeChildren.size} candidates, none is selected to mutate")
             if (it.any { a -> a.second?.impact?.validate(a.first) == false})
                 throw IllegalStateException("mismatched impact for gene ${it.filter { a -> a.second?.impact?.validate(a.first) == false}.map { "${it.first}:${it.second}" }.joinToString(",")}")
         }
@@ -571,17 +595,17 @@ abstract class Gene(
 
     /**
      * mutate the current gene (and NONE of its children directly, if any) if there is no need to apply selection,
-     * i.e., when [candidatesInternalGenes] is empty.
+     * i.e., when [mutablePhenotypeChildren] is empty.
      * Note though that this method might add/remove children
      *
      * @return whether the mutation was successful
      */
     protected  open fun shallowMutate(randomness: Randomness,
-                           apc: AdaptiveParameterControl,
-                           mwc: MutationWeightControl,
-                           selectionStrategy: SubsetGeneSelectionStrategy,
-                           enableAdaptiveGeneMutation: Boolean,
-                           additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+                                      apc: AdaptiveParameterControl,
+                                      mwc: MutationWeightControl,
+                                      selectionStrategy: SubsetGeneMutationSelectionStrategy,
+                                      enableAdaptiveGeneMutation: Boolean,
+                                      additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         return false
     }

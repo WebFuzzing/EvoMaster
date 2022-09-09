@@ -2,11 +2,10 @@ package org.evomaster.core.search.gene.root
 
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
 /**
  * A basic gene that contains no internal genes
@@ -53,28 +52,23 @@ abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
         throw IllegalStateException("Bug in ${this::class.java.simpleName}: copyContent() must not be called on a SimpleGene")
     }
 
-    final override fun candidatesInternalGenes(randomness: Randomness,
-                                               apc: AdaptiveParameterControl,
-                                               selectionStrategy: SubsetGeneSelectionStrategy,
-                                               enableAdaptiveGeneMutation: Boolean,
-                                               additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene>{
+    final override fun mutablePhenotypeChildren(): List<Gene>{
         return listOf()
     }
 
 
 
-    final override fun adaptiveSelectSubset(randomness: Randomness,
-                                            internalGenes: List<Gene>,
-                                            mwc: MutationWeightControl,
-                                            additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    final override fun adaptiveSelectSubsetToMutate(randomness: Randomness,
+                                                    internalGenes: List<Gene>,
+                                                    mwc: MutationWeightControl,
+                                                    additionalGeneMutationInfo: AdditionalGeneMutationInfo
     ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         throw IllegalStateException("adaptive gene selection is unavailable for the gene ${this::class.java.simpleName}")
     }
 
     final override fun customShouldApplyShallowMutation(
         randomness: Randomness,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {

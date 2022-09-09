@@ -7,10 +7,8 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsAction
-import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
@@ -26,7 +24,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.EvaluatedInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -209,9 +207,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             val enableAGM = adaptive && config.isEnabledArchiveGeneMutation()
 
             val selectionStrategy = when {
-                enableAGS -> SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
-                enableWGS && !enableAGS -> SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
-                else -> SubsetGeneSelectionStrategy.DEFAULT
+                enableAGS -> SubsetGeneMutationSelectionStrategy.ADAPTIVE_WEIGHT
+                enableWGS && !enableAGS -> SubsetGeneMutationSelectionStrategy.DETERMINISTIC_WEIGHT
+                else -> SubsetGeneMutationSelectionStrategy.DEFAULT
             }
 
             val additionInfo = mutationConfiguration(
