@@ -325,9 +325,13 @@ class ArchiveGeneMutator{
                 if (specializationGene == null){
                     gene.selectedSpecialization = randomness.nextInt(0, gene.specializationGenes.size - 1)
                 }else {
-                    val selected = selectSpec(gene, impact, targets)
+                    var selected = selectSpec(gene, impact, targets)
                     val currentImpact = impact.getSpecializationImpacts().getOrNull(gene.selectedSpecialization)
-                    if (selected == gene.selectedSpecialization || currentImpact?.recentImprovement() == true){
+
+                    if(selected == gene.selectedSpecialization && !specializationGene.isMutable()){
+                        selected = (selected + 1) % gene.specializationGenes.size
+                        gene.selectedSpecialization = selected
+                    } else if (selected == gene.selectedSpecialization || currentImpact?.recentImprovement() == true){
                         specializationGene.standardMutation(
                                 randomness, apc, mwc,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
                         )

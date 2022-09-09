@@ -24,6 +24,10 @@ class SqlJSONGene(name: String,
         private val log: Logger = LoggerFactory.getLogger(SqlJSONGene::class.java)
     }
 
+    override fun isMutable(): Boolean {
+        return objectGene.isMutable()
+    }
+
     override fun isLocallyValid() : Boolean{
         return getViewOfChildren().all { it.isLocallyValid() }
     }
