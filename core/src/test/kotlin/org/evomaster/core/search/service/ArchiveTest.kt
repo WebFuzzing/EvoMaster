@@ -33,10 +33,10 @@ class ArchiveTest{
                 object : TypeLiteral<Archive<OneMaxIndividual>>() {}))
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
-
         randomness = injector.getInstance(Randomness::class.java)
-
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.useTimeInFeedbackSampling = false
+        config.seed = 42
     }
 
     @Test
@@ -293,9 +293,14 @@ class ArchiveTest{
                 .map{ind -> ind.individual.size()}
                 .distinct()
 
-        assertEquals(2, sizes.size)
+        /*
+            Man: need to check with Andrea
+
+         */
+        assertEquals(3, sizes.size)
         assertTrue(sizes.contains(1))
         assertTrue(sizes.contains(2))
+        assertTrue(sizes.contains(3))
     }
 
     @Test

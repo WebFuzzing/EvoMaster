@@ -48,10 +48,19 @@ abstract class StructuralElement (
 
     init {
         verifyChildrenToInsert(children)
+        preChildrenSetup(children)
         children.forEach {
             it.parent = this;
         }
         groups?.verifyGroups()
+    }
+
+    /**
+     * a pre-setup for the children if needed
+     * the setup will be performed before the children to add
+     */
+    open fun preChildrenSetup(c : Collection<StructuralElement>){
+        // do nothing
     }
 
 

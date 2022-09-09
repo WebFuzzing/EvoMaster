@@ -71,7 +71,7 @@ class MutationWeightControlTest {
                 forceNotEmpty = true
         ))
 
-        assert(selected.size >= 2)
+        assertTrue(selected.size >= 2)
     }
 
     @Test
@@ -99,7 +99,7 @@ class MutationWeightControlTest {
                     forceNotEmpty = true
             ))
         }
-        assert(selected.count { it == obj } >= 1)
+        assertTrue(selected.count { it == obj } >= 1)
     }
 
     @Test
@@ -121,7 +121,7 @@ class MutationWeightControlTest {
             thus when executing 2 times, we assume that 7rd field is selected at least one time
          */
         val resultHW = selectField(obj as ObjectGene, 6, 2, SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT)
-        assert(resultHW)
+        assertTrue(resultHW)
 
         config.weightBasedMutationRate = false
 

@@ -2,23 +2,20 @@ package org.evomaster.core.problem.external.service.param
 
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.optional.OptionalGene
 
 
-class ResponseParam (
-    /**
-     * Contains the values for HTTP status codes
-     */
-    val status: EnumGene<Int> = EnumGene("status", listOf(200, 400, 401, 403, 404, 500)),
-    /**
-     * Response content type, for now supports only JSON
-     */
-    val responseType: EnumGene<String> = EnumGene("responseType", listOf("JSON")),
-    val response: OptionalGene = OptionalGene("response", ObjectGene("response", listOf()))
-        ): Param("response", mutableListOf(status).plus(responseType).toMutableList()) {
-
-    override fun copyContent(): Param {
-        return ResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, response.copy() as OptionalGene)
-    }
-}
+/**
+ * represent external service responses which contains
+ * @property responseType the data type of the response
+ * @property response represents the response to return
+ * @property extraProperties represent the extra properties to describe the responses, such as status code for HTTP response,
+ * note that all [extraProperties] are considered as part of children of this param.
+ */
+abstract class ResponseParam(
+    name: String,
+    val responseType: EnumGene<String>,
+    val response: OptionalGene,
+    val extraProperties: List<Gene>
+) : Param(name, extraProperties.plus(responseType).plus(response).toMutableList())

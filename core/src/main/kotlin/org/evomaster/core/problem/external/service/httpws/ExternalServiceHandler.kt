@@ -1,16 +1,16 @@
-package org.evomaster.core.problem.external.service
+package org.evomaster.core.problem.external.service.httpws
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.external.service.ExternalServiceUtils.generateRandomIPAddress
-import org.evomaster.core.problem.external.service.ExternalServiceUtils.isAddressAvailable
-import org.evomaster.core.problem.external.service.ExternalServiceUtils.nextIPAddress
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.generateRandomIPAddress
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isAddressAvailable
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.nextIPAddress
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import org.evomaster.core.problem.external.service.ExternalServiceUtils.isReservedIP
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isReservedIP
 import org.evomaster.core.search.service.Randomness
 
 class ExternalServiceHandler {

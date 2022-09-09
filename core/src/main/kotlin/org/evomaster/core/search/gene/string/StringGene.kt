@@ -203,7 +203,12 @@ class StringGene(
     }
 
     override fun applyGlobalUpdates() {
-        assert(!tainted)
+        /*
+            TODO this assertion had to be removed, as Resource Sampler uses action templates that have been
+            already initialized... but unsure how that would negatively effect the Taint on Sampling done
+            here
+         */
+        //assert(!tainted)
 
         //check if starting directly with a tainted value
         val state = getSearchGlobalState()!! //cannot be null when this method is called

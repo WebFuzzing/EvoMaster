@@ -286,7 +286,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
 
 
-    protected fun handleAuth(a: HttpWsAction, builder: Invocation.Builder, cookies: Map<String, List<NewCookie>>, tokens: Map<String, String>) {
+    protected fun handleHeaders(a: HttpWsAction, builder: Invocation.Builder, cookies: Map<String, List<NewCookie>>, tokens: Map<String, String>) {
         a.auth.headers.forEach {
             builder.header(it.name, it.value)
         }
@@ -302,6 +302,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
                 //TODO those should be skipped directly in the search, ie, right now they are useless genes
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .filter { !(a.auth.jsonTokenPostLogin != null && it.name.equals("Authorization", true)) }
+                .filter{ it.isInUse()}
                 .forEach {
                     builder.header(it.name, it.gene.getValueAsRawString())
                 }

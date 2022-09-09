@@ -12,11 +12,14 @@ import org.evomaster.core.search.service.Randomness
 /**
  * created by manzh on 2020-06-16
  */
-open class PrimitiveTypeMatchIndividual (
-        val gene : Gene) :  Individual(children = mutableListOf()){
+open class PrimitiveTypeMatchIndividual (action: PrimitiveTypeMatchAction) :  Individual(children = mutableListOf(action)){
 
     constructor(value : Any, name : String): this(
-            instance(value, name)
+            PrimitiveTypeMatchAction(instance(value, name))
+    )
+
+    constructor(gene: Gene): this(
+        PrimitiveTypeMatchAction(gene)
     )
 
     companion object{
@@ -40,9 +43,7 @@ open class PrimitiveTypeMatchIndividual (
         fun stringTemplate() = PrimitiveTypeMatchIndividual(StringGene(name()))
     }
 
-    override fun doInitialize(randomness: Randomness?) {
-        gene.doInitialize(randomness)
-    }
+    val gene : Gene = (children[0] as PrimitiveTypeMatchAction).seeTopGenes()[0]
 
     override fun verifyInitializationActions(): Boolean {
         //do nothing
@@ -55,10 +56,12 @@ open class PrimitiveTypeMatchIndividual (
 
     override fun size(): Int = 1
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> = listOf(gene)
+    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+        return (children[0] as PrimitiveTypeMatchAction).seeTopGenes()
+    }
 
     override fun copyContent(): Individual {
-        return PrimitiveTypeMatchIndividual(gene.copy())
+        return PrimitiveTypeMatchIndividual(children[0].copy() as PrimitiveTypeMatchAction)
     }
 
 }
