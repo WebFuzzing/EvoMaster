@@ -106,6 +106,10 @@ class SqlMultidimensionalArrayGene<T>(
         }
     }
 
+    override fun isMutable(): Boolean {
+        return !initialized || this.children[0].isMutable()
+    }
+
     /**
      * Returns the element by using a list of indices for
      * each dimension. The number of indices must be equal
