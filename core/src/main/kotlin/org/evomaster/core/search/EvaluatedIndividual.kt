@@ -10,6 +10,7 @@ import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -704,6 +705,25 @@ class EvaluatedIndividual<T>(
             geneId = id,
             fromInitialization = individual.seeGenes(GeneFilter.ONLY_SQL).contains(gene)
         )
+    }
+
+    fun updateImpactGeneDueToAddedExternalService(
+        mutatedGenes: MutatedGeneSpecification,
+        addedExActions: List<ApiExternalServiceAction>
+    ){
+        impactInfo ?: throw IllegalStateException("there is no any impact initialized when adding impacts for external service actions")
+        addedExActions.forEach { e->
+            impactInfo.addOrUpdateMainActionGeneImpacts(
+                localId = e.getLocalId(),
+                fixedIndexedAction = false,
+                actionName = e.getName(),
+                actionIndex = -1,
+                newAction = true,
+                impacts = mutableMapOf()
+            )
+        }
+        mutatedGenes.addedExternalServiceActions.addAll(addedExActions)
+
     }
 
     //TODO check this when integrating with SQL resource handling

@@ -29,7 +29,10 @@ data class MutatedGeneSpecification (
 
         //SQL resource handling
         val addedDbActions : MutableList<List<DbAction>> = mutableListOf(),
-        val removedDbActions : MutableList<Pair<DbAction, Int>> = mutableListOf()
+        val removedDbActions : MutableList<Pair<DbAction, Int>> = mutableListOf(),
+
+        // external service actions
+        val addedExternalServiceActions : MutableList<Action> = mutableListOf()
 ){
 
     var mutatedIndividual: Individual? = null

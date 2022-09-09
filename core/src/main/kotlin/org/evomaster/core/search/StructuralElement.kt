@@ -59,8 +59,11 @@ abstract class StructuralElement (
      * a pre-setup for the children if needed
      * the setup will be performed before the children to add
      */
-    open fun preChildrenSetup(c : Collection<StructuralElement>){
-        // do nothing
+    private fun preChildrenSetup(c : Collection<StructuralElement>){
+        val root = if (this is Individual) this else getRoot()
+        if (root is Individual){
+            root.handleLocalIdsForAddition(c)
+        }
     }
 
 
@@ -95,6 +98,7 @@ abstract class StructuralElement (
 
     fun addChildToGroup(child: StructuralElement, groupId: String){
         verifyChildrenToInsert(child)
+        preChildrenSetup(listOf(child))
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
@@ -105,6 +109,7 @@ abstract class StructuralElement (
 
     fun addChildToGroup(position: Int, child: StructuralElement, groupId: String){
         verifyChildrenToInsert(child)
+        preChildrenSetup(listOf(child))
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
@@ -132,6 +137,7 @@ abstract class StructuralElement (
      */
     open fun addChild(child: StructuralElement){
         verifyChildrenToInsert(child)
+        preChildrenSetup(listOf(child))
         if(children.contains(child)){
             throw IllegalArgumentException("Child already present")
         }
@@ -141,6 +147,7 @@ abstract class StructuralElement (
 
     open fun addChild(position: Int, child: StructuralElement){
         verifyChildrenToInsert(child)
+        preChildrenSetup(listOf(child))
         if(children.contains(child)) throw IllegalArgumentException("Child already present")
         child.parent = this
         (children as MutableList<StructuralElement>).add(position, child)
@@ -155,6 +162,7 @@ abstract class StructuralElement (
 
     open fun addChildren(position: Int, list : List<StructuralElement>){
         verifyChildrenToInsert(list)
+        preChildrenSetup(list)
         for(child in list){
             if(children.contains(child)) throw IllegalArgumentException("Child already present")
         }

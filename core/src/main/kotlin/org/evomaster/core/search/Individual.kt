@@ -50,10 +50,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
 
-    override fun preChildrenSetup(c : Collection<StructuralElement>) {
-        if (isLocalIdsNotAssigned())
-            setLocalIdsForChildren((c as List<ActionComponent>).flatMap { it.flatView() })
-    }
+//    override fun preChildrenSetup(c : Collection<StructuralElement>) {
+////        if (isLocalIdsNotAssigned())
+////            setLocalIdsForChildren((c as List<ActionComponent>).flatMap { it.flatView() })
+//        handleLocalIdsForAddition(c)
+//    }
 
     /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
@@ -417,21 +418,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         }
     }
 
-    override fun addChild(child: StructuralElement) {
-        handleLocalIdsForAddition(listOf(child))
-        super.addChild(child)
-    }
-
-    override fun addChild(position: Int, child: StructuralElement) {
-        handleLocalIdsForAddition(listOf(child))
-        super.addChild(position, child)
-    }
-
-    override fun addChildren(position: Int, list: List<StructuralElement>) {
-        handleLocalIdsForAddition(list)
-        super.addChildren(position, list)
-    }
-
     /**
      * @return whether all action components are assigned with valid local ids
      */
@@ -465,7 +451,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
 
     // handle local ids in add child and children
-    private fun handleLocalIdsForAddition(children: List<StructuralElement>){
+    fun handleLocalIdsForAddition(children: Collection<StructuralElement>){
         children.forEach {child->
             if (child is ActionComponent){
                 if (child is Action && !child.hasLocalId())

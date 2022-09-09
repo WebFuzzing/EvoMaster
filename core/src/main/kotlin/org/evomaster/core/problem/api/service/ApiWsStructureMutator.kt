@@ -36,6 +36,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 //    @Deprecated("External Actions will be moved into EnterpriseActionGroup")
     private fun <T : ApiWsIndividual> addExternalServiceActions(
         individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
         sampler: ApiWsSampler<T>
     ) {
         // TODO: Incomplete code, under development
@@ -62,12 +63,22 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 }
             }
 
+            // all actions should have local ids
+            Lazy.assert {
+                actions.all { it.hasLocalId() }
+            }
+
             // TODO: Reset of served requests should be done at this phase
             //  but to the exact ExternalService
 //            sampler.getExternalService().resetServedRequests()
 
             if (log.isTraceEnabled)
                 log.trace("{} existingExternalServiceData are added", actions)
+
+            // update impact based on added genes
+            if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
+                individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
+            }
         }
     }
 
@@ -77,7 +88,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         sampler: ApiWsSampler<T>
     ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
-        addExternalServiceActions(individual, sampler)
+        addExternalServiceActions(individual, mutatedGenes, sampler)
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(
