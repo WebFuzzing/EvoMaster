@@ -294,7 +294,7 @@ class BigDecimalGene(
         } else{
             val context = MathContext(precision, getRoundingMode())
             bd.round(context).run {
-                if (scale != null) this.setScale(scale)
+                if (scale != null) this.setScale(scale, getRoundingMode())
                 else this
             }
         }
