@@ -60,10 +60,10 @@ abstract class StructuralElement (
      * the setup will be performed before the children to add
      */
     private fun preChildrenSetup(c : Collection<StructuralElement>){
-        val root = if (this is Individual) this else getRoot()
-        if (root is Individual){
-            root.handleLocalIdsForAddition(c)
-        }
+        if (this is Individual)
+            this.handleLocalIdsForAddition(c)
+        if (this.getRoot() is Individual && this is ActionTree)
+            (this.getRoot() as Individual).handleLocalIdsForAddition(c)
     }
 
 
