@@ -131,15 +131,17 @@ object GeneUtils {
             })
         }
 
-        for (g in genes) {
-            when (g) {
-                /*
-                    TODO, check with Andrea, why only DateGene and TimeGene?
-                    there also exist a repair for StringGene
-                 */
-                is DateGene, is TimeGene -> g.repair()
-            }
-        }
+        genes.forEach { it.repair() }
+        // repair() will need to be refactored
+//        for (g in genes) {
+//            when (g) {
+//                /*
+//                    TODO, check with Andrea, why only DateGene and TimeGene?
+//                    there also exist a repair for StringGene
+//                 */
+//                is DateGene, is TimeGene -> g.repair()
+//            }
+//        }
     }
 
 

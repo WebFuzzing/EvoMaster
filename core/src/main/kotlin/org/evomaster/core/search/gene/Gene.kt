@@ -263,6 +263,10 @@ abstract class Gene(
      * there might be a need to repair gene based on some constraints, e.g., DateGene and TimeGene
      *
      * TODO likely this will be removed once we deal with ChoiceGene for robustness testing
+     *
+     * TODO it is actually bit more complicated... not just for robustness (time/date that will need refactoring),
+     * but also for intra-children constraints: ie modifying one child might brake constraints in parent,
+     * see SqlRangeGene as an example
      */
     open fun repair(){
         //do nothing
