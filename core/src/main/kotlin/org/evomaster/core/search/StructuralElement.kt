@@ -60,8 +60,10 @@ abstract class StructuralElement (
      * the setup will be performed before the children to add
      */
     private fun preChildrenSetup(c : Collection<StructuralElement>){
+        // handle local id for new children to add into individual
         if (this is Individual)
             this.handleLocalIdsForAddition(c)
+        // handle local id for new children to add into composite structure of individual, ie ActionTree
         if (this.getRoot() is Individual && this is ActionTree)
             (this.getRoot() as Individual).handleLocalIdsForAddition(c)
     }

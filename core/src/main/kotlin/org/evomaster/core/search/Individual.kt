@@ -49,13 +49,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         private val log = LoggerFactory.getLogger(Individual::class.java)
     }
 
-
-//    override fun preChildrenSetup(c : Collection<StructuralElement>) {
-////        if (isLocalIdsNotAssigned())
-////            setLocalIdsForChildren((c as List<ActionComponent>).flatMap { it.flatView() })
-//        handleLocalIdsForAddition(c)
-//    }
-
     /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
      *
@@ -450,7 +443,9 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
 
-    // handle local ids in add child and children
+    /**
+     * handle local ids of children (ie ActionComponent) to add
+     */
     fun handleLocalIdsForAddition(children: Collection<StructuralElement>){
         children.forEach {child->
             if (child is ActionComponent){
