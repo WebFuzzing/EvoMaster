@@ -16,7 +16,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
 
-abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
+abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     companion object {
         private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)

@@ -19,7 +19,7 @@ import kotlin.math.max
 /**
  * created by manzhang on 2021/11/26
  */
-class RPCTestCaseWriter : WebTestCaseWriter() {
+class RPCTestCaseWriter : ApiTestCaseWriter() {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RPCTestCaseWriter::class.java)

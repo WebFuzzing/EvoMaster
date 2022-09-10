@@ -14,12 +14,19 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+//TODO is this really necessary? or is it just a printing option for ObjetGene?
+
 class SqlXMLGene(name: String,
                  val objectGene: ObjectGene = ObjectGene(name, fields = listOf())
 ) : CompositeFixedGene(name, mutableListOf(objectGene)) {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(SqlXMLGene::class.java)
+    }
+
+
+    override fun isMutable(): Boolean {
+        return objectGene.isMutable()
     }
 
     override fun isLocallyValid() : Boolean{

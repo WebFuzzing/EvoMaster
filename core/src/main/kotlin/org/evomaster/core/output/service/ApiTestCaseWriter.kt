@@ -11,7 +11,7 @@ import org.evomaster.core.search.EvaluatedDbAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.utils.GeneUtils
 
-abstract class WebTestCaseWriter : TestCaseWriter() {
+abstract class ApiTestCaseWriter : TestCaseWriter() {
 
     protected fun createUniqueResponseVariableName(): String {
         val name = "res_$counter"
@@ -27,9 +27,11 @@ abstract class WebTestCaseWriter : TestCaseWriter() {
 
     override fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
 
+        //FIXME this is getting auth, not field declaration
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
         TokenWriter.handleGettingTokens(format, ind, lines, baseUrlOfSut, this)
 
+        //FIXME this doing initializations, not field declaration
         val initializingActions = ind.individual.seeInitializingActions().filterIsInstance<DbAction>()
         val initializingActionResults = (ind.seeResults(initializingActions))
         if (initializingActionResults.any { (it as? DbActionResult) == null })
