@@ -133,14 +133,12 @@ class ExternalServiceHandler {
                     externalServiceRequests.add(it)
                 }
                 if (actions.none { a -> a.request.url == it.url }) {
-                    counter++
-                    val localId = "ExternalServiceAction_$counter"
                     actions.add(
                         HttpExternalServiceAction(
                             it,
                             "",
                             u,
-                            counter
+                            counter++
                         )
                     )
                 }
