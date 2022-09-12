@@ -17,9 +17,8 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
-import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.slf4j.Logger
@@ -82,7 +81,7 @@ abstract class AbstractParser(
 
             // Non-terminal genes (iterate over children)
             is OptionalGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is DisruptiveGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is CustomMutationRateGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ArrayGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is MapGene<*, *> -> updateGeneWithParameterValue(gene, paramName, paramValue)
@@ -239,7 +238,7 @@ abstract class AbstractParser(
         return updateGenesRecursivelyWithParameterValue(gene.gene, gene.name, paramValue)
     }
 
-    protected fun updateGeneWithParameterValue(gene: DisruptiveGene<*>, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(gene: CustomMutationRateGene<*>, paramName: String, paramValue: String): Boolean {
         return updateGenesRecursivelyWithParameterValue(gene.gene, gene.gene.name, paramValue)
     }
 
@@ -362,7 +361,7 @@ abstract class AbstractParser(
             is TimeGene -> (gene as ArrayGene<TimeGene>).addElement(elementGene)
             is DateTimeGene -> (gene as ArrayGene<DateTimeGene>).addElement(elementGene)
             is OptionalGene -> (gene as ArrayGene<OptionalGene>).addElement(elementGene)
-            is DisruptiveGene<*> -> (gene as ArrayGene<DisruptiveGene<*>>).addElement(elementGene)
+            is CustomMutationRateGene<*> -> (gene as ArrayGene<CustomMutationRateGene<*>>).addElement(elementGene)
             is ArrayGene<*> -> (gene as ArrayGene<ArrayGene<*>>).addElement(elementGene)
             is ObjectGene -> (gene as ArrayGene<ObjectGene>).addElement(elementGene)
             is MapGene<*, *> -> (gene as ArrayGene<MapGene<*, *>>).addElement(elementGene)
@@ -383,7 +382,7 @@ abstract class AbstractParser(
             is TimeGene -> (gene as MapGene<StringGene, TimeGene>).addElement(elementGene as PairGene<StringGene, TimeGene>)
             is DateTimeGene -> (gene as MapGene<StringGene, DateTimeGene>).addElement(elementGene as PairGene<StringGene, DateTimeGene>)
             is OptionalGene -> (gene as MapGene<StringGene, OptionalGene>).addElement(elementGene as PairGene<StringGene, OptionalGene>)
-            is DisruptiveGene<*> -> (gene as MapGene<StringGene, DisruptiveGene<*>>).addElement(elementGene as PairGene<StringGene, DisruptiveGene<*>>)
+            is CustomMutationRateGene<*> -> (gene as MapGene<StringGene, CustomMutationRateGene<*>>).addElement(elementGene as PairGene<StringGene, CustomMutationRateGene<*>>)
             is ArrayGene<*> -> (gene as MapGene<StringGene, ArrayGene<*>>).addElement(elementGene as PairGene<StringGene, ArrayGene<*>>)
             is ObjectGene -> (gene as MapGene<StringGene, ObjectGene>).addElement(elementGene as PairGene<StringGene, ObjectGene>)
             is MapGene<*, *> -> (gene as MapGene<StringGene, MapGene<*, *>>).addElement(elementGene as PairGene<StringGene, MapGene<*, *>>)

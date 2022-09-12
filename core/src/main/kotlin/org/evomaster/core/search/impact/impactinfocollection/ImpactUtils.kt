@@ -22,7 +22,7 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.*
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -49,7 +49,7 @@ class ImpactUtils {
 
         fun createGeneImpact(gene : Gene, id : String) : GeneImpact{
             return when(gene){
-                is DisruptiveGene<*> -> DisruptiveGeneImpact(id, gene)
+                is CustomMutationRateGene<*> -> DisruptiveGeneImpact(id, gene)
                 is OptionalGene -> OptionalGeneImpact(id, gene)
                 is BooleanGene -> BinaryGeneImpact(id)
                 is EnumGene<*> -> EnumGeneImpact(id, gene)
@@ -261,7 +261,7 @@ class ImpactUtils {
          */
         fun generateGeneId(gene: Gene):String{
             return when(gene){
-                is DisruptiveGene<*> -> "DisruptiveGene$SEPARATOR_GENE_WITH_TYPE${generateGeneId(gene.gene)}"
+                is CustomMutationRateGene<*> -> "DisruptiveGene$SEPARATOR_GENE_WITH_TYPE${generateGeneId(gene.gene)}"
                 is OptionalGene -> "OptionalGene$SEPARATOR_GENE_WITH_TYPE${generateGeneId(gene.gene)}"
                 is ObjectGene -> if (gene.refType.isNullOrBlank()) gene.name else "${gene.refType}$SEPARATOR_GENE_WITH_TYPE${gene.name}"
                 else -> gene.name

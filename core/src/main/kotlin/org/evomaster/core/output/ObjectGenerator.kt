@@ -4,7 +4,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -73,7 +73,7 @@ class ObjectGenerator {
         }.first()
         when (foundGene::class) {
             OptionalGene::class -> return (foundGene as OptionalGene).gene
-            DisruptiveGene::class -> return (foundGene as DisruptiveGene<*>).gene
+            CustomMutationRateGene::class -> return (foundGene as CustomMutationRateGene<*>).gene
             else -> return foundGene
         }
     }

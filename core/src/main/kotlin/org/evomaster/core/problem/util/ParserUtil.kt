@@ -14,7 +14,7 @@ import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.rest.resource.PathRToken
 import org.evomaster.core.problem.rest.resource.RToken
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -200,7 +200,7 @@ object ParserUtil {
 
     private fun getFirstTypeGene(gene : Gene) : Gene{
         if(gene is ObjectGene) return gene
-        else if(gene is DisruptiveGene<*>){
+        else if(gene is CustomMutationRateGene<*>){
             return getFirstTypeGene(gene.gene)
         }else if(gene is OptionalGene){
             return getFirstTypeGene(gene.gene)
