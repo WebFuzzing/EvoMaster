@@ -1012,6 +1012,7 @@ class GraphQLActionBuilderTest {
         assertTrue(page.parameters[2] is GQReturnParam)
 
         //primitive type that is not part of the search
+        //query will look like: {GenreCollection}
         val genreCollection = actionCluster["GenreCollection"] as GraphQLAction
 
         val mediaTagCollection = actionCluster["MediaTagCollection"] as GraphQLAction
@@ -1064,6 +1065,17 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(169, actionCluster.size)
+
+        val jiraImportUsers = actionCluster["jiraImportUsers"] as GraphQLAction
+        assertEquals(2, jiraImportUsers.parameters.size)
+        assertTrue(jiraImportUsers.parameters[0] is GQInputParam)
+        assertTrue(jiraImportUsers.parameters[1] is GQReturnParam)
+
+        assertTrue(jiraImportUsers.parameters[1].gene is ObjectGene)
+        val objJiraImportUsersPayload = jiraImportUsers.parameters[1].gene as ObjectGene
+        assertEquals(3, objJiraImportUsersPayload.fields.size)
+        assertTrue(objJiraImportUsersPayload.fields.any { it is BooleanGene && it.name == "clientMutationId" })
+        assertTrue(objJiraImportUsersPayload.fields.any { it is BooleanGene && it.name == "errors" })
 
     }
 
@@ -1192,6 +1204,30 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(2, actionCluster.size)
+    }
+
+    @Test
+    fun primitivesTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Primitives.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(2, actionCluster.size)
+
+        val flowers = actionCluster["flowers"] as GraphQLAction
+
+        val stores = actionCluster["stores"] as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val objStore = stores.parameters[0].gene as ObjectGene
+        assertEquals(2, objStore.fields.size)
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "bouquets" })
+
     }
 
     @Disabled
