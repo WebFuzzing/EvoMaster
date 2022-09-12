@@ -1,6 +1,10 @@
 package org.evomaster.core.search.impact.impactinfocollection.collection
 
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions

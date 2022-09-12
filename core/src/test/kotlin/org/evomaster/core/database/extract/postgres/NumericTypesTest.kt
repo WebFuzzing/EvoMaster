@@ -5,10 +5,10 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.DoubleGene
-import org.evomaster.core.search.gene.FloatGene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

@@ -1,20 +1,33 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.network.MacAddrGene
+import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.optional.ChoiceGene
+import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.evomaster.core.search.gene.sql.time.SqlTimeIntervalGene
+import org.evomaster.core.search.gene.string.Base64StringGene
+import org.evomaster.core.search.gene.string.NumericStringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.uri.UriDataGene
 import org.evomaster.core.search.gene.uri.UriGene
 import org.evomaster.core.search.gene.uri.UrlHttpGene
+import org.evomaster.core.search.gene.utils.NumberMutatorUtils
 import org.evomaster.core.search.service.Randomness
 import java.io.File
 import java.math.BigDecimal
@@ -480,7 +493,7 @@ object GeneSamplerForTests {
         )
     }
 
-    fun samplePrintablePairGene(rand: Randomness): PairGene<*,*> {
+    fun samplePrintablePairGene(rand: Randomness): PairGene<*, *> {
 
         val selection = geneClasses.filter { !it.isAbstract }
 

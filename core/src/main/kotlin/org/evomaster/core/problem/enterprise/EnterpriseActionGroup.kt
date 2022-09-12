@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.enterprise
 
-import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.search.*
 
 
@@ -18,7 +18,8 @@ class EnterpriseActionGroup(
     groups: GroupsOfChildren<out Action> = GroupsOfChildren(
         children,
         listOf(
-            ChildGroup(GroupsOfChildren.EXTERNAL_SERVICES, { e -> e is ExternalServiceAction }),
+            ChildGroup(GroupsOfChildren.EXTERNAL_SERVICES
+                , { e -> e is ApiExternalServiceAction }),
             ChildGroup(GroupsOfChildren.MAIN, { k -> mainClass.isAssignableFrom(k.javaClass) }, 0, 0, 1)
         )
     ),

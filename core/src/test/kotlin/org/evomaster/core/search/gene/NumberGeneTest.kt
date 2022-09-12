@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -360,7 +361,7 @@ class NumberGeneTest {
 
     @Test
     fun testBigIntegerPrecision(){
-        assertThrows(IllegalArgumentException::class.java, {BigIntegerGene("bigInt gene",precision=392236186)})
+        assertThrows(IllegalArgumentException::class.java, { BigIntegerGene("bigInt gene",precision=392236186) })
         val bi = BigIntegerGene("max", precision = 19)
         assertEquals(Long.MAX_VALUE.toBigInteger(), bi.max)
         assertEquals(Long.MIN_VALUE.toBigInteger(), bi.min)
@@ -369,7 +370,7 @@ class NumberGeneTest {
     @Test
     fun testBigDecimalPrecision(){
 
-        assertThrows(IllegalArgumentException::class.java, {BigDecimalGene("invalid decimal gene",precision=309, scale = 0)})
+        assertThrows(IllegalArgumentException::class.java, { BigDecimalGene("invalid decimal gene",precision=309, scale = 0) })
         val bi = BigDecimalGene("invalid decimal gene", precision=308, scale =  Int.MAX_VALUE)
         assertNotNull(bi.max)
         assertNotNull(bi.min)

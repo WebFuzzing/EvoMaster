@@ -6,9 +6,8 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.external.service.ExternalServiceAction
-import org.evomaster.core.problem.external.service.ExternalServiceInfo
-import org.evomaster.core.problem.external.service.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceInfo
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
@@ -19,9 +18,9 @@ import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -314,11 +313,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     private fun initExternalServiceInfo(info: SutInfoDto) {
         if (info.bootTimeInfoDto?.externalServicesDto != null) {
             info.bootTimeInfoDto.externalServicesDto.forEach {
-                externalServiceHandler.addExternalService(ExternalServiceInfo(
+                externalServiceHandler.addExternalService(
+                    ExternalServiceInfo(
                         it.protocol,
                         it.remoteHostname,
                         it.remotePort
-                ))
+                )
+                )
             }
         }
     }

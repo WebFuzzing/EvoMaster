@@ -6,6 +6,15 @@ import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.placeholder.LimitObjectGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -1012,6 +1021,7 @@ class GraphQLActionBuilderTest {
         assertTrue(page.parameters[2] is GQReturnParam)
 
         //primitive type that is not part of the search
+        //query will look like: {GenreCollection}
         val genreCollection = actionCluster["GenreCollection"] as GraphQLAction
 
         val mediaTagCollection = actionCluster["MediaTagCollection"] as GraphQLAction
@@ -1064,6 +1074,17 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(169, actionCluster.size)
+
+        val jiraImportUsers = actionCluster["jiraImportUsers"] as GraphQLAction
+        assertEquals(2, jiraImportUsers.parameters.size)
+        assertTrue(jiraImportUsers.parameters[0] is GQInputParam)
+        assertTrue(jiraImportUsers.parameters[1] is GQReturnParam)
+
+        assertTrue(jiraImportUsers.parameters[1].gene is ObjectGene)
+        val objJiraImportUsersPayload = jiraImportUsers.parameters[1].gene as ObjectGene
+        assertEquals(3, objJiraImportUsersPayload.fields.size)
+        assertTrue(objJiraImportUsersPayload.fields.any { it is BooleanGene && it.name == "clientMutationId" })
+        assertTrue(objJiraImportUsersPayload.fields.any { it is BooleanGene && it.name == "errors" })
 
     }
 
@@ -1192,6 +1213,30 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(2, actionCluster.size)
+    }
+
+    @Test
+    fun primitivesTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Primitives.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(2, actionCluster.size)
+
+        val flowers = actionCluster["flowers"] as GraphQLAction
+
+        val stores = actionCluster["stores"] as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val objStore = stores.parameters[0].gene as ObjectGene
+        assertEquals(2, objStore.fields.size)
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "bouquets" })
+
     }
 
     @Disabled

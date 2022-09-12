@@ -16,7 +16,7 @@ public class HypermutationTestBase extends SpringTestBase {
         String zGeneId = "POST:/api/highweight/"+action+"/{x}::HighWeightDto>body";
 
         boolean result = true;
-        for (Map<String, GeneImpact> a : ind.getActionGeneImpact()){
+        for (Map<String, GeneImpact> a : ind.getActionGeneImpact(true)){
             if (a.values().stream().noneMatch(s-> s.getId().contains(xGeneId)))
                 continue;
 

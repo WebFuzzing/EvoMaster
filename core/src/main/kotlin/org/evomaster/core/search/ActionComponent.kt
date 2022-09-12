@@ -28,6 +28,10 @@ abstract class ActionComponent(
      * note that the id can be assigned only if the current id is NONE_ACTION_ID
      */
     fun setLocalId(id: String) {
+        if (getRoot() is Individual){
+            throw IllegalStateException("cannot re-assign the id of the action if it belongs to the individual")
+        }
+
         if (this.localId == NONE_ACTION_COMPONENT_ID)
             this.localId = id
         else

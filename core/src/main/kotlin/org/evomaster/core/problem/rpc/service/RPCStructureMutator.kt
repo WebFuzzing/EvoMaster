@@ -39,14 +39,15 @@ class RPCStructureMutator : ApiWsStructureMutator() {
             val sampledAction = sampler.sampleRandomAction()
 
             //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, size, false, size)
             individual.addAction(action = sampledAction)
+            mutatedGenes?.addRemovedOrAddedByAction(sampledAction, individual.seeFixedMainActions().indexOf(sampledAction), null, false, size)
+
         }else{
             // remove
             val chosen = randomness.choose(individual.seeMainActionComponents().indices)
             val removed = individual.seeMainExecutableActions()[chosen]
             //save mutated genes
-            mutatedGenes?.addRemovedOrAddedByAction(removed, size, true, size)
+            mutatedGenes?.addRemovedOrAddedByAction(removed, individual.seeFixedMainActions().indexOf(removed), null, true, size)
             individual.removeAction(chosen)
         }
     }

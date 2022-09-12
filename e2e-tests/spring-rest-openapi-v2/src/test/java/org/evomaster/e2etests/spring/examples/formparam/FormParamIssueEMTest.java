@@ -22,6 +22,8 @@ public class FormParamIssueEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        defaultSeed = 0;
+
         runTestHandlingFlakyAndCompilation(
                 "FormParamIssueEM",
                 "org.FormParamIssueEM",

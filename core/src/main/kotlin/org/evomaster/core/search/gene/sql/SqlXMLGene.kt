@@ -2,18 +2,19 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.CompositeFixedGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlXmlGeneImpact
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+//TODO is this really necessary? or is it just a printing option for ObjetGene?
 
 class SqlXMLGene(name: String,
                  val objectGene: ObjectGene = ObjectGene(name, fields = listOf())
@@ -21,6 +22,11 @@ class SqlXMLGene(name: String,
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(SqlXMLGene::class.java)
+    }
+
+
+    override fun isMutable(): Boolean {
+        return objectGene.isMutable()
     }
 
     override fun isLocallyValid() : Boolean{
@@ -37,11 +43,7 @@ class SqlXMLGene(name: String,
     }
 
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if (objectGene.isMutable()) listOf(objectGene) else emptyList()
-    }
-
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlXmlGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(objectGene))
                 throw IllegalStateException("mismatched input: the internalGenes should only contain objectGene")
@@ -50,10 +52,6 @@ class SqlXMLGene(name: String,
         throw IllegalArgumentException("impact is null or not SqlXmlGeneImpact")
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        // do nothing since the objectGene is not mutable
-        return true
-    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         val rawValue = objectGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML , targetFormat)
@@ -94,7 +92,6 @@ class SqlXMLGene(name: String,
         return  objectGene.mutationWeight()
     }
 
-    override fun innerGene(): List<Gene> = listOf(objectGene)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when(gene){
@@ -108,5 +105,13 @@ class SqlXMLGene(name: String,
         }
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
 
 }

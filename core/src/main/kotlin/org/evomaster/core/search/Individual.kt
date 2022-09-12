@@ -4,7 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
@@ -49,9 +49,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         private val log = LoggerFactory.getLogger(Individual::class.java)
     }
 
-    init {
+
+    override fun preChildrenSetup(c : Collection<StructuralElement>) {
         if (isLocalIdsNotAssigned())
-            setLocalIdsForChildren(children.flatMap { it.flatView() })
+            setLocalIdsForChildren((c as List<ActionComponent>).flatMap { it.flatView() })
     }
 
     /**
@@ -231,7 +232,30 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * return a list of all external service actions in [this] individual
      * that include all the initializing actions among the main actions
      */
-     fun seeExternalServiceActions() : List<ExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ExternalServiceAction>
+     fun seeExternalServiceActions() : List<ApiExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ApiExternalServiceAction>
+
+
+    /**
+     * @return a sequence of actions which are not in initialization and
+     * except structure mutator, an index of any action in this sequence is determinate after the construction
+     *
+     * Note that the method is particular used by impact collections for the individual
+     */
+    fun seeFixedMainActions() = seeActions(ActionFilter.NO_INIT).filterNot { it is ApiExternalServiceAction }
+
+
+    /**
+     * @return a view of actions which are not in initialization and
+     * the index of the action is dynamic without mutation, such as external service
+     *
+     * for an individual, the external service could be updated based on fitness evaluation,
+     * then newly added external service could result in a dynamic index for the actions.
+     * then we categorize all such actions as a return of the method
+     *
+     * Note that the method is particular used by impact collections for the individual
+     */
+    fun seeDynamicMainActions() = seeActions(ActionFilter.NO_INIT).filterIsInstance<ApiExternalServiceAction>()
+
 
     /**
      * Determine if the structure (ie the actions) of this individual
@@ -358,6 +382,40 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return true
     }
 
+    /**
+     * @return an action based on the specified [localId]
+     */
+    fun findActionByLocalId(localId : String): Action?{
+        return seeAllActions().find { it.getLocalId() == localId }
+    }
+
+    /**
+     * @param isFromInit represents whether the action to target is from init
+     * @param actionIndex represents whether the action to target is part of fixedIndexMain group otherwise it is null
+     * @param localId represents whether the action to target is part of dynamicMain group otherwise it is null
+     * @return an action based on the given info
+     */
+    fun findAction(isFromInit: Boolean, actionIndex: Int?, localId: String?): Action?{
+        if (actionIndex == null && localId == null)
+            throw IllegalArgumentException("the actionIndex or localId must be specified to find the action")
+
+        if (isFromInit){
+            if (actionIndex == null) {
+                throw IllegalArgumentException("actionIndex must be specified in order to find the action from init")
+            }
+            return if (seeInitializingActions().size > actionIndex)
+                 seeInitializingActions()[actionIndex]
+            else
+//                throw IllegalArgumentException("the specified actionIndex ($actionIndex) exceeds the existing init actions(${seeInitializingActions().size})")
+                null
+        }else {
+            return if (actionIndex == null)
+                findActionByLocalId(localId!!)
+            else if (seeFixedMainActions().size > actionIndex)
+                seeFixedMainActions()[actionIndex]
+            else null
+        }
+    }
 
     override fun addChild(child: StructuralElement) {
         handleLocalIdsForAddition(listOf(child))

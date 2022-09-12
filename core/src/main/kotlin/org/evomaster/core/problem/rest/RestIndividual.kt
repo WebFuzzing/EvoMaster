@@ -3,8 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.*
@@ -105,7 +104,7 @@ class RestIndividual(
             GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
             GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
             GeneFilter.ONLY_SQL -> seeDbActions().flatMap(DbAction::seeTopGenes)
-            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ExternalServiceAction::seeTopGenes)
+            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
         }
     }
 
@@ -242,10 +241,14 @@ class RestIndividual(
         swapChildren(getFirstIndexOfRestResourceCalls() + position1, getFirstIndexOfRestResourceCalls() + position2)
     }
 
-    fun getActionIndexes(actionFilter: ActionFilter, resourcePosition: Int)
-    = getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).map {
-        seeActions(actionFilter).indexOf(it)
+
+    fun getFixedActionIndexes(resourcePosition: Int)
+    = getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).filter { seeMainExecutableActions().contains(it) }.map {
+        seeFixedMainActions().indexOf(it)
     }
+
+    fun getDynamicActionLocalIds(resourcePosition: Int) =
+        getIndexedResourceCalls()[resourcePosition]!!.seeActions(ALL).filter { seeDynamicMainActions().contains(it) }.map { it.getLocalId() }
 
     private fun validateSwap(first : Int, second : Int) : Boolean{
         //TODO need update, although currently not in use

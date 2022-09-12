@@ -1,8 +1,8 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
-import org.evomaster.core.search.gene.DisruptiveGene
+import org.evomaster.core.search.gene.optional.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.impact.impactinfocollection.value.DisruptiveGeneImpact
 
 import org.junit.jupiter.api.Test

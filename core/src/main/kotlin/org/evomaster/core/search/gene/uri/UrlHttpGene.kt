@@ -2,11 +2,18 @@ package org.evomaster.core.search.gene.uri
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.network.InetGene
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.ChoiceGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import java.net.URL
 
 
@@ -58,21 +65,6 @@ class UrlHttpGene(
         getViewOfChildren().forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-
-        return innerGene().filter { it.isMutable() }
-    }
-
-    override fun innerGene(): List<Gene> {
-        return listOf(scheme, host, port, path)
-    }
-
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
         mode: GeneUtils.EscapeMode?,
@@ -112,5 +104,13 @@ class UrlHttpGene(
         return false
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
 
 }

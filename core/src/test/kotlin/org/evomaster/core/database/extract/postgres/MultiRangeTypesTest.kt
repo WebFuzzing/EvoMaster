@@ -9,6 +9,9 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.sql.SqlMultiRangeGene
 import org.evomaster.core.search.gene.sql.SqlRangeGene
 import org.junit.jupiter.api.Assertions.*
@@ -134,7 +137,8 @@ class MultiRangeTypesTest : ExtractTestBasePostgres() {
                         day = IntegerGene("day", value = 1)
                 ),
                         time = TimeGene("time", hour = IntegerGene("hour", value = 0),
-                                minute = IntegerGene("hour", value = 0))
+                                minute = IntegerGene("hour", value = 0)
+                        )
                 ),
                 right = DateTimeGene(
                         "left", date = DateGene(
@@ -143,7 +147,8 @@ class MultiRangeTypesTest : ExtractTestBasePostgres() {
                         day = IntegerGene("day", value = 1)
                 ),
                         time = TimeGene("time", hour = IntegerGene("hour", value = 0),
-                                minute = IntegerGene("hour", value = 0))
+                                minute = IntegerGene("hour", value = 0)
+                        )
                 ),
                 isRightClosed = BooleanGene("right", value = true)
         )

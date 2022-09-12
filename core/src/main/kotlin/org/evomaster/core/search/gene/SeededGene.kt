@@ -2,12 +2,16 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.interfaces.ComparableGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.value.SeededGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
 /**
  * represent gene which contains seeded values customized by user with the driver
@@ -110,9 +114,7 @@ class SeededGene<T>(
         else this.gene.containsSameValueAs(other.gene as Gene))
     }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(gene, seeded)
-    }
+
 
     override fun possiblySame(gene : Gene) : Boolean =
             super.possiblySame(gene) && this.gene.possiblySame((gene as SeededGene<*>).gene as Gene)
@@ -134,7 +136,7 @@ class SeededGene<T>(
         return false
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SeededGeneImpact){
             if (internalGenes.size != 1)
                 throw IllegalStateException("mismatched input: the internalGenes should only contain one candidate")
@@ -148,13 +150,18 @@ class SeededGene<T>(
         throw IllegalArgumentException("impact is null or not SeedGeneImpact")
     }
 
-    override fun candidatesInternalGenes(
+    override fun mutablePhenotypeChildren(): List<Gene> {
+
+        return listOf((if (employSeeded) seeded else gene))
+    }
+
+    override fun customShouldApplyShallowMutation(
         randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
+    ): Boolean {
+
         var changeEmploySeed = false
         if (isEmploySeededMutable){
             if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
@@ -173,17 +180,14 @@ class SeededGene<T>(
             }
         }
 
-        if (changeEmploySeed)
-            return emptyList()
-        return listOf((if (employSeeded) seeded else gene))
+        return changeEmploySeed
     }
-
 
     override fun shallowMutate(
         randomness: Randomness,
         apc: AdaptiveParameterControl,
         mwc: MutationWeightControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
         enableAdaptiveGeneMutation: Boolean,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {

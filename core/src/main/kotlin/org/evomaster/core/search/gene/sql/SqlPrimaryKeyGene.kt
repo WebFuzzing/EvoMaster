@@ -1,18 +1,14 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.StructuralElement
-import org.evomaster.core.search.gene.CompositeGene
+import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -60,11 +56,8 @@ class SqlPrimaryKeyGene(name: String,
             gene.randomize(randomness, false)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if (isMutable()) listOf(gene) else emptyList()
-    }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlPrimaryKeyGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(gene))
                 throw IllegalStateException("mismatched input: the internalGenes should only contain gene")
@@ -74,10 +67,6 @@ class SqlPrimaryKeyGene(name: String,
 
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        //do nothing since the gene is not mutable
-        return true
-    }
 
     override fun copyValueFrom(other: Gene) {
         if (other !is SqlPrimaryKeyGene) {
@@ -119,11 +108,19 @@ class SqlPrimaryKeyGene(name: String,
         return gene.isReferenceToNonPrintable(previousGenes)
     }
 
-    override fun innerGene(): List<Gene> = listOf(gene)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         // do nothing
         return true
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
 
 }
