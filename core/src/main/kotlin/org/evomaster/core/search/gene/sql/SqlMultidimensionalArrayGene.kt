@@ -211,9 +211,15 @@ class SqlMultidimensionalArrayGene<T>(
         val newChild = buildNewElements(newDimensionSizes, template.copy())
 
         killAllChildren()
-        addChild(newChild)
+
         this.dimensionSizes = newDimensionSizes
-        newChild.randomize(randomness, tryToForceNewValue)
+
+        if(initialized){
+            newChild.doInitialize(randomness)
+        } else {
+            newChild.randomize(randomness, tryToForceNewValue)
+        }
+        addChild(newChild)
     }
 
     /**
