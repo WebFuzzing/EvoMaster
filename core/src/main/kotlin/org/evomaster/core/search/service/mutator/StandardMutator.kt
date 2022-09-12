@@ -170,11 +170,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 .forEach { it.isActive = true; it.requestSelection = false }
 
             //disable genes that should no longer be mutated
-            val time = individual.searchGlobalState!!.time.percentageUsedBudget()
-            a.seeTopGenes().flatMap { it.flatView() }
-                .filterIsInstance<CustomMutationRateGene<*>>()
-                .filter { it.probability > 0 && it.searchPercentageActive < time }
-                .forEach { it.preventMutation() }
+            val state = individual.searchGlobalState
+            if(state != null) {
+                val time = state.time.percentageUsedBudget()
+                a.seeTopGenes().flatMap { it.flatView() }
+                    .filterIsInstance<CustomMutationRateGene<*>>()
+                    .filter { it.probability > 0 && it.searchPercentageActive < time }
+                    .forEach { it.preventMutation() }
+            }
         }
     }
 
