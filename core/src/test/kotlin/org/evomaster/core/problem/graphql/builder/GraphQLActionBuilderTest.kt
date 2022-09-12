@@ -1374,4 +1374,28 @@ class GraphQLActionBuilderTest {
         assertEquals(2, actionCluster.size)
     }
 
+    @Test
+    fun composeTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/compose.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(9, actionCluster.size)
+    }
+
+    @Test
+    fun stratzTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/stratz.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(19, actionCluster.size)
+    }
+
 }
