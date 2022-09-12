@@ -51,11 +51,6 @@ class HttpExternalServiceAction(
     constructor(request: HttpExternalServiceRequest, template: String, externalService: ExternalService, id: Long, localId: String = NONE_ACTION_COMPONENT_ID) :
             this(request, buildResponse(template), externalService, id = id, localId = localId)
 
-    init {
-        // TODO: This is not the correct way to do this, but for now
-        //  to test concept, this is triggered here.
-        this.buildResponse()
-    }
 
     /**
      * Holds the ID for the WireMock stub
@@ -129,12 +124,12 @@ class HttpExternalServiceAction(
     }
 
     /**
-     * Remove stub from WireMock
+     * Remove the existing stub from WireMock. Will be used before building new response.
      */
     fun removeStub() {
-        if (studIb.toString() == "") {
+        if (studIb != UUID(0,0)) {
             val existing = externalService.getWireMockServer().getStubMapping(studIb)
-            if (existing.item != null) {
+            if (existing.isPresent) {
                 externalService.getWireMockServer().removeStubMapping(existing.item)
             }
         }
@@ -145,9 +140,9 @@ class HttpExternalServiceAction(
     }
 
     private fun viewResponse(): String {
-        // TODO: This needs to be refactored
-//        return (response as HttpWsResponseParam).response.toString()
-        return "{}"
+        // TODO: Need to extend further to handle the response body based on the
+        //  unmarshalled object inside SUT using the ParsedDto information.
+        return (response as HttpWsResponseParam).response.getValueAsRawString()
     }
 
 }

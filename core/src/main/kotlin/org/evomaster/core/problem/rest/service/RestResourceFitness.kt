@@ -4,6 +4,8 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.httpws.ExternalService
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -83,15 +85,22 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             var terminated = false
 
             call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>().forEach { a ->
-                // TODO: Handle ExternalServiceAction
-                val externalServiceAction = a.getExternalServiceActions()
+                // Note: [indexOfAction] is used to register the action in RemoteController
+                //  to map it to the ActionDto.
+                val httpExternalServiceAction = a.getExternalServiceActions()
+
+                if (httpExternalServiceAction is HttpExternalServiceAction) {
+                    // TODO: Handeling WireMock for ExternalServiceActions should be generalised
+                    //  to facilitate other cases such as RPC and GraphQL
+                    externalServiceHandler.handleHttpExternalServiceAction(httpExternalServiceAction)
+                }
 
                 val restCallAction = a.getMainAction()
 
                 //TODO handling of inputVariables
                 registerNewAction(restCallAction, indexOfAction)
 
-                val ok: Boolean
+                var ok: Boolean = false
 
                 if (restCallAction is RestCallAction) {
                     ok = handleRestCall(restCallAction, actionResults, chainState, cookies, tokens)
@@ -99,9 +108,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
                     call.getResourceNode().confirmFailureCreationByPost(call, restCallAction, restActionResult)
                     restActionResult.stopping = !ok
-                } else {
-                    throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
                 }
+//                else {
+//                    throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
+//                }
 
                 if (!ok) {
                     terminated = true
