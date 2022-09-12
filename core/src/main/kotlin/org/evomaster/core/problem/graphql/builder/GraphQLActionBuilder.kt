@@ -247,19 +247,22 @@ object GraphQLActionBuilder {
 
     private fun isReturnNotPrimitive(
         gene: Gene,
-    ) = (gene.name.lowercase() != "scalar"
-            && !(gene is OptionalGene && gene.gene.name == "scalar")
-            && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.name.lowercase() == "scalar")
-            && !(gene is ArrayGene<*> && gene.template.name.lowercase() == "scalar")
-            && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.name.lowercase() == "scalar")
-            && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template.name.lowercase() == "scalar")
+    ) = (
+             !(gene is OptionalGene && isScalar(gene.gene))
+            && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && isScalar(gene.gene.template.gene))
+            && !(gene is ArrayGene<*> && isScalar(gene.template))
+            && !(gene is ArrayGene<*> && gene.template is OptionalGene && isScalar(gene.template.gene))
+            && !(gene is OptionalGene && gene.gene is ArrayGene<*> && isScalar(gene.gene.template))
             //enum cases
             && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
             && !(gene is ArrayGene<*> && gene.template is EnumGene<*>)
             && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
             && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>)
             && gene !is EnumGene<*>
-            && !(gene is OptionalGene && gene.gene is EnumGene<*>))
+            && !(gene is OptionalGene && gene.gene is EnumGene<*>)
+            )
+
+    private fun isScalar( gene: Gene) = gene is IntegerGene || gene is StringGene || gene is FloatGene || gene is BooleanGene|| gene is LongGene || gene is DateGene
 
 
     /**Note: There are tree functions containing blocs of "when": two functions for inputs and one for return.
@@ -693,11 +696,18 @@ object GraphQLActionBuilder {
                     element.KindOfFieldName,
                     element.enumValues,
                 )
-            GqlConst.SCALAR ->
-                return createScalarGene(
-                    element.typeName,
-                    element.KindOfFieldName,
-                )
+            GqlConst.SCALAR -> {
+                if (element.kindOfFieldType.lowercase() == GqlConst.LIST)
+                    return createScalarGene(
+                        element.typeName,
+                        element.fieldName,
+                    )
+                 else
+                    return createScalarGene(
+                        element.typeName,
+                        element.KindOfFieldName,
+                    )
+            }
             else ->
                 return OptionalGene(element.fieldName, StringGene(element.fieldName))
         }

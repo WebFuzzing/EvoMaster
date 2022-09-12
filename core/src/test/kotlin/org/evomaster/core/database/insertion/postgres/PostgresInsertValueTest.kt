@@ -1,8 +1,11 @@
 package org.evomaster.core.database.insertion.postgres
 
+import com.google.gson.Gson
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.core.KGenericContainer
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
+import org.postgresql.util.PGobject
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.sql.Connection
 import java.sql.DriverManager
@@ -114,5 +117,26 @@ class PostgresInsertValueTest {
         SqlScriptRunner.execCommand(connection, "INSERT INTO SpatialTable(lineSegmentColumn) VALUES ('((0.0, 0.0), (0.0, 1.0))')")
     }
 
+    @Test
+    fun testInsertJson() {
+        val fooDto = FooDto(-1)
+        val json = Gson().toJson(fooDto)
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE JSONTable(jsonColumn json NOT NULL)")
+        SqlScriptRunner.execCommand(connection, "INSERT INTO JSONTable(jsonColumn) VALUES ('${json}')")
+
+        val queryResult = SqlScriptRunner.execCommand(connection, "SELECT jsonColumn FROM JSONTable")
+        assertFalse(queryResult.isEmpty)
+
+        val row = queryResult.seeRows()[0]
+        val jsonValue = row.getValueByName("jsonColumn") as PGobject
+        val jsonFromDB = jsonValue.toString()
+
+        val dto = Gson().fromJson(jsonFromDB, FooDto::class.java)
+
+        assertEquals(-1, dto.x)
+    }
 
 }
+
+class FooDto(var x : Int)

@@ -1021,6 +1021,7 @@ class GraphQLActionBuilderTest {
         assertTrue(page.parameters[2] is GQReturnParam)
 
         //primitive type that is not part of the search
+        //query will look like: {GenreCollection}
         val genreCollection = actionCluster["GenreCollection"] as GraphQLAction
 
         val mediaTagCollection = actionCluster["MediaTagCollection"] as GraphQLAction
@@ -1073,6 +1074,17 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(169, actionCluster.size)
+
+        val jiraImportUsers = actionCluster["jiraImportUsers"] as GraphQLAction
+        assertEquals(2, jiraImportUsers.parameters.size)
+        assertTrue(jiraImportUsers.parameters[0] is GQInputParam)
+        assertTrue(jiraImportUsers.parameters[1] is GQReturnParam)
+
+        assertTrue(jiraImportUsers.parameters[1].gene is ObjectGene)
+        val objJiraImportUsersPayload = jiraImportUsers.parameters[1].gene as ObjectGene
+        assertEquals(3, objJiraImportUsersPayload.fields.size)
+        assertTrue(objJiraImportUsersPayload.fields.any { it is BooleanGene && it.name == "clientMutationId" })
+        assertTrue(objJiraImportUsersPayload.fields.any { it is BooleanGene && it.name == "errors" })
 
     }
 
@@ -1204,36 +1216,28 @@ class GraphQLActionBuilderTest {
     }
 
     @Test
-    fun testPetClinic2() {
-
+    fun primitivesTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/petclinic(fragment3).json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Primitives.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
-        assertEquals(1, actionCluster.size)
+        assertEquals(2, actionCluster.size)
 
-        val owners = actionCluster["owners"] as GraphQLAction
-        assertEquals(1, owners.parameters.size)
-        assertTrue(owners.parameters[0] is GQReturnParam)
-        assertTrue(owners.parameters[0].gene is ObjectGene)
-        /**/
-        val owner = owners.parameters[0].gene as ObjectGene
-        assertEquals(1, owner.fields.size)
-        assertTrue(owner.fields.any { it is OptionalGene && it.name == "pets" })
-        val objPet = ((owner.fields.first { it.name == "pets" }) as OptionalGene).gene as ObjectGene
-        assertEquals(1, objPet.fields.size)
-        assertTrue(objPet.fields.any { it is OptionalGene && it.name == "visits" })
-        assertTrue(objPet.fields[0] is OptionalGene)
-        val objVisitConnection = (objPet.fields[0] as OptionalGene).gene as ObjectGene
-        assertEquals(2, objVisitConnection.fields.size)
-        assertTrue(objVisitConnection.fields[0] is BooleanGene)
-        assertTrue(objVisitConnection.fields.any { it is BooleanGene && it.name == "totalCount" })
-        assertTrue(objVisitConnection.fields.any { it is OptionalGene && it.name == "visits" })
+        val flowers = actionCluster["flowers"] as GraphQLAction
+
+        val stores = actionCluster["stores"] as GraphQLAction
+        assertEquals(1, stores.parameters.size)
+        assertTrue(stores.parameters[0] is GQReturnParam)
+
+        assertTrue(stores.parameters[0].gene is ObjectGene)
+        val objStore = stores.parameters[0].gene as ObjectGene
+        assertEquals(2, objStore.fields.size)
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "id" })
+        assertTrue(objStore.fields.any { it is BooleanGene && it.name == "bouquets" })
 
     }
-
 
     @Disabled
     @Test
