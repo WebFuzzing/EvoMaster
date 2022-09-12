@@ -18,7 +18,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -36,7 +36,7 @@ class BindingBuildTest {
         val post = RestCallAction(id="post",verb = HttpVerb.POST,path = ancestorPath.copy(), parameters = mutableListOf(bodyParam))
 
         val path = RestPath("/api/foo/{id}")
-        val disruptiveGene = DisruptiveGene("id", f1.copy(), 1.0)
+        val disruptiveGene = CustomMutationRateGene("id", f1.copy(), 1.0)
         (disruptiveGene.gene as LongGene).value = 5L
         val pathParam = PathParam("id", disruptiveGene)
         val queryPathParam = QueryParam("doubleValue", f2.copy())

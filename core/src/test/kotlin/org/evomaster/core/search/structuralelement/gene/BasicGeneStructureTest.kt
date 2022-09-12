@@ -12,7 +12,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
@@ -387,11 +387,11 @@ class OptionalGeneStructureTest: GeneStructuralElementBaseTest() {
 
 // disruptive gene
 class DisruptiveGeneStructureTest: GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene = DisruptiveGene("foo", OptionalGene("foo", IntegerGene("foo", 42)), 0.5)
+    override fun getCopyFromTemplate(): Gene = CustomMutationRateGene("foo", OptionalGene("foo", IntegerGene("foo", 42)), 0.5)
 
     override fun assertCopyFrom(base: Gene) {
-        assertTrue(base is DisruptiveGene<*>)
-        (base as DisruptiveGene<*>).apply {
+        assertTrue(base is CustomMutationRateGene<*>)
+        (base as CustomMutationRateGene<*>).apply {
             assertTrue(gene is OptionalGene)
             assertEquals(0.5, probability)
             (gene as OptionalGene).apply {
@@ -401,7 +401,7 @@ class DisruptiveGeneStructureTest: GeneStructuralElementBaseTest() {
         }
     }
 
-    override fun getStructuralElement(): DisruptiveGene<OptionalGene> = DisruptiveGene("foo", OptionalGene("foo", IntegerGene("foo", 0)), 1.0)
+    override fun getStructuralElement(): CustomMutationRateGene<OptionalGene> = CustomMutationRateGene("foo", OptionalGene("foo", IntegerGene("foo", 0)), 1.0)
 
     override fun getExpectedChildrenSize(): Int  = 1
 }

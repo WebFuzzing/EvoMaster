@@ -8,7 +8,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
@@ -149,15 +149,15 @@ class ResourceNodeTest {
             assertEquals(HttpVerb.GET, get.verb)
             val getXyzId = get.parameters.find { it.name == "rxyzId" }
             assertNotNull(getXyzId)
-            val getXyzIdGene = (getXyzId!!.gene as? DisruptiveGene<*>)?.gene
+            val getXyzIdGene = (getXyzId!!.gene as? CustomMutationRateGene<*>)?.gene
             assertNotNull(getXyzIdGene)
             val getBarId = get.parameters.find { it.name == "rbarId" }
             assertNotNull(getBarId)
-            val getBarIdGene = (getBarId!!.gene as? DisruptiveGene<*>)?.gene
+            val getBarIdGene = (getBarId!!.gene as? CustomMutationRateGene<*>)?.gene
             assertNotNull(getBarIdGene)
             val getFooId = get.parameters.find { it.name == "rfooId" }
             assertNotNull(getFooId)
-            val getFooIdGene = (getFooId!!.gene as? DisruptiveGene<*>)?.gene
+            val getFooIdGene = (getFooId!!.gene as? CustomMutationRateGene<*>)?.gene
             assertNotNull(getFooIdGene)
 
             val postXyz = get(2) as RestCallAction

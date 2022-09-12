@@ -15,13 +15,22 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * A gene that has a major, disruptive impact on the whole chromosome.
- * As such, it should be mutated only with low probability
+ * A wrapper for a gene that has a major, disruptive impact on the whole chromosome.
+ * As such, it should be mutated only with low probability.
+ * Can also be used for genes that might have little to no impact on phenotype, so mutating them
+ * would be just a waste
  *
  * @param probability of the gene can be mutated. 0 means it is impossible to mutate,
  *                      whereas 1 means can always be mutated
+ * @param searchPercentageActive for how long the gene can be mutated. After this percentage [0.0,1.0] of time has passed,
+ *                      then we prevent mutations to it (ie probability is set to 0 automatically).
+ *                      By default, it is used during whole search (ie, 1.0).
  */
-class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
+class CustomMutationRateGene<out T>(
+    name: String,
+    val gene: T,
+    var probability: Double,
+    val searchPercentageActive: Double = 1.0
 ) : CompositeFixedGene(name, gene)
         where T : Gene {
 
@@ -29,13 +38,20 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
         if (probability < 0 || probability > 1) {
             throw IllegalArgumentException("Invalid probability value: $probability")
         }
-        if (gene is DisruptiveGene<*>) {
+        if(searchPercentageActive < 0 || searchPercentageActive > 1){
+            throw IllegalArgumentException("Invalid searchPercentageActive value: $searchPercentageActive")
+        }
+        if (gene is CustomMutationRateGene<*>) {
             throw IllegalArgumentException("Cannot have a recursive disruptive gene")
         }
     }
 
     companion object{
-        private val log: Logger = LoggerFactory.getLogger(DisruptiveGene::class.java)
+        private val log: Logger = LoggerFactory.getLogger(CustomMutationRateGene::class.java)
+    }
+
+    fun preventMutation(){
+        probability = 0.0
     }
 
     override fun isLocallyValid() : Boolean{
@@ -43,7 +59,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
     }
 
     override fun copyContent(): Gene {
-        return DisruptiveGene(name, gene.copy(), probability)
+        return CustomMutationRateGene(name, gene.copy(), probability)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -58,7 +74,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
     ) : Boolean {
 
         /*
-            This is a bit convoluted... but Disruptive gene is rather special.
+            This is a bit convoluted... but this gene is rather special.
             Whether it can be mutated is based on a probability, so it is not deterministic.
             Applying "shallow mutate" here actually means not mutating...
             So, the "higher" probability of mutate, the "lower" the probability of shallow mutate
@@ -100,7 +116,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
     override fun isPrintable() = gene.isPrintable()
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is DisruptiveGene<*>) {
+        if (other !is CustomMutationRateGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.gene.copyValueFrom(other.gene)
@@ -108,7 +124,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is DisruptiveGene<*>) {
+        if (other !is CustomMutationRateGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         /**
@@ -130,7 +146,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double
 
 
     override fun possiblySame(gene: Gene): Boolean {
-        return gene is DisruptiveGene<*> && gene.name == this.name && this.gene.possiblySame((gene as DisruptiveGene<T>).gene)
+        return gene is CustomMutationRateGene<*> && gene.name == this.name && this.gene.possiblySame((gene as CustomMutationRateGene<T>).gene)
     }
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
