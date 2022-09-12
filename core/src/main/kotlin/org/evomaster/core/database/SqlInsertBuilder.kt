@@ -10,7 +10,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.database.schema.*
 import org.evomaster.core.database.schema.ColumnFactory.createColumnFromDto
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.dbconstraint.*
 import org.slf4j.Logger

@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchVectorGene
 import org.junit.jupiter.api.Assertions.*
@@ -45,7 +45,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[1] is SqlTextSearchQueryGene)
 
         val textSearchVectorGene = genes[0] as SqlTextSearchVectorGene
-        val stringGene = textSearchVectorGene.innerGene()[0] as StringGene
+        val stringGene = textSearchVectorGene.getViewOfChildren()[0] as StringGene
         stringGene.value = "foo bar"
 
         val textSearchQueryGene = genes[1] as SqlTextSearchQueryGene
@@ -107,7 +107,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[1] is SqlTextSearchQueryGene)
 
         val textSearchVectorGene = genes[0] as SqlTextSearchVectorGene
-        val stringGene = textSearchVectorGene.innerGene()[0] as StringGene
+        val stringGene = textSearchVectorGene.getViewOfChildren()[0] as StringGene
         stringGene.value = "foo bar"
 
         val textSearchQueryGene = genes[1] as SqlTextSearchQueryGene
@@ -150,7 +150,7 @@ class TextSearchTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[1] is SqlTextSearchQueryGene)
 
         val textSearchVectorGene = genes[0] as SqlTextSearchVectorGene
-        val stringGene = textSearchVectorGene.innerGene()[0] as StringGene
+        val stringGene = textSearchVectorGene.getViewOfChildren()[0] as StringGene
         stringGene.value = "   "
 
         val dbCommandDto = DbActionTransformer.transform(actions)

@@ -6,6 +6,15 @@ import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.placeholder.LimitObjectGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test

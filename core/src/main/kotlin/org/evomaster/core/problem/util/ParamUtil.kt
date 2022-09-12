@@ -5,10 +5,20 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.string.StringGene
 
 /**
  * this class used to handle binding values among params
@@ -194,7 +204,7 @@ class ParamUtil {
         private fun extractPathFromRoot(comGene: Gene, gene: Gene, names: MutableList<String>): Boolean {
             when (comGene) {
                 is ObjectGene -> return extractPathFromRoot(comGene, gene, names)
-                is PairGene<*,*> -> return extractPathFromRoot(comGene, gene, names)
+                is PairGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
                 is DisruptiveGene<*> -> return extractPathFromRoot(comGene, gene, names)
                 is OptionalGene -> return extractPathFromRoot(comGene, gene, names)
                 is ArrayGene<*> -> return extractPathFromRoot(comGene, gene, names)

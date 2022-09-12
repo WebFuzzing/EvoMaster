@@ -3,11 +3,12 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.interfaces.ComparableGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -47,6 +48,7 @@ class SqlRangeGene<T>(
 
     override fun isLocallyValid() : Boolean{
         return getViewOfChildren().all { it.isLocallyValid() }
+                && left <= right
     }
 
     private fun swapLeftRightValues() {
@@ -64,6 +66,14 @@ class SqlRangeGene<T>(
             swapLeftRightValues()
         }
         assert(left <= right)
+    }
+
+    override fun mutationCheck(): Boolean {
+        return isLocallyValid()
+    }
+
+    override fun repair() {
+        repairGeneIfNeeded()
     }
 
     override fun copyContent(): Gene {
@@ -106,19 +116,7 @@ class SqlRangeGene<T>(
         repairGeneIfNeeded()
     }
 
-    /**
-     * Forbid explicitly individual mutation
-     * of these genes
-     */
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf()
-    }
+
 
     private fun isLeftOpen(): Boolean {
         return !isLeftClosed.value
@@ -134,10 +132,10 @@ class SqlRangeGene<T>(
     }
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         if (isEmpty())
             return "\"empty\""
@@ -151,11 +149,6 @@ class SqlRangeGene<T>(
             )
     }
 
-
-
-
-    override fun innerGene(): List<Gene> =
-            listOf(isLeftClosed, left, right, isRightClosed)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
@@ -171,17 +164,14 @@ class SqlRangeGene<T>(
         return false
     }
 
-
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true)
-        return true
+        return false
     }
+
 
 }

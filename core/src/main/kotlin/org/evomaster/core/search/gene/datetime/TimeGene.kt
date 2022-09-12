@@ -3,13 +3,16 @@ package org.evomaster.core.search.gene.datetime
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGeneImpact
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -75,17 +78,9 @@ class TimeGene(
         second.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(hour, minute, second)
-    }
 
-    override fun adaptiveSelectSubset(
+
+    override fun adaptiveSelectSubsetToMutate(
         randomness: Randomness,
         internalGenes: List<Gene>,
         mwc: MutationWeightControl,
@@ -186,12 +181,7 @@ class TimeGene(
                 && isValidSecondRange(this.second)
 
 
-    /*
-     override fun mutationWeight(): Int
-     weight for time gene might be 1 as default since it is simple to solve
-    */
 
-    override fun innerGene(): List<Gene> = listOf(hour, minute, second)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
@@ -232,6 +222,16 @@ class TimeGene(
 
     override fun compareTo(other: TimeGene): Int {
         return TIME_GENE_COMPARATOR.compare(this, other)
+    }
+
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
 
 }

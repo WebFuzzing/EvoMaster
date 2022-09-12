@@ -18,7 +18,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene

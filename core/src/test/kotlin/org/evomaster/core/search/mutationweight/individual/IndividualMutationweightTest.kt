@@ -6,6 +6,8 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.mutationweight.GeneWeightTestSchema
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

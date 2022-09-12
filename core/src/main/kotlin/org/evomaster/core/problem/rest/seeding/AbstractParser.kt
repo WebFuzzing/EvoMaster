@@ -6,9 +6,22 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.codec.binary.Base64
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.string.Base64StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.regex.Pattern
@@ -73,7 +86,7 @@ abstract class AbstractParser(
             is ArrayGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is MapGene<*, *> -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is CycleObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue) // Same as ObjectGene, should it differ?
+            //is CycleObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue) // Same as ObjectGene, should it differ?
 
             else -> {
                 // ImmutableDataHolderGene should never happen

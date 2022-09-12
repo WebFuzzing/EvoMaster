@@ -3,10 +3,12 @@ package org.evomaster.core.search.gene.network
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -38,21 +40,13 @@ class MacAddrGene(
         octets.forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return octets.toList()
-    }
+
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         return "\"${getValueAsRawString()}\""
     }
@@ -65,8 +59,6 @@ class MacAddrGene(
     }
 
 
-
-    override fun innerGene(): List<Gene> = octets.toList()
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
@@ -115,4 +107,14 @@ class MacAddrGene(
     fun size() = octets.size
 
     override fun copyContent() = MacAddrGene(name, numberOfOctets = octets.size, octets.map { it.copy() as IntegerGene }.toList())
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

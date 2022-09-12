@@ -1,15 +1,14 @@
 package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.CompositeFixedGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.RegexGeneImpact
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
 /**
  * A gene representing a regular expression (regex).
@@ -31,15 +30,21 @@ class RegexGene(
         disjunctions.randomize(randomness, tryToForceNewValue)
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
     override fun isMutable(): Boolean {
         return disjunctions.isMutable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if (!isMutable()) emptyList() else listOf(disjunctions)
-    }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is RegexGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(disjunctions))
                 throw IllegalArgumentException("mismatched internal gene")
@@ -48,10 +53,6 @@ class RegexGene(
         throw IllegalArgumentException("mismatched gene impact")
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-        // do nothing since disjunctions is not mutable
-        return true
-    }
 
     override fun getValueAsRawString(): String {
         return disjunctions.getValueAsPrintableString(targetFormat = null)
@@ -97,7 +98,6 @@ class RegexGene(
      */
     override fun mutationWeight(): Double = disjunctions.mutationWeight()
 
-    override fun innerGene(): List<Gene> = listOf(disjunctions)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is RegexGene){

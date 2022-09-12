@@ -15,7 +15,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.CollectionGene
+import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

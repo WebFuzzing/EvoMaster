@@ -4,10 +4,10 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.gene.DisruptiveGene
+import org.evomaster.core.search.gene.optional.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 
 class ObjectGenerator {
 
