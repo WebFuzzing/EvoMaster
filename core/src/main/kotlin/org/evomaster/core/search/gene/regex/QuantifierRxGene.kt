@@ -173,9 +173,7 @@ class QuantifierRxGene(
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean){
         val base = template.copy()
-        if (base.isMutable()) {
-            base.randomize(randomness, forceNewValue)
-        }
+        base.doInitialize(randomness)
         addChild(base)
     }
 

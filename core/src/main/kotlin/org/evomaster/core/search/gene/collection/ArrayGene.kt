@@ -292,9 +292,6 @@ class ArrayGene<T>(
      *
      */
     fun addElement(element: Gene) : Boolean{
-        if(!element.initialized){
-            throw IllegalArgumentException("Adding non-initialized element")
-        }
         element as? T ?: return false
         checkConstraintsForAdd()
         addChild(element)
