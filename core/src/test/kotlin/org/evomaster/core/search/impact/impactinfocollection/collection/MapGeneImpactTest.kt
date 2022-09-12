@@ -49,7 +49,8 @@ class MapGeneImpactTest : GeneImpactTest(){
                     geneToMutate.killChildByIndex(0)
                 else{
                     val key = generateKey()
-                    geneToMutate.addElement(PairGene.createStringPairGene(IntegerGene(key.toString(), key)))
+                    geneToMutate.addElement(
+                        PairGene.createStringPairGene(IntegerGene(key.toString(), key)).apply { doInitialize() })
                 }
             }
         }
