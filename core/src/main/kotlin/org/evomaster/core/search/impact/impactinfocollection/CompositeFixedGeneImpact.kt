@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
-import org.evomaster.core.search.gene.CompositeFixedGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 
 /**

@@ -49,9 +49,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         private val log = LoggerFactory.getLogger(Individual::class.java)
     }
 
-    init {
+
+    override fun preChildrenSetup(c : Collection<StructuralElement>) {
         if (isLocalIdsNotAssigned())
-            setLocalIdsForChildren(children.flatMap { it.flatView() })
+            setLocalIdsForChildren((c as List<ActionComponent>).flatMap { it.flatView() })
     }
 
     /**

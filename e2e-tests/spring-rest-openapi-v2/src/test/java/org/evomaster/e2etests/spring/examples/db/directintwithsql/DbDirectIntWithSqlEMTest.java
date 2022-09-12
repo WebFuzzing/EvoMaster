@@ -16,7 +16,7 @@ import org.evomaster.core.search.EvaluatedAction;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.FitnessValue;
 import org.evomaster.core.search.Solution;
-import org.evomaster.core.search.gene.IntegerGene;
+import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.search.service.FitnessFunction;
 import org.evomaster.ci.utils.CIUtils;
 import org.junit.jupiter.api.Test;

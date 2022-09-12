@@ -6,6 +6,11 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -71,7 +76,8 @@ class UpdateForBodyParamStructureTest : StructuralElementBaseTest() {
         ObjectGene(
             "obj",
             listOf(IntegerGene("f1"), DoubleGene("f2"), LongGene("f3"))),
-        EnumGene("contentType", listOf("application/json"))))
+        EnumGene("contentType", listOf("application/json"))
+    ))
 
     override fun getExpectedChildrenSize(): Int = 2
 

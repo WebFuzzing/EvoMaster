@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.value
 
-import org.evomaster.core.search.gene.DisruptiveGene
+import org.evomaster.core.search.gene.optional.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.*
 

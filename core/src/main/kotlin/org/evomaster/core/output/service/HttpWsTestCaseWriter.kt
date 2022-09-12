@@ -1,6 +1,5 @@
 package org.evomaster.core.output.service
 
-import com.google.gson.Gson
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.Lines
@@ -11,15 +10,13 @@ import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
-import java.lang.NumberFormatException
 import javax.ws.rs.core.MediaType
 
-abstract class HttpWsTestCaseWriter : WebTestCaseWriter() {
+abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     companion object {
         private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)

@@ -3,7 +3,7 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -31,7 +31,7 @@ class CharacterClassEscapeRxGeneTest {
             val apc = AdaptiveParameterControl()
             val mwc = MutationWeightControl()
             gene.doInitialize(randomness)
-            gene.standardMutation(randomness, apc = apc, mwc = mwc, internalGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT)
+            gene.standardMutation(randomness, apc = apc, mwc = mwc, childrenToMutateSelectionStrategy = SubsetGeneMutationSelectionStrategy.DEFAULT)
             assertTrue(gene.value.toInt() >= 0, "invalid digit value: " + gene.value)
             assertTrue(gene.value.toInt() <= 90, "invalid digit value: " + gene.value)
         }
@@ -44,7 +44,7 @@ class CharacterClassEscapeRxGeneTest {
         val apc = AdaptiveParameterControl()
         val mwc = MutationWeightControl()
         assertThrows<IllegalStateException>("standardMutation() cannot be successful without calling to randomize() first",
-                { gene.standardMutation(randomness, apc = apc, mwc = mwc, internalGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT) })
+                { gene.standardMutation(randomness, apc = apc, mwc = mwc, childrenToMutateSelectionStrategy = SubsetGeneMutationSelectionStrategy.DEFAULT) })
 
     }
 

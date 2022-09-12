@@ -1,9 +1,23 @@
 package org.evomaster.core.search.structuralelement.gene
 
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.string.Base64StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -124,7 +138,8 @@ class StringWithSpecialization : GeneStructuralElementBaseTest(){
 
 
     override fun getStructuralElement(): StringGene = StringGene("foo", "foo", specializationGenes = mutableListOf(
-        DateGene("now"), IntegerGene("foo")))
+        DateGene("now"), IntegerGene("foo")
+    ))
 
     override fun getExpectedChildrenSize(): Int = 2
 }
@@ -217,7 +232,7 @@ class MapGeneIntStructureTest : GeneStructuralElementBaseTest() {
         assertChildren(base, copyTemplateSize)
     }
 
-    override fun getStructuralElement(): MapGene<StringGene,  DoubleGene> = MapGene(
+    override fun getStructuralElement(): MapGene<StringGene, DoubleGene> = MapGene(
         "foo",
         template = PairGene.createStringPairGene(DoubleGene("foo")),
         maxSize = 20,
@@ -260,14 +275,16 @@ class TimeGeneStructureTest: GeneStructuralElementBaseTest() {
         }
     }
 
-    override fun getStructuralElement(): TimeGene = TimeGene("22:11:22",IntegerGene("h", 22), IntegerGene("m", 11), IntegerGene("s", 22))
+    override fun getStructuralElement(): TimeGene = TimeGene("22:11:22",
+        IntegerGene("h", 22), IntegerGene("m", 11), IntegerGene("s", 22)
+    )
     override fun getExpectedChildrenSize(): Int  = 3
 }
 
 class DateTimeGeneStructureTest: GeneStructuralElementBaseTest() {
     override fun getCopyFromTemplate()= DateTimeGene("2021-06-08 23:13:42",
         date = DateGene("2021-06-08", IntegerGene("year", 2021), IntegerGene("month", 6), IntegerGene("day",8)),
-        time = TimeGene("23:13:42",IntegerGene("h", 23), IntegerGene("m", 13), IntegerGene("s", 42))
+        time = TimeGene("23:13:42", IntegerGene("h", 23), IntegerGene("m", 13), IntegerGene("s", 42))
     )
 
     override fun assertCopyFrom(base: Gene) {
@@ -282,7 +299,7 @@ class DateTimeGeneStructureTest: GeneStructuralElementBaseTest() {
 
     override fun getStructuralElement(): DateTimeGene = DateTimeGene("2021-06-3 22:11:22",
             date = DateGene("2021-06-3", IntegerGene("year", 2021), IntegerGene("month", 6), IntegerGene("day",3)),
-            time = TimeGene("22:11:22",IntegerGene("h", 22), IntegerGene("m", 11), IntegerGene("s", 22))
+            time = TimeGene("22:11:22", IntegerGene("h", 22), IntegerGene("m", 11), IntegerGene("s", 22))
     )
     override fun getExpectedChildrenSize(): Int  = 2
 }

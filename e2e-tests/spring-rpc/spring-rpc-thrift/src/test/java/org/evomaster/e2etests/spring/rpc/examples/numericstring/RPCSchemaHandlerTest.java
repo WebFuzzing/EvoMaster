@@ -5,6 +5,9 @@ import org.evomaster.core.problem.rpc.RPCCallAction;
 import org.evomaster.core.problem.rpc.service.RPCSampler;
 import org.evomaster.core.search.Action;
 import org.evomaster.core.search.gene.*;
+import org.evomaster.core.search.gene.numeric.BigDecimalGene;
+import org.evomaster.core.search.gene.optional.OptionalGene;
+import org.evomaster.core.search.gene.string.NumericStringGene;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

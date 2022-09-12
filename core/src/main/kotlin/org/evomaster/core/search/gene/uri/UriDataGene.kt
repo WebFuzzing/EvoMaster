@@ -2,10 +2,13 @@ package org.evomaster.core.search.gene.uri
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.Base64StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import java.net.URI
 
 
@@ -41,19 +44,8 @@ class UriDataGene(
         getViewOfChildren().forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return innerGene().filter { it.isMutable() }
-    }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(type, base64, data)
-    }
+
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -90,4 +82,14 @@ class UriDataGene(
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return false
     }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

@@ -8,10 +8,8 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
-import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.LongGene
+import org.evomaster.core.search.gene.optional.DisruptiveGene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll

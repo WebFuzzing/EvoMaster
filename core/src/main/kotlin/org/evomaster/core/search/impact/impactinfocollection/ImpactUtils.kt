@@ -17,10 +17,17 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.*
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.NumericStringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.regex.*
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.SqlMultidimensionalArrayGeneImpact
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -54,7 +61,7 @@ class ImpactUtils {
                 //is Base64StringGene -> StringGeneImpact(id, gene.data)
                 is ObjectGene -> ObjectGeneImpact(id, gene)
                 is TupleGene -> TupleGeneImpact(id, gene)
-                is MapGene<*, *>-> MapGeneImpact(id)
+                is MapGene<*, *> -> MapGeneImpact(id)
                 is PairGene<*, *> -> throw IllegalStateException("do not count impacts for PairGene yet")
                 is ArrayGene<*> -> ArrayGeneImpact(id)
                 is DateGene -> DateGeneImpact(id, gene)

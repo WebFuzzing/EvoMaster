@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.ArrayGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.sql.geometric.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -48,8 +48,8 @@ class GeometricTypesTest : ExtractTestBasePostgres() {
         assertTrue(genes[6] is SqlCircleGene)
 
         val lineGene = genes[1] as SqlLineGene
-        val p = lineGene.innerGene()[0] as SqlPointGene
-        val q = lineGene.innerGene()[1] as SqlPointGene
+        val p = lineGene.getViewOfChildren()[0] as SqlPointGene
+        val q = lineGene.getViewOfChildren()[1] as SqlPointGene
         p.x.value = 0.0f
         p.y.value = 0.0f
         q.x.value = 1.0f

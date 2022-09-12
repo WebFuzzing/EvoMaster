@@ -1,0 +1,9 @@
+type Query {
+    flowers:[String]
+    stores: Store
+}
+
+type Store {
+    id: Int!
+   bouquets : [String]
+}

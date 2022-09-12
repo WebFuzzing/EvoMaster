@@ -2,14 +2,14 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.CompositeGene
+import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -118,21 +118,23 @@ class QuantifierRxGene(
         return min != limitedMax || template.isMutable()
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun customShouldApplyShallowMutation(randomness: Randomness,
+                                                  selectionStrategy: SubsetGeneMutationSelectionStrategy,
+                                                  enableAdaptiveGeneMutation: Boolean,
+                                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
         val length = atoms.size
 
-        return if( length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
-            log.trace("Removing atom")
-            emptyList()
-        } else if(length < limitedMax && randomness.nextBoolean(MODIFY_LENGTH)){
-            emptyList()
-        } else {
-            atoms.filter { it.isMutable() }
+        if(length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
+            return true
         }
+        if(length < limitedMax && randomness.nextBoolean(MODIFY_LENGTH)){
+            return true
+        }
+        return false
     }
 
-
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         /*
             atoms is dynamically modified, then we do not collect impacts for it now.
             thus for the internal genes, adaptive gene selection for mutation is not applicable
@@ -141,7 +143,7 @@ class QuantifierRxGene(
         return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(null, s))
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         val length = atoms.size
 
         if (length < min || length > limitedMax)
@@ -227,7 +229,6 @@ class QuantifierRxGene(
         return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0
     }
 
-    override fun innerGene(): List<Gene> = atoms
 
     /*
         Note that value binding cannot be performed on the [atoms]
