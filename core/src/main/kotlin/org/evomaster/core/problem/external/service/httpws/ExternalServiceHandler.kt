@@ -133,14 +133,14 @@ class ExternalServiceHandler {
                     externalServiceRequests.add(it)
                 }
                 if (actions.none { a -> a.request.url == it.url }) {
-                    actions.add(
-                        HttpExternalServiceAction(
-                            it,
-                            "",
-                            u,
-                            counter++
-                        )
+                    val action = HttpExternalServiceAction(
+                        it,
+                        "",
+                        u,
+                        counter++
                     )
+                    action.doInitialize(randomness)
+                    actions.add(action)
                 }
 
             }

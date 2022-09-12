@@ -3,7 +3,10 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -15,7 +18,6 @@ import org.slf4j.LoggerFactory
  * take care of calculating/collecting fitness of [RestIndividual]
  */
 class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
-
 
 
     @Inject
@@ -31,7 +33,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
     /*
         add db check in term of each abstract resource
      */
-    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(
+        individual: RestIndividual,
+        targets: Set<Int>
+    ): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -45,7 +50,13 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
         //whether there exist some SQL execution failure
-        var failureBefore = doDbCalls(individual.seeInitializingActions().filterIsInstance<DbAction>(), sqlIdMap, true, executedDbActions, actionResults)
+        var failureBefore = doDbCalls(
+            individual.seeInitializingActions().filterIsInstance<DbAction>(),
+            sqlIdMap,
+            true,
+            executedDbActions,
+            actionResults
+        )
 
         val cookies = getCookies(individual)
         val tokens = getTokens(individual)
@@ -60,41 +71,75 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            val result = doDbCalls(call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>, sqlIdMap, failureBefore, executedDbActions, actionResults)
+            val result = doDbCalls(
+                call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>,
+                sqlIdMap,
+                failureBefore,
+                executedDbActions,
+                actionResults
+            )
             failureBefore = failureBefore || result
 
             var terminated = false
 
-            for (a in call.seeActions(ActionFilter.NO_SQL)){
+            call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>().forEach { a ->
+                // TODO: Handle ExternalServiceAction
+                val externalServiceAction = a.getExternalServiceActions()
+
+                val restCallAction = a.getMainAction()
 
                 //TODO handling of inputVariables
-                registerNewAction(a, indexOfAction)
+                registerNewAction(restCallAction, indexOfAction)
 
                 val ok: Boolean
 
-                if (a is RestCallAction) {
-                    ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
+                if (restCallAction is RestCallAction) {
+                    ok = handleRestCall(restCallAction, actionResults, chainState, cookies, tokens)
                     // update creation of resources regarding response status
                     val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
-                    call.getResourceNode().confirmFailureCreationByPost(call, a, restActionResult)
+                    call.getResourceNode().confirmFailureCreationByPost(call, restCallAction, restActionResult)
                     restActionResult.stopping = !ok
                 } else {
-                    throw IllegalStateException("Cannot handle: ${a.javaClass}")
+                    throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
                 }
 
                 if (!ok) {
                     terminated = true
-                    break
                 }
                 indexOfAction++
+
             }
 
-            if(terminated)
+//            for (a in call.seeActions(ActionFilter.NO_SQL)){
+
+            //TODO handling of inputVariables
+//                registerNewAction(a, indexOfAction)
+//
+//                val ok: Boolean
+//
+//                if (a is RestCallAction) {
+//                    ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
+//                    // update creation of resources regarding response status
+//                    val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
+//                    call.getResourceNode().confirmFailureCreationByPost(call, a, restActionResult)
+//                    restActionResult.stopping = !ok
+//                } else {
+//                    throw IllegalStateException("Cannot handle: ${a.javaClass}")
+//                }
+//
+//                if (!ok) {
+//                    terminated = true
+//                    break
+//                }
+//                indexOfAction++
+//            }
+
+            if (terminated)
                 break
         }
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()
-        val dto = restActionResultHandling(individual, targets, allRestResults, fv)?:return null
+        val dto = restActionResultHandling(individual, targets, allRestResults, fv) ?: return null
 
         /*
             TODO: Man shall we update the action cluster based on expanded action?
@@ -107,14 +152,20 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         /*
          update dependency regarding executed dto
          */
-        if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
+        if (config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
         if (actionResults.size > individual.seeActions(ActionFilter.ALL).size)
             log.warn("initialize invalid evaluated individual")
 
         return EvaluatedIndividual(
-                fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
+            fv,
+            individual.copy() as RestIndividual,
+            actionResults,
+            config = config,
+            trackOperator = individual.trackOperator,
+            index = time.evaluatedIndividuals
+        )
 
     }
 }

@@ -146,6 +146,7 @@ class HttpExternalServiceAction(
 
     private fun viewResponse(): String {
         // TODO: This needs to be refactored
+//        return (response as HttpWsResponseParam).response.toString()
         return "{}"
     }
 
