@@ -48,7 +48,7 @@ class ArrayGeneImpactTest : GeneImpactTest(){
                     geneToMutate.removeExistingElement(geneToMutate.getViewOfElements()[0])
                 }else{
                     val key = generateKey()
-                    geneToMutate.addElement(IntegerGene(key.toString(), key))
+                    geneToMutate.addElement(IntegerGene(key.toString(), key).apply { doInitialize() })
                 }
             }
         }
