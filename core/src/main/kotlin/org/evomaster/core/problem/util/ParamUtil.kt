@@ -13,7 +13,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlNullableGene
@@ -154,7 +154,7 @@ class ParamUtil {
             parameters.forEach { p ->
                 p.gene.flatView(pred).filter {
                     !(it is ObjectGene ||
-                            it is DisruptiveGene<*> ||
+                            it is CustomMutationRateGene<*> ||
                             it is OptionalGene ||
                             it is ArrayGene<*> ||
                             it is MapGene<*, *>)
@@ -205,7 +205,7 @@ class ParamUtil {
             when (comGene) {
                 is ObjectGene -> return extractPathFromRoot(comGene, gene, names)
                 is PairGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
-                is DisruptiveGene<*> -> return extractPathFromRoot(comGene, gene, names)
+                is CustomMutationRateGene<*> -> return extractPathFromRoot(comGene, gene, names)
                 is OptionalGene -> return extractPathFromRoot(comGene, gene, names)
                 is ArrayGene<*> -> return extractPathFromRoot(comGene, gene, names)
                 is MapGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
@@ -226,7 +226,7 @@ class ParamUtil {
             return false
         }
 
-        private fun extractPathFromRoot(comGene: DisruptiveGene<*>, gene: Gene, names: MutableList<String>): Boolean {
+        private fun extractPathFromRoot(comGene: CustomMutationRateGene<*>, gene: Gene, names: MutableList<String>): Boolean {
             if (extractPathFromRoot(comGene.gene, gene, names)) {
                 names.add(comGene.name)
                 return true
@@ -280,7 +280,7 @@ class ParamUtil {
         fun getValueGene(gene: Gene): Gene {
             if (gene is OptionalGene) {
                 return getValueGene(gene.gene)
-            } else if (gene is DisruptiveGene<*>)
+            } else if (gene is CustomMutationRateGene<*>)
                 return getValueGene(gene.gene)
             else if (gene is SqlPrimaryKeyGene) {
                 if (gene.gene is SqlAutoIncrementGene)
@@ -297,7 +297,7 @@ class ParamUtil {
                 return gene
             } else if (gene is OptionalGene) {
                 return getObjectGene(gene.gene)
-            } else if (gene is DisruptiveGene<*>)
+            } else if (gene is CustomMutationRateGene<*>)
                 return getObjectGene(gene.gene)
             else return null
         }

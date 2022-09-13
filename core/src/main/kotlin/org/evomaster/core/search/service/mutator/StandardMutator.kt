@@ -19,6 +19,7 @@ import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
@@ -162,10 +163,21 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 }
             }
 
+            //make sure that requested genes are activated
             a.seeTopGenes().flatMap { it.flatView() }
                 .filterIsInstance<OptionalGene>()
                 .filter { it.selectable && it.requestSelection }
                 .forEach { it.isActive = true; it.requestSelection = false }
+
+            //disable genes that should no longer be mutated
+            val state = individual.searchGlobalState
+            if(state != null) {
+                val time = state.time.percentageUsedBudget()
+                a.seeTopGenes().flatMap { it.flatView() }
+                    .filterIsInstance<CustomMutationRateGene<*>>()
+                    .filter { it.probability > 0 && it.searchPercentageActive < time }
+                    .forEach { it.preventMutation() }
+            }
         }
     }
 

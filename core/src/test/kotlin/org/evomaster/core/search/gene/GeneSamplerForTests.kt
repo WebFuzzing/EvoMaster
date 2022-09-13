@@ -13,7 +13,7 @@ import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.network.MacAddrGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
@@ -101,7 +101,7 @@ object GeneSamplerForTests {
             BigIntegerGene::class -> sampleBigIntegerGene(rand) as T
             BooleanGene::class -> sampleBooleanGene(rand) as T
             CycleObjectGene::class -> sampleCycleObjectGene(rand) as T
-            DisruptiveGene::class -> sampleDisruptiveGene(rand) as T
+            CustomMutationRateGene::class -> sampleDisruptiveGene(rand) as T
             DoubleGene::class -> sampleDoubleGene(rand) as T
             EnumGene::class -> sampleEnumGene(rand) as T
             FloatGene::class -> sampleFloatGene(rand) as T
@@ -577,13 +577,13 @@ object GeneSamplerForTests {
     }
 
 
-    fun sampleDisruptiveGene(rand: Randomness): DisruptiveGene<*> {
+    fun sampleDisruptiveGene(rand: Randomness): CustomMutationRateGene<*> {
         val selection = geneClasses
                 .filter { !it.isAbstract }
-                .filter { it != DisruptiveGene::class }
+                .filter { it != CustomMutationRateGene::class }
         val chosen = sample(rand.choose(selection), rand)
 
-        return DisruptiveGene("rand DisruptiveGene", chosen, 0.5)
+        return CustomMutationRateGene("rand DisruptiveGene", chosen, 0.5)
     }
 
     fun sampleCycleObjectGene(rand: Randomness): CycleObjectGene {

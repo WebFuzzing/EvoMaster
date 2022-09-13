@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 object GQLActionCluster{
     val cluster : MutableMap<String, Action> = mutableMapOf()
     init {
-        val schema = this::class.java.getResource("/graphql/PetsClinic.json")?.readText()?:throw IllegalStateException("fail to get the resource")
+        val schema = this::class.java.getResource("/graphql/online/PetsClinic.json")?.readText()?:throw IllegalStateException("fail to get the resource")
         GraphQLActionBuilder.addActionsFromSchema(schema, cluster)
     }
 }

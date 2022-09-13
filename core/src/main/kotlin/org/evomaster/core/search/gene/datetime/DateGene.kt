@@ -43,7 +43,7 @@ class DateGene(
         const val MAX_MONTH = 13
         const val MIN_MONTH = 0
         const val MAX_DAY = 32
-        const val MIN_DAY = 9
+        const val MIN_DAY = 0
 
         val DATE_GENE_COMPARATOR = compareBy<DateGene> { it.year }
             .thenBy { it.month }

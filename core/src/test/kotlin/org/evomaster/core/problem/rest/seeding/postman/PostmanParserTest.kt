@@ -20,7 +20,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -56,7 +56,7 @@ class PostmanParserTest {
         // Assert the presence and value of each gene of the request
         val request = testCases[0][0]
 
-        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as CustomMutationRateGene<StringGene>
         assertEquals("pathParamValue", pathParam.gene.value)
 
         val headerParam = request.parameters.filterIsInstance<HeaderParam>()[0].gene as OptionalGene
@@ -137,7 +137,7 @@ class PostmanParserTest {
         // Assert the absence of each gene of the request, except for required ones
         val request = testCases[1][0]
 
-        assertEquals("pathParamValue", (request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>).gene.value)
+        assertEquals("pathParamValue", (request.parameters.filterIsInstance<PathParam>()[0].gene as CustomMutationRateGene<StringGene>).gene.value)
 
         assertFalse((request.parameters.filterIsInstance<HeaderParam>()[0].gene as OptionalGene).isActive)
 
@@ -187,7 +187,7 @@ class PostmanParserTest {
         val request = testCases[0][0]
         val originalRequest = loadRestCallActions(swagger).find { it.verb == HttpVerb.GET }!!
 
-        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as CustomMutationRateGene<StringGene>
         assertEquals("pathParamValue", pathParam.gene.value)
 
         val headerParam = request.parameters.filterIsInstance<HeaderParam>()[0].gene as OptionalGene
@@ -348,7 +348,7 @@ class PostmanParserTest {
         // Assert the absence of the request body
         val request = testCases[3][0]
 
-        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as CustomMutationRateGene<StringGene>
         assertEquals("path param value", pathParam.gene.value)
     }
 
@@ -361,7 +361,7 @@ class PostmanParserTest {
         // Assert the absence of the request body
         val request = testCases[4][0]
 
-        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as CustomMutationRateGene<StringGene>
         assertEquals("prop1=val1", pathParam.gene.value)
     }
 
@@ -374,7 +374,7 @@ class PostmanParserTest {
         // Assert the absence of the request body
         val request = testCases[5][0]
 
-        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as CustomMutationRateGene<StringGene>
         assertEquals("{prop1=val1}", pathParam.gene.value)
     }
 
@@ -387,7 +387,7 @@ class PostmanParserTest {
         // Assert the absence of the request body
         val request = testCases[6][0]
 
-        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as DisruptiveGene<StringGene>
+        val pathParam = request.parameters.filterIsInstance<PathParam>()[0].gene as CustomMutationRateGene<StringGene>
         assertEquals("{prop1=val1, val2 and val3+val4;prop2=val4;prop3=val5}", pathParam.gene.value)
     }
 

@@ -27,7 +27,7 @@ class StringSpecializationImpactTest : GeneImpactTest() {
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
         geneToMutate as StringGene
         if (mutationTag == 0){
-            geneToMutate.addChild(DateGene("s"))
+            geneToMutate.addChild(DateGene("s").apply { doInitialize() })
             geneToMutate.selectedSpecialization = geneToMutate.specializationGenes.lastIndex
         }else{
             val selected = if (mutationTag > 0) mutationTag - 1 else mutationTag
