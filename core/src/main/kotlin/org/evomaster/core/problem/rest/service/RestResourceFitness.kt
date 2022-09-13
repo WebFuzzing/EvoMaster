@@ -69,6 +69,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         //run the test, one action at a time
         var indexOfAction = 0
 
+        callsLoop@
         for (call in individual.getResourceCalls()) {
 
             val result = doDbCalls(
@@ -82,7 +83,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
             var terminated = false
 
-            call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>().forEach { a ->
+            for (a in call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>()){
                 // TODO: Handle ExternalServiceAction
                 val externalServiceAction = a.getExternalServiceActions()
 
@@ -108,6 +109,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 }
                 indexOfAction++
 
+                if (terminated)
+                    break@callsLoop
             }
 
 //            for (a in call.seeActions(ActionFilter.NO_SQL)){
@@ -134,8 +137,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 //                indexOfAction++
 //            }
 
-            if (terminated)
-                break
+
         }
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()
