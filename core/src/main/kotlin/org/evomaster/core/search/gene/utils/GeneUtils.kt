@@ -482,7 +482,7 @@ object GeneUtils {
         if (selected.isNotEmpty()) {
             //it is fine, but we still need to make sure selected objects are fine
             selected.forEach {
-                if ((it is OptionalGene && it.gene is ObjectGene && it.gene !is CycleObjectGene)
+                if ((it is OptionalGene && it.gene is ObjectGene && (it.gene !is CycleObjectGene || it.gene !is LimitObjectGene))
                 ) {
                     repairBooleanSelection(it.gene)
                 } else if ( //looking into objects inside a tuple
@@ -609,8 +609,8 @@ object GeneUtils {
 
     private fun isTupleOptionalObjetNotCycle(gene: Gene):Boolean {
         return (gene is TupleGene && gene.elements.last() is OptionalGene
-                && (gene.elements.last() as OptionalGene).gene is ObjectGene &&
-                (gene.elements.last() as OptionalGene).gene !is CycleObjectGene)
+                && (gene.elements.last() as OptionalGene).gene is ObjectGene && (
+                ((gene.elements.last() as OptionalGene).gene !is CycleObjectGene)  || ((gene.elements.last() as OptionalGene).gene !is LimitObjectGene)))
     }
 
     /**
