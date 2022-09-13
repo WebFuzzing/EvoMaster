@@ -16,7 +16,7 @@ class GraphQLUtilsTest {
     @Test
     fun graphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/MelodyRepo2.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/online/MelodyRepo2.json").readText()
 
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
@@ -39,7 +39,7 @@ class GraphQLUtilsTest {
     @Test
     fun petClinicFragmentGraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic(Fragment).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/PetsClinic(Fragment).json").readText()
 
 
         val gson = Gson()
@@ -61,7 +61,7 @@ class GraphQLUtilsTest {
     @Test
     fun petClinicFragment2GraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic(Fragment2).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/PetsClinic(Fragment2).json").readText()
 
 
         val gson = Gson()
@@ -84,7 +84,7 @@ class GraphQLUtilsTest {
     @Test
     fun cyclesEgGraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/CyclesEg.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/CyclesEg.json").readText()
 
 
         val gson = Gson()
@@ -107,7 +107,7 @@ class GraphQLUtilsTest {
     @Test
     fun universeCyclesFragmentGraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/UniverseCycles(Fragment).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/UniverseCycles(Fragment).json").readText()
 
 
         val gson = Gson()
@@ -131,7 +131,7 @@ class GraphQLUtilsTest {
     @Test
     fun unionInternalEgFragmentGraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalEg(Fragment).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/unionInternalEg(Fragment).json").readText()
 
 
         val gson = Gson()
@@ -155,7 +155,7 @@ class GraphQLUtilsTest {
     @Test
     fun unionInternalRecEgFragmentGraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg(Fragment).json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/unionInternalRecEg(Fragment).json").readText()
 
 
         val gson = Gson()
@@ -177,7 +177,7 @@ class GraphQLUtilsTest {
     @Test
     fun unionInternalRecEg2GraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/unionInternalRecEg2.json").readText()
 
 
         val gson = Gson()
@@ -199,7 +199,7 @@ class GraphQLUtilsTest {
     @Test
     fun interfaceInternalEgGraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/interfaceInternalEg.json").readText()
 
 
         val gson = Gson()
@@ -222,7 +222,7 @@ class GraphQLUtilsTest {
     @Test
     fun interfaceEgGraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceEg.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/interfaceEg.json").readText()
 
 
         val gson = Gson()
@@ -245,7 +245,7 @@ class GraphQLUtilsTest {
     @Test
     fun interfaceHisGraphTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceHis.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/interfaceHis.json").readText()
 
 
         val gson = Gson()
@@ -268,7 +268,7 @@ class GraphQLUtilsTest {
     @Test
     fun allNodesReachableTest() {
 
-        val json = GraphQLUtilsTest::class.java.getResource("/graphql/abstract.json").readText()
+        val json = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/abstract.json").readText()
 
         val gson = Gson()
         val schemaObj: SchemaObj = gson.fromJson(json, SchemaObj::class.java)
@@ -324,36 +324,36 @@ class GraphQLUtilsTest {
         val jsonFiles: MutableMap<String, String> = mutableMapOf()
         val buffer = StringBuffer()
 
-        jsonFiles["PetsClinic"] = GraphQLUtilsTest::class.java.getResource("/graphql/PetsClinic.json").readText()
-        jsonFiles["AniList"] = GraphQLUtilsTest::class.java.getResource("/graphql/AniList.json").readText()
-        jsonFiles["Bitquery"] = GraphQLUtilsTest::class.java.getResource("/graphql/Bitquery.json").readText()
+        jsonFiles["PetsClinic"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/PetsClinic.json").readText()
+        jsonFiles["AniList"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/AniList.json").readText()
+        jsonFiles["Bitquery"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/Bitquery.json").readText()
         // jsonFiles["GitLab"] = GraphQLUtilsTest::class.java.getResource("/graphql/GitLab.json").readText()//TODO not working
-        jsonFiles["DigitransitHSL"] = GraphQLUtilsTest::class.java.getResource("/graphql/DigitransitHSL.json").readText()
-        jsonFiles["TravelgateX"] = GraphQLUtilsTest::class.java.getResource("/graphql/TravelgateX.json").readText()
-        jsonFiles["Universe"] = GraphQLUtilsTest::class.java.getResource("/graphql/Universe.json").readText()
-        jsonFiles["CatalysisHub"] = GraphQLUtilsTest::class.java.getResource("/graphql/CatalysisHub.json").readText()
-        jsonFiles["Contentful"] = GraphQLUtilsTest::class.java.getResource("/graphql/Contentful.json").readText()
-        jsonFiles["Countries"] = GraphQLUtilsTest::class.java.getResource("/graphql/Countries.json").readText()
-        jsonFiles["DeutscheBahn"] = GraphQLUtilsTest::class.java.getResource("/graphql/DeutscheBahn.json").readText()
-        jsonFiles["EHRI"] = GraphQLUtilsTest::class.java.getResource("/graphql/EHRI.json").readText()
-        jsonFiles["EtMDB"] = GraphQLUtilsTest::class.java.getResource("/graphql/EtMDB.json").readText()
-        jsonFiles["Everbase"] = GraphQLUtilsTest::class.java.getResource("/graphql/Everbase.json").readText()
-        jsonFiles["GraphQLJobs"] = GraphQLUtilsTest::class.java.getResource("/graphql/GraphQLJobs.json").readText()
-        jsonFiles["HIVDB"] = GraphQLUtilsTest::class.java.getResource("/graphql/HIVDB.json").readText()
-        jsonFiles["MelodyRepo"] = GraphQLUtilsTest::class.java.getResource("/graphql/MelodyRepo.json").readText()
-        jsonFiles["MelodyRepo2"] = GraphQLUtilsTest::class.java.getResource("/graphql/MelodyRepo2.json").readText()
-        jsonFiles["ReactFinland"] = GraphQLUtilsTest::class.java.getResource("/graphql/ReactFinland.json").readText()
-        jsonFiles["recEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/recEg.json").readText()
-        jsonFiles["SpaceX"] = GraphQLUtilsTest::class.java.getResource("/graphql/SpaceX.json").readText()
-        jsonFiles["Book"] = GraphQLUtilsTest::class.java.getResource("/graphql/Book.json").readText()
-        jsonFiles["interfaceEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceEg.json").readText()
-        jsonFiles["interfaceInternalEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
-        jsonFiles["unionInternalEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalEg.json").readText()
-        jsonFiles["unionInternalRecEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg.json").readText()
-        jsonFiles["unionInternalRecEg2"] = GraphQLUtilsTest::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
-        jsonFiles["enumInterface"] = GraphQLUtilsTest::class.java.getResource("/graphql/enumInterface.json").readText()
-        jsonFiles["interfaceHis"] = GraphQLUtilsTest::class.java.getResource("/graphql/interfaceHis.json").readText()
-        jsonFiles["recEg2"] = GraphQLUtilsTest::class.java.getResource("/graphql/recEg2.json").readText()
+        jsonFiles["DigitransitHSL"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/DigitransitHSL.json").readText()
+        jsonFiles["TravelgateX"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/TravelgateX.json").readText()
+        jsonFiles["Universe"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/Universe.json").readText()
+        jsonFiles["CatalysisHub"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/CatalysisHub.json").readText()
+        jsonFiles["Contentful"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/Contentful.json").readText()
+        jsonFiles["Countries"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/Countries.json").readText()
+        jsonFiles["DeutscheBahn"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/DeutscheBahn.json").readText()
+        jsonFiles["EHRI"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/EHRI.json").readText()
+        jsonFiles["EtMDB"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/EtMDB.json").readText()
+        jsonFiles["Everbase"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/Everbase.json").readText()
+        jsonFiles["GraphQLJobs"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/GraphQLJobs.json").readText()
+        jsonFiles["HIVDB"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/HIVDB.json").readText()
+        jsonFiles["MelodyRepo"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/MelodyRepo.json").readText()
+        jsonFiles["MelodyRepo2"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/MelodyRepo2.json").readText()
+        jsonFiles["ReactFinland"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/ReactFinland.json").readText()
+        jsonFiles["recEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/recEg.json").readText()
+        jsonFiles["SpaceX"] = GraphQLUtilsTest::class.java.getResource("/graphql/online/SpaceX.json").readText()
+        jsonFiles["Book"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/Book.json").readText()
+        jsonFiles["interfaceEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/interfaceEg.json").readText()
+        jsonFiles["interfaceInternalEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/interfaceInternalEg.json").readText()
+        jsonFiles["unionInternalEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/unionInternalEg.json").readText()
+        jsonFiles["unionInternalRecEg"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/unionInternalRecEg.json").readText()
+        jsonFiles["unionInternalRecEg2"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/unionInternalRecEg2.json").readText()
+        jsonFiles["enumInterface"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/enumInterface.json").readText()
+        jsonFiles["interfaceHis"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/interfaceHis.json").readText()
+        jsonFiles["recEg2"] = GraphQLUtilsTest::class.java.getResource("/graphql/artificial/recEg2.json").readText()
 
         jsonFiles.forEach {
 

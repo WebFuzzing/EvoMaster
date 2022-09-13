@@ -28,7 +28,7 @@ class GraphQLActionBuilderTest {
     fun testPetClinic() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/PetsClinic.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/PetsClinic.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -128,7 +128,7 @@ class GraphQLActionBuilderTest {
     fun bitquerySchemaTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Bitquery.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/Bitquery.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -150,7 +150,7 @@ class GraphQLActionBuilderTest {
     fun catalysisHubSchemaTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/CatalysisHub.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/CatalysisHub.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -162,7 +162,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun contentfulSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Contentful.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/Contentful.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -193,7 +193,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun countriesSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Countries.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/Countries.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -215,7 +215,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun deutscheBahnSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/DeutscheBahn.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/DeutscheBahn.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -233,7 +233,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun digitransitHSLSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/DigitransitHSL.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/DigitransitHSL.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -259,7 +259,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun eHRISchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/EHRI.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/EHRI.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -271,7 +271,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun etMDBSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/EtMDB.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/EtMDB.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -283,7 +283,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun everbaseSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Everbase.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/Everbase.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -296,7 +296,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun graphQLJobsSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GraphQLJobs.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/GraphQLJobs.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -308,7 +308,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun HIVDBSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/HIVDB.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/HIVDB.json").readText()
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
@@ -319,7 +319,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun melodyRepoSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/MelodyRepo.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/MelodyRepo.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -342,7 +342,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun reactFinlandSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/ReactFinland.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/ReactFinland.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -354,7 +354,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun travelgateXSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/TravelgateX.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/TravelgateX.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -380,7 +380,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun recEgTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/recEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/recEg.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -391,7 +391,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun spaceXTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/SpaceX.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/SpaceX.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -414,7 +414,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun bookTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Book.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/Book.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -427,7 +427,7 @@ class GraphQLActionBuilderTest {
     fun interfaceEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfaceEg.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -462,7 +462,7 @@ class GraphQLActionBuilderTest {
     fun interfaceEgFunctionTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceEgFunction.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfaceEgFunction.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -506,7 +506,7 @@ class GraphQLActionBuilderTest {
     fun interfaceInternalEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceInternalEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfaceInternalEg.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -545,7 +545,7 @@ class GraphQLActionBuilderTest {
     fun unionInternalEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalEg.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -584,7 +584,7 @@ class GraphQLActionBuilderTest {
     fun unionInternalFunctionsEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalFunctionsEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalFunctionsEg.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -633,7 +633,7 @@ class GraphQLActionBuilderTest {
     fun unionInternalRecEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalRecEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalRecEg.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -670,7 +670,7 @@ class GraphQLActionBuilderTest {
     fun unionInternalRecEg2Test() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/unionInternalRecEg2.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalRecEg2.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -682,7 +682,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun enumInterfaceTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/enumInterface.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/enumInterface.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -694,7 +694,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun interfaceHisTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/interfaceHis.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfaceHis.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -720,7 +720,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun recEgTest2() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/recEg2.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/recEg2.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -768,7 +768,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun depthTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/abstract2.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/abstract2.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, max(config.treeDepth,5))
@@ -806,7 +806,7 @@ class GraphQLActionBuilderTest {
     fun functionInReturnedObjectsTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/functionInReturnedObjectsBase.json")
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/functionInReturnedObjectsBase.json")
             .readText()
 
         val config = EMConfig()
@@ -911,7 +911,7 @@ class GraphQLActionBuilderTest {
     fun functionInReturnedObjectsWithOutBooleanSelectionTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/functionInReturnedObjectsBase.json")
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/functionInReturnedObjectsBase.json")
             .readText()
 
         val config = EMConfig()
@@ -1005,7 +1005,7 @@ class GraphQLActionBuilderTest {
     fun anigListSchemaTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/AniList.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/AniList.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1068,7 +1068,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun gitLabSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitLab.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/GitLab.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1092,7 +1092,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun universeSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Universe.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/Universe.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1104,7 +1104,7 @@ class GraphQLActionBuilderTest {
     fun historyInFunctionInReturnedObject() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/HistoryInFunctionInReturnedObject.json")
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/HistoryInFunctionInReturnedObject.json")
             .readText()
 
         val config = EMConfig()
@@ -1158,7 +1158,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun timbuctooSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Timbuctoo.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/Timbuctoo.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1185,7 +1185,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun zoraTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Zora.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/Zora.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1196,7 +1196,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun faunaTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Fauna.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/Fauna.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1207,7 +1207,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun rootNameTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/RootNames.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/RootNames.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1243,12 +1243,204 @@ class GraphQLActionBuilderTest {
     @Test
     fun gitHubTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/GitHub.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/GitHub.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(204, actionCluster.size)
+    }
+
+    @Test
+    fun barcelonaUrbanMobilityTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/barcelonaUrbanMobility.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(10, actionCluster.size)
+    }
+
+    @Test
+    fun buildkiteTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/buildkite.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(70, actionCluster.size)
+    }
+
+    @Test
+    fun camaraDeputadosTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/camaraDeputados.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(33, actionCluster.size)
+    }
+
+    @Test
+    fun demotivationQuotesTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/demotivationQuotes.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(2, actionCluster.size)
+    }
+
+    @Test
+    fun directionsTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/directions.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(6, actionCluster.size)
+    }
+
+    @Test
+    fun fruitsTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/fruits.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(7, actionCluster.size)
+    }
+
+    @Test
+    fun mockiTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/mocki.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(4, actionCluster.size)
+    }
+
+    @Test
+    fun musicBrainzTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/musicBrainz.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(6, actionCluster.size)
+    }
+
+    @Test
+    fun pokemonTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/pokemon.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(13, actionCluster.size)
+    }
+
+    @Test
+    fun rickandmortyapiTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/rickandmortyapi.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(9, actionCluster.size)
+    }
+
+    @Test
+    fun spotifyTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/spotify.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(11, actionCluster.size)
+    }
+
+    @Test
+    fun swapiTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/swapi.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(13, actionCluster.size)
+    }
+
+    @Test
+    fun swopTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/swop.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(6, actionCluster.size)
+    }
+
+    @Test
+    fun weatherTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/weather.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(2, actionCluster.size)
+    }
+
+    @Test
+    fun composeTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/compose.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(9, actionCluster.size)
+    }
+
+    @Test
+    fun stratzTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/stratz.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(19, actionCluster.size)
     }
 
 }

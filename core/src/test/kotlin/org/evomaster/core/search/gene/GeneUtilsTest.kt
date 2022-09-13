@@ -261,7 +261,7 @@ internal class GeneUtilsTest {
     fun testRepairInPetclinic() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/online/PetsClinic.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         val pettypes = actionCluster.get("pettypes") as GraphQLAction
