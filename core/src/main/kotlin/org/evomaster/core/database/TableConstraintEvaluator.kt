@@ -1,7 +1,7 @@
 package org.evomaster.core.database
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.NumberGene
+import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.dbconstraint.*
 import java.util.regex.Pattern

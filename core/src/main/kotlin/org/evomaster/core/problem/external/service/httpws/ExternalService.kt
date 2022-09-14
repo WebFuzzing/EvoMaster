@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.external.service.httpws
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import java.util.*
 
 /**
  * Represent the external service related information including
@@ -58,6 +59,18 @@ class ExternalService(
      */
     fun stopWireMockServer() {
         wireMockServer.stop()
+    }
+
+    /**
+     * Will remove the stub mapping related to the given id
+     */
+    fun removeStub(stubId: UUID) : Boolean {
+        val stubMapping = wireMockServer.getStubMapping(stubId)
+        if (stubMapping.isPresent) {
+            wireMockServer.removeStubMapping(stubMapping.item)
+            return true
+        }
+        return false
     }
 
 }

@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.BigDecimalGene
+import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

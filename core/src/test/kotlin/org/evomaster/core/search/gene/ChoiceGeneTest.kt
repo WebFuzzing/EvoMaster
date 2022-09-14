@@ -1,5 +1,8 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.ChoiceGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -11,7 +14,8 @@ class ChoiceGeneTest {
     @Test
     fun testOneElement() {
         ChoiceGene("choice",listOf(
-                IntegerGene("a",0,10)))
+                IntegerGene("a",0,10)
+        ))
     }
 
     @Test
@@ -40,7 +44,8 @@ class ChoiceGeneTest {
     @Test
     fun testRadomize() {
         val gene = ChoiceGene("choice",listOf(
-                IntegerGene("a",0,10)))
+                IntegerGene("a",0,10)
+        ))
         gene.doInitialize(rand)
         (gene.getViewOfChildren()[0] as IntegerGene).value = 0
         assertEquals("0", gene.getValueAsPrintableString())
@@ -50,7 +55,8 @@ class ChoiceGeneTest {
     fun testRadomizeTwoChoices() {
         val gene = ChoiceGene("choice",listOf(
                 IntegerGene("a",0,10),
-                StringGene("b","foo")))
+                StringGene("b","foo")
+        ))
         gene.doInitialize(rand)
         repeat (100) {
             gene.randomize(rand,true)

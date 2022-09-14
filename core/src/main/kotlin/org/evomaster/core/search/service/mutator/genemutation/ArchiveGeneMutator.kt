@@ -7,6 +7,9 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.Impact
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
@@ -291,8 +294,8 @@ class ArchiveGeneMutator{
      * @param additionalGeneMutationInfo contains addtional info for applying archive-based gene mutation, e.g., impact, history of the gene
      */
     fun mutateStringGene(
-            gene: StringGene, targets: Set<Int>,
-            allGenes : List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo){
+        gene: StringGene, targets: Set<Int>,
+        allGenes : List<Gene>, selectionStrategy: SubsetGeneMutationSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo){
         var employBinding = true
         if (additionalGeneMutationInfo.impact == null){
             val ds = gene.standardSpecializationMutation(
@@ -322,9 +325,13 @@ class ArchiveGeneMutator{
                 if (specializationGene == null){
                     gene.selectedSpecialization = randomness.nextInt(0, gene.specializationGenes.size - 1)
                 }else {
-                    val selected = selectSpec(gene, impact, targets)
+                    var selected = selectSpec(gene, impact, targets)
                     val currentImpact = impact.getSpecializationImpacts().getOrNull(gene.selectedSpecialization)
-                    if (selected == gene.selectedSpecialization || currentImpact?.recentImprovement() == true){
+
+                    if(selected == gene.selectedSpecialization && !specializationGene.isMutable()){
+                        selected = (selected + 1) % gene.specializationGenes.size
+                        gene.selectedSpecialization = selected
+                    } else if (selected == gene.selectedSpecialization || currentImpact?.recentImprovement() == true){
                         specializationGene.standardMutation(
                                 randomness, apc, mwc,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
                         )

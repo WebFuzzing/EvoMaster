@@ -7,7 +7,12 @@ import org.evomaster.core.problem.graphql.builder.GraphQLActionBuilder
 import org.evomaster.core.problem.graphql.PetClinicCheckMain
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.*
@@ -256,7 +261,7 @@ internal class GeneUtilsTest {
     fun testRepairInPetclinic() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText()
+        val json = PetClinicCheckMain::class.java.getResource("/graphql/online/PetsClinic.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster)
         val pettypes = actionCluster.get("pettypes") as GraphQLAction
@@ -313,7 +318,7 @@ internal class GeneUtilsTest {
     @Test
     fun testCopyFields() {
 
-        val obj = ObjectGene("Obj1",  listOf(StringGene("a", "hello"),StringGene("b", "hihi")))
+        val obj = ObjectGene("Obj1",  listOf(StringGene("a", "hello"), StringGene("b", "hihi")))
 
         val objBase = ObjectGene("Obj1", listOf(StringGene("a", "hello")))
 

@@ -4,6 +4,8 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.httpws.ExternalService
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -69,7 +71,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         //run the test, one action at a time
         var indexOfAction = 0
 
-        callsLoop@
         for (call in individual.getResourceCalls()) {
 
             val result = doDbCalls(
@@ -83,9 +84,17 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
             var terminated = false
 
-            for (a in call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>()){
-                // TODO: Handle ExternalServiceAction
-                val externalServiceAction = a.getExternalServiceActions()
+            call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>().forEach { a ->
+                // Note: [indexOfAction] is used to register the action in RemoteController
+                //  to map it to the ActionDto.
+
+                val externalServiceActions = a.getExternalServiceActions()
+
+                externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach {
+                    // TODO: Handling WireMock for ExternalServiceActions should be generalised
+                    //  to facilitate other cases such as RPC and GraphQL
+                    externalServiceHandler.handleHttpExternalServiceAction(it)
+                }
 
                 val restCallAction = a.getMainAction()
 
@@ -109,8 +118,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 }
                 indexOfAction++
 
-                if (terminated)
-                    break@callsLoop
             }
 
 //            for (a in call.seeActions(ActionFilter.NO_SQL)){
@@ -137,7 +144,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 //                indexOfAction++
 //            }
 
-
+            if (terminated)
+                break
         }
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()

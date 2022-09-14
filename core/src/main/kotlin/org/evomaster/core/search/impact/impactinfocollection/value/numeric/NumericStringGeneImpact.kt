@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.numeric
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.NumericStringGene
+import org.evomaster.core.search.gene.string.NumericStringGene
 import org.evomaster.core.search.impact.impactinfocollection.*
 
 

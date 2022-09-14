@@ -54,9 +54,9 @@ data class AdditionalGeneMutationInfo (
                 selection,
                 impact, geneReference, archiveGeneSelector, archiveGeneMutator, evi, targets, rootGene = rootGene, localId = localId,
                 effectiveHistory = effectiveHistory.mapNotNull {
-                   it.innerGene().find { g-> g.possiblySame(gene) } }.toMutableList(),
-                history = history.filter { it.first.innerGene().any { g-> g.possiblySame(gene) }}.map {
-                    it.first.innerGene().find { g-> g.possiblySame(gene) }!! to it.second
+                   it.getViewOfChildren().find { g-> g.possiblySame(gene) } }.toMutableList(),
+                history = history.filter { it.first.getViewOfChildren().any { g-> g.possiblySame(gene) }}.map {
+                    it.first.getViewOfChildren().find { g-> g.possiblySame(gene) }!! to it.second
                 }.toMutableList()
         )
     }

@@ -225,4 +225,13 @@ class ExternalServiceHandler {
         return externalServiceRequests
     }
 
+    /**
+     * Will build the response stub on WireMock related to the [HttpExternalServiceAction]
+     * Existing stub will be removed and new will be added
+     */
+    fun handleHttpExternalServiceAction(httpExternalServiceAction: HttpExternalServiceAction) {
+        httpExternalServiceAction.removeStub()
+        httpExternalServiceAction.buildResponse()
+    }
+
 }

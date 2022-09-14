@@ -3,7 +3,10 @@ package org.evomaster.core.database.extract.mysql
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.BigDecimalGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

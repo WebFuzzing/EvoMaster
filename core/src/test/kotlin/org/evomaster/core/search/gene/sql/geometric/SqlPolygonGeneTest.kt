@@ -1,7 +1,7 @@
 package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.search.gene.FloatGene
+import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach

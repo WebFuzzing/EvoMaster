@@ -3,12 +3,13 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -16,16 +17,16 @@ import org.slf4j.LoggerFactory
  * Bit strings are strings of 1's and 0's.
  */
 class SqlBitStringGene(
-        /**
+    /**
          * The name of this gene
          */
         name: String,
 
-        val minSize: Int = 0,
+    val minSize: Int = 0,
 
-        val maxSize: Int = ArrayGene.MAX_SIZE,
+    val maxSize: Int = ArrayGene.MAX_SIZE,
 
-        private val booleanArrayGene: ArrayGene<BooleanGene> = ArrayGene(name, template = BooleanGene(name), minSize = minSize, maxSize = maxSize)
+    private val booleanArrayGene: ArrayGene<BooleanGene> = ArrayGene(name, template = BooleanGene(name), minSize = minSize, maxSize = maxSize)
 
 ) :  CompositeFixedGene(name, mutableListOf( booleanArrayGene)) {
 
@@ -45,10 +46,6 @@ class SqlBitStringGene(
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         booleanArrayGene.randomize(randomness, tryToForceNewValue)
-    }
-
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-       return listOf(booleanArrayGene)
     }
 
 
@@ -76,9 +73,7 @@ class SqlBitStringGene(
         return booleanArrayGene.containsSameValueAs(other.booleanArrayGene)
     }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(booleanArrayGene)
-    }
+
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlBitStringGene) {
@@ -92,17 +87,13 @@ class SqlBitStringGene(
 
     override fun copyContent() = SqlBitStringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copy() as ArrayGene<BooleanGene>)
 
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true)
-        return true
+        return false
     }
-
 
 }

@@ -4,11 +4,13 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -16,18 +18,18 @@ import org.slf4j.LoggerFactory
  * Binary strings are strings of 1's and 0's.
  */
 class SqlBinaryStringGene(
-        /**
+    /**
          * The name of this gene
          */
         name: String,
 
-        val minSize: Int = 0,
+    val minSize: Int = 0,
 
-        val maxSize: Int = ArrayGene.MAX_SIZE,
+    val maxSize: Int = ArrayGene.MAX_SIZE,
 
-        private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize),
+    private val binaryArrayGene: ArrayGene<IntegerGene> = ArrayGene(name, template = IntegerGene(name, min = 0, max = 255), minSize = minSize, maxSize = maxSize),
 
-        val databaseType: DatabaseType = DatabaseType.POSTGRES
+    val databaseType: DatabaseType = DatabaseType.POSTGRES
 
 ) :  CompositeFixedGene(name, mutableListOf( binaryArrayGene)) {
 
@@ -46,7 +48,7 @@ class SqlBinaryStringGene(
         binaryArrayGene.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
+    override fun mutablePhenotypeChildren(): List<Gene> {
         return listOf(binaryArrayGene)
     }
 
@@ -80,9 +82,7 @@ class SqlBinaryStringGene(
         return binaryArrayGene.containsSameValueAs(other.binaryArrayGene)
     }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(binaryArrayGene)
-    }
+
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlBinaryStringGene) {
@@ -98,15 +98,13 @@ class SqlBinaryStringGene(
             binaryArrayGene.copy() as ArrayGene<IntegerGene>,
             databaseType=databaseType)
 
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true)
-        return true
+        return false
     }
+
 }

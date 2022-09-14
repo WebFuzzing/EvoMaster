@@ -1,7 +1,7 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
-import org.evomaster.core.output.service.WebTestCaseWriter
+import org.evomaster.core.output.service.ApiTestCaseWriter
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.httpws.service.auth.CookieLogin
@@ -34,7 +34,7 @@ object CookieWriter {
                              ind: EvaluatedIndividual<*>,
                              lines: Lines,
                              baseUrlOfSut: String,
-                             testCaseWriter: WebTestCaseWriter
+                             testCaseWriter: ApiTestCaseWriter
     ) {
 
         val cookiesInfo =  getCookieLoginAuth(ind.individual)

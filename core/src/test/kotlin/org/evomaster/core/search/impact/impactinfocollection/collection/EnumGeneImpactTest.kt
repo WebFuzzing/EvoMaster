@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.collection
 
-import org.evomaster.core.search.gene.EnumGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
