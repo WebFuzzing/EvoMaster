@@ -672,6 +672,9 @@ class FitnessValue(
         if(accessedExternalServiceRequests.containsKey(actionIndex)){
             throw IllegalArgumentException("Action index $actionIndex is already handled")
         }
+        if(urls.isEmpty()){
+            throw IllegalArgumentException("No URLs as input")
+        }
         accessedExternalServiceRequests[actionIndex] = urls
     }
 }
