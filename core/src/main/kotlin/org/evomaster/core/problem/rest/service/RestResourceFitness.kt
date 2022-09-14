@@ -87,12 +87,13 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>().forEach { a ->
                 // Note: [indexOfAction] is used to register the action in RemoteController
                 //  to map it to the ActionDto.
-                val httpExternalServiceAction = a.getExternalServiceActions()
 
-                if (httpExternalServiceAction is HttpExternalServiceAction) {
-                    // TODO: Handeling WireMock for ExternalServiceActions should be generalised
+                val externalServiceActions = a.getExternalServiceActions()
+
+                externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach {
+                    // TODO: Handling WireMock for ExternalServiceActions should be generalised
                     //  to facilitate other cases such as RPC and GraphQL
-                    externalServiceHandler.handleHttpExternalServiceAction(httpExternalServiceAction)
+                    externalServiceHandler.handleHttpExternalServiceAction(it)
                 }
 
                 val restCallAction = a.getMainAction()

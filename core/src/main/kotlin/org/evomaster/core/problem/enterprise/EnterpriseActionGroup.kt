@@ -32,11 +32,21 @@ class EnterpriseActionGroup(
 
      constructor(action: Action, localId: String = NONE_ACTION_COMPONENT_ID): this(mutableListOf(action), action.javaClass, localId = localId)
 
+    /**
+     * @return the main action toward the SUT. the can be only 1 in this group
+     */
     fun getMainAction() = children[groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.MAIN)]
         as Action
 
-    fun getExternalServiceActions() = children[groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.EXTERNAL_SERVICES)]
-            as Action
+
+    /**
+     * @return all the actions related to setup the main actions.
+     * This might be empty.
+     */
+    fun getExternalServiceActions() : List<ApiExternalServiceAction>{
+        return groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES) as List<ApiExternalServiceAction>
+    }
+
 
     override fun copyContent(): EnterpriseActionGroup {
 
