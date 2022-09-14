@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.value
 
-import org.evomaster.core.search.gene.DisruptiveGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.*
 
@@ -23,7 +23,7 @@ class DisruptiveGeneImpact (
             geneImpact
     )
 
-    constructor(id : String, gene: DisruptiveGene<*>) : this(id, geneImpact = ImpactUtils.createGeneImpact(gene.gene, id))
+    constructor(id : String, gene: CustomMutationRateGene<*>) : this(id, geneImpact = ImpactUtils.createGeneImpact(gene.gene, id))
 
 
     override fun copy(): DisruptiveGeneImpact {
@@ -40,21 +40,21 @@ class DisruptiveGeneImpact (
                 geneImpact = geneImpact.clone())
     }
 
-    override fun validate(gene: Gene): Boolean = gene is DisruptiveGene<*>
+    override fun validate(gene: Gene): Boolean = gene is CustomMutationRateGene<*>
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
-        if (gc.current  !is DisruptiveGene<*>){
+        if (gc.current  !is CustomMutationRateGene<*>){
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be DisruptiveGene")
         }
-        if (gc.previous != null && gc.previous !is DisruptiveGene<*>){
+        if (gc.previous != null && gc.previous !is CustomMutationRateGene<*>){
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be DisruptiveGene")
         }
 
         val mutatedGeneWithContext = MutatedGeneWithContext(
-                previous = if (gc.previous==null) null else (gc.previous as DisruptiveGene<*>).gene,
+                previous = if (gc.previous==null) null else (gc.previous as CustomMutationRateGene<*>).gene,
                 current = gc.current.gene,
                 numOfMutatedGene = gc.numOfMutatedGene
         )
@@ -72,6 +72,6 @@ class DisruptiveGeneImpact (
 
     override fun syncImpact(previous: Gene?, current: Gene) {
         check(previous,current)
-        geneImpact.syncImpact((previous as DisruptiveGene<*>).gene, (current as DisruptiveGene<*>).gene)
+        geneImpact.syncImpact((previous as CustomMutationRateGene<*>).gene, (current as CustomMutationRateGene<*>).gene)
     }
 }

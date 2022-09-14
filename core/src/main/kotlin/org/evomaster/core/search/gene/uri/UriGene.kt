@@ -2,10 +2,12 @@ package org.evomaster.core.search.gene.uri
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.optional.ChoiceGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
 
 /**
@@ -55,19 +57,6 @@ class UriGene(name: String,
         gene.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(gene)
-    }
-
-    override fun innerGene(): List<Gene> {
-        return listOf(gene)
-    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -97,4 +86,14 @@ class UriGene(name: String,
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return gene.bindValueBasedOn(gene)
     }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
+
 }

@@ -9,7 +9,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.matchproblem.*
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness

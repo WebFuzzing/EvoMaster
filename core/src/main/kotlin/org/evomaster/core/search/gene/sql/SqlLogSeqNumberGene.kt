@@ -3,11 +3,12 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.pow
@@ -22,12 +23,12 @@ import kotlin.math.pow
  *  Max value is FFFFFFFF/FFFFFFFF
  */
 class SqlLogSeqNumberGene(
-        /**
+    /**
          * The name of this gene
          */
         name: String,
 
-        /**
+    /**
          * The left part of 32 bits
          */
         val leftPart: LongGene = LongGene("leftPart",
@@ -37,7 +38,7 @@ class SqlLogSeqNumberGene(
                 minInclusive = true,
                 maxInclusive = true),
 
-        /**
+    /**
          * The right part of 32 bits
          */
         val rightPart: LongGene = LongGene("rightPart",
@@ -47,7 +48,7 @@ class SqlLogSeqNumberGene(
                 minInclusive = true,
                 maxInclusive = true),
 
-        ) : CompositeFixedGene(name, mutableListOf(leftPart, rightPart)) {
+    ) : CompositeFixedGene(name, mutableListOf(leftPart, rightPart)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlLogSeqNumberGene::class.java)
@@ -96,26 +97,11 @@ class SqlLogSeqNumberGene(
         genes[index].randomize(randomness, tryToForceNewValue)
     }
 
-    /**
-     * Forbid explicitly individual mutation
-     * of these genes
-     */
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf()
-    }
-
-
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         return String.format(
                 "\"%s/%s\"",
@@ -124,10 +110,6 @@ class SqlLogSeqNumberGene(
         )
     }
 
-
-
-    override fun innerGene(): List<Gene> =
-            listOf(leftPart, rightPart)
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlLogSeqNumberGene) {
@@ -142,16 +124,14 @@ class SqlLogSeqNumberGene(
     }
 
 
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true)
-        return true
+        return false
     }
+
 
 }

@@ -9,7 +9,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
