@@ -345,5 +345,4 @@ abstract class StructuralElement (
         return false
     }
 
-    abstract fun addChildrenToGroup(position: Int, children: HttpExternalServiceAction, groupId: String)
 }
