@@ -101,7 +101,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 //TODO handling of inputVariables
                 registerNewAction(restCallAction, indexOfAction)
 
-                var ok: Boolean = false
+                val ok: Boolean
 
                 if (restCallAction is RestCallAction) {
                     ok = handleRestCall(restCallAction, actionResults, chainState, cookies, tokens)
@@ -109,10 +109,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
                     call.getResourceNode().confirmFailureCreationByPost(call, restCallAction, restActionResult)
                     restActionResult.stopping = !ok
+                } else {
+                    throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
                 }
-//                else {
-//                    throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
-//                }
 
                 if (!ok) {
                     terminated = true
