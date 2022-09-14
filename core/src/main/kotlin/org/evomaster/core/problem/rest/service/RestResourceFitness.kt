@@ -123,12 +123,14 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
                 }
 
-                val requestedExternalServiceUrls = externalServiceHandler.getRequestedExternalServiceUrls()
-                if(requestedExternalServiceUrls.isNotEmpty()) {
-                    fv.registerExternalServiceRequest(
-                        indexOfAction,
-                        externalServiceHandler.getRequestedExternalServiceUrls()
-                    )
+                externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach {
+                    val requestedExternalServiceUrls = externalServiceHandler.getRequestedExternalServiceUrls()
+                    if(requestedExternalServiceUrls.isNotEmpty()) {
+                        fv.registerExternalServiceRequest(
+                            indexOfAction,
+                            externalServiceHandler.getRequestedExternalServiceUrls()
+                        )
+                    }
                 }
 
                 if (!ok) {

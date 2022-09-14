@@ -63,4 +63,11 @@ abstract class ApiExternalServiceAction(
     fun confirmNotUsed() {
         this.used = false
     }
+
+    /**
+     * Disable the action using active status
+     */
+    fun disable() {
+        this.active = false
+    }
 }
