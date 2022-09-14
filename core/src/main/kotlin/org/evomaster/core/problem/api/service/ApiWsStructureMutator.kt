@@ -33,11 +33,12 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     }
 
 
-//    @Deprecated("External Actions will be moved into EnterpriseActionGroup")
     private fun <T : ApiWsIndividual> addExternalServiceActions(
         individual: EvaluatedIndividual<*>,
-        mutatedGenes: MutatedGeneSpecification?,
-        sampler: ApiWsSampler<T>
+        /**
+         * TODO add why
+         */
+        mutatedGenes: MutatedGeneSpecification?
     ) {
         // TODO: Incomplete code, under development
 
@@ -45,40 +46,61 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             return
         }
 
-        if (sampler is ResourceSampler) {
-            val ind = individual.individual as? T
-                ?: throw IllegalArgumentException("Invalid individual type")
+        val ind = individual.individual as? T
+            ?: throw IllegalArgumentException("Invalid individual type")
 
-            // TODO: Under review
-//            val fw = individual.fitness.getAccessedExternalServiceRequests()
+        val esr = individual.fitness.getViewAccessedExternalServiceRequests()
+        if(esr.isEmpty()){
+            //nothing to do
+            return
+        }
 
-            val actions = mutableListOf<HttpExternalServiceAction>().plus(
-                sampler.getExternalService().getExternalServiceActions()
-            )
 
-            ind.seeMainExecutableActions().forEach { action ->
-                if (actions.isNotEmpty()) {
-                    val enterpriseActionGroup = action.parent as EnterpriseActionGroup
-                    enterpriseActionGroup.addChildrenToGroup(0, actions, GroupsOfChildren.EXTERNAL_SERVICES)
-                }
+        ind.seeMainExecutableActions().forEachIndexed { index, action ->
+
+            val parent = action.parent
+            if(parent !is EnterpriseActionGroup){
+                //TODO this should not really happen
+                val msg = "Action is not inside an EnterpriseActionGroup"
+                log.error(msg)
+                throw RuntimeException(msg)
             }
 
-            // all actions should have local ids
-            Lazy.assert {
-                actions.all { it.hasLocalId() }
-            }
+            if(esr.containsKey(index)){
 
-            // TODO: Reset of served requests should be done at this phase
-            //  but to the exact ExternalService
+                val urls = esr[index]
+                // TODO add all as action, but not if already there
+                // TODO if some actions are no longer used, disable
+
+            } else {
+                /*
+                    nothing was called so anything there from previous setups can be safely removed.
+                    however, "removing" could have some side-effects (TODO explains), so we just mark them
+                    as disabled
+                */
+                parent.groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+                    .forEach {
+                        // TODO disable
+                    }
+            }
+        }
+
+        // all actions should have local ids
+        Lazy.assert {
+            ind.seeAllActions().all { it.hasLocalId() }
+        }
+
+        // TODO: Reset of served requests should be done at this phase
+        //  but to the exact ExternalService
 //            sampler.getExternalService().resetServedRequests()
 
-            if (log.isTraceEnabled)
-                log.trace("{} existingExternalServiceData are added", actions)
+        if (log.isTraceEnabled)
+            log.trace("{} existingExternalServiceData are added")
 
-            // update impact based on added genes
-            if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
-                individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
-            }
+        // update impact based on added genes
+        //TODO update (maybe want to save all newly added actions to compute this...)
+        if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
         }
     }
 
@@ -88,7 +110,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         sampler: ApiWsSampler<T>
     ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
-        addExternalServiceActions(individual, mutatedGenes, sampler)
+        addExternalServiceActions(individual, mutatedGenes)
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(
@@ -102,6 +124,17 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val ind = individual.individual as? T
             ?: throw IllegalArgumentException("Invalid individual type")
+
+        /**
+         * This is done on an already evaluated individual from a PREVIOUS fitness evaluation.
+         * IF, in the previous evaluation it uses a DB and some SELECTs did not return data, THEN
+         * create new actions for setting up SQL data.
+         *
+         * So adding these new actions count as a sort of mutation operator, based on fitness feedback
+         * from a PREVIOUS evaluation.
+         * Recall, EXTREMELY IMPORTANT, once an individual is evaluated for fitness, we CANNOT change
+         * its phenotype (otherwise the fitness value would be meaningless).
+         */
 
         val fw = individual.fitness.getViewOfAggregatedFailedWhere()
             //TODO likely to remove/change once we ll support VIEWs

@@ -110,7 +110,8 @@ class ExternalServiceHandler {
     }
 
     /**
-     * Reset all the served requests
+     * Reset all the served requests.
+     * The WireMock instances will still be up and running
      */
     fun resetServedRequests() {
         externalServices.forEach { it.value.reset() }
@@ -121,7 +122,9 @@ class ExternalServiceHandler {
      * as ExternalServiceAction. It ignores if the same absolute URL is added
      * already.
      *
-     * This is not perfect yet, have to explore more scenarios and perfect the
+     * This gets reset each time a new main action is evaluated.
+     *
+     * TODO This is not perfect yet, have to explore more scenarios and perfect the
      * implementation.
      */
     fun getExternalServiceActions(): MutableList<HttpExternalServiceAction> {
@@ -147,6 +150,13 @@ class ExternalServiceHandler {
         }
         return actions
     }
+
+    fun getRequestedExternalServiceUrls() : List<String>{
+
+        // TODO
+        return listOf()
+    }
+
 
     /**
      * Default IP address will be a randomly generated IP

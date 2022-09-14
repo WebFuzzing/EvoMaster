@@ -731,7 +731,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             dto.additionalInfoList
         )
 
-        handleExternalServiceInfo(dto.additionalInfoList)
+        handleExternalServiceInfo(fv, dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
             expandIndividual(individual, dto.additionalInfoList, actionResults)
@@ -746,9 +746,33 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         return dto
     }
 
-    private fun handleExternalServiceInfo(infoDto: List<AdditionalInfoDto>) {
-        infoDto.forEach { info ->
+    /**
+     * Based on info coming from SUT execution, register and start new WireMock instances.
+     */
+    private fun handleExternalServiceInfo(fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
+
+        /*
+            Note: this info here is based from what connections / hostname resolving done in the SUT,
+            via instrumentation.
+
+            However, what is actually called on an already up and running WM instance from a previous call is
+            done on WM directly, and it must be done at SUT call (as WM get reset there)
+         */
+
+        infoDto.forEachIndexed { index, info ->
             info.externalServices.forEach { es ->
+
+                /*
+                    The info here is coming from SUT instrumentation
+                 */
+
+                /*
+                    TODO: check, do we really want to start WireMock isntances right now after a fitness evaluation?
+                    We need to make sure then, if we do this, that a call in instrumented SUT with (now) and
+                    without (previous fitness evaluation) WM instances would result in same behavior.
+
+                    TODO: ie make sure that, if test is executed again now, the behavior is the same
+                 */
                 externalServiceHandler.addExternalService(
                     HttpExternalServiceInfo(
                         es.protocol,

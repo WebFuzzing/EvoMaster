@@ -90,7 +90,9 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
                 searchTimeController.newIndividualsWithSqlFailedWhere()
             }
         } else if (configuration.extractSqlExecutionInfo) {
-
+            /*
+                this code here is done in previous block as well
+             */
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
                 fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))

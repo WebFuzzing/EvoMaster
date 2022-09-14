@@ -88,6 +88,16 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 // Note: [indexOfAction] is used to register the action in RemoteController
                 //  to map it to the ActionDto.
 
+                /*
+                    Always need to reset WireMock.
+                    Assume there no is External Action here. Still, the SUT could make a call to an external service
+                    because new code is reached (eg due mutation of some genes).
+                    We do not want such new call to re-use a mocking from a previous action which were left on.
+                    So 2 options: (1) always reset before calling SUT, or (2) always reset after call in which external
+                    setups were used.
+                 */
+                externalServiceHandler.resetServedRequests()
+
                 val externalServiceActions = a.getExternalServiceActions()
 
                 externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach {
@@ -113,36 +123,13 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
                 }
 
+                fv.registerExternalServiceRequest(indexOfAction, externalServiceHandler.getRequestedExternalServiceUrls())
+
                 if (!ok) {
                     terminated = true
                 }
                 indexOfAction++
-
             }
-
-//            for (a in call.seeActions(ActionFilter.NO_SQL)){
-
-            //TODO handling of inputVariables
-//                registerNewAction(a, indexOfAction)
-//
-//                val ok: Boolean
-//
-//                if (a is RestCallAction) {
-//                    ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
-//                    // update creation of resources regarding response status
-//                    val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
-//                    call.getResourceNode().confirmFailureCreationByPost(call, a, restActionResult)
-//                    restActionResult.stopping = !ok
-//                } else {
-//                    throw IllegalStateException("Cannot handle: ${a.javaClass}")
-//                }
-//
-//                if (!ok) {
-//                    terminated = true
-//                    break
-//                }
-//                indexOfAction++
-//            }
 
             if (terminated)
                 break
@@ -165,8 +152,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         if (config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
-        if (actionResults.size > individual.seeActions(ActionFilter.ALL).size)
-            log.warn("initialize invalid evaluated individual")
+        if (actionResults.size > individual.seeActions(ActionFilter.NO_EXTERNAL_SERVICE).size)
+            log.warn("Mismatch in action results: ${actionResults.size} > ${individual.seeActions(ActionFilter.NO_EXTERNAL_SERVICE).size}")
 
         return EvaluatedIndividual(
             fv,
