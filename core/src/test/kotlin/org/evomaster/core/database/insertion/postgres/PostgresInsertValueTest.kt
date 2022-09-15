@@ -10,6 +10,7 @@ import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
+import java.util.*
 
 class PostgresInsertValueTest {
 
@@ -21,10 +22,10 @@ class PostgresInsertValueTest {
         private val POSTGRES_VERSION: String = "14"
 
         private val postgres = KGenericContainer("postgres:$POSTGRES_VERSION")
-                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
                 .withExposedPorts(5432)
                 //https://www.postgresql.org/docs/current/auth-trust.html
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
+                .withTmpFs(Collections.singletonMap("/var/lib/postgresql/data", "rw"))
 
         @BeforeAll
         @JvmStatic
