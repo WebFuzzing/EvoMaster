@@ -41,7 +41,7 @@ class PostgresInsertValueTest {
              * The following issue describes how to avoid this by using a LogMessageWaitStrategy
              * https://github.com/testcontainers/testcontainers-java/issues/317
              */
-            postgres.waitingFor(LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s").withTimes(2))
+            postgres.waitingFor(LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s").withTimes(5))
 
             connection = DriverManager.getConnection(url, "postgres", "")
         }
