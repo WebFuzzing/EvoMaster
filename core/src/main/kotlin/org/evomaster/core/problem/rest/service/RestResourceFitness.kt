@@ -71,6 +71,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         //run the test, one action at a time
         var indexOfAction = 0
 
+        RCallsLoop@
         for (call in individual.getResourceCalls()) {
 
             val result = doDbCalls(
@@ -84,7 +85,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
             var terminated = false
 
-            call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>().forEach { a ->
+            for(a in call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>()){
                 // Note: [indexOfAction] is used to register the action in RemoteController
                 //  to map it to the ActionDto.
 
@@ -137,11 +138,14 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 if (!ok) {
                     terminated = true
                 }
+
+                if (terminated)
+                    break@RCallsLoop
+
                 indexOfAction++
             }
 
-            if (terminated)
-                break
+
         }
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()
