@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.httpws.service
 
-import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
@@ -9,8 +8,8 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
@@ -33,86 +32,92 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
     }
 
-    @Inject
-    protected lateinit var externalServiceHandler: ExternalServiceHandler
+//    @Inject
+//    protected lateinit var externalServiceHandler: ExternalServiceHandler
 
 
-    private fun addExternalServiceActions(
+    private fun <T : ApiWsIndividual> addExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         /**
          * TODO add why
          */
-        mutatedGenes: MutatedGeneSpecification?
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
     ) {
 
         if (config.externalServiceIPSelectionStrategy == EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             return
         }
 
-        val ind = individual.individual as? ApiWsIndividual
-            ?: throw IllegalArgumentException("Invalid individual type")
+        if (sampler is ResourceSampler) {
+            val ind = individual.individual as? ApiWsIndividual
+                ?: throw IllegalArgumentException("Invalid individual type")
 
-        val esr = individual.fitness.getViewAccessedExternalServiceRequests()
-        if (esr.isEmpty()) {
-            //nothing to do
-            return
-        }
-
-
-        ind.seeMainExecutableActions().forEachIndexed { index, action ->
-
-            val parent = action.parent
-            if (parent !is EnterpriseActionGroup) {
-                //TODO this should not really happen
-                val msg = "Action is not inside an EnterpriseActionGroup"
-                log.error(msg)
-                throw RuntimeException(msg)
+            // There is no chance to get and action registered according to the current
+            // logic
+            val esr = individual.fitness.getViewAccessedExternalServiceRequests()
+            if (esr.isEmpty()) {
+                //nothing to do
+                return
             }
 
-            if (esr.containsKey(index)) {
+            ind.seeMainExecutableActions().forEachIndexed { index, action ->
 
-                val urls = esr[index]
-                // TODO add all as action, but not if already there
-                // TODO if some actions are no longer used, disable
-                if (urls!!.isNotEmpty()) {
-                    urls.forEach { u ->
-                        // If the wasMatched is false, which indicate there is no stub for the request
-                        // Not sure whether that can be used inside the logic
-                        parent.addChildrenToGroup(
-                            externalServiceHandler.getExternalServiceActions().filter { it.request.absoluteURL == u },
-                            GroupsOfChildren.EXTERNAL_SERVICES
-                        )
-                    }
+                val parent = action.parent
+                if (parent !is EnterpriseActionGroup) {
+                    //TODO this should not really happen
+                    val msg = "Action is not inside an EnterpriseActionGroup"
+                    log.error(msg)
+                    throw RuntimeException(msg)
                 }
 
-            } else {
-                /*
-                    nothing was called so anything there from previous setups can be safely removed.
-                    however, "removing" could have some side-effects (TODO explains), so we just mark them
-                    as disabled
-                */
-                parent.groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
-                    .forEach {
-                        val httpExternalServiceAction = it as HttpExternalServiceAction
-                        httpExternalServiceAction.disable()
+                if (esr.containsKey(index)) {
+
+                    val urls = esr[index]
+                    // TODO add all as action, but not if already there
+                    // TODO if some actions are no longer used, disable
+                    if (urls!!.isNotEmpty()) {
+                        urls.forEach { u ->
+                            // If the wasMatched is false, which indicate there is no stub for the request
+                            // Not sure whether that can be used inside the logic
+                            val actions = sampler.getExternalService().getExternalServiceActions()
+                                .filter { it.request.absoluteURL == u }
+                            parent.addChildrenToGroup(
+                                actions,
+                                GroupsOfChildren.EXTERNAL_SERVICES
+                            )
+                        }
                     }
+
+                } else {
+                    /*
+                        nothing was called so anything there from previous setups can be safely removed.
+                        however, "removing" could have some side-effects (TODO explains), so we just mark them
+                        as disabled
+                    */
+                    parent.groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+                        .forEach {
+                            val httpExternalServiceAction = it as HttpExternalServiceAction
+                            httpExternalServiceAction.disable()
+                        }
+                }
             }
-        }
 
-        // all actions should have local ids
-        Lazy.assert {
-            ind.seeAllActions().all { it.hasLocalId() }
-        }
+            // all actions should have local ids
+            Lazy.assert {
+                ind.seeAllActions().all { it.hasLocalId() }
+            }
 
 
-        if (log.isTraceEnabled)
-            log.trace("{} existingExternalServiceData are added")
+            if (log.isTraceEnabled)
+                log.trace("{} existingExternalServiceData are added")
 
-        // update impact based on added genes
-        //TODO update (maybe want to save all newly added actions to compute this...)
+            // update impact based on added genes
+            //TODO update (maybe want to save all newly added actions to compute this...)
 //        if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
 //            individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
 //        }
+        }
     }
 
     fun <T : ApiWsIndividual> addInitializingActions(
@@ -121,7 +126,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         sampler: ApiWsSampler<T>
     ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
-        addExternalServiceActions(individual, mutatedGenes)
+        addExternalServiceActions(individual, mutatedGenes, sampler)
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(
