@@ -103,6 +103,11 @@ class HttpExternalServiceAction(
      *  in future.
      */
     fun buildResponse() {
+        // If the action is active only modify the response
+        if (!active) {
+            return
+        }
+
         if (externalService.getWireMockServer().findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.url)))
                 .isEmpty()
         ) {

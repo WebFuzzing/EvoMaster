@@ -65,9 +65,9 @@ abstract class ApiExternalServiceAction(
     }
 
     /**
-     * Disable the action using active status
+     * make the action active explicitly based on [active]
      */
-    fun disable() {
-        this.active = false
+    fun activate() {
+        this.active = true
     }
 }

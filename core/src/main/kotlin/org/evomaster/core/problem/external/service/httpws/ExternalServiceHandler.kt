@@ -143,7 +143,6 @@ class ExternalServiceHandler {
                         counter++
                     )
                     action.doInitialize(randomness)
-                    action.buildResponse()
                     actions.add(action)
                 }
 
@@ -156,10 +155,10 @@ class ExternalServiceHandler {
      * Returns only the served requests related to the specific WireMock
      */
     fun getRequestedExternalServiceUrls() : List<String> {
-        val output: List<String> = mutableListOf()
+        val output: MutableList<String> = mutableListOf()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
-                output.plus(it.absoluteURL)
+                output.add(it.absoluteURL)
             }
         }
         return output

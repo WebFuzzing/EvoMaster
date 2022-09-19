@@ -129,7 +129,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 if(requestedExternalServiceUrls.isNotEmpty()) {
                     fv.registerExternalServiceRequest(
                         indexOfAction,
-                        externalServiceHandler.getRequestedExternalServiceUrls()
+                        requestedExternalServiceUrls
                     )
                 }
 

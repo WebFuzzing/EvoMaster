@@ -98,7 +98,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     parent.groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
                         .forEach {
                             val httpExternalServiceAction = it as HttpExternalServiceAction
-                            httpExternalServiceAction.disable()
+                            httpExternalServiceAction.resetActive()
                         }
                 }
             }
