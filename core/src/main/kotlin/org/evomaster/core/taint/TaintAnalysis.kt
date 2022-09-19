@@ -98,7 +98,7 @@ object TaintAnalysis {
                 but for now we just keep a very basic, ad-hoc solution
              */
 
-            if(s.stringSpecialization != StringSpecialization.REGEX || genes.size != 2){
+            if(!s.stringSpecialization.isRegex || genes.size != 2){
                 continue
             }
 
@@ -126,11 +126,11 @@ object TaintAnalysis {
             try {
                 genes[0].addSpecializations(
                         genes[0].getValueAsRawString(),
-                        listOf(StringSpecializationInfo(StringSpecialization.REGEX, choices[0])),
+                        listOf(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, choices[0])),
                         randomness)
                 genes[1].addSpecializations(
                         genes[1].getValueAsRawString(),
-                        listOf(StringSpecializationInfo(StringSpecialization.REGEX, choices[1])),
+                        listOf(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, choices[1])),
                         randomness)
             }catch (e: Exception){
                 LoggingUtil.uniqueWarn(log, "Cannot handle partial match on regex: ${s.value}")
