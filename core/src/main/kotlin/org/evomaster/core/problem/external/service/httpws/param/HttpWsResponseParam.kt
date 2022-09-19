@@ -15,7 +15,7 @@ class HttpWsResponseParam (
     /**
      * Response content type, for now supports only JSON
      */
-    responseType: EnumGene<String> = EnumGene("responseType", listOf("JSON")),
+    responseType: EnumGene<String> = EnumGene("responseType", listOf("JSON", "XML")),
     response: OptionalGene = OptionalGene("response", ObjectGene("response", listOf()))
         ): ResponseParam("response", responseType, response, listOf(status)) {
 

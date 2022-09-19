@@ -51,7 +51,6 @@ class HttpExternalServiceAction(
     constructor(request: HttpExternalServiceRequest, template: String, externalService: ExternalService, id: Long, localId: String = NONE_ACTION_COMPONENT_ID) :
             this(request, buildResponse(template), externalService, id = id, localId = localId)
 
-
     /**
      * Holds the ID for the WireMock stub
      */
@@ -104,9 +103,9 @@ class HttpExternalServiceAction(
      */
     fun buildResponse() {
         // If the action is active only modify the response
-        if (!active) {
-            return
-        }
+//        if (!active) {
+//            return
+//        }
 
         if (externalService.getWireMockServer().findStubMappingsByMetadata(matchingJsonPath("$.url", containing(request.url)))
                 .isEmpty()

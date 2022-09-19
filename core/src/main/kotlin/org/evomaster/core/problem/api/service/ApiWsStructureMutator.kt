@@ -86,6 +86,12 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                                 actions,
                                 GroupsOfChildren.EXTERNAL_SERVICES
                             )
+
+                            // update impact based on added genes
+                            //TODO update (maybe want to save all newly added actions to compute this...)
+                            if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
+                                individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
+                            }
                         }
                     }
 
@@ -111,12 +117,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
             if (log.isTraceEnabled)
                 log.trace("{} existingExternalServiceData are added")
-
-            // update impact based on added genes
-            //TODO update (maybe want to save all newly added actions to compute this...)
-//        if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
-//            individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
-//        }
         }
     }
 
