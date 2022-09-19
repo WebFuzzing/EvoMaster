@@ -1252,28 +1252,80 @@
               },
               "isDeprecated": false,
               "deprecationReason": null
+            },
+            {
+              "name": "entryCollection",
+              "args": [
+                {
+                  "name": "skip",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  },
+                  "defaultValue": "0"
+                },
+                {
+                  "name": "limit",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  },
+                  "defaultValue": "100"
+                },
+                {
+                  "name": "preview",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "locale",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "where",
+                  "type": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "EntryFilter",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "order",
+                  "type": {
+                    "kind": "LIST",
+                    "name": null,
+                    "ofType": {
+                      "kind": "ENUM",
+                      "name": "EntryOrder",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "OBJECT",
+                "name": "EntryCollection",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
             }
           ],
           "inputFields": null,
           "interfaces": [],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "SCALAR",
-          "name": "String",
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "SCALAR",
-          "name": "Boolean",
-          "fields": null,
-          "inputFields": null,
-          "interfaces": null,
           "enumValues": null,
           "possibleTypes": null
         },
@@ -1297,8 +1349,33 @@
               "deprecationReason": null
             },
             {
-              "name": "title",
+              "name": "contentfulMetadata",
               "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "title",
+              "args": [
+                {
+                  "name": "locale",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
               "type": {
                 "kind": "SCALAR",
                 "name": "String",
@@ -1309,7 +1386,17 @@
             },
             {
               "name": "description",
-              "args": [],
+              "args": [
+                {
+                  "name": "locale",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
               "type": {
                 "kind": "SCALAR",
                 "name": "String",
@@ -1320,7 +1407,17 @@
             },
             {
               "name": "contentType",
-              "args": [],
+              "args": [
+                {
+                  "name": "locale",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
               "type": {
                 "kind": "SCALAR",
                 "name": "String",
@@ -1331,7 +1428,17 @@
             },
             {
               "name": "fileName",
-              "args": [],
+              "args": [
+                {
+                  "name": "locale",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
               "type": {
                 "kind": "SCALAR",
                 "name": "String",
@@ -1342,7 +1449,17 @@
             },
             {
               "name": "size",
-              "args": [],
+              "args": [
+                {
+                  "name": "locale",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
               "type": {
                 "kind": "SCALAR",
                 "name": "Int",
@@ -1362,6 +1479,15 @@
                     "ofType": null
                   },
                   "defaultValue": null
+                },
+                {
+                  "name": "locale",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
                 }
               ],
               "type": {
@@ -1374,7 +1500,17 @@
             },
             {
               "name": "width",
-              "args": [],
+              "args": [
+                {
+                  "name": "locale",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
               "type": {
                 "kind": "SCALAR",
                 "name": "Int",
@@ -1385,7 +1521,17 @@
             },
             {
               "name": "height",
-              "args": [],
+              "args": [
+                {
+                  "name": "locale",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
               "type": {
                 "kind": "SCALAR",
                 "name": "Int",
@@ -1515,6 +1661,15 @@
         },
         {
           "kind": "SCALAR",
+          "name": "String",
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "SCALAR",
           "name": "DateTime",
           "fields": null,
           "inputFields": null,
@@ -1528,6 +1683,67 @@
           "fields": null,
           "inputFields": null,
           "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "OBJECT",
+          "name": "ContentfulMetadata",
+          "fields": [
+            {
+              "name": "tags",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "ContentfulTag",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "OBJECT",
+          "name": "ContentfulTag",
+          "fields": [
+            {
+              "name": "id",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "name",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
           "enumValues": null,
           "possibleTypes": null
         },
@@ -1774,6 +1990,11 @@
             },
             {
               "name": "WEBP",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "AVIF",
               "isDeprecated": false,
               "deprecationReason": null
             }
@@ -2074,10 +2295,25 @@
               },
               "isDeprecated": false,
               "deprecationReason": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
             }
           ],
           "inputFields": null,
-          "interfaces": null,
+          "interfaces": [],
           "enumValues": null,
           "possibleTypes": [
             {
@@ -2131,6 +2367,15 @@
               "ofType": null
             }
           ]
+        },
+        {
+          "kind": "SCALAR",
+          "name": "Boolean",
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
         },
         {
           "kind": "OBJECT",
@@ -2219,6 +2464,21 @@
                 "ofType": {
                   "kind": "OBJECT",
                   "name": "Sys",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
                   "ofType": null
                 }
               },
@@ -2527,6 +2787,21 @@
                 "ofType": {
                   "kind": "OBJECT",
                   "name": "Sys",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
                   "ofType": null
                 }
               },
@@ -2895,6 +3170,21 @@
                 "ofType": {
                   "kind": "OBJECT",
                   "name": "Sys",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
                   "ofType": null
                 }
               },
@@ -3390,6 +3680,21 @@
               "deprecationReason": null
             },
             {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "linkedFrom",
               "args": [
                 {
@@ -3670,6 +3975,21 @@
                 "ofType": {
                   "kind": "OBJECT",
                   "name": "Sys",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
                   "ofType": null
                 }
               },
@@ -3980,6 +4300,21 @@
               "deprecationReason": null
             },
             {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "linkedFrom",
               "args": [
                 {
@@ -4261,6 +4596,21 @@
                 "ofType": {
                   "kind": "OBJECT",
                   "name": "Sys",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
                   "ofType": null
                 }
               },
@@ -4650,6 +5000,21 @@
               "deprecationReason": null
             },
             {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "linkedFrom",
               "args": [
                 {
@@ -4946,6 +5311,21 @@
                 "ofType": {
                   "kind": "OBJECT",
                   "name": "Sys",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
                   "ofType": null
                 }
               },
@@ -5325,6 +5705,21 @@
               "deprecationReason": null
             },
             {
+              "name": "contentfulMetadata",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ContentfulMetadata",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "linkedFrom",
               "args": [
                 {
@@ -5584,6 +5979,80 @@
           "possibleTypes": null
         },
         {
+          "kind": "OBJECT",
+          "name": "AssetCollection",
+          "fields": [
+            {
+              "name": "total",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "skip",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "limit",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "items",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Asset",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
           "kind": "INPUT_OBJECT",
           "name": "AssetFilter",
           "fields": null,
@@ -5593,6 +6062,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -6339,7 +6817,7 @@
               "name": "publishedAt",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "DateTime",
                 "ofType": null
               },
               "defaultValue": null
@@ -6348,7 +6826,7 @@
               "name": "publishedAt_not",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "DateTime",
                 "ofType": null
               },
               "defaultValue": null
@@ -6360,7 +6838,7 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
-                  "name": "String",
+                  "name": "DateTime",
                   "ofType": null
                 }
               },
@@ -6373,26 +6851,44 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
-                  "name": "String",
+                  "name": "DateTime",
                   "ofType": null
                 }
               },
               "defaultValue": null
             },
             {
-              "name": "publishedAt_contains",
+              "name": "publishedAt_gt",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "DateTime",
                 "ofType": null
               },
               "defaultValue": null
             },
             {
-              "name": "publishedAt_not_contains",
+              "name": "publishedAt_gte",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "DateTime",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "publishedAt_lt",
+              "type": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "publishedAt_lte",
+              "type": {
+                "kind": "SCALAR",
+                "name": "DateTime",
                 "ofType": null
               },
               "defaultValue": null
@@ -6410,7 +6906,7 @@
               "name": "firstPublishedAt",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "DateTime",
                 "ofType": null
               },
               "defaultValue": null
@@ -6419,7 +6915,7 @@
               "name": "firstPublishedAt_not",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "DateTime",
                 "ofType": null
               },
               "defaultValue": null
@@ -6431,7 +6927,7 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
-                  "name": "String",
+                  "name": "DateTime",
                   "ofType": null
                 }
               },
@@ -6444,26 +6940,44 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
-                  "name": "String",
+                  "name": "DateTime",
                   "ofType": null
                 }
               },
               "defaultValue": null
             },
             {
-              "name": "firstPublishedAt_contains",
+              "name": "firstPublishedAt_gt",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "DateTime",
                 "ofType": null
               },
               "defaultValue": null
             },
             {
-              "name": "firstPublishedAt_not_contains",
+              "name": "firstPublishedAt_gte",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "DateTime",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "firstPublishedAt_lt",
+              "type": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "firstPublishedAt_lte",
+              "type": {
+                "kind": "SCALAR",
+                "name": "DateTime",
                 "ofType": null
               },
               "defaultValue": null
@@ -6481,7 +6995,7 @@
               "name": "publishedVersion",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "Float",
                 "ofType": null
               },
               "defaultValue": null
@@ -6490,7 +7004,7 @@
               "name": "publishedVersion_not",
               "type": {
                 "kind": "SCALAR",
-                "name": "String",
+                "name": "Float",
                 "ofType": null
               },
               "defaultValue": null
@@ -6502,7 +7016,7 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
-                  "name": "String",
+                  "name": "Float",
                   "ofType": null
                 }
               },
@@ -6515,6 +7029,102 @@
                 "name": null,
                 "ofType": {
                   "kind": "SCALAR",
+                  "name": "Float",
+                  "ofType": null
+                }
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "publishedVersion_gt",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Float",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "publishedVersion_gte",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Float",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "publishedVersion_lt",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Float",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "publishedVersion_lte",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Float",
+                "ofType": null
+              },
+              "defaultValue": null
+            }
+          ],
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "SCALAR",
+          "name": "Float",
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "INPUT_OBJECT",
+          "name": "ContentfulMetadataFilter",
+          "fields": null,
+          "inputFields": [
+            {
+              "name": "tags_exists",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "tags",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataTagsFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            }
+          ],
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "INPUT_OBJECT",
+          "name": "ContentfulMetadataTagsFilter",
+          "fields": null,
+          "inputFields": [
+            {
+              "name": "id_contains_all",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
                   "name": "String",
                   "ofType": null
                 }
@@ -6522,20 +7132,28 @@
               "defaultValue": null
             },
             {
-              "name": "publishedVersion_contains",
+              "name": "id_contains_some",
               "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
               },
               "defaultValue": null
             },
             {
-              "name": "publishedVersion_not_contains",
+              "name": "id_contains_none",
               "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
               },
               "defaultValue": null
             }
@@ -6655,80 +7273,6 @@
           "possibleTypes": null
         },
         {
-          "kind": "OBJECT",
-          "name": "AssetCollection",
-          "fields": [
-            {
-              "name": "total",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "skip",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "limit",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "items",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "LIST",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "Asset",
-                    "ofType": null
-                  }
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
           "kind": "INPUT_OBJECT",
           "name": "LessonFilter",
           "fields": null,
@@ -6738,6 +7282,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -7145,6 +7698,15 @@
               "defaultValue": null
             },
             {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
               "name": "title_exists",
               "type": {
                 "kind": "SCALAR",
@@ -7397,6 +7959,80 @@
           "possibleTypes": null
         },
         {
+          "kind": "OBJECT",
+          "name": "LessonCopyCollection",
+          "fields": [
+            {
+              "name": "total",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "skip",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "limit",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "items",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "LessonCopy",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
           "kind": "INPUT_OBJECT",
           "name": "LessonCopyFilter",
           "fields": null,
@@ -7406,6 +8042,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -7644,80 +8289,6 @@
           "possibleTypes": null
         },
         {
-          "kind": "OBJECT",
-          "name": "LessonCopyCollection",
-          "fields": [
-            {
-              "name": "total",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "skip",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "limit",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "items",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "LIST",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "LessonCopy",
-                    "ofType": null
-                  }
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
           "kind": "INPUT_OBJECT",
           "name": "LayoutFilter",
           "fields": null,
@@ -7727,6 +8298,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -7984,6 +8564,80 @@
           "possibleTypes": null
         },
         {
+          "kind": "OBJECT",
+          "name": "LessonCodeSnippetsCollection",
+          "fields": [
+            {
+              "name": "total",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "skip",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "limit",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "items",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "LessonCodeSnippets",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
           "kind": "INPUT_OBJECT",
           "name": "LessonCodeSnippetsFilter",
           "fields": null,
@@ -7993,6 +8647,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -8799,80 +9462,6 @@
           "possibleTypes": null
         },
         {
-          "kind": "OBJECT",
-          "name": "LessonCodeSnippetsCollection",
-          "fields": [
-            {
-              "name": "total",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "skip",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "limit",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "items",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "LIST",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "LessonCodeSnippets",
-                    "ofType": null
-                  }
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
           "kind": "INPUT_OBJECT",
           "name": "CourseFilter",
           "fields": null,
@@ -8882,6 +9471,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -9489,6 +10087,80 @@
           "possibleTypes": null
         },
         {
+          "kind": "OBJECT",
+          "name": "LayoutCopyCollection",
+          "fields": [
+            {
+              "name": "total",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "skip",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "limit",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "items",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "LayoutCopy",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
           "kind": "INPUT_OBJECT",
           "name": "LayoutCopyFilter",
           "fields": null,
@@ -9498,6 +10170,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -10060,80 +10741,6 @@
           "possibleTypes": null
         },
         {
-          "kind": "OBJECT",
-          "name": "LayoutCopyCollection",
-          "fields": [
-            {
-              "name": "total",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "skip",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "limit",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "items",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "LIST",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "LayoutCopy",
-                    "ofType": null
-                  }
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
           "kind": "INPUT_OBJECT",
           "name": "LayoutHeroImageFilter",
           "fields": null,
@@ -10143,6 +10750,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -10423,6 +11039,15 @@
               "defaultValue": null
             },
             {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
               "name": "title_exists",
               "type": {
                 "kind": "SCALAR",
@@ -10543,6 +11168,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -11110,6 +11744,80 @@
           "possibleTypes": null
         },
         {
+          "kind": "OBJECT",
+          "name": "CategoryCollection",
+          "fields": [
+            {
+              "name": "total",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "skip",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "limit",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "items",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "LIST",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Category",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
           "kind": "INPUT_OBJECT",
           "name": "CategoryFilter",
           "fields": null,
@@ -11119,6 +11827,15 @@
               "type": {
                 "kind": "INPUT_OBJECT",
                 "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
                 "ofType": null
               },
               "defaultValue": null
@@ -11367,83 +12084,124 @@
           "possibleTypes": null
         },
         {
-          "kind": "OBJECT",
-          "name": "CategoryCollection",
-          "fields": [
+          "kind": "INPUT_OBJECT",
+          "name": "EntryFilter",
+          "fields": null,
+          "inputFields": [
             {
-              "name": "total",
-              "args": [],
+              "name": "sys",
               "type": {
-                "kind": "NON_NULL",
+                "kind": "INPUT_OBJECT",
+                "name": "SysFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "contentfulMetadata",
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ContentfulMetadataFilter",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "OR",
+              "type": {
+                "kind": "LIST",
                 "name": null,
                 "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
+                  "kind": "INPUT_OBJECT",
+                  "name": "EntryFilter",
                   "ofType": null
                 }
               },
+              "defaultValue": null
+            },
+            {
+              "name": "AND",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "EntryFilter",
+                  "ofType": null
+                }
+              },
+              "defaultValue": null
+            }
+          ],
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "ENUM",
+          "name": "EntryOrder",
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": [
+            {
+              "name": "sys_id_ASC",
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "skip",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
+              "name": "sys_id_DESC",
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "limit",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "Int",
-                  "ofType": null
-                }
-              },
+              "name": "sys_publishedAt_ASC",
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "items",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "LIST",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "Category",
-                    "ofType": null
-                  }
-                }
-              },
+              "name": "sys_publishedAt_DESC",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "sys_firstPublishedAt_ASC",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "sys_firstPublishedAt_DESC",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "sys_publishedVersion_ASC",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "sys_publishedVersion_DESC",
               "isDeprecated": false,
               "deprecationReason": null
             }
           ],
-          "inputFields": null,
-          "interfaces": [],
-          "enumValues": null,
           "possibleTypes": null
         },
         {
           "kind": "OBJECT",
           "name": "__Schema",
           "fields": [
+            {
+              "name": "description",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
             {
               "name": "types",
               "args": [],
@@ -11575,6 +12333,17 @@
               "deprecationReason": null
             },
             {
+              "name": "specifiedByURL",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "fields",
               "args": [
                 {
@@ -11672,7 +12441,17 @@
             },
             {
               "name": "inputFields",
-              "args": [],
+              "args": [
+                {
+                  "name": "includeDeprecated",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  },
+                  "defaultValue": "false"
+                }
+              ],
               "type": {
                 "kind": "LIST",
                 "name": null,
@@ -11788,7 +12567,17 @@
             },
             {
               "name": "args",
-              "args": [],
+              "args": [
+                {
+                  "name": "includeDeprecated",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  },
+                  "defaultValue": "false"
+                }
+              ],
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -11911,6 +12700,32 @@
               },
               "isDeprecated": false,
               "deprecationReason": null
+            },
+            {
+              "name": "isDeprecated",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "deprecationReason",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
             }
           ],
           "inputFields": null,
@@ -12011,6 +12826,21 @@
               "deprecationReason": null
             },
             {
+              "name": "isRepeatable",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "locations",
               "args": [],
               "type": {
@@ -12035,7 +12865,17 @@
             },
             {
               "name": "args",
-              "args": [],
+              "args": [
+                {
+                  "name": "includeDeprecated",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Boolean",
+                    "ofType": null
+                  },
+                  "defaultValue": "false"
+                }
+              ],
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -12219,6 +13059,8 @@
           "name": "deprecated",
           "locations": [
             "FIELD_DEFINITION",
+            "ARGUMENT_DEFINITION",
+            "INPUT_FIELD_DEFINITION",
             "ENUM_VALUE"
           ],
           "args": [
@@ -12230,6 +13072,27 @@
                 "ofType": null
               },
               "defaultValue": "\"No longer supported\""
+            }
+          ]
+        },
+        {
+          "name": "specifiedBy",
+          "locations": [
+            "SCALAR"
+          ],
+          "args": [
+            {
+              "name": "url",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              },
+              "defaultValue": null
             }
           ]
         }
