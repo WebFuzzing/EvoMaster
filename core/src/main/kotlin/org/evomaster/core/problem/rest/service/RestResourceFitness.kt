@@ -124,16 +124,15 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
                 }
 
-                // There is no actions added anywhere before, so this list is empty
-                externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach {
-                    val requestedExternalServiceUrls = externalServiceHandler.getRequestedExternalServiceUrls()
-                    if(requestedExternalServiceUrls.isNotEmpty()) {
-                        fv.registerExternalServiceRequest(
-                            indexOfAction,
-                            externalServiceHandler.getRequestedExternalServiceUrls()
-                        )
-                    }
+                // get visited wiremock instances
+                val requestedExternalServiceUrls = externalServiceHandler.getRequestedExternalServiceUrls()
+                if(requestedExternalServiceUrls.isNotEmpty()) {
+                    fv.registerExternalServiceRequest(
+                        indexOfAction,
+                        externalServiceHandler.getRequestedExternalServiceUrls()
+                    )
                 }
+
 
                 if (!ok) {
                     terminated = true
