@@ -907,6 +907,10 @@ class EMConfig {
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
     var statisticsColumnId = "-"
 
+    @Cfg("When running experiments and statistic files are generated, all configs are saved." +
+            " So, this one can be used as extra label for classifying the experiment")
+    var labelForExperiments = "-"
+
     @Cfg("Whether we should collect data on the extra heuristics. Only needed for experiments.")
     var writeExtraHeuristicsFile = false
 
