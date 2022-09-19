@@ -38,4 +38,9 @@ class ReplaceValuesDeParser() :
     override fun visit(timeValue: TimeValue?) {
         appendSymbol()
     }
+
+    override fun visit(dateTimeLiteralExpression: DateTimeLiteralExpression?) {
+        appendSymbol()
+    }
+
 }
