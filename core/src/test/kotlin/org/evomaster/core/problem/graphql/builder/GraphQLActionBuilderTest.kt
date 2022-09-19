@@ -188,6 +188,36 @@ class GraphQLActionBuilderTest {
         assertTrue((categoryCollection.parameters[0].gene as OptionalGene).gene is IntegerGene)
         assertTrue((categoryCollection.parameters[4].gene as OptionalGene).gene is ObjectGene)
         assertTrue((((categoryCollection.parameters[4].gene as OptionalGene).gene as ObjectGene).fields[6] as OptionalGene).gene is StringGene)
+
+        /**/
+        val lessonCodeSnippets = actionCluster["lessonCodeSnippets"] as GraphQLAction
+        assertEquals(4, lessonCodeSnippets.parameters.size)
+        assertTrue(lessonCodeSnippets.parameters[0] is GQInputParam)
+        assertTrue(lessonCodeSnippets.parameters[1] is GQInputParam)
+        assertTrue(lessonCodeSnippets.parameters[2] is GQInputParam)
+        assertTrue(lessonCodeSnippets.parameters[3] is GQReturnParam)
+        assertTrue(lessonCodeSnippets.parameters[3].gene is ObjectGene)
+
+        val objLessonCodeSnippets= lessonCodeSnippets.parameters[3].gene as ObjectGene
+        assertTrue(objLessonCodeSnippets.fields.any { it is TupleGene && it.name == "linkedFrom" })
+
+        val tupleLinkedFrom = objLessonCodeSnippets.fields.first { it.name == "linkedFrom" } as TupleGene
+        assertEquals(2, tupleLinkedFrom.elements.size)
+        assertTrue(tupleLinkedFrom.elements.any { it is OptionalGene && it.gene is ObjectGene  && it.name == "linkedFrom" })
+
+        val objLinkedFrom = (tupleLinkedFrom.elements[1] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objLinkedFrom.fields.size)
+        assertTrue(objLinkedFrom.fields.any { it is TupleGene && it.name == "entryCollection" })
+
+        val tupleEntryCollection = objLinkedFrom.fields.first { it.name == "entryCollection" } as TupleGene
+        assertEquals(5, tupleEntryCollection.elements.size)
+
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "skip" })
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "limit" })
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "preview" })
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "locale" })
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "entryCollection" })
+
     }
 
     @Test
