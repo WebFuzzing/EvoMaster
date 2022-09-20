@@ -112,8 +112,8 @@ object TaintAnalysis {
                 continue
             }
 
-            val left = s.value.subSequence(0, pos).toString() + ")$"
-            val right = "^(" + s.value.subSequence(pos + divider.length, s.value.length).toString()
+            val left = "("+s.value.subSequence(0, pos).toString() + ")$"
+            val right = "^(" + s.value.subSequence(pos + divider.length, s.value.length).toString()+")"
 
             val taintInput = specsMap.entries.first { it.value.any { it == s } }.key
 
