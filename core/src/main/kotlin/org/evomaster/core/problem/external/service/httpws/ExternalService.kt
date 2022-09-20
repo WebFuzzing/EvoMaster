@@ -48,10 +48,19 @@ class ExternalService(
     }
 
     /**
-     * Reset WireMock to clean up the requests
+     * Reset WireMock to clean everything including stubs and
+     * requests.
      */
     fun reset() {
         wireMockServer.resetAll()
+    }
+
+    /**
+     * Reset the served request on the respective WireMock
+     * instance.
+     */
+    fun resetServedRequests() {
+        wireMockServer.resetRequests()
     }
 
     /**

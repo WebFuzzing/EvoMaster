@@ -112,7 +112,7 @@ class ExternalServiceHandler {
      * The WireMock instances will still be up and running
      */
     fun resetServedRequests() {
-        externalServices.forEach { it.value.reset() }
+        externalServices.forEach { it.value.resetServedRequests() }
     }
 
     /**
@@ -220,17 +220,17 @@ class ExternalServiceHandler {
         wm.start()
 
         // to prevent from the 404 when no matching stub below stub is added
-        // TODO: Need to decide what should be the default behaviour.
-        //  Removed it for now, since always the stub will be removed
-//        wm.stubFor(
-//            any(anyUrl())
-//                .atPriority(10)
-//                .willReturn(
-//                    aResponse()
-//                        .withStatus(500)
-//                        .withBody("Internal Server Error")
-//                )
-//        )
+        // WireMock throws an exception when there is no stub for the request
+        // to avoid the exception it handled manually
+        wm.stubFor(
+            any(anyUrl())
+                .atPriority(10)
+                .willReturn(
+                    aResponse()
+                        .withStatus(404)
+                        .withBody("Not Found")
+                )
+        )
 
         return wm
     }

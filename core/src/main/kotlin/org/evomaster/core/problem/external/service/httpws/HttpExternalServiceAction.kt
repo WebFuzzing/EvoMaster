@@ -106,6 +106,9 @@ class HttpExternalServiceAction(
      *  in future.
      */
     fun buildResponse() {
+        val wm = externalService.getWireMockServer()
+        val mappings = wm.stubMappings
+        val m = mappings.size
         if (!active) {
             return
         }

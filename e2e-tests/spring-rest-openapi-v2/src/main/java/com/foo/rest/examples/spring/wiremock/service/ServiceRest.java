@@ -55,7 +55,7 @@ public class ServiceRest {
             case(403):
                 return new ResponseEntity<>(responseDto, HttpStatus.FORBIDDEN);
             case(404):
-                return new ResponseEntity<>(responseDto, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
             default:
                 return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -70,7 +70,7 @@ public class ServiceRest {
 //            method = RequestMethod.GET,
 //            produces = MediaType.APPLICATION_JSON
 //    )
-    public ResponseEntity<ResponseDto> secondDummyExternalCall() {
+    public ResponseEntity<ResponseDto> complexExternalCalls() {
         ResponseDto responseDto = new ResponseDto();
 
         int responseCode = -1;
@@ -82,11 +82,10 @@ public class ServiceRest {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
 
-//            responseCode = connection.getResponseCode();
-//            responseDto.valid = connection.getResponseCode() == 200;
+            int r = connection.getResponseCode();
 
-            if (connection.getResponseCode() == 200) {
-                URL secondURL = new URL("http://bar.baz:8080/api/echo/bar");
+            if (r == 200) {
+                URL secondURL = new URL("http://bar.baz:8080/api/echo/bazz");
                 HttpURLConnection secondConnection = (HttpURLConnection) secondURL.openConnection();
                 secondConnection.setRequestProperty("accept", "application/json");
 
@@ -110,7 +109,7 @@ public class ServiceRest {
             case(403):
                 return new ResponseEntity<>(responseDto, HttpStatus.FORBIDDEN);
             case(404):
-                return new ResponseEntity<>(responseDto, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
             default:
                 return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
         }
