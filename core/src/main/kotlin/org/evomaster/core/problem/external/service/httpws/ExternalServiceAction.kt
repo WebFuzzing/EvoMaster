@@ -36,9 +36,8 @@ class ExternalServiceAction(
     val externalService: ExternalService,
     active : Boolean = false,
     used : Boolean = false,
-    private val id: Long,
-    localId : String
-) : ApiExternalServiceAction(response, active, used, localId) {
+    private val id: Long
+) : ApiExternalServiceAction(response, active, used) {
 
 
 
@@ -50,8 +49,8 @@ class ExternalServiceAction(
         }
     }
 
-    constructor(request: ExternalServiceRequest, template: String, externalService: ExternalService, id: Long, localId: String = NONE_ACTION_COMPONENT_ID) :
-            this(request, buildResponse(template), externalService, id = id, localId = localId)
+    constructor(request: ExternalServiceRequest, template: String, externalService: ExternalService, id: Long) :
+            this(request, buildResponse(template), externalService, id = id)
 
     init {
         // TODO: This is not the correct way to do this, but for now
@@ -90,8 +89,7 @@ class ExternalServiceAction(
             externalService,
             active,
             used,
-            id,
-            localId = getLocalId()
+            id
         )
     }
 

@@ -441,7 +441,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     private fun isLocalIdsNotAssigned() : Boolean{
-        return flatView().all { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID}
+        return flatView().all { !it.hasLocalId ()
+                // FIXME Man need to check local id for gene for the moment
+                //&& (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> !i.hasLocalId() }})
+        }
     }
 
     private fun flatView() : List<ActionComponent>{
@@ -450,7 +453,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     private fun areAllLocalIdsAssigned() : Boolean{
-        return  flatView().none { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID }
+        return  flatView().all { it.hasLocalId()
+                // FIXME Man need to check local id for gene for the moment
+                //&& (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> i.hasLocalId() }})
+        }
     }
 
     /**

@@ -15,9 +15,8 @@ abstract class ApiExternalServiceAction(
      */
     val response: ResponseParam,
     active : Boolean = false,
-    used : Boolean = false,
-    localId : String
-) : Action(listOf(response), localId){
+    used : Boolean = false
+) : Action(listOf(response)){
 
 
     /**
