@@ -8,6 +8,7 @@ import org.testcontainers.containers.GenericContainer;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,6 +20,7 @@ public class DbCleanerPostgresTest extends DbCleanerTestBase{
 
     private static final GenericContainer postgres = new GenericContainer("postgres:" + POSTGRES_VERSION)
             .withExposedPorts(5432)
+            .withTmpFs(Collections.singletonMap("/var/lib/postgresql/data", "rw"))
             .withEnv("POSTGRES_HOST_AUTH_METHOD","trust");
 
     private static Connection connection;

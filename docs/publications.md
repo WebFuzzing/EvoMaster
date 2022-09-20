@@ -13,6 +13,10 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+* A. Belhadi, M. Zhang, A. Arcuri.
+  *White-Box and Black-Box Fuzzing for GraphQL APIs*.
+  [[arXiv](https://arxiv.org/abs/2209.05833)]
+
 * M. Zhang, A. Arcuri, Y. Li, Y. Liu, K. Xue.
   *White-box Fuzzing RPC-based APIs with EvoMaster: An Industrial Case Study*.
   [[arXiv](https://arxiv.org/abs/2208.12743)]
