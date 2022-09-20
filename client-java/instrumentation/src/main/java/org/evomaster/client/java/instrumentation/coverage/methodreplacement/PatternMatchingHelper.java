@@ -20,7 +20,7 @@ public class PatternMatchingHelper {
 
         if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.REGEX, regex));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex));
         }
 
         if (idTemplate == null) {
