@@ -40,6 +40,11 @@ abstract class StructuralElement (
     }
 
     /**
+     * a unique id is used to identify this structural element in the context of an individual
+     */
+    private var localId : String = NONE_LOCAL_ID
+
+    /**
      * set a local id of the action
      * note that the id can be assigned only if the current id is NONE_ACTION_ID
      */
@@ -67,11 +72,6 @@ abstract class StructuralElement (
     }
 
     fun getLocalId() = localId
-
-    /**
-     * a unique id is used to identify this structural element in the context of an individual
-     */
-    private var localId : String = NONE_LOCAL_ID
 
     /**
      * parent of the element, which contains current the element
