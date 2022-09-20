@@ -51,7 +51,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
 
     override fun preChildrenSetup(c : Collection<StructuralElement>) {
-        if (isLocalIdsNotInitialized())
+        if (areAllLocalIdsNotInitialized())
             setLocalIdsForChildren((c as List<ActionComponent>).flatMap { it.flatView() })
     }
 
@@ -443,7 +443,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     /**
      * @return if local ids are not initialized
      */
-    private fun isLocalIdsNotInitialized() : Boolean{
+    private fun areAllLocalIdsNotInitialized() : Boolean{
         return flatView().all { !it.hasLocalId ()
                 // FIXME Man need to check local id for gene for the moment
                 //&& (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> !i.hasLocalId() }})
