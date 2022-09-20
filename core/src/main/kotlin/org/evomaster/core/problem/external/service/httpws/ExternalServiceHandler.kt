@@ -13,6 +13,9 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isReservedIP
 import org.evomaster.core.search.service.Randomness
 
+/**
+ * To manage the external service related activities
+ */
 class ExternalServiceHandler {
     /**
      * This will hold the information about the external service
@@ -44,11 +47,6 @@ class ExternalServiceHandler {
     private var lastIPAddress: String = ""
 
     private var counter: Long = 0
-
-    /**
-     * Collection of captured external service requests under SUT
-     */
-    private val externalServiceRequests: MutableList<HttpExternalServiceRequest> = mutableListOf()
 
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
@@ -124,17 +122,16 @@ class ExternalServiceHandler {
      *
      * This gets reset each time a new main action is evaluated.
      *
-     * TODO This is not perfect yet, have to explore more scenarios and perfect the
-     * implementation.
+     * TODO: This is not perfect yet, have to explore more scenarios and perfect the
+     *  implementation.
+     *
+     * TODO: Building the stub for WireMock will not be handled at this point, need to
+     *  validate the idea
      */
     fun getExternalServiceActions(): MutableList<HttpExternalServiceAction> {
         val actions = mutableListOf<HttpExternalServiceAction>()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
-                // TODO: This needs to be revised to make it nicer
-                if (externalServiceRequests.none { r -> r.absoluteURL == it.absoluteURL }) {
-                    externalServiceRequests.add(it)
-                }
                 if (actions.none { a -> a.request.url == it.url }) {
                     val action = HttpExternalServiceAction(
                         it,
@@ -143,10 +140,9 @@ class ExternalServiceHandler {
                         counter++
                     )
                     action.doInitialize(randomness)
-                    action.buildResponse()
+                    action.confirmUsed() // TODO comment
                     actions.add(action)
                 }
-
             }
         }
         return actions
@@ -164,7 +160,6 @@ class ExternalServiceHandler {
         }
         return output
     }
-
 
     /**
      * Default IP address will be a randomly generated IP
@@ -225,31 +220,19 @@ class ExternalServiceHandler {
         wm.start()
 
         // to prevent from the 404 when no matching stub below stub is added
-        // TODO: Need to decide what should be the default behaviour
-        wm.stubFor(
-            any(anyUrl())
-                .atPriority(10)
-                .willReturn(
-                    aResponse()
-                        .withStatus(500)
-                        .withBody("Internal Server Error")
-                )
-        )
+        // TODO: Need to decide what should be the default behaviour.
+        //  Removed it for now, since always the stub will be removed
+//        wm.stubFor(
+//            any(anyUrl())
+//                .atPriority(10)
+//                .willReturn(
+//                    aResponse()
+//                        .withStatus(500)
+//                        .withBody("Internal Server Error")
+//                )
+//        )
 
         return wm
-    }
-
-    fun getExternalServiceRequests(): MutableList<HttpExternalServiceRequest> {
-        return externalServiceRequests
-    }
-
-    /**
-     * Will build the response stub on WireMock related to the [HttpExternalServiceAction]
-     * Existing stub will be removed and new will be added
-     */
-    fun handleHttpExternalServiceAction(httpExternalServiceAction: HttpExternalServiceAction) {
-        httpExternalServiceAction.removeStub()
-        httpExternalServiceAction.buildResponse()
     }
 
 }

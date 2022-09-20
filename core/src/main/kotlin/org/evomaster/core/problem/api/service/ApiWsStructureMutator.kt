@@ -32,16 +32,16 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
     }
 
-//    @Inject
-//    protected lateinit var externalServiceHandler: ExternalServiceHandler
-
-
     private fun <T : ApiWsIndividual> addExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         /**
          * TODO add why
          */
         mutatedGenes: MutatedGeneSpecification?,
+        /**
+         * [ExternalServiceHandler] is not injected in mutator at the moment, also to validate
+         * it's related to REST only sampler is needed
+         */
         sampler: ApiWsSampler<T>
     ) {
 
@@ -53,8 +53,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             val ind = individual.individual as? ApiWsIndividual
                 ?: throw IllegalArgumentException("Invalid individual type")
 
-            // There is no chance to get and action registered according to the current
-            // logic
             val esr = individual.fitness.getViewAccessedExternalServiceRequests()
             if (esr.isEmpty()) {
                 //nothing to do
@@ -71,41 +69,46 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     throw RuntimeException(msg)
                 }
 
-                if (esr.containsKey(index)) {
+                // If the action already exists mark it as used
+                esr.flatMap { it.value }.forEach { url ->
+                    val existingActions = parent.getViewOfChildren()
+                        .filterIsInstance<HttpExternalServiceAction>()
+                        .filter { it.request.absoluteURL == url }
 
-                    val urls = esr[index]
-                    // TODO add all as action, but not if already there
-                    // TODO if some actions are no longer used, disable
-                    if (urls!!.isNotEmpty()) {
-                        urls.forEach { u ->
-                            // If the wasMatched is false, which indicate there is no stub for the request
-                            // Not sure whether that can be used inside the logic
-                            val actions = sampler.getExternalService().getExternalServiceActions()
-                                .filter { it.request.absoluteURL == u }
+                    val actions = sampler.getExternalService()
+                        .getExternalServiceActions()
+                        .filter { it.request.absoluteURL == url }
+
+                    if (existingActions.isEmpty()) {
+                        if (actions.isNotEmpty()) {
                             parent.addChildrenToGroup(
                                 actions,
                                 GroupsOfChildren.EXTERNAL_SERVICES
                             )
 
                             // update impact based on added genes
-                            //TODO update (maybe want to save all newly added actions to compute this...)
+                            // TODO: Man to review this..
                             if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
                                 individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
                             }
                         }
+                    } else {
+                        /*
+                            nothing was called so anything there from previous setups can be safely removed.
+                            however, "removing" could have some side-effects (TODO explains), so we just mark them
+                            as disabled
+
+                            Code never reaches this part
+                        */
+                        parent.getViewOfChildren()
+                            .filterIsInstance<HttpExternalServiceAction>()
+                            .filter { it.request.absoluteURL != url }.forEach { action ->
+                                // code never reached this point
+                                action.confirmNotUsed()
+                                action.resetActive()
+                            }
                     }
 
-                } else {
-                    /*
-                        nothing was called so anything there from previous setups can be safely removed.
-                        however, "removing" could have some side-effects (TODO explains), so we just mark them
-                        as disabled
-                    */
-                    parent.groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
-                        .forEach {
-                            val httpExternalServiceAction = it as HttpExternalServiceAction
-                            httpExternalServiceAction.resetActive()
-                        }
                 }
             }
 

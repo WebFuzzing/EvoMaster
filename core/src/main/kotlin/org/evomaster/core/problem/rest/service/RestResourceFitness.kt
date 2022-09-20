@@ -104,7 +104,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach {
                     // TODO: Handling WireMock for ExternalServiceActions should be generalised
                     //  to facilitate other cases such as RPC and GraphQL
-                    externalServiceHandler.handleHttpExternalServiceAction(it)
+                    it.buildResponse()
                 }
 
                 val restCallAction = a.getMainAction()
@@ -133,6 +133,19 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     )
                 }
 
+                // Mark the existing external service actions as used if there is call
+                //  made based on the absolute URL. Otherwise, mark it not used
+                requestedExternalServiceUrls.forEach { url ->
+                    externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach { action ->
+                        if (action.request.absoluteURL == url) {
+                            action.confirmUsed()
+                        } else {
+                            // Code never reaches this part
+                            action.confirmNotUsed()
+                        }
+                        action.resetActive()
+                    }
+                }
 
                 if (!ok) {
                     terminated = true
