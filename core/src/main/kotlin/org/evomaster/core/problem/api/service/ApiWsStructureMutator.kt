@@ -103,7 +103,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                         parent.getViewOfChildren()
                             .filterIsInstance<HttpExternalServiceAction>()
                             .filter { it.request.absoluteURL != url }.forEach { action ->
-                                // code never reached this point
                                 action.confirmNotUsed()
                                 action.resetActive()
                             }
