@@ -131,47 +131,20 @@ class ExternalServiceHandler {
         val actions = mutableListOf<HttpExternalServiceAction>()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
-                if (actions.none { a -> a.request.url == it.url }) {
-                    val action = HttpExternalServiceAction(
-                        it,
-                        "",
-                        u,
-                        counter++
-                    )
-                    action.doInitialize(randomness)
-                    actions.add(action)
-                }
+                val action = HttpExternalServiceAction(
+                    it,
+                    "",
+                    u,
+                    counter++
+                )
+                action.doInitialize(randomness)
+                action.confirmUsed()
+                actions.add(action)
             }
         }
         return actions
     }
 
-    /**
-     * Return a list of [HttpExternalServiceAction]s for the given absoluteURL.
-     *
-     * There is a possibility to have multiple requests made for the same URL several,
-     * so it returns a list of actions.
-     */
-    fun getExternalServiceActionsForURL(url: String): List<HttpExternalServiceAction> {
-        val actions = mutableListOf<HttpExternalServiceAction>()
-        externalServices.forEach { (_, service) ->
-            service.getAllServedRequests()
-                .filter { it.absoluteURL == url }
-                .distinct()
-                .forEach { request ->
-                    val action = HttpExternalServiceAction(
-                        request,
-                        "",
-                        service,
-                        counter++
-                    )
-                    action.doInitialize(randomness)
-                    action.confirmUsed()
-                    actions.add(action)
-                }
-        }
-        return actions
-    }
 
     /**
      * Returns only the served requests related to the specific WireMock

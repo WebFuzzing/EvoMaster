@@ -4,7 +4,6 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.httpws.ExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -85,7 +84,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
             var terminated = false
 
-            for(a in call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>()){
+            for (a in call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>()) {
                 // Note: [indexOfAction] is used to register the action in RemoteController
                 //  to map it to the ActionDto.
 
@@ -101,12 +100,15 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
                 val externalServiceActions = a.getExternalServiceActions()
 
-                externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach {
-                    // TODO: Handling WireMock for ExternalServiceActions should be generalised
-                    //  to facilitate other cases such as RPC and GraphQL
-                    it.resetActive()
-                    it.buildResponse()
-                }
+                externalServiceActions.forEach { it.resetActive() }
+
+                externalServiceActions.filter { it.active }
+                    .filterIsInstance<HttpExternalServiceAction>()
+                    .forEach {
+                        // TODO: Handling WireMock for ExternalServiceActions should be generalised
+                        //  to facilitate other cases such as RPC and GraphQL
+                        it.buildResponse()
+                    }
 
                 val restCallAction = a.getMainAction()
 
@@ -127,7 +129,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
                 // get visited wiremock instances
                 val requestedExternalServiceUrls = externalServiceHandler.getRequestedExternalServiceUrls()
-                if(requestedExternalServiceUrls.isNotEmpty()) {
+                if (requestedExternalServiceUrls.isNotEmpty()) {
                     fv.registerExternalServiceRequest(
                         indexOfAction,
                         requestedExternalServiceUrls

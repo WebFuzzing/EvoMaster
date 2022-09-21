@@ -76,7 +76,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     if (urls!!.isNotEmpty()) {
                         val actions = urls.map { url ->
                             sampler.getExternalService()
-                                .getExternalServiceActionsForURL(url)
+                                .getAllExternalServiceActions()
                         }.flatten()
 
                         if (actions.isNotEmpty()) {
