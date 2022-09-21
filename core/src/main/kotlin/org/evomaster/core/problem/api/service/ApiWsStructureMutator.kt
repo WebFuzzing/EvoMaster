@@ -60,7 +60,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             }
 
             ind.seeMainExecutableActions().forEachIndexed { index, action ->
-
                 val parent = action.parent
                 if (parent !is EnterpriseActionGroup) {
                     //TODO this should not really happen
@@ -73,51 +72,33 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     val urls = esr[index]
 
                     if (urls!!.isNotEmpty()) {
-                        urls.forEach { url ->
-                            val existingActions = parent.getViewOfChildren()
-                                .filterIsInstance<HttpExternalServiceAction>()
-                                .filter { it.request.absoluteURL == url }
+                        val newActions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
+                        urls.forEach { url ->
+                            // TODO: Instead of a List it's wise to return one action. Need a refactor.
+                            //  There are chance one absolute URL to have multiple requests in WireMock,
+                            //   have to consider when handling this.
                             val actions = sampler.getExternalService()
                                 .getExternalServiceActions()
                                 .filter { it.request.absoluteURL == url }
 
-                            if (existingActions.isEmpty()) {
-                                if (actions.isNotEmpty()) {
-                                    parent.addChildrenToGroup(
-                                        actions,
-                                        GroupsOfChildren.EXTERNAL_SERVICES
-                                    )
-
-                                    // update impact based on added genes
-                                    // TODO: Man to review this..
-                                    if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
-                                        individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
-                                    }
-                                }
-                            } else {
-                                /*
-                                    nothing was called so anything there from previous setups can be safely removed.
-                                    however, "removing" could have some side-effects (TODO explains), so we just mark them
-                                    as disabled
-
-                                    Code never reaches this part
-                                */
-//                                parent.getViewOfChildren()
-//                                    .filterIsInstance<HttpExternalServiceAction>()
-//                                    .filter { it.request.absoluteURL != url }.forEach { action ->
-//                                        action.confirmNotUsed()
-//                                        action.resetActive()
-//                                    }
+                            if (actions.isNotEmpty()) {
+                                newActions.addAll(actions)
                             }
                         }
-                    } else {
-//                        parent.groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
-//                            .forEach {
-//                                val httpExternalServiceAction = it as HttpExternalServiceAction
-//                                httpExternalServiceAction.confirmNotUsed()
-//                                httpExternalServiceAction.resetActive()
-//                            }
+
+                        if (newActions.isNotEmpty()) {
+                            parent.addChildrenToGroup(
+                                newActions,
+                                GroupsOfChildren.EXTERNAL_SERVICES
+                            )
+                        }
+
+                        // update impact based on added genes
+                        // TODO: Refactored this, Man to review the place where impacts get updated.
+                        if (mutatedGenes != null && newActions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
+                            individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, newActions)
+                        }
                     }
                 }
             }
@@ -126,7 +107,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
             Lazy.assert {
                 ind.seeAllActions().all { it.hasLocalId() }
             }
-
 
             if (log.isTraceEnabled)
                 log.trace("{} existingExternalServiceData are added")
