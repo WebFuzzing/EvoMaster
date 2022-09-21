@@ -69,45 +69,56 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     throw RuntimeException(msg)
                 }
 
-                // If the action already exists mark it as used
-                esr.flatMap { it.value }.forEach { url ->
-                    val existingActions = parent.getViewOfChildren()
-                        .filterIsInstance<HttpExternalServiceAction>()
-                        .filter { it.request.absoluteURL == url }
+                if (esr.containsKey(index)) {
+                    val urls = esr[index]
 
-                    val actions = sampler.getExternalService()
-                        .getExternalServiceActions()
-                        .filter { it.request.absoluteURL == url }
+                    if (urls!!.isNotEmpty()) {
+                        urls.forEach { url ->
+                            val existingActions = parent.getViewOfChildren()
+                                .filterIsInstance<HttpExternalServiceAction>()
+                                .filter { it.request.absoluteURL == url }
 
-                    if (existingActions.isEmpty()) {
-                        if (actions.isNotEmpty()) {
-                            parent.addChildrenToGroup(
-                                actions,
-                                GroupsOfChildren.EXTERNAL_SERVICES
-                            )
+                            val actions = sampler.getExternalService()
+                                .getExternalServiceActions()
+                                .filter { it.request.absoluteURL == url }
 
-                            // update impact based on added genes
-                            // TODO: Man to review this..
-                            if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
-                                individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
+                            if (existingActions.isEmpty()) {
+                                if (actions.isNotEmpty()) {
+                                    parent.addChildrenToGroup(
+                                        actions,
+                                        GroupsOfChildren.EXTERNAL_SERVICES
+                                    )
+
+                                    // update impact based on added genes
+                                    // TODO: Man to review this..
+                                    if (mutatedGenes != null && actions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
+                                        individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, actions)
+                                    }
+                                }
+                            } else {
+                                /*
+                                    nothing was called so anything there from previous setups can be safely removed.
+                                    however, "removing" could have some side-effects (TODO explains), so we just mark them
+                                    as disabled
+
+                                    Code never reaches this part
+                                */
+//                                parent.getViewOfChildren()
+//                                    .filterIsInstance<HttpExternalServiceAction>()
+//                                    .filter { it.request.absoluteURL != url }.forEach { action ->
+//                                        action.confirmNotUsed()
+//                                        action.resetActive()
+//                                    }
                             }
                         }
                     } else {
-                        /*
-                            nothing was called so anything there from previous setups can be safely removed.
-                            however, "removing" could have some side-effects (TODO explains), so we just mark them
-                            as disabled
-
-                            Code never reaches this part
-                        */
-                        parent.getViewOfChildren()
-                            .filterIsInstance<HttpExternalServiceAction>()
-                            .filter { it.request.absoluteURL != url }.forEach { action ->
-                                action.confirmNotUsed()
-                                action.resetActive()
-                            }
+//                        parent.groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+//                            .forEach {
+//                                val httpExternalServiceAction = it as HttpExternalServiceAction
+//                                httpExternalServiceAction.confirmNotUsed()
+//                                httpExternalServiceAction.resetActive()
+//                            }
                     }
-
                 }
             }
 

@@ -140,7 +140,6 @@ class ExternalServiceHandler {
                         counter++
                     )
                     action.doInitialize(randomness)
-                    action.confirmUsed() // TODO comment
                     actions.add(action)
                 }
             }
