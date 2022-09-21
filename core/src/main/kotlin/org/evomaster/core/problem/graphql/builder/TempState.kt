@@ -25,5 +25,7 @@ data class TempState(
         /*
          * An intermediate data structure used for extracting Union types
          */
-        var tempUnionTables: MutableList<Table> = mutableListOf()
+        var tempUnionTables: MutableList<Table> = mutableListOf(),
+
+        var inputTypeName: MutableMap<String,String> = mutableMapOf()
 )
