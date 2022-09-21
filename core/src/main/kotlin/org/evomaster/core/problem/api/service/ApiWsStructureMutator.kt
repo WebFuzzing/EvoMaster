@@ -59,6 +59,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 return
             }
 
+            val newActions: MutableList<HttpExternalServiceAction> = mutableListOf()
+
             ind.seeMainExecutableActions().forEachIndexed { index, action ->
                 val parent = action.parent
                 if (parent !is EnterpriseActionGroup) {
@@ -72,32 +74,23 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     val urls = esr[index]
 
                     if (urls!!.isNotEmpty()) {
-                        val newActions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
-                        urls.forEach { url ->
+                        val actions = urls.map { url ->
                             // TODO: Instead of a List it's wise to return one action. Need a refactor.
                             //  There are chance one absolute URL to have multiple requests in WireMock,
                             //   have to consider when handling this.
-                            val actions = sampler.getExternalService()
+                            sampler.getExternalService()
                                 .getExternalServiceActions()
                                 .filter { it.request.absoluteURL == url }
 
-                            if (actions.isNotEmpty()) {
-                                newActions.addAll(actions)
-                            }
-                        }
+                        }.flatten()
 
-                        if (newActions.isNotEmpty()) {
+                        if (actions.isNotEmpty()) {
+                            newActions.addAll(actions)
                             parent.addChildrenToGroup(
-                                newActions,
-                                GroupsOfChildren.EXTERNAL_SERVICES
+                                    actions,
+                                    GroupsOfChildren.EXTERNAL_SERVICES
                             )
-                        }
-
-                        // update impact based on added genes
-                        // TODO: Refactored this, Man to review the place where impacts get updated.
-                        if (mutatedGenes != null && newActions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
-                            individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, newActions)
                         }
                     }
                 }
@@ -110,6 +103,12 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
             if (log.isTraceEnabled)
                 log.trace("{} existingExternalServiceData are added")
+
+            // update impact based on added genes
+            // TODO: Refactored this, Man to review the place where impacts get updated.
+            if (mutatedGenes != null && newActions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
+                individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, newActions)
+            }
         }
     }
 
