@@ -1,9 +1,9 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlJSONGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest

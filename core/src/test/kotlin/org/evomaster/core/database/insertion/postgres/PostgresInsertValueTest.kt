@@ -1,12 +1,16 @@
 package org.evomaster.core.database.insertion.postgres
 
+import com.google.gson.Gson
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.core.KGenericContainer
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.*
+import org.postgresql.util.PGobject
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
+import java.util.*
 
 class PostgresInsertValueTest {
 
@@ -18,10 +22,10 @@ class PostgresInsertValueTest {
         private val POSTGRES_VERSION: String = "14"
 
         private val postgres = KGenericContainer("postgres:$POSTGRES_VERSION")
-                .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
                 .withExposedPorts(5432)
                 //https://www.postgresql.org/docs/current/auth-trust.html
                 .withEnv("POSTGRES_HOST_AUTH_METHOD", "trust")
+                .withTmpFs(Collections.singletonMap("/var/lib/postgresql/data", "rw"))
 
         @BeforeAll
         @JvmStatic
@@ -38,7 +42,7 @@ class PostgresInsertValueTest {
              * The following issue describes how to avoid this by using a LogMessageWaitStrategy
              * https://github.com/testcontainers/testcontainers-java/issues/317
              */
-            postgres.waitingFor(LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s").withTimes(2))
+            postgres.waitingFor(LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s").withTimes(5))
 
             connection = DriverManager.getConnection(url, "postgres", "")
         }
@@ -114,5 +118,26 @@ class PostgresInsertValueTest {
         SqlScriptRunner.execCommand(connection, "INSERT INTO SpatialTable(lineSegmentColumn) VALUES ('((0.0, 0.0), (0.0, 1.0))')")
     }
 
+    @Test
+    fun testInsertJson() {
+        val fooDto = FooDto(-1)
+        val json = Gson().toJson(fooDto)
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE JSONTable(jsonColumn json NOT NULL)")
+        SqlScriptRunner.execCommand(connection, "INSERT INTO JSONTable(jsonColumn) VALUES ('${json}')")
+
+        val queryResult = SqlScriptRunner.execCommand(connection, "SELECT jsonColumn FROM JSONTable")
+        assertFalse(queryResult.isEmpty)
+
+        val row = queryResult.seeRows()[0]
+        val jsonValue = row.getValueByName("jsonColumn") as PGobject
+        val jsonFromDB = jsonValue.toString()
+
+        val dto = Gson().fromJson(jsonFromDB, FooDto::class.java)
+
+        assertEquals(-1, dto.x)
+    }
 
 }
+
+class FooDto(var x : Int)

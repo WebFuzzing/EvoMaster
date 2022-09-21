@@ -1,6 +1,6 @@
 package org.evomaster.core.search.algorithms.constant
 
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.service.Sampler
 
 /**

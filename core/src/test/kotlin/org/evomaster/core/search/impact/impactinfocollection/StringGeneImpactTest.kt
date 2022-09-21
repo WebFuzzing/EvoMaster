@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 
 /**

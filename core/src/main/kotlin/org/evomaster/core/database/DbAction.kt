@@ -4,10 +4,9 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ImmutableDataHolderGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.service.Randomness
 
 /**
  *  An action executed on the database.
@@ -29,9 +28,8 @@ class DbAction(
          * data already existing in the database.
          * This is very helpful when dealing with Foreign Keys.
          */
-        val representExistingData: Boolean = false,
-        localId : String = NONE_ACTION_COMPONENT_ID
-) : Action(listOf(), localId) {
+        val representExistingData: Boolean = false
+) : Action(listOf()) {
 
     init {
         /*
@@ -101,7 +99,7 @@ class DbAction(
     }
 
     override fun copyContent(): Action {
-        return DbAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData, localId = getLocalId())
+        return DbAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {

@@ -1,6 +1,6 @@
 package org.evomaster.core.search.impact.impactinfocollection.value.collection
 
-import org.evomaster.core.search.gene.ArrayGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact

@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.junit.jupiter.api.Assertions.*

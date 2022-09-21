@@ -57,14 +57,10 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         if (taintType.isTainted()) {
             /*
                 .matches() does a full match of the text, not a partial.
-
-                TODO: enclosing the pattern in ^(pattern)$ would be fine for most
-                cases, but not fully correct: eg for multi-lines, and if pattern
-                already has ^ and $
              */
-            String regex = "^(" + caller.pattern().toString() + ")$";
+            String regex = caller.pattern().toString();
             ExecutionTracer.addStringSpecialization(text,
-                    new StringSpecializationInfo(StringSpecialization.REGEX, regex, taintType));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regex, taintType));
         }
         boolean matcherMatchesResults = caller.matches();
         assert (patternMatchesResult == matcherMatchesResults);
@@ -95,7 +91,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
           Since matches() requires all the input to
           match the regex, and find() only requires
           the input to appear at least once, we could
-          add some prefix and sufix to match the
+          add some prefix and suffix to match the
           find
          */
 
@@ -106,20 +102,13 @@ public class MatcherClassReplacement implements MethodReplacementClass {
             use flags.
             \s\S is just a way to covering everything
          */
-        String anyPositionRegexMatch = String.format("([\\s\\S]*)(%s)([\\s\\S]*)", regex);
         TaintType taintType = ExecutionTracer.getTaintType(substring);
         if (taintType.isTainted()) {
-            /*
-                .matches() does a full match of the text, not a partial.
-
-                TODO: enclosing the pattern in ^(pattern)$ would be fine for most
-                cases, but not fully correct: eg for multi-lines, and if pattern
-                already has ^ and $
-             */
             ExecutionTracer.addStringSpecialization(substring,
-                    new StringSpecializationInfo(StringSpecialization.REGEX, anyPositionRegexMatch, taintType));
+                    new StringSpecializationInfo(StringSpecialization.REGEX_PARTIAL, regex, taintType));
         }
 
+        String anyPositionRegexMatch = RegexSharedUtils.handlePartialMatch(regex);
         boolean patternMatchResult = PatternMatchingHelper.matches(anyPositionRegexMatch, substring, idTemplate);
         boolean matcherFindResult = caller.find();
         assert (patternMatchResult == matcherFindResult);

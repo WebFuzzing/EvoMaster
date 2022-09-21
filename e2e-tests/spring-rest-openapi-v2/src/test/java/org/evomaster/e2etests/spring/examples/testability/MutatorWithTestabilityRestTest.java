@@ -13,7 +13,7 @@ import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.StringGene;
+import org.evomaster.core.search.gene.string.StringGene;
 import org.evomaster.core.search.service.Archive;
 import org.evomaster.core.search.service.mutator.EvaluatedMutation;
 import org.evomaster.core.search.service.mutator.StandardMutator;

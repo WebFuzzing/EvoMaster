@@ -18,9 +18,9 @@ import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -127,7 +127,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         actionCluster.values.forEach {
             (it as RestCallAction).addParam(QueryParam(key,
-                OptionalGene(key, DisruptiveGene(key, StringGene(key, "42"), 0.0))
+                CustomMutationRateGene(key,
+                    OptionalGene(key, CustomMutationRateGene(key, StringGene(key, "42"), 0.0)),
+                    probability = 1.0,
+                    searchPercentageActive = 0.1
+                )
             ))
         }
     }
@@ -138,7 +142,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         actionCluster.values.forEach {
             (it as RestCallAction).addParam(HeaderParam(key,
-                OptionalGene(key, DisruptiveGene(key, StringGene(key, "42"), 0.0))
+                CustomMutationRateGene(key,
+                    OptionalGene(key, CustomMutationRateGene(key, StringGene(key, "42"), 0.0)),
+                    probability = 1.0,
+                    searchPercentageActive = 0.1
+                )
             ))
         }
     }

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.value
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.TupleGene
+import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.impact.impactinfocollection.*
 
 class TupleGeneImpact (

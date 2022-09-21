@@ -4,8 +4,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.generateIndividualResults
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -328,7 +328,7 @@ class IndividualGeneImpactTest {
         override fun repairInitializationActions(randomness: Randomness) {}
     }
 
-   abstract class IndAction(genes : List<out Gene>) : Action(genes, localId = NONE_ACTION_COMPONENT_ID){
+   abstract class IndAction(genes : List<out Gene>) : Action(genes){
 
 
 
@@ -336,18 +336,22 @@ class IndividualGeneImpactTest {
             fun getIndMainAction(size: Int = 1): List<IndMainAction>{
                 if(size < 1) throw IllegalArgumentException("size should be at least 1, but $size")
                 return (0 until size).map {
-                    IndMainAction(listOf(StringGene("index1","index1"),
-                            StringGene("index2", "index2")))
+                    IndMainAction(listOf(
+                        StringGene("index1","index1"),
+                            StringGene("index2", "index2")
+                    ))
                             .apply { doInitialize(Randomness().apply { updateSeed(42) }) }}
             }
 
             fun getSeqIndInitAction(size : Int) : List<IndInitAction>{
                 if(size < 0) throw IllegalArgumentException("size should not be less than 0, but $size")
                 if (size == 0) return  listOf()
-                return (0 until size).map { IndInitAction(listOf(IntegerGene(
+                return (0 until size).map { IndInitAction(listOf(
+                    IntegerGene(
                         name = "index$it",
                         value = it
-                ))) }
+                )
+                )) }
             }
 
             fun getSeqIndInitAction(templates : Array<Int>, repeat : Array<Int>) : List<List<IndInitAction>>{
@@ -358,10 +362,12 @@ class IndividualGeneImpactTest {
                 templates.forEachIndexed { t, i ->
                     (0..repeat[t]).forEach { _->
                         actions.add((0 until i).map {
-                            IndInitAction(listOf(IntegerGene(
+                            IndInitAction(listOf(
+                                IntegerGene(
                                     name = "index$t$it",
                                     value = it
-                            )))
+                            )
+                            ))
                         })
                     }
                 }

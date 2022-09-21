@@ -3,12 +3,14 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlJsonGeneImpact
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -50,17 +52,8 @@ class SqlJSONPathGene(
         pathExpression.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return if (pathExpression.isMutable()) listOf(pathExpression) else emptyList()
-    }
 
-    override fun adaptiveSelectSubset(
+    override fun adaptiveSelectSubsetToMutate(
         randomness: Randomness,
         internalGenes: List<Gene>,
         mwc: MutationWeightControl,
@@ -79,17 +72,6 @@ class SqlJSONPathGene(
         throw IllegalArgumentException("impact is null or not SqlJsonGeneImpact")
     }
 
-    override fun shallowMutate(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        mwc: MutationWeightControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        // do nothing since the objectGene is not mutable
-        return true
-    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -134,8 +116,6 @@ class SqlJSONPathGene(
         return pathExpression.mutationWeight()
     }
 
-    override fun innerGene(): List<Gene> = listOf(pathExpression)
-
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when (gene) {
@@ -145,6 +125,15 @@ class SqlJSONPathGene(
                 false
             }
         }
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
 
 }

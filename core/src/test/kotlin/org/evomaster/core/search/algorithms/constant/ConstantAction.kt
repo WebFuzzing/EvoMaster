@@ -2,13 +2,11 @@ package org.evomaster.core.search.algorithms.constant
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.StructuralElement
-import org.evomaster.core.search.algorithms.onemax.OneMaxAction
-import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 
-class ConstantAction(val gene: IntegerGene, localId : String = NONE_ACTION_COMPONENT_ID
-) : Action(mutableListOf(gene), localId){
+class ConstantAction(val gene: IntegerGene
+) : Action(mutableListOf(gene)){
 
     override fun getName(): String {
         return "ConstantAction Action"
@@ -23,6 +21,6 @@ class ConstantAction(val gene: IntegerGene, localId : String = NONE_ACTION_COMPO
     }
 
     override fun copyContent(): StructuralElement {
-        return ConstantAction(gene.copy() as IntegerGene, getLocalId())
+        return ConstantAction(gene.copy() as IntegerGene)
     }
 }

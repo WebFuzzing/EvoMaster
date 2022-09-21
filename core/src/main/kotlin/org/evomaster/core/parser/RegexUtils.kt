@@ -5,6 +5,21 @@ import java.util.stream.Collectors
 
 object RegexUtils {
 
+    /**
+     * These are regex with no value, as they match everything.
+     * Note: we could have something more sophisticated, to check for any possible meaningless one.
+     * But this simple list should do for most cases.
+     *
+     * TODO: this is not really true, as by default . does not match line breakers like \n
+     * So, although they are not important, they are technically not "meaningless"
+     */
+    private val meaninglessRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
+
+
+    fun isMeaningfulRegex(regex: String):  Boolean {
+        return ! meaninglessRegex.contains(regex)
+    }
+
     fun ignoreCaseRegex(input: String) : String {
 
         return input.chars()

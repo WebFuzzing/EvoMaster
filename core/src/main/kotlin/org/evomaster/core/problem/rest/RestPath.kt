@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI

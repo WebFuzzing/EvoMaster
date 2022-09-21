@@ -57,9 +57,17 @@ public enum StringSpecialization implements Serializable {
 
 
     /**
-     * String constrained by a regular expression
+     * String constrained by a regular expression.
+     * Should match whole text
      */
-    REGEX,
+    REGEX_WHOLE,
+
+    /**
+     * String constrained by a regular expression.
+     * Should match a part of the text, and not necessarely all of it
+     */
+    REGEX_PARTIAL,
+
 
     /**
      * String parsed to double
@@ -102,6 +110,10 @@ public enum StringSpecialization implements Serializable {
     /**
      *  String should be a valid URI
      */
-    URI
+    URI;
 
+
+    public boolean isRegex(){
+        return this == REGEX_PARTIAL || this == REGEX_WHOLE;
+    }
 }

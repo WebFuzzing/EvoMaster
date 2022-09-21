@@ -2,7 +2,7 @@ package org.evomaster.core.search.algorithms.onemax
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.EnumGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator

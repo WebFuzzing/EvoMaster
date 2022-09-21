@@ -8,6 +8,10 @@ import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -120,8 +124,8 @@ class RestActionBuilderV3Test{
 
         cluster.values.forEach { a->
             numOfRG += a.seeTopGenes().size
-            numOfIG0 += a.seeTopGenes().count { g-> g.innerGene().isEmpty() }
-            numOfIGM += a.seeTopGenes().count { g-> g.innerGene().isNotEmpty() }
+            numOfIG0 += a.seeTopGenes().count { g-> g.getViewOfChildren().isEmpty() }
+            numOfIGM += a.seeTopGenes().count { g-> g.getViewOfChildren().isNotEmpty() }
             numOfObjOfIGM += a.seeTopGenes().count { g-> ParamUtil.getValueGene(g) is ObjectGene }
         }
         assertEquals(expectedNumOfRootGene, numOfRG)

@@ -3,12 +3,15 @@ package org.evomaster.core.search.gene.sql.textsearch
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
-import org.evomaster.core.search.gene.GeneUtils.removeEnclosedQuotationMarks
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.SINGLE_APOSTROPHE_PLACEHOLDER
+import org.evomaster.core.search.gene.utils.GeneUtils.removeEnclosedQuotationMarks
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -31,13 +34,13 @@ import org.slf4j.LoggerFactory
  *  are NOT valid ts_query values
  */
 class SqlTextSearchQueryGene(
-        /*
-         * The name of this gene
-         */
+    /*
+     * The name of this gene
+     */
         name: String,
-        /*
-         * TS queries are lists of lexemes.
-         */
+    /*
+     * TS queries are lists of lexemes.
+     */
         val queryLexemes: ArrayGene<StringGene> = ArrayGene(name = "lexemes",
                 template = StringGene("lexeme template",
                         // lexemes are non empty strings
@@ -48,7 +51,7 @@ class SqlTextSearchQueryGene(
                 minSize = 0
                 ),
 
-) : CompositeFixedGene(name, mutableListOf(queryLexemes)) {
+    ) : CompositeFixedGene(name, mutableListOf(queryLexemes)) {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(SqlTextSearchQueryGene::class.java)
@@ -80,21 +83,13 @@ class SqlTextSearchQueryGene(
         }
     }
 
-    override fun candidatesInternalGenes(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(queryLexemes)
-    }
+
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         val queryStr =
                 queryLexemes.getViewOfElements()
@@ -128,9 +123,6 @@ class SqlTextSearchQueryGene(
     }
 
 
-
-    override fun innerGene(): List<Gene> = listOf(queryLexemes)
-
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlTextSearchQueryGene -> {
@@ -143,5 +135,13 @@ class SqlTextSearchQueryGene(
         }
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
 
 }

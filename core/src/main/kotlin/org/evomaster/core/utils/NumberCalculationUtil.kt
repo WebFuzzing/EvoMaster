@@ -1,6 +1,6 @@
 package org.evomaster.core.utils
 
-import org.evomaster.core.search.gene.NumberMutatorUtils
+import org.evomaster.core.search.gene.utils.NumberMutatorUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal

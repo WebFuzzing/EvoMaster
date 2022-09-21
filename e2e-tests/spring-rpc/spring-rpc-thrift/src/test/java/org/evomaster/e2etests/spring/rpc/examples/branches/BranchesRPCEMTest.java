@@ -7,7 +7,7 @@ import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.IntegerGene;
+import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.search.gene.ObjectGene;
 import org.evomaster.e2etests.spring.rpc.examples.SpringRPCTestBase;
 import org.junit.jupiter.api.BeforeAll;
