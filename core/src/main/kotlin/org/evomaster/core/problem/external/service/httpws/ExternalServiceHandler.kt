@@ -166,6 +166,7 @@ class ExternalServiceHandler {
                         counter++
                     )
                     action.doInitialize(randomness)
+                    action.confirmUsed()
                     actions.add(action)
                 }
         }

@@ -104,6 +104,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach {
                     // TODO: Handling WireMock for ExternalServiceActions should be generalised
                     //  to facilitate other cases such as RPC and GraphQL
+                    it.resetActive()
                     it.buildResponse()
                 }
 
@@ -143,7 +144,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                             // Code never reaches this part
                             action.confirmNotUsed()
                         }
-                        action.resetActive()
                     }
                 }
 
