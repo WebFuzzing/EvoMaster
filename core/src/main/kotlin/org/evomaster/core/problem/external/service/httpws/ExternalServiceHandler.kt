@@ -1,16 +1,15 @@
 package org.evomaster.core.problem.external.service.httpws
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isAddressAvailable
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.nextIPAddress
-
-import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isReservedIP
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.nextIPAddress
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -121,14 +120,8 @@ class ExternalServiceHandler {
      * already.
      *
      * This gets reset each time a new main action is evaluated.
-     *
-     * TODO: This is not perfect yet, have to explore more scenarios and perfect the
-     *  implementation.
-     *
-     * TODO: Building the stub for WireMock will not be handled at this point, need to
-     *  validate the idea
      */
-    fun getExternalServiceActions(): MutableList<HttpExternalServiceAction> {
+    fun getAllExternalServiceActions(): List<HttpExternalServiceAction> {
         val actions = mutableListOf<HttpExternalServiceAction>()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
@@ -148,9 +141,35 @@ class ExternalServiceHandler {
     }
 
     /**
+     * Return a list of [HttpExternalServiceAction]s for the given absoluteURL.
+     *
+     * There is a possibility to have multiple requests made for the same URL several,
+     * so it returns a list of actions.
+     */
+    fun getExternalServiceActionsForURL(url: String): List<HttpExternalServiceAction> {
+        val actions = mutableListOf<HttpExternalServiceAction>()
+        externalServices.forEach { (_, service) ->
+            service.getAllServedRequests()
+                .filter { it.absoluteURL == url }
+                .distinct()
+                .forEach { request ->
+                    val action = HttpExternalServiceAction(
+                        request,
+                        "",
+                        service,
+                        counter++
+                    )
+                    action.doInitialize(randomness)
+                    actions.add(action)
+                }
+        }
+        return actions
+    }
+
+    /**
      * Returns only the served requests related to the specific WireMock
      */
-    fun getRequestedExternalServiceUrls() : List<String> {
+    fun getRequestedExternalServiceUrls(): List<String> {
         val output: MutableList<String> = mutableListOf()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {

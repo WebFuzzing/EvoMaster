@@ -74,22 +74,16 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     val urls = esr[index]
 
                     if (urls!!.isNotEmpty()) {
-
                         val actions = urls.map { url ->
-                            // TODO: Instead of a List it's wise to return one action. Need a refactor.
-                            //  There are chance one absolute URL to have multiple requests in WireMock,
-                            //   have to consider when handling this.
                             sampler.getExternalService()
-                                .getExternalServiceActions()
-                                .filter { it.request.absoluteURL == url }
-
+                                .getExternalServiceActionsForURL(url)
                         }.flatten()
 
                         if (actions.isNotEmpty()) {
                             newActions.addAll(actions)
                             parent.addChildrenToGroup(
-                                    actions,
-                                    GroupsOfChildren.EXTERNAL_SERVICES
+                                actions,
+                                GroupsOfChildren.EXTERNAL_SERVICES
                             )
                         }
                     }
