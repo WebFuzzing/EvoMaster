@@ -50,11 +50,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
 
-    override fun preChildrenSetup(c : Collection<StructuralElement>) {
-        if (areAllLocalIdsNotInitialized())
-            setLocalIdsForChildren((c as List<ActionComponent>).flatMap { it.flatView() })
-    }
-
     /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
      *
