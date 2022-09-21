@@ -30,9 +30,8 @@ class RPCExternalServiceAction(
 
     responseParam: RPCResponseParam,
     active : Boolean = false,
-    used : Boolean = false,
-    localId : String
-) : ApiExternalServiceAction(responseParam, active, used, localId) {
+    used : Boolean = false
+) : ApiExternalServiceAction(responseParam, active, used) {
 
     companion object{
         private const val RPC_EX_NAME_SEPARATOR =":::"
@@ -53,6 +52,6 @@ class RPCExternalServiceAction(
     }
 
     override fun copyContent(): RPCExternalServiceAction {
-        return RPCExternalServiceAction(interfaceName, functionName, descriptiveInfo, requestRuleIdentifier, response.copy() as RPCResponseParam, active, used, getLocalId())
+        return RPCExternalServiceAction(interfaceName, functionName, descriptiveInfo, requestRuleIdentifier, response.copy() as RPCResponseParam, active, used)
     }
 }

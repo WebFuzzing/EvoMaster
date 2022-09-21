@@ -44,6 +44,7 @@ import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.NumericStringGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -221,7 +222,7 @@ class RPCEndpointsHandler {
 
             val response = RPCResponseParam(EnumGene("responseType", listOf("JSON")),rgene)
             return RPCExternalServiceAction(
-                    interfaceName = dto.interfaceFullName,functionName = dto.functionName, descriptiveInfo = dto.appKey, requestRuleIdentifier = dto.requests?.first(),responseParam = response, localId = ActionComponent.NONE_ACTION_COMPONENT_ID)
+                    interfaceName = dto.interfaceFullName,functionName = dto.functionName, descriptiveInfo = dto.appKey, requestRuleIdentifier = dto.requests?.first(),responseParam = response)
         }
     }
 
