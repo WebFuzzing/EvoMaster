@@ -1074,7 +1074,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public boolean customizeMockingRPCExternalService(List<MockRPCExternalServiceDto> externalServiceDtos) {
+    public boolean customizeMockingRPCExternalService(List<MockRPCExternalServiceDto> externalServiceDtos, boolean enabled) {
         return false;
     }
 
