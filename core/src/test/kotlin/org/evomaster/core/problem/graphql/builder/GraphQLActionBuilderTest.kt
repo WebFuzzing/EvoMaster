@@ -1207,11 +1207,11 @@ class GraphQLActionBuilderTest {
         assertTrue(objAboutMe.fields.any { it is TupleGene && it.name == "dataSetMetadataList" })
 
         val tupleDataSetMetadataList = objAboutMe.fields.first { it.name == "dataSetMetadataList" } as TupleGene
-        assertEquals(5, tupleDataSetMetadataList.elements.size)
+        assertEquals(3, tupleDataSetMetadataList.elements.size)
         assertTrue((tupleDataSetMetadataList.elements.last() as OptionalGene).gene !is CycleObjectGene)
     }
 
-    @Disabled("this gives lot of GC issues")
+    //@Disabled("this gives lot of GC issues")
     @Test
     fun zoraTest() {
         val actionCluster = mutableMapOf<String, Action>()
