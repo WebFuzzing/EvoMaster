@@ -16,6 +16,12 @@ import org.evomaster.core.search.service.Randomness
  * To manage the external service related activities
  */
 class ExternalServiceHandler {
+
+    companion object {
+        const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
+        const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
+    }
+
     /**
      * This will hold the information about the external service
      * calls inside the SUT. Information will be passed to the core
@@ -237,20 +243,26 @@ class ExternalServiceHandler {
         )
         wm.start()
 
-        // to prevent from the 404 when no matching stub below stub is added
-        // WireMock throws an exception when there is no stub for the request
-        // to avoid the exception it handled manually
-        wm.stubFor(
-            any(anyUrl())
-                .atPriority(10)
-                .willReturn(
-                    aResponse()
-                        .withStatus(404)
-                        .withBody("Not Found")
-                )
-        )
+        wireMockSetDefaults(wm)
 
         return wm
+    }
+
+    /**
+     * To prevent from the 404 when no matching stub below stub is added
+     * WireMock throws an exception when there is no stub for the request
+     * to avoid the exception it handled manually
+     */
+    fun wireMockSetDefaults(wireMockServer: WireMockServer) {
+        wireMockServer.stubFor(
+            any(anyUrl())
+                .atPriority(100)
+                .willReturn(
+                    aResponse()
+                        .withStatus(WIREMOCK_DEFAULT_RESPONSE_CODE)
+                        .withBody(WIREMOCK_DEFAULT_RESPONSE_MESSAGE)
+                )
+        )
     }
 
 }
