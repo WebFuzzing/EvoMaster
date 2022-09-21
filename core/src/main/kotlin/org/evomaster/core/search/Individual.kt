@@ -49,6 +49,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         private val log = LoggerFactory.getLogger(Individual::class.java)
     }
 
+
+    override fun preChildrenSetup(c : Collection<StructuralElement>) {
+        if (areAllLocalIdsNotInitialized())
+            setLocalIdsForChildren((c as List<ActionComponent>).flatMap { it.flatView() })
+    }
+
     /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
      *
@@ -419,8 +425,14 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                 && flatView().run { this.map { it.getLocalId() }.toSet().size == this.size }
     }
 
-    private fun isLocalIdsNotAssigned() : Boolean{
-        return flatView().all { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID}
+    /**
+     * @return if local ids are not initialized
+     */
+    private fun areAllLocalIdsNotInitialized() : Boolean{
+        return flatView().all { !it.hasLocalId ()
+                // FIXME Man need to check local id for gene for the moment
+                //&& (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> !i.hasLocalId() }})
+        }
     }
 
     private fun flatView() : List<ActionComponent>{
@@ -429,7 +441,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     private fun areAllLocalIdsAssigned() : Boolean{
-        return  flatView().none { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID }
+        return  flatView().all { it.hasLocalId()
+                // FIXME Man need to check local id for gene for the moment
+                //&& (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> i.hasLocalId() }})
+        }
     }
 
     /**

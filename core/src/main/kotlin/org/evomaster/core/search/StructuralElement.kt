@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.Lazy
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
@@ -34,7 +35,43 @@ abstract class StructuralElement (
 
     companion object{
         private val log = LoggerFactory.getLogger(StructuralElement::class.java)
+
+        const val NONE_LOCAL_ID = "NONE_LOCAL_ID"
     }
+
+    /**
+     * a unique id is used to identify this structural element in the context of an individual
+     */
+    private var localId : String = NONE_LOCAL_ID
+
+    /**
+     * set a local id of the action
+     * note that the id can be assigned only if the current id is NONE_ACTION_ID
+     */
+    fun setLocalId(id: String) {
+        if (getRoot() is Individual){
+            throw IllegalStateException("cannot re-assign the id of the action if it belongs to the individual")
+        }
+
+        if (!hasLocalId())
+            this.localId = id
+        else
+            throw IllegalStateException("cannot re-assign the id of the action, the current id is ${this.localId}")
+    }
+
+    /**
+     * return if the action has been assigned with a local id
+     */
+    fun hasLocalId() = localId != NONE_LOCAL_ID
+
+    /**
+     * reset local id of the action
+     */
+    fun resetLocalId() {
+        localId = NONE_LOCAL_ID
+    }
+
+    fun getLocalId() = localId
 
     /**
      * parent of the element, which contains current the element
@@ -256,6 +293,11 @@ abstract class StructuralElement (
      */
     open fun copy() : StructuralElement {
         val copy = copyContent()
+        if (hasLocalId())
+            copy.setLocalId(localId)
+        Lazy.assert {
+            copy.getLocalId() == localId
+        }
         copy.postCopy(this)
         return copy
     }
