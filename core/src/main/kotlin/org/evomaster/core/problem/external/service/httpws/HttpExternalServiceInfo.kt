@@ -25,9 +25,7 @@ class HttpExternalServiceInfo(
      * Will be used in WireMock as it's identifier to simplify the tracking.
      */
     fun signature(): String {
-        val md = MessageDigest.getInstance("MD5")
-        val value = protocol + remoteHostname + remotePort.toString()
-        return BigInteger(1, md.digest(value.toByteArray())).toString(16).padStart(32, '0')
+        return protocol + remoteHostname + remotePort.toString()
     }
 
     override fun equals(other: Any?): Boolean {

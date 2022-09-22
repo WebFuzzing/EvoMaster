@@ -39,9 +39,9 @@ class ExternalServiceHandler {
     private lateinit var config: EMConfig
 
     /**
-     * Contains the information about external services as map.
+     * Contains the information about [ExternalService] as map.
      *
-     * Mapped against to hostname with ExternalService.
+     * Mapped against to signature of the [ExternalService].
      */
     private val externalServices: MutableMap<String, ExternalService> = mutableMapOf()
 
@@ -56,17 +56,17 @@ class ExternalServiceHandler {
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
      *
-     * If there is a WireMock instance is available for the hostname,
+     * If there is a WireMock instance is available for the [ExternalService] signature,
      * it will be skipped from creating a new one.
      */
     fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (!externalServices.containsKey(externalServiceInfo.remoteHostname)) {
+            if (!externalServices.containsKey(externalServiceInfo.signature())) {
                 val ip = getIP(externalServiceInfo.remotePort)
                 lastIPAddress = ip
                 val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
 
-                externalServices[externalServiceInfo.remoteHostname] = ExternalService(externalServiceInfo, wm)
+                externalServices[externalServiceInfo.signature()] = ExternalService(externalServiceInfo, wm)
             }
         }
     }
@@ -121,39 +121,37 @@ class ExternalServiceHandler {
     }
 
     /**
-     * This takes all the served requests from WireMock server and creates them
-     * as ExternalServiceAction. It ignores if the same absolute URL is added
-     * already.
-     *
-     * This gets reset each time a new main action is evaluated.
+     * Creates an [HttpExternalServiceAction] based on the given [HttpExternalServiceRequest]
      */
-    fun getAllExternalServiceActions(): List<HttpExternalServiceAction> {
-        val actions = mutableListOf<HttpExternalServiceAction>()
-        externalServices.forEach { (_, u) ->
-            u.getAllServedRequests().forEach {
-                val action = HttpExternalServiceAction(
-                    it,
-                    "",
-                    u,
-                    counter++
-                )
-                action.doInitialize(randomness)
-                action.confirmUsed()
-                actions.add(action)
-            }
-        }
-        return actions
+    fun createExternalServiceAction(request: HttpExternalServiceRequest): HttpExternalServiceAction {
+        val externalService = getExternalService(request.wireMockSignature)
+
+        val action = HttpExternalServiceAction(
+            request,
+            "",
+            externalService,
+            counter++
+        )
+        action.doInitialize(randomness)
+        return action
     }
 
+    /**
+     * Returns the [ExternalService] if the signature exists
+     */
+    fun getExternalService(signature: String): ExternalService {
+        return externalServices.getValue(signature)
+    }
 
     /**
-     * Returns only the served requests related to the specific WireMock
+     * Returns a list of the served requests related to the specific WireMock
+     * as [HttpExternalServiceRequest]
      */
-    fun getRequestedExternalServiceUrls(): List<String> {
-        val output: MutableList<String> = mutableListOf()
+    fun getAllServedExternalServiceRequests(): List<HttpExternalServiceRequest> {
+        val output: MutableList<HttpExternalServiceRequest> = mutableListOf()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
-                output.add(it.absoluteURL)
+                output.add(it)
             }
         }
         return output

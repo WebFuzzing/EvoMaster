@@ -18,6 +18,7 @@ class HttpExternalServiceRequest(
     val url: String,
     val absoluteURL: String,
     val wasMatched: Boolean,
+    val wireMockSignature: String
 ) {
 
     fun getId() : String {

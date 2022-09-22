@@ -43,6 +43,7 @@ class ExternalService(
                     it.request.url,
                     it.request.absoluteUrl,
                     it.wasMatched,
+                    externalServiceInfo.signature()
                 )
         }.toList()
     }

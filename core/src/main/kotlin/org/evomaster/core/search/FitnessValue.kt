@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceRequest
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
@@ -78,7 +79,7 @@ class FitnessValue(
      * Contains the absolute URLs of what accessed by the SUT.
      * The key is the action index.
      */
-    private val accessedExternalServiceRequests: MutableMap<Int, List<String>> = mutableMapOf()
+    private val accessedExternalServiceRequests: MutableMap<Int, List<HttpExternalServiceRequest>> = mutableMapOf()
 
     /**
     * How long it took to evaluate this fitness value.
@@ -668,13 +669,13 @@ class FitnessValue(
 
     fun getViewAccessedExternalServiceRequests() = accessedExternalServiceRequests
 
-    fun registerExternalServiceRequest(actionIndex: Int, urls: List<String>){
+    fun registerExternalServiceRequest(actionIndex: Int, requests: List<HttpExternalServiceRequest>){
         if(accessedExternalServiceRequests.containsKey(actionIndex)){
             throw IllegalArgumentException("Action index $actionIndex is already handled")
         }
-        if(urls.isEmpty()){
+        if(requests.isEmpty()){
             throw IllegalArgumentException("No URLs as input")
         }
-        accessedExternalServiceRequests[actionIndex] = urls
+        accessedExternalServiceRequests[actionIndex] = requests
     }
 }

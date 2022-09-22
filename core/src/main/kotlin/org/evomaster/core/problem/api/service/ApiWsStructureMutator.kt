@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.httpws.service
 
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
@@ -8,8 +9,8 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
-import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
@@ -32,77 +33,85 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
     }
 
-    private fun <T : ApiWsIndividual> addExternalServiceActions(
+    // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
+    @Inject
+    protected lateinit var externalServiceHandler: ExternalServiceHandler
+
+    private fun addExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         /**
          * TODO add why
          */
         mutatedGenes: MutatedGeneSpecification?,
-        /**
-         * [ExternalServiceHandler] is not injected in mutator at the moment, also to validate
-         * it's related to REST only sampler is needed
-         */
-        sampler: ApiWsSampler<T>
     ) {
 
         if (config.externalServiceIPSelectionStrategy == EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             return
         }
 
-        if (sampler is ResourceSampler) {
-            val ind = individual.individual as? ApiWsIndividual
-                ?: throw IllegalArgumentException("Invalid individual type")
+        val ind = individual.individual as? ApiWsIndividual
+            ?: throw IllegalArgumentException("Invalid individual type")
 
-            val esr = individual.fitness.getViewAccessedExternalServiceRequests()
-            if (esr.isEmpty()) {
-                //nothing to do
-                return
+        val esr = individual.fitness.getViewAccessedExternalServiceRequests()
+        if (esr.isEmpty()) {
+            //nothing to do
+            return
+        }
+
+        val newActions: MutableList<HttpExternalServiceAction> = mutableListOf()
+
+        ind.seeMainExecutableActions().forEachIndexed { index, action ->
+            val parent = action.parent
+            if (parent !is EnterpriseActionGroup) {
+                //TODO this should not really happen
+                val msg = "Action is not inside an EnterpriseActionGroup"
+                log.error(msg)
+                throw RuntimeException(msg)
             }
 
-            val newActions: MutableList<HttpExternalServiceAction> = mutableListOf()
+            if (esr.containsKey(index)) {
+                val requests = esr[index]
 
-            ind.seeMainExecutableActions().forEachIndexed { index, action ->
-                val parent = action.parent
-                if (parent !is EnterpriseActionGroup) {
-                    //TODO this should not really happen
-                    val msg = "Action is not inside an EnterpriseActionGroup"
-                    log.error(msg)
-                    throw RuntimeException(msg)
-                }
+                if (requests!!.isNotEmpty()) {
+                    val existingActions = parent.getExternalServiceActions()
 
-                if (esr.containsKey(index)) {
-                    val urls = esr[index]
+                    val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
-                    if (urls!!.isNotEmpty()) {
-                        val actions = urls.map { url ->
-                            sampler.getExternalService()
-                                .getAllExternalServiceActions()
-                        }.flatten()
-
-                        if (actions.isNotEmpty()) {
-                            newActions.addAll(actions)
-                            parent.addChildrenToGroup(
-                                actions,
-                                GroupsOfChildren.EXTERNAL_SERVICES
-                            )
+                    // TODO: Man is the following done as expected?
+                    requests.map { request ->
+                        if (existingActions.filterIsInstance<HttpExternalServiceAction>()
+                                .none { it.request.absoluteURL == request.absoluteURL }
+                        ) {
+                            val a = externalServiceHandler
+                                .createExternalServiceAction(request)
+                            a.confirmUsed()
+                            actions.add(a)
                         }
+                    }
+
+                    if (actions.isNotEmpty()) {
+                        newActions.addAll(actions)
+                        parent.addChildrenToGroup(
+                            actions,
+                            GroupsOfChildren.EXTERNAL_SERVICES
+                        )
                     }
                 }
             }
+        }
 
-            // all actions should have local ids
-            Lazy.assert {
-                ind.seeAllActions().all { it.hasLocalId() }
-            }
+        // all actions should have local ids
+        Lazy.assert {
+            ind.seeAllActions().all { it.hasLocalId() }
+        }
 
-            if (log.isTraceEnabled)
-                log.trace("{} existingExternalServiceData are added")
+        if (log.isTraceEnabled)
+            log.trace("{} existingExternalServiceData are added")
 
-            // update impact based on added genes
-            // TODO: Refactored this, Man to review the place where impacts get updated.
-            if (mutatedGenes != null && newActions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
-                individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, newActions)
-            }
+        // update impact based on added genes
+        // TODO: Refactored this, Man to review the place where impacts get updated.
+        if (mutatedGenes != null && newActions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, newActions)
         }
     }
 
@@ -112,7 +121,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         sampler: ApiWsSampler<T>
     ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
-        addExternalServiceActions(individual, mutatedGenes, sampler)
+        addExternalServiceActions(individual, mutatedGenes)
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(

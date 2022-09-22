@@ -128,19 +128,19 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 }
 
                 // get visited wiremock instances
-                val requestedExternalServiceUrls = externalServiceHandler.getRequestedExternalServiceUrls()
-                if (requestedExternalServiceUrls.isNotEmpty()) {
+                val requestedExternalServiceRequests = externalServiceHandler.getAllServedExternalServiceRequests()
+                if (requestedExternalServiceRequests.isNotEmpty()) {
                     fv.registerExternalServiceRequest(
                         indexOfAction,
-                        requestedExternalServiceUrls
+                        requestedExternalServiceRequests
                     )
                 }
 
                 // Mark the existing external service actions as used if there is call
                 //  made based on the absolute URL. Otherwise, mark it not used
-                requestedExternalServiceUrls.forEach { url ->
+                requestedExternalServiceRequests.forEach { request ->
                     externalServiceActions.filterIsInstance<HttpExternalServiceAction>().forEach { action ->
-                        if (action.request.absoluteURL == url) {
+                        if (action.request.absoluteURL == request.absoluteURL) {
                             action.confirmUsed()
                         } else {
                             // Code never reaches this part

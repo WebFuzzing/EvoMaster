@@ -759,7 +759,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             done on WM directly, and it must be done at SUT call (as WM get reset there)
          */
 
-        infoDto.forEachIndexed { index, info ->
+        infoDto.forEachIndexed { _, info ->
             info.externalServices.forEach { es ->
 
                 /*
