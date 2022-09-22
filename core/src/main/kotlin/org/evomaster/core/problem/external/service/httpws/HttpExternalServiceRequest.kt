@@ -9,6 +9,10 @@ import java.util.UUID
  * TODO: Properties have to extended further based on the need
  */
 class HttpExternalServiceRequest(
+    /**
+     * Most likely the UUID created by the respective WireMock
+     * while capturing the request.
+     */
     val id: UUID,
     val method: String,
     val url: String,
