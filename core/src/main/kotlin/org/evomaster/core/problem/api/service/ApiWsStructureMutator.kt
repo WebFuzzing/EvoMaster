@@ -80,7 +80,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
                     val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
-                    // TODO: Man is the following done as expected?
                     requests.forEach { request ->
                         if (existingActions.filterIsInstance<HttpExternalServiceAction>()
                                 .none { it.request.absoluteURL == request.absoluteURL }

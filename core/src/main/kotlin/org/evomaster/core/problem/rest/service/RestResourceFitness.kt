@@ -148,8 +148,21 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                                 // Code never reaches this part
                                 action.confirmNotUsed()
                             }
-                    }
+                        }
                 }
+
+                // TODO: Not completed
+                externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
+                    .forEach { action ->
+                        val requests = requestedExternalServiceRequests
+                            .filter { it.absoluteURL == action.request.absoluteURL }
+
+                        if (requests.isEmpty()) {
+                            action.confirmNotUsed()
+                        } else {
+                            action.confirmUsed()
+                        }
+                    }
 
                 if (!ok) {
                     terminated = true
