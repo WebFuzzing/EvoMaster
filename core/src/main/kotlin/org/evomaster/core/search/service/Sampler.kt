@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -61,6 +62,7 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
             sampleAtRandom()
         }
 
+        samplePostProcessing(ind)
 
         org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
         return ind
@@ -73,6 +75,19 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      */
     protected abstract fun sampleAtRandom(): T
 
+    open fun samplePostProcessing(ind: T){
+
+        val state = ind.searchGlobalState ?: return
+        val time = state.time.percentageUsedBudget()
+
+        ind.seeAllActions().forEach { a ->
+            val allGenes = a.seeTopGenes().flatMap { it.flatView() }
+
+            allGenes.filterIsInstance<OptionalGene>()
+                .filter { it.searchPercentageActive < time }
+                .forEach { it.forbidSelection() }
+        }
+    }
 
     /**
      * Create a new individual, but not fully at random, but rather

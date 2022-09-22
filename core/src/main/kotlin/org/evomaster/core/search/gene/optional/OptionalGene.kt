@@ -75,6 +75,13 @@ class OptionalGene(name: String,
         return selectable
     }
 
+    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+        if(this.javaClass == klass){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
+    }
+
     override fun copyValueFrom(other: Gene) {
         if (other !is OptionalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
