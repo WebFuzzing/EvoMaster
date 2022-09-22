@@ -69,6 +69,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 throw RuntimeException(msg)
             }
 
+            // Adding the new [HttpExternalServiceAction] will be handled here. Handling
+            // used and not used external service actions will be handled in Fitness using
+            // [used] property in action.
             if (esr.containsKey(index)) {
                 val requests = esr[index]
 
@@ -78,7 +81,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                     val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
                     // TODO: Man is the following done as expected?
-                    requests.map { request ->
+                    requests.forEach { request ->
                         if (existingActions.filterIsInstance<HttpExternalServiceAction>()
                                 .none { it.request.absoluteURL == request.absoluteURL }
                         ) {
