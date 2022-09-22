@@ -67,7 +67,7 @@ class CustomMutationRateGene<out T>(
     }
 
     override fun copyContent(): Gene {
-        return CustomMutationRateGene(name, gene.copy(), probability)
+        return CustomMutationRateGene(name, gene.copy(), probability, searchPercentageActive)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

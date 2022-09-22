@@ -66,7 +66,7 @@ class OptionalGene(name: String,
     }
 
     override fun copyContent(): Gene {
-        val copy = OptionalGene(name, gene.copy(), isActive, requestSelection)
+        val copy = OptionalGene(name, gene.copy(), isActive, requestSelection, searchPercentageActive)
         copy.selectable = this.selectable
         return copy
     }
