@@ -80,15 +80,19 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
                     val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
-                    requests.forEach { request ->
-                        if (existingActions.filterIsInstance<HttpExternalServiceAction>()
-                                .none { it.request.absoluteURL == request.absoluteURL }
-                        ) {
-                            val a = externalServiceHandler
-                                .createExternalServiceAction(request)
-                            a.confirmUsed()
-                            actions.add(a)
-                        }
+                    requests
+                        .groupBy { it.absoluteURL }
+                        .forEach { (url, requests) ->
+                            // here, we assume that the front external service actions should be accessed
+                            val startingIndex = existingActions.filterIsInstance<HttpExternalServiceAction>().count { it.request.absoluteURL == url}
+                            if (startingIndex < requests.size){
+                                (startingIndex until  requests.count()).forEach {i->
+                                    val a = externalServiceHandler
+                                        .createExternalServiceAction(requests[i])
+                                    a.confirmUsed()
+                                    actions.add(a)
+                                }
+                            }
                     }
 
                     if (actions.isNotEmpty()) {

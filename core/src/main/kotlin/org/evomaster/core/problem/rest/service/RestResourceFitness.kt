@@ -136,16 +136,18 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     )
                 }
 
-                // TODO: Not completed
                 externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
-                    .forEach { action ->
-                        val requests = requestedExternalServiceRequests
-                            .filter { it.absoluteURL == action.request.absoluteURL }
+                    .groupBy { it.request.absoluteURL }
+                    .forEach { (url, actions) ->
+                        // times of url has been accessed with this rest call
+                        val count = requestedExternalServiceRequests.count { r-> r.absoluteURL == url}
 
-                        if (requests.isEmpty()) {
-                            action.confirmNotUsed()
-                        } else {
-                            action.confirmUsed()
+                        actions.forEachIndexed { index, action ->
+                            if (index < count) {
+                                action.confirmUsed()
+                            } else {
+                                action.confirmNotUsed()
+                            }
                         }
                     }
 
