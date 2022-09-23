@@ -208,8 +208,8 @@ class RPCEndpointsHandler {
     }
 
     private fun handleMockRPCExternalServiceDto(dto: MockRPCExternalServiceDto) : ApiExternalServiceAction{
-        if (dto.requests.isNotEmpty() && dto.requests != dto.responses)
-            throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requests.size} vs. ${dto.responses.size}")
+        if (dto.requestRules.isNotEmpty() && dto.requestRules != dto.responses)
+            throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size}")
         if (dto.responses.size > 1){
             TODO("NOT SUPPORT RULE-based Responses")
         }else{
@@ -222,7 +222,7 @@ class RPCEndpointsHandler {
 
             val response = RPCResponseParam(EnumGene("responseType", listOf("JSON")),rgene)
             return RPCExternalServiceAction(
-                    interfaceName = dto.interfaceFullName,functionName = dto.functionName, descriptiveInfo = dto.appKey, requestRuleIdentifier = dto.requests?.first(),responseParam = response)
+                    interfaceName = dto.interfaceFullName,functionName = dto.functionName, descriptiveInfo = dto.appKey, requestRuleIdentifier = dto.requestRules?.first(),responseParam = response)
         }
     }
 
@@ -236,7 +236,7 @@ class RPCEndpointsHandler {
             interfaceFullName = action.interfaceName
             functionName = action.functionName
             appKey = action.descriptiveInfo
-            requests = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
+            requestRules = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
             responses = listOf(action.response.gene.getValueAsPrintableString(mode = mode))
         }
     }
