@@ -136,21 +136,6 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     )
                 }
 
-                // Mark the existing external service actions as used if there is call
-                //  made based on the absolute URL. Otherwise, mark it not used
-                requestedExternalServiceRequests.forEach { request ->
-                    externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
-                        .filter { it.request.absoluteURL == request.absoluteURL }
-                        .forEachIndexed { index, action ->
-                            if (index == 0) {
-                                action.confirmUsed()
-                            } else {
-                                // Code never reaches this part
-                                action.confirmNotUsed()
-                            }
-                        }
-                }
-
                 // TODO: Not completed
                 externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
                     .forEach { action ->
