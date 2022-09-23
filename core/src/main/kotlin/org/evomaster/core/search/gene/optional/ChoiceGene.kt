@@ -71,6 +71,14 @@ class ChoiceGene<T>(
         return listOf(geneChoices[activeGeneIndex])
     }
 
+    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+        if(this.javaClass == klass){
+            return this as T
+        }
+        return geneChoices[activeGeneIndex].getWrappedGene(klass)
+    }
+
+
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
 
       // TODO

@@ -201,7 +201,7 @@ class RestPath(path: String) {
     }
 
     private fun usableQueryParamsFunction(): (Param) -> Boolean {
-        return { it is QueryParam && (it.gene !is OptionalGene || it.gene.isActive) }
+        return { it is QueryParam && (it.gene.getWrappedGene(OptionalGene::class.java)?.isActive ?: true) }
     }
 
     fun numberOfUsableQueryParams(params: List<Param>): Int {

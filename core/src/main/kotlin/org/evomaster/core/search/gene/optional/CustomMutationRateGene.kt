@@ -50,6 +50,14 @@ class CustomMutationRateGene<out T>(
         private val log: Logger = LoggerFactory.getLogger(CustomMutationRateGene::class.java)
     }
 
+
+    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+        if(this.javaClass == klass){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
+    }
+
     fun preventMutation(){
         probability = 0.0
     }
@@ -59,7 +67,7 @@ class CustomMutationRateGene<out T>(
     }
 
     override fun copyContent(): Gene {
-        return CustomMutationRateGene(name, gene.copy(), probability)
+        return CustomMutationRateGene(name, gene.copy(), probability, searchPercentageActive)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

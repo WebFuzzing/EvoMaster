@@ -42,6 +42,8 @@ class ExtraQueryEMTest : SpringTestBase() {
 
             args.add("--extraQueryParam")
             args.add("true")
+            args.add("--searchPercentageExtraHandling")
+            args.add("0.7")
 
             val solution = initAndRun(args)
 
