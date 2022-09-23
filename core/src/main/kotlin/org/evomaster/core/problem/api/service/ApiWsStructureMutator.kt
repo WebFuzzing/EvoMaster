@@ -86,7 +86,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                             // here, we assume that the front external service actions should be accessed
                             val startingIndex = existingActions.filterIsInstance<HttpExternalServiceAction>().count { it.request.absoluteURL == url}
                             if (startingIndex < requests.size){
-                                (startingIndex until  requests.count()).forEach {i->
+                                (startingIndex until  requests.size).forEach {i->
                                     val a = externalServiceHandler
                                         .createExternalServiceAction(requests[i])
                                     a.confirmUsed()
