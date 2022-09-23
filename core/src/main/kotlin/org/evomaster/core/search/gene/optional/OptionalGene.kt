@@ -17,21 +17,25 @@ import org.slf4j.LoggerFactory
 /**
  * A gene that might or might not be active.
  * An example are for query parameters in URLs
+ *
+ * @param isActive whether the enclosed gene will be expressed in the phenotype
+ * @param requestSelection In some cases, we might add new optional genes that are off by default.
+ *                         This is the case for we "expand" the genotype of an individual with new
+ *                         info coming from the search.
+ *                         But, in these cases, to avoid modifying the phenotype, we must leave them off
+ *                         by default.
+ *                         However, we might want to tell the search that, at the next mutation, we should
+ *                         put them on.
+ * @param searchPercentageActive for how long the gene can be active. After this percentage [0.0,1.0] of time has passed,
+ *                      then we deactivate it and forbid its selection.
+ *                      By default, it can be used during whole search (ie, 1.0).
  */
 class OptionalGene(name: String,
                    val gene: Gene,
                    var isActive: Boolean = true,
-                   /**
-                    * In some cases, we might add new optional genes that are off by default.
-                    * This is the case for we "expand" the genotype of an individual with new
-                    * info coming from the search.
-                    * But, in these cases, to avoid modifying the phenotype, we must leave them off
-                    * by default.
-                    * However, we might want to tell the search that, at the next mutation, we should
-                    * put them on.
-                    */
-                   var requestSelection: Boolean = false)
-    : CompositeFixedGene(name, gene) {
+                   var requestSelection: Boolean = false,
+                   val searchPercentageActive: Double = 1.0
+) : CompositeFixedGene(name, gene) {
 
 
     companion object{
@@ -45,6 +49,13 @@ class OptionalGene(name: String,
     var selectable = true
         private set
 
+    init {
+        if(searchPercentageActive < 0 || searchPercentageActive > 1){
+            throw IllegalArgumentException("Invalid searchPercentageActive value: $searchPercentageActive")
+        }
+    }
+
+
     override fun isLocallyValid() : Boolean{
         return getViewOfChildren().all { it.isLocallyValid() }
     }
@@ -55,13 +66,20 @@ class OptionalGene(name: String,
     }
 
     override fun copyContent(): Gene {
-        val copy = OptionalGene(name, gene.copy(), isActive, requestSelection)
+        val copy = OptionalGene(name, gene.copy(), isActive, requestSelection, searchPercentageActive)
         copy.selectable = this.selectable
         return copy
     }
 
     override fun isMutable(): Boolean {
         return selectable
+    }
+
+    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+        if(this.javaClass == klass){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
     }
 
     override fun copyValueFrom(other: Gene) {

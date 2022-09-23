@@ -163,9 +163,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 }
             }
 
+            val allGenes = a.seeTopGenes().flatMap { it.flatView() }
+
             //make sure that requested genes are activated
-            a.seeTopGenes().flatMap { it.flatView() }
-                .filterIsInstance<OptionalGene>()
+            allGenes.filterIsInstance<OptionalGene>()
                 .filter { it.selectable && it.requestSelection }
                 .forEach { it.isActive = true; it.requestSelection = false }
 
@@ -173,10 +174,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             val state = individual.searchGlobalState
             if(state != null) {
                 val time = state.time.percentageUsedBudget()
-                a.seeTopGenes().flatMap { it.flatView() }
-                    .filterIsInstance<CustomMutationRateGene<*>>()
+
+                allGenes.filterIsInstance<CustomMutationRateGene<*>>()
                     .filter { it.probability > 0 && it.searchPercentageActive < time }
                     .forEach { it.preventMutation() }
+
+                allGenes.filterIsInstance<OptionalGene>()
+                    .filter { it.searchPercentageActive < time }
+                    .forEach { it.forbidSelection() }
             }
         }
     }

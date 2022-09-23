@@ -174,7 +174,19 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
             info.queryParameters
                 .filter { name ->
+                    //if parameter already exists, do not add it again
                     !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
+                }
+                .filter { name ->
+                    /*
+                        This one is very tricky. Some JEE-based frameworks could conflate URL query parameters and
+                         parameters in body payload of form submissions in x-www-form-urlencoded format.
+                         This happens for example in LanguageTool.
+                     */
+                    !action.parameters.any{
+                            b -> b is BodyParam && b.isForm()
+                            && b.seeGenes().flatMap { it.flatView() }.any { it.name.equals(name, ignoreCase = true)  }
+                    }
                 }
                 .forEach {
                     val gene = StringGene(it).apply { doInitialize(randomness) }

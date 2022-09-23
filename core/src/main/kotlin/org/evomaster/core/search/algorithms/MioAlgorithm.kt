@@ -27,13 +27,8 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                     || sampler.hasSpecialInit()
                     || randomness.nextBoolean(randomP)) {
 
-                val ind = if(sampler.hasSpecialInit()){
-                    // If there is still special init set, sample from that
-                    sampler.smartSample()
-                } else {
-                    //note this can still be a smart sample
-                    sampler.sample()
-                }
+                val ind = sampler.sample()
+
                 Lazy.assert { ind.isInitialized() && ind.searchGlobalState!=null }
 
                 ff.calculateCoverage(ind)?.run {

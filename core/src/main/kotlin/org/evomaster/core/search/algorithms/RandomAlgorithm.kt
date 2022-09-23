@@ -18,12 +18,9 @@ class RandomAlgorithm <T> : SearchAlgorithm<T>() where T : Individual {
     }
 
     override fun searchOnce() {
-
-
-            val individual = sampler.sampleAtRandom()
+            val individual = sampler.sample(true)
 
             ff.calculateCoverage(individual)?.run { archive.addIfNeeded(this) }
-
     }
 
 }
