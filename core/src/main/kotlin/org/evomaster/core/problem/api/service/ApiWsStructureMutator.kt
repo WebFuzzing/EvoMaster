@@ -82,13 +82,13 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
                     requests
                         .groupBy { it.absoluteURL }
-                        .forEach { (url, requests) ->
+                        .forEach { (url, grequests) ->
                             // here, we assume that the front external service actions should be accessed
                             val startingIndex = existingActions.filterIsInstance<HttpExternalServiceAction>().count { it.request.absoluteURL == url}
-                            if (startingIndex < requests.size){
-                                (startingIndex until  requests.size).forEach {i->
+                            if (startingIndex < grequests.size){
+                                (startingIndex until  grequests.size).forEach {i->
                                     val a = externalServiceHandler
-                                        .createExternalServiceAction(requests[i])
+                                        .createExternalServiceAction(grequests[i])
                                     a.confirmUsed()
                                     actions.add(a)
                                 }
