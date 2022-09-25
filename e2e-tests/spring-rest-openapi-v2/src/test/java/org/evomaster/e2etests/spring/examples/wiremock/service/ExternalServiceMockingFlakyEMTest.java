@@ -4,11 +4,20 @@ import com.foo.rest.examples.spring.wiremock.service.ServiceController;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.resource.RestResourceCalls;
+import org.evomaster.core.search.Action;
+import org.evomaster.core.search.ActionFilter;
+import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Disabled("Need update code after refactoring")
 public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
@@ -41,9 +50,19 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
+                    // The below block of code is an experiment: Ignore
+                    List<Action> actions = new ArrayList<>();
+                    for (EvaluatedIndividual<RestIndividual> individual : solution.getIndividuals()) {
+                        for (RestResourceCalls call : individual.getIndividual().getResourceCalls()) {
+                            actions.addAll(call.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE));
+                        }
+                    }
+                    assertEquals(actions.size(), 14);
+                    // End block
+
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external", "false");
-                    // TODO: disable till the basics works perfectly
+
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/complex", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external/complex", "false");
                     // TODO: Disabled till the Jackson method replacement handled to unmarshall the JSON

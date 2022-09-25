@@ -82,9 +82,7 @@ public class ServiceRest {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestProperty("accept", "application/json");
 
-            int r = connection.getResponseCode();
-
-            if (r == 200) {
+            if (connection.getResponseCode() == 200) {
                 URL secondURL = new URL("http://bar.baz:8080/api/echo/bazz");
                 HttpURLConnection secondConnection = (HttpURLConnection) secondURL.openConnection();
                 secondConnection.setRequestProperty("accept", "application/json");
