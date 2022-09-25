@@ -65,11 +65,11 @@ public class ServiceRest {
      * To test multiple external calls under a single REST call
      */
 
-//    @RequestMapping(
-//            value = "/external/complex",
-//            method = RequestMethod.GET,
-//            produces = MediaType.APPLICATION_JSON
-//    )
+    @RequestMapping(
+            value = "/external/complex",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
     public ResponseEntity<ResponseDto> complexExternalCalls() {
         ResponseDto responseDto = new ResponseDto();
 
