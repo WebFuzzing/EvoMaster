@@ -119,7 +119,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
             thus RestSampler needs to be changed to ResourceSampler
          */
         ResourceSampler sampler = injector.getInstance(ResourceSampler.class);
-        RestIndividual ind = sampler.sampleAtRandom();
+        RestIndividual ind = sampler.sample(true);
 
         FitnessFunction<RestIndividual> ff = injector.getInstance(Key.get(
                 new TypeLiteral<FitnessFunction<RestIndividual>>() {

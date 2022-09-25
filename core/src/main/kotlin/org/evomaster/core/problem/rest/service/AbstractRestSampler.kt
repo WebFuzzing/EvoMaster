@@ -128,9 +128,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.values.forEach {
             (it as RestCallAction).addParam(QueryParam(key,
                 CustomMutationRateGene(key,
-                    OptionalGene(key, CustomMutationRateGene(key, StringGene(key, "42"), 0.0)),
+                    OptionalGene(
+                        key,
+                        CustomMutationRateGene(key, StringGene(key, "42"), 0.0),
+                        searchPercentageActive = config.searchPercentageExtraHandling
+                    ),
                     probability = 1.0,
-                    searchPercentageActive = 0.1
+                    searchPercentageActive = config.searchPercentageExtraHandling
                 )
             ))
         }
@@ -143,9 +147,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.values.forEach {
             (it as RestCallAction).addParam(HeaderParam(key,
                 CustomMutationRateGene(key,
-                    OptionalGene(key, CustomMutationRateGene(key, StringGene(key, "42"), 0.0)),
+                    OptionalGene(
+                        key,
+                        CustomMutationRateGene(key, StringGene(key, "42"), 0.0),
+                        searchPercentageActive = config.searchPercentageExtraHandling
+                    ),
                     probability = 1.0,
-                    searchPercentageActive = 0.1
+                    searchPercentageActive = config.searchPercentageExtraHandling
                 )
             ))
         }

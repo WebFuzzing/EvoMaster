@@ -15,6 +15,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.search.RootElement
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.SearchGlobalState
+import kotlin.reflect.KClass
 
 
 /**
@@ -279,6 +280,26 @@ abstract class Gene(
 
 
         super.postCopy(original)
+    }
+
+
+    /**
+     * Some genes are wrapper to provide extra functionality and control on how genes are sampled, mutated and
+     * impacting the phenotype.
+     * Here, we search for wrapped child with given type.
+     * Note that containers like objects and arrays are not wrappers.
+     * See for example Optional and Choice genes.
+     *
+     * Will return [this] if of the specified type, otherwise [null].
+     * Wrapper genes, and only those, will override this method to check their children
+     */
+    open  fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+
+        if(this.javaClass == klass){
+            return this as T
+        }
+
+        return null
     }
 
     /**

@@ -69,10 +69,10 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
                     RestFitness ff = injector.getInstance(RestFitness.class);
 
                     RestSampler sampler = injector.getInstance(RestSampler.class);
-                    RestIndividual ind = sampler.sample();
+                    RestIndividual ind = sampler.sample(false);
                     int count = 0;
                     while (ind.seeMainExecutableActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)) && count < 3){
-                        ind = sampler.sample();
+                        ind = sampler.sample(false);
                         count++;
                     }
                     if (ind.seeMainExecutableActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)))
