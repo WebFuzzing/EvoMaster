@@ -13,7 +13,7 @@ import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.StringGene;
+import org.evomaster.core.search.gene.string.StringGene;
 import org.evomaster.core.search.service.Archive;
 import org.evomaster.core.search.service.mutator.EvaluatedMutation;
 import org.evomaster.core.search.service.mutator.StandardMutator;
@@ -69,13 +69,13 @@ public class MutatorWithTestabilityRestTest extends SpringTestBase {
                     RestFitness ff = injector.getInstance(RestFitness.class);
 
                     RestSampler sampler = injector.getInstance(RestSampler.class);
-                    RestIndividual ind = sampler.sample();
+                    RestIndividual ind = sampler.sample(false);
                     int count = 0;
-                    while (ind.seeActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)) && count < 3){
-                        ind = sampler.sample();
+                    while (ind.seeMainExecutableActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)) && count < 3){
+                        ind = sampler.sample(false);
                         count++;
                     }
-                    if (ind.seeActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)))
+                    if (ind.seeMainExecutableActions().stream().anyMatch(a-> anyExcludedAction(sampler, a)))
                         fail("cannot find any valid individual");
                     archive.addIfNeeded(ff.calculateCoverage(ind, Collections.emptySet()));
 

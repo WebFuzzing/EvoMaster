@@ -36,11 +36,10 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
         if (!config.generateSqlDataWithSearch)
             return restGenes
 
-        // TODO: Man fix for external services
-        // 1) SQL genes in initialization plus 2) SQL genes in resource handling plus 3) rest actions in resource handling
-        return individual.seeInitializingActions().filterIsInstance<DbAction>().flatMap { it.seeTopGenes() }.filter(Gene::isMutable).plus(
-            individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(GeneFilter.ONLY_SQL) }
-        ).plus(restGenes)
+        return individual.seeInitializingActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable)
+            .plus(individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(GeneFilter.ONLY_SQL) })
+            .plus(restGenes)
+            .plus(individual.seeExternalServiceActions().flatMap { it.seeTopGenes() })
 
     }
 

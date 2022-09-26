@@ -17,10 +17,13 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
+import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.io.File
+import java.time.Duration
 
 
 class SamplerVerifierTest {
@@ -45,19 +48,38 @@ class SamplerVerifierTest {
         sampler.sample() //should not crash
     }
 
-    @TestFactory
-    fun testSamplingFromAllSchemasUnderResources(): Collection<DynamicTest> {
+    //@Timeout(10, unit = TimeUnit.SECONDS) // this timeout is not working
+   // @Execution(ExecutionMode.CONCURRENT) //issues with shared caches
 
-        return scanForSchemas().map {
-            DynamicTest.dynamicTest(it) { runInvariantCheck(it, 1000)}
+    @TestFactory
+    fun testSamplingFromAllSchemasUnderCoreResources(): Collection<DynamicTest>{
+        return sampleFromSchemasAndCheckInvariants("../core/src/test/resources/swagger", "swagger")
+    }
+
+
+    @Disabled("Few hundreds of those fails. will need to fix the parsing")
+    @TestFactory
+    fun testSamplingFromAPIsGuru(): Collection<DynamicTest>{
+        return sampleFromSchemasAndCheckInvariants("./src/test/resources/APIs_guru", "APIs_guru")
+    }
+
+
+    private fun sampleFromSchemasAndCheckInvariants(relativePath: String, resourceFolder: String): Collection<DynamicTest> {
+
+        return scanForSchemas(relativePath, resourceFolder)
+            .sorted().map {
+            DynamicTest.dynamicTest(it) {
+                assertTimeoutPreemptively(Duration.ofSeconds(5)) {
+                    runInvariantCheck(it, 100)
+                }
+            }
         }.toList()
     }
 
-    private fun scanForSchemas() : List<String>{
-        val relativePath = "../core/src/test/resources/swagger"
+    private fun scanForSchemas(relativePath: String, resourceFolder: String) : List<String>{
         val target = File(relativePath)
         if (!target.exists()) {
-            throw IllegalStateException("Swagger resource folder does not exist: ${target.absolutePath}")
+            throw IllegalStateException("OpenAPI resource folder does not exist: ${target.absolutePath}")
         }
 
         return target.walk()
@@ -66,7 +88,7 @@ class SamplerVerifierTest {
                 .filter { !it.name.endsWith("trace_v2.json") } // no actions are parsed
                 .map {
                     val s = it.path.replace("\\", "/")
-                            .replace(relativePath, "swagger")
+                            .replace(relativePath, resourceFolder)
                     s
                 }.toList()
     }
@@ -84,6 +106,9 @@ class SamplerVerifierTest {
 
         val sampler = injector.getInstance(ResourceSampler::class.java)
 
+        if(sampler.numberOfDistinctActions() == 0){
+            throw IllegalStateException("No actions for schema")
+        }
 
         for(i in 0..iterations) {
             val ind = sampler.sample()
@@ -94,8 +119,9 @@ class SamplerVerifierTest {
     private fun checkInvariant(ind: Individual){
 
         assertTrue(ind.isInitialized(), "Sampled individual is not initialized")
+        assertTrue(ind.areValidLocalIds(), "Sampled individual should have action components which have valid local ids")
 
-        val actions = ind.seeActions()
+        val actions = ind.seeAllActions()
 
         for(a in actions){
 

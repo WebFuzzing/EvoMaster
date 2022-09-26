@@ -35,7 +35,7 @@ class RestSampler : AbstractRestSampler(){
             actions.add(sampleRandomAction(0.05) as RestCallAction)
         }
         val ind = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), this, time.evaluatedIndividuals)
-        ind.searchGlobalState = searchGlobalState
+        ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
 
@@ -101,8 +101,7 @@ class RestSampler : AbstractRestSampler(){
             val objInd = RestIndividual(test, sampleType, mutableListOf()//, usedObjects.copy()
                     ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
 
-            //usedObjects.clear()
-            objInd.searchGlobalState = searchGlobalState
+            objInd.doGlobalInitialize(searchGlobalState)
             return objInd
         }
         //usedObjects.clear()
@@ -414,7 +413,7 @@ class RestSampler : AbstractRestSampler(){
                     copy.auth = auth
                     copy.doInitialize(randomness)
                     val ind = createIndividual(mutableListOf(copy))
-                    ind.searchGlobalState = searchGlobalState
+                    ind.doGlobalInitialize(searchGlobalState)
                     adHocInitialIndividuals.add(ind)
                 }
     }

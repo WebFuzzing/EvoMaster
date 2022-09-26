@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.sql.SqlUUIDGene
+import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions
@@ -16,7 +16,7 @@ class SqlUUIDGeneImpactTest : GeneImpactTest() {
 
     override fun getGene(): Gene {
 
-        return SqlUUIDGene("uuid")
+        return UUIDGene("uuid")
     }
 
     override fun checkImpactType(impact: GeneImpact) {
@@ -24,7 +24,7 @@ class SqlUUIDGeneImpactTest : GeneImpactTest() {
     }
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as SqlUUIDGene
+        geneToMutate as UUIDGene
         val p = Random.nextBoolean()
         geneToMutate.apply {
             when{

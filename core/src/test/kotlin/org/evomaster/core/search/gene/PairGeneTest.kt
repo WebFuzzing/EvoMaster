@@ -1,5 +1,8 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test

@@ -5,8 +5,8 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.dbconstraint.*
 import org.junit.Assert.assertFalse

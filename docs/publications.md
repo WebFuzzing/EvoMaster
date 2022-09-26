@@ -13,6 +13,14 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+* A. Belhadi, M. Zhang, A. Arcuri.
+  *White-Box and Black-Box Fuzzing for GraphQL APIs*.
+  [[arXiv](https://arxiv.org/abs/2209.05833)]
+
+* M. Zhang, A. Arcuri, Y. Li, Y. Liu, K. Xue.
+  *White-box Fuzzing RPC-based APIs with EvoMaster: An Industrial Case Study*.
+  [[arXiv](https://arxiv.org/abs/2208.12743)]
+
 * M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
   [[arXiv](https://arxiv.org/abs/2208.03988)]
@@ -22,6 +30,8 @@ Also, some of these papers provides full replication packages, which are linked 
   [[arXiv](https://arxiv.org/abs/2205.05325)]
   [[Script 0](exp/arxiv_open_problems_bb.py)]
   [[Script 1](exp/arxiv_open_problems_wb.py)]
+
+
 
 ## Peer-Reviewed Publications
 

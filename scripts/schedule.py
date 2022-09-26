@@ -12,15 +12,17 @@ import subprocess
 import time
 import platform
 
+# Note: here we for flush on ALL prints, otherwise we would end up with messed up logs
+
 if len(sys.argv) != 3:
-    print("Usage:\nschedule.py <N> <FOLDER>")
+    print("Usage:\nschedule.py <N> <FOLDER>", flush=True)
     exit(1)
 
 # The number of jobs to run in parallel
 N = int(sys.argv[1])
 
 if N < 1:
-    print("Invalid value for N: " + str(N))
+    print("Invalid value for N: " + str(N), flush=True)
     exit(1)
 
 # Location of experiment folder
@@ -37,7 +39,7 @@ scripts = [f for f in os.listdir(SCRIPTS_FOLDER) if os.path.isfile(os.path.join(
 # and f.startswith("evomaster")
 # as we might want to use this script for BB experiments, let's not bind it to EvoMaster
 
-print("There are " + str(len(scripts)) + " Bash script files")
+print("There are " + str(len(scripts)) + " Bash script files", flush=True)
 
 random.shuffle(scripts)
 
@@ -45,7 +47,7 @@ k = 1
 
 def runScript(s):
     global k
-    print("Running script " + str(k)+ "/"+ str(len(scripts)) +": " + s)
+    print("Running script " + str(k)+ "/"+ str(len(scripts)) +": " + s, flush=True)
     k = k + 1
 
     command = ["bash", os.path.join("scripts", s)]
@@ -61,7 +63,7 @@ for s in scripts:
             for h in buffer:
                 h.poll()
                 if h.returncode is not None and h.returncode != 0:
-                    print("Process terminated with code: " + str(h.returncode))
+                    print("Process terminated with code: " + str(h.returncode), flush=True)
 
             # keep the ones running... those have return code not set yet
             buffer = [h for h in buffer if h.returncode is None]
@@ -71,14 +73,14 @@ for s in scripts:
                 runScript(s)
                 break
 
-print("Waiting for last scripts to end")
+print("Waiting for last scripts to end", flush=True)
 
 for h in buffer:
     h.wait()
     if h.returncode != 0:
-        print("Process terminated with code: " + str(h.returncode))
+        print("Process terminated with code: " + str(h.returncode), flush=True)
 
-print("All jobs are completed")
+print("All jobs are completed", flush=True)
 
 #TODO how to make sure no subprocess is left hanging?
 

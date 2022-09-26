@@ -4,10 +4,10 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlNullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.sql.SqlUUIDGene
+import org.evomaster.core.search.gene.UUIDGene
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -31,8 +31,8 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         assertEquals(2, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
-        assertTrue(genes[1] is SqlUUIDGene)
-        val uuidGene = genes[1] as SqlUUIDGene
+        assertTrue(genes[1] is UUIDGene)
+        val uuidGene = genes[1] as UUIDGene
 
         val expectedUUIDStringValue = UUID(0L, 0L).toString()
 
@@ -48,7 +48,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
         val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
-        val expectedUUID = (genes[1] as SqlUUIDGene).getValueAsUUID()
+        val expectedUUID = (genes[1] as UUIDGene).getValueAsUUID()
 
         val dbCommandDto = DbActionTransformer.transform(actions)
 
@@ -76,8 +76,8 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
-        assertTrue((genes[0] as SqlPrimaryKeyGene).gene is SqlUUIDGene)
-        val uuidGene = (genes[0] as SqlPrimaryKeyGene).gene as SqlUUIDGene
+        assertTrue((genes[0] as SqlPrimaryKeyGene).gene is UUIDGene)
+        val uuidGene = (genes[0] as SqlPrimaryKeyGene).gene as UUIDGene
 
         val expectedUUID = UUID(0L, 0L)
 
@@ -96,8 +96,8 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
-        assertTrue((genes[0] as SqlPrimaryKeyGene).gene is SqlUUIDGene)
-        val uuidGene = (genes[0] as SqlPrimaryKeyGene).gene as SqlUUIDGene
+        assertTrue((genes[0] as SqlPrimaryKeyGene).gene is UUIDGene)
+        val uuidGene = (genes[0] as SqlPrimaryKeyGene).gene as UUIDGene
         val expectedUUID = uuidGene.getValueAsUUID()
 
 
@@ -127,7 +127,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is SqlNullableGene)
-        val uuidGene = (genes[0] as SqlNullableGene).gene  as SqlUUIDGene
+        val uuidGene = (genes[0] as SqlNullableGene).gene  as UUIDGene
 
         val expectedUUID = UUID(0L, 0L)
 
@@ -144,7 +144,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
         val actions = builder.createSqlInsertionAction("y", setOf("uuid"))
         val genes = actions[0].seeTopGenes()
 
-        val uuidGene = (genes[0] as SqlNullableGene).gene as SqlUUIDGene
+        val uuidGene = (genes[0] as SqlNullableGene).gene as UUIDGene
 
         val expectedUUID = uuidGene.getValueAsUUID()
 

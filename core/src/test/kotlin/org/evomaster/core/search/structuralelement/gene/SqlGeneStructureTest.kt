@@ -1,6 +1,9 @@
 package org.evomaster.core.search.structuralelement.gene
 
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.sql.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -70,14 +73,14 @@ class SqlJsonGeneStructureTest : GeneStructuralElementBaseTest() {
 }
 
 class SqlNullableGeneStructureTest : GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene = SqlNullableGene("nullable",IntegerGene("foo", 1))
+    override fun getCopyFromTemplate(): Gene = SqlNullableGene("nullable", IntegerGene("foo", 1))
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is SqlNullableGene)
         assertEquals(1, ((base as SqlNullableGene).gene as IntegerGene).value)
     }
 
-    override fun getStructuralElement(): SqlNullableGene = SqlNullableGene("nullable",IntegerGene("foo", 0))
+    override fun getStructuralElement(): SqlNullableGene = SqlNullableGene("nullable", IntegerGene("foo", 0))
 
     override fun getExpectedChildrenSize(): Int  = 1
 }
@@ -96,17 +99,17 @@ class SqlPrimaryKeyGeneStructureTest : GeneStructuralElementBaseTest() {
 }
 
 class SqlUUIDGeneStructureTest : GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene = SqlUUIDGene("uuid", LongGene("m", 2L), LongGene("l", 1L))
+    override fun getCopyFromTemplate(): Gene = UUIDGene("uuid", LongGene("m", 2L), LongGene("l", 1L))
 
     override fun assertCopyFrom(base: Gene) {
-        assertTrue(base is SqlUUIDGene)
-        (base as SqlUUIDGene).apply {
+        assertTrue(base is UUIDGene)
+        (base as UUIDGene).apply {
             assertEquals(2L, mostSigBits.value)
             assertEquals(1L, leastSigBits.value)
         }
     }
 
-    override fun getStructuralElement(): SqlUUIDGene = SqlUUIDGene("uuid", LongGene("m", 0L), LongGene("l", 0L))
+    override fun getStructuralElement(): UUIDGene = UUIDGene("uuid", LongGene("m", 0L), LongGene("l", 0L))
 
     override fun getExpectedChildrenSize(): Int  = 2
 }

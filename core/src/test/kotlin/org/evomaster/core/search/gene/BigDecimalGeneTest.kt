@@ -1,9 +1,13 @@
 package org.evomaster.core.search.gene
 
+import com.google.inject.Injector
+import com.google.inject.Module
+import com.netflix.governator.guice.LifecycleInjector
+import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -12,28 +16,20 @@ class BigDecimalGeneTest {
 
     @Test
     fun testMutationsWithinRange() {
-        val randomness = Randomness()
 
-        val config = EMConfig()
+        val injector: Injector = LifecycleInjector.builder()
+                .withModules(* arrayOf<Module>(BaseModule(emptyArray(), true)))
+                .build().createInjector()
+
+        val randomness = injector.getInstance(Randomness::class.java)
+        val config = injector.getInstance(EMConfig::class.java)
+        val apc = injector.getInstance(AdaptiveParameterControl::class.java)
+
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-        val time = SearchTimeController()
-
-        val apc = AdaptiveParameterControl()
-
-        val configField = AdaptiveParameterControl::class.java.getDeclaredField("config")
-        configField.isAccessible = true
-        configField.set(apc, config)
-        configField.isAccessible = false
-
-        val timeField = AdaptiveParameterControl::class.java.getDeclaredField("time")
-        timeField.isAccessible = true
-        timeField.set(apc, time)
-        timeField.isAccessible = false
-
-        val configurationField = SearchTimeController::class.java.getDeclaredField("configuration")
-        configurationField.isAccessible = true
-        configurationField.set(time, config)
-        configurationField.isAccessible = false
+        config.focusedSearchActivationTime = 0.5
+        config.maxActionEvaluations = 10
+        config.useTimeInFeedbackSampling = false
+        config.seed = 42
 
         val gene = BigDecimalGene("gene",
                 min = BigDecimal(-100),

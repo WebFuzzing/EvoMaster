@@ -29,7 +29,7 @@ import static org.evomaster.client.java.controller.internal.db.ParserUtils.*;
 public class SqlHandler {
 
     private final static Set<String> booleanConstantNames = Collections.unmodifiableSet(
-            new LinkedHashSet<>(Arrays.asList("t","true","f","false","yes","y","no","n","on","off","unknown"))
+            new LinkedHashSet<>(Arrays.asList("t", "true", "f", "false", "yes", "y", "no", "n", "on", "off", "unknown"))
     );
 
     /**
@@ -103,6 +103,7 @@ public class SqlHandler {
 
     /**
      * handle executed sql info
+     *
      * @param sql to be handled
      */
     public void handle(SqlInfo sql) {
@@ -113,13 +114,13 @@ public class SqlHandler {
     public void handle(String sql) {
         Objects.requireNonNull(sql);
 
-        if(!calculateHeuristics && !extractSqlExecution){
+        if (!calculateHeuristics && !extractSqlExecution) {
             return;
         }
 
         numberOfSqlCommands++;
 
-        if(! ParserUtils.canParseSqlStatement(sql)){
+        if (!ParserUtils.canParseSqlStatement(sql)) {
             SimpleLogger.warn("Cannot handle SQL statement: " + sql);
             return;
         }
@@ -128,11 +129,11 @@ public class SqlHandler {
 
         if (isSelect(sql)) {
             mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));
-        } else if(isDelete(sql)){
+        } else if (isDelete(sql)) {
             deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sql));
-        } else if(isInsert(sql)){
+        } else if (isInsert(sql)) {
             mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sql));
-        } else if(isUpdate(sql)){
+        } else if (isUpdate(sql)) {
             mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
         }
 
@@ -140,7 +141,7 @@ public class SqlHandler {
 
     public ExecutionDto getExecutionDto() {
 
-        if(!calculateHeuristics && !extractSqlExecution){
+        if (!calculateHeuristics && !extractSqlExecution) {
             return null;
         }
 
@@ -157,7 +158,8 @@ public class SqlHandler {
 
     /**
      * compute (SELECT, DELETE and UPDATE) sql distance for sql commands which exists in [buffer]
-     *      Note that we skip `SELECT 1` (typically for testing sql connection) since its distance is 0
+     * Note that we skip `SELECT 1` (typically for testing sql connection) since its distance is 0
+     *
      * @return a list of heuristics for sql commands
      */
     public List<PairCommandDistance> getDistances() {
@@ -167,16 +169,16 @@ public class SqlHandler {
         }
 
 
-        buffer.stream()
-                .forEach(sql -> {
+        buffer.forEach(sql -> {
                     if (!isSelectOne(sql) && (isSelect(sql) || isDelete(sql) || isUpdate(sql))) {
                         double dist;
                         try {
-                             dist = computeDistance(sql);
-                        }catch (Exception e){
+                            dist = computeDistance(sql);
+                        } catch (Exception e) {
                             SimpleLogger.error("FAILED TO COMPUTE HEURISTICS FOR SQL: " + sql);
+                            dist = Double.MAX_VALUE;
                             //assert false; //TODO put back once we update JSqlParser
-                            return;
+                            //return;
                         }
                         distances.add(new PairCommandDistance(sql, dist));
                     }
@@ -200,7 +202,7 @@ public class SqlHandler {
         try {
             statement = CCJSqlParserUtil.parse(command);
         } catch (Exception e) {
-            SimpleLogger.uniqueWarn("Cannot handle command: " + command + "\n" + e.toString());
+            SimpleLogger.uniqueWarn("Cannot handle command: " + command + "\n" + e);
             return Double.MAX_VALUE;
         }
 
@@ -212,7 +214,7 @@ public class SqlHandler {
          */
 
         double dist;
-        if(columns.isEmpty()){
+        if (columns.isEmpty()) {
             //TODO check if table(s) not empty, and give >0 otherwise
             dist = 0;
         } else {
@@ -238,12 +240,12 @@ public class SqlHandler {
 
            TODO: we need a general solution
          */
-        if(isSelect(command)) {
+        if (isSelect(command)) {
             select = SelectTransformer.addFieldsToSelect(command);
             select = SelectTransformer.removeConstraints(select);
             select = SelectTransformer.removeOperations(select);
         } else {
-            if(columns.size() > 1){
+            if (columns.size() > 1) {
                 SimpleLogger.uniqueWarn("Cannot analyze: " + command);
             }
             Map.Entry<String, Set<String>> mapping = columns.entrySet().iterator().next();
@@ -258,15 +260,16 @@ public class SqlHandler {
             throw new RuntimeException(e);
         }
 
+
         return HeuristicsCalculator.computeDistance(command, data);
     }
 
-    private String createSelectForSingleTable(String tableName, Set<String> columns){
+    private String createSelectForSingleTable(String tableName, Set<String> columns) {
 
         StringBuilder buffer = new StringBuilder();
         buffer.append("SELECT ");
 
-        String variables = columns.stream().collect(Collectors.joining(", "));
+        String variables = String.join(", ", columns);
 
         buffer.append(variables);
         buffer.append(" FROM ");
@@ -276,8 +279,8 @@ public class SqlHandler {
     }
 
     /**
-     *  Check the fields involved in the WHERE clause (if any).
-     *  Return a map from table name to column names of the involved fields.
+     * Check the fields involved in the WHERE clause (if any).
+     * Return a map from table name to column names of the involved fields.
      */
     public Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
 
@@ -296,7 +299,7 @@ public class SqlHandler {
         }
 
         SqlNameContext context = new SqlNameContext(statement);
-        if(schema != null) {
+        if (schema != null) {
             context.setSchema(schema);
         }
 
@@ -306,14 +309,14 @@ public class SqlHandler {
 
                 String tn = context.getTableName(column);
 
-                if(tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){
+                if (tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)) {
                     // TODO handle it properly when ll have support for sub-selects
                     return;
                 }
 
                 String cn = column.getColumnName().toLowerCase();
 
-                if(! context.hasColumn(tn, cn)) {
+                if (!context.hasColumn(tn, cn)) {
 
                     /*
                         This is an issue with the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
@@ -333,7 +336,7 @@ public class SqlHandler {
                         //case in which a boolean constant is wrongly treated as a column name.
                         //TODO not sure what we can really do here without modifying the parser
                     } else {
-                        SimpleLogger.warn("Cannot find column '" + cn +"' in table '" + tn +"'");
+                        SimpleLogger.warn("Cannot find column '" + cn + "' in table '" + tn + "'");
                     }
                     return;
                 }

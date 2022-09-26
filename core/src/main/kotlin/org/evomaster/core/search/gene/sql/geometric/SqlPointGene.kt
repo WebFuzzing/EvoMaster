@@ -4,10 +4,12 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -27,10 +29,10 @@ class SqlPointGene(
     }
 
     override fun copyContent(): Gene = SqlPointGene(
-        name,
-        x.copy() as FloatGene,
-        y.copy() as FloatGene,
-        databaseType = databaseType
+            name,
+            x.copy() as FloatGene,
+            y.copy() as FloatGene,
+            databaseType = databaseType
     )
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -38,15 +40,7 @@ class SqlPointGene(
         y.randomize(randomness, tryToForceNewValue)
     }
 
-    override fun candidatesInternalGenes(
-        randomness: Randomness,
-        apc: AdaptiveParameterControl,
-        selectionStrategy: SubsetGeneSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        return listOf(x, y)
-    }
+
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -54,16 +48,23 @@ class SqlPointGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        return when (databaseType)  {
-            DatabaseType.H2 -> "\"POINT(${x.getValueAsPrintableString()} ${y.getValueAsPrintableString()})\""
-            DatabaseType.MYSQL -> "POINT(${x.getValueAsPrintableString()},${y.getValueAsPrintableString()})"
-            DatabaseType.POSTGRES -> "\" (${x.getValueAsRawString()} , ${y.getValueAsRawString()}) \""
+        return when (databaseType) {
+            DatabaseType.POSTGRES,
+            DatabaseType.H2 -> "\"${getValueAsRawString()}\""
+            DatabaseType.MYSQL -> getValueAsRawString()
             else ->
-                throw IllegalArgumentException("SqlPointGene.getValueAsPrintableString is not supported for databasetype: ${databaseType}")}
+                throw IllegalArgumentException("SqlPointGene.getValueAsPrintableString is not supported for databasetype: ${databaseType}")
+        }
     }
 
     override fun getValueAsRawString(): String {
-        return "(${x.getValueAsRawString()} , ${y.getValueAsRawString()})"
+        return when (databaseType) {
+            DatabaseType.H2 -> "POINT(${x.getValueAsRawString()} ${y.getValueAsRawString()})"
+            DatabaseType.MYSQL -> "POINT(${x.getValueAsRawString()}, ${y.getValueAsRawString()})"
+            DatabaseType.POSTGRES -> "(${x.getValueAsRawString()}, ${y.getValueAsRawString()})"
+            else ->
+                throw IllegalArgumentException("SqlPointGene.getValueAsPrintableString is not supported for databasetype: ${databaseType}")
+        }
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -84,8 +85,6 @@ class SqlPointGene(
 
 
 
-    override fun innerGene(): List<Gene> = listOf(x, y)
-
     override fun bindValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlPointGene -> {
@@ -99,5 +98,13 @@ class SqlPointGene(
         }
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
 
 }

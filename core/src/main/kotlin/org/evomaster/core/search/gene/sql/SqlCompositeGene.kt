@@ -2,15 +2,13 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.CompositeFixedGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
-import org.evomaster.core.search.gene.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
-import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -38,9 +36,15 @@ class SqlCompositeGene(
                 .forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return listOf()
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
     }
+
 
     private val QUOTATION_MARK = "\""
 
@@ -80,8 +84,6 @@ class SqlCompositeGene(
         }.all { it })
     }
 
-    override fun innerGene(): List<Gene> = fields
-
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlCompositeGene && (fields.indices).all { fields[it].possiblySame(gene.fields[it]) }) {
@@ -103,18 +105,5 @@ class SqlCompositeGene(
 
     override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copy() }.toList(), this.compositeTypeName)
 
-    /**
-     * Dummy mutation for composite genes
-     */
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
-        this.randomize(randomness, true)
-        return true
-    }
+
 }

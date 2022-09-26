@@ -16,7 +16,7 @@ import org.evomaster.core.search.EvaluatedAction;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.FitnessValue;
 import org.evomaster.core.search.Solution;
-import org.evomaster.core.search.gene.IntegerGene;
+import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.search.service.FitnessFunction;
 import org.evomaster.ci.utils.CIUtils;
 import org.junit.jupiter.api.Test;
@@ -121,7 +121,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
             thus RestSampler needs to be changed to ResourceSampler
          */
         ResourceSampler sampler = injector.getInstance(ResourceSampler.class);
-        RestIndividual ind = sampler.sampleAtRandom();
+        RestIndividual ind = sampler.sample(true);
 
         FitnessFunction<RestIndividual> ff = injector.getInstance(Key.get(
                 new TypeLiteral<FitnessFunction<RestIndividual>>() {
@@ -134,7 +134,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         //as no data in database, should get worst heuristic value
         assertEquals(Double.MAX_VALUE, noDataFV.averageExtraDistancesToMinimize(0));
 
-        RestCallResult result = (RestCallResult) ((EvaluatedAction) ei.evaluatedActions().get(0)).getResult();
+        RestCallResult result = (RestCallResult) ((EvaluatedAction) ei.evaluatedMainActions().get(0)).getResult();
         assertEquals(400, result.getStatusCode().intValue());
 
 
@@ -144,7 +144,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         assertEquals(1, insertions.size());
 
         //extract the x/y values from the random call
-        RestCallAction first = (RestCallAction) ind.seeActions().iterator().next();
+        RestCallAction first = (RestCallAction) ind.seeAllActions().iterator().next();
         int x = first.getParameters().stream()
                 .filter(p -> p.getName().equalsIgnoreCase("x"))
                 .map(p -> Integer.parseInt(p.getGene().getValueAsRawString()))
@@ -168,7 +168,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 });
 
         RestIndividual withSQL = (RestIndividual) ind.copy(); //new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, Traceable.DEFAULT_INDEX);
-        withSQL.addInitializingActions(0,insertions);
+        withSQL.addInitializingDbActions(0,insertions);
 
         ei = ff.calculateCoverage(withSQL, noDataFV.getViewOfData().keySet());
         assertNotNull(ei);
@@ -184,7 +184,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         }
 
         //but still not reaching target
-        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedActions().get(0)).getResult();
+        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedMainActions().get(0)).getResult();
         assertEquals(400, result.getStatusCode().intValue());
 
 
@@ -211,7 +211,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 //            assertTrue(rightDataFV.compareExtraToMinimize(target, closeDataFV) >= 0);
 //        }
 
-        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedActions().get(0)).getResult();
+        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedMainActions().get(0)).getResult();
         assertEquals(200, result.getStatusCode().intValue());
     }
 

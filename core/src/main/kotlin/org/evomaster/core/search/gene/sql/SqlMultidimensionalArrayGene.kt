@@ -1,14 +1,17 @@
 package org.evomaster.core.search.gene.sql
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -22,6 +25,11 @@ class SqlMultidimensionalArrayGene<T>(
          * The name of this gene
          */
         name: String,
+        /**
+         * The database type of the column where the gene is inserted.
+         * By default, the database type is POSTGRES
+         */
+        val databaseType: DatabaseType = DatabaseType.POSTGRES,
         /**
          * The type for this array. Every time we create a new element to add, it has to be based
          * on this template
@@ -85,7 +93,7 @@ class SqlMultidimensionalArrayGene<T>(
             val s = dimensionSizes[0]
             return if (dimensionSizes.size == 1) {
                 // leaf ArrayGene case
-                ArrayGene("[$s]", elementTemplate.copy(), maxSize = s, minSize = s, openingTag = "{", closingTag = "}", separatorTag = ",")
+                ArrayGene("[$s]", elementTemplate.copy(), maxSize = s, minSize = s)
             } else {
                 // nested/inner ArrayGene case
                 val currentDimensionSize = dimensionSizes.first()
@@ -93,9 +101,13 @@ class SqlMultidimensionalArrayGene<T>(
                 val arrayTemplate = buildNewElements(nextDimensionSizes, elementTemplate)
 
                 ArrayGene("[$currentDimensionSize]${arrayTemplate.name}", arrayTemplate,
-                        maxSize = currentDimensionSize, minSize = currentDimensionSize, openingTag = "{", closingTag = "}", separatorTag = ",")
+                        maxSize = currentDimensionSize, minSize = currentDimensionSize)
             }
         }
+    }
+
+    override fun isMutable(): Boolean {
+        return !initialized || this.children[0].isMutable()
     }
 
     /**
@@ -199,9 +211,15 @@ class SqlMultidimensionalArrayGene<T>(
         val newChild = buildNewElements(newDimensionSizes, template.copy())
 
         killAllChildren()
-        addChild(newChild)
+
         this.dimensionSizes = newDimensionSizes
-        newChild.randomize(randomness, tryToForceNewValue)
+
+        if(initialized){
+            newChild.doInitialize(randomness)
+        } else {
+            newChild.randomize(randomness, tryToForceNewValue)
+        }
+        addChild(newChild)
     }
 
     /**
@@ -247,9 +265,6 @@ class SqlMultidimensionalArrayGene<T>(
         return this.getViewOfChildren()[0].containsSameValueAs(other.getViewOfChildren()[0])
     }
 
-    override fun innerGene(): List<Gene> {
-        return listOf(getArray())
-    }
 
     /**
      * A multidimensional array gene can only bind to other multidimensional array genes
@@ -276,15 +291,46 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
     override fun getValueAsPrintableString(
-            previousGenes: List<Gene>,
-            mode: GeneUtils.EscapeMode?,
-            targetFormat: OutputFormat?,
-            extraCheck: Boolean
+        previousGenes: List<Gene>,
+        mode: GeneUtils.EscapeMode?,
+        targetFormat: OutputFormat?,
+        extraCheck: Boolean
     ): String {
         if (!initialized) {
             throw IllegalStateException("Cannot call to getValueAsPrintableString() using an unitialized multidimensional array")
         }
-        return "\"${this.children[0].getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)}\""
+        val printableString = getValueAsPrintableString(this.children[0], previousGenes, mode,targetFormat  , extraCheck)
+        return when (databaseType) {
+            DatabaseType.H2 -> printableString
+            DatabaseType.POSTGRES -> "\"$printableString\""
+            else -> throw IllegalStateException("Unsupported getValueAsPrintableString for database type $databaseType")
+        }
+    }
+
+    /**
+     * Helper funcgtion for printing the inner arrays and elements
+     */
+    private fun getValueAsPrintableString(gene: Gene, previousGenes: List<Gene>,
+                                          mode: GeneUtils.EscapeMode?,
+                                          targetFormat: OutputFormat?,
+                                          extraCheck: Boolean
+    ): String {
+        return if (gene is ArrayGene<*>) {
+            val str = gene.getViewOfElements().joinToString(", ") { g ->
+                getValueAsPrintableString(g, previousGenes, mode, targetFormat, extraCheck)}
+            when (databaseType) {
+                DatabaseType.POSTGRES -> "{$str}"
+                DatabaseType.H2 -> "ARRAY[$str]"
+                else -> throw IllegalStateException("Unsupported getValueAsPrintableString for database type $databaseType")
+            }
+        } else {
+            val str = gene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+            when (databaseType) {
+                DatabaseType.POSTGRES -> str
+                DatabaseType.H2 -> GeneUtils.replaceEnclosedQuotationMarksWithSingleApostrophePlaceHolder(str)
+                else -> throw IllegalStateException("Unsupported getValueAsPrintableString for database type $databaseType")
+            }
+        }
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -313,10 +359,10 @@ class SqlMultidimensionalArrayGene<T>(
     /**
      * The function adaptiveSelectSubset() behaves as ArrayGene.adaptiveSelectSubset()
      */
-    override fun adaptiveSelectSubset(randomness: Randomness,
-                                      internalGenes: List<Gene>,
-                                      mwc: MutationWeightControl,
-                                      additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness,
+                                              internalGenes: List<Gene>,
+                                              mwc: MutationWeightControl,
+                                              additionalGeneMutationInfo: AdditionalGeneMutationInfo
     ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         /*
             element is dynamically modified, then we do not collect impacts for it now.
@@ -331,15 +377,6 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
 
-    override fun candidatesInternalGenes(randomness: Randomness,
-                                         apc: AdaptiveParameterControl,
-                                         selectionStrategy: SubsetGeneSelectionStrategy,
-                                         enableAdaptiveGeneMutation: Boolean,
-                                         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): List<Gene> {
-        //TODO
-        return listOf()
-    }
 
 
     override fun copyContent(): Gene {
@@ -352,9 +389,10 @@ class SqlMultidimensionalArrayGene<T>(
 
         val copy = SqlMultidimensionalArrayGene(
                 name = name,
+                databaseType = this.databaseType,
                 template = template.copy(),
                 numberOfDimensions = numberOfDimensions,
-                maxDimensionSize = maxDimensionSize,
+                maxDimensionSize = maxDimensionSize
         )
 
         if (children.isNotEmpty()) {
@@ -364,16 +402,18 @@ class SqlMultidimensionalArrayGene<T>(
         return copy
     }
 
-    override fun shallowMutate(
-            randomness: Randomness,
-            apc: AdaptiveParameterControl,
-            mwc: MutationWeightControl,
-            selectionStrategy: SubsetGeneSelectionStrategy,
-            enableAdaptiveGeneMutation: Boolean,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+
+    override fun isPrintable(): Boolean {
+        return getViewOfChildren().all { it.isPrintable() }
+    }
+
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ): Boolean {
-        this.randomize(randomness, true)
-        return true
+        return false
     }
 
 }

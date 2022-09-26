@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -12,6 +13,7 @@ class NumberGeneTest {
 
     @Test
     fun testDoubleGene(){
+
         val gene = DoubleGene("value", 12.9999999, -99.99, 99.99, precision = null, scale = 2)
         assertEquals(0.01, gene.getMinimalDelta())
         assertEquals(13.00, gene.getFormattedValue())
@@ -26,6 +28,7 @@ class NumberGeneTest {
 
     @Test
     fun testFloatDelta(){
+
         val gene = FloatGene("value", 12.9999999f, -99.99f, 99.99f, precision = null, scale = 2)
         assertEquals(0.01f, gene.getMinimalDelta())
         assertEquals(13.00f, gene.getFormattedValue())
@@ -41,6 +44,8 @@ class NumberGeneTest {
 
     @Test
     fun testBigDecimalIntegralNumberFormat(){
+
+
         BigDecimalGene("foo", precision = 2, scale = 0).apply {
             assertEquals("99", getMaximum().toString())
             assertEquals("-99", getMinimum().toString())
@@ -76,6 +81,15 @@ class NumberGeneTest {
 
     @Test
     fun testBigDecimalFloatingPointNumberFormat(){
+
+        BigDecimalGene("bg").apply {
+            assertTrue(isMutable())
+        }
+
+        BigDecimalGene("bg", min = BigDecimal("1.1"), max = BigDecimal("1.1"), scale = 1).apply {
+            assertFalse(isMutable())
+            assertEquals("1.1", value.toString())
+        }
 
         BigDecimalGene("foo", precision = 4, scale = 2).apply {
             assertEquals("99.99", getMaximum().toString())
@@ -117,6 +131,15 @@ class NumberGeneTest {
 
     @Test
     fun testDoubleGeneInclusive(){
+        DoubleGene("dg").apply {
+            assertTrue(isMutable())
+        }
+
+        DoubleGene("dg", min = 0.1, max = 0.1, scale = 1).apply {
+            assertFalse(isMutable())
+            assertEquals(0.1, value)
+        }
+
         DoubleGene("value", min = 0.0,precision = 4, scale = 2, minInclusive = false).apply {
             assertEquals(99.99, getMaximum())
             assertEquals(0.01, getMinimum())
@@ -156,6 +179,15 @@ class NumberGeneTest {
 
     @Test
     fun testFloatDeltaInclusive(){
+        FloatGene("fg").apply {
+            assertTrue(isMutable())
+        }
+
+        FloatGene("fg", min = 0.1f, max = 0.1f, scale = 1).apply {
+            assertFalse(isMutable())
+            assertEquals(0.1f, value)
+        }
+
         FloatGene("value", min = 0.0f,precision = 4, scale = 2, minInclusive = false).apply {
             assertEquals(99.99f, getMaximum())
             assertEquals(0.01f, getMinimum())
@@ -193,6 +225,15 @@ class NumberGeneTest {
 
     @Test
     fun testIntegerGene(){
+        IntegerGene("ig").apply {
+            assertTrue(isMutable())
+        }
+
+        IntegerGene("ig", min = 1, max = 1).apply {
+            assertFalse(isMutable())
+            assertEquals(1, value)
+        }
+
         IntegerGene("ig", precision = 2).apply {
             assertEquals(99, getMaximum())
             assertEquals(-99, getMinimum())
@@ -229,7 +270,17 @@ class NumberGeneTest {
 
     @Test
     fun testLongGene(){
-        LongGene("ig", precision = 2).apply {
+
+        LongGene("lg").apply {
+            assertTrue(isMutable())
+        }
+
+        LongGene("lg", min = 1, max = 1).apply {
+            assertFalse(isMutable())
+            assertEquals(1, value)
+        }
+
+        LongGene("lg", precision = 2).apply {
             assertEquals(99, getMaximum())
             assertEquals(-99, getMinimum())
             // default
@@ -240,7 +291,7 @@ class NumberGeneTest {
             assertTrue(isLocallyValid())
         }
 
-        LongGene("ig", min = 0, precision = 2, minInclusive = false).apply {
+        LongGene("lg", min = 0, precision = 2, minInclusive = false).apply {
             assertEquals(99, getMaximum())
             assertEquals(1, getMinimum())
             // default
@@ -251,7 +302,7 @@ class NumberGeneTest {
             assertTrue(isLocallyValid())
         }
 
-        LongGene("ig", max = 0, precision = 2, maxInclusive = false).apply {
+        LongGene("lg", max = 0, precision = 2, maxInclusive = false).apply {
             assertEquals(-1, getMaximum())
             assertEquals(-99, getMinimum())
             // default
@@ -265,6 +316,15 @@ class NumberGeneTest {
 
     @Test
     fun testBigIntegerGene(){
+        BigIntegerGene("big").apply {
+            assertTrue(isMutable())
+        }
+
+        BigIntegerGene("big", min = BigInteger("111"), max = BigInteger("111")).apply {
+            assertFalse(isMutable())
+            assertEquals("111", value.toString())
+        }
+
         BigIntegerGene("ig", precision = 2).apply {
             assertEquals(99, getMaximum().toInt())
             assertEquals(-99, getMinimum().toInt())
@@ -301,7 +361,7 @@ class NumberGeneTest {
 
     @Test
     fun testBigIntegerPrecision(){
-        assertThrows(IllegalArgumentException::class.java, {BigIntegerGene("bigInt gene",precision=392236186)})
+        assertThrows(IllegalArgumentException::class.java, { BigIntegerGene("bigInt gene",precision=392236186) })
         val bi = BigIntegerGene("max", precision = 19)
         assertEquals(Long.MAX_VALUE.toBigInteger(), bi.max)
         assertEquals(Long.MIN_VALUE.toBigInteger(), bi.min)
@@ -310,7 +370,7 @@ class NumberGeneTest {
     @Test
     fun testBigDecimalPrecision(){
 
-        assertThrows(IllegalArgumentException::class.java, {BigDecimalGene("invalid decimal gene",precision=309, scale = 0)})
+        assertThrows(IllegalArgumentException::class.java, { BigDecimalGene("invalid decimal gene",precision=309, scale = 0) })
         val bi = BigDecimalGene("invalid decimal gene", precision=308, scale =  Int.MAX_VALUE)
         assertNotNull(bi.max)
         assertNotNull(bi.min)

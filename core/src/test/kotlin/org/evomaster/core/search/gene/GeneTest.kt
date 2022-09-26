@@ -1,5 +1,8 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.root.SimpleGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -21,7 +24,7 @@ class GeneTest {
             This number should not change, unless you explicitly add/remove any gene.
             if so, update this number accordingly
          */
-        assertEquals(69, genes.size)
+        assertEquals(77, genes.size)
     }
 
     @Test
@@ -205,6 +208,7 @@ class GeneTest {
         }
     }
 
+   // @Disabled("seed 1796 is still failing")
     @TestFactory
     fun testRandomized(): Collection<DynamicTest> {
         return (1000..2000L).map {
@@ -224,7 +228,7 @@ class GeneTest {
                     checkInvariants(root) // all invariants should hold
 
                     val copy = root.copy()
-                    checkInvariants(copy); //same for a copy
+                    checkInvariants(copy) //same for a copy
 
                     if(root.isGloballyValid()) { //in these tests, global constraints are not handled
                         if (root.isPrintable()) {
@@ -260,7 +264,10 @@ class GeneTest {
         //must be locally valid once gene has been randomized
         assertTrue(gene.isLocallyValid(), msg)
         //all tree must be valid, regardless of impact on phenotype
-        assertTrue(gene.flatView().all { it.isLocallyValid() })
+        assertTrue(gene.flatView().all {
+                it.isLocallyValid()
+            }
+        )
 
         //TODO add more invariants here
     }

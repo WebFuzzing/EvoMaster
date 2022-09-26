@@ -4,10 +4,9 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ImmutableDataHolderGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.service.Randomness
 
 /**
  *  An action executed on the database.

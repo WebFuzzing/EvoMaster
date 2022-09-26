@@ -11,7 +11,7 @@ import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlXMLGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

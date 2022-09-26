@@ -2,15 +2,15 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.gene.CompositeFixedGene
+import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.regex.DisjunctionRxGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -58,7 +58,7 @@ class DisjunctionRxGene(
     override fun canBeChildless() = true
 
     override fun copyContent(): Gene {
-        val copy = DisjunctionRxGene(name, terms.map { it.copy() as Gene }, matchStart, matchEnd)
+        val copy = DisjunctionRxGene(name, terms.map { it.copy() }, matchStart, matchEnd)
         copy.extraPrefix = this.extraPrefix
         copy.extraPostfix = this.extraPostfix
         return copy
@@ -81,17 +81,21 @@ class DisjunctionRxGene(
         return !matchStart || !matchEnd || terms.any { it.isMutable() }
     }
 
-    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): List<Gene> {
-        return if(!matchStart && randomness.nextBoolean(APPEND)){
-            emptyList()
-        } else if(!matchEnd && randomness.nextBoolean(APPEND)){
-            emptyList()
-        } else {
-            terms.filter { it.isMutable() }
+    override fun customShouldApplyShallowMutation(randomness: Randomness,
+                                                  selectionStrategy: SubsetGeneMutationSelectionStrategy,
+                                                  enableAdaptiveGeneMutation: Boolean,
+                                                  additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean {
+        if(!matchStart && randomness.nextBoolean(APPEND)){
+            return true
         }
+        if(!matchEnd && randomness.nextBoolean(APPEND)){
+            return true
+        }
+        return false
     }
 
-    override fun adaptiveSelectSubset(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is DisjunctionRxGeneImpact)
             throw IllegalArgumentException("mismatched gene impact")
 
@@ -112,7 +116,7 @@ class DisjunctionRxGene(
         return selected.map { it to additionalGeneMutationInfo.copyFoInnerGene(impacts[internalGenes.indexOf(it)], it) }.toList()
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,  selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
         if(!matchStart){
             extraPrefix = ! extraPrefix
         } else {
@@ -169,9 +173,6 @@ class DisjunctionRxGene(
     override fun mutationWeight(): Double {
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
-
-    override fun innerGene(): List<Gene> = terms
-
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is DisjunctionRxGene && terms.size == gene.terms.size){

@@ -10,7 +10,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.database.schema.*
 import org.evomaster.core.database.schema.ColumnFactory.createColumnFromDto
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.dbconstraint.*
 import org.slf4j.Logger
@@ -517,7 +517,7 @@ class SqlInsertBuilder(
 
                 for (i in 0 until pks.size) {
                     val pkName = pks[i].name
-                    val inQuotes = pks[i].type.shouldBePrintedInQuotes() || pks[i].dimension > 0
+                    val inQuotes = pks[i].type.shouldBePrintedInQuotes || pks[i].dimension > 0
                     val data = ImmutableDataHolderGene(pkName, r.columnData[i], inQuotes)
                     val pk = SqlPrimaryKeyGene(pkName, table.name, data, id)
                     genes.add(pk)
@@ -599,7 +599,7 @@ class SqlInsertBuilder(
             if (row!!.columnData[i] != "NULL") {
 
                 val colName = cols[i].name
-                val inQuotes = cols[i].type.shouldBePrintedInQuotes() || cols[i].dimension > 0
+                val inQuotes = cols[i].type.shouldBePrintedInQuotes || cols[i].dimension > 0
 
                 val gene = if (cols[i].primaryKey) {
                     SqlPrimaryKeyGene(

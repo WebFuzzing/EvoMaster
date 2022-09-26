@@ -10,7 +10,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.*
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 
 class RestTestCaseWriter : HttpWsTestCaseWriter {
@@ -63,7 +63,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
              */
             lines.addEmpty()
 
-            ind.evaluatedActions().asSequence()
+            ind.evaluatedMainActions().asSequence()
                     .map { it.action }
                     .filterIsInstance(RestCallAction::class.java)
                     .filter { it.locationId != null }
@@ -110,7 +110,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
      * eg a POST followed by a GET on the created resource
      */
     private fun hasChainedLocations(individual: Individual) : Boolean{
-        return individual.seeActions().any { a ->
+        return individual.seeAllActions().any { a ->
             a is RestCallAction && a.isLocationChained()
         }
     }

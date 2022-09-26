@@ -2,9 +2,11 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.database.DbActionGeneBuilder
 import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlJSONGene
-import org.evomaster.core.search.gene.sql.SqlUUIDGene
 import org.evomaster.core.search.gene.sql.SqlXMLGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -51,7 +53,7 @@ class FlatViewTest {
 
     @Test
     fun testExcludeSqlUUIDGene() {
-        val gene = SqlUUIDGene("gene")
+        val gene = UUIDGene("gene")
         assertEquals(1, gene.flatView { true }.size)
     }
 

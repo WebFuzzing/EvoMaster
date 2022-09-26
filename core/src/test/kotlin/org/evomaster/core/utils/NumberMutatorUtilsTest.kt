@@ -1,11 +1,11 @@
 package org.evomaster.core.utils
 
-import org.evomaster.core.search.gene.BigDecimalGene
-import org.evomaster.core.search.gene.DoubleGene
-import org.evomaster.core.search.gene.FloatGene
-import org.evomaster.core.search.gene.NumberMutatorUtils.MAX_DOUBLE_PRECISION
-import org.evomaster.core.search.gene.NumberMutatorUtils.MAX_FLOAT_PRECISION
-import org.evomaster.core.search.gene.NumberMutatorUtils.getDecimalEpsilon
+import org.evomaster.core.search.gene.numeric.BigDecimalGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.utils.NumberMutatorUtils.MAX_DOUBLE_PRECISION
+import org.evomaster.core.search.gene.utils.NumberMutatorUtils.MAX_FLOAT_PRECISION
+import org.evomaster.core.search.gene.utils.NumberMutatorUtils.getDecimalEpsilon
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

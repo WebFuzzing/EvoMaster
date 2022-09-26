@@ -8,6 +8,12 @@ import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -191,7 +197,9 @@ object GraphQLUtils {
 
 
     fun repairIndividual(ind: GraphQLIndividual) {
-        ind.seeActions().forEach { a ->
+        ind.seeAllActions()
+            .filterIsInstance<GraphQLAction>()
+            .forEach { a ->
             a.parameters.filterIsInstance<GQReturnParam>().forEach { p ->
                 if (p.gene is ObjectGene ) {
                     p.gene.fields.forEach { if ((it is TupleGene && it.lastElementTreatedSpecially)|| (it is BooleanGene ) || (it is OptionalGene) ) GeneUtils.repairBooleanSelection(p.gene) }

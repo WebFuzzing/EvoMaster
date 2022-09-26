@@ -34,10 +34,17 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 public @interface Replacement {
 
+
+
     /**
      * Specify if the target replaced method was static
      */
     boolean replacingStatic() default false;
+
+    /**
+     *  Specify if the target to replace is a constructor call, ie, using "new"
+     */
+    boolean replacingConstructor() default false;
 
     /**
      * There might be different reasons to replace a methods,

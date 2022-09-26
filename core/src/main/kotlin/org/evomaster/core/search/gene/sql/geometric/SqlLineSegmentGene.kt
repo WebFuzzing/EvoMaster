@@ -2,6 +2,9 @@ package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -54,5 +57,13 @@ class SqlLineSegmentGene(
         }
     }
 
+    override fun customShouldApplyShallowMutation(
+        randomness: Randomness,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ): Boolean {
+        return false
+    }
 
 }

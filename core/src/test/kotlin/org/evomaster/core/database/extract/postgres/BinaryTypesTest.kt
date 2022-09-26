@@ -5,7 +5,8 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlBinaryStringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -70,7 +71,7 @@ class BinaryTypesTest : ExtractTestBasePostgres() {
 
         val sqlBinaryStringGene = genes[0] as SqlBinaryStringGene
 
-        val arrayGene  = sqlBinaryStringGene.innerGene()[0] as ArrayGene<IntegerGene>
+        val arrayGene  = sqlBinaryStringGene.getViewOfChildren()[0] as ArrayGene<IntegerGene>
         val integerGene0 = arrayGene.template.copy() as IntegerGene
         integerGene0.value = 0
 

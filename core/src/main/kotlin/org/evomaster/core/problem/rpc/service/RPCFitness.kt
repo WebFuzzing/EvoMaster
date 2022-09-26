@@ -15,7 +15,7 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.CollectionGene
+import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -45,7 +45,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val fv = FitnessValue(individual.size().toDouble())
 
         run loop@{
-            individual.seeActions().forEachIndexed { index, action->
+            individual.seeAllActions().filterIsInstance<RPCCallAction>().forEachIndexed { index, action->
                 val ok = executeNewAction(action, index, actionResults)
                 if (!ok) return@loop
             }
@@ -63,7 +63,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 status info in GRPC, see https://grpc.github.io/grpc/core/md_doc_statuscodes.html
          */
         val rpcActionResults = actionResults.filterIsInstance<RPCCallResult>()
-        handleResponseTargets(fv, individual.seeActions(), rpcActionResults, dto.additionalInfoList)
+        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, dto.additionalInfoList)
 
         if (config.baseTaintAnalysisProbability > 0) {
             Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }

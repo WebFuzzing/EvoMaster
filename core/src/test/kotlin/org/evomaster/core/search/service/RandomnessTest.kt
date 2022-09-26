@@ -154,4 +154,19 @@ class RandomnessTest{
 
         assertEquals(a, b)
     }
+
+    @Test
+    fun chooseIntRange(){
+
+        val a = listOf(3,4,5,6)
+
+        val seen = a.map { false }.toMutableList()
+
+        for(i in 0 until 100){
+            val k = rand.choose(a.indices)
+            assertTrue(k in 0..3, "Wrong value: $k")
+            seen[k] = true
+        }
+        assertTrue(seen.all { it })
+    }
 }

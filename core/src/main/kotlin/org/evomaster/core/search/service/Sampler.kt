@@ -5,12 +5,17 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
 abstract class Sampler<T> : TrackOperator where T : Individual {
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(Sampler::class.java)
+    }
 
     @Inject
     protected lateinit var randomness: Randomness
@@ -36,19 +41,6 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      */
     protected val actionCluster: MutableMap<String, Action> = mutableMapOf()
 
-    /**
-     * Sample a new individual at random, but still satisfying all given constraints.
-     *
-     * Note: must guarantee to setup the [searchGlobalState] in this new individual
-     */
-    abstract fun sampleAtRandom(): T
-
-
-    fun numberOfDistinctActions() = actionCluster.size
-
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(Sampler::class.java)
-    }
 
 
     /**
@@ -56,15 +48,44 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      * will create a new, different individual, but there is no
      * hard guarantee
      */
-    fun sample(): T {
+    fun sample(forceRandomSample: Boolean = false): T {
         if (log.isTraceEnabled){
             log.trace("sampler will be applied")
         }
 
-        if (randomness.nextBoolean(config.probOfSmartSampling)) {
-            return smartSample()
+        val ind = if (forceRandomSample) {
+            sampleAtRandom()
+        } else if (hasSpecialInit() || randomness.nextBoolean(config.probOfSmartSampling)) {
+            // If there is still special init set, sample from that, otherwise depen on probability
+            smartSample()
         } else {
-            return sampleAtRandom()
+            sampleAtRandom()
+        }
+
+        samplePostProcessing(ind)
+
+        org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
+        return ind
+    }
+
+    /**
+     * Sample a new individual at random, but still satisfying all given constraints.
+     *
+     * Note: must guarantee to setup the [searchGlobalState] in this new individual
+     */
+    protected abstract fun sampleAtRandom(): T
+
+    open fun samplePostProcessing(ind: T){
+
+        val state = ind.searchGlobalState ?: return
+        val time = state.time.percentageUsedBudget()
+
+        ind.seeAllActions().forEach { a ->
+            val allGenes = a.seeTopGenes().flatMap { it.flatView() }
+
+            allGenes.filterIsInstance<OptionalGene>()
+                .filter { it.searchPercentageActive < time }
+                .forEach { it.forbidSelection() }
         }
     }
 
@@ -74,10 +95,12 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
      *
      * Note: must guarantee to setup the [searchGlobalState] in this new individual
      */
-    open fun smartSample(): T {
+    protected open fun smartSample(): T {
         //unless this method is overridden, just sample at random
         return sampleAtRandom()
     }
+
+    fun numberOfDistinctActions() = actionCluster.size
 
     /**
      * When the search starts, there might be some predefined individuals

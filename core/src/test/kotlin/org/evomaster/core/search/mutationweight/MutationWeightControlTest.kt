@@ -8,13 +8,12 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.mutationweight.individual.IndividualMutationweightTest
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
@@ -72,7 +71,7 @@ class MutationWeightControlTest {
                 forceNotEmpty = true
         ))
 
-        assert(selected.size >= 2)
+        assertTrue(selected.size >= 2)
     }
 
     @Test
@@ -100,7 +99,7 @@ class MutationWeightControlTest {
                     forceNotEmpty = true
             ))
         }
-        assert(selected.count { it == obj } >= 1)
+        assertTrue(selected.count { it == obj } >= 1)
     }
 
     @Test
@@ -121,8 +120,8 @@ class MutationWeightControlTest {
             then, m of 7th field are not less than 61/73 when d = 0.0.
             thus when executing 2 times, we assume that 7rd field is selected at least one time
          */
-        val resultHW = selectField(obj as ObjectGene, 6, 2, SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT)
-        assert(resultHW)
+        val resultHW = selectField(obj as ObjectGene, 6, 2, SubsetGeneMutationSelectionStrategy.DETERMINISTIC_WEIGHT)
+        assertTrue(resultHW)
 
         config.weightBasedMutationRate = false
 
@@ -133,7 +132,7 @@ class MutationWeightControlTest {
          */
         var counter = 0
         repeat(100){
-            val result = selectField(einfoObj!!, 4, 1, SubsetGeneSelectionStrategy.DEFAULT)
+            val result = selectField(einfoObj!!, 4, 1, SubsetGeneMutationSelectionStrategy.DEFAULT)
             if(result) counter++
         //assertFalse(result)
         }
@@ -142,10 +141,10 @@ class MutationWeightControlTest {
         assertTrue(counter < 10)
     }
 
-    private fun selectField(obj: ObjectGene, indexOfField : Int, times : Int, selectionStrategy: SubsetGeneSelectionStrategy) : Boolean{
+    private fun selectField(obj: ObjectGene, indexOfField : Int, times : Int, selectionStrategy: SubsetGeneMutationSelectionStrategy) : Boolean{
         val mutatedWH = obj.copy()
         mutatedWH.standardMutation(
-                randomness, apc = apc, mwc = mwc, internalGeneSelectionStrategy = selectionStrategy
+                randomness, apc = apc, mwc = mwc, childrenToMutateSelectionStrategy = selectionStrategy
         )
 
         var result = false

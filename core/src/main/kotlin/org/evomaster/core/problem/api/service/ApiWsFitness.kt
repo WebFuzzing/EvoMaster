@@ -18,7 +18,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -90,7 +90,9 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
                 searchTimeController.newIndividualsWithSqlFailedWhere()
             }
         } else if (configuration.extractSqlExecutionInfo) {
-
+            /*
+                this code here is done in previous block as well
+             */
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
                 fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))

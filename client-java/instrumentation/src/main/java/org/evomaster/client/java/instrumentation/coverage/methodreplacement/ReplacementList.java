@@ -11,6 +11,10 @@ public class ReplacementList {
 
     private static List<MethodReplacementClass> listCache;
 
+    /*
+        FIXME why was this a list of instances and not a list of Class<? extends MethodReplacementClass> ???
+     */
+
     /**
      * Return all the available method replacement classes.
      * Every time a new replacement class is implemented, it needs to
@@ -34,6 +38,7 @@ public class ReplacementList {
                     new Http11ProcessorReplacementClass(),
                     new HttpServletRequestClassReplacement(),
                     new IntegerClassReplacement(),
+                    new JacksonObjectMapperClassReplacement(),
                     new LocalDateClassReplacement(),
                     new LocalDateTimeClassReplacement(),
                     new LocalTimeClassReplacement(),
@@ -50,7 +55,9 @@ public class ReplacementList {
                     new ShortClassReplacement(),
                     new ServletRequestClassReplacement(),
                     new WebRequestClassReplacement(),
-                    new URLClassReplacement()
+                    new URIClassReplacement(),
+                    new URLClassReplacement(),
+                    new UUIDClassReplacement()
             );
         }
 
@@ -59,12 +66,23 @@ public class ReplacementList {
 
 
     public static List<MethodReplacementClass> getReplacements(String target) {
+        return getReplacements(target, false);
+    }
+
+
+    public static List<MethodReplacementClass> getReplacements(String target, boolean strict) {
         Objects.requireNonNull(target);
         final String targetClassName = ClassName.get(target).getFullNameWithDots();
 
-        return getList().stream()
+        List<MethodReplacementClass> list = getList().stream()
                 //.filter(t -> t.isAvailable()) // bad idea to load 3rd classes at this point...
                 .filter(t -> {
+
+                    if(strict){
+                        //exact match, no subclasses allowed
+                        return t.getTargetClassName().equals(targetClassName);
+                    }
+
                     /*
                         TODO: this is tricky, due to how "super" calls are
                         handled. For now, we just allow subclasses if they
@@ -107,5 +125,9 @@ public class ReplacementList {
                         }
                 )
                 .collect(Collectors.toList());
+
+        assert !strict || (list.size() <= 1); //if strict, at most 1 class can match
+
+        return list;
     }
 }

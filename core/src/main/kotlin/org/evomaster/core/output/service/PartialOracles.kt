@@ -15,7 +15,6 @@ import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
-import javax.annotation.PostConstruct
 
 /**
  * [PartialOracles] are meant to be a way to handle different types of soft assertions/expectations (name may change in future)
@@ -106,7 +105,7 @@ class PartialOracles {
 
     fun generatesExpectation(individual: EvaluatedIndividual<RestIndividual>): Boolean{
         return oracles.any { oracle ->
-            individual.evaluatedActions().any {
+            individual.evaluatedMainActions().any {
                 oracle.generatesExpectation(
                         (it.action as RestCallAction),
                         (it.result as HttpWsCallResult)
@@ -146,9 +145,9 @@ class PartialOracles {
         val oracleInds = mutableMapOf<String, MutableList<EvaluatedIndividual<RestIndividual>>>()
         oracles.forEach { oracle ->
             val failindInds = individuals.filter {
-                it.evaluatedActions().any { oracle.selectForClustering(it) }
+                it.evaluatedMainActions().any { oracle.selectForClustering(it) }
             }.toMutableList()
-            failindInds.sortBy { it.evaluatedActions().size }
+            failindInds.sortBy { it.evaluatedMainActions().size }
             oracleInds.put(oracle.getName(), failindInds)
         }
         return oracleInds
@@ -158,7 +157,7 @@ class PartialOracles {
         val active = mutableMapOf<String, Boolean>()
         oracles.forEach { oracle ->
             active.put(oracle.getName(), individuals.any { individual ->
-                individual.evaluatedActions().any {
+                individual.evaluatedMainActions().any {
                     it.action is RestCallAction && oracle.generatesExpectation(
                             (it.action as RestCallAction),
                             (it.result as HttpWsCallResult)

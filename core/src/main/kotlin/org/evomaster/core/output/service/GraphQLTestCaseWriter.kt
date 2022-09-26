@@ -12,7 +12,7 @@ import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 
 class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
@@ -26,7 +26,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
         if (ind.individual is GraphQLIndividual) {
-            ind.evaluatedActions().forEach { a ->
+            ind.evaluatedMainActions().forEach { a ->
                 handleSingleCall(a, lines, baseUrlOfSut)
             }
         }

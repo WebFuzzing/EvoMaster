@@ -16,11 +16,19 @@ import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGene
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.*
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.string.NumericStringGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.regex.*
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.SqlMultidimensionalArrayGeneImpact
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -42,7 +50,7 @@ class ImpactUtils {
 
         fun createGeneImpact(gene : Gene, id : String) : GeneImpact{
             return when(gene){
-                is DisruptiveGene<*> -> DisruptiveGeneImpact(id, gene)
+                is CustomMutationRateGene<*> -> DisruptiveGeneImpact(id, gene)
                 is OptionalGene -> OptionalGeneImpact(id, gene)
                 is BooleanGene -> BinaryGeneImpact(id)
                 is EnumGene<*> -> EnumGeneImpact(id, gene)
@@ -51,10 +59,10 @@ class ImpactUtils {
                 is DoubleGene -> DoubleGeneImpact(id)
                 is FloatGene -> FloatGeneImpact(id)
                 is StringGene -> StringGeneImpact(id, gene)
-                is Base64StringGene -> StringGeneImpact(id, gene.data)
+                //is Base64StringGene -> StringGeneImpact(id, gene.data)
                 is ObjectGene -> ObjectGeneImpact(id, gene)
                 is TupleGene -> TupleGeneImpact(id, gene)
-                is MapGene<*, *>-> MapGeneImpact(id)
+                is MapGene<*, *> -> MapGeneImpact(id)
                 is PairGene<*, *> -> throw IllegalStateException("do not count impacts for PairGene yet")
                 is ArrayGene<*> -> ArrayGeneImpact(id)
                 is DateGene -> DateGeneImpact(id, gene)
@@ -69,7 +77,7 @@ class ImpactUtils {
                 is SqlNullableGene -> SqlNullableImpact(id, gene)
                 is SqlJSONGene -> SqlJsonGeneImpact(id, gene)
                 is SqlXMLGene -> SqlXmlGeneImpact(id, gene)
-                is SqlUUIDGene -> SqlUUIDGeneImpact(id, gene)
+                is UUIDGene -> SqlUUIDGeneImpact(id, gene)
                 is SqlPrimaryKeyGene -> SqlPrimaryKeyGeneImpact(id, gene)
                 is SqlForeignKeyGene -> SqlForeignKeyGeneImpact(id)
                 is SqlAutoIncrementGene -> GeneImpact(id)
@@ -81,6 +89,8 @@ class ImpactUtils {
                 is QuantifierRxGene -> QuantifierRxGeneImpact(id, gene)
                 is RxAtom -> RxAtomImpact(id)
                 is RxTerm -> RxTermImpact(id)
+                // general for composite fixed gene
+                is CompositeFixedGene -> CompositeFixedGeneImpact(id, gene)
                 else ->{
                     LoggingUtil.uniqueWarn(log, "the impact of {} was collected in a general manner, i.e., GeneImpact", gene::class.java.simpleName)
                     GeneImpact(id)
@@ -92,6 +102,10 @@ class ImpactUtils {
         private const val SEPARATOR_GENE = ";"
         private const val SEPARATOR_GENE_WITH_TYPE = ">"
 
+        /**
+         * TODO
+         * Man: might employ local id of the action, check it later
+         */
         fun generateGeneId(action: Action, gene : Gene) : String = "${action.getName()}$SEPARATOR_ACTION_TO_GENE${generateGeneId(gene)}$SEPARATOR_ACTION_TO_GENE${action.seeTopGenes().indexOf(gene)}"
 
         fun extractActionName(geneId : String) : String?{
@@ -129,7 +143,7 @@ class ImpactUtils {
         ) : Map<String, MutableList<MutatedGeneWithContext>>{
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
-            if (individual.seeActions().isEmpty()){
+            if (individual.seeAllActions().isEmpty()){
                 individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                     val id = generateGeneId(individual, g)
                     val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
@@ -137,12 +151,12 @@ class ImpactUtils {
                     contexts.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = mutatedGenes.size))
                 }
             }else{
-                individual.seeActions().forEachIndexed { index, action ->
+                individual.seeAllActions().forEachIndexed { index, action ->
                     action.seeTopGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                         val id = generateGeneId(action, g)
                         val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
-                        val previous = findGeneById(previousIndividual, id, action.getName(), index, false)?: throw IllegalArgumentException("mismatched previous individual")
-                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous, mutatedGenes.size))
+                        val previous = findGeneById(previousIndividual, id, action.getName(), index, action.getLocalId(), action is ApiExternalServiceAction, false)?: throw IllegalArgumentException("mismatched previous individual")
+                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, action.getLocalId(), action is ApiExternalServiceAction, previous, mutatedGenes.size))
                     }
                 }
             }
@@ -161,7 +175,7 @@ class ImpactUtils {
 
             actions.forEachIndexed { index, a ->
 
-                val manipulated = mutatedGeneSpecification.isActionMutated(index, isInit)
+                val manipulated = mutatedGeneSpecification.isActionMutated(index, a.getLocalId(), isInit)
                 if (manipulated){
                     a.seeTopGenes().filter {
                         if (isInit)
@@ -180,9 +194,11 @@ class ImpactUtils {
                                 id = id,
                                 actionName = a.getName(),
                                 indexOfAction = indexInPrevious,
+                                localId = a.getLocalId(),
+                                isDynamic = a is ApiExternalServiceAction,
                                 isDb = isInit
                         )
-                        list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName(), numOfMutatedGene = num))
+                        list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName(), actionLocalId = a.getLocalId(), isDynamicAction = a is ApiExternalServiceAction, numOfMutatedGene = num))
                     }
                 }
             }
@@ -217,12 +233,23 @@ class ImpactUtils {
         }
 
 
-        private fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int, isDb : Boolean):Gene?{
-            if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)).size) return null
-            val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
+        private fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int?, localId: String?, isDynamic : Boolean, isDb : Boolean):Gene?{
+            if (!isDynamic && indexOfAction == null)
+                throw IllegalArgumentException("indexOfAction must be specified if the action is not dynamic, ie, external service action")
+
+            if (isDynamic && localId == null)
+                throw IllegalArgumentException("localId must be specified if the action is dynamic, ie, external service action")
+
+            val action = if (indexOfAction!=null && !isDynamic){
+                if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)).size) return null
+                if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
+            }else {
+                individual.findActionByLocalId(localId!!)?:return null
+            }
             if (action.getName() != actionName)
                 throw IllegalArgumentException("mismatched gene mutated info ${action.getName()} vs. $actionName")
             return action.seeTopGenes().find { generateGeneId(action, it) == id }
+
         }
 
         private fun findGeneById(individual: Individual, id : String):Gene?{
@@ -248,7 +275,7 @@ class ImpactUtils {
          */
         fun generateGeneId(gene: Gene):String{
             return when(gene){
-                is DisruptiveGene<*> -> "DisruptiveGene$SEPARATOR_GENE_WITH_TYPE${generateGeneId(gene.gene)}"
+                is CustomMutationRateGene<*> -> "DisruptiveGene$SEPARATOR_GENE_WITH_TYPE${generateGeneId(gene.gene)}"
                 is OptionalGene -> "OptionalGene$SEPARATOR_GENE_WITH_TYPE${generateGeneId(gene.gene)}"
                 is ObjectGene -> if (gene.refType.isNullOrBlank()) gene.name else "${gene.refType}$SEPARATOR_GENE_WITH_TYPE${gene.name}"
                 else -> gene.name

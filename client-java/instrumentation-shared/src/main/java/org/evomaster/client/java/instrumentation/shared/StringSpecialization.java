@@ -57,9 +57,17 @@ public enum StringSpecialization implements Serializable {
 
 
     /**
-     * String constrained by a regular expression
+     * String constrained by a regular expression.
+     * Should match whole text
      */
-    REGEX,
+    REGEX_WHOLE,
+
+    /**
+     * String constrained by a regular expression.
+     * Should match a part of the text, and not necessarely all of it
+     */
+    REGEX_PARTIAL,
+
 
     /**
      * String parsed to double
@@ -86,5 +94,26 @@ public enum StringSpecialization implements Serializable {
      *  ie 2 (or more) different variables should be keep their
      *  value in sync
      */
-    EQUAL
+    EQUAL,
+
+    /**
+     * A 128-bit Universal Unique Identifier (UUID)
+     */
+    UUID,
+
+    /**
+     *  String should be a valid URL.
+     *  All valid URLs are valid URIs, but vice-versa is not true
+     */
+    URL,
+
+    /**
+     *  String should be a valid URI
+     */
+    URI;
+
+
+    public boolean isRegex(){
+        return this == REGEX_PARTIAL || this == REGEX_WHOLE;
+    }
 }

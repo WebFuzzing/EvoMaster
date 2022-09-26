@@ -7,11 +7,11 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.external.service.ExternalServiceInfo
-import org.evomaster.core.problem.external.service.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -23,6 +23,10 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -43,8 +47,73 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
-    }
 
+        //see org.springframework.http.HttpHeaders
+
+        val knownHttpHeaders = setOf(
+            "Accept",
+            "Accept-Charset",
+            "Accept-Encoding",
+            "Accept-Language",
+            "Accept-Patch",
+            "Accept-Ranges",
+            "Access-Control-Allow-Credentials",
+            "Access-Control-Allow-Headers",
+            "Access-Control-Allow-Methods",
+            "Access-Control-Allow-Origin",
+            "Access-Control-Expose-Headers",
+            "Access-Control-Max-Age",
+            "Access-Control-Request-Headers",
+            "Access-Control-Request-Method",
+            "Age",
+            "Allow",
+            "Authorization",
+            "Cache-Control",
+            "Connection",
+            "Content-Encoding",
+            "Content-Disposition",
+            "Content-Language",
+            "Content-Length",
+            "Content-Location",
+            "Content-Range",
+            "Content-Type",
+            "Cookie",
+            "Date",
+            "ETag",
+            "Expect",
+            "Expires",
+            "From",
+            "Host",
+            "If-Match",
+            "If-Modified-Since",
+            "If-None-Match",
+            "If-Range",
+            "If-Unmodified-Since",
+            "Last-Modified",
+            "Link",
+            "Location",
+            "Max-Forwards",
+            "Origin",
+            "Pragma",
+            "Proxy-Authenticate",
+            "Proxy-Authorization",
+            "Range",
+            "Referer",
+            "Retry-After",
+            "Server",
+            "Set-Cookie",
+            "Set-Cookie2",
+            "TE",
+            "Trailer",
+            "Transfer-Encoding",
+            "Upgrade",
+            "User-Agent",
+            "Vary",
+            "Via",
+            "Warning",
+            "WWW-Authenticate"
+        ).map { it.lowercase() }.toSet()
+    }
 
 
     /**
@@ -53,24 +122,24 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
      * params that were not specified in the Swagger schema
      */
     open fun expandIndividual(
-            individual: RestIndividual,
-            additionalInfoList: List<AdditionalInfoDto>,
-            actionResults: List<ActionResult>
+        individual: RestIndividual,
+        additionalInfoList: List<AdditionalInfoDto>,
+        actionResults: List<ActionResult>
     ) {
 
-        if (individual.seeActions().size < additionalInfoList.size) {
+        if (individual.seeAllActions().size < additionalInfoList.size) {
             /*
                 Note: as not all actions might had been executed, it might happen that
                 there are less Info than declared actions.
                 But the other way round should not really happen
              */
-            log.warn("Length mismatch between ${individual.seeActions().size} actions and ${additionalInfoList.size} info data")
+            log.warn("Length mismatch between ${individual.seeAllActions().size} actions and ${additionalInfoList.size} info data")
             return
         }
 
-        for (i in 0 until additionalInfoList.size) {
+        for (i in additionalInfoList.indices) {
 
-            val action = individual.seeActions()[i]
+            val action = individual.seeAllActions()[i]
             val info = additionalInfoList[i]
 
             if (action !is RestCallAction) {
@@ -88,26 +157,46 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
              */
 
             info.headers
-                    .filter { name ->
-                        !action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
-                    }
-                    .forEach {
-                        val gene = StringGene(it)
-                        action.addParam(HeaderParam(it,
-                                OptionalGene(it, gene, false, requestSelection = true).apply { doInitialize() }))
-                    }
+                .filter { name ->
+                    !action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
+                }
+                .filter {
+                    //ignore common HTTP headers which could mess up the requests
+                    !knownHttpHeaders.contains(it.lowercase())
+                }
+                .forEach {
+                    val gene = StringGene(it)
+                    action.addParam(
+                        HeaderParam(it,
+                            OptionalGene(it, gene, false, requestSelection = true).apply { doInitialize() })
+                    )
+                }
 
             info.queryParameters
-                    .filter { name ->
-                        !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
+                .filter { name ->
+                    //if parameter already exists, do not add it again
+                    !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
+                }
+                .filter { name ->
+                    /*
+                        This one is very tricky. Some JEE-based frameworks could conflate URL query parameters and
+                         parameters in body payload of form submissions in x-www-form-urlencoded format.
+                         This happens for example in LanguageTool.
+                     */
+                    !action.parameters.any{
+                            b -> b is BodyParam && b.isForm()
+                            && b.seeGenes().flatMap { it.flatView() }.any { it.name.equals(name, ignoreCase = true)  }
                     }
-                    .forEach {
-                        val gene = StringGene(it).apply { doInitialize(randomness) }
-                        action.addParam(QueryParam(it,
-                                OptionalGene(it, gene, false, requestSelection = true).apply { doInitialize() }))
-                    }
+                }
+                .forEach {
+                    val gene = StringGene(it).apply { doInitialize(randomness) }
+                    action.addParam(
+                        QueryParam(it,
+                            OptionalGene(it, gene, false, requestSelection = true).apply { doInitialize() })
+                    )
+                }
 
-            if(result.getStatusCode() == 415){
+            if (result.getStatusCode() == 415) {
                 /*
                     In theory, this should not happen.
                     415 means the media type of the sent payload is wrong.
@@ -118,13 +207,13 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     However, a POST/PUT could expect a payload and, if that is not specified
                     in OpenAPI, we could get a 415 when sending no data.
                  */
-                if(action.parameters.none{ it is BodyParam}){
+                if (action.parameters.none { it is BodyParam }) {
 
                     val obj = ObjectGene("body", listOf()).apply { doInitialize(randomness) }
 
                     val body = BodyParam(obj,
-                             // TODO could look at "Accept" header instead of defaulting to JSON
-                            EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
+                        // TODO could look at "Accept" header instead of defaulting to JSON
+                        EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
 
                     val update = UpdateForBodyParam(body)
 
@@ -135,17 +224,17 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
             val dtoNames = info.parsedDtoNames;
 
-            val noBody = action.parameters.none{ it is BodyParam}
+            val noBody = action.parameters.none { it is BodyParam }
             val emptyObject = !noBody &&
                     // this is the case of 415 handling
                     action.parameters.find { it is BodyParam }!!.let {
                         it.gene is ObjectGene && it.gene.fields.isEmpty()
                     }
 
-            if(info.rawAccessOfHttpBodyPayload == true
-                    && dtoNames.isNotEmpty()
-                    && (noBody || emptyObject)
-            ){
+            if (info.rawAccessOfHttpBodyPayload == true
+                && dtoNames.isNotEmpty()
+                && (noBody || emptyObject)
+            ) {
                 /*
                     The SUT tried to read the HTTP body payload, but there is no info
                     about it in the schema. This can happen when payloads are dynamically
@@ -156,23 +245,23 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     TODO what to do if more than 1 DTO are registered?
                          Likely need a new MultiOptionGene similar to DisjunctionListRxGene
                  */
-                if(dtoNames.size > 1){
+                if (dtoNames.size > 1) {
                     LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
                 }
                 val name = dtoNames.first()
                 val obj = getObjectGeneForDto(name).apply { doInitialize(randomness) }
 
                 val body = BodyParam(obj,
-                        EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
+                    EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
                 val update = UpdateForBodyParam(body)
                 action.addParam(update)
             }
         }
     }
 
-    private fun getObjectGeneForDto(name: String) : Gene{
+    private fun getObjectGeneForDto(name: String): Gene {
 
-        if(!infoDto.unitsInfoDto.parsedDtos.containsKey(name)){
+        if (!infoDto.unitsInfoDto.parsedDtos.containsKey(name)) {
             /*
                 parsedDto info is update throughout the search.
                 so, if info is missing, we re-fetch the whole data.
@@ -182,12 +271,12 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
              */
             infoDto = rc.getSutInfo()!!
 
-            if(!infoDto.unitsInfoDto.parsedDtos.containsKey(name)){
+            if (!infoDto.unitsInfoDto.parsedDtos.containsKey(name)) {
                 throw RuntimeException("BUG: info for DTO $name is not available in the SUT driver")
             }
         }
 
-        val schema : String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
+        val schema: String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
         //TODO neeed to check: referType is same with the name?
         return RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
     }
@@ -197,35 +286,42 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
      * API entry point
      */
     fun handleResponseTargets(
-            fv: FitnessValue,
-            actions: List<RestCallAction>,
-            actionResults: List<ActionResult>,
-            additionalInfoList: List<AdditionalInfoDto>) {
+        fv: FitnessValue,
+        actions: List<RestCallAction>,
+        actionResults: List<ActionResult>,
+        additionalInfoList: List<AdditionalInfoDto>
+    ) {
 
         (0 until actionResults.size)
-                .filter { actions[it] is RestCallAction }
-                .filter { actionResults[it] is RestCallResult }
-                .forEach {
-                    val result = actionResults[it] as RestCallResult
-                    val status = result.getStatusCode() ?: -1
-                    val name = actions[it].getName()
+            .filter { actions[it] is RestCallAction }
+            .filter { actionResults[it] is RestCallResult }
+            .forEach {
+                val result = actionResults[it] as RestCallResult
+                val status = result.getStatusCode() ?: -1
+                val name = actions[it].getName()
 
-                    //objective for HTTP specific status code
-                    val statusId = idMapper.handleLocalTarget("$status:$name")
-                    fv.updateTarget(statusId, 1.0, it)
+                //objective for HTTP specific status code
+                val statusId = idMapper.handleLocalTarget("$status:$name")
+                fv.updateTarget(statusId, 1.0, it)
 
-                    val location5xx : String? = getlocation5xx(status, additionalInfoList, it, result, name)
+                val location5xx: String? = getlocation5xx(status, additionalInfoList, it, result, name)
 
-                    handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
+                handleAdditionalStatusTargetDescription(fv, status, name, it, location5xx)
 
-                    if(config.expectationsActive) {
-                        handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
-                    }
+                if (config.expectationsActive) {
+                    handleAdditionalOracleTargetDescription(fv, actions, result, name, it)
                 }
+            }
     }
 
 
-    fun handleAdditionalOracleTargetDescription(fv: FitnessValue, actions: List<RestCallAction>, result : RestCallResult, name: String, indexOfAction : Int){
+    fun handleAdditionalOracleTargetDescription(
+        fv: FitnessValue,
+        actions: List<RestCallAction>,
+        result: RestCallResult,
+        name: String,
+        indexOfAction: Int
+    ) {
         /*
            Objectives for the two partial oracles implemented thus far.
         */
@@ -239,7 +335,13 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-    fun handleAdditionalStatusTargetDescription(fv: FitnessValue, status : Int, name: String, indexOfAction : Int, location5xx: String?){
+    fun handleAdditionalStatusTargetDescription(
+        fv: FitnessValue,
+        status: Int,
+        name: String,
+        indexOfAction: Int,
+        location5xx: String?
+    ) {
         /*
            Objectives for results on endpoints.
            Problem: we might get a 4xx/5xx, but then no gradient to keep sampling for
@@ -262,7 +364,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             fv.updateTarget(faultId, 1.0, indexOfAction)
         }
 
-        if (status == 500){
+        if (status == 500) {
             /*
                 500 codes "might" be bugs. To distinguish between different bugs
                 that crash the same endpoint, we need to know what was the last
@@ -274,7 +376,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             Lazy.assert {
                 location5xx != null || config.blackBox
             }
-            val postfix = if(location5xx==null) name else "${location5xx!!} $name"
+            val postfix = if (location5xx == null) name else "${location5xx!!} $name"
             val descriptiveId = idMapper.getFaultDescriptiveIdFor500(postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
@@ -282,16 +384,17 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-
     /**
      * @return whether the call was OK. Eg, in some cases, we might want to stop
      * the test at this action, and do not continue
      */
-    protected fun handleRestCall(a: RestCallAction,
-                                 actionResults: MutableList<ActionResult>,
-                                 chainState: MutableMap<String, String>,
-                                 cookies: Map<String, List<NewCookie>>,
-                                tokens: Map<String,String>)
+    protected fun handleRestCall(
+        a: RestCallAction,
+        actionResults: MutableList<ActionResult>,
+        chainState: MutableMap<String, String>,
+        cookies: Map<String, List<NewCookie>>,
+        tokens: Map<String, String>
+    )
             : Boolean {
 
         searchTimeController.waitForRateLimiter()
@@ -315,6 +418,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     rcr.setErrorMessage(e.cause!!.message!!)
                     return false
                 }
+
                 TcpUtils.isTimeout(e) -> {
                     /*
                         This is very tricky. In theory it shouldn't happen that a REST call
@@ -333,6 +437,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     statistics.reportTimeout()
                     return false
                 }
+
                 TcpUtils.isOutOfEphemeralPorts(e) -> {
                     /*
                         This could happen if for any reason we run out of ephemeral ports.
@@ -347,6 +452,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
                     createInvocation(a, chainState, cookies, tokens).invoke()
                 }
+
                 TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
                     /*
                         This should not really happen... but it does :( at least on Windows...
@@ -355,15 +461,19 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     rcr.setTcpProblem(true)
                     return false
                 }
+
                 config.blackBox && TcpUtils.isRefusedConnection(e) -> {
                     /*
                         This might happen if we have wrong info of API location, eg host/servers in
                         the schema are wrong or static with hardcoded TCP ports
                      */
-                    throw SutProblemException("Failed to connect API with TCP." +
-                            " Is the API up and running at '${getBaseUrl()}' ?" +
-                            " If not, the location can be overridden with --bbTargetUrl")
+                    throw SutProblemException(
+                        "Failed to connect API with TCP." +
+                                " Is the API up and running at '${getBaseUrl()}' ?" +
+                                " If not, the location can be overridden with --bbTargetUrl"
+                    )
                 }
+
                 else -> throw e
             }
         }
@@ -386,20 +496,23 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     if (body.length < configuration.maxResponseByteSize) {
                         rcr.setBody(body)
                     } else {
-                        LoggingUtil.uniqueWarn(log,
-                                "A very large response body was retrieved from the endpoint '${a.path}'." +
-                                        " If that was expected, increase the 'maxResponseByteSize' threshold" +
-                                        " in the configurations.")
+                        LoggingUtil.uniqueWarn(
+                            log,
+                            "A very large response body was retrieved from the endpoint '${a.path}'." +
+                                    " If that was expected, increase the 'maxResponseByteSize' threshold" +
+                                    " in the configurations."
+                        )
                         rcr.setTooLargeBody(true)
                     }
-                } catch (e: OutOfMemoryError){
+                } catch (e: OutOfMemoryError) {
                     /*
                         internal classes in JVM can throw this error directly, like
                         jdk.internal.util.ArraysSupport.hugeLength(...)
                         see:
                         https://github.com/EMResearch/EvoMaster/issues/449
                      */
-                    LoggingUtil.uniqueWarn(log,
+                    LoggingUtil.uniqueWarn(
+                        log,
                         "An extremely large response body was retrieved from the endpoint '${a.path}'." +
                                 " So large that it cannot be handled inside the JVM in which EvoMaster is running."
                     )
@@ -408,7 +521,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
         } catch (e: Exception) {
 
-            if(e is ProcessingException && TcpUtils.isTimeout(e)){
+            if (e is ProcessingException && TcpUtils.isTimeout(e)) {
                 rcr.setTimedout(true)
                 statistics.reportTimeout()
                 return false
@@ -425,7 +538,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     then the action is to Login with a generated account (eg bar)
                     thus, the response would likely be 401
              */
-            if (!a.auth.excludeAuthCheck(a)){
+            if (!a.auth.excludeAuthCheck(a)) {
                 //this would likely be a misconfiguration in the SUT controller
                 log.warn("Got 401 although having auth for '${a.auth.name}'")
             }
@@ -438,10 +551,11 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-    private fun createInvocation(a: RestCallAction,
-                                 chainState: MutableMap<String, String>,
-                                 cookies: Map<String, List<NewCookie>>,
-                                 tokens: Map<String,String>
+    private fun createInvocation(
+        a: RestCallAction,
+        chainState: MutableMap<String, String>,
+        cookies: Map<String, List<NewCookie>>,
+        tokens: Map<String, String>
     ): Invocation {
 
         val baseUrl = getBaseUrl()
@@ -450,25 +564,25 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         val locationHeader = if (a.locationId != null) {
             chainState[locationName(a.locationId!!)]
-                    ?: throw IllegalStateException("Call expected a missing chained 'location'")
+                ?: throw IllegalStateException("Call expected a missing chained 'location'")
         } else {
             null
         }
 
         val fullUri = EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
-                .let {
-                    /*
-                        TODO this will be need to be done properly, and check if
-                        it is or not a valid char.
-                        Furthermore, likely needed to be done in resolveLocation,
-                        or at least check how RestAssured would behave
-                     */
-                    //it.replace("\"", "")
-                    GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
-                }
+            .let {
+                /*
+                    TODO this will be need to be done properly, and check if
+                    it is or not a valid char.
+                    Furthermore, likely needed to be done in resolveLocation,
+                    or at least check how RestAssured would behave
+                 */
+                //it.replace("\"", "")
+                GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
+            }
 
 
-        val builder = if(a.produces.isEmpty()){
+        val builder = if (a.produces.isEmpty()) {
             log.debug("No 'produces' type defined for {}", path)
             client.target(fullUri).request("*/*")
 
@@ -481,7 +595,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             client.target(fullUri).request(a.produces.first())
         }
 
-        handleAuth(a, builder, cookies, tokens)
+        handleHeaders(a, builder, cookies, tokens)
 
         /*
             TODO: need to handle "accept" of returned resource
@@ -503,7 +617,10 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
-            Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), body.contentType())
+            Entity.entity(
+                body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat),
+                body.contentType()
+            )
         } else if (forms != null) {
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
         } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
@@ -512,7 +629,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 when objects like WebRequest are used. So we default to urlencoded
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if(a.verb == HttpVerb.POST && body == null){
+        } else if (a.verb == HttpVerb.POST && body == null) {
             /*
                 POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
                 411 if  Content-Length is missing...
@@ -541,8 +658,12 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
 
-
-    private fun handleSaveLocation(a: RestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
+    private fun handleSaveLocation(
+        a: RestCallAction,
+        response: Response,
+        rcr: RestCallResult,
+        chainState: MutableMap<String, String>
+    ): Boolean {
         if (a.saveLocation) {
 
             if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
@@ -584,9 +705,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
     fun hasParameterChild(a: RestCallAction): Boolean {
         return sampler.seeAvailableActions()
-                .filterIsInstance<RestCallAction>()
-                .map { it.path }
-                .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
+            .filterIsInstance<RestCallAction>()
+            .map { it.path }
+            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
 
     private fun locationName(id: String): String {
@@ -594,9 +715,10 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     }
 
     protected fun restActionResultHandling(
-        individual: RestIndividual, targets: Set<Int>, actionResults: List<ActionResult>, fv: FitnessValue) : TestResultsDto?{
+        individual: RestIndividual, targets: Set<Int>, actionResults: List<ActionResult>, fv: FitnessValue
+    ): TestResultsDto? {
 
-        if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
+        if (actionResults.any { it is RestCallResult && it.getTcpProblem() }) {
             /*
                 If there are socket issues, we avoid trying to compute any coverage.
                 The caller might restart the SUT and try again.
@@ -614,9 +736,14 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
         handleExtra(dto, fv)
 
-        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
+        handleResponseTargets(
+            fv,
+            individual.seeAllActions().filterIsInstance<RestCallAction>(),
+            actionResults,
+            dto.additionalInfoList
+        )
 
-        handleExternalServiceInfo(dto.additionalInfoList)
+        handleExternalServiceInfo(fv, dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
             expandIndividual(individual, dto.additionalInfoList, actionResults)
@@ -631,15 +758,45 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         return dto
     }
 
-    private fun handleExternalServiceInfo(infoDto: List<AdditionalInfoDto>) {
-        infoDto.forEach { info ->
+    /**
+     * Based on info coming from SUT execution, register and start new WireMock instances.
+     */
+    private fun handleExternalServiceInfo(fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
+
+        /*
+            Note: this info here is based from what connections / hostname resolving done in the SUT,
+            via instrumentation.
+
+            However, what is actually called on an already up and running WM instance from a previous call is
+            done on WM directly, and it must be done at SUT call (as WM get reset there)
+         */
+
+        infoDto.forEachIndexed { _, info ->
             info.externalServices.forEach { es ->
-                externalServiceHandler.addExternalService(ExternalServiceInfo(es.protocol, es.remoteHostname, es.remotePort))
+
+                /*
+                    The info here is coming from SUT instrumentation
+                 */
+
+                /*
+                    TODO: check, do we really want to start WireMock isntances right now after a fitness evaluation?
+                    We need to make sure then, if we do this, that a call in instrumented SUT with (now) and
+                    without (previous fitness evaluation) WM instances would result in same behavior.
+
+                    TODO: ie make sure that, if test is executed again now, the behavior is the same
+                 */
+                externalServiceHandler.addExternalService(
+                    HttpExternalServiceInfo(
+                        es.protocol,
+                        es.remoteHostname,
+                        es.remotePort
+                    )
+                )
             }
         }
     }
 
-    override fun getActionDto(action: Action, index: Int) : ActionDto {
+    override fun getActionDto(action: Action, index: Int): ActionDto {
         val actionDto = super.getActionDto(action, index)
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {

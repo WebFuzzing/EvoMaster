@@ -34,26 +34,24 @@ class GraphQLBlackBoxFitness : GraphQLFitness() {
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
+        val actions = individual.seeMainExecutableActions() as List<GraphQLAction>
+
         //run the test, one action at a time
-        for (i in 0 until individual.seeActions().size) {
+        for (i in actions.indices) {
 
-            val a = individual.seeActions()[i]
+            val a = actions[i]
 
-            var ok = false
+            //TODO handle WM here
 
-            if (a is GraphQLAction) {
-                ok = handleGraphQLCall(a, actionResults, mapOf(), mapOf())
-                actionResults[i].stopping = !ok
-            } else {
-                throw IllegalStateException("Cannot handle: ${a.javaClass}")
-            }
+            val ok = handleGraphQLCall(a, actionResults, mapOf(), mapOf())
+            actionResults[i].stopping = !ok
 
             if (!ok) {
                 break
             }
         }
 
-        handleResponseTargets(fv, individual.seeActions(), actionResults, listOf())
+        handleResponseTargets(fv, actions, actionResults, listOf())
 
         return EvaluatedIndividual(fv, individual.copy() as GraphQLIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

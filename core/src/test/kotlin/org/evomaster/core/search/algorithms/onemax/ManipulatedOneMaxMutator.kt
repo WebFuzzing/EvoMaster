@@ -38,7 +38,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
         val previousValue = ind.getValue(index)
         ind.setValue(index, if(improve) min(1.0, ind.getValue(index) + degree) else min(0.0, ind.getValue(index) - degree))
 
-        mutatedGeneSpecification?.addMutatedGene(isDb = false, isInit = false, valueBeforeMutation = previousValue.toString(), gene = ind.seeGenes()[index], position = null)
+        mutatedGeneSpecification?.addMutatedGene(isDb = false, isInit = false, valueBeforeMutation = previousValue.toString(), gene = ind.seeGenes()[index], localId = null, position = 0)
 
         return ind
     }

@@ -3,18 +3,24 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.external.service.ExternalServiceAction
-import org.evomaster.core.problem.external.service.ExternalServiceInfo
-import org.evomaster.core.problem.external.service.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
+import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -89,6 +95,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val skip = getEndpointsToSkip(swagger, infoDto)
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, skip)
 
+        if(config.extraQueryParam){
+            addExtraQueryParam(actionCluster)
+        }
+        if(config.extraHeader){
+            addExtraHeader(actionCluster)
+        }
+
         setupAuthentication(infoDto)
         initSqlInfo(infoDto)
 
@@ -107,6 +120,45 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
+
+    private fun addExtraQueryParam(actionCluster: Map<String, Action>){
+
+        val key = TaintInputName.EXTRA_PARAM_TAINT
+
+        actionCluster.values.forEach {
+            (it as RestCallAction).addParam(QueryParam(key,
+                CustomMutationRateGene(key,
+                    OptionalGene(
+                        key,
+                        CustomMutationRateGene(key, StringGene(key, "42"), 0.0),
+                        searchPercentageActive = config.searchPercentageExtraHandling
+                    ),
+                    probability = 1.0,
+                    searchPercentageActive = config.searchPercentageExtraHandling
+                )
+            ))
+        }
+    }
+
+    private fun addExtraHeader(actionCluster: Map<String, Action>){
+
+        val key = TaintInputName.EXTRA_HEADER_TAINT
+
+        actionCluster.values.forEach {
+            (it as RestCallAction).addParam(HeaderParam(key,
+                CustomMutationRateGene(key,
+                    OptionalGene(
+                        key,
+                        CustomMutationRateGene(key, StringGene(key, "42"), 0.0),
+                        searchPercentageActive = config.searchPercentageExtraHandling
+                    ),
+                    probability = 1.0,
+                    searchPercentageActive = config.searchPercentageExtraHandling
+                )
+            ))
+        }
+    }
+
 
     /**
      * create AdHocInitialIndividuals
@@ -277,11 +329,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     private fun initExternalServiceInfo(info: SutInfoDto) {
         if (info.bootTimeInfoDto?.externalServicesDto != null) {
             info.bootTimeInfoDto.externalServicesDto.forEach {
-                externalServiceHandler.addExternalService(ExternalServiceInfo(
+                externalServiceHandler.addExternalService(
+                    HttpExternalServiceInfo(
                         it.protocol,
                         it.remoteHostname,
                         it.remotePort
-                ))
+                )
+                )
             }
         }
     }
