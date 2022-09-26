@@ -326,21 +326,6 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (useWireMock(solution)) {
-                if (format.isKotlin()) {
-                    addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
-                } else if (format.isJava()) {
-                    addImport("static com.github.tomakehurst.wiremock.client.WireMock.*", lines)
-                }
-                addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
-                addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
-                addImport(
-                    "com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer",
-                    lines
-                )
-                addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
-            }
-
             addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
             addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
@@ -469,13 +454,6 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
-            if (useWireMock(solution)) {
-                getExternalServiceActions(solution).forEach {
-                    val v = it.externalService.externalServiceInfo.signature().plus("WireMock")
-                    lines.add("private static WireMockServer ${v}")
-                }
-                lines.add("private static WireMockServer wireMockServer;")
-            }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
@@ -484,12 +462,6 @@ class TestSuiteWriter {
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
-            }
-            if (useWireMock(solution)) {
-                getExternalServiceActions(solution).forEach {
-                    val v = it.externalService.externalServiceInfo.signature().plus("WireMock")
-                    lines.add("private lateinit var ${v}: WireMockServer")
-                }
             }
         } else if (config.outputFormat.isJavaScript()) {
 
@@ -590,81 +562,6 @@ class TestSuiteWriter {
                 }
             }
 
-            /*
-            Considering only REST individuals.
-             */
-
-            if (useWireMock(solution)) {
-                val actions = getExternalServiceActions(solution)
-                if (format.isJavaOrKotlin()) {
-                    actions.forEach { action ->
-                        val es = action.externalService
-                        val address = es.getWireMockAddress()
-                        val port = es.getWireMockPort()
-                        val remoteHostName = es.externalServiceInfo.remoteHostname
-                        val v = es.externalServiceInfo.signature().plus("WireMockServer")
-                        addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
-                        if (format.isJava()) {
-                            lines.add("$v = new WireMockServer(new WireMockConfiguration()")
-                        } else if (format.isKotlin()) {
-                            lines.add("$v = WireMockServer(WireMockConfiguration()")
-                        }
-                        lines.indented {
-                            lines.add(".bindAddress(\"$address\")")
-                            lines.add(".port($port)")
-                            if (format.isJava()) {
-                                lines.add(".extensions(new ResponseTemplateTransformer(false)")
-                            } else if (format.isKotlin()) {
-                                lines.add(".extensions(ResponseTemplateTransformer(false)")
-                            }
-                        }
-                        addStatement("))", lines)
-                        addStatement("assertNotNull($v)", lines)
-                        addStatement("${v}.start()", lines)
-                        lines.add("${v}.stubFor(")
-                        lines.indented {
-                            lines.add("any(anyUrl()).atPriority(100)")
-                            lines.add(".willReturn(")
-                            lines.indented {
-                                lines.add("aResponse()")
-                                lines.indented {
-                                    lines.add(".withStatus(404)")
-                                    lines.add(".withBody(\"Not Found\")")
-                                }
-                                lines.add(")")
-                            }
-                        }
-                        addStatement(")", lines)
-
-                        // Since request method ANY used only for fallback purpose. It can be skipped for now to avoid
-                        // null from getUrl()
-                        es.getStubs().filter { s -> s.request.method.toString() != "ANY" }.forEach { map ->
-                            lines.add("${v}.stubFor(")
-                            // TODO: urlMatching and urlEqualTo should be handled in future if there is a chance for Regex based url patterns
-                            lines.indented {
-                                lines.add(
-                                    "${
-                                        map.request.method.toString().lowercase()
-                                    }(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})"
-                                )
-                                lines.add(".willReturn(")
-                                lines.indented {
-                                    lines.add("aResponse()")
-                                    lines.indented {
-                                        lines.add(".withStatus(${map.response.status})")
-                                        lines.add(".withBody(\"${map.response.body}\")")
-                                    }
-                                    lines.add(")")
-                                }
-                            }
-                            addStatement(")", lines)
-                        }
-
-                        lines.addEmpty(1)
-                    }
-                }
-            }
-
             testCaseWriter.addExtraInitStatement(lines)
         }
 
@@ -704,16 +601,6 @@ class TestSuiteWriter {
                     }
                     else -> {
                         addStatement("$controller.stopSut()", lines)
-
-                        // TODO: Verify the order later
-                        if (useWireMock(solution)) {
-                            addStatement("DnsCacheManipulator.clearDnsCache()", lines)
-                            val actions = getExternalServiceActions(solution)
-                            actions.forEach {
-                                val v = it.externalService.externalServiceInfo.signature().plus("WireMock")
-                                addStatement("${v}.stop()", lines)
-                            }
-                        }
                     }
                 }
             }
@@ -876,27 +763,4 @@ class TestSuiteWriter {
 
 
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
-
-    private fun useWireMock(solution: Solution<*>): Boolean {
-        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (getExternalServiceActions(solution).isNotEmpty()) {
-                // TODO: Disabled till full implementation is completed, probably have to remove
-                //  it from here and move it under [TestCaseWriter]
-                return false
-            }
-        }
-        return false
-    }
-
-    private fun getExternalServiceActions(solution: Solution<*>): List<HttpExternalServiceAction> {
-        val actions = mutableListOf<HttpExternalServiceAction>()
-        solution.individuals.filter { i -> i.individual is RestIndividual }
-            .forEach {
-                it.individual.seeExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
-                    .forEach { action ->
-                        actions.add(action)
-                    }
-            }
-        return actions.toList()
-    }
 }

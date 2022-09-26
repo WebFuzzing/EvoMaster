@@ -6,6 +6,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -96,106 +97,111 @@ abstract class TestCaseWriter {
         lines: Lines,
         ind: EvaluatedIndividual<*>,
     ) {
-        ind.individual.seeExternalServiceActions()
-            .filterIsInstance<HttpExternalServiceAction>()
-            .forEach { action ->
-                val es = action.externalService
-                val address = es.getWireMockAddress()
-                val port = es.getWireMockPort()
-                val remoteHostName = es.externalServiceInfo.remoteHostname
-                val v = es.externalServiceInfo.signature().plus("WireMockServer")
+        lines.add("// External Service Begin")
 
-                if (format.isJava()) {
-                    lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\");")
-                    lines.add("WireMockServer wireMockServer = new WireMockServer(new WireMockConfiguration()")
-                }
+        if (ind.individual is RestIndividual) {
+            ind.individual.seeExternalServiceActions()
+                .filterIsInstance<HttpExternalServiceAction>()
+                .forEach { action ->
+                    val address = action.externalService.getWireMockAddress()
+                    val port = action.externalService.getWireMockPort()
+                    val remoteHostName = action.externalService.externalServiceInfo.remoteHostname
 
-                if (format.isKotlin()) {
-                    lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")")
-                    lines.add("val wireMockServer = WireMockServer(WireMockConfiguration()")
-                }
-
-                lines.indented {
-                    lines.add(".bindAddress(\"$address\")")
-                    lines.add(".port($port)")
                     if (format.isJava()) {
-                        lines.add(".extensions(new ResponseTemplateTransformer(false)")
-                    } else if (format.isKotlin()) {
-                        lines.add(".extensions(ResponseTemplateTransformer(false)")
+                        lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\");")
+                        lines.add("WireMockServer wireMockServer = new WireMockServer(new WireMockConfiguration()")
                     }
-                }
 
-                if (format.isJava()) {
-                    lines.add("));")
-                    lines.add("assertNotNull(wireMockServer);")
-                    lines.add("wireMockServer.start();")
-                }
+                    if (format.isKotlin()) {
+                        lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")")
+                        lines.add("val wireMockServer = WireMockServer(WireMockConfiguration()")
+                    }
 
-                if (format.isKotlin()) {
-                    lines.add("))")
-                    lines.add("assertNotNull(wireMockServer)")
-                    lines.add("wireMockServer.start()")
-                }
-
-                lines.add("${v}.stubFor(")
-                lines.indented {
-                    lines.add("any(anyUrl()).atPriority(100)")
-                    lines.add(".willReturn(")
                     lines.indented {
-                        lines.add("aResponse()")
-                        lines.indented {
-                            lines.add(".withStatus(404)")
-                            lines.add(".withBody(\"Not Found\")")
-                        }
-                        lines.add(")")
-                    }
-                }
-
-                if (format.isJava()) {
-                    lines.add(");")
-                }
-                if (format.isKotlin()) {
-                    lines.add(")")
-                }
-
-                es.getStubs()
-                    .filter { s -> s.request.method.toString() != "ANY" }
-                    .forEach { map ->
-                        lines.add("wireMockServer.stubFor(")
-                        lines.indented {
-                            lines.add(
-                                "${
-                                    map.request.method.toString().lowercase()
-                                }(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})"
-                            )
-                            lines.add(".willReturn(")
-                            lines.indented {
-                                lines.add("aResponse()")
-                                lines.indented {
-                                    lines.add(".withStatus(${map.response.status})")
-                                    lines.add(".withBody(\"${map.response.body}\")")
-                                }
-                                lines.add(")")
-                            }
-                        }
+                        lines.add(".bindAddress(\"$address\")")
+                        lines.add(".port($port)")
                         if (format.isJava()) {
-                            lines.add(");")
+                            lines.add(".extensions(new ResponseTemplateTransformer(false)")
+                        } else if (format.isKotlin()) {
+                            lines.add(".extensions(ResponseTemplateTransformer(false)")
                         }
-                        if (format.isKotlin()) {
+                    }
+
+                    if (format.isJava()) {
+                        lines.add("));")
+                        lines.add("assertNotNull(wireMockServer);")
+                        lines.add("wireMockServer.start();")
+                    }
+
+                    if (format.isKotlin()) {
+                        lines.add("))")
+                        lines.add("assertNotNull(wireMockServer)")
+                        lines.add("wireMockServer.start()")
+                    }
+
+                    lines.add("wireMockServer.stubFor(")
+                    lines.indented {
+                        lines.add("any(anyUrl()).atPriority(100)")
+                        lines.add(".willReturn(")
+                        lines.indented {
+                            lines.add("aResponse()")
+                            lines.indented {
+                                lines.add(".withStatus(404)")
+                                lines.add(".withBody(\"Not Found\")")
+                            }
                             lines.add(")")
                         }
-                        lines.addEmpty(1)
                     }
 
-                if (format.isJava()) {
-                    lines.add("DnsCacheManipulator.clearDnsCache();")
-                    lines.add("wireMockServer.stop();")
+                    if (format.isJava()) {
+                        lines.add(");")
+                    }
+                    if (format.isKotlin()) {
+                        lines.add(")")
+                    }
+
+                    action.externalService.getStubs()
+                        .filter { s -> s.request.method.toString() != "ANY" }
+                        .forEach { map ->
+                            lines.add("wireMockServer.stubFor(")
+                            lines.indented {
+                                lines.add(
+                                    "${
+                                        map.request.method.toString().lowercase()
+                                    }(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})"
+                                )
+                                lines.add(".willReturn(")
+                                lines.indented {
+                                    lines.add("aResponse()")
+                                    lines.indented {
+                                        lines.add(".withStatus(${map.response.status})")
+                                        lines.add(".withBody(\"${map.response.body}\")")
+                                    }
+                                    lines.add(")")
+                                }
+                            }
+                            if (format.isJava()) {
+                                lines.add(");")
+                            }
+                            if (format.isKotlin()) {
+                                lines.add(")")
+                            }
+                            lines.addEmpty(1)
+                        }
+
+                    if (format.isJava()) {
+                        lines.add("DnsCacheManipulator.clearDnsCache();")
+                        lines.add("wireMockServer.stop();")
+                    }
+                    if (format.isKotlin()) {
+                        lines.add("DnsCacheManipulator.clearDnsCache()")
+                        lines.add("wireMockServer.stop()")
+                    }
+                    lines.addEmpty(1)
                 }
-                if (format.isKotlin()) {
-                    lines.add("DnsCacheManipulator.clearDnsCache()")
-                    lines.add("wireMockServer.stop()")
-                }
-            }
+            lines.addEmpty(1)
+            lines.add("// External Service End")
+        }
     }
 
     /**
