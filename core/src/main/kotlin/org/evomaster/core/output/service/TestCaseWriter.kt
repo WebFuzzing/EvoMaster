@@ -80,11 +80,16 @@ abstract class TestCaseWriter {
         lines.indented {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
+            val actions = getExternalServiceActions(ind)
             if (ind.individual is RestIndividual) {
-                handleExternalServiceActions(lines, ind)
+                handleExternalServiceActionsBegin(lines, actions)
             }
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars)
+
+            if (ind.individual is RestIndividual) {
+                handleExternalServiceActionsEnd(lines, actions)
+            }
         }
 
         lines.add("}")
@@ -108,12 +113,11 @@ abstract class TestCaseWriter {
         return actions
     }
 
-    private fun handleExternalServiceActions(
+    private fun handleExternalServiceActionsBegin(
         lines: Lines,
-        ind: EvaluatedIndividual<*>,
+        actions: List<HttpExternalServiceAction>
     ) {
-        lines.add("// External Service Begin")
-        getExternalServiceActions(ind)
+        actions
             .forEach { action ->
                 val address = action.externalService.getWireMockAddress()
                 val port = action.externalService.getWireMockPort()
@@ -178,20 +182,17 @@ abstract class TestCaseWriter {
 
                 action.externalService.getStubs()
                     .filter { s -> s.request.method.toString() != "ANY" }
-                    .forEach { map ->
+                    .forEach { stub ->
                         lines.add("${name}.stubFor(")
                         lines.indented {
-                            lines.add(
-                                "${
-                                    map.request.method.toString().lowercase()
-                                }(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})"
-                            )
+                            lines.add("${stub.request.method.toString().lowercase()}(urlEqualTo(\"${stub.request.url}\"))")
+                            lines.add(".atPriority(${stub.priority})")
                             lines.add(".willReturn(")
                             lines.indented {
                                 lines.add("aResponse()")
                                 lines.indented {
-                                    lines.add(".withStatus(${map.response.status})")
-                                    lines.add(".withBody(\"${map.response.body}\")")
+                                    lines.add(".withStatus(${stub.response.status})")
+                                    lines.add(".withBody(\"${stub.response.body}\")")
                                 }
                                 lines.add(")")
                             }
@@ -204,6 +205,21 @@ abstract class TestCaseWriter {
                         }
                         lines.addEmpty(1)
                     }
+                lines.addEmpty(1)
+            }
+        lines.addEmpty(1)
+
+    }
+   private fun handleExternalServiceActionsEnd(
+        lines: Lines,
+        actions: List<HttpExternalServiceAction>
+    ) {
+        actions
+            .forEach { action ->
+                val name = action.externalService.externalServiceInfo
+                    .signature()
+                    .replace(".", "")
+                    .plus("WireMock")
 
                 if (format.isJava()) {
                     lines.add("DnsCacheManipulator.clearDnsCache();")
@@ -216,8 +232,6 @@ abstract class TestCaseWriter {
                 lines.addEmpty(1)
             }
         lines.addEmpty(1)
-        lines.add("// External Service End")
-
     }
 
     /**

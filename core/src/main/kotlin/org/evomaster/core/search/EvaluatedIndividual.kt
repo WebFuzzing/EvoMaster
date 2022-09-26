@@ -137,7 +137,7 @@ class EvaluatedIndividual<T>(
         val list = actions ?: individual.seeActions(NO_EXTERNAL_SERVICE)
         val all = individual.seeActions(NO_EXTERNAL_SERVICE)
         val last = results.indexOfFirst { it.stopping }
-        return list.mapNotNull {
+        return list.filterIsInstance<RestCallAction>().mapNotNull {
             val index = all.indexOf(it)
             if (last == -1 || index <= last)
                 results[index]
@@ -183,7 +183,9 @@ class EvaluatedIndividual<T>(
             val dbActions = c.seeActions(ONLY_SQL)
             val dbResults = seeResults(dbActions)
 
-            val restActions = c.seeActions(NO_SQL)
+            // TODO: with the current ActionFilter seeActions returns everything except DbActions
+            //  so filtering only the RestCallAction/s for now. It's a temporary fix.
+            val restActions = c.seeActions(NO_SQL).filterIsInstance<RestCallAction>()
             val restResult = seeResults(restActions)
 
             // get evaluated action based on the list of action results
