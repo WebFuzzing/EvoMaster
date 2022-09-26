@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.external.service.ExternalServiceAction
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -459,7 +459,7 @@ class TestSuiteWriter {
             }
             if (useWireMock(solution)) {
                 getExternalServiceActions(solution).forEach {
-                    val v = it.externalService.getSignature().plus("WireMock")
+                    val v = it.externalService.externalServiceInfo.signature().plus("WireMock")
                     lines.add("private static WireMockServer ${v}")
                 }
                 lines.add("private static WireMockServer wireMockServer;")
@@ -475,7 +475,7 @@ class TestSuiteWriter {
             }
             if (useWireMock(solution)) {
                 getExternalServiceActions(solution).forEach {
-                    val v = it.externalService.getSignature().plus("WireMock")
+                    val v = it.externalService.externalServiceInfo.signature().plus("WireMock")
                     lines.add("private lateinit var ${v}: WireMockServer")
                 }
             }
@@ -590,7 +590,7 @@ class TestSuiteWriter {
                        val address = es.getWireMockAddress()
                        val port = es.getWireMockPort()
                        val remoteHostName = es.externalServiceInfo.remoteHostname
-                       val v = es.getSignature().plus("WireMockServer")
+                       val v = es.externalServiceInfo.signature().plus("WireMockServer")
                        addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
                        if (format.isJava()) {
                            lines.add("$v = new WireMockServer(new WireMockConfiguration()")
@@ -694,7 +694,7 @@ class TestSuiteWriter {
                             addStatement("DnsCacheManipulator.clearDnsCache()", lines)
                             val actions = getExternalServiceActions(solution)
                             actions.forEach {
-                                val v = it.externalService.getSignature().plus("WireMock")
+                                val v = it.externalService.externalServiceInfo.signature().plus("WireMock")
                                 addStatement("${v}.stop()", lines)
                             }
                         }
@@ -871,12 +871,12 @@ class TestSuiteWriter {
         return false
     }
 
-    private fun getExternalServiceActions(solution: Solution<*>): List<ExternalServiceAction> {
+    private fun getExternalServiceActions(solution: Solution<*>): List<HttpExternalServiceAction> {
         val wireMockServers: MutableList<String> = mutableListOf()
-        val actions = mutableListOf<ExternalServiceAction>()
+        val actions = mutableListOf<HttpExternalServiceAction>()
         solution.individuals.filter { i -> i.individual is RestIndividual }
             .forEach {
-                it.individual.seeExternalServiceActions().forEach { action ->
+                it.individual.seeExternalServiceActions().filterIsInstance<HttpExternalServiceAction>().forEach { action ->
                     if (!wireMockServers.contains(action.externalService.getWireMockAbsoluteAddress())) {
                         actions.add(action)
                         wireMockServers.add(action.externalService.getWireMockAbsoluteAddress())

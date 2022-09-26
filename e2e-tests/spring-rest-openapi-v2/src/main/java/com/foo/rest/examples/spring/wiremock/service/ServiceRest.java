@@ -114,55 +114,6 @@ public class ServiceRest {
         }
     }
 
-    @RequestMapping(
-            value = "/external/get",
-            method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
-    )
-    public ResponseEntity<ResponseDto> secondDummyExternalCall() {
-        ResponseDto responseDto = new ResponseDto();
-        int responseCode = 500;
-
-        try {
-            URL url = new URL("http://fooz.bar:8080/api/echo/bar");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestProperty("accept", "application/json");
-            responseCode = connection.getResponseCode();
-            if (responseCode == 200) {
-                responseDto.valid = true;
-            }
-        } catch (IOException e) {
-            responseDto.valid = false;
-        }
-
-        return new ResponseEntity<>(responseDto, HttpStatus.OK);
-    }
-
-    @RequestMapping(
-            value = "/external/post",
-            method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
-    )
-    public ResponseEntity<ResponseDto> thirdDummyExternalCall() {
-        ResponseDto responseDto = new ResponseDto();
-        int responseCode = 500;
-        try {
-            URL url = new URL("http://fooz.bar:8080/api/echo/bar");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestProperty("accept", "application/json");
-            connection.setRequestMethod("POST");
-            responseCode = connection.getResponseCode();
-            if (responseCode == 200) {
-                responseDto.valid = true;
-            }
-        } catch (IOException e) {
-            responseDto.valid = false;
-        }
-
-
-        return new ResponseEntity<>(responseDto, HttpStatus.OK);
-    }
-
     /**
      * An endpoint to receive JSON response from external service and response
      * true or false based on the result.
