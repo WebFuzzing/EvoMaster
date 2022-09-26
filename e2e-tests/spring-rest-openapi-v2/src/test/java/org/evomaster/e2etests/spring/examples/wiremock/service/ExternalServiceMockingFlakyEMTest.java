@@ -60,6 +60,9 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     assertEquals(actions.size(), 14);
                     // End block
 
+                    // TODO: Multiple calls to the same service test casuses problems. Will be implmented
+                    //  separatley.
+
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wiremock/external", "false");
 
