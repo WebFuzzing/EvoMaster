@@ -112,7 +112,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         }
 
         if (log.isTraceEnabled)
-            log.trace("{} existingExternalServiceData are added")
+            log.trace("{} existingExternalServiceData are added", newActions.size)
 
         // update impact based on added genes
         // TODO: Refactored this, Man to review the place where impacts get updated.

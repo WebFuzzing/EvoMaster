@@ -18,6 +18,9 @@ class HttpExternalServiceRequest(
     val url: String,
     val absoluteURL: String,
     val wasMatched: Boolean,
+    /**
+     * refers to the WireMock instance which received the request.
+     */
     val wireMockSignature: String
 ) {
 
