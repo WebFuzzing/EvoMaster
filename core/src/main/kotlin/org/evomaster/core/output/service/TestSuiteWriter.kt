@@ -86,7 +86,7 @@ class TestSuiteWriter {
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
-        if (! config.outputFormat.isJavaScript()) {
+        if (!config.outputFormat.isJavaScript()) {
             /*
                 In Java/Kotlin/C# the tests are inside a class, but not in JS
              */
@@ -100,10 +100,10 @@ class TestSuiteWriter {
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             // TODO skip to sort RPC for the moment
-            if (solution.individuals.any { it.individual is RPCIndividual }){
+            if (solution.individuals.any { it.individual is RPCIndividual }) {
                 var counter = 0
                 solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
-            }else
+            } else
                 testSuiteOrganizer.sortTests(solution, config.customNaming)
         } catch (ex: Exception) {
             var counter = 0
@@ -135,7 +135,7 @@ class TestSuiteWriter {
             lines.add(testLines)
         }
 
-        if (! config.outputFormat.isJavaScript()) {
+        if (!config.outputFormat.isJavaScript()) {
             lines.deindent()
         }
 
@@ -147,17 +147,17 @@ class TestSuiteWriter {
         return lines.toString()
     }
 
-    private fun handleResetDatabaseInput(solution: Solution<*>): String{
+    private fun handleResetDatabaseInput(solution: Solution<*>): String {
         if (!config.outputFormat.isJavaOrKotlin())
-            throw IllegalStateException("DO NOT SUPPORT resetDatabased for "+ config.outputFormat)
+            throw IllegalStateException("DO NOT SUPPORT resetDatabased for " + config.outputFormat)
 
         val accessedTable = mutableSetOf<String>()
-        solution.individuals.forEach { e->
+        solution.individuals.forEach { e ->
             //TODO will need to be refactored when supporting Web Frontend
-            if (e.individual is ApiWsIndividual){
-               accessedTable.addAll(e.individual.getInsertTableNames())
+            if (e.individual is ApiWsIndividual) {
+                accessedTable.addAll(e.individual.getInsertTableNames())
             }
-            e.fitness.databaseExecutions.values.forEach { de->
+            e.fitness.databaseExecutions.values.forEach { de ->
                 accessedTable.addAll(de.insertedData.map { it.key })
                 accessedTable.addAll(de.updatedData.map { it.key })
                 accessedTable.addAll(de.deletedData)
@@ -168,10 +168,10 @@ class TestSuiteWriter {
         if (all.isEmpty()) return "null"
 
         val input = all.joinToString(",") { "\"$it\"" }
-        return when{
+        return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
             config.outputFormat.isKotlin() -> "listOf($input)"
-            else -> throw IllegalStateException("DO NOT SUPPORT resetDatabased for "+ config.outputFormat)
+            else -> throw IllegalStateException("DO NOT SUPPORT resetDatabased for " + config.outputFormat)
         }
     }
 
@@ -320,7 +320,7 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaOrKotlin()) {
-            if (useRestAssured()){
+            if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)
                 addImport("io.restassured.RestAssured.given", lines, true)
                 addImport("io.restassured.response.ValidatableResponse", lines)
@@ -334,7 +334,10 @@ class TestSuiteWriter {
                 }
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
-                addImport("com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer", lines)
+                addImport(
+                    "com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer",
+                    lines
+                )
                 addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
             }
 
@@ -350,7 +353,7 @@ class TestSuiteWriter {
             if (config.enableBasicAssertions) {
                 addImport("org.hamcrest.Matchers.*", lines, true)
                 //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
-                if (useRestAssured()){
+                if (useRestAssured()) {
                     addImport("io.restassured.config.JsonConfig", lines)
                     addImport("io.restassured.path.json.config.JsonPathConfig", lines)
                     addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
@@ -363,7 +366,11 @@ class TestSuiteWriter {
 
 
             if (config.expectationsActive) {
-                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
+                addImport(
+                    "org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler",
+                    lines,
+                    true
+                )
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
 
                 if (useRestAssured())
@@ -378,7 +385,7 @@ class TestSuiteWriter {
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
-            if(config.testTimeout > 0 ) {
+            if (config.testTimeout > 0) {
                 lines.add("jest.setTimeout(${config.testTimeout * 1000});")
             }
         }
@@ -416,36 +423,41 @@ class TestSuiteWriter {
     }
 
     private fun classFields(lines: Lines, format: OutputFormat) {
-        if(format.isCsharp()){
+        if (format.isCsharp()) {
             lines.addEmpty()
             addStatement("private $fixtureClass $fixture", lines)
             lines.addEmpty()
         }
     }
 
-    private fun getJaCoCoInit() : String{
-        if(config.jaCoCoAgentLocation.isNotBlank()){
-            val agent = config.jaCoCoAgentLocation.replace("\\","\\\\")
-            val cli = config.jaCoCoCliLocation.replace("\\","\\\\")
-            val exec = config.jaCoCoOutputFile.replace("\\","\\\\")
+    private fun getJaCoCoInit(): String {
+        if (config.jaCoCoAgentLocation.isNotBlank()) {
+            val agent = config.jaCoCoAgentLocation.replace("\\", "\\\\")
+            val cli = config.jaCoCoCliLocation.replace("\\", "\\\\")
+            val exec = config.jaCoCoOutputFile.replace("\\", "\\\\")
             val port = config.jaCoCoPort
             return ".setJaCoCo(\"$agent\",\"$cli\",\"${exec}\",$port)"
         }
         return ""
     }
 
-    private fun getJavaCommand() : String{
-        if(config.javaCommand != "java"){
-            val java = config.javaCommand.replace("\\","\\\\")
+    private fun getJavaCommand(): String {
+        if (config.javaCommand != "java") {
+            val java = config.javaCommand.replace("\\", "\\\\")
             return ".setJavaCommand(\"$java\")"
         }
         return ""
     }
 
-    private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines, solution: Solution<*>) {
+    private fun staticVariables(
+        controllerName: String?,
+        controllerInput: String?,
+        lines: Lines,
+        solution: Solution<*>
+    ) {
 
-        val executable = if(controllerInput.isNullOrBlank()) ""
-            else "\"$controllerInput\"".replace("\\","\\\\")
+        val executable = if (controllerInput.isNullOrBlank()) ""
+        else "\"$controllerInput\"".replace("\\", "\\\\")
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
@@ -549,7 +561,7 @@ class TestSuiteWriter {
                             now only support white-box
                             TODO remove this later if we do not use test generation with driver
                          */
-                        if (config.problemType == EMConfig.ProblemType.RPC){
+                        if (config.problemType == EMConfig.ProblemType.RPC) {
                             addStatement("$controller.extractRPCSchema()", lines)
                         }
                     }
@@ -561,7 +573,7 @@ class TestSuiteWriter {
                 }
             }
 
-            if (config.problemType != EMConfig.ProblemType.RPC){
+            if (config.problemType != EMConfig.ProblemType.RPC) {
                 if (format.isJavaOrKotlin()) {
                     addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
                     addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
@@ -584,69 +596,73 @@ class TestSuiteWriter {
 
             if (useWireMock(solution)) {
                 val actions = getExternalServiceActions(solution)
-               if (format.isJavaOrKotlin()) {
-                   actions.forEach { action ->
-                       val es = action.externalService
-                       val address = es.getWireMockAddress()
-                       val port = es.getWireMockPort()
-                       val remoteHostName = es.externalServiceInfo.remoteHostname
-                       val v = es.externalServiceInfo.signature().plus("WireMockServer")
-                       addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
-                       if (format.isJava()) {
-                           lines.add("$v = new WireMockServer(new WireMockConfiguration()")
-                       } else if (format.isKotlin()) {
-                           lines.add("$v = WireMockServer(WireMockConfiguration()")
-                       }
-                       lines.indented {
-                           lines.add(".bindAddress(\"$address\")")
-                           lines.add(".port($port)")
-                           if (format.isJava()) {
-                               lines.add(".extensions(new ResponseTemplateTransformer(false)")
-                           } else if (format.isKotlin()) {
-                               lines.add(".extensions(ResponseTemplateTransformer(false)")
-                           }
-                       }
-                       addStatement("))", lines)
-                       addStatement("assertNotNull($v)", lines)
-                       addStatement("${v}.start()", lines)
-                       lines.add("${v}.stubFor(")
-                       lines.indented {
-                           lines.add("any(anyUrl()).atPriority(10)")
-                           lines.add(".willReturn(")
-                           lines.indented {
-                               lines.add("aResponse()")
-                               lines.indented {
-                                   lines.add(".withStatus(500)")
-                                   lines.add(".withBody(\"Internal Server Error\")")
-                               }
-                               lines.add(")")
-                           }
-                       }
-                       addStatement(")", lines)
+                if (format.isJavaOrKotlin()) {
+                    actions.forEach { action ->
+                        val es = action.externalService
+                        val address = es.getWireMockAddress()
+                        val port = es.getWireMockPort()
+                        val remoteHostName = es.externalServiceInfo.remoteHostname
+                        val v = es.externalServiceInfo.signature().plus("WireMockServer")
+                        addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
+                        if (format.isJava()) {
+                            lines.add("$v = new WireMockServer(new WireMockConfiguration()")
+                        } else if (format.isKotlin()) {
+                            lines.add("$v = WireMockServer(WireMockConfiguration()")
+                        }
+                        lines.indented {
+                            lines.add(".bindAddress(\"$address\")")
+                            lines.add(".port($port)")
+                            if (format.isJava()) {
+                                lines.add(".extensions(new ResponseTemplateTransformer(false)")
+                            } else if (format.isKotlin()) {
+                                lines.add(".extensions(ResponseTemplateTransformer(false)")
+                            }
+                        }
+                        addStatement("))", lines)
+                        addStatement("assertNotNull($v)", lines)
+                        addStatement("${v}.start()", lines)
+                        lines.add("${v}.stubFor(")
+                        lines.indented {
+                            lines.add("any(anyUrl()).atPriority(100)")
+                            lines.add(".willReturn(")
+                            lines.indented {
+                                lines.add("aResponse()")
+                                lines.indented {
+                                    lines.add(".withStatus(404)")
+                                    lines.add(".withBody(\"Not Found\")")
+                                }
+                                lines.add(")")
+                            }
+                        }
+                        addStatement(")", lines)
 
-                       // Since request method ANY used only for fallback purpose. It can be skipped for now to avoid
-                       // null from getUrl()
-                       es.getStubs().filter { s -> s.request.method.toString() != "ANY" }.forEach { map ->
-                           lines.add("${v}.stubFor(")
-                           // TODO: urlMatching and urlEqualTo should be handled in future if there is a chance for Regex based url patterns
-                           lines.indented {
-                               lines.add("${map.request.method.toString().lowercase()}(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})")
-                               lines.add(".willReturn(")
-                               lines.indented {
-                                   lines.add("aResponse()")
-                                   lines.indented {
-                                       lines.add(".withStatus(${map.response.status})")
-                                       lines.add(".withBody(\"${map.response.body}\")")
-                                   }
-                                   lines.add(")")
-                               }
-                           }
-                           addStatement(")", lines)
-                       }
+                        // Since request method ANY used only for fallback purpose. It can be skipped for now to avoid
+                        // null from getUrl()
+                        es.getStubs().filter { s -> s.request.method.toString() != "ANY" }.forEach { map ->
+                            lines.add("${v}.stubFor(")
+                            // TODO: urlMatching and urlEqualTo should be handled in future if there is a chance for Regex based url patterns
+                            lines.indented {
+                                lines.add(
+                                    "${
+                                        map.request.method.toString().lowercase()
+                                    }(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})"
+                                )
+                                lines.add(".willReturn(")
+                                lines.indented {
+                                    lines.add("aResponse()")
+                                    lines.indented {
+                                        lines.add(".withStatus(${map.response.status})")
+                                        lines.add(".withBody(\"${map.response.body}\")")
+                                    }
+                                    lines.add(")")
+                                }
+                            }
+                            addStatement(")", lines)
+                        }
 
-                       lines.addEmpty(1)
-                   }
-               }
+                        lines.addEmpty(1)
+                    }
+                }
             }
 
             testCaseWriter.addExtraInitStatement(lines)
@@ -737,7 +753,7 @@ class TestSuiteWriter {
                 //TODO add resetDatabase
                 addStatement("await $controller.resetStateOfSUT()", lines)
             } else if (format.isJavaOrKotlin()) {
-                if (config.employSmartDbClean == true){
+                if (config.employSmartDbClean == true) {
                     addStatement("$controller.resetDatabase(${handleResetDatabaseInput(solution)})", lines)
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
@@ -850,7 +866,6 @@ class TestSuiteWriter {
     }
 
 
-
     /**
      *  FIXME replace with direct injection
      */
@@ -865,23 +880,22 @@ class TestSuiteWriter {
     private fun useWireMock(solution: Solution<*>): Boolean {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             if (getExternalServiceActions(solution).isNotEmpty()) {
-                return true
+                // TODO: Disabled till full implementation is completed, probably have to remove
+                //  it from here and move it under [TestCaseWriter]
+                return false
             }
         }
         return false
     }
 
     private fun getExternalServiceActions(solution: Solution<*>): List<HttpExternalServiceAction> {
-        val wireMockServers: MutableList<String> = mutableListOf()
         val actions = mutableListOf<HttpExternalServiceAction>()
         solution.individuals.filter { i -> i.individual is RestIndividual }
             .forEach {
-                it.individual.seeExternalServiceActions().filterIsInstance<HttpExternalServiceAction>().forEach { action ->
-                    if (!wireMockServers.contains(action.externalService.getWireMockAbsoluteAddress())) {
+                it.individual.seeExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
+                    .forEach { action ->
                         actions.add(action)
-                        wireMockServers.add(action.externalService.getWireMockAbsoluteAddress())
                     }
-                }
             }
         return actions.toList()
     }

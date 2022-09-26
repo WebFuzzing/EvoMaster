@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -25,8 +26,10 @@ abstract class TestCaseWriter {
      */
     protected var counter = 0
 
-    protected val format : OutputFormat
-        get(){ return config.outputFormat}
+    protected val format: OutputFormat
+        get() {
+            return config.outputFormat
+        }
 
 
     companion object {
@@ -34,10 +37,9 @@ abstract class TestCaseWriter {
     }
 
 
-
     fun convertToCompilableTestCode(
-            test: TestCase,
-            baseUrlOfSut: String
+        test: TestCase,
+        baseUrlOfSut: String
     ): Lines {
 
         counter = 0
@@ -45,12 +47,13 @@ abstract class TestCaseWriter {
         val lines = Lines()
 
         if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
-                && test.test.getClusters().size != 0) {
+            && test.test.getClusters().size != 0
+        ) {
             clusterComment(lines, test)
         }
 
         if (format.isJUnit()) {
-            if(config.testTimeout <= 0){
+            if (config.testTimeout <= 0) {
                 lines.add("@Test")
             } else {
                 if (format.isJUnit4()) {
@@ -76,6 +79,7 @@ abstract class TestCaseWriter {
         lines.indented {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
+            handleExternalServiceActions(lines, ind)
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars)
         }
@@ -88,6 +92,112 @@ abstract class TestCaseWriter {
         return lines
     }
 
+    private fun handleExternalServiceActions(
+        lines: Lines,
+        ind: EvaluatedIndividual<*>,
+    ) {
+        ind.individual.seeExternalServiceActions()
+            .filterIsInstance<HttpExternalServiceAction>()
+            .forEach { action ->
+                val es = action.externalService
+                val address = es.getWireMockAddress()
+                val port = es.getWireMockPort()
+                val remoteHostName = es.externalServiceInfo.remoteHostname
+                val v = es.externalServiceInfo.signature().plus("WireMockServer")
+
+                if (format.isJava()) {
+                    lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\");")
+                    lines.add("WireMockServer wireMockServer = new WireMockServer(new WireMockConfiguration()")
+                }
+
+                if (format.isKotlin()) {
+                    lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")")
+                    lines.add("val wireMockServer = WireMockServer(WireMockConfiguration()")
+                }
+
+                lines.indented {
+                    lines.add(".bindAddress(\"$address\")")
+                    lines.add(".port($port)")
+                    if (format.isJava()) {
+                        lines.add(".extensions(new ResponseTemplateTransformer(false)")
+                    } else if (format.isKotlin()) {
+                        lines.add(".extensions(ResponseTemplateTransformer(false)")
+                    }
+                }
+
+                if (format.isJava()) {
+                    lines.add("));")
+                    lines.add("assertNotNull(wireMockServer);")
+                    lines.add("wireMockServer.start();")
+                }
+
+                if (format.isKotlin()) {
+                    lines.add("))")
+                    lines.add("assertNotNull(wireMockServer)")
+                    lines.add("wireMockServer.start()")
+                }
+
+                lines.add("${v}.stubFor(")
+                lines.indented {
+                    lines.add("any(anyUrl()).atPriority(100)")
+                    lines.add(".willReturn(")
+                    lines.indented {
+                        lines.add("aResponse()")
+                        lines.indented {
+                            lines.add(".withStatus(404)")
+                            lines.add(".withBody(\"Not Found\")")
+                        }
+                        lines.add(")")
+                    }
+                }
+
+                if (format.isJava()) {
+                    lines.add(");")
+                }
+                if (format.isKotlin()) {
+                    lines.add(")")
+                }
+
+                es.getStubs()
+                    .filter { s -> s.request.method.toString() != "ANY" }
+                    .forEach { map ->
+                        lines.add("wireMockServer.stubFor(")
+                        lines.indented {
+                            lines.add(
+                                "${
+                                    map.request.method.toString().lowercase()
+                                }(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})"
+                            )
+                            lines.add(".willReturn(")
+                            lines.indented {
+                                lines.add("aResponse()")
+                                lines.indented {
+                                    lines.add(".withStatus(${map.response.status})")
+                                    lines.add(".withBody(\"${map.response.body}\")")
+                                }
+                                lines.add(")")
+                            }
+                        }
+                        if (format.isJava()) {
+                            lines.add(");")
+                        }
+                        if (format.isKotlin()) {
+                            lines.add(")")
+                        }
+                        lines.addEmpty(1)
+                    }
+
+                if (format.isJava()) {
+                    lines.add("DnsCacheManipulator.clearDnsCache();")
+                    lines.add("wireMockServer.stop();")
+                }
+                if (format.isKotlin()) {
+                    lines.add("DnsCacheManipulator.clearDnsCache()")
+                    lines.add("wireMockServer.stop()")
+                }
+            }
+    }
+
     /**
      * Before starting to make actions (eg HTTP calls in web apis), check if we need to declare any field, ie variable,
      * for this test.
@@ -95,7 +205,12 @@ abstract class TestCaseWriter {
      * @param ind is the final individual (ie test) to be generated into the test scripts
      * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
      */
-    protected abstract fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>)
+    protected abstract fun handleFieldDeclarations(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>
+    )
 
     /**
      * handle action call generation
@@ -104,7 +219,12 @@ abstract class TestCaseWriter {
      * @param ind is the final individual (ie test) to be generated into the test scripts
      * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
      */
-    protected abstract fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>)
+    protected abstract fun handleActionCalls(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>
+    )
 
     /**
      * handle action call generation
@@ -128,10 +248,12 @@ abstract class TestCaseWriter {
      */
     open fun addExtraInitStatement(lines: Lines) {}
 
-    protected fun addActionInTryCatch(call: Action,
-                                      lines: Lines,
-                                      res: ActionResult,
-                                      baseUrlOfSut: String) {
+    protected fun addActionInTryCatch(
+        call: Action,
+        lines: Lines,
+        res: ActionResult,
+        baseUrlOfSut: String
+    ) {
         when {
             /*
                 TODO do we need to handle differently in JS due to Promises?
@@ -165,7 +287,7 @@ abstract class TestCaseWriter {
 
         res.getErrorMessage()?.let {
             lines.indented {
-                lines.add("//${it.replace('\n', ' ').replace('\r',' ')}")
+                lines.add("//${it.replace('\n', ' ').replace('\r', ' ')}")
             }
         }
         lines.add("}")
@@ -191,7 +313,7 @@ abstract class TestCaseWriter {
     /**
      * an optional handling for handling generated tests
      */
-    open fun additionalTestHandling(tests: List<TestCase>){
+    open fun additionalTestHandling(tests: List<TestCase>) {
         // do nothing
     }
 
