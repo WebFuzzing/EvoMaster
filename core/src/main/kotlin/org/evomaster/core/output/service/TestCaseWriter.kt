@@ -80,7 +80,9 @@ abstract class TestCaseWriter {
         lines.indented {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
-            handleExternalServiceActions(lines, ind)
+            if (ind.individual is RestIndividual) {
+                handleExternalServiceActions(lines, ind)
+            }
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars)
         }
@@ -93,115 +95,129 @@ abstract class TestCaseWriter {
         return lines
     }
 
+    private fun getExternalServiceActions(ind: EvaluatedIndividual<*>) : List<HttpExternalServiceAction> {
+        val actions : MutableList<HttpExternalServiceAction> = mutableListOf()
+        ind.individual.seeExternalServiceActions()
+            .filterIsInstance<HttpExternalServiceAction>()
+            .forEach { action ->
+                if (actions.none { a -> a.externalService.externalServiceInfo.signature() == action.externalService.externalServiceInfo.signature() }) {
+                    actions.add(action)
+                }
+            }
+
+        return actions
+    }
+
     private fun handleExternalServiceActions(
         lines: Lines,
         ind: EvaluatedIndividual<*>,
     ) {
         lines.add("// External Service Begin")
+        getExternalServiceActions(ind)
+            .forEach { action ->
+                val address = action.externalService.getWireMockAddress()
+                val port = action.externalService.getWireMockPort()
+                val remoteHostName = action.externalService.externalServiceInfo.remoteHostname
+                val name = action.externalService.externalServiceInfo
+                    .signature()
+                    .replace(".", "")
+                    .plus("WireMock")
 
-        if (ind.individual is RestIndividual) {
-            ind.individual.seeExternalServiceActions()
-                .filterIsInstance<HttpExternalServiceAction>()
-                .forEach { action ->
-                    val address = action.externalService.getWireMockAddress()
-                    val port = action.externalService.getWireMockPort()
-                    val remoteHostName = action.externalService.externalServiceInfo.remoteHostname
+                if (format.isJava()) {
+                    lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\");")
+                    lines.add("WireMockServer ${name} = new WireMockServer(new WireMockConfiguration()")
+                }
 
+                if (format.isKotlin()) {
+                    lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")")
+                    lines.add("val ${name} = WireMockServer(WireMockConfiguration()")
+                }
+
+                lines.indented {
+                    lines.add(".bindAddress(\"$address\")")
+                    lines.add(".port($port)")
                     if (format.isJava()) {
-                        lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\");")
-                        lines.add("WireMockServer wireMockServer = new WireMockServer(new WireMockConfiguration()")
+                        lines.add(".extensions(new ResponseTemplateTransformer(false)")
+                    } else if (format.isKotlin()) {
+                        lines.add(".extensions(ResponseTemplateTransformer(false)")
                     }
+                }
 
-                    if (format.isKotlin()) {
-                        lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")")
-                        lines.add("val wireMockServer = WireMockServer(WireMockConfiguration()")
-                    }
+                if (format.isJava()) {
+                    lines.add("));")
+                    lines.add("assertNotNull(${name});")
+                    lines.add("${name}.start();")
+                }
 
+                if (format.isKotlin()) {
+                    lines.add("))")
+                    lines.add("assertNotNull(${name})")
+                    lines.add("${name}.start()")
+                }
+
+                lines.add("${name}.stubFor(")
+                lines.indented {
+                    lines.add("any(anyUrl()).atPriority(100)")
+                    lines.add(".willReturn(")
                     lines.indented {
-                        lines.add(".bindAddress(\"$address\")")
-                        lines.add(".port($port)")
-                        if (format.isJava()) {
-                            lines.add(".extensions(new ResponseTemplateTransformer(false)")
-                        } else if (format.isKotlin()) {
-                            lines.add(".extensions(ResponseTemplateTransformer(false)")
-                        }
-                    }
-
-                    if (format.isJava()) {
-                        lines.add("));")
-                        lines.add("assertNotNull(wireMockServer);")
-                        lines.add("wireMockServer.start();")
-                    }
-
-                    if (format.isKotlin()) {
-                        lines.add("))")
-                        lines.add("assertNotNull(wireMockServer)")
-                        lines.add("wireMockServer.start()")
-                    }
-
-                    lines.add("wireMockServer.stubFor(")
-                    lines.indented {
-                        lines.add("any(anyUrl()).atPriority(100)")
-                        lines.add(".willReturn(")
+                        lines.add("aResponse()")
                         lines.indented {
-                            lines.add("aResponse()")
-                            lines.indented {
-                                lines.add(".withStatus(404)")
-                                lines.add(".withBody(\"Not Found\")")
-                            }
-                            lines.add(")")
+                            lines.add(".withStatus(404)")
+                            lines.add(".withBody(\"Not Found\")")
                         }
-                    }
-
-                    if (format.isJava()) {
-                        lines.add(");")
-                    }
-                    if (format.isKotlin()) {
                         lines.add(")")
                     }
+                }
 
-                    action.externalService.getStubs()
-                        .filter { s -> s.request.method.toString() != "ANY" }
-                        .forEach { map ->
-                            lines.add("wireMockServer.stubFor(")
+                if (format.isJava()) {
+                    lines.add(");")
+                }
+                if (format.isKotlin()) {
+                    lines.add(")")
+                }
+
+                action.externalService.getStubs()
+                    .filter { s -> s.request.method.toString() != "ANY" }
+                    .forEach { map ->
+                        lines.add("${name}.stubFor(")
+                        lines.indented {
+                            lines.add(
+                                "${
+                                    map.request.method.toString().lowercase()
+                                }(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})"
+                            )
+                            lines.add(".willReturn(")
                             lines.indented {
-                                lines.add(
-                                    "${
-                                        map.request.method.toString().lowercase()
-                                    }(urlEqualTo(\"${map.request.url}\")).atPriority(${map.priority})"
-                                )
-                                lines.add(".willReturn(")
+                                lines.add("aResponse()")
                                 lines.indented {
-                                    lines.add("aResponse()")
-                                    lines.indented {
-                                        lines.add(".withStatus(${map.response.status})")
-                                        lines.add(".withBody(\"${map.response.body}\")")
-                                    }
-                                    lines.add(")")
+                                    lines.add(".withStatus(${map.response.status})")
+                                    lines.add(".withBody(\"${map.response.body}\")")
                                 }
-                            }
-                            if (format.isJava()) {
-                                lines.add(");")
-                            }
-                            if (format.isKotlin()) {
                                 lines.add(")")
                             }
-                            lines.addEmpty(1)
                         }
+                        if (format.isJava()) {
+                            lines.add(");")
+                        }
+                        if (format.isKotlin()) {
+                            lines.add(")")
+                        }
+                        lines.addEmpty(1)
+                    }
 
-                    if (format.isJava()) {
-                        lines.add("DnsCacheManipulator.clearDnsCache();")
-                        lines.add("wireMockServer.stop();")
-                    }
-                    if (format.isKotlin()) {
-                        lines.add("DnsCacheManipulator.clearDnsCache()")
-                        lines.add("wireMockServer.stop()")
-                    }
-                    lines.addEmpty(1)
+                if (format.isJava()) {
+                    lines.add("DnsCacheManipulator.clearDnsCache();")
+                    lines.add("${name}.stop();")
                 }
-            lines.addEmpty(1)
-            lines.add("// External Service End")
-        }
+                if (format.isKotlin()) {
+                    lines.add("DnsCacheManipulator.clearDnsCache()")
+                    lines.add("${name}.stop()")
+                }
+                lines.addEmpty(1)
+            }
+        lines.addEmpty(1)
+        lines.add("// External Service End")
+
     }
 
     /**

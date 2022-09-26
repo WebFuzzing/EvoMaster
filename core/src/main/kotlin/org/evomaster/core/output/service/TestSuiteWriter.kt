@@ -326,6 +326,21 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
+            if (useWireMock(solution)) {
+                if (format.isKotlin()) {
+                    addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
+                } else if (format.isJava()) {
+                    addImport("static com.github.tomakehurst.wiremock.client.WireMock.*", lines)
+                }
+                addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
+                addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
+                addImport(
+                    "com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer",
+                    lines
+                )
+                addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
+            }
+
             addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
             addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
@@ -763,4 +778,27 @@ class TestSuiteWriter {
 
 
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
+
+    private fun useWireMock(solution: Solution<*>): Boolean {
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+            if (getExternalServiceActions(solution).isNotEmpty()) {
+                // TODO: Disabled till full implementation is completed, probably have to remove
+                //  it from here and move it under [TestCaseWriter]
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun getExternalServiceActions(solution: Solution<*>): List<HttpExternalServiceAction> {
+        val actions = mutableListOf<HttpExternalServiceAction>()
+        solution.individuals.filter { i -> i.individual is RestIndividual }
+            .forEach {
+                it.individual.seeExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
+                    .forEach { action ->
+                        actions.add(action)
+                    }
+            }
+        return actions.toList()
+    }
 }
