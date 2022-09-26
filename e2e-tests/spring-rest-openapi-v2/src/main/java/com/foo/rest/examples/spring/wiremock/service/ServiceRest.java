@@ -87,8 +87,14 @@ public class ServiceRest {
                 HttpURLConnection secondConnection = (HttpURLConnection) secondURL.openConnection();
                 secondConnection.setRequestProperty("accept", "application/json");
 
-                responseCode = secondConnection.getResponseCode();
-                responseDto.valid = secondConnection.getResponseCode() == 200;
+                if (secondConnection.getResponseCode() == 200) {
+                    URL sameURL = new URL("http://foo.baz:8080/api/echo/bar");
+                    HttpURLConnection sameURLConnection = (HttpURLConnection) sameURL.openConnection();
+                    sameURLConnection.setRequestProperty("accept", "application/json");
+
+                    responseCode = sameURLConnection.getResponseCode();
+                    responseDto.valid = sameURLConnection.getResponseCode() == 200;
+                }
             }
         } catch (IOException e) {
             SimpleLogger.uniqueWarn(e.getLocalizedMessage());
