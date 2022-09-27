@@ -31,6 +31,8 @@ class GQLAllLimitReachedEMTest : SpringTestBase() {
 
             args.add("--problemType")
             args.add(EMConfig.ProblemType.GRAPHQL.toString())
+            args.add("--treeDepth")
+            args.add("2")
 
             val solution = initAndRun(args)
 
