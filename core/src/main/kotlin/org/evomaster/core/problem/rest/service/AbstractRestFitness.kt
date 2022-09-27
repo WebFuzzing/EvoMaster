@@ -188,6 +188,16 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                             && b.seeGenes().flatMap { it.flatView() }.any { it.name.equals(name, ignoreCase = true)  }
                     }
                 }
+                .filter{ name ->
+                    /*
+                        Another tricky case. Some frameworks like Spring can have hidden params to override the method
+                        type of the requests. This is needed for handling web browsers without JS.
+                        See https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/filter/HiddenHttpMethodFilter.html
+                        This lead to meaningless tests with 405 responses.
+                        So, we skip them.
+                     */
+                    name != "_method"
+                }
                 .forEach {
                     val gene = StringGene(it).apply { doInitialize(randomness) }
                     action.addParam(
