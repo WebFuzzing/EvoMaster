@@ -24,7 +24,7 @@ public class TestabilityWithSeedTestEMTest extends SpringRPCTestBase {
     }
 
 
-    @Disabled("Temporary")
+    @Test
     public void testRunEM() throws Throwable {
 
 
