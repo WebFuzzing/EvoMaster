@@ -607,6 +607,7 @@ open class RestResourceNode(
             actions.remove(org)
             val example = action.copy() as RestCallAction
             example.resetLocalId()
+            example.resetProperties()
             actions.add(example)
         }
     }

@@ -328,7 +328,7 @@ class IndividualGeneImpactTest {
         override fun repairInitializationActions(randomness: Randomness) {}
     }
 
-   abstract class IndAction(genes : List<out Gene>) : Action(genes, localId = NONE_ACTION_COMPONENT_ID){
+   abstract class IndAction(genes : List<out Gene>) : Action(genes){
 
 
 

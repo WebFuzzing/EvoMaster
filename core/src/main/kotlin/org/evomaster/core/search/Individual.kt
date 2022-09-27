@@ -50,11 +50,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
 
-    override fun preChildrenSetup(c : Collection<StructuralElement>) {
-        if (isLocalIdsNotAssigned())
-            setLocalIdsForChildren((c as List<ActionComponent>).flatMap { it.flatView() })
-    }
-
     /**
      * presents the evaluated results of the individual once the individual is tracked (i.e., [EMConfig.enableTrackIndividual]).
      *
@@ -417,21 +412,6 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         }
     }
 
-    override fun addChild(child: StructuralElement) {
-        handleLocalIdsForAddition(listOf(child))
-        super.addChild(child)
-    }
-
-    override fun addChild(position: Int, child: StructuralElement) {
-        handleLocalIdsForAddition(listOf(child))
-        super.addChild(position, child)
-    }
-
-    override fun addChildren(position: Int, list: List<StructuralElement>) {
-        handleLocalIdsForAddition(list)
-        super.addChildren(position, list)
-    }
-
     /**
      * @return whether all action components are assigned with valid local ids
      */
@@ -440,8 +420,14 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                 && flatView().run { this.map { it.getLocalId() }.toSet().size == this.size }
     }
 
-    private fun isLocalIdsNotAssigned() : Boolean{
-        return flatView().all { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID}
+    /**
+     * @return if local ids are not initialized
+     */
+    private fun areAllLocalIdsNotInitialized() : Boolean{
+        return flatView().all { !it.hasLocalId ()
+                // FIXME Man need to check local id for gene for the moment
+                //&& (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> !i.hasLocalId() }})
+        }
     }
 
     private fun flatView() : List<ActionComponent>{
@@ -450,7 +436,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     private fun areAllLocalIdsAssigned() : Boolean{
-        return  flatView().none { it.getLocalId() == ActionComponent.NONE_ACTION_COMPONENT_ID }
+        return  flatView().all { it.hasLocalId()
+                // FIXME Man need to check local id for gene for the moment
+                //&& (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> i.hasLocalId() }})
+        }
     }
 
     /**
@@ -464,8 +453,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
 
-    // handle local ids in add child and children
-    private fun handleLocalIdsForAddition(children: List<StructuralElement>){
+    /**
+     * handle local ids of children (ie ActionComponent) to add
+     */
+    fun handleLocalIdsForAddition(children: Collection<StructuralElement>){
         children.forEach {child->
             if (child is ActionComponent){
                 if (child is Action && !child.hasLocalId())

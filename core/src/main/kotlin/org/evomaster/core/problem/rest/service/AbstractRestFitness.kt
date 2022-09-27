@@ -8,7 +8,7 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceInfo
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.*
@@ -174,7 +174,19 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
             info.queryParameters
                 .filter { name ->
+                    //if parameter already exists, do not add it again
                     !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
+                }
+                .filter { name ->
+                    /*
+                        This one is very tricky. Some JEE-based frameworks could conflate URL query parameters and
+                         parameters in body payload of form submissions in x-www-form-urlencoded format.
+                         This happens for example in LanguageTool.
+                     */
+                    !action.parameters.any{
+                            b -> b is BodyParam && b.isForm()
+                            && b.seeGenes().flatMap { it.flatView() }.any { it.name.equals(name, ignoreCase = true)  }
+                    }
                 }
                 .forEach {
                     val gene = StringGene(it).apply { doInitialize(randomness) }
@@ -731,7 +743,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             dto.additionalInfoList
         )
 
-        handleExternalServiceInfo(dto.additionalInfoList)
+        handleExternalServiceInfo(fv, dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
             expandIndividual(individual, dto.additionalInfoList, actionResults)
@@ -746,11 +758,35 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         return dto
     }
 
-    private fun handleExternalServiceInfo(infoDto: List<AdditionalInfoDto>) {
-        infoDto.forEach { info ->
+    /**
+     * Based on info coming from SUT execution, register and start new WireMock instances.
+     */
+    private fun handleExternalServiceInfo(fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
+
+        /*
+            Note: this info here is based from what connections / hostname resolving done in the SUT,
+            via instrumentation.
+
+            However, what is actually called on an already up and running WM instance from a previous call is
+            done on WM directly, and it must be done at SUT call (as WM get reset there)
+         */
+
+        infoDto.forEachIndexed { _, info ->
             info.externalServices.forEach { es ->
+
+                /*
+                    The info here is coming from SUT instrumentation
+                 */
+
+                /*
+                    TODO: check, do we really want to start WireMock isntances right now after a fitness evaluation?
+                    We need to make sure then, if we do this, that a call in instrumented SUT with (now) and
+                    without (previous fitness evaluation) WM instances would result in same behavior.
+
+                    TODO: ie make sure that, if test is executed again now, the behavior is the same
+                 */
                 externalServiceHandler.addExternalService(
-                    ExternalServiceInfo(
+                    HttpExternalServiceInfo(
                         es.protocol,
                         es.remoteHostname,
                         es.remotePort
