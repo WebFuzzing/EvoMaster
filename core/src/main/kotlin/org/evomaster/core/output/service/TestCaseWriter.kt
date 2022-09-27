@@ -82,15 +82,11 @@ abstract class TestCaseWriter {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
             val actions = getExternalServiceActions(ind)
-            if (ind.individual is RestIndividual && handleExternalService(actions)) {
-                handleExternalServiceActionsBegin(lines, actions)
+            if (ind.individual is RestIndividual && handleExternalService()) {
+                handleExternalServiceActions(lines, actions)
             }
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars)
-
-            if (ind.individual is RestIndividual && handleExternalService(actions)) {
-                handleExternalServiceActionsEnd(lines, actions)
-            }
         }
 
         lines.add("}")
@@ -115,7 +111,7 @@ abstract class TestCaseWriter {
         return actions
     }
 
-    private fun handleExternalServiceActionsBegin(
+    private fun handleExternalServiceActions(
         lines: Lines,
         actions: List<HttpExternalServiceAction>
     ) {
@@ -123,45 +119,7 @@ abstract class TestCaseWriter {
             .filter { action -> action.active }
             .forEach { action ->
                 val response = action.response as HttpWsResponseParam
-                val address = action.externalService.getWireMockAddress()
-                val port = action.externalService.getWireMockPort()
-                val remoteHostName = action.externalService.externalServiceInfo.remoteHostname
-                val name = action.externalService.externalServiceInfo
-                    .signature()
-                    .replace(".", "")
-                    .plus("WireMock")
-
-                if (format.isJava()) {
-                    lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\");")
-                    lines.add("WireMockServer ${name} = new WireMockServer(new WireMockConfiguration()")
-                }
-
-                if (format.isKotlin()) {
-                    lines.add("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")")
-                    lines.add("val ${name} = WireMockServer(WireMockConfiguration()")
-                }
-
-                lines.indented {
-                    lines.add(".bindAddress(\"$address\")")
-                    lines.add(".port($port)")
-                    if (format.isJava()) {
-                        lines.add(".extensions(new ResponseTemplateTransformer(false)")
-                    } else if (format.isKotlin()) {
-                        lines.add(".extensions(ResponseTemplateTransformer(false)")
-                    }
-                }
-
-                if (format.isJava()) {
-                    lines.add("));")
-                    lines.add("assertNotNull(${name});")
-                    lines.add("${name}.start();")
-                }
-
-                if (format.isKotlin()) {
-                    lines.add("))")
-                    lines.add("assertNotNull(${name})")
-                    lines.add("${name}.start()")
-                }
+                val name = getWireMockVariableName(action)
 
                 // Default behaviour of WireMock has been removed, since found no purpose
                 // in case if there is a failure regarding no routes found in WireMock
@@ -194,29 +152,6 @@ abstract class TestCaseWriter {
                 }
                 lines.addEmpty(1)
             }
-    }
-
-    private fun handleExternalServiceActionsEnd(
-        lines: Lines,
-        actions: List<HttpExternalServiceAction>
-    ) {
-        lines.addEmpty(1)
-        actions
-            .forEach { action ->
-                val name = action.externalService.externalServiceInfo
-                    .signature()
-                    .replace(".", "")
-                    .plus("WireMock")
-
-                if (format.isJava()) {
-                    lines.add("${name}.stop();")
-                }
-                if (format.isKotlin()) {
-                    lines.add("${name}.stop()")
-                }
-                lines.addEmpty(1)
-            }
-        lines.addEmpty(1)
     }
 
     /**
@@ -338,13 +273,20 @@ abstract class TestCaseWriter {
         // do nothing
     }
 
-    private fun handleExternalService(actions: List<HttpExternalServiceAction>): Boolean {
+    private fun handleExternalService(): Boolean {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (actions.isNotEmpty()) {
-                // TODO: Have to be moved to a common place, since it's used in two places
-                return true
-            }
+            // TODO: Have to be moved to a common place, since it's used in two places
+            return true
         }
         return false
+    }
+
+    private fun getWireMockVariableName(action: HttpExternalServiceAction): String {
+        return action
+            .externalService
+            .externalServiceInfo
+            .signature()
+            .replace(".", "")
+            .plus("WireMock")
     }
 }

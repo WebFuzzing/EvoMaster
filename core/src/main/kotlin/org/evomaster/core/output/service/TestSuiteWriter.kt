@@ -326,7 +326,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (handleExternalService(getExternalServiceActions(solution))) {
+            if (handleExternalService()) {
                 if (format.isKotlin()) {
                     addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
                 } else if (format.isJava()) {
@@ -456,6 +456,8 @@ class TestSuiteWriter {
         solution: Solution<*>
     ) {
 
+        val externalServiceActions = getExternalServiceActions(solution)
+
         val executable = if (controllerInput.isNullOrBlank()) ""
         else "\"$controllerInput\"".replace("\\", "\\\\")
 
@@ -469,6 +471,14 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
+            if (handleExternalService()) {
+                externalServiceActions
+                    .distinctBy { it.externalService.externalServiceInfo.signature() }
+                    .forEach { action ->
+                        val name = getWireMockVariableName(action)
+                        addStatement("private static WireMockServer ${name};", lines)
+                    }
+            }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
@@ -477,6 +487,14 @@ class TestSuiteWriter {
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
+            }
+            if (handleExternalService()) {
+                externalServiceActions
+                    .distinctBy { it.externalService.externalServiceInfo.signature() }
+                    .forEach { action ->
+                        val name = getWireMockVariableName(action)
+                        addStatement("private lateinit var ${name}: WireMockServer", lines)
+                    }
             }
         } else if (config.outputFormat.isJavaScript()) {
 
@@ -577,6 +595,39 @@ class TestSuiteWriter {
                 }
             }
 
+            val actions = getExternalServiceActions(solution)
+
+            if (handleExternalService()) {
+                actions
+                    .distinctBy { it.externalService.externalServiceInfo.signature() }
+                    .forEach { action ->
+                        val address = action.externalService.getWireMockAddress()
+                        val port = action.externalService.getWireMockPort()
+                        val name = getWireMockVariableName(action)
+
+                        if (format.isJava()) {
+                            lines.add("${name} = new WireMockServer(new WireMockConfiguration()")
+                        }
+
+                        if (format.isKotlin()) {
+                            lines.add("${name} = WireMockServer(WireMockConfiguration()")
+                        }
+
+                        lines.indented {
+                            lines.add(".bindAddress(\"$address\")")
+                            lines.add(".port($port)")
+                            if (format.isJava()) {
+                                addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
+                            }
+
+                            if (format.isKotlin()) {
+                                addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
+                            }
+                        }
+                        addStatement("${name}.start()", lines)
+                    }
+            }
+
             testCaseWriter.addExtraInitStatement(lines)
         }
 
@@ -616,6 +667,15 @@ class TestSuiteWriter {
                     }
                     else -> {
                         addStatement("$controller.stopSut()", lines)
+                        if (handleExternalService()) {
+                            val actions = getExternalServiceActions(solution)
+                            actions.distinctBy { it.externalService.externalServiceInfo.signature() }
+                                .forEach { action ->
+                                val name = getWireMockVariableName(action)
+                                    addStatement("${name}.stop()", lines)
+                                }
+                            addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                        }
                     }
                 }
             }
@@ -659,7 +719,18 @@ class TestSuiteWriter {
                     addStatement("$controller.resetDatabase(${handleResetDatabaseInput(solution)})", lines)
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
-                addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+
+                val actions = getExternalServiceActions(solution)
+
+                actions
+                    .distinctBy { it.externalService.externalServiceInfo.signature() }
+                    .forEach { action ->
+                        val name = action.externalService.externalServiceInfo
+                            .signature()
+                            .replace(".", "")
+                            .plus("WireMock")
+                        addStatement("${name}.resetAll()", lines)
+                    }
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)
                 //TODO add resetDatabase
@@ -780,12 +851,10 @@ class TestSuiteWriter {
 
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
 
-    private fun handleExternalService(actions: List<HttpExternalServiceAction>): Boolean {
+    private fun handleExternalService(): Boolean {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (actions.isNotEmpty()) {
-                // TODO: Have to be moved to a common place, since it's used in two places
-                return true
-            }
+            // TODO: Have to be moved to a common place, since it's used in two places
+            return true
         }
         return false
     }
@@ -805,5 +874,14 @@ class TestSuiteWriter {
                     }
             }
         return actions.toList()
+    }
+
+    private fun getWireMockVariableName(action: HttpExternalServiceAction): String {
+        return action
+            .externalService
+            .externalServiceInfo
+            .signature()
+            .replace(".", "")
+            .plus("WireMock")
     }
 }
