@@ -1,36 +1,40 @@
-package org.evomaster.core.search.gene.sql
+package org.evomaster.core.search.gene.optional
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
+import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.*
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
 
-
-class SqlNullableGene(name: String,
-                      val gene: Gene,
-                      var isPresent: Boolean = true
+class NullableGene(name: String,
+                   val gene: Gene,
+                   var isPresent: Boolean = true
 ) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
     //FIXME need a generic NullableGene. some code seems same as Optional
 
     init{
         if(gene is SqlWrapperGene && gene.getForeignKey() != null){
-            throw IllegalStateException("SqlNullable should not contain a FK, " +
-                    "as its nullability is handled directly in SqlForeignKeyGene")
+            throw IllegalStateException(
+                "SqlNullable should not contain a FK, " +
+                        "as its nullability is handled directly in SqlForeignKeyGene"
+            )
         }
     }
 
     companion object{
-        private val log: Logger = LoggerFactory.getLogger(SqlNullableGene::class.java)
+        private val log: Logger = LoggerFactory.getLogger(NullableGene::class.java)
         private const val ABSENT = 0.1
     }
 
@@ -43,7 +47,7 @@ class SqlNullableGene(name: String,
     }
 
     override fun copyContent(): Gene {
-        return SqlNullableGene(name, gene.copy(), isPresent)
+        return NullableGene(name, gene.copy(), isPresent)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -121,7 +125,7 @@ class SqlNullableGene(name: String,
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlNullableGene) {
+        if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.isPresent = other.isPresent
@@ -129,7 +133,7 @@ class SqlNullableGene(name: String,
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlNullableGene) {
+        if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.isPresent == other.isPresent &&
@@ -144,7 +148,7 @@ class SqlNullableGene(name: String,
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlNullableGene) isPresent = gene.isPresent
+        if (gene is NullableGene) isPresent = gene.isPresent
         return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 }

@@ -19,6 +19,7 @@ import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.network.MacAddrGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.regex.DisjunctionListRxGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
@@ -389,7 +390,7 @@ class DbActionGeneBuilder {
 
         if (column.nullable && fk == null) {
             //FKs handle nullability in their own custom way
-            gene = SqlNullableGene(column.name, gene)
+            gene = NullableGene(column.name, gene)
         }
 
         if (column.dimension > 0) {

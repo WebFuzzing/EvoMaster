@@ -2,7 +2,7 @@ package org.evomaster.core.database
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.NumberGene
-import org.evomaster.core.search.gene.sql.SqlNullableGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.dbconstraint.*
 import java.util.regex.Pattern
 
@@ -63,7 +63,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         val isPresent = when (gene) {
             // if no gene is found, consider the value to be null
             null -> false
-            else -> if (gene is SqlNullableGene) {
+            else -> if (gene is NullableGene) {
                 // if the gene is a nullable gen, the value
                 // could be null if isPresent==true
                 gene.isPresent
