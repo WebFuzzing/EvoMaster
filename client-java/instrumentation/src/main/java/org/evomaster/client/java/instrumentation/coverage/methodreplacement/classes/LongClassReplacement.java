@@ -75,7 +75,7 @@ public class LongClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
-    public static long valueOf(String input, String idTemplate) {
+    public static Long valueOf(String input, String idTemplate) {
         return parseLong(input, idTemplate);
     }
 }

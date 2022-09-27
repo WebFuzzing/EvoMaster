@@ -103,6 +103,9 @@ class ReplacementListTest {
                     }
                     assertEquals(r.replacingStatic(), Modifier.isStatic(targetMethod.getModifiers()));
 
+                    assertEquals(targetMethod.getReturnType(),m.getReturnType()
+                            , "Mismatched return type for " + targetClass.getName()+"."+targetMethod.getName()+"()");
+
                 } else{
                     Constructor targetConstructor = null;
                     try {
