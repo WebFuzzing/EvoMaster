@@ -26,4 +26,8 @@ class HttpWsResponseParam (
     override fun copyContent(): Param {
         return HttpWsResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, response.copy() as OptionalGene)
     }
+
+    fun getStatus() : String {
+        return status.getValueAsRawString()
+    }
 }

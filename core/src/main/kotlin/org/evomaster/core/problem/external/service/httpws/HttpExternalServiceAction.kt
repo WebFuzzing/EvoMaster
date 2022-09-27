@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.external.service.httpws
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
@@ -35,8 +36,8 @@ class HttpExternalServiceAction(
      * WireMock server which received the request
      */
     val externalService: ExternalService,
-    active : Boolean = false,
-    used : Boolean = false,
+    active: Boolean = false,
+    used: Boolean = false,
     private val id: Long
 ) : ApiExternalServiceAction(response, active, used) {
 
@@ -110,7 +111,7 @@ class HttpExternalServiceAction(
         }
 
         externalService.getWireMockServer().stubFor(
-            get(urlMatching(request.url))
+            getRequestMethod(request)
                 .atPriority(1)
                 .willReturn(
                     aResponse()
@@ -122,6 +123,25 @@ class HttpExternalServiceAction(
                         .attr("url", request.absoluteURL)
                 )
         )
+
+    }
+
+    /**
+     * will response the [MappingBuilder] based on the HTTP method
+     */
+    private fun getRequestMethod(request: HttpExternalServiceRequest): MappingBuilder {
+        val response = when (request.method) {
+            "GET" -> get(urlEqualTo(request.url))
+            "POST" -> post(urlEqualTo(request.url))
+            "PUT" -> put(urlEqualTo(request.url))
+            "PATCH" -> patch(urlEqualTo(request.url))
+            "DELETE" -> delete(urlEqualTo(request.url))
+            "HEAD" -> head(urlEqualTo(request.url))
+            "TRACE" -> trace(urlEqualTo(request.url))
+            "OPTIONS" -> options(urlEqualTo(request.url))
+            else -> any(urlEqualTo(request.url))
+        }
+        return response
     }
 
     /**

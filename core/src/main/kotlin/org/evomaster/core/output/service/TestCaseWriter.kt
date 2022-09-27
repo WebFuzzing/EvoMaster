@@ -6,6 +6,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
@@ -100,8 +101,8 @@ abstract class TestCaseWriter {
         return lines
     }
 
-    private fun getExternalServiceActions(ind: EvaluatedIndividual<*>) : List<HttpExternalServiceAction> {
-        val actions : MutableList<HttpExternalServiceAction> = mutableListOf()
+    private fun getExternalServiceActions(ind: EvaluatedIndividual<*>): List<HttpExternalServiceAction> {
+        val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
         ind.individual.seeExternalServiceActions()
             .filterIsInstance<HttpExternalServiceAction>()
             .forEach { action ->
@@ -118,7 +119,9 @@ abstract class TestCaseWriter {
         actions: List<HttpExternalServiceAction>
     ) {
         actions
+            .filter { action -> action.active }
             .forEach { action ->
+                val response = action.response as HttpWsResponseParam
                 val address = action.externalService.getWireMockAddress()
                 val port = action.externalService.getWireMockPort()
                 val remoteHostName = action.externalService.externalServiceInfo.remoteHostname
@@ -159,61 +162,61 @@ abstract class TestCaseWriter {
                     lines.add("${name}.start()")
                 }
 
+//                lines.add("${name}.stubFor(")
+//                lines.indented {
+//                    lines.add("any(anyUrl()).atPriority(100)")
+//                    lines.add(".willReturn(")
+//                    lines.indented {
+//                        lines.add("aResponse()")
+//                        lines.indented {
+//                            lines.add(".withStatus(404)")
+//                            lines.add(".withBody(\"Not Found\")")
+//                        }
+//                        lines.add(")")
+//                    }
+//                }
+
+//                if (format.isJava()) {
+//                    lines.add(");")
+//                }
+//                if (format.isKotlin()) {
+//                    lines.add(")")
+//                }
+
                 lines.add("${name}.stubFor(")
                 lines.indented {
-                    lines.add("any(anyUrl()).atPriority(100)")
+                    lines.add(
+                        "${
+                            action.request.method.lowercase()
+                        }(urlEqualTo(\"${action.request.url}\"))"
+                    )
+                    // adding priority as 1 for now when extending further this has to be
+                    lines.add(".atPriority(1)")
                     lines.add(".willReturn(")
                     lines.indented {
                         lines.add("aResponse()")
                         lines.indented {
-                            lines.add(".withStatus(404)")
-                            lines.add(".withBody(\"Not Found\")")
+                            lines.add(".withStatus(${response.getStatus()})")
+                            lines.add(".withBody(\"${response.response.getValueAsRawString()}\")")
                         }
                         lines.add(")")
                     }
                 }
-
                 if (format.isJava()) {
                     lines.add(");")
                 }
                 if (format.isKotlin()) {
                     lines.add(")")
                 }
-
-                action.externalService.getStubs()
-                    .filter { s -> s.request.method.toString() != "ANY" }
-                    .forEach { stub ->
-                        lines.add("${name}.stubFor(")
-                        lines.indented {
-                            lines.add("${stub.request.method.toString().lowercase()}(urlEqualTo(\"${stub.request.url}\"))")
-                            lines.add(".atPriority(${stub.priority})")
-                            lines.add(".willReturn(")
-                            lines.indented {
-                                lines.add("aResponse()")
-                                lines.indented {
-                                    lines.add(".withStatus(${stub.response.status})")
-                                    lines.add(".withBody(\"${stub.response.body}\")")
-                                }
-                                lines.add(")")
-                            }
-                        }
-                        if (format.isJava()) {
-                            lines.add(");")
-                        }
-                        if (format.isKotlin()) {
-                            lines.add(")")
-                        }
-                        lines.addEmpty(1)
-                    }
                 lines.addEmpty(1)
             }
-        lines.addEmpty(1)
-
     }
-   private fun handleExternalServiceActionsEnd(
+
+    private fun handleExternalServiceActionsEnd(
         lines: Lines,
         actions: List<HttpExternalServiceAction>
     ) {
+        lines.addEmpty(1)
         actions
             .forEach { action ->
                 val name = action.externalService.externalServiceInfo
