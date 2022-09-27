@@ -4,7 +4,10 @@
       "queryType": {
         "name": "Query"
       },
-      "mutationType": null,
+      "mutationType": {
+        "name": "Mutation"
+      },
+
       "types": [
         {
           "kind": "SCALAR",
@@ -39,12 +42,16 @@
           "name": "Query",
           "fields": [
             {
-              "name": "book",
+              "name": "books",
               "args": [],
               "type": {
-                "kind": "OBJECT",
-                "name": "Book",
-                "ofType": null
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "Book",
+                  "ofType": null
+                }
               },
               "isDeprecated": false,
               "deprecationReason": null
@@ -56,6 +63,35 @@
           "possibleTypes": null
         },
 
+        {
+          "kind": "OBJECT",
+          "name": "Mutation",
+          "fields": [
+            {
+              "name": "addBook",
+              "args": [  {
+                "name": "name",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null
+              }],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
 
         {
           "kind": "OBJECT",
@@ -109,6 +145,17 @@
           "kind": "OBJECT",
           "name": "Address",
           "fields": [
+            {
+              "name": "id",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
             {
               "name": "streetName",
               "args": [],
