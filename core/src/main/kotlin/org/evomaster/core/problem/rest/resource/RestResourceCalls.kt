@@ -339,11 +339,15 @@ class RestResourceCalls(
                             throw IllegalStateException("cannot fix the fk of ${db.getResolvedName()}")
                         }
                         ok.second?.forEach { ddb ->
-                            val call = calls.find { it.seeActions(ActionFilter.ONLY_SQL).contains(ddb) }!!
-                            setDependentCall(call)
-                            // handling rest action binding with the fixed db which is in a different call
-                            if (dbactionInOtherCalls.contains(ddb)) {
-                                bindRestActionBasedOnDbActions(listOf(ddb), cluster, false, false)
+                            val frontCall = calls.find { it.seeActions(ActionFilter.ONLY_SQL).contains(ddb) }
+                            if (frontCall != null){
+                                setDependentCall(frontCall)
+                                // handling rest action binding with the fixed db which is in a different call
+                                if (dbactionInOtherCalls.contains(ddb)) {
+                                    bindRestActionBasedOnDbActions(listOf(ddb), cluster, false, false)
+                                }
+                            }else{
+                                Lazy.assert { dbActions.contains(ddb) }
                             }
                         }
                         frontDbActions.add(db)

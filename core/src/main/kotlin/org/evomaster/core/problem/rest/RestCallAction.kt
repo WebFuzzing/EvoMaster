@@ -197,6 +197,15 @@ class RestCallAction(
         }
     }
 
+    /**
+     * reset [saveLocation], [locationId] and [responseRefs] properties of [this] RestCallAction
+     */
+    fun resetProperties(){
+        saveLocation = false
+        locationId = null
+        clearRefs()
+    }
+
     fun getDescription() : String? = description
     fun clearRefs(){
         responseRefs.clear()
