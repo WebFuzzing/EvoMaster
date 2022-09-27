@@ -70,7 +70,7 @@ public class ByteClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
-    public static byte valueOf(String input, String idTemplate) {
+    public static Byte valueOf(String input, String idTemplate) {
         return parseByte(input, idTemplate);
     }
 
