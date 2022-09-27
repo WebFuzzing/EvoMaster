@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 class SqlNullImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
         val gene = IntegerGene("gene", 0)
-        return NullableGene("o", isPresent = false, gene = gene)
+        return NullableGene("o", isPresent = false, gene = gene, nullLabel = "NULL")
     }
 
     override fun checkImpactType(impact: GeneImpact) {

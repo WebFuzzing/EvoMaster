@@ -19,43 +19,44 @@ import java.lang.IllegalStateException
 
 class NullableGene(name: String,
                    val gene: Gene,
-                   var isPresent: Boolean = true
-) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
+                   var isPresent: Boolean = true,
+                   var nullLabel: String = "null"
+) : CompositeGene(name, mutableListOf(gene)) {
 
-    //FIXME need a generic NullableGene. some code seems same as Optional
 
-    init{
-        if(gene is SqlWrapperGene && gene.getForeignKey() != null){
-            throw IllegalStateException(
-                "SqlNullable should not contain a FK, " +
-                        "as its nullability is handled directly in SqlForeignKeyGene"
-            )
-        }
-    }
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(NullableGene::class.java)
-        private const val ABSENT = 0.1
+        private const val ABSENT = 0.01
+    }
+
+    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+        if(this.javaClass == klass){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
     }
 
     override fun isLocallyValid() : Boolean{
         return getViewOfChildren().all { it.isLocallyValid() }
     }
 
-    override fun getForeignKey(): SqlForeignKeyGene? {
-        return null
-    }
-
     override fun copyContent(): Gene {
-        return NullableGene(name, gene.copy(), isPresent)
+        return NullableGene(name, gene.copy(), isPresent, nullLabel)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
-        isPresent = if (!isPresent && tryToForceNewValue)
+        isPresent = if (!isPresent && tryToForceNewValue) {
             true
-        else
-            randomness.nextBoolean(ABSENT)
+        } else{
+            /*
+                on sampling, we consider a 50-50 chances to be null.
+                then, during mutation, we give less chances to null
+             */
+            randomness.nextBoolean()
+        }
+
 
         if(gene.isMutable())
             gene.randomize(randomness, tryToForceNewValue)
@@ -70,7 +71,7 @@ class NullableGene(name: String,
 
         if (!isPresent) return true
 
-        //FIXME
+        //FIXME do impact
 //        if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
 //            return if (randomness.nextBoolean(ABSENT)) emptyList() else listOf(gene)
 //        }
@@ -89,7 +90,11 @@ class NullableGene(name: String,
 //        throw IllegalArgumentException("impact is not SqlNullableImpact ${additionalGeneMutationInfo.impact::class.java.simpleName}")
 //
 
-        return false;
+        /*
+            Here, it means the gene is present. A shallow mutation would put it to null, which we do only with low
+            probability
+         */
+        return randomness.nextBoolean(ABSENT);
     }
 
     override fun mutablePhenotypeChildren(): List<Gene> {
@@ -118,7 +123,7 @@ class NullableGene(name: String,
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         if (!isPresent) {
-            return "NULL"
+            return nullLabel
         }
 
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat)
@@ -129,6 +134,7 @@ class NullableGene(name: String,
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.isPresent = other.isPresent
+        this.nullLabel = other.nullLabel
         this.gene.copyValueFrom(other.gene)
     }
 
@@ -138,6 +144,7 @@ class NullableGene(name: String,
         }
         return this.isPresent == other.isPresent &&
                 this.gene.containsSameValueAs(other.gene)
+                && this.nullLabel == other.nullLabel
     }
 
 

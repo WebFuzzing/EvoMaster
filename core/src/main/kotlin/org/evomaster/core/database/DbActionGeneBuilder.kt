@@ -390,7 +390,7 @@ class DbActionGeneBuilder {
 
         if (column.nullable && fk == null) {
             //FKs handle nullability in their own custom way
-            gene = NullableGene(column.name, gene)
+            gene = NullableGene(column.name, gene, true, "NULL")
         }
 
         if (column.dimension > 0) {

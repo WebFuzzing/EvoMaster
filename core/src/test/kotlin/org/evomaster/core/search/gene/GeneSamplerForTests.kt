@@ -313,7 +313,7 @@ object GeneSamplerForTests {
     private fun sampleSqlNullableGene(rand: Randomness): NullableGene {
         val selection = geneClasses.filter { !it.isAbstract }
                 .filter { it.java != SqlForeignKeyGene::class.java }
-        return NullableGene("rand SqlNullableGene",
+        return NullableGene("rand NullableGene",
                 gene = sample(rand.choose(selection), rand))
     }
 
