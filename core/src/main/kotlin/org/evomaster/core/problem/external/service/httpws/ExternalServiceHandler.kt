@@ -183,10 +183,10 @@ class ExternalServiceHandler {
                         if (isAddressAvailable(config.externalServiceIP, port)) {
                             config.externalServiceIP
                         } else {
-                            throw IllegalStateException("User provided IP address is not available")
+                            throw IllegalStateException("User provided IP address is not available: ${config.externalServiceIP}:$port")
                         }
                     } else {
-                        throw IllegalStateException("Can not use a reserved IP address")
+                        throw IllegalStateException("Can not use a reserved IP address: ${config.externalServiceIP}")
                     }
                 }
             }

@@ -16,10 +16,12 @@ class HttpWsResponseParam (
     val status: EnumGene<Int> = EnumGene("status", listOf(200, 400, 401, 403, 500)),
     /**
      * Response content type, for now supports only JSON
+     *
+     * TODO might want to support XML and other formats here in the future
      */
-    responseType: EnumGene<String> = EnumGene("responseType", listOf("JSON", "XML")),
+    responseType: EnumGene<String> = EnumGene("responseType", listOf("JSON")),
     response: OptionalGene = OptionalGene("response", ObjectGene("response", listOf()))
-        ): ResponseParam("response", responseType, response, listOf(status)) {
+): ResponseParam("response", responseType, response, listOf(status)) {
 
     override fun copyContent(): Param {
         return HttpWsResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, response.copy() as OptionalGene)

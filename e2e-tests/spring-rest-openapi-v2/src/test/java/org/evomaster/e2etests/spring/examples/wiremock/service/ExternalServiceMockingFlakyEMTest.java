@@ -19,7 +19,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Need update code after refactoring")
 public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
 
     @BeforeAll
