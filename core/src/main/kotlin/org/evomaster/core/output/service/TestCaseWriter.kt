@@ -82,13 +82,13 @@ abstract class TestCaseWriter {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
             val actions = getExternalServiceActions(ind)
-            if (ind.individual is RestIndividual) {
+            if (ind.individual is RestIndividual && handleExternalService(actions)) {
                 handleExternalServiceActionsBegin(lines, actions)
             }
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars)
 
-            if (ind.individual is RestIndividual) {
+            if (ind.individual is RestIndividual && handleExternalService(actions)) {
                 handleExternalServiceActionsEnd(lines, actions)
             }
         }
@@ -105,6 +105,7 @@ abstract class TestCaseWriter {
         val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
         ind.individual.seeExternalServiceActions()
             .filterIsInstance<HttpExternalServiceAction>()
+            .filter { action -> action.active }
             .forEach { action ->
                 if (actions.none { a -> a.externalService.externalServiceInfo.signature() == action.externalService.externalServiceInfo.signature() }) {
                     actions.add(action)
@@ -162,26 +163,9 @@ abstract class TestCaseWriter {
                     lines.add("${name}.start()")
                 }
 
-//                lines.add("${name}.stubFor(")
-//                lines.indented {
-//                    lines.add("any(anyUrl()).atPriority(100)")
-//                    lines.add(".willReturn(")
-//                    lines.indented {
-//                        lines.add("aResponse()")
-//                        lines.indented {
-//                            lines.add(".withStatus(404)")
-//                            lines.add(".withBody(\"Not Found\")")
-//                        }
-//                        lines.add(")")
-//                    }
-//                }
-
-//                if (format.isJava()) {
-//                    lines.add(");")
-//                }
-//                if (format.isKotlin()) {
-//                    lines.add(")")
-//                }
+                // Default behaviour of WireMock has been removed, since found no purpose
+                // in case if there is a failure regarding no routes found in WireMock
+                // consider adding that later
 
                 lines.add("${name}.stubFor(")
                 lines.indented {
@@ -225,11 +209,9 @@ abstract class TestCaseWriter {
                     .plus("WireMock")
 
                 if (format.isJava()) {
-                    lines.add("DnsCacheManipulator.clearDnsCache();")
                     lines.add("${name}.stop();")
                 }
                 if (format.isKotlin()) {
-                    lines.add("DnsCacheManipulator.clearDnsCache()")
                     lines.add("${name}.stop()")
                 }
                 lines.addEmpty(1)
@@ -356,4 +338,13 @@ abstract class TestCaseWriter {
         // do nothing
     }
 
+    private fun handleExternalService(actions: List<HttpExternalServiceAction>): Boolean {
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+            if (actions.isNotEmpty()) {
+                // TODO: Have to be moved to a common place, since it's used in two places
+                return true
+            }
+        }
+        return false
+    }
 }

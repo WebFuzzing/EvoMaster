@@ -326,7 +326,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (useWireMock(solution)) {
+            if (handleExternalService(getExternalServiceActions(solution))) {
                 if (format.isKotlin()) {
                     addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
                 } else if (format.isJava()) {
@@ -659,6 +659,7 @@ class TestSuiteWriter {
                     addStatement("$controller.resetDatabase(${handleResetDatabaseInput(solution)})", lines)
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
+                addStatement("DnsCacheManipulator.clearDnsCache()", lines)
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)
                 //TODO add resetDatabase
@@ -779,22 +780,26 @@ class TestSuiteWriter {
 
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
 
-    private fun useWireMock(solution: Solution<*>): Boolean {
+    private fun handleExternalService(actions: List<HttpExternalServiceAction>): Boolean {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (getExternalServiceActions(solution).isNotEmpty()) {
-                // TODO: Disabled till full implementation is completed, probably have to remove
-                //  it from here and move it under [TestCaseWriter]
+            if (actions.isNotEmpty()) {
+                // TODO: Have to be moved to a common place, since it's used in two places
                 return true
             }
         }
         return false
     }
 
+    /**
+     * Return only the active actions
+     */
     private fun getExternalServiceActions(solution: Solution<*>): List<HttpExternalServiceAction> {
         val actions = mutableListOf<HttpExternalServiceAction>()
         solution.individuals.filter { i -> i.individual is RestIndividual }
             .forEach {
-                it.individual.seeExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
+                it.individual.seeExternalServiceActions()
+                    .filterIsInstance<HttpExternalServiceAction>()
+                    .filter { action -> action.active }
                     .forEach { action ->
                         actions.add(action)
                     }
