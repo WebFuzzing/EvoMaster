@@ -8,11 +8,23 @@ import java.util.UUID
  *
  * TODO: Properties have to extended further based on the need
  */
-class ExternalServiceRequest(
+class HttpExternalServiceRequest(
+    /**
+     * Most likely the UUID created by the respective WireMock
+     * while capturing the request.
+     */
     val id: UUID,
     val method: String,
     val url: String,
     val absoluteURL: String,
     val wasMatched: Boolean,
+    /**
+     * refers to the WireMock instance which received the request.
+     */
+    val wireMockSignature: String
 ) {
+
+    fun getId() : String {
+        return id.toString()
+    }
 }
