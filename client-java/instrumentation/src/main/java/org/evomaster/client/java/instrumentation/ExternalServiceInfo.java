@@ -1,6 +1,8 @@
 package org.evomaster.client.java.instrumentation;
 
 import java.io.Serializable;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 
 /**
@@ -33,6 +35,15 @@ public class ExternalServiceInfo implements Serializable {
 
     public Integer getRemotePort() {
         return remotePort;
+    }
+
+    /**
+     * Returns a combination of strings including protocol, remote hostname,
+     * and remote port.
+     * Will be used a unique identifier.
+     */
+    public String signature() {
+        return protocol + remoteHostname + remotePort.toString();
     }
 
     @Override

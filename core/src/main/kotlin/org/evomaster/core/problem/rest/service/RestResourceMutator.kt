@@ -39,7 +39,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
         return individual.seeInitializingActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable)
             .plus(individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(GeneFilter.ONLY_SQL) })
             .plus(restGenes)
-            .plus(individual.seeExternalServiceActions().flatMap { it.seeTopGenes() })
+            .plus(individual.seeExternalServiceActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable))
 
     }
 

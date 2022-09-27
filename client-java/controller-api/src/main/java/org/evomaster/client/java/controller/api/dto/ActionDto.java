@@ -33,7 +33,7 @@ public class ActionDto {
     public RPCActionDto rpcCall;
 
     /**
-     * Mapping of external service hostname to internal WireMock
+     * Mapping of external service signature to internal WireMock
      * instance addresses.
      */
     public Map<String, String> externalServiceMapping = new HashMap<>();

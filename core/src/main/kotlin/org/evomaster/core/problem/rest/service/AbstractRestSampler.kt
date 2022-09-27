@@ -6,7 +6,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceInfo
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
@@ -330,7 +330,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         if (info.bootTimeInfoDto?.externalServicesDto != null) {
             info.bootTimeInfoDto.externalServicesDto.forEach {
                 externalServiceHandler.addExternalService(
-                    ExternalServiceInfo(
+                    HttpExternalServiceInfo(
                         it.protocol,
                         it.remoteHostname,
                         it.remotePort

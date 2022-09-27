@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceRequest
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
@@ -74,8 +75,11 @@ class FitnessValue(
     /**
      * To keep track of accessed external services prevent from adding them again
      * TODO: This is not completed, not need to consider for review for now
+     *
+     * Contains the absolute URLs of what accessed by the SUT.
+     * The key is the action index.
      */
-    private val accessedExternalServiceRequests: MutableList<String> = mutableListOf()
+    private val accessedExternalServiceRequests: MutableMap<Int, List<HttpExternalServiceRequest>> = mutableMapOf()
 
     /**
     * How long it took to evaluate this fitness value.
@@ -90,6 +94,7 @@ class FitnessValue(
         copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
         copy.aggregateDatabaseData()
         copy.executionTimeMs = executionTimeMs
+        copy.accessedExternalServiceRequests.putAll(this.accessedExternalServiceRequests)
         return copy
     }
 
@@ -662,17 +667,15 @@ class FitnessValue(
         return targets.filterValues { it.actionIndex == actionIndex }.keys
     }
 
-    fun getAccessedExternalServiceRequests() = accessedExternalServiceRequests
+    fun getViewAccessedExternalServiceRequests() = accessedExternalServiceRequests
 
-    /**
-     * Collect external service requests made by the SUT from ExternalServiceHandler
-     * and store it to prevent from adding them again
-     *
-     * TODO: This is not completed, not need to consider for review for now. Still under
-     *  development. Since it's not crashing left it as it is.
-     */
-    fun aggregateExternalServiceRequests() {
-        accessedExternalServiceRequests.clear()
-        accessedExternalServiceRequests.addAll(mutableListOf())
+    fun registerExternalServiceRequest(actionIndex: Int, requests: List<HttpExternalServiceRequest>){
+        if(accessedExternalServiceRequests.containsKey(actionIndex)){
+            throw IllegalArgumentException("Action index $actionIndex is already handled")
+        }
+        if(requests.isEmpty()){
+            throw IllegalArgumentException("No URLs as input")
+        }
+        accessedExternalServiceRequests[actionIndex] = requests
     }
 }

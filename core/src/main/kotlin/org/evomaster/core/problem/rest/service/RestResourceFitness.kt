@@ -3,7 +3,11 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -15,7 +19,6 @@ import org.slf4j.LoggerFactory
  * take care of calculating/collecting fitness of [RestIndividual]
  */
 class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
-
 
 
     @Inject
@@ -31,7 +34,10 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
     /*
         add db check in term of each abstract resource
      */
-    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(
+        individual: RestIndividual,
+        targets: Set<Int>
+    ): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -45,7 +51,13 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
         //whether there exist some SQL execution failure
-        var failureBefore = doDbCalls(individual.seeInitializingActions().filterIsInstance<DbAction>(), sqlIdMap, true, executedDbActions, actionResults)
+        var failureBefore = doDbCalls(
+            individual.seeInitializingActions().filterIsInstance<DbAction>(),
+            sqlIdMap,
+            true,
+            executedDbActions,
+            actionResults
+        )
 
         val cookies = getCookies(individual)
         val tokens = getTokens(individual)
@@ -58,43 +70,102 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         //run the test, one action at a time
         var indexOfAction = 0
 
+        RCallsLoop@
         for (call in individual.getResourceCalls()) {
 
-            val result = doDbCalls(call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>, sqlIdMap, failureBefore, executedDbActions, actionResults)
+            val result = doDbCalls(
+                call.seeActions(ActionFilter.ONLY_SQL) as List<DbAction>,
+                sqlIdMap,
+                failureBefore,
+                executedDbActions,
+                actionResults
+            )
             failureBefore = failureBefore || result
 
             var terminated = false
 
-            for (a in call.seeActions(ActionFilter.NO_SQL)){
+            for (a in call.getViewOfChildren().filterIsInstance<EnterpriseActionGroup>()) {
+                // Note: [indexOfAction] is used to register the action in RemoteController
+                //  to map it to the ActionDto.
+
+                /*
+                    Always need to reset WireMock.
+                    Assume there no is External Action here. Still, the SUT could make a call to an external service
+                    because new code is reached (eg due mutation of some genes).
+                    We do not want such new call to re-use a mocking from a previous action which were left on.
+                    So 2 options: (1) always reset before calling SUT, or (2) always reset after call in which external
+                    setups were used.
+                 */
+                externalServiceHandler.resetServedRequests()
+
+                val externalServiceActions = a.getExternalServiceActions()
+
+                externalServiceActions.forEach { it.resetActive() }
+
+                externalServiceActions.filter { it.active }
+                    .filterIsInstance<HttpExternalServiceAction>()
+                    .forEach {
+                        // TODO: Handling WireMock for ExternalServiceActions should be generalised
+                        //  to facilitate other cases such as RPC and GraphQL
+                        it.buildResponse()
+                    }
+
+                val restCallAction = a.getMainAction()
 
                 //TODO handling of inputVariables
-                registerNewAction(a, indexOfAction)
+                registerNewAction(restCallAction, indexOfAction)
 
                 val ok: Boolean
 
-                if (a is RestCallAction) {
-                    ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
+                if (restCallAction is RestCallAction) {
+                    ok = handleRestCall(restCallAction, actionResults, chainState, cookies, tokens)
                     // update creation of resources regarding response status
                     val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
-                    call.getResourceNode().confirmFailureCreationByPost(call, a, restActionResult)
+                    call.getResourceNode().confirmFailureCreationByPost(call, restCallAction, restActionResult)
                     restActionResult.stopping = !ok
                 } else {
-                    throw IllegalStateException("Cannot handle: ${a.javaClass}")
+                    throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
                 }
+
+                // get visited wiremock instances
+                val requestedExternalServiceRequests = externalServiceHandler.getAllServedExternalServiceRequests()
+                if (requestedExternalServiceRequests.isNotEmpty()) {
+                    fv.registerExternalServiceRequest(
+                        indexOfAction,
+                        requestedExternalServiceRequests
+                    )
+                }
+
+                externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
+                    .groupBy { it.request.absoluteURL }
+                    .forEach { (url, actions) ->
+                        // times of url has been accessed with this rest call
+                        val count = requestedExternalServiceRequests.count { r-> r.absoluteURL == url}
+
+                        actions.forEachIndexed { index, action ->
+                            if (index < count) {
+                                action.confirmUsed()
+                            } else {
+                                action.confirmNotUsed()
+                            }
+                        }
+                    }
 
                 if (!ok) {
                     terminated = true
-                    break
                 }
+
+                if (terminated)
+                    break@RCallsLoop
+
                 indexOfAction++
             }
 
-            if(terminated)
-                break
+
         }
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()
-        val dto = restActionResultHandling(individual, targets, allRestResults, fv)?:return null
+        val dto = restActionResultHandling(individual, targets, allRestResults, fv) ?: return null
 
         /*
             TODO: Man shall we update the action cluster based on expanded action?
@@ -107,14 +178,20 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         /*
          update dependency regarding executed dto
          */
-        if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
+        if (config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
-        if (actionResults.size > individual.seeActions(ActionFilter.ALL).size)
-            log.warn("initialize invalid evaluated individual")
+        if (actionResults.size > individual.seeActions(ActionFilter.NO_EXTERNAL_SERVICE).size)
+            log.warn("Mismatch in action results: ${actionResults.size} > ${individual.seeActions(ActionFilter.NO_EXTERNAL_SERVICE).size}")
 
         return EvaluatedIndividual(
-                fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
+            fv,
+            individual.copy() as RestIndividual,
+            actionResults,
+            config = config,
+            trackOperator = individual.trackOperator,
+            index = time.evaluatedIndividuals
+        )
 
     }
 }
