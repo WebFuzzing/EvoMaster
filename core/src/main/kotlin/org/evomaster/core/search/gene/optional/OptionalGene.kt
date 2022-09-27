@@ -34,7 +34,7 @@ class OptionalGene(name: String,
                    val gene: Gene,
                    var isActive: Boolean = true,
                    var requestSelection: Boolean = false,
-                   val searchPercentageActive: Double = 1.0
+                   var searchPercentageActive: Double = 1.0
 ) : CompositeFixedGene(name, gene) {
 
 
@@ -89,6 +89,7 @@ class OptionalGene(name: String,
         this.isActive = other.isActive
         this.selectable = other.selectable
         this.requestSelection = other.requestSelection
+        this.searchPercentageActive = other.searchPercentageActive
         this.gene.copyValueFrom(other.gene)
     }
 
@@ -98,6 +99,8 @@ class OptionalGene(name: String,
         }
         return this.isActive == other.isActive
                 && this.gene.containsSameValueAs(other.gene)
+                && this.selectable == other.selectable
+                && this.searchPercentageActive == other.searchPercentageActive
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -202,6 +205,6 @@ class OptionalGene(name: String,
     }
 
     override fun isPrintable(): Boolean {
-        return gene.isPrintable()
+        return isActive && gene.isPrintable()
     }
 }
