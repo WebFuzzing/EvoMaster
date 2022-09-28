@@ -86,14 +86,19 @@ class TupleGene(
 
             if (lastElementTreatedSpecially) {
                 //printout the inputs. See later if a refactoring is needed
-                buffer.append("(")
-                val s = elements.dropLast(1).joinToString(",") {
+                val s = elements.dropLast(1)
+                        //.filter { it !is OptionalGene || it.isActive }
+                        .filter{it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true}
+                        .joinToString(",") {
 
                     gqlInputsPrinting(it, targetFormat)
 
                 }.replace("\"", "\\\"")
-                buffer.append(s)
-                buffer.append(")")
+                if(s.isNotEmpty()) {
+                    buffer.append("(")
+                    buffer.append(s)
+                    buffer.append(")")
+                }
 
                 //printout the return
                 val returnGene = elements.last()
@@ -117,10 +122,11 @@ class TupleGene(
                         } else ""
                 )
             } else { //printout only the inputs, since there is no return (is a primitive type)
-                val s = elements.filter { it !is OptionalGene || it.isActive }.joinToString(",") {
-
+                val s = elements
+                        //.filter { it !is OptionalGene || it.isActive }
+                        .filter{it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true}
+                        .joinToString(",") {
                     gqlInputsPrinting(it, targetFormat)
-
                 }.replace("\"", "\\\"")
 
                 if (s.isNotEmpty()) {
