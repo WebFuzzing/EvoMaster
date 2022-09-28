@@ -161,7 +161,8 @@ class HttpExternalServiceAction(
     private fun viewResponse(): String {
         // TODO: Need to extend further to handle the response body based on the
         //  unmarshalled object inside SUT using the ParsedDto information.
-        return (response as HttpWsResponseParam).response.getValueAsRawString()
+//        return (response as HttpWsResponseParam).response.getValueAsRawString()
+        return "{}"
     }
 
 }

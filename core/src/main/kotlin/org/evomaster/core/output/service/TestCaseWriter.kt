@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
+import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.rest.RestIndividual
@@ -82,7 +83,7 @@ abstract class TestCaseWriter {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
             val actions = getExternalServiceActions(ind)
-            if (ind.individual is RestIndividual && handleExternalService()) {
+            if (ind.individual is RestIndividual && TestWriterUtils.handleExternalService(config)) {
                 handleExternalServiceActions(lines, actions)
             }
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
@@ -138,8 +139,8 @@ abstract class TestCaseWriter {
                     lines.indented {
                         lines.add("aResponse()")
                         lines.indented {
-                            lines.add(".withStatus(${response.getStatus()})")
-                            lines.add(".withBody(\"${response.response.getValueAsRawString()}\")")
+                            lines.add(".withStatus(${response.status.getValueAsRawString()})")
+                            lines.add(".withBody(\"{}\")")
                         }
                         lines.add(")")
                     }
@@ -271,22 +272,5 @@ abstract class TestCaseWriter {
      */
     open fun additionalTestHandling(tests: List<TestCase>) {
         // do nothing
-    }
-
-    private fun handleExternalService(): Boolean {
-        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            // TODO: Have to be moved to a common place, since it's used in two places
-            return true
-        }
-        return false
-    }
-
-    private fun getWireMockVariableName(action: HttpExternalServiceAction): String {
-        return action
-            .externalService
-            .externalServiceInfo
-            .signature()
-            .replace(".", "")
-            .plus("WireMock")
     }
 }

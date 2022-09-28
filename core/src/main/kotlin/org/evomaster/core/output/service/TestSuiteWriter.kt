@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
+import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.output.service.TestWriterUtils.Companion.handleExternalService
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.BlackBoxUtils
@@ -326,7 +328,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (handleExternalService()) {
+            if (handleExternalService(config)) {
                 if (format.isKotlin()) {
                     addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
                 } else if (format.isJava()) {
@@ -471,7 +473,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
-            if (handleExternalService()) {
+            if (handleExternalService(config)) {
                 externalServiceActions
                     .distinctBy { it.externalService.externalServiceInfo.signature() }
                     .forEach { action ->
@@ -488,7 +490,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
             }
-            if (handleExternalService()) {
+            if (handleExternalService(config)) {
                 externalServiceActions
                     .distinctBy { it.externalService.externalServiceInfo.signature() }
                     .forEach { action ->
@@ -597,7 +599,7 @@ class TestSuiteWriter {
 
             val actions = getExternalServiceActions(solution)
 
-            if (handleExternalService()) {
+            if (handleExternalService(config)) {
                 actions
                     .distinctBy { it.externalService.externalServiceInfo.signature() }
                     .forEach { action ->
@@ -670,7 +672,7 @@ class TestSuiteWriter {
                     }
                     else -> {
                         addStatement("$controller.stopSut()", lines)
-                        if (handleExternalService()) {
+                        if (handleExternalService(config)) {
                             val actions = getExternalServiceActions(solution)
                             actions.distinctBy { it.externalService.externalServiceInfo.signature() }
                                 .forEach { action ->
@@ -854,14 +856,6 @@ class TestSuiteWriter {
 
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
 
-    private fun handleExternalService(): Boolean {
-        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            // TODO: Have to be moved to a common place, since it's used in two places
-            return true
-        }
-        return false
-    }
-
     /**
      * Return only the active actions
      */
@@ -879,12 +873,5 @@ class TestSuiteWriter {
         return actions.toList()
     }
 
-    private fun getWireMockVariableName(action: HttpExternalServiceAction): String {
-        return action
-            .externalService
-            .externalServiceInfo
-            .signature()
-            .replace(".", "")
-            .plus("WireMock")
-    }
+
 }
