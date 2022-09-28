@@ -15,6 +15,7 @@ import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
@@ -141,7 +142,7 @@ object GeneSamplerForTests {
             SqlJSONGene::class -> sampleSqlJSONGene(rand) as T
             SqlTextSearchQueryGene::class -> sampleSqlTextSearchQueryGene(rand) as T
             SqlPrimaryKeyGene::class -> sampleSqlPrimaryKeyGene(rand) as T
-            SqlNullableGene::class -> sampleSqlNullableGene(rand) as T
+            NullableGene::class -> sampleSqlNullableGene(rand) as T
             SqlMultidimensionalArrayGene::class -> sampleSqlMultidimensionalArrayGene(rand) as T
             MacAddrGene::class -> sampleSqlMacAddrGene(rand) as T
             InetGene::class -> sampleSqlInetGene(rand) as T
@@ -309,10 +310,10 @@ object GeneSamplerForTests {
                 numberOfDimensions = rand.nextInt(1, MAX_NUMBER_OF_DIMENSIONS))
     }
 
-    private fun sampleSqlNullableGene(rand: Randomness): SqlNullableGene {
+    private fun sampleSqlNullableGene(rand: Randomness): NullableGene {
         val selection = geneClasses.filter { !it.isAbstract }
                 .filter { it.java != SqlForeignKeyGene::class.java }
-        return SqlNullableGene("rand SqlNullableGene",
+        return NullableGene("rand NullableGene",
                 gene = sample(rand.choose(selection), rand))
     }
 

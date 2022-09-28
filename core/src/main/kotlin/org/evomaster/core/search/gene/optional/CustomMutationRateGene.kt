@@ -30,7 +30,7 @@ class CustomMutationRateGene<out T>(
     name: String,
     val gene: T,
     var probability: Double,
-    val searchPercentageActive: Double = 1.0
+    var searchPercentageActive: Double = 1.0
 ) : CompositeFixedGene(name, gene)
         where T : Gene {
 
@@ -129,6 +129,7 @@ class CustomMutationRateGene<out T>(
         }
         this.gene.copyValueFrom(other.gene)
         this.probability = other.probability
+        this.searchPercentageActive = other.searchPercentageActive
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -141,6 +142,7 @@ class CustomMutationRateGene<out T>(
          */
         return this.gene.containsSameValueAs(other.gene)
                 && this.probability == other.probability
+                && this.searchPercentageActive == other.searchPercentageActive
     }
 
 
