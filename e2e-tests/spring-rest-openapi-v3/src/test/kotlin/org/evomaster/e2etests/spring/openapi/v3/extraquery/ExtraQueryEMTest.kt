@@ -47,6 +47,8 @@ class ExtraQueryEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
+            FIXME add _method assertion and make sure filter is applied
+
             assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/extraquery/servlet", "OK")
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/extraquery/proxyprint", "OK")
