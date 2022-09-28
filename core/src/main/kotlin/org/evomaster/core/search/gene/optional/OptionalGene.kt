@@ -34,7 +34,7 @@ class OptionalGene(name: String,
                    val gene: Gene,
                    var isActive: Boolean = true,
                    var requestSelection: Boolean = false,
-                   val searchPercentageActive: Double = 1.0
+                   var searchPercentageActive: Double = 1.0
 ) : CompositeFixedGene(name, gene) {
 
 
@@ -89,6 +89,7 @@ class OptionalGene(name: String,
         this.isActive = other.isActive
         this.selectable = other.selectable
         this.requestSelection = other.requestSelection
+        this.searchPercentageActive = other.searchPercentageActive
         this.gene.copyValueFrom(other.gene)
     }
 
@@ -98,6 +99,8 @@ class OptionalGene(name: String,
         }
         return this.isActive == other.isActive
                 && this.gene.containsSameValueAs(other.gene)
+                && this.selectable == other.selectable
+                && this.searchPercentageActive == other.searchPercentageActive
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -181,10 +184,15 @@ class OptionalGene(name: String,
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+        if(!isActive)
+            return ""
+
         return gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
     }
 
     override fun getValueAsRawString(): String {
+        if(!isActive)
+            return ""
         return gene.getValueAsRawString()
     }
 
@@ -202,6 +210,14 @@ class OptionalGene(name: String,
     }
 
     override fun isPrintable(): Boolean {
-        return gene.isPrintable()
+        /*
+            A non active gene would end up in being an empty string, that could still be part of the phenotype.
+            For example, when dealing with JavaScript, we could have array with empty elements, like
+            x = [,,]
+            which is different from
+            x = [null,null,null]
+            as in the former case the values are 'undefined'
+         */
+        return !isActive || gene.isPrintable()
     }
 }

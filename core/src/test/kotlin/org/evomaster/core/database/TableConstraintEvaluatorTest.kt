@@ -7,7 +7,7 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.gene.sql.SqlNullableGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.dbconstraint.*
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -279,7 +279,7 @@ class TableConstraintEvaluatorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=true)
         val table = Table("table0", setOf(column), setOf(), setOf())
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeTopGenes()[0] as SqlNullableGene).isPresent = false
+        (action.seeTopGenes()[0] as NullableGene).isPresent = false
 
         val constraint = IsNotNullConstraint("table0", "column0")
         val evaluator = TableConstraintEvaluator()
@@ -292,7 +292,7 @@ class TableConstraintEvaluatorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=true)
         val table = Table("table0", setOf(column), setOf(), setOf())
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeTopGenes()[0] as SqlNullableGene).isPresent = true
+        (action.seeTopGenes()[0] as NullableGene).isPresent = true
 
         val constraint = IsNotNullConstraint("table0", "column0")
         val evaluator = TableConstraintEvaluator()
