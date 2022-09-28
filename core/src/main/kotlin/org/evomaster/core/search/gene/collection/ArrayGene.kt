@@ -51,12 +51,15 @@ class ArrayGene<T>(
          * Man: change var to val to maintain list reference as its children
          *
          */
-        val elements: MutableList<T> = mutableListOf(),
+        elements: MutableList<T> = mutableListOf(),
         private val openingTag : String = "[",
         private val closingTag : String = "]",
         private val separatorTag : String = ", "
 ) : CollectionGene, CompositeGene(name, elements)
         where T : Gene {
+
+    protected val elements : List<T>
+        get() =  children as List<T>
 
     init {
         if(template is CycleObjectGene || template is LimitObjectGene){
@@ -208,7 +211,7 @@ class ArrayGene<T>(
             addElement(gene)
         }else{
             log.trace("Removing gene in mutation")
-            val removed = elements.removeAt(randomness.nextInt(elements.size))
+            val removed = killChildByIndex(randomness.nextInt(elements.size)) as T
             // remove binding if any other bound with
             removed.removeThisFromItsBindingGenes()
         }
@@ -267,7 +270,7 @@ class ArrayGene<T>(
     fun removeExistingElement(element: T){
         //this is a reference heap check, not based on `equalsTo`
         if (elements.contains(element)){
-            elements.remove(element)
+            killChild(element)
             element.removeThisFromItsBindingGenes()
         }else{
             log.warn("the specified element (${if (element.isPrintable()) element.getValueAsPrintableString() else "not printable"})) does not exist in this array")
