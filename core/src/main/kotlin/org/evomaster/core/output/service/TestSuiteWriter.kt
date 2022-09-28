@@ -602,8 +602,11 @@ class TestSuiteWriter {
                     .distinctBy { it.externalService.externalServiceInfo.signature() }
                     .forEach { action ->
                         val address = action.externalService.getWireMockAddress()
+                        val remoteHostName = action.externalService.externalServiceInfo.remoteHostname
                         val port = action.externalService.getWireMockPort()
                         val name = getWireMockVariableName(action)
+
+                        addStatement("DnsCacheManipulator.setDnsCache(\"$remoteHostName\", \"$address\")", lines)
 
                         if (format.isJava()) {
                             lines.add("${name} = new WireMockServer(new WireMockConfiguration()")
@@ -671,7 +674,7 @@ class TestSuiteWriter {
                             val actions = getExternalServiceActions(solution)
                             actions.distinctBy { it.externalService.externalServiceInfo.signature() }
                                 .forEach { action ->
-                                val name = getWireMockVariableName(action)
+                                    val name = getWireMockVariableName(action)
                                     addStatement("${name}.stop()", lines)
                                 }
                             addStatement("DnsCacheManipulator.clearDnsCache()", lines)

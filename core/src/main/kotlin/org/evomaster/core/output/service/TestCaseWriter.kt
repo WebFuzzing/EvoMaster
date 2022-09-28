@@ -124,7 +124,7 @@ abstract class TestCaseWriter {
                 // Default behaviour of WireMock has been removed, since found no purpose
                 // in case if there is a failure regarding no routes found in WireMock
                 // consider adding that later
-
+                lines.add("assertNotNull(${name})")
                 lines.add("${name}.stubFor(")
                 lines.indented {
                     lines.add(
