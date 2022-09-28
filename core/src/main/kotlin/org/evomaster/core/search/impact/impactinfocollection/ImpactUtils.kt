@@ -25,6 +25,7 @@ import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.string.NumericStringGene
@@ -74,7 +75,7 @@ class ImpactUtils {
                 is BigIntegerGene -> BigIntegerGeneImpact(id)
                 is NumericStringGene -> NumericStringGeneImpact(id, gene)
                 //sql
-                is SqlNullableGene -> SqlNullableImpact(id, gene)
+                is NullableGene -> SqlNullableImpact(id, gene)
                 is SqlJSONGene -> SqlJsonGeneImpact(id, gene)
                 is SqlXMLGene -> SqlXmlGeneImpact(id, gene)
                 is UUIDGene -> SqlUUIDGeneImpact(id, gene)

@@ -1,57 +1,62 @@
-package org.evomaster.core.search.gene.sql
+package org.evomaster.core.search.gene.optional
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
+import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.*
+import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
 
+class NullableGene(name: String,
+                   val gene: Gene,
+                   var isPresent: Boolean = true,
+                   var nullLabel: String = "null"
+) : CompositeGene(name, mutableListOf(gene)) {
 
-class SqlNullableGene(name: String,
-                      val gene: Gene,
-                      var isPresent: Boolean = true
-) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
-    //FIXME need a generic NullableGene. some code seems same as Optional
-
-    init{
-        if(gene is SqlWrapperGene && gene.getForeignKey() != null){
-            throw IllegalStateException("SqlNullable should not contain a FK, " +
-                    "as its nullability is handled directly in SqlForeignKeyGene")
-        }
-    }
 
     companion object{
-        private val log: Logger = LoggerFactory.getLogger(SqlNullableGene::class.java)
-        private const val ABSENT = 0.1
+        private val log: Logger = LoggerFactory.getLogger(NullableGene::class.java)
+        private const val ABSENT = 0.01
+    }
+
+    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+        if(this.javaClass == klass){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
     }
 
     override fun isLocallyValid() : Boolean{
         return getViewOfChildren().all { it.isLocallyValid() }
     }
 
-    override fun getForeignKey(): SqlForeignKeyGene? {
-        return null
-    }
-
     override fun copyContent(): Gene {
-        return SqlNullableGene(name, gene.copy(), isPresent)
+        return NullableGene(name, gene.copy(), isPresent, nullLabel)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
-        isPresent = if (!isPresent && tryToForceNewValue)
+        isPresent = if (!isPresent && tryToForceNewValue) {
             true
-        else
-            randomness.nextBoolean(ABSENT)
+        } else{
+            /*
+                on sampling, we consider a 50-50 chances to be null.
+                then, during mutation, we give less chances to null
+             */
+            randomness.nextBoolean()
+        }
+
 
         if(gene.isMutable())
             gene.randomize(randomness, tryToForceNewValue)
@@ -66,7 +71,7 @@ class SqlNullableGene(name: String,
 
         if (!isPresent) return true
 
-        //FIXME
+        //FIXME do impact
 //        if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
 //            return if (randomness.nextBoolean(ABSENT)) emptyList() else listOf(gene)
 //        }
@@ -85,7 +90,11 @@ class SqlNullableGene(name: String,
 //        throw IllegalArgumentException("impact is not SqlNullableImpact ${additionalGeneMutationInfo.impact::class.java.simpleName}")
 //
 
-        return false;
+        /*
+            Here, it means the gene is present. A shallow mutation would put it to null, which we do only with low
+            probability
+         */
+        return randomness.nextBoolean(ABSENT);
     }
 
     override fun mutablePhenotypeChildren(): List<Gene> {
@@ -114,26 +123,28 @@ class SqlNullableGene(name: String,
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         if (!isPresent) {
-            return "NULL"
+            return nullLabel
         }
 
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is SqlNullableGene) {
+        if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.isPresent = other.isPresent
+        this.nullLabel = other.nullLabel
         this.gene.copyValueFrom(other.gene)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlNullableGene) {
+        if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.isPresent == other.isPresent &&
                 this.gene.containsSameValueAs(other.gene)
+                && this.nullLabel == other.nullLabel
     }
 
 
@@ -144,7 +155,7 @@ class SqlNullableGene(name: String,
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlNullableGene) isPresent = gene.isPresent
+        if (gene is NullableGene) isPresent = gene.isPresent
         return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 }
