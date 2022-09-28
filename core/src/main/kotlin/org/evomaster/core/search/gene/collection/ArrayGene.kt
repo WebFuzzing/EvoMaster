@@ -28,9 +28,12 @@ class ArrayGene<T>(
         name: String,
         /**
          * The type for this array. Every time we create a new element to add, it has to be based
-         * on this template
+         * on this template.
+         *
+         * Note: here the template cannot be a KClass, because we might need to specify constraints on
+         * the template (eg ranges for numbers)
          */
-        val template: T, //TODO refactor all templates, to be KClass and not gene instances, to avoid confusion
+        val template: T,
         /**
          *  How max elements to have in this array. Usually arrays are unbound, till the maximum int size (ie, 2 billion
          *  elements on the JVM). But, for search reasons, too large arrays are impractical
@@ -60,11 +63,6 @@ class ArrayGene<T>(
             minSize = 0
             maxSize = 0
             killAllChildren()
-        } else {
-            if(!template.isPrintable()){
-                //FIXME put back once we fix issue with Nullable
-                //throw IllegalArgumentException("Cannot build an array of non-printable genes: ${template.javaClass}")
-            }
         }
 
         if (minSize != null && maxSize != null && minSize!! > maxSize!!){

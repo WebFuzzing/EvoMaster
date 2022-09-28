@@ -184,10 +184,15 @@ class OptionalGene(name: String,
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+        if(!isActive)
+            return ""
+
         return gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
     }
 
     override fun getValueAsRawString(): String {
+        if(!isActive)
+            return ""
         return gene.getValueAsRawString()
     }
 
@@ -205,6 +210,14 @@ class OptionalGene(name: String,
     }
 
     override fun isPrintable(): Boolean {
-        return isActive && gene.isPrintable()
+        /*
+            A non active gene would end up in being an empty string, that could still be part of the phenotype.
+            For example, when dealing with JavaScript, we could have array with empty elements, like
+            x = [,,]
+            which is different from
+            x = [null,null,null]
+            as in the former case the values are 'undefined'
+         */
+        return !isActive || gene.isPrintable()
     }
 }
