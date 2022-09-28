@@ -47,9 +47,8 @@ class ExtraQueryEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            FIXME add _method assertion and make sure filter is applied
-
             assertTrue(solution.individuals.size >= 1)
+            assertNone(solution,HttpVerb.POST, 405) //this happens if _method is not handled
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/extraquery/servlet", "OK")
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/extraquery/proxyprint", "OK")
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/extraquery/languagetool", "OK")

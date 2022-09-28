@@ -196,8 +196,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                         This lead to meaningless tests with 405 responses.
                         So, we skip them.
                      */
-                    //name != "_method"
-                    true //FIXME
+                    name != "_method"
                 }
                 .forEach {
                     val gene = StringGene(it).apply { doInitialize(randomness) }
