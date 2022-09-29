@@ -295,7 +295,7 @@ class ArchiveGeneMutator{
      */
     fun mutateStringGene(
         gene: StringGene, targets: Set<Int>,
-        allGenes : List<Gene>, selectionStrategy: SubsetGeneMutationSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo){
+        allGenes : List<Gene>, selectionStrategy: SubsetGeneMutationSelectionStrategy, additionalGeneMutationInfo: AdditionalGeneMutationInfo, changeSpecSetting: Double){
         var employBinding = true
         if (additionalGeneMutationInfo.impact == null){
             val ds = gene.standardSpecializationMutation(
@@ -328,14 +328,16 @@ class ArchiveGeneMutator{
                     var selected = selectSpec(gene, impact, targets)
                     val currentImpact = impact.getSpecializationImpacts().getOrNull(gene.selectedSpecialization)
 
-                    if(selected == gene.selectedSpecialization && !specializationGene.isMutable()){
+                    val selectCurrent = gene.selectedSpecialization == selected || (currentImpact?.recentImprovement() == true && randomness.nextBoolean(1.0-changeSpecSetting))
+
+                    if (selectCurrent && specializationGene.isMutable()){
+                        specializationGene.standardMutation(
+                            randomness, apc, mwc,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
+                        )
+                    }else if (gene.selectedSpecialization == selected){
                         selected = (selected + 1) % gene.specializationGenes.size
                         gene.selectedSpecialization = selected
-                    } else if (selected == gene.selectedSpecialization || currentImpact?.recentImprovement() == true){
-                        specializationGene.standardMutation(
-                                randomness, apc, mwc,selectionStrategy, true, additionalGeneMutationInfo.copyFoInnerGene(currentImpact as? GeneImpact)
-                        )
-                    }else{
+                    } else{
                         gene.selectedSpecialization = selected
                     }
                 }

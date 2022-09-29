@@ -245,7 +245,7 @@ class StringGene(
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
             additionalGeneMutationInfo.archiveGeneMutator.mutateStringGene(
-                    this, allGenes = allGenes, selectionStrategy = selectionStrategy, targets = additionalGeneMutationInfo.targets, additionalGeneMutationInfo = additionalGeneMutationInfo
+                    this, allGenes = allGenes, selectionStrategy = selectionStrategy, targets = additionalGeneMutationInfo.targets, additionalGeneMutationInfo = additionalGeneMutationInfo, changeSpecSetting = PROB_CHANGE_SPEC
             )
             return true
         }
