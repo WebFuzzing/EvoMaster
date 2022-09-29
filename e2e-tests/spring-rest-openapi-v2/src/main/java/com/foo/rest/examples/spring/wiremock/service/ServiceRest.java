@@ -47,15 +47,15 @@ public class ServiceRest {
         // inside ExternalServiceAction.
 
         switch (responseCode) {
-            case(200):
+            case (200):
                 return new ResponseEntity<>(responseDto, HttpStatus.OK);
-            case(400):
+            case (400):
                 return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
-            case(401):
+            case (401):
                 return new ResponseEntity<>(responseDto, HttpStatus.UNAUTHORIZED);
-            case(403):
+            case (403):
                 return new ResponseEntity<>(responseDto, HttpStatus.FORBIDDEN);
-            case(404):
+            case (404):
                 return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
             default:
                 return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -99,15 +99,15 @@ public class ServiceRest {
         // inside ExternalServiceAction.
 
         switch (responseCode) {
-            case(200):
+            case (200):
                 return new ResponseEntity<>(responseDto, HttpStatus.OK);
-            case(400):
+            case (400):
                 return new ResponseEntity<>(responseDto, HttpStatus.BAD_REQUEST);
-            case(401):
+            case (401):
                 return new ResponseEntity<>(responseDto, HttpStatus.UNAUTHORIZED);
-            case(403):
+            case (403):
                 return new ResponseEntity<>(responseDto, HttpStatus.FORBIDDEN);
-            case(404):
+            case (404):
                 return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
             default:
                 return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);

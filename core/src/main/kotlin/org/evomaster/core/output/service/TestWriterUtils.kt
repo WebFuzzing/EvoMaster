@@ -11,7 +11,7 @@ class TestWriterUtils {
         /**
          * Check the current [EMConfig] and return boolean as the result
          */
-         fun handleExternalService(config: EMConfig): Boolean {
+        fun handleExternalService(config: EMConfig): Boolean {
             if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
                 return true
             }
@@ -25,8 +25,7 @@ class TestWriterUtils {
         fun getWireMockVariableName(action: HttpExternalServiceAction): String {
             return action
                 .externalService
-                .externalServiceInfo
-                .signature()
+                .getSignature()
                 .replace(".", "")
                 .plus("WireMock")
         }

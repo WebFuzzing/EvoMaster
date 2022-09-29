@@ -475,10 +475,9 @@ class TestSuiteWriter {
             }
             if (handleExternalService(config)) {
                 externalServiceActions
-                    .distinctBy { it.externalService.externalServiceInfo.signature() }
+                    .distinctBy { it.externalService.getSignature() }
                     .forEach { action ->
-                        val name = getWireMockVariableName(action)
-                        addStatement("private static WireMockServer ${name};", lines)
+                        addStatement("private static WireMockServer ${getWireMockVariableName(action)};", lines)
                     }
             }
         } else if (config.outputFormat.isKotlin()) {
@@ -492,10 +491,9 @@ class TestSuiteWriter {
             }
             if (handleExternalService(config)) {
                 externalServiceActions
-                    .distinctBy { it.externalService.externalServiceInfo.signature() }
+                    .distinctBy { it.externalService.getSignature() }
                     .forEach { action ->
-                        val name = getWireMockVariableName(action)
-                        addStatement("private lateinit var ${name}: WireMockServer", lines)
+                        addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
                     }
             }
         } else if (config.outputFormat.isJavaScript()) {
@@ -601,10 +599,10 @@ class TestSuiteWriter {
 
             if (handleExternalService(config)) {
                 actions
-                    .distinctBy { it.externalService.externalServiceInfo.signature() }
+                    .distinctBy { it.externalService.getSignature() }
                     .forEach { action ->
                         val address = action.externalService.getWireMockAddress()
-                        val remoteHostName = action.externalService.externalServiceInfo.remoteHostname
+                        val remoteHostName = action.externalService.getRemoteHostName()
                         val port = action.externalService.getWireMockPort()
                         val name = getWireMockVariableName(action)
 
@@ -674,7 +672,7 @@ class TestSuiteWriter {
                         addStatement("$controller.stopSut()", lines)
                         if (handleExternalService(config)) {
                             val actions = getExternalServiceActions(solution)
-                            actions.distinctBy { it.externalService.externalServiceInfo.signature() }
+                            actions.distinctBy { it.externalService.getSignature() }
                                 .forEach { action ->
                                     val name = getWireMockVariableName(action)
                                     addStatement("${name}.stop()", lines)
@@ -725,17 +723,13 @@ class TestSuiteWriter {
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
 
-                val actions = getExternalServiceActions(solution)
-
-                actions
-                    .distinctBy { it.externalService.externalServiceInfo.signature() }
-                    .forEach { action ->
-                        val name = action.externalService.externalServiceInfo
-                            .signature()
-                            .replace(".", "")
-                            .plus("WireMock")
-                        addStatement("${name}.resetAll()", lines)
-                    }
+                if (handleExternalService(config)) {
+                    getExternalServiceActions(solution)
+                        .distinctBy { it.externalService.getSignature() }
+                        .forEach { action ->
+                            addStatement("${getWireMockVariableName(action)}.resetAll()", lines)
+                        }
+                }
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)
                 //TODO add resetDatabase
@@ -872,6 +866,4 @@ class TestSuiteWriter {
             }
         return actions.toList()
     }
-
-
 }

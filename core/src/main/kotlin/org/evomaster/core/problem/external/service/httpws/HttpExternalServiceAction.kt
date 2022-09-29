@@ -3,6 +3,7 @@ package org.evomaster.core.problem.external.service.httpws
 import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
+import com.github.tomakehurst.wiremock.matching.UrlPattern
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
@@ -127,21 +128,35 @@ class HttpExternalServiceAction(
     }
 
     /**
-     * will response the [MappingBuilder] based on the HTTP method
+     * Will return a [MappingBuilder] based on the HTTP method
+     * TODO: Moved it to a ResponseBuilder, later
      */
     private fun getRequestMethod(request: HttpExternalServiceRequest): MappingBuilder {
         val response = when (request.method) {
-            "GET" -> get(urlEqualTo(request.url))
-            "POST" -> post(urlEqualTo(request.url))
-            "PUT" -> put(urlEqualTo(request.url))
-            "PATCH" -> patch(urlEqualTo(request.url))
-            "DELETE" -> delete(urlEqualTo(request.url))
-            "HEAD" -> head(urlEqualTo(request.url))
-            "TRACE" -> trace(urlEqualTo(request.url))
-            "OPTIONS" -> options(urlEqualTo(request.url))
-            else -> any(urlEqualTo(request.url))
+            "GET" -> get(getUrlPattern(request.url))
+            "POST" -> post(getUrlPattern(request.url))
+            "PUT" -> put(getUrlPattern(request.url))
+            "PATCH" -> patch(getUrlPattern(request.url))
+            "DELETE" -> delete(getUrlPattern(request.url))
+            "HEAD" -> head(getUrlPattern(request.url))
+            "TRACE" -> trace(getUrlPattern(request.url))
+            "OPTIONS" -> options(getUrlPattern(request.url))
+            else -> any(getUrlPattern(request.url))
         }
         return response
+    }
+
+    /**
+     * Path can be mapped to a specific URL (urlEqualTo) and Regex (urlMatching)
+     * in WireMock.
+     *
+     * Note: urlMatching gives some issues when try to use getURL in
+     * TestCaseWriter.
+     *
+     * TODO: Moved it to a ResponseBuilder, later
+     */
+    private fun getUrlPattern(url: String) : UrlPattern {
+        return urlEqualTo(url)
     }
 
     /**

@@ -104,7 +104,7 @@ abstract class TestCaseWriter {
             .filterIsInstance<HttpExternalServiceAction>()
             .filter { action -> action.active }
             .forEach { action ->
-                if (actions.none { a -> a.externalService.externalServiceInfo.signature() == action.externalService.externalServiceInfo.signature() }) {
+                if (actions.none { a -> a.externalService.getSignature() == action.externalService.getSignature() }) {
                     actions.add(action)
                 }
             }

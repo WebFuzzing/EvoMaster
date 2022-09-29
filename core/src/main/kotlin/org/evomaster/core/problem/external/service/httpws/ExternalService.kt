@@ -12,7 +12,7 @@ class ExternalService(
     /**
      * External service information collected from SUT
      */
-    val externalServiceInfo: HttpExternalServiceInfo,
+    private val externalServiceInfo: HttpExternalServiceInfo,
     /**
      * Initiated WireMock server for the external service
      */
@@ -37,8 +37,20 @@ class ExternalService(
         return wireMockServer
     }
 
+    fun getRemoteHostName(): String {
+        return externalServiceInfo.remoteHostname
+    }
+
     fun getWireMockAbsoluteAddress(): String {
         return getWireMockAddress().plus(":").plus(getWireMockPort())
+    }
+
+    /**
+     * Returns the signature of the external service.
+     * Which is usually contains protocol, remote hostname, and port.
+     */
+    fun getSignature(): String {
+        return externalServiceInfo.signature()
     }
 
     /**
@@ -66,7 +78,7 @@ class ExternalService(
                 it.request.url,
                 it.request.absoluteUrl,
                 it.wasMatched,
-                externalServiceInfo.signature()
+                getSignature()
             )
         }.toList()
     }
