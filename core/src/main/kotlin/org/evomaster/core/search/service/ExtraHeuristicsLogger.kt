@@ -47,23 +47,25 @@ class ExtraHeuristicsLogger {
     private fun getExtraHeuristicsFilePath() = Paths.get(config.extraHeuristicsFile).toAbsolutePath()
 
     fun writeHeuristics(list: List<HeuristicEntryDto>, actionId: Int) {
-        if (config.writeExtraHeuristicsFile) {
-
-            val counter = time.evaluatedIndividuals
-            val lines = list.map {
-                val group = if (it.type == HeuristicEntryDto.Type.SQL) {
-                    try {
-                        "\"${removeAllConstants(it.id)}\""
-                    } catch (ex: JSQLParserException) {
-                        "JSQLParserException: ${ex.message}"
-                    }
-                } else
-                    "-"
-                "$counter,$actionId,${it.value},\"${it.id}\",${it.type},${it.objective},$group\n"
-            }.joinToString("")
-
-            getExtraHeuristicsFilePath().toFile().appendText(lines)
+        if (!config.writeExtraHeuristicsFile) {
+            return
         }
+
+        val counter = time.evaluatedIndividuals
+        val lines = list.map {
+            val group = if (it.type == HeuristicEntryDto.Type.SQL) {
+                try {
+                    "\"${removeAllConstants(it.id)}\""
+                } catch (ex: JSQLParserException) {
+                    "JSQLParserException: ${ex.message}"
+                }
+            } else
+                "-"
+            "$counter,$actionId,${it.value},\"${it.id}\",${it.type},${it.objective},$group\n"
+        }.joinToString("")
+
+        getExtraHeuristicsFilePath().toFile().appendText(lines)
+
     }
 
     /**
