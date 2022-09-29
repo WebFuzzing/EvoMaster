@@ -137,7 +137,7 @@ class EvaluatedIndividual<T>(
         val list = actions ?: individual.seeActions(NO_EXTERNAL_SERVICE)
         val all = individual.seeActions(NO_EXTERNAL_SERVICE)
         val last = results.indexOfFirst { it.stopping }
-        return list.filterIsInstance<RestCallAction>().mapNotNull {
+        return list.mapNotNull {
             val index = all.indexOf(it)
             if (last == -1 || index <= last)
                 results[index]

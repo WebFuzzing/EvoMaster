@@ -141,7 +141,7 @@ abstract class TestCaseWriter {
                         lines.indented {
                             lines.add(".withStatus(${response.status.getValueAsRawString()})")
                             // TODO: Response is empty for now
-                            lines.add(".withBody(\"{}\")")
+                            lines.add(".withBody(\"${response.response.getValueAsRawString()}\")")
                         }
                         lines.add(")")
                     }
