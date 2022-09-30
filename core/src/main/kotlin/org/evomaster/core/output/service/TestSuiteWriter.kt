@@ -627,14 +627,12 @@ class TestSuiteWriter {
                             addStatement("${name}.start()", lines)
                         }
                 } else {
-                    log.warn("Currently not supported for the used language.")
+                    log.warn("NOT support for other format ($format) except JavaOrKotlin")
                 }
             }
 
             testCaseWriter.addExtraInitStatement(lines)
         }
-
-
 
         if (format.isJavaScript()) {
             lines.append(");")
@@ -848,7 +846,7 @@ class TestSuiteWriter {
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
 
     /**
-     * Return only the active actions
+     * Returns a distinct List of [HttpExternalServiceAction] from the given solution
      */
     private fun getWireMockServers(solution: Solution<*>): List<HttpExternalServiceAction> {
         val actions = mutableListOf<HttpExternalServiceAction>()
