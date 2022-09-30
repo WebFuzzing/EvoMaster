@@ -3,6 +3,7 @@ package com.foo.graphql.fieldWithDifferentArgument.resolver
 
 import com.foo.graphql.fieldWithDifferentArgument.DataRepository
 import com.foo.graphql.fieldWithDifferentArgument.type.Flower
+import com.foo.graphql.fieldWithDifferentArgument.type.Store
 
 import graphql.kickstart.tools.GraphQLQueryResolver
 import org.springframework.stereotype.Component
@@ -14,14 +15,14 @@ open class QueryResolver(
 
 
 
-    fun flower (id: Int, color: String) : Flower {
+    fun flower (id: Int?, color: String?) : Flower {
         return dataRepo.findByIdAndColor(id, color)
     }
 
-   /* fun store (): Store {
-        return
-    }*/
+    fun store (): Store {
+        return dataRepo.findStores()
 
+    }
 }
 
 

@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 @SpringBootApplication
 open class GQLFieldWithDifferentArgumentApplication{
     companion object{
-        const val SCHEMA_NAME = "input.graphqls"
+        const val SCHEMA_NAME = "fieldWithDifferentArgument.graphqls"
     }
 }
 
