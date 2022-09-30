@@ -500,6 +500,7 @@ public class EMController {
                     info.lastExecutedStatement = a.getLastExecutedStatement();
                     info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
                     info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
+                    info.responseDtoNames = new HashSet<>(a.getResponseDtoNames());
                     info.externalServices = a.getExternalServices().stream()
                             .map(es -> new ExternalServiceInfoDto(
                                     es.getProtocol(),

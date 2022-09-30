@@ -93,6 +93,12 @@ public class AdditionalInfo implements Serializable {
      */
     private final Set<String> parsedDtoNames = new CopyOnWriteArraySet<>();
 
+    /**
+     * The name of all unmarshalled response DTOs by SUT.
+     * Collection through the instrumentation inside GSON and Jackson.
+     */
+    private final Set<String> responseDtoNames = new CopyOnWriteArraySet<>();
+
     private String lastExecutingThread = null;
 
     private final Set<SqlInfo> sqlInfoData = new CopyOnWriteArraySet<>();
@@ -112,6 +118,10 @@ public class AdditionalInfo implements Serializable {
     public void addParsedDtoName(String name){
         parsedDtoNames.add(name);
     }
+
+    public Set<String> getResponseDtoNames() { return Collections.unmodifiableSet(responseDtoNames); }
+
+    public void addResponseDtoName(String name) { responseDtoNames.add(name); }
 
     public boolean isRawAccessOfHttpBodyPayload() {
         return rawAccessOfHttpBodyPayload;

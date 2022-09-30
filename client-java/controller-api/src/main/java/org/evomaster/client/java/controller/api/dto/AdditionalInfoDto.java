@@ -55,6 +55,12 @@ public class AdditionalInfoDto {
      */
     public Set<String> parsedDtoNames = new HashSet<>();
 
+    /**
+     * The names of all the collected response DTO that have been parsed through
+     * GSON and Jackson.
+     */
+    public Set<String> responseDtoNames = new HashSet<>();
+
 
     /**
      * To keep track of all external service calls used under SUT.

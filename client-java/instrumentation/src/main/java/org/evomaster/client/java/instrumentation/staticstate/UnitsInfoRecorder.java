@@ -42,6 +42,13 @@ public class UnitsInfoRecorder implements Serializable {
      */
     private Map<String,String> parsedDtos;
 
+    /**
+     * Map of unmarshalled JSON captured through instrumentation.
+     * key -> class full name
+     * value -> object schema (mostly JSON, might support XML in future)
+     */
+    private Map<String, String> responseDTOs;
+
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
         numberOfLines = new AtomicInteger(0);
@@ -51,6 +58,7 @@ public class UnitsInfoRecorder implements Serializable {
         numberOfTrackedMethods = new AtomicInteger(0);
         numberOfInstrumentedNumberComparisons = new AtomicInteger(0);
         parsedDtos = new ConcurrentHashMap<>();
+        responseDTOs = new ConcurrentHashMap<>();
     }
 
     /**
@@ -104,6 +112,21 @@ public class UnitsInfoRecorder implements Serializable {
             singleton.parsedDtos.put(name, schema);
         }
     }
+
+    public static void registerResponseDto(String name, String schema) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("Empty class name");
+        }
+        if (schema == null || schema.isEmpty()) {
+            throw new IllegalArgumentException("Empty schema");
+        }
+
+        if (!singleton.responseDTOs.containsKey(name)) {
+            singleton.parsedDtos.put(name, schema);
+        }
+    }
+
+    public Map<String, String> getResponseDTOs() { return Collections.unmodifiableMap(responseDTOs); }
 
     public  int getNumberOfUnits() {
         return unitNames.size();

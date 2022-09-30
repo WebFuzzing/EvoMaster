@@ -61,4 +61,11 @@ public class UnitsInfoDto {
         TODO should consider if also adding info on type, eg JSON vs XML
      */
     public Map<String,String> parsedDtos;
+
+
+    /**
+     * All the unmarshalled response DTOs inside SUT collected through GSON and
+     * Jackson.
+     */
+    public Map<String, String> responseDTOs;
 }

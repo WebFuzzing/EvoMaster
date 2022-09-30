@@ -36,6 +36,9 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             String schema = ClassToSchema.getOrDeriveSchema(valueType);
             UnitsInfoRecorder.registerNewParsedDto(name, schema);
             ExecutionTracer.addParsedDtoName(name);
+            // to parse JSON object information to core
+            UnitsInfoRecorder.registerResponseDto(name, schema);
+            ExecutionTracer.addResponseDtoName(name);
         }
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_class", caller);
@@ -62,6 +65,10 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             String schema = ClassToSchema.getOrDeriveSchema(valueType);
             UnitsInfoRecorder.registerNewParsedDto(name, schema);
             ExecutionTracer.addParsedDtoName(name);
+
+            // to parse JSON object information to core
+            UnitsInfoRecorder.registerResponseDto(name, schema);
+            ExecutionTracer.addResponseDtoName(name);
         }
         // JSON can be unwrapped using different approaches
         // val dto: FooDto = mapper.readValue(json)

@@ -299,6 +299,10 @@ public class ExecutionTracer {
         getCurrentAdditionalInfo().addParsedDtoName(name);
     }
 
+    public static void addResponseDtoName(String name) {
+        getCurrentAdditionalInfo().addResponseDtoName(name);
+    }
+
     public static void addQueryParameter(String param) {
         getCurrentAdditionalInfo().addQueryParameter(param);
     }

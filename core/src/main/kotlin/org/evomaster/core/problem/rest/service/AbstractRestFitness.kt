@@ -22,7 +22,8 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -183,12 +184,13 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                          parameters in body payload of form submissions in x-www-form-urlencoded format.
                          This happens for example in LanguageTool.
                      */
-                    !action.parameters.any{
-                            b -> b is BodyParam && b.isForm()
-                            && b.seeGenes().flatMap { it.flatView() }.any { it.name.equals(name, ignoreCase = true)  }
+                    !action.parameters.any { b ->
+                        b is BodyParam && b.isForm()
+                                && b.seeGenes().flatMap { it.flatView() }
+                            .any { it.name.equals(name, ignoreCase = true) }
                     }
                 }
-                .filter{ name ->
+                .filter { name ->
                     /*
                         Another tricky case. Some frameworks like Spring can have hidden params to override the method
                         type of the requests. This is needed for handling web browsers without JS.
@@ -265,6 +267,19 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     EnumGene("contentType", listOf("application/json")).apply { doInitialize(randomness) })
                 val update = UpdateForBodyParam(body)
                 action.addParam(update)
+            }
+
+            val responseDtoNames = info.responseDtoNames
+
+            if (responseDtoNames.isNotEmpty()) {
+                // Clear everything before adding new
+                externalServiceHandler.clearResponseDTOs()
+
+                responseDtoNames.forEach { name ->
+                    if (infoDto.unitsInfoDto.responseDTOs.containsKey(name)) {
+                        externalServiceHandler.addResponseDTO(name, infoDto.unitsInfoDto.parsedDtos[name].toString())
+                    }
+                }
             }
         }
     }
@@ -753,7 +768,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             dto.additionalInfoList
         )
 
-        handleExternalServiceInfo(fv, dto.additionalInfoList)
+        handleExternalServiceInfo(dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
             expandIndividual(individual, dto.additionalInfoList, actionResults)
@@ -771,7 +786,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
      */
-    private fun handleExternalServiceInfo(fv: FitnessValue, infoDto: List<AdditionalInfoDto>) {
+    private fun handleExternalServiceInfo(infoDto: List<AdditionalInfoDto>) {
 
         /*
             Note: this info here is based from what connections / hostname resolving done in the SUT,
