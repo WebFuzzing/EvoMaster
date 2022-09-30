@@ -4,6 +4,9 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
+import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestCallAction
@@ -92,7 +95,35 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     SqlWriter.handleDbInitialization(format, c.first, lines, ind.individual.seeDbActions(), groupIndex = index.toString(), insertionVars =insertionVars, skipFailure = config.skipFailureSQLInTestFile)
                 //actions
                 c.second.forEach { a ->
+
+                    val exActions = mutableListOf<HttpExternalServiceAction>()
+
+                    // add all used external service actions for the action
+                    if (TestWriterUtils.handleExternalService(config)){
+                        if (!format.isJavaOrKotlin() ){
+                            log.warn("NOT support for other format ($format) except JavaOrKotlin")
+                        }else{
+                            if (a.action.parent !is EnterpriseActionGroup)
+                                throw IllegalStateException("invalid parent of the RestAction, it is expected to be EnterpriseActionGroup, but it is ${a.action.parent!!::class.java.simpleName}")
+                            val group = a.action.parent as EnterpriseActionGroup
+                            exActions.addAll(group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>())
+                            handleExternalServiceActions(lines, exActions)
+                        }
+                    }
+
                     handleSingleCall(a, lines, baseUrlOfSut)
+
+                    // reset all used external service action
+                    if (exActions.isNotEmpty()){
+                        if (!format.isJavaOrKotlin() ){
+                            log.warn("NOT support for other format ($format) except JavaOrKotlin")
+                        } else{
+                            exActions.forEach { action->
+                                lines.add("${getWireMockVariableName(action)}.resetAll()")
+                                lines.appendSemicolon(config.outputFormat)
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -6,6 +6,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.rest.RestIndividual
@@ -82,10 +83,7 @@ abstract class TestCaseWriter {
         lines.indented {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
-            val actions = getExternalServiceActions(ind)
-            if (ind.individual is RestIndividual && TestWriterUtils.handleExternalService(config)) {
-                handleExternalServiceActions(lines, actions)
-            }
+
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars)
         }
@@ -112,7 +110,7 @@ abstract class TestCaseWriter {
         return actions
     }
 
-    private fun handleExternalServiceActions(
+    protected fun handleExternalServiceActions(
         lines: Lines,
         actions: List<HttpExternalServiceAction>
     ) {
