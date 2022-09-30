@@ -6,10 +6,8 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
-import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
-import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -83,7 +81,6 @@ abstract class TestCaseWriter {
         lines.indented {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
-
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars)
         }
@@ -94,20 +91,6 @@ abstract class TestCaseWriter {
             lines.append(");")
         }
         return lines
-    }
-
-    private fun getExternalServiceActions(ind: EvaluatedIndividual<*>): List<HttpExternalServiceAction> {
-        val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
-        ind.individual.seeExternalServiceActions()
-            .filterIsInstance<HttpExternalServiceAction>()
-            .filter { action -> action.active }
-            .forEach { action ->
-                if (actions.none { a -> a.externalService.getSignature() == action.externalService.getSignature() }) {
-                    actions.add(action)
-                }
-            }
-
-        return actions
     }
 
     protected fun handleExternalServiceActions(
@@ -144,18 +127,16 @@ abstract class TestCaseWriter {
                         lines.add(")")
                     }
                 }
+                lines.add(")")
                 if (format.isJava()) {
-                    lines.add(");")
-                }
-                if (format.isKotlin()) {
-                    lines.add(")")
+                    lines.appendSemicolon(format)
                 }
                 lines.addEmpty(1)
             }
     }
 
     /**
-     * Before starting to make actions (eg HTTP calls in web apis), check if we need to declare any field, ie variable,
+     * Before starting to make actions (e.g. HTTP calls in web apis), check if we need to declare any field, ie variable,
      * for this test.
      * @param lines are generated lines which save the generated test scripts
      * @param ind is the final individual (ie test) to be generated into the test scripts
@@ -251,7 +232,7 @@ abstract class TestCaseWriter {
 
 
     protected fun capitalizeFirstChar(name: String): String {
-        return name[0].toUpperCase() + name.substring(1)
+        return name[0].uppercaseChar() + name.substring(1)
     }
 
 
