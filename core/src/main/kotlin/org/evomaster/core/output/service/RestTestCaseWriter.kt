@@ -117,36 +117,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 //actions
                 c.second.forEach { a ->
 
-                    val exActions = mutableListOf<HttpExternalServiceAction>()
-
-                    // add all used external service actions for the action
-                    if (TestWriterUtils.handleExternalService(config)) {
-                        if (!format.isJavaOrKotlin()) {
-                            log.warn("NOT support for other format ($format) except JavaOrKotlin")
-                        } else {
-                            if (a.action.parent !is EnterpriseActionGroup)
-                                throw IllegalStateException("invalid parent of the RestAction, it is expected to be EnterpriseActionGroup, but it is ${a.action.parent!!::class.java.simpleName}")
-                            val group = a.action.parent as EnterpriseActionGroup
-                            exActions.addAll(
-                                group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
-                                    .filter { it.active })
-                            handleExternalServiceActions(lines, exActions)
-                        }
-                    }
-
                     handleSingleCall(a, lines, baseUrlOfSut)
-
-                    // reset all used external service action
-                    if (exActions.isNotEmpty()) {
-                        if (!format.isJavaOrKotlin()) {
-                            log.warn("NOT support for other format ($format) except JavaOrKotlin")
-                        } else {
-                            exActions.forEach { action ->
-                                lines.add("${getWireMockVariableName(action)}.resetAll()")
-                                lines.appendSemicolon(config.outputFormat)
-                            }
-                        }
-                    }
                 }
             }
         }

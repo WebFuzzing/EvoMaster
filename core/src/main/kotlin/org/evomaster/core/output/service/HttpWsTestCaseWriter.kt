@@ -6,6 +6,8 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.output.formatter.OutputFormatter
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -210,6 +212,24 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String
     ) {
+
+        val exActions = mutableListOf<HttpExternalServiceAction>()
+
+        // add all used external service actions for the action
+        if (TestWriterUtils.handleExternalService(config)) {
+            if (!format.isJavaOrKotlin()) {
+                log.warn("NOT support for other format ($format) except JavaOrKotlin")
+            } else {
+                if (evaluatedAction.action.parent !is EnterpriseActionGroup)
+                    throw IllegalStateException("invalid parent of the RestAction, it is expected to be EnterpriseActionGroup, but it is ${evaluatedAction.action.parent!!::class.java.simpleName}")
+                val group = evaluatedAction.action.parent as EnterpriseActionGroup
+                exActions.addAll(
+                    group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
+                        .filter { it.active })
+                handleExternalServiceActions(lines, exActions)
+            }
+        }
+
         lines.addEmpty()
 
         val call = evaluatedAction.action as HttpWsAction
@@ -219,6 +239,18 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             addActionInTryCatch(call, lines, res, baseUrlOfSut)
         } else {
             addActionLines(call, lines, res, baseUrlOfSut)
+        }
+
+        // reset all used external service action
+        if (exActions.isNotEmpty()) {
+            if (!format.isJavaOrKotlin()) {
+                log.warn("NOT support for other format ($format) except JavaOrKotlin")
+            } else {
+                exActions.forEach { action ->
+                    lines.add("${TestWriterUtils.getWireMockVariableName(action)}.resetAll()")
+                    lines.appendSemicolon(config.outputFormat)
+                }
+            }
         }
     }
 
