@@ -97,9 +97,13 @@ abstract class TestCaseWriter {
         lines: Lines,
         actions: List<HttpExternalServiceAction>
     ) {
+        // TODO: Handle same request pattern exists multiple time.
+        //  Currently we don't handle the same request pattern exists multiple
+        //  time. For that, need to create WireMock scenario to have multiple
+        //  responses for the same request pattern.
         actions
             .filter { action -> action.active }
-            .forEach { action ->
+            .forEachIndexed { index, action ->
                 val response = action.response as HttpWsResponseParam
                 val name = getWireMockVariableName(action)
 
@@ -114,8 +118,9 @@ abstract class TestCaseWriter {
                             action.request.method.lowercase()
                         }(urlEqualTo(\"${action.request.url}\"))"
                     )
-                    // adding priority as 1 for now when extending further this has to be
-                    lines.add(".atPriority(1)")
+                    // adding priority from the index of the respective action
+                    // TODO: when handling multiple calls need to fix this
+                    lines.add(".atPriority(${index + 1})")
                     lines.add(".willReturn(")
                     lines.indented {
                         lines.add("aResponse()")

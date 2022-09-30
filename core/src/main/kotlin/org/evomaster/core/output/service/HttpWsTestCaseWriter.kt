@@ -246,10 +246,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             if (!format.isJavaOrKotlin()) {
                 log.warn("NOT support for other format ($format) except JavaOrKotlin")
             } else {
-                exActions.forEach { action ->
-                    lines.add("${TestWriterUtils.getWireMockVariableName(action)}.resetAll()")
-                    lines.appendSemicolon(config.outputFormat)
-                }
+                lines.addEmpty(1)
+                exActions
+                    .distinctBy { it.externalService.getSignature() }
+                    .forEach { action ->
+                        lines.add("${TestWriterUtils.getWireMockVariableName(action)}.resetAll()")
+                        lines.appendSemicolon(format)
+                    }
             }
         }
     }
@@ -493,7 +496,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
         val type = res.getBodyType()
-            // if there is payload, but no type identified, treat it as plain text
+        // if there is payload, but no type identified, treat it as plain text
             ?: MediaType.TEXT_PLAIN_TYPE
 
         var bodyVarName = responseVariableName
