@@ -216,17 +216,19 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val exActions = mutableListOf<HttpExternalServiceAction>()
 
         // add all used external service actions for the action
-        if (TestWriterUtils.handleExternalService(config)) {
-            if (!format.isJavaOrKotlin()) {
-                log.warn("NOT support for other format ($format) except JavaOrKotlin")
-            } else {
-                if (evaluatedAction.action.parent !is EnterpriseActionGroup)
-                    throw IllegalStateException("invalid parent of the RestAction, it is expected to be EnterpriseActionGroup, but it is ${evaluatedAction.action.parent!!::class.java.simpleName}")
-                val group = evaluatedAction.action.parent as EnterpriseActionGroup
-                exActions.addAll(
-                    group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
-                        .filter { it.active })
-                handleExternalServiceActions(lines, exActions)
+        if (config.isEnabledExternalServiceMocking()) {
+            if (evaluatedAction.action.parent !is EnterpriseActionGroup)
+                throw IllegalStateException("invalid parent of the RestAction, it is expected to be EnterpriseActionGroup, but it is ${evaluatedAction.action.parent!!::class.java.simpleName}")
+            val group = evaluatedAction.action.parent as EnterpriseActionGroup
+            exActions.addAll(
+                group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
+                    .filter { it.active })
+            if (exActions.isNotEmpty()) {
+                if (format.isJavaOrKotlin()) {
+                    handleExternalServiceActions(lines, exActions)
+                } else {
+                    log.warn("In mocking of external services, we do NOT support for other format ($format) except JavaOrKotlin")
+                }
             }
         }
 

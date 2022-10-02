@@ -5,7 +5,6 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
-import org.evomaster.core.output.service.TestWriterUtils.Companion.handleExternalService
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.BlackBoxUtils
@@ -328,7 +327,7 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (handleExternalService(config)) {
+            if (config.isEnabledExternalServiceMocking()) {
                 if (format.isKotlin()) {
                     addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
                 } else if (format.isJava()) {
@@ -458,7 +457,7 @@ class TestSuiteWriter {
         solution: Solution<*>
     ) {
 
-        val wireMockServers = getWireMockServers(solution)
+        val wireMockServers = getWireMockServerActions(solution)
 
         val executable = if (controllerInput.isNullOrBlank()) ""
         else "\"$controllerInput\"".replace("\\", "\\\\")
@@ -473,7 +472,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
-            if (handleExternalService(config)) {
+            if (config.isEnabledExternalServiceMocking()) {
                 wireMockServers
                     .forEach { action ->
                         addStatement("private static WireMockServer ${getWireMockVariableName(action)};", lines)
@@ -488,7 +487,7 @@ class TestSuiteWriter {
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
             }
-            if (handleExternalService(config)) {
+            if (config.isEnabledExternalServiceMocking()) {
                 wireMockServers
                     .forEach { action ->
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
@@ -593,9 +592,10 @@ class TestSuiteWriter {
                 }
             }
 
-            if (format.isJavaOrKotlin()) {
-                if (handleExternalService(config)) {
-                    getWireMockServers(solution)
+            val wireMockServers = getWireMockServerActions(solution)
+            if (config.isEnabledExternalServiceMocking() && wireMockServers.isNotEmpty()) {
+                if (format.isJavaOrKotlin()) {
+                    wireMockServers
                         .forEach { action ->
                             val address = action.externalService.getWireMockAddress()
                             val name = getWireMockVariableName(action)
@@ -627,7 +627,7 @@ class TestSuiteWriter {
                             addStatement("${name}.start()", lines)
                         }
                 } else {
-                    log.warn("NOT support for other format ($format) except JavaOrKotlin")
+                    log.warn("In mocking of external services, we do NOT support for other format ($format) except JavaOrKotlin")
                 }
             }
 
@@ -668,8 +668,8 @@ class TestSuiteWriter {
                     }
                     else -> {
                         addStatement("$controller.stopSut()", lines)
-                        if (format.isJavaOrKotlin() && handleExternalService(config)) {
-                            getWireMockServers(solution)
+                        if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking()) {
+                            getWireMockServerActions(solution)
                                 .forEach { action ->
                                     addStatement("${getWireMockVariableName(action)}.stop()", lines)
                                 }
@@ -719,8 +719,8 @@ class TestSuiteWriter {
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
 
-                if (format.isJavaOrKotlin() && handleExternalService(config)) {
-                    getWireMockServers(solution)
+                if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking()) {
+                    getWireMockServerActions(solution)
                         .forEach { action ->
                             addStatement("${getWireMockVariableName(action)}.resetAll()", lines)
                         }
@@ -848,17 +848,10 @@ class TestSuiteWriter {
     /**
      * Returns a distinct List of [HttpExternalServiceAction] from the given solution
      */
-    private fun getWireMockServers(solution: Solution<*>): List<HttpExternalServiceAction> {
-        val actions = mutableListOf<HttpExternalServiceAction>()
-        solution.individuals.filter { i -> i.individual is RestIndividual }
-            .forEach {
-                it.individual.seeExternalServiceActions()
-                    .filterIsInstance<HttpExternalServiceAction>()
-                    .filter { action -> action.active }
-                    .forEach { action ->
-                        actions.add(action)
-                    }
-            }
-        return actions.distinctBy { it.externalService.getSignature() }.toList()
+    private fun getWireMockServerActions(solution: Solution<*>): List<HttpExternalServiceAction> {
+        return solution.individuals.filter { i -> i.individual is RestIndividual }
+            .flatMap { it.individual.seeExternalServiceActions()
+                .filterIsInstance<HttpExternalServiceAction>()
+                .filter { it.active } }.distinctBy { it.externalService.getSignature() }.toList()
     }
 }
