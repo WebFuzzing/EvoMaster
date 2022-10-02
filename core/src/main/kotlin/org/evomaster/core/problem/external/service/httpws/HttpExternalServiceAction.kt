@@ -132,7 +132,7 @@ class HttpExternalServiceAction(
      * TODO: Moved it to a ResponseBuilder, later
      */
     private fun getRequestMethod(request: HttpExternalServiceRequest): MappingBuilder {
-        val response = when (request.method) {
+        val response = when (request.method.uppercase()) {
             "GET" -> get(getUrlPattern(request.url))
             "POST" -> post(getUrlPattern(request.url))
             "PUT" -> put(getUrlPattern(request.url))
@@ -141,7 +141,8 @@ class HttpExternalServiceAction(
             "HEAD" -> head(getUrlPattern(request.url))
             "TRACE" -> trace(getUrlPattern(request.url))
             "OPTIONS" -> options(getUrlPattern(request.url))
-            else -> any(getUrlPattern(request.url))
+            "ANY" -> any(getUrlPattern(request.url))
+            else -> throw IllegalArgumentException("Invalid HTTP request method")
         }
         return response
     }

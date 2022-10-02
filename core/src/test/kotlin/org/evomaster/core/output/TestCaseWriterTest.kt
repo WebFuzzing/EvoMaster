@@ -15,17 +15,15 @@ import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.BooleanGene
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.UUIDGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateGene
-import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.UUIDGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType
 
@@ -106,6 +104,8 @@ class TestCaseWriterTest {
     }
 
 
+
+
     private fun buildEvaluatedIndividual(dbInitialization: MutableList<DbAction>): Triple<OutputFormat, String, EvaluatedIndividual<RestIndividual>> {
         val format = OutputFormat.JAVA_JUNIT_4
 
@@ -142,12 +142,7 @@ class TestCaseWriterTest {
         val insertIntoTableAction1 = DbAction(aTable, setOf(aColumn), 1L, mutableListOf(gene1))
 
 
-        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(
-            mutableListOf(
-                insertIntoTableAction0,
-                insertIntoTableAction1
-            )
-        )
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1))
         val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
@@ -282,8 +277,7 @@ class TestCaseWriterTest {
         val primaryKeyGene = SqlPrimaryKeyGene(idColumn.name, "myTable", integerGene, 10)
         val stringGene = StringGene(nameColumn.name, "nameValue", 0, 10)
 
-        val insertIntoTableAction =
-            DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(primaryKeyGene, stringGene))
+        val insertIntoTableAction = DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(primaryKeyGene, stringGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
         val config = getConfig(format)
@@ -334,11 +328,9 @@ class TestCaseWriterTest {
         val firstInsertionId = 1001L
         val insertIntoTable0 = DbAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
-        val foreignKeyGene =
-            SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
 
-        val insertIntoTable1 =
-            DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
+        val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
         val config = getConfig(format)
@@ -437,8 +429,7 @@ class TestCaseWriterTest {
         val secondInsertionId = 1002L
         val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", true, -1L)
 
-        val insertIntoTable1 =
-            DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
+        val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
         val config = getConfig(format)
@@ -447,7 +438,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -498,7 +489,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -539,20 +530,14 @@ class TestCaseWriterTest {
 
         val insertIntoTableAction2 = DbAction(aTable, setOf(aColumn), 2L, mutableListOf(gene2))
 
-        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(
-            mutableListOf(
-                insertIntoTableAction0,
-                insertIntoTableAction1,
-                insertIntoTableAction2
-            )
-        )
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1, insertIntoTableAction2))
         val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -602,8 +587,7 @@ class TestCaseWriterTest {
         val secondInsertionId = 1002L
         val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, pkGeneUniqueId)
 
-        val insertIntoTable1 =
-            DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
+        val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
         val config = getConfig(format)
@@ -640,28 +624,13 @@ class TestCaseWriterTest {
 
     @Test
     fun testIndirectForeignKeyColumn() {
-        val table0_Id =
-            Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.H2)
+        val table0_Id = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.H2)
         val table0 = Table("Table0", setOf(table0_Id), HashSet<ForeignKey>())
 
-        val table1_Id = Column(
-            "Id",
-            INTEGER,
-            10,
-            primaryKey = true,
-            foreignKeyToAutoIncrement = true,
-            databaseType = DatabaseType.H2
-        )
+        val table1_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true, databaseType = DatabaseType.H2)
         val table1 = Table("Table1", setOf(table1_Id), HashSet<ForeignKey>())
 
-        val table2_Id = Column(
-            "Id",
-            INTEGER,
-            10,
-            primaryKey = true,
-            foreignKeyToAutoIncrement = true,
-            databaseType = DatabaseType.H2
-        )
+        val table2_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true, databaseType = DatabaseType.H2)
         val table2 = Table("Table2", setOf(table2_Id), HashSet<ForeignKey>())
 
         val insertId0 = 1001L
@@ -688,7 +657,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -716,10 +685,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testInsertDateColumnType() {
-        val idColumn =
-            Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.H2)
-        val dateColumn =
-            Column("birthDate", DATE, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.H2)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.H2)
+        val dateColumn = Column("birthDate", DATE, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.H2)
 
         val table = Table("Table0", setOf(idColumn, dateColumn), HashSet<ForeignKey>())
 
@@ -736,7 +703,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -759,14 +726,10 @@ class TestCaseWriterTest {
 
     @Test
     fun testUUIDColumnType() {
-        val idColumn = Column(
-            "Id", INTEGER, 10, primaryKey = true, autoIncrement = true,
-            databaseType = DatabaseType.H2
-        )
-        val uuidColumn = Column(
-            "uuidCode", UUID, 10, primaryKey = false, autoIncrement = false,
-            databaseType = DatabaseType.H2
-        )
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true,
+                databaseType = DatabaseType.H2)
+        val uuidColumn = Column("uuidCode", UUID, 10, primaryKey = false, autoIncrement = false,
+                databaseType = DatabaseType.H2)
 
         val table = Table("Table0", setOf(idColumn, uuidColumn), HashSet<ForeignKey>())
 
@@ -783,7 +746,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -808,16 +771,8 @@ class TestCaseWriterTest {
     fun testJSONBEmpty() {
 
 
-        val idColumn =
-            Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
-        val jsonbColumn = Column(
-            "jsonbColumn",
-            JSONB,
-            10,
-            primaryKey = false,
-            autoIncrement = false,
-            databaseType = DatabaseType.POSTGRES
-        )
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -834,7 +789,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -860,16 +815,8 @@ class TestCaseWriterTest {
     fun testJSONBColumnType() {
 
 
-        val idColumn =
-            Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
-        val jsonbColumn = Column(
-            "jsonbColumn",
-            JSONB,
-            10,
-            primaryKey = false,
-            autoIncrement = false,
-            databaseType = DatabaseType.POSTGRES
-        )
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -886,7 +833,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -910,16 +857,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testJSONBoolean() {
-        val idColumn =
-            Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
-        val jsonbColumn = Column(
-            "jsonbColumn",
-            JSONB,
-            10,
-            primaryKey = false,
-            autoIncrement = false,
-            databaseType = DatabaseType.POSTGRES
-        )
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -936,7 +875,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -960,16 +899,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testJSONString() {
-        val idColumn =
-            Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
-        val jsonbColumn = Column(
-            "jsonbColumn",
-            JSONB,
-            10,
-            primaryKey = false,
-            autoIncrement = false,
-            databaseType = DatabaseType.POSTGRES
-        )
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -986,7 +917,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -1008,7 +939,7 @@ class TestCaseWriterTest {
     }
 
     @Test
-    fun testVarGeneration() {
+    fun testVarGeneration(){
         //TODO: this needs a rename
         val format = OutputFormat.JAVA_JUNIT_4
 
@@ -1029,7 +960,7 @@ class TestCaseWriterTest {
 
         val writer = RestTestCaseWriter(config, PartialOracles())
 
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -1096,8 +1027,7 @@ class TestCaseWriterTest {
         val fooInsertionId = 1001L
         val fooInsertion = DbAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
         val barInsertionId = 1002L
-        val foreignKeyGene =
-            SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val barInsertion = DbAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
@@ -1114,12 +1044,12 @@ class TestCaseWriterTest {
         val config = getConfig(format)
         config.expectationsActive = false
         config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
-        config.probOfApplySQLActionToCreateResources = 0.1
+        config.probOfApplySQLActionToCreateResources=0.1
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = RestTestCaseWriter(config, PartialOracles())
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
 @Test
@@ -1169,8 +1099,7 @@ public void test() throws Exception {
         val fooInsertionId = 1001L
         val fooInsertion = DbAction(foo, setOf(fooId), fooInsertionId, listOf(pkFoo))
         val barInsertionId = 1002L
-        val foreignKeyGene =
-            SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val barInsertion = DbAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
@@ -1191,13 +1120,13 @@ public void test() throws Exception {
 
         val config = getConfig(format)
         config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
-        config.probOfApplySQLActionToCreateResources = 0.1
+        config.probOfApplySQLActionToCreateResources=0.1
         config.skipFailureSQLInTestFile = true
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = RestTestCaseWriter(config, PartialOracles())
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
 @Test
@@ -1242,12 +1171,12 @@ public void test() throws Exception {
 
         val config = getConfig(format)
         config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
-        config.probOfApplySQLActionToCreateResources = 0.1
+        config.probOfApplySQLActionToCreateResources=0.1
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = RestTestCaseWriter(config, PartialOracles())
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
 @Test
@@ -1273,13 +1202,12 @@ public void test() throws Exception {
 
 
     @Test
-    fun testTestWithObjectAssertion() {
+    fun testTestWithObjectAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
         val fooResult = RestCallResult()
 
         fooResult.setStatusCode(200)
-        fooResult.setBody(
-            """
+        fooResult.setBody("""
            [
                 {},
                 {
@@ -1299,8 +1227,7 @@ public void test() throws Exception {
                     "empty":{}
                 }
            ]
-        """.trimIndent()
-        )
+        """.trimIndent())
         fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
@@ -1317,7 +1244,7 @@ public void test() throws Exception {
         val test = TestCase(test = ei, name = "test")
 
         val writer = RestTestCaseWriter(config, PartialOracles())
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
             test("test", async () => {
@@ -1348,13 +1275,12 @@ public void test() throws Exception {
 
 
     @Test
-    fun testTestWithObjectLengthAssertion() {
+    fun testTestWithObjectLengthAssertion(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
         val fooResult = RestCallResult()
 
         fooResult.setStatusCode(200)
-        fooResult.setBody(
-            """
+        fooResult.setBody("""
            {
                 "p1":{},
                 "p2":{
@@ -1374,8 +1300,7 @@ public void test() throws Exception {
                     "empty":{}
                 }
            }
-        """.trimIndent()
-        )
+        """.trimIndent())
         fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
@@ -1392,7 +1317,7 @@ public void test() throws Exception {
         val test = TestCase(test = ei, name = "test")
 
         val writer = RestTestCaseWriter(config, PartialOracles())
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
             test("test", async () => {
@@ -1421,19 +1346,17 @@ public void test() throws Exception {
 
 
     @Test
-    fun testApplyAssertionEscapes() {
+    fun testApplyAssertionEscapes(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
         val fooResult = RestCallResult()
 
         val email = "foo@foo.foo"
         fooResult.setStatusCode(200)
-        fooResult.setBody(
-            """
+        fooResult.setBody("""
            {
                 "email":$email
            }
-        """.trimIndent()
-        )
+        """.trimIndent())
         fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
@@ -1450,7 +1373,7 @@ public void test() throws Exception {
         val test = TestCase(test = ei, name = "test")
 
         val writer = RestTestCaseWriter(config, PartialOracles())
-        val lines = writer.convertToCompilableTestCode(test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
         val expectedLines = """
             test("test", async () => {

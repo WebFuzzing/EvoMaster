@@ -102,7 +102,7 @@ abstract class TestCaseWriter {
         //  time. For that, need to create WireMock scenario to have multiple
         //  responses for the same request pattern.
         actions
-            .filter { action -> action.active }
+            .filter { it.active }
             .forEachIndexed { index, action ->
                 val response = action.response as HttpWsResponseParam
                 val name = getWireMockVariableName(action)
@@ -133,9 +133,7 @@ abstract class TestCaseWriter {
                     }
                 }
                 lines.add(")")
-                if (format.isJava()) {
-                    lines.appendSemicolon(format)
-                }
+                lines.appendSemicolon(format)
                 lines.addEmpty(1)
             }
     }
