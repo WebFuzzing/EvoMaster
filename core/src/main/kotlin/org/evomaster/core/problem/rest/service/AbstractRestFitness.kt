@@ -234,7 +234,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
 
 
-            val dtoNames = info.parsedDtoNames;
+            val dtoNames = info.parsedDtoNames
 
             val noBody = action.parameters.none { it is BodyParam }
             val emptyObject = !noBody &&

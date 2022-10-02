@@ -1030,6 +1030,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
         dto.unitNames = recorder.getUnitNames();
         dto.parsedDtos = recorder.getParsedDtos();
+        dto.responseDTOs = recorder.getResponseDTOs();
         dto.numberOfInstrumentedNumberComparisons = recorder.getNumberOfInstrumentedNumberComparisons();
         return dto;
     }

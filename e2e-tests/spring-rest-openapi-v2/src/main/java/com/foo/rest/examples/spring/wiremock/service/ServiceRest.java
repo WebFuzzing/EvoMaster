@@ -118,11 +118,11 @@ public class ServiceRest {
      * An endpoint to receive JSON response from external service and response
      * true or false based on the result.
      */
-//    @RequestMapping(
-//            value = "/external/json",
-//            method = RequestMethod.GET,
-//            produces = MediaType.APPLICATION_JSON
-//    )
+    @RequestMapping(
+            value = "/external/json",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
     public ResponseDto jsonResponse() {
         ResponseDto responseDto = new ResponseDto();
 
