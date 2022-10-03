@@ -1,7 +1,9 @@
 package org.evomaster.core.problem.external.service.httpws
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
+import com.github.tomakehurst.wiremock.matching.UrlPattern
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
@@ -35,8 +37,8 @@ class HttpExternalServiceAction(
      * WireMock server which received the request
      */
     val externalService: ExternalService,
-    active : Boolean = false,
-    used : Boolean = false,
+    active: Boolean = false,
+    used: Boolean = false,
     private val id: Long
 ) : ApiExternalServiceAction(response, active, used) {
 
@@ -110,7 +112,7 @@ class HttpExternalServiceAction(
         }
 
         externalService.getWireMockServer().stubFor(
-            get(urlMatching(request.url))
+            getRequestMethod(request)
                 .atPriority(1)
                 .willReturn(
                     aResponse()
@@ -122,6 +124,40 @@ class HttpExternalServiceAction(
                         .attr("url", request.absoluteURL)
                 )
         )
+
+    }
+
+    /**
+     * Will return a [MappingBuilder] based on the HTTP method
+     * TODO: Moved it to a ResponseBuilder, later
+     */
+    private fun getRequestMethod(request: HttpExternalServiceRequest): MappingBuilder {
+        val response = when (request.method.uppercase()) {
+            "GET" -> get(getUrlPattern(request.url))
+            "POST" -> post(getUrlPattern(request.url))
+            "PUT" -> put(getUrlPattern(request.url))
+            "PATCH" -> patch(getUrlPattern(request.url))
+            "DELETE" -> delete(getUrlPattern(request.url))
+            "HEAD" -> head(getUrlPattern(request.url))
+            "TRACE" -> trace(getUrlPattern(request.url))
+            "OPTIONS" -> options(getUrlPattern(request.url))
+            "ANY" -> any(getUrlPattern(request.url))
+            else -> throw IllegalArgumentException("Invalid HTTP request method")
+        }
+        return response
+    }
+
+    /**
+     * Path can be mapped to a specific URL (urlEqualTo) and Regex (urlMatching)
+     * in WireMock.
+     *
+     * Note: urlMatching gives some issues when try to use getURL in
+     * TestCaseWriter.
+     *
+     * TODO: Moved it to a ResponseBuilder, later
+     */
+    private fun getUrlPattern(url: String) : UrlPattern {
+        return urlEqualTo(url)
     }
 
     /**
