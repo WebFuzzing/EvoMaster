@@ -1,0 +1,3586 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "This page shows how to use HTTP requests to access the Genome Nexus API. There are more high level clients available in Python, R, JavaScript, TypeScript and various other languages as well as a command line client to annotate MAF and VCF. See https://docs.genomenexus.org/api.\n\nAside from programmatic clients there are web based tools to annotate variants, see https://docs.genomenexus.org/tools.\n\n We currently only provide long-term support for the '/annotation' endpoint. The other endpoints might change.",
+    "version": "2.0",
+    "title": "Genome Nexus API",
+    "license": {
+      "name": "MIT License",
+      "url": "https://github.com/genome-nexus/genome-nexus/blob/master/LICENSE"
+    }
+  },
+  "host": "localhost:28125",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "info-controller",
+      "description": "Info Controller"
+    },
+    {
+      "name": "pdb-controller",
+      "description": "PDB Controller"
+    },
+    {
+      "name": "annotation-controller",
+      "description": "Annotation Controller"
+    },
+    {
+      "name": "ptm-controller",
+      "description": "PTM Controller"
+    },
+    {
+      "name": "pfam-controller",
+      "description": "PFAM Controller"
+    },
+    {
+      "name": "ensembl-controller",
+      "description": "Ensembl Controller"
+    }
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "paths": {
+    "/annotation": {
+      "post": {
+        "tags": [
+          "annotation-controller"
+        ],
+        "summary": "Retrieves VEP annotation for the provided list of variants",
+        "operationId": "fetchVariantAnnotationPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "variants",
+            "description": "List of variants. For example [\"X:g.66937331T>A\",\"17:g.41242962_41242963insGA\"] (GRCh37) or [\"1:g.182712A>C\", \"2:g.265023C>T\", \"3:g.319781del\", \"19:g.110753dup\", \"1:g.1385015_1387562del\"] (GRCh38)",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "isoformOverrideSource",
+            "in": "query",
+            "description": "Isoform override source. For example uniprot",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Map of tokens. For example {\"source1\":\"put-your-token1-here\",\"source2\":\"put-your-token2-here\"}",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma separated list of fields to include (case-sensitive!). For example: hotspots",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "default": "hotspots"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VariantAnnotation"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/annotation/dbsnp/": {
+      "post": {
+        "tags": [
+          "annotation-controller"
+        ],
+        "summary": "Retrieves VEP annotation for the provided list of dbSNP ids",
+        "operationId": "fetchVariantAnnotationByIdPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "variantIds",
+            "description": "List of variant IDs. For example [\"rs116035550\"]",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "isoformOverrideSource",
+            "in": "query",
+            "description": "Isoform override source. For example uniprot",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Map of tokens. For example {\"source1\":\"put-your-token1-here\",\"source2\":\"put-your-token2-here\"}",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma separated list of fields to include (case-sensitive!). For example: annotation_summary",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "default": "annotation_summary"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VariantAnnotation"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/annotation/dbsnp/{variantId}": {
+      "get": {
+        "tags": [
+          "annotation-controller"
+        ],
+        "summary": "Retrieves VEP annotation for the give dbSNP id",
+        "operationId": "fetchVariantAnnotationByIdGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "variantId",
+            "in": "path",
+            "description": "dbSNP id. For example rs116035550.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "isoformOverrideSource",
+            "in": "query",
+            "description": "Isoform override source. For example uniprot",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Map of tokens. For example {\"source1\":\"put-your-token1-here\",\"source2\":\"put-your-token2-here\"}",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma separated list of fields to include (case-sensitive!). For example: annotation_summary",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "default": "annotation_summary"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/VariantAnnotation"
+            }
+          }
+        }
+      }
+    },
+    "/annotation/genomic": {
+      "post": {
+        "tags": [
+          "annotation-controller"
+        ],
+        "summary": "Retrieves VEP annotation for the provided list of genomic locations",
+        "operationId": "fetchVariantAnnotationByGenomicLocationPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "genomicLocations",
+            "description": "List of Genomic Locations",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GenomicLocation"
+              }
+            }
+          },
+          {
+            "name": "isoformOverrideSource",
+            "in": "query",
+            "description": "Isoform override source. For example uniprot",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Map of tokens. For example {\"source1\":\"put-your-token1-here\",\"source2\":\"put-your-token2-here\"}",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma separated list of fields to include (case-sensitive!). For example: hotspots",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "default": "hotspots"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VariantAnnotation"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/annotation/genomic/{genomicLocation}": {
+      "get": {
+        "tags": [
+          "annotation-controller"
+        ],
+        "summary": "Retrieves VEP annotation for the provided genomic location",
+        "operationId": "fetchVariantAnnotationByGenomicLocationGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "genomicLocation",
+            "in": "path",
+            "description": "A genomic location. For example 7,140453136,140453136,A,T",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "isoformOverrideSource",
+            "in": "query",
+            "description": "Isoform override source. For example uniprot",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Map of tokens. For example {\"source1\":\"put-your-token1-here\",\"source2\":\"put-your-token2-here\"}",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma separated list of fields to include (case-sensitive!). For example: hotspots",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "default": "hotspots"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/VariantAnnotation"
+            }
+          }
+        }
+      }
+    },
+    "/annotation/{variant}": {
+      "get": {
+        "tags": [
+          "annotation-controller"
+        ],
+        "summary": "Retrieves VEP annotation for the provided variant",
+        "operationId": "fetchVariantAnnotationGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "variant",
+            "in": "path",
+            "description": "Variant. For example 17:g.41242962_41242963insGA",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "isoformOverrideSource",
+            "in": "query",
+            "description": "Isoform override source. For example uniprot",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Map of tokens. For example {\"source1\":\"put-your-token1-here\",\"source2\":\"put-your-token2-here\"}",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "description": "Comma separated list of fields to include (case-sensitive!). For example: hotspots",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "default": "hotspots"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/VariantAnnotation"
+            }
+          }
+        }
+      }
+    },
+    "/ensembl/canonical-gene/entrez": {
+      "post": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Retrieves canonical Ensembl Gene ID by Entrez Gene Ids",
+        "operationId": "fetchCanonicalEnsemblGeneIdByEntrezGeneIdsPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "entrezGeneIds",
+            "description": "List of Entrez Gene Ids. For example [\"23140\",\"26009\",\"100131879\"]",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EnsemblGene"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ensembl/canonical-gene/entrez/{entrezGeneId}": {
+      "get": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Retrieves Ensembl canonical gene id by Entrez Gene Id",
+        "operationId": "fetchCanonicalEnsemblGeneIdByEntrezGeneIdGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "entrezGeneId",
+            "in": "path",
+            "description": "An Entrez Gene Id. For example 23140",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/EnsemblGene"
+            }
+          }
+        }
+      }
+    },
+    "/ensembl/canonical-gene/hgnc": {
+      "post": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Retrieves canonical Ensembl Gene ID by Hugo Symbols",
+        "operationId": "fetchCanonicalEnsemblGeneIdByHugoSymbolsPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "hugoSymbols",
+            "description": "List of Hugo Symbols. For example [\"TP53\",\"PIK3CA\",\"BRCA1\"]",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EnsemblGene"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ensembl/canonical-gene/hgnc/{hugoSymbol}": {
+      "get": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Retrieves Ensembl canonical gene id by Hugo Symbol",
+        "operationId": "fetchCanonicalEnsemblGeneIdByHugoSymbolGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "hugoSymbol",
+            "in": "path",
+            "description": "A Hugo Symbol. For example TP53",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/EnsemblGene"
+            }
+          }
+        }
+      }
+    },
+    "/ensembl/canonical-transcript/hgnc": {
+      "post": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Retrieves Ensembl canonical transcripts by Hugo Symbols",
+        "operationId": "fetchCanonicalEnsemblTranscriptsByHugoSymbolsPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "hugoSymbols",
+            "description": "List of Hugo Symbols. For example [\"TP53\",\"PIK3CA\",\"BRCA1\"]",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "isoformOverrideSource",
+            "in": "query",
+            "description": "Isoform override source. For example uniprot",
+            "required": false,
+            "type": "string",
+            "default": "uniprot"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EnsemblTranscript"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ensembl/canonical-transcript/hgnc/{hugoSymbol}": {
+      "get": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Retrieves Ensembl canonical transcript by Hugo Symbol",
+        "operationId": "fetchCanonicalEnsemblTranscriptByHugoSymbolGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "hugoSymbol",
+            "in": "path",
+            "description": "A Hugo Symbol. For example TP53",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "isoformOverrideSource",
+            "in": "query",
+            "description": "Isoform override source. For example uniprot",
+            "required": false,
+            "type": "string",
+            "default": "uniprot"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/EnsemblTranscript"
+            }
+          }
+        }
+      }
+    },
+    "/ensembl/transcript": {
+      "get": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Retrieves Ensembl Transcripts by protein ID, and gene ID. Retrieves all transcripts in case no query parameter provided",
+        "operationId": "fetchEnsemblTranscriptsGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "geneId",
+            "in": "query",
+            "description": "An Ensembl gene ID. For example ENSG00000136999",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "proteinId",
+            "in": "query",
+            "description": "An Ensembl protein ID. For example ENSP00000439985",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "hugoSymbol",
+            "in": "query",
+            "description": "A Hugo Symbol For example ARF5",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EnsemblTranscript"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Retrieves Ensembl Transcripts by Ensembl transcript IDs, hugo Symbols, protein IDs, or gene IDs",
+        "operationId": "fetchEnsemblTranscriptsByEnsemblFilterPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "ensemblFilter",
+            "description": "List of Ensembl transcript IDs. For example [\"ENST00000361390\", \"ENST00000361453\", \"ENST00000361624\"]<br>OR<br>List of Hugo Symbols. For example [\"TP53\", \"PIK3CA\", \"BRCA1\"]<br>OR<br>List of Ensembl protein IDs. For example [\"ENSP00000439985\", \"ENSP00000478460\", \"ENSP00000346196\"]<br>OR<br>List of Ensembl gene IDs. For example [\"ENSG00000136999\", \"ENSG00000272398\", \"ENSG00000198695\"]",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/EnsemblFilter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EnsemblTranscript"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ensembl/transcript/{transcriptId}": {
+      "get": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Retrieves the transcript by an Ensembl transcript ID",
+        "operationId": "fetchEnsemblTranscriptByTranscriptIdGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "transcriptId",
+            "in": "path",
+            "description": "An Ensembl transcript ID. For example ENST00000361390",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/EnsemblTranscript"
+            }
+          }
+        }
+      }
+    },
+    "/ensembl/xrefs": {
+      "get": {
+        "tags": [
+          "ensembl-controller"
+        ],
+        "summary": "Perform lookups of Ensembl identifiers and retrieve their external references in other databases",
+        "operationId": "fetchGeneXrefsGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "accession",
+            "in": "query",
+            "description": "Ensembl gene accession. For example ENSG00000169083",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GeneXref"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pdb/header": {
+      "post": {
+        "tags": [
+          "pdb-controller"
+        ],
+        "summary": "Retrieves PDB header info by a PDB id",
+        "operationId": "fetchPdbHeaderPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "pdbIds",
+            "description": "List of pdb ids, for example [\"1a37\",\"1a4o\"]",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PdbHeader"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pdb/header/{pdbId}": {
+      "get": {
+        "tags": [
+          "pdb-controller"
+        ],
+        "summary": "Retrieves PDB header info by a PDB id",
+        "operationId": "fetchPdbHeaderGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "pdbId",
+            "in": "path",
+            "description": "PDB id, for example 1a37",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/PdbHeader"
+            }
+          }
+        }
+      }
+    },
+    "/pfam/domain": {
+      "post": {
+        "tags": [
+          "pfam-controller"
+        ],
+        "summary": "Retrieves PFAM domains by PFAM domain accession IDs",
+        "operationId": "fetchPfamDomainsByPfamAccessionPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "pfamAccessions",
+            "description": "List of PFAM domain accession IDs. For example [\"PF02827\",\"PF00093\",\"PF15276\"]",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PfamDomain"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pfam/domain/{pfamAccession}": {
+      "get": {
+        "tags": [
+          "pfam-controller"
+        ],
+        "summary": "Retrieves a PFAM domain by a PFAM domain ID",
+        "operationId": "fetchPfamDomainsByAccessionGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "pfamAccession",
+            "in": "path",
+            "description": "A PFAM domain accession ID. For example PF02827",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/PfamDomain"
+            }
+          }
+        }
+      }
+    },
+    "/ptm/experimental": {
+      "get": {
+        "tags": [
+          "ptm-controller"
+        ],
+        "summary": "Retrieves PTM entries by Ensembl Transcript ID",
+        "operationId": "fetchPostTranslationalModificationsGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "ensemblTranscriptId",
+            "in": "query",
+            "description": "Ensembl Transcript ID. For example ENST00000646891",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PostTranslationalModification"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ptm-controller"
+        ],
+        "summary": "Retrieves PTM entries by Ensembl Transcript IDs",
+        "operationId": "fetchPostTranslationalModificationsByPtmFilterPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "ptmFilter",
+            "description": "List of Ensembl transcript IDs. For example [\"ENST00000420316\", \"ENST00000646891\", \"ENST00000371953\"]",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PtmFilter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PostTranslationalModification"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "tags": [
+          "info-controller"
+        ],
+        "summary": "Retrieve Genome Nexus Version",
+        "operationId": "fetchVersionGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/AggregateSourceInfo"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "AggregateSourceInfo": {
+      "type": "object",
+      "properties": {
+        "genomeNexus": {
+          "$ref": "#/definitions/GenomeNexusInfo"
+        },
+        "vep": {
+          "$ref": "#/definitions/VEPInfo"
+        }
+      }
+    },
+    "AlleleCount": {
+      "type": "object",
+      "required": [
+        "ac",
+        "ac_afr",
+        "ac_amr",
+        "ac_asj",
+        "ac_eas",
+        "ac_fin",
+        "ac_nfe",
+        "ac_oth",
+        "ac_sas"
+      ],
+      "properties": {
+        "ac": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ac_afr": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ac_amr": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ac_asj": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ac_eas": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ac_fin": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ac_nfe": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ac_oth": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ac_sas": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "AlleleFrequency": {
+      "type": "object",
+      "required": [
+        "af",
+        "af_afr",
+        "af_amr",
+        "af_asj",
+        "af_eas",
+        "af_fin",
+        "af_nfe",
+        "af_oth",
+        "af_sas"
+      ],
+      "properties": {
+        "af": {
+          "type": "number",
+          "format": "double"
+        },
+        "af_afr": {
+          "type": "number",
+          "format": "double"
+        },
+        "af_amr": {
+          "type": "number",
+          "format": "double"
+        },
+        "af_asj": {
+          "type": "number",
+          "format": "double"
+        },
+        "af_eas": {
+          "type": "number",
+          "format": "double"
+        },
+        "af_fin": {
+          "type": "number",
+          "format": "double"
+        },
+        "af_nfe": {
+          "type": "number",
+          "format": "double"
+        },
+        "af_oth": {
+          "type": "number",
+          "format": "double"
+        },
+        "af_sas": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "AlleleNumber": {
+      "type": "object",
+      "required": [
+        "an",
+        "an_afr",
+        "an_amr",
+        "an_asj",
+        "an_eas",
+        "an_fin",
+        "an_nfe",
+        "an_oth",
+        "an_sas"
+      ],
+      "properties": {
+        "an": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "an_afr": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "an_amr": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "an_asj": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "an_eas": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "an_fin": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "an_nfe": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "an_oth": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "an_sas": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "Alleles": {
+      "type": "object",
+      "properties": {
+        "allele": {
+          "type": "string",
+          "description": "allele"
+        }
+      }
+    },
+    "ArticleAbstract": {
+      "type": "object",
+      "properties": {
+        "abstract": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
+    "Citations": {
+      "type": "object",
+      "properties": {
+        "abstracts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ArticleAbstract"
+          }
+        },
+        "pmids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ClinVar": {
+      "type": "object",
+      "properties": {
+        "alleleId": {
+          "type": "integer",
+          "format": "int32",
+          "description": "allele_id"
+        },
+        "alt": {
+          "type": "string",
+          "description": "alt"
+        },
+        "chrom": {
+          "type": "string",
+          "description": "chrom"
+        },
+        "cytogenic": {
+          "type": "string",
+          "description": "cytogenic"
+        },
+        "gene": {
+          "description": "gene",
+          "$ref": "#/definitions/Gene"
+        },
+        "hg19": {
+          "description": "hg19",
+          "$ref": "#/definitions/Hg19"
+        },
+        "hg38": {
+          "description": "hg38",
+          "$ref": "#/definitions/Hg38"
+        },
+        "hgvs": {
+          "description": "hgvs",
+          "$ref": "#/definitions/Hgvs"
+        },
+        "license": {
+          "type": "string",
+          "description": "license"
+        },
+        "rcv": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Rcv"
+          }
+        },
+        "variantId": {
+          "type": "integer",
+          "format": "int32",
+          "description": "variant_id"
+        }
+      }
+    },
+    "Clinvar": {
+      "type": "object",
+      "properties": {
+        "alternateAllele": {
+          "type": "string"
+        },
+        "chromosome": {
+          "type": "string"
+        },
+        "clinicalSignificance": {
+          "type": "string"
+        },
+        "clinvarId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "conflictingClinicalSignificance": {
+          "type": "string"
+        },
+        "endPosition": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "referenceAllele": {
+          "type": "string"
+        },
+        "startPosition": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ClinvarAnnotation": {
+      "type": "object",
+      "properties": {
+        "annotation": {
+          "$ref": "#/definitions/Clinvar"
+        }
+      }
+    },
+    "ColocatedVariant": {
+      "type": "object",
+      "required": [
+        "gnomad_afr_allele",
+        "gnomad_afr_maf",
+        "gnomad_eas_allele",
+        "gnomad_eas_maf",
+        "gnomad_nfe_allele",
+        "gnomad_nfe_maf"
+      ],
+      "properties": {
+        "dbSnpId": {
+          "type": "string"
+        },
+        "gnomad_nfe_allele": {
+          "type": "string",
+          "description": "GnomAD Non-Finnish European Allele"
+        },
+        "gnomad_nfe_maf": {
+          "type": "string",
+          "description": "GnomAD Non-Finnish European MAF"
+        },
+        "gnomad_afr_allele": {
+          "type": "string",
+          "description": "GnomAD African/African American Allele"
+        },
+        "gnomad_afr_maf": {
+          "type": "string",
+          "description": "GnomAD African/African American MAF"
+        },
+        "gnomad_eas_allele": {
+          "type": "string",
+          "description": "GnomAD East Asian Allele"
+        },
+        "gnomad_eas_maf": {
+          "type": "string",
+          "description": "GnomAD East Asian MAF"
+        }
+      }
+    },
+    "Cosmic": {
+      "type": "object",
+      "properties": {
+        "alt": {
+          "type": "string",
+          "description": "alt"
+        },
+        "chrom": {
+          "type": "string",
+          "description": "chrom"
+        },
+        "cosmicId": {
+          "type": "string",
+          "description": "cosmic_id"
+        },
+        "hg19": {
+          "description": "hg19",
+          "$ref": "#/definitions/Hg19"
+        },
+        "license": {
+          "type": "string",
+          "description": "_license"
+        },
+        "mutFreq": {
+          "type": "number",
+          "format": "double",
+          "description": "mut_freq"
+        },
+        "mutNt": {
+          "type": "string",
+          "description": "mut_nt"
+        },
+        "ref": {
+          "type": "string",
+          "description": "ref"
+        },
+        "tumorSite": {
+          "type": "string",
+          "description": "tumor_site"
+        }
+      }
+    },
+    "CountByTumorType": {
+      "type": "object",
+      "properties": {
+        "tumorType": {
+          "type": "string",
+          "description": "Tumor Type"
+        },
+        "tumorTypeCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Sample count for Tumor Type"
+        },
+        "variantCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Variant count for Tumor Type"
+        }
+      }
+    },
+    "Dbsnp": {
+      "type": "object",
+      "properties": {
+        "_class": {
+          "type": "string",
+          "description": "class"
+        },
+        "alleleOrigin": {
+          "type": "string",
+          "description": "allele_origin"
+        },
+        "alleles": {
+          "type": "array",
+          "description": "alleles",
+          "items": {
+            "$ref": "#/definitions/Alleles"
+          }
+        },
+        "alt": {
+          "type": "string",
+          "description": "alt"
+        },
+        "chrom": {
+          "type": "string",
+          "description": "chrom"
+        },
+        "dbsnpBuild": {
+          "type": "integer",
+          "format": "int32",
+          "description": "dbsnp_build"
+        },
+        "flags": {
+          "type": "array",
+          "description": "flags",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hg19": {
+          "description": "hg19",
+          "$ref": "#/definitions/Hg19"
+        },
+        "license": {
+          "type": "string",
+          "description": "_license"
+        },
+        "ref": {
+          "type": "string",
+          "description": "ref"
+        },
+        "rsid": {
+          "type": "string",
+          "description": "rsid"
+        },
+        "validated": {
+          "type": "boolean",
+          "example": false,
+          "description": "validated"
+        },
+        "varSubtype": {
+          "type": "string",
+          "description": "var_subtype"
+        },
+        "vartype": {
+          "type": "string",
+          "description": "vartype"
+        }
+      }
+    },
+    "Drug": {
+      "type": "object",
+      "properties": {
+        "drugName": {
+          "type": "string"
+        },
+        "ncitCode": {
+          "type": "string"
+        },
+        "synonyms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "uuid": {
+          "type": "string"
+        }
+      }
+    },
+    "EnsemblFilter": {
+      "type": "object",
+      "properties": {
+        "geneIds": {
+          "type": "array",
+          "description": "List of Ensembl gene IDs. For example [\"ENSG00000136999\", \"ENSG00000272398\", \"ENSG00000198695\"]",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hugoSymbols": {
+          "type": "array",
+          "description": "List of Hugo Symbols. For example [\"TP53\", \"PIK3CA\", \"BRCA1\"]",
+          "items": {
+            "type": "string"
+          }
+        },
+        "proteinIds": {
+          "type": "array",
+          "description": "List of Ensembl protein IDs. For example [\"ENSP00000439985\", \"ENSP00000478460\", \"ENSP00000346196\"]",
+          "items": {
+            "type": "string"
+          }
+        },
+        "transcriptIds": {
+          "type": "array",
+          "description": "List of Ensembl transcript IDs. For example [\"ENST00000361390\", \"ENST00000361453\", \"ENST00000361624\"]",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "EnsemblGene": {
+      "type": "object",
+      "required": [
+        "geneId",
+        "hugoSymbol"
+      ],
+      "properties": {
+        "geneId": {
+          "type": "string",
+          "description": "Ensembl gene id"
+        },
+        "hugoSymbol": {
+          "type": "string",
+          "description": "Approved Hugo symbol"
+        },
+        "synonyms": {
+          "type": "array",
+          "description": "Hugo symbol synonyms",
+          "items": {
+            "type": "string"
+          }
+        },
+        "previousSymbols": {
+          "type": "array",
+          "description": "Previous Hugo symbols",
+          "items": {
+            "type": "string"
+          }
+        },
+        "entrezGeneId": {
+          "type": "string",
+          "description": "Entrez Gene Id"
+        }
+      }
+    },
+    "EnsemblTranscript": {
+      "type": "object",
+      "required": [
+        "geneId",
+        "proteinId",
+        "transcriptId"
+      ],
+      "properties": {
+        "uniprotId": {
+          "type": "string"
+        },
+        "transcriptId": {
+          "type": "string",
+          "description": "Ensembl transcript id"
+        },
+        "geneId": {
+          "type": "string",
+          "description": "Ensembl gene id"
+        },
+        "proteinId": {
+          "type": "string",
+          "description": "Ensembl protein id"
+        },
+        "proteinLength": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Length of protein"
+        },
+        "pfamDomains": {
+          "type": "array",
+          "description": "Pfam domains",
+          "items": {
+            "$ref": "#/definitions/PfamDomainRange"
+          }
+        },
+        "hugoSymbols": {
+          "type": "array",
+          "description": "Hugo symbols",
+          "items": {
+            "type": "string"
+          }
+        },
+        "refseqMrnaId": {
+          "type": "string",
+          "description": "RefSeq mRNA ID"
+        },
+        "ccdsId": {
+          "type": "string",
+          "description": "Consensus CDS (CCDS) ID"
+        },
+        "exons": {
+          "type": "array",
+          "description": "Exon information",
+          "items": {
+            "$ref": "#/definitions/Exon"
+          }
+        },
+        "utrs": {
+          "type": "array",
+          "description": "UTR information",
+          "items": {
+            "$ref": "#/definitions/UntranslatedRegion"
+          }
+        }
+      }
+    },
+    "Exon": {
+      "type": "object",
+      "required": [
+        "exonEnd",
+        "exonId",
+        "exonStart",
+        "rank",
+        "strand",
+        "version"
+      ],
+      "properties": {
+        "exonId": {
+          "type": "string",
+          "description": "Exon id"
+        },
+        "exonStart": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Start position of exon"
+        },
+        "exonEnd": {
+          "type": "integer",
+          "format": "int32",
+          "description": "End position of exon"
+        },
+        "rank": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of exon in transcript"
+        },
+        "strand": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Strand exon is on, -1 for - and 1 for +"
+        },
+        "version": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Exon version"
+        }
+      }
+    },
+    "Gene": {
+      "type": "object",
+      "properties": {
+        "geneId": {
+          "type": "string",
+          "description": "geneid"
+        },
+        "symbol": {
+          "type": "string",
+          "description": "symbol"
+        }
+      }
+    },
+    "GeneXref": {
+      "type": "object",
+      "required": [
+        "db_display_name",
+        "dbname",
+        "description",
+        "display_id",
+        "primary_id",
+        "version"
+      ],
+      "properties": {
+        "db_display_name": {
+          "type": "string",
+          "description": "Database display name"
+        },
+        "dbname": {
+          "type": "string",
+          "description": "Database name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description"
+        },
+        "display_id": {
+          "type": "string",
+          "description": "Display id"
+        },
+        "ensemblGeneId": {
+          "type": "string"
+        },
+        "info_text": {
+          "type": "string",
+          "description": "Database info text"
+        },
+        "info_types": {
+          "type": "string",
+          "description": "Database info type"
+        },
+        "primary_id": {
+          "type": "string",
+          "description": "Primary id"
+        },
+        "synonyms": {
+          "type": "array",
+          "description": "Synonyms",
+          "items": {
+            "type": "string"
+          }
+        },
+        "version": {
+          "type": "string",
+          "description": "Version"
+        }
+      }
+    },
+    "GeneralPopulationStats": {
+      "type": "object",
+      "properties": {
+        "counts": {
+          "description": "Counts",
+          "$ref": "#/definitions/SignalPopulationStats"
+        },
+        "frequencies": {
+          "description": "Frequencies",
+          "$ref": "#/definitions/SignalPopulationStats"
+        }
+      }
+    },
+    "GenomeNexusInfo": {
+      "type": "object",
+      "properties": {
+        "database": {
+          "$ref": "#/definitions/Version"
+        },
+        "server": {
+          "$ref": "#/definitions/Version"
+        }
+      }
+    },
+    "GenomicLocation": {
+      "type": "object",
+      "required": [
+        "chromosome",
+        "end",
+        "referenceAllele",
+        "start",
+        "variantAllele"
+      ],
+      "properties": {
+        "chromosome": {
+          "type": "string",
+          "description": "Chromosome"
+        },
+        "start": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Start Position"
+        },
+        "end": {
+          "type": "integer",
+          "format": "int32",
+          "description": "End Position"
+        },
+        "referenceAllele": {
+          "type": "string",
+          "description": "Reference Allele"
+        },
+        "variantAllele": {
+          "type": "string",
+          "description": "Variant Allele"
+        }
+      }
+    },
+    "Gnomad": {
+      "type": "object",
+      "properties": {
+        "alleleCount": {
+          "description": "ac",
+          "$ref": "#/definitions/AlleleCount"
+        },
+        "alleleFrequency": {
+          "description": "af",
+          "$ref": "#/definitions/AlleleFrequency"
+        },
+        "alleleNumber": {
+          "description": "an",
+          "$ref": "#/definitions/AlleleNumber"
+        },
+        "homozygotes": {
+          "description": "hom",
+          "$ref": "#/definitions/Homozygotes"
+        }
+      }
+    },
+    "Hg19": {
+      "type": "object",
+      "properties": {
+        "end": {
+          "type": "integer",
+          "format": "int32",
+          "description": "end"
+        },
+        "start": {
+          "type": "integer",
+          "format": "int32",
+          "description": "start"
+        }
+      }
+    },
+    "Hg38": {
+      "type": "object",
+      "properties": {
+        "end": {
+          "type": "string",
+          "description": "end"
+        },
+        "start": {
+          "type": "string",
+          "description": "start"
+        }
+      }
+    },
+    "Hgvs": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "genomic": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "protein": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Homozygotes": {
+      "type": "object",
+      "required": [
+        "hom",
+        "hom_afr",
+        "hom_amr",
+        "hom_asj",
+        "hom_eas",
+        "hom_fin",
+        "hom_nfe",
+        "hom_oth",
+        "hom_sas"
+      ],
+      "properties": {
+        "hom": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hom_afr": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hom_amr": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hom_asj": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hom_eas": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hom_fin": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hom_nfe": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hom_oth": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hom_sas": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "Hotspot": {
+      "type": "object",
+      "properties": {
+        "hugoSymbol": {
+          "type": "string",
+          "description": "Hugo gene symbol"
+        },
+        "inframeCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Inframe mutation count"
+        },
+        "missenseCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Missense mutation count"
+        },
+        "residue": {
+          "type": "string",
+          "description": "Hotspot residue"
+        },
+        "spliceCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Splice mutation count"
+        },
+        "transcriptId": {
+          "type": "string",
+          "description": "Ensembl Transcript Id"
+        },
+        "truncatingCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Truncation mutation count"
+        },
+        "tumorCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Tumor count"
+        },
+        "type": {
+          "type": "string",
+          "description": "Hotspot type"
+        }
+      }
+    },
+    "HotspotAnnotation": {
+      "type": "object",
+      "properties": {
+        "annotation": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Hotspot"
+            }
+          }
+        },
+        "license": {
+          "type": "string"
+        }
+      }
+    },
+    "HrdScore": {
+      "type": "object",
+      "properties": {
+        "fractionLoh": {
+          "type": "number",
+          "format": "double",
+          "description": "Median HRD Fraction LOH"
+        },
+        "lst": {
+          "type": "number",
+          "format": "double",
+          "description": "Median HRD LST"
+        },
+        "ntelomericAi": {
+          "type": "number",
+          "format": "double",
+          "description": "Median HRD ntelomeric AI"
+        }
+      }
+    },
+    "Implication": {
+      "type": "object",
+      "properties": {
+        "alterations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "levelOfEvidence": {
+          "type": "string",
+          "enum": [
+            "LEVEL_0",
+            "LEVEL_1",
+            "LEVEL_2",
+            "LEVEL_2A",
+            "LEVEL_2B",
+            "LEVEL_3A",
+            "LEVEL_3B",
+            "LEVEL_4",
+            "LEVEL_R1",
+            "LEVEL_R2",
+            "LEVEL_R3",
+            "LEVEL_Px1",
+            "LEVEL_Px2",
+            "LEVEL_Px3",
+            "LEVEL_Dx1",
+            "LEVEL_Dx2",
+            "LEVEL_Dx3",
+            "NO"
+          ]
+        },
+        "tumorType": {
+          "$ref": "#/definitions/TumorType"
+        }
+      }
+    },
+    "IndicatorQueryResp": {
+      "type": "object",
+      "properties": {
+        "alleleExist": {
+          "type": "boolean",
+          "example": false
+        },
+        "dataVersion": {
+          "type": "string"
+        },
+        "diagnosticImplications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Implication"
+          }
+        },
+        "diagnosticSummary": {
+          "type": "string"
+        },
+        "geneExist": {
+          "type": "boolean",
+          "example": false
+        },
+        "geneSummary": {
+          "type": "string"
+        },
+        "highestDiagnosticImplicationLevel": {
+          "type": "string",
+          "enum": [
+            "LEVEL_0",
+            "LEVEL_1",
+            "LEVEL_2",
+            "LEVEL_2A",
+            "LEVEL_2B",
+            "LEVEL_3A",
+            "LEVEL_3B",
+            "LEVEL_4",
+            "LEVEL_R1",
+            "LEVEL_R2",
+            "LEVEL_R3",
+            "LEVEL_Px1",
+            "LEVEL_Px2",
+            "LEVEL_Px3",
+            "LEVEL_Dx1",
+            "LEVEL_Dx2",
+            "LEVEL_Dx3",
+            "NO"
+          ]
+        },
+        "highestPrognosticImplicationLevel": {
+          "type": "string",
+          "enum": [
+            "LEVEL_0",
+            "LEVEL_1",
+            "LEVEL_2",
+            "LEVEL_2A",
+            "LEVEL_2B",
+            "LEVEL_3A",
+            "LEVEL_3B",
+            "LEVEL_4",
+            "LEVEL_R1",
+            "LEVEL_R2",
+            "LEVEL_R3",
+            "LEVEL_Px1",
+            "LEVEL_Px2",
+            "LEVEL_Px3",
+            "LEVEL_Dx1",
+            "LEVEL_Dx2",
+            "LEVEL_Dx3",
+            "NO"
+          ]
+        },
+        "highestResistanceLevel": {
+          "type": "string",
+          "enum": [
+            "LEVEL_0",
+            "LEVEL_1",
+            "LEVEL_2",
+            "LEVEL_2A",
+            "LEVEL_2B",
+            "LEVEL_3A",
+            "LEVEL_3B",
+            "LEVEL_4",
+            "LEVEL_R1",
+            "LEVEL_R2",
+            "LEVEL_R3",
+            "LEVEL_Px1",
+            "LEVEL_Px2",
+            "LEVEL_Px3",
+            "LEVEL_Dx1",
+            "LEVEL_Dx2",
+            "LEVEL_Dx3",
+            "NO"
+          ]
+        },
+        "highestSensitiveLevel": {
+          "type": "string",
+          "enum": [
+            "LEVEL_0",
+            "LEVEL_1",
+            "LEVEL_2",
+            "LEVEL_2A",
+            "LEVEL_2B",
+            "LEVEL_3A",
+            "LEVEL_3B",
+            "LEVEL_4",
+            "LEVEL_R1",
+            "LEVEL_R2",
+            "LEVEL_R3",
+            "LEVEL_Px1",
+            "LEVEL_Px2",
+            "LEVEL_Px3",
+            "LEVEL_Dx1",
+            "LEVEL_Dx2",
+            "LEVEL_Dx3",
+            "NO"
+          ]
+        },
+        "hotspot": {
+          "type": "boolean",
+          "example": false
+        },
+        "lastUpdate": {
+          "type": "string"
+        },
+        "mutationEffect": {
+          "$ref": "#/definitions/MutationEffectResp"
+        },
+        "oncogenic": {
+          "type": "string"
+        },
+        "otherSignificantResistanceLevels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "LEVEL_0",
+              "LEVEL_1",
+              "LEVEL_2",
+              "LEVEL_2A",
+              "LEVEL_2B",
+              "LEVEL_3A",
+              "LEVEL_3B",
+              "LEVEL_4",
+              "LEVEL_R1",
+              "LEVEL_R2",
+              "LEVEL_R3",
+              "LEVEL_Px1",
+              "LEVEL_Px2",
+              "LEVEL_Px3",
+              "LEVEL_Dx1",
+              "LEVEL_Dx2",
+              "LEVEL_Dx3",
+              "NO"
+            ]
+          }
+        },
+        "otherSignificantSensitiveLevels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "LEVEL_0",
+              "LEVEL_1",
+              "LEVEL_2",
+              "LEVEL_2A",
+              "LEVEL_2B",
+              "LEVEL_3A",
+              "LEVEL_3B",
+              "LEVEL_4",
+              "LEVEL_R1",
+              "LEVEL_R2",
+              "LEVEL_R3",
+              "LEVEL_Px1",
+              "LEVEL_Px2",
+              "LEVEL_Px3",
+              "LEVEL_Dx1",
+              "LEVEL_Dx2",
+              "LEVEL_Dx3",
+              "NO"
+            ]
+          }
+        },
+        "prognosticImplications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Implication"
+          }
+        },
+        "prognosticSummary": {
+          "type": "string"
+        },
+        "query": {
+          "$ref": "#/definitions/Query"
+        },
+        "treatments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/IndicatorQueryTreatment"
+          }
+        },
+        "tumorTypeSummary": {
+          "type": "string"
+        },
+        "variantExist": {
+          "type": "boolean",
+          "example": false
+        },
+        "variantSummary": {
+          "type": "string"
+        },
+        "vus": {
+          "type": "boolean",
+          "example": false
+        }
+      }
+    },
+    "IndicatorQueryTreatment": {
+      "type": "object",
+      "properties": {
+        "abstracts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ArticleAbstract"
+          }
+        },
+        "alterations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approvedIndications": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "drugs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Drug"
+          }
+        },
+        "fdaApproved": {
+          "type": "boolean",
+          "example": false
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "LEVEL_0",
+            "LEVEL_1",
+            "LEVEL_2",
+            "LEVEL_2A",
+            "LEVEL_2B",
+            "LEVEL_3A",
+            "LEVEL_3B",
+            "LEVEL_4",
+            "LEVEL_R1",
+            "LEVEL_R2",
+            "LEVEL_R3",
+            "LEVEL_Px1",
+            "LEVEL_Px2",
+            "LEVEL_Px3",
+            "LEVEL_Dx1",
+            "LEVEL_Dx2",
+            "LEVEL_Dx3",
+            "NO"
+          ]
+        },
+        "levelAssociatedCancerType": {
+          "$ref": "#/definitions/TumorType"
+        },
+        "pmids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "IntegerRange": {
+      "type": "object",
+      "properties": {
+        "end": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "start": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "IntergenicConsequences": {
+      "type": "object",
+      "required": [
+        "consequenceTerms",
+        "impact",
+        "variantAllele"
+      ],
+      "properties": {
+        "impact": {
+          "type": "string",
+          "description": "impact"
+        },
+        "variantAllele": {
+          "type": "string",
+          "description": "variant_allele"
+        },
+        "consequenceTerms": {
+          "type": "array",
+          "description": "consequence_terms",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "MainType": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tumorForm": {
+          "type": "string",
+          "enum": [
+            "SOLID",
+            "LIQUID"
+          ]
+        }
+      },
+      "description": "OncoTree Cancer Type"
+    },
+    "MutationAssessor": {
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "codonStartPosition": {
+          "type": "string",
+          "description": "Codon start position"
+        },
+        "cosmicCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of mutations in COSMIC for this protein"
+        },
+        "functionalImpact": {
+          "type": "string",
+          "description": "Functional impact"
+        },
+        "functionalImpactScore": {
+          "type": "number",
+          "format": "double",
+          "description": "Functional impact score"
+        },
+        "hgvs": {
+          "type": "string"
+        },
+        "hugoSymbol": {
+          "type": "string",
+          "description": "Hugo gene symbol"
+        },
+        "input": {
+          "type": "string",
+          "description": "User-input variants"
+        },
+        "mappingIssue": {
+          "type": "string",
+          "description": "Mapping issue info"
+        },
+        "msaGaps": {
+          "type": "number",
+          "format": "double",
+          "description": "Portion of gaps in variant position in multiple sequence alignment"
+        },
+        "msaHeight": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of diverse sequences in multiple sequence alignment (identical or highly similar sequences filtered out)"
+        },
+        "msaLink": {
+          "type": "string",
+          "description": "Link to multiple sequence alignment"
+        },
+        "pdbLink": {
+          "type": "string",
+          "description": "Link to 3d structure browser"
+        },
+        "referenceGenomeVariant": {
+          "type": "string",
+          "description": "Reference genome variant"
+        },
+        "referenceGenomeVariantType": {
+          "type": "string",
+          "description": "Reference genome variant type"
+        },
+        "refseqId": {
+          "type": "string",
+          "description": "Refseq protein ID"
+        },
+        "refseqPosition": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Variant position in Refseq protein, can be different from the one in Uniprot"
+        },
+        "refseqResidue": {
+          "type": "string",
+          "description": "Reference residue in Refseq protein, can be different from the one in Uniprot"
+        },
+        "snpCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of SNPs in dbSNP for this protein"
+        },
+        "uniprotId": {
+          "type": "string",
+          "description": "Uniprot protein accession ID"
+        },
+        "uniprotPosition": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Variant position in Uniprot protein, can be different from the one in Refseq"
+        },
+        "uniprotResidue": {
+          "type": "string",
+          "description": "Reference residue in Uniprot protein, can be different from the one in Refseq"
+        },
+        "variant": {
+          "type": "string",
+          "description": "Amino acid substitution"
+        },
+        "variantConservationScore": {
+          "type": "number",
+          "format": "double",
+          "description": "Variant conservation score"
+        },
+        "variantSpecificityScore": {
+          "type": "number",
+          "format": "double",
+          "description": "Variant specificity score"
+        }
+      }
+    },
+    "MutationAssessorAnnotation": {
+      "type": "object",
+      "properties": {
+        "annotation": {
+          "$ref": "#/definitions/MutationAssessor"
+        },
+        "license": {
+          "type": "string"
+        }
+      }
+    },
+    "MutationEffectResp": {
+      "type": "object",
+      "properties": {
+        "citations": {
+          "$ref": "#/definitions/Citations"
+        },
+        "description": {
+          "type": "string"
+        },
+        "knownEffect": {
+          "type": "string"
+        }
+      }
+    },
+    "Mutdb": {
+      "type": "object",
+      "properties": {
+        "alt": {
+          "type": "string",
+          "description": "alt"
+        },
+        "chrom": {
+          "type": "string",
+          "description": "chrom"
+        },
+        "cosmicId": {
+          "type": "string",
+          "description": "cosmic_id"
+        },
+        "hg19": {
+          "description": "hg19",
+          "$ref": "#/definitions/Hg19"
+        },
+        "mutpredScore": {
+          "type": "number",
+          "format": "double",
+          "description": "mutpred_score"
+        },
+        "ref": {
+          "type": "string",
+          "description": "ref"
+        },
+        "rsid": {
+          "type": "string",
+          "description": "rsid"
+        },
+        "uniprotId": {
+          "type": "string",
+          "description": "uniprot_id"
+        }
+      }
+    },
+    "MyVariantInfo": {
+      "type": "object",
+      "properties": {
+        "clinVar": {
+          "description": "clinvar",
+          "$ref": "#/definitions/ClinVar"
+        },
+        "cosmic": {
+          "description": "cosmic",
+          "$ref": "#/definitions/Cosmic"
+        },
+        "dbsnp": {
+          "description": "dbsnp",
+          "$ref": "#/definitions/Dbsnp"
+        },
+        "gnomadExome": {
+          "description": "gnomad_exome",
+          "$ref": "#/definitions/Gnomad"
+        },
+        "gnomadGenome": {
+          "description": "gnomad_genome",
+          "$ref": "#/definitions/Gnomad"
+        },
+        "hgvs": {
+          "type": "string",
+          "description": "hgvs"
+        },
+        "mutdb": {
+          "$ref": "#/definitions/Mutdb"
+        },
+        "query": {
+          "type": "string"
+        },
+        "snpeff": {
+          "description": "snpeff",
+          "$ref": "#/definitions/Snpeff"
+        },
+        "variant": {
+          "type": "string",
+          "description": "variant"
+        },
+        "vcf": {
+          "description": "vcf",
+          "$ref": "#/definitions/Vcf"
+        },
+        "version": {
+          "type": "integer",
+          "format": "int32",
+          "description": "version"
+        }
+      }
+    },
+    "MyVariantInfoAnnotation": {
+      "type": "object",
+      "properties": {
+        "annotation": {
+          "$ref": "#/definitions/MyVariantInfo"
+        },
+        "license": {
+          "type": "string"
+        }
+      }
+    },
+    "NucleotideContext": {
+      "type": "object",
+      "required": [
+        "seq"
+      ],
+      "properties": {
+        "hgvs": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "molecule": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "seq": {
+          "type": "string",
+          "description": "Nucleotide context sequence"
+        }
+      }
+    },
+    "NucleotideContextAnnotation": {
+      "type": "object",
+      "properties": {
+        "annotation": {
+          "$ref": "#/definitions/NucleotideContext"
+        },
+        "license": {
+          "type": "string"
+        }
+      }
+    },
+    "OncokbAnnotation": {
+      "type": "object",
+      "properties": {
+        "annotation": {
+          "$ref": "#/definitions/IndicatorQueryResp"
+        },
+        "license": {
+          "type": "string"
+        }
+      }
+    },
+    "PdbHeader": {
+      "type": "object",
+      "required": [
+        "pdbId",
+        "title"
+      ],
+      "properties": {
+        "compound": {
+          "type": "object"
+        },
+        "pdbId": {
+          "type": "string",
+          "description": "PDB id"
+        },
+        "source": {
+          "type": "object"
+        },
+        "title": {
+          "type": "string",
+          "description": "PDB description"
+        }
+      }
+    },
+    "PfamDomain": {
+      "type": "object",
+      "required": [
+        "name",
+        "pfamAccession"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "PFAM domain description"
+        },
+        "name": {
+          "type": "string",
+          "description": "PFAM domain name"
+        },
+        "pfamAccession": {
+          "type": "string",
+          "description": "PFAM domain accession"
+        }
+      }
+    },
+    "PfamDomainRange": {
+      "type": "object",
+      "required": [
+        "pfamDomainEnd",
+        "pfamDomainId",
+        "pfamDomainStart"
+      ],
+      "properties": {
+        "pfamDomainId": {
+          "type": "string",
+          "description": "Pfam domain id"
+        },
+        "pfamDomainStart": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Pfam domain start amino acid"
+        },
+        "pfamDomainEnd": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Pfam domain end amino acid"
+        }
+      }
+    },
+    "PostTranslationalModification": {
+      "type": "object",
+      "properties": {
+        "ensemblTranscriptIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "position": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pubmedIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sequence": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "uniprotAccession": {
+          "type": "string"
+        },
+        "uniprotEntry": {
+          "type": "string"
+        }
+      }
+    },
+    "PtmAnnotation": {
+      "type": "object",
+      "properties": {
+        "annotation": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/PostTranslationalModification"
+            }
+          }
+        },
+        "license": {
+          "type": "string"
+        }
+      }
+    },
+    "PtmFilter": {
+      "type": "object",
+      "properties": {
+        "transcriptIds": {
+          "type": "array",
+          "description": "List of Ensembl transcript IDs. For example [\"ENST00000361390\", \"ENST00000361453\", \"ENST00000361624\"]",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Query": {
+      "type": "object",
+      "properties": {
+        "alteration": {
+          "type": "string"
+        },
+        "alterationType": {
+          "type": "string"
+        },
+        "consequence": {
+          "type": "string"
+        },
+        "entrezGeneId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "hgvs": {
+          "type": "string"
+        },
+        "hugoSymbol": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "proteinEnd": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "proteinStart": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "svType": {
+          "type": "string",
+          "enum": [
+            "DELETION",
+            "TRANSLOCATION",
+            "DUPLICATION",
+            "INSERTION",
+            "INVERSION",
+            "FUSION",
+            "UNKNOWN"
+          ]
+        },
+        "tumorType": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "Rcv": {
+      "type": "object",
+      "properties": {
+        "accession": {
+          "type": "string",
+          "description": "accession"
+        },
+        "clinicalSignificance": {
+          "type": "string",
+          "description": "clinical_significance"
+        },
+        "origin": {
+          "type": "string",
+          "description": "origin"
+        },
+        "preferredName": {
+          "type": "string",
+          "description": "preferred_name"
+        }
+      }
+    },
+    "SignalAnnotation": {
+      "type": "object",
+      "properties": {
+        "annotation": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SignalMutation"
+          }
+        },
+        "license": {
+          "type": "string"
+        }
+      }
+    },
+    "SignalMutation": {
+      "type": "object",
+      "properties": {
+        "biallelicCountsByTumorType": {
+          "type": "array",
+          "description": "Biallelic Counts by Tumor Type",
+          "items": {
+            "$ref": "#/definitions/CountByTumorType"
+          }
+        },
+        "chromosome": {
+          "type": "string",
+          "description": "Chromosome"
+        },
+        "countsByTumorType": {
+          "type": "array",
+          "description": "Counts by Tumor Type",
+          "items": {
+            "$ref": "#/definitions/CountByTumorType"
+          }
+        },
+        "endPosition": {
+          "type": "integer",
+          "format": "int64",
+          "description": "End Position"
+        },
+        "generalPopulationStats": {
+          "description": "General Population Stats",
+          "$ref": "#/definitions/GeneralPopulationStats"
+        },
+        "hugoGeneSymbol": {
+          "type": "string",
+          "description": "Hugo Gene Symbol"
+        },
+        "mskExperReview": {
+          "type": "boolean",
+          "example": false,
+          "description": "Msk Expert Review"
+        },
+        "mutationStatus": {
+          "type": "string",
+          "description": "Mutation Status"
+        },
+        "overallNumberOfGermlineHomozygous": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pathogenic": {
+          "type": "string",
+          "description": "Pathogenic"
+        },
+        "penetrance": {
+          "type": "string",
+          "description": "Penetrance"
+        },
+        "qcPassCountsByTumorType": {
+          "type": "array",
+          "description": "QC Pass Counts by Tumor Type",
+          "items": {
+            "$ref": "#/definitions/CountByTumorType"
+          }
+        },
+        "referenceAllele": {
+          "type": "string",
+          "description": "Reference Allele"
+        },
+        "startPosition": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Start Position"
+        },
+        "statsByTumorType": {
+          "type": "array",
+          "description": "Stats By Tumor Type",
+          "items": {
+            "$ref": "#/definitions/StatsByTumorType"
+          }
+        },
+        "variantAllele": {
+          "type": "string",
+          "description": "Variant Allele"
+        }
+      }
+    },
+    "SignalPopulationStats": {
+      "type": "object",
+      "properties": {
+        "afr": {
+          "type": "number",
+          "format": "double",
+          "description": "African/African American"
+        },
+        "asj": {
+          "type": "number",
+          "format": "double",
+          "description": "Ashkenazi Jewish"
+        },
+        "asn": {
+          "type": "number",
+          "format": "double",
+          "description": "Asian"
+        },
+        "eur": {
+          "type": "number",
+          "format": "double",
+          "description": "European"
+        },
+        "impact": {
+          "type": "number",
+          "format": "double",
+          "description": "Impact"
+        },
+        "oth": {
+          "type": "number",
+          "format": "double",
+          "description": "Other"
+        }
+      }
+    },
+    "Snpeff": {
+      "type": "object",
+      "properties": {
+        "license": {
+          "type": "string",
+          "description": "license"
+        }
+      }
+    },
+    "StatsByTumorType": {
+      "type": "object",
+      "properties": {
+        "ageAtDx": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Median Age at Dx"
+        },
+        "fBiallelic": {
+          "type": "number",
+          "format": "double",
+          "description": "Frequency Of Biallelic"
+        },
+        "fCancerTypeCount": {
+          "type": "number",
+          "format": "double",
+          "description": "Frequency Of Cancer Type Count"
+        },
+        "hrdScore": {
+          "description": "Hrd Score",
+          "$ref": "#/definitions/HrdScore"
+        },
+        "msiScore": {
+          "type": "number",
+          "format": "double",
+          "description": "Msi Score"
+        },
+        "nCancerTypeCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number Of Cancer Type Count"
+        },
+        "numberOfGermlineHomozygous": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number Of Germline Homozygous Per Tumor Type"
+        },
+        "numberWithSig": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of Variants with Signature"
+        },
+        "tmb": {
+          "type": "number",
+          "format": "double",
+          "description": "Median TMB"
+        },
+        "tumorType": {
+          "type": "string",
+          "description": "Tumor Type"
+        }
+      }
+    },
+    "TranscriptConsequence": {
+      "type": "object",
+      "required": [
+        "transcript_id"
+      ],
+      "properties": {
+        "amino_acids": {
+          "type": "string",
+          "description": "Amino acids"
+        },
+        "canonical": {
+          "type": "string",
+          "description": "Canonical transcript indicator"
+        },
+        "codons": {
+          "type": "string",
+          "description": "Codons"
+        },
+        "consequence_terms": {
+          "type": "array",
+          "description": "List of consequence terms",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exon": {
+          "type": "string"
+        },
+        "gene_id": {
+          "type": "string",
+          "description": "Ensembl gene id"
+        },
+        "gene_symbol": {
+          "type": "string",
+          "description": "Hugo gene symbol"
+        },
+        "hgnc_id": {
+          "type": "string",
+          "description": "HGNC id"
+        },
+        "hgvsc": {
+          "type": "string",
+          "description": "HGVSc"
+        },
+        "hgvsg": {
+          "type": "string",
+          "description": "HGVSg"
+        },
+        "hgvsp": {
+          "type": "string",
+          "description": "HGVSp"
+        },
+        "polyphen_prediction": {
+          "type": "string",
+          "description": "Polyphen Prediction"
+        },
+        "polyphen_score": {
+          "type": "number",
+          "format": "double",
+          "description": "Polyphen Score"
+        },
+        "protein_end": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Protein end position"
+        },
+        "protein_id": {
+          "type": "string",
+          "description": "Ensembl protein id"
+        },
+        "protein_start": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Protein start position"
+        },
+        "refseq_transcript_ids": {
+          "type": "array",
+          "description": "List of RefSeq transcript ids",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sift_prediction": {
+          "type": "string",
+          "description": "Sift Prediction"
+        },
+        "sift_score": {
+          "type": "number",
+          "format": "double",
+          "description": "Sift Score"
+        },
+        "transcript_id": {
+          "type": "string",
+          "description": "Ensembl transcript id"
+        },
+        "uniprotId": {
+          "type": "string"
+        },
+        "variant_allele": {
+          "type": "string",
+          "description": "Variant allele"
+        }
+      }
+    },
+    "TranscriptConsequenceSummary": {
+      "type": "object",
+      "required": [
+        "transcriptId"
+      ],
+      "properties": {
+        "aminoAcidAlt": {
+          "type": "string",
+          "description": "Alt Amino Acid"
+        },
+        "aminoAcidRef": {
+          "type": "string",
+          "description": "Reference Amino Acid"
+        },
+        "aminoAcids": {
+          "type": "string",
+          "description": "Amino acids change"
+        },
+        "codonChange": {
+          "type": "string",
+          "description": "Codon change"
+        },
+        "consequenceTerms": {
+          "type": "string",
+          "description": "Consequence terms (comma separated)"
+        },
+        "entrezGeneId": {
+          "type": "string",
+          "description": "Entrez gene id"
+        },
+        "exon": {
+          "type": "string"
+        },
+        "hgvsc": {
+          "type": "string",
+          "description": "HGVSc"
+        },
+        "hgvsp": {
+          "type": "string",
+          "description": "HGVSp"
+        },
+        "hgvspShort": {
+          "type": "string",
+          "description": "HGVSp short"
+        },
+        "hugoGeneSymbol": {
+          "type": "string",
+          "description": "Hugo gene symbol"
+        },
+        "polyphenPrediction": {
+          "type": "string",
+          "description": "Polyphen Prediction"
+        },
+        "polyphenScore": {
+          "type": "number",
+          "format": "double",
+          "description": "Polyphen Score"
+        },
+        "proteinPosition": {
+          "description": "Protein position (start and end)",
+          "$ref": "#/definitions/IntegerRange"
+        },
+        "refSeq": {
+          "type": "string",
+          "description": "RefSeq id"
+        },
+        "siftPrediction": {
+          "type": "string",
+          "description": "Sift Prediction"
+        },
+        "siftScore": {
+          "type": "number",
+          "format": "double",
+          "description": "Sift Score"
+        },
+        "transcriptId": {
+          "type": "string",
+          "description": "Transcript id"
+        },
+        "uniprotId": {
+          "type": "string",
+          "description": "Uniprot ID"
+        },
+        "variantClassification": {
+          "type": "string",
+          "description": "Variant classification"
+        }
+      }
+    },
+    "TumorType": {
+      "type": "object",
+      "properties": {
+        "children": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/TumorType"
+          }
+        },
+        "code": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "level": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "mainType": {
+          "$ref": "#/definitions/MainType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "tissue": {
+          "type": "string"
+        },
+        "tumorForm": {
+          "type": "string",
+          "enum": [
+            "SOLID",
+            "LIQUID"
+          ]
+        }
+      },
+      "description": "OncoTree Detailed Cancer Type"
+    },
+    "UntranslatedRegion": {
+      "type": "object",
+      "required": [
+        "end",
+        "start",
+        "strand",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "UTR Type"
+        },
+        "start": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Start position of UTR"
+        },
+        "end": {
+          "type": "integer",
+          "format": "int32",
+          "description": "End position of UTR"
+        },
+        "strand": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Strand UTR is on, -1 for - and 1 for +"
+        }
+      }
+    },
+    "VEPInfo": {
+      "type": "object",
+      "properties": {
+        "cache": {
+          "$ref": "#/definitions/Version"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "server": {
+          "$ref": "#/definitions/Version"
+        }
+      }
+    },
+    "VariantAnnotation": {
+      "type": "object",
+      "required": [
+        "id",
+        "intergenic_consequences",
+        "originalVariantQuery",
+        "variant"
+      ],
+      "properties": {
+        "allele_string": {
+          "type": "string",
+          "description": "Allele string (e.g: A/T)"
+        },
+        "annotationJSON": {
+          "type": "string",
+          "description": "Annotation data as JSON string"
+        },
+        "annotation_summary": {
+          "description": "Variant Annotation Summary",
+          "$ref": "#/definitions/VariantAnnotationSummary"
+        },
+        "assembly_name": {
+          "type": "string",
+          "description": "NCBI build number"
+        },
+        "clinvar": {
+          "description": "ClinVar",
+          "$ref": "#/definitions/ClinvarAnnotation"
+        },
+        "colocatedVariants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ColocatedVariant"
+          }
+        },
+        "end": {
+          "type": "integer",
+          "format": "int32",
+          "description": "End position"
+        },
+        "hgvsg": {
+          "type": "string"
+        },
+        "hotspots": {
+          "description": "Hotspot Annotation",
+          "$ref": "#/definitions/HotspotAnnotation"
+        },
+        "id": {
+          "type": "string",
+          "description": "Variant id"
+        },
+        "intergenic_consequences": {
+          "type": "array",
+          "description": "intergenicConsequences",
+          "items": {
+            "$ref": "#/definitions/IntergenicConsequences"
+          }
+        },
+        "most_severe_consequence": {
+          "type": "string",
+          "description": "Most severe consequence"
+        },
+        "mutation_assessor": {
+          "description": "Mutation Assessor Annotation",
+          "$ref": "#/definitions/MutationAssessorAnnotation"
+        },
+        "my_variant_info": {
+          "description": "My Variant Info Annotation",
+          "$ref": "#/definitions/MyVariantInfoAnnotation"
+        },
+        "nucleotide_context": {
+          "description": "Nucleotide Context Annotation",
+          "$ref": "#/definitions/NucleotideContextAnnotation"
+        },
+        "oncokb": {
+          "description": "Oncokb",
+          "$ref": "#/definitions/OncokbAnnotation"
+        },
+        "originalVariantQuery": {
+          "type": "string",
+          "description": "Original variant query"
+        },
+        "ptms": {
+          "description": "Post Translational Modifications",
+          "$ref": "#/definitions/PtmAnnotation"
+        },
+        "seq_region_name": {
+          "type": "string",
+          "description": "Chromosome"
+        },
+        "signalAnnotation": {
+          "$ref": "#/definitions/SignalAnnotation"
+        },
+        "start": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Start position"
+        },
+        "strand": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Strand (negative or positive)"
+        },
+        "successfully_annotated": {
+          "type": "boolean",
+          "example": false,
+          "description": "Status flag indicating whether variant was succesfully annotated"
+        },
+        "transcript_consequences": {
+          "type": "array",
+          "description": "List of transcripts",
+          "items": {
+            "$ref": "#/definitions/TranscriptConsequence"
+          }
+        },
+        "variant": {
+          "type": "string",
+          "description": "Variant key"
+        }
+      }
+    },
+    "VariantAnnotationSummary": {
+      "type": "object",
+      "required": [
+        "transcriptConsequenceSummaries",
+        "transcriptConsequenceSummary",
+        "transcriptConsequences",
+        "variant"
+      ],
+      "properties": {
+        "assemblyName": {
+          "type": "string",
+          "description": "Assembly name"
+        },
+        "canonicalTranscriptId": {
+          "type": "string",
+          "description": "Canonical transcript id"
+        },
+        "genomicLocation": {
+          "description": "Genomic location",
+          "$ref": "#/definitions/GenomicLocation"
+        },
+        "strandSign": {
+          "type": "string",
+          "description": "Strand (- or +)"
+        },
+        "transcriptConsequenceSummaries": {
+          "type": "array",
+          "description": "All transcript consequence summaries",
+          "items": {
+            "$ref": "#/definitions/TranscriptConsequenceSummary"
+          }
+        },
+        "transcriptConsequenceSummary": {
+          "description": "Most impactful transcript consequence of canonical transcript or if non-existent any transcript",
+          "$ref": "#/definitions/TranscriptConsequenceSummary"
+        },
+        "transcriptConsequences": {
+          "type": "array",
+          "description": "(Deprecated) Transcript consequence summaries (list of one when using annotation/, multiple when using annotation/summary/",
+          "items": {
+            "$ref": "#/definitions/TranscriptConsequenceSummary"
+          }
+        },
+        "variant": {
+          "type": "string",
+          "description": "Variant key"
+        },
+        "variantType": {
+          "type": "string",
+          "description": "Variant type"
+        }
+      }
+    },
+    "Vcf": {
+      "type": "object",
+      "properties": {
+        "alt": {
+          "type": "string",
+          "description": "alt"
+        },
+        "position": {
+          "type": "string",
+          "description": "position"
+        },
+        "ref": {
+          "type": "string",
+          "description": "ref"
+        }
+      }
+    },
+    "Version": {
+      "type": "object",
+      "properties": {
+        "static": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

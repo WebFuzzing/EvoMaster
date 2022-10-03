@@ -1155,6 +1155,12 @@ class EMConfig {
     var extraHeader = false
 
 
+    @Experimental
+    @Cfg("Percentage [0.0,1.0] of elapsed time in the search while trying to infer any extra query parameter and" +
+            " header. After this time has passed, those attempts stop. ")
+    @PercentageAsProbability(false)
+    var searchPercentageExtraHandling = 0.1
+
     enum class ResourceSamplingStrategy(val requiredArchive: Boolean = false) {
         NONE,
         /**
@@ -1820,5 +1826,12 @@ class EMConfig {
         if(instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if(instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         return categories.joinToString(",")
+    }
+
+    /**
+     * @return whether to handle the external service mocking
+     */
+    fun isEnabledExternalServiceMocking(): Boolean {
+        return externalServiceIPSelectionStrategy != ExternalServiceIPSelectionStrategy.NONE
     }
 }

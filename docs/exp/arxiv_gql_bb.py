@@ -24,9 +24,8 @@
 #
 #  for s in `ls *.sh`; do sbatch $s; done
 #
-#  For local experiments, better to use schedule.py
 #
-#  Currently, for 100k budget, use 300 minutes as timeout on cluster
+#  Currently, for 100k budget, use 300 minutes as timeout
 
 
 ### Other useful commands on the cluster:
@@ -81,17 +80,12 @@ import statistics
 import math
 import sys
 
+EXP_ID = "evomaster-gql"
 
-
-EXP_ID = "evomaster"
-
-
-
-if len(sys.argv) < 9 or len(sys.argv) > 11:
+if len(sys.argv) != 10:
     print(
-        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <budget> <timeoutMinutes> <nJobs> <configFilter?> <sutFilter?>")
+        "Usage:\n<nameOfScript>.py <cluster> <baseSeed> <dir> <minSeed> <maxSeed> <maxActions> <minutesPerRun> <nJobs> <localSut>")
     exit(1)
-
 
 ### input parameters
 
@@ -115,39 +109,29 @@ MIN_SEED = int(sys.argv[4])
 # going to be repeated 30 times, starting from seed 10 to seed 39 (both included).
 MAX_SEED = int(sys.argv[5])
 
-# For how long to run the search. If it is a number, then it will use number of actions as stopping criterion.
-# However, if it contains either "s", "m", or "h", then time will be used as stopping criterion (see --maxTime)
-BUDGET = str(sys.argv[6])
+# By default, experiments are run with stopping criterion of number of actions and not time.
+MAX_ACTIONS = int(sys.argv[6])
 
 # How many minutes we expect each EM run to last AT MOST.
 # Warning: if this value is under-estimated, it will happen the cluster will kill jobs
 # that are not finished withing the specified time.
-# At the moment this is used only on cluster
-TIMEOUT_MINUTES = int(sys.argv[7])
+MINUTES_PER_RUN = int(sys.argv[7])
 
 # How many scripts M we want the N jobs to be divided into.
 # Note: on cluster we can at most submit 400 scripts.
-# Also note that in the same .sh script there can be experiments only for a single SUT.
+# Also not that in the same .sh script there can be experiments only for a single SUT.
 NJOBS = int(sys.argv[8])
 
-# An optional string to filter CONFIGS to be included.
-# A string could refer to multiple CONFIGS separated by a `,` like a,b
-# None or `all` represents all CONFIGS should be included.
-# Default is None.
-CONFIGFILTER = None
-if len(sys.argv) > 9:
-    CONFIGFILTER = str(sys.argv[9])
+# whether the SUT can be obtained locally
+LOCAL_SUT = sys.argv[9].lower() in ("yes", "true", "t")
 
-#
-# An optional string to filter SUTs to be included based on their names
-# A string could refer to multiple SUTs separated by a `,` like a,b
-# Note that
-# None or `all` represents all SUTs should be included
-# and only consider unique ones, eg, create one experiment setting for a,a
-# Default is None
-SUTFILTER = None
-if len(sys.argv) > 10:
-    SUTFILTER = str(sys.argv[10])
+## configure auth file
+AUTH_DIR = os.path.abspath("authconfig")
+
+class AuthInfo:
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
 
 # input parameter validation
 if MIN_SEED > MAX_SEED:
@@ -161,94 +145,39 @@ else:
     print("ERROR: target folder already exists")
     exit(1)
 
-
 JDK_8 = "JDK_8"
 JDK_11 = "JDK_11"
 JS = "JS"
-DOTNET_3 = "DOTNET_3"
+
 
 class Sut:
-    def __init__(self, name, timeWeight, platform):
+    def __init__(self, name, timeWeight, platform, url, authInfo=None):
         self.name = name
         # the higher value, the more time it will need compared to the other SUTS
         self.timeWeight = timeWeight
         # Java? JS? NodeJS
         self.platform = platform
+        # url of the sut
+        self.url = url
+        ## auth configuration in header
+        self.authInfo = authInfo
 
 
-
-# To ge the SUTs, you need in EMB to run the script "scripts/dist.py True" to
-# generate a dist.zip file that you can upload on cluster.
-# Note: the values after the SUT names is multiplicative factor for how long
-# experiments should be run.
-# Depending on what experiments you are running, might want to de-select some
-# of the SUTs (eg, by commenting them out)
-
-SUTS = [
-    # IND
-    #Sut("ind0", 1, JDK_8),
-    # REST JVM
-    Sut("features-service", 1, JDK_8),
-    Sut("scout-api", 2, JDK_8),
-    Sut("proxyprint", 2, JDK_8),
-    Sut("rest-ncs", 2, JDK_8),
-    Sut("rest-scs", 1, JDK_8),
-    Sut("rest-news", 1, JDK_8),
-    Sut("catwatch", 1, JDK_8),
-    Sut("restcountries", 2, JDK_8),
-    Sut("languagetool", 3, JDK_8),
-    Sut("ocvn-rest", 1, JDK_8),
-    Sut("gestaohospital-rest", 1, JDK_8),
-    Sut("cwa-verification", 1, JDK_11),
-    Sut("genome-nexus", 1, JDK_8),
-    Sut("market", 1, JDK_11),
-    # GRAPHQL JVM
-    Sut("petclinic-graphql", 1, JDK_8),
-    Sut("patio-api", 1, JDK_11),
-    Sut("timbuctoo", 1, JDK_11),
-    Sut("graphql-ncs", 1, JDK_8),
-    Sut("graphql-scs", 1, JDK_8),
-    # REST NodeJS
-    Sut("js-rest-ncs", 1, JS),
-    Sut("js-rest-scs", 1, JS),
-    Sut("cyclotron", 1, JS),
-    Sut("disease-sh-api", 1, JS),
-    Sut("realworld-app", 1, JS),
-    Sut("spacex-api", 1, JS),
-    # GRAPHQL NodeJS
-    Sut("react-finland", 1, JS),
-    Sut("ecommerce-server", 1, JS),
-    # RPC
-    Sut("rpc-thrift-ncs", 1, JDK_8),
-    Sut("rpc-thrift-scs", 1, JDK_8),
-    # .NET
-    # Sut("cs-rest-ncs",1,DOTNET_3),
-    # Sut("cs-rest-scs",1,DOTNET_3),
-    # Sut("sampleproject",1,DOTNET_3),
-    # Sut("menu-api",1,DOTNET_3)
-]
-
-if SUTFILTER is not None and SUTFILTER.lower() != "all":
-    filteredsut = []
-
-    for s in list(set(SUTFILTER.split(","))):
-        found = list(filter(lambda x: x.name.lower() == s.lower(), SUTS))
-        if len(found) == 0:
-            print("ERROR: cannot find the specified SUT "+s)
-            exit(1)
-        filteredsut.extend(found)
-
-    SUTS = filteredsut
-
-
-# Specify if using any industrial case study.
-# If so, environment variables will be checked for them
-USING_IND = any(sut.name == 'ind0' for sut in SUTS)
-
+CASESTUDY_DIR = ""
 
 ### We need different settings based on whether we are running the
 ### scripts on cluster or locally.
 if CLUSTER:
+
+    # To ge the SUTs, you need in EMB to run the script "scripts/dist.py" to
+    # generate a dist.zip file that you can upload on cluster.
+    # Note: the values after the SUT names is multiplicative factor for how long
+    # experiments should be run.
+    # Depending on what experiments you are running, might want to de-select some
+    # of the SUTs (eg, by commenting them out)
+
+    SUTS = [
+    ]
 
     HOME = os.environ['HOME']
     EVOMASTER_DIR = HOME
@@ -258,26 +187,90 @@ if CLUSTER:
 
 ## Local configurations
 else:
+    # These SUTs requires Docker
+    SUTS = [
+
+        Sut("Bitquery", 1, JDK_8, url="https://graphql.bitquery.io", authInfo=AuthInfo("X-API-KEY","BQY1JeBd1pYtoC1B6YYe4DMwMOzbOZNU")),
+        Sut("Buildkite", 1, JDK_8, url="https://graphql.buildkite.com/v1", authInfo=AuthInfo("Authorization","Bearer 992ae7ae4998a8a8faa7c762d74e3c20f2abe154")),
+        Sut("Fauna", 1, JDK_8, url="https://graphql.fauna.com/graphql",authInfo=AuthInfo("Authorization","Basic Zm5BRFFVdWNRb0FDQ1VpZDAxeXVIdWt2SnptaVY4STI4a2R6Y0p2UDo=")),
+        Sut("Swop", 1, JDK_8, url="https://swop.cx/graphql",authInfo=AuthInfo("Authorization","ApiKey ee38a847ff6851a815efc2316d8a0c892dfcf82b90b719b2f0cf2e354cef07de")),
+
+
+        Sut("Stratz", 1, JDK_8, url="https://api.stratz.com/graphql?key=jE1M9jZk28iOXJs2LBfrN3gxWeqfgR2B"),
+        Sut("Contentful", 1, JDK_8, url="https://graphql.contentful.com/content/v1/spaces/f8bqpb154z8p/environments/master?access_token=9d5de88248563ebc0d2ad688d0473f56fcd31c600e419d6c8962f6aed0150599"),
+
+
+        Sut("Anilist", 1, JDK_8, url="https://anilist.co/graphql"),
+        Sut("Catalysis-hub", 1, JDK_8, url="http://api.catalysis-hub.org/graphql"),
+        Sut("Countries", 1, JDK_8, url="https://countries.trevorblades.com/"),
+        Sut("Bahnql", 1, JDK_8, url="https://bahnql.herokuapp.com/graphql?"),
+        Sut("Digitransit", 1, JDK_8, url="https://api.digitransit.fi/routing/v1/routers/finland/index/graphql"),
+        Sut("Ehri", 1, JDK_8, url="https://portal.ehri-project.eu/api/graphql"),
+        Sut("Gitlab", 1, JDK_8, url="https://gitlab.com/api/graphql"),
+        Sut("Jobs", 1, JDK_8, url="https://api.graphql.jobs/"),
+        Sut("Hivdb", 1, JDK_8, url="https://hivdb.stanford.edu/graphql"),
+
+        Sut("Melody", 1, JDK_8, url="https://api.melody.sh/graphql"),
+        Sut("React-finland", 1, JDK_8, url="https://api.react-finland.fi/graphql?"),
+        Sut("Universe", 1, JDK_8, url="https://www.universe.com/graphql"),
+        Sut("Travelgatex", 1, JDK_8, url="https://api.travelgatex.com/"),
+        Sut("barcelona-urban-mobility", 1, JDK_8, url="https://barcelona-urban-mobility-graphql-api.netlify.app/graphql"),
+        Sut("Camara-deputados", 1, JDK_8, url="https://graphql-camara-deputados.herokuapp.com/"),
+        Sut("Ghibliql", 1, JDK_8, url="https://ghibliql.herokuapp.com"),
+        Sut("Graphbrainz", 1, JDK_8, url="https://graphbrainz.herokuapp.com/?"),
+        Sut("Spacex", 1, JDK_8, url="https://api.spacex.land/graphql"),
+        Sut("Spotify", 1, JDK_8, url="https://spotify-api-graphql-console.herokuapp.com/graphql"),
+
+        Sut("Swapi", 1, JDK_8, url="https://swapi-graphql.netlify.app/.netlify/functions/index"),
+        Sut("Demotivation-quotes", 1, JDK_8, url="https://demotivation-quotes-api.herokuapp.com/graphql"),
+        Sut("Graphqlpokemon", 1, JDK_8, url="https://graphqlpokemon.favware.tech/"),
+        Sut("Compose", 1, JDK_8, url="https://graphql-compose.herokuapp.com/northwind/"),
+        Sut("Directions", 1, JDK_8, url="https://directions-graphql.herokuapp.com/graphql"),
+        Sut("RickAndMortyapi", 1, JDK_8, url="https://rickandmortyapi.com/graphql"),
+        Sut("Weather", 1, JDK_8, url="https://graphql-weather-api.herokuapp.com/"),
+        Sut("Mocki", 1, JDK_8, url="https://api.mocki.io/v2/c4d7a195/graphql"),
+        Sut("Fruits", 1, JDK_8, url="https://fruits-api.netlify.app/graphql"),
+
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        #
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+        # Sut("", 1, JDK_8, url=""),
+
+    ]
 
     # You will need to define environment variables on your OS
     EVOMASTER_DIR = os.environ.get("EVOMASTER_DIR", "")
-    EMB_DIR = os.environ.get('EMB_DIR',"")
 
     if EVOMASTER_DIR == "":
         raise Exception("You must specify a EVOMASTER_DIR env variable specifying where evomaster.jar can be found")
 
-    if EMB_DIR == "":
-        raise Exception("You must specify a EMB_DIR env variable specifying the '/dist' folder from where EMB repository was cloned")
+    if LOCAL_SUT:
+        EMB_DIR = os.environ.get('EMB_DIR', "")
+        if EMB_DIR == "":
+            raise Exception(
+                "You must specify a EMB_DIR env variable specifying the '/dist' folder from where EMB repository was cloned")
 
-    CASESTUDY_DIR = EMB_DIR
+        CASESTUDY_DIR = EMB_DIR
 
-    if not os.path.exists(CASESTUDY_DIR):
-        raise Exception(CASESTUDY_DIR + " does not exist. Did you run script/dist.py?")
+        if not os.path.exists(CASESTUDY_DIR):
+            raise Exception(CASESTUDY_DIR + " does not exist. Did you run script/dist.py?")
 
-    if USING_IND:
-        ind0_package = os.environ.get("SUT_PACKAGE_IND0", "")
-        if ind0_package == "":
-            raise Exception("You cannot run experiments on IND0 without specify target package to cover with SUT_PACKAGE_IND0 env variable")
+    ind0_package = os.environ.get("SUT_PACKAGE_IND0", "")
+    # if ind0_package == "":
+    #     raise Exception("You cannot run experiments on IND0 without specify target package to cover with SUT_PACKAGE_IND0 env variable")
 
     LOGS_DIR = BASE_DIR
 
@@ -285,16 +278,14 @@ else:
     if JAVA_HOME_8 == "":
         raise Exception("You must specify a JAVA_HOME_8 env variable specifying where JDK 8 is installed")
 
-    JAVA_HOME_11 = os.environ.get("JAVA_HOME_11", "")
-    if JAVA_HOME_11 == "":
-        raise Exception("You must specify a JAVA_HOME_11 env variable specifying where JDK 11 is installed")
-
+    #  JAVA_HOME_11 = os.environ.get("JAVA_HOME_11", "")
+        #  if JAVA_HOME_11 == "":
+    #    raise Exception("You must specify a JAVA_HOME_11 env variable specifying where JDK 11 is installed")
 
 # How to run EvoMaster
 EVOMASTER_JAVA_OPTIONS = " -Xms2G -Xmx4G  -jar evomaster.jar "
 AGENT = "evomaster-agent.jar"
 EM_POSTFIX = "-evomaster-runner.jar"
-EM_POSTFIX_DOTNET = "-evomaster-runner.dll"
 SUT_POSTFIX = "-sut.jar"
 
 if NJOBS < len(SUTS):
@@ -312,7 +303,7 @@ TEST_DIR = BASE_DIR + "/tests"
 os.makedirs(TEST_DIR)
 
 ALL_LOGS = LOGS_DIR + "/logs"
-#We might end up generating gigas of log files. So, at each new experiments, we delete previous logs
+# We might end up generating gigas of log files. So, at each new experiments, we delete previous logs
 shutil.rmtree(ALL_LOGS, ignore_errors=True)
 LOG_DIR = ALL_LOGS + "/" + EXP_ID
 os.makedirs(LOG_DIR)
@@ -325,31 +316,26 @@ CPUS = 3
 
 TIMEOUT_SUT_START_MINUTES = 20
 
-
 if not CLUSTER:
     REPORT_DIR = str(pathlib.PurePath(REPORT_DIR).as_posix())
     SCRIPT_DIR = str(pathlib.PurePath(SCRIPT_DIR).as_posix())
     TEST_DIR = str(pathlib.PurePath(TEST_DIR).as_posix())
     LOG_DIR = str(pathlib.PurePath(LOG_DIR).as_posix())
 
-    #Due to Windows limitations (ie crappy FS), we need to copy JARs over
-    for sut in SUTS:
-        if sut.platform == JDK_8 or sut.platform == JDK_11:
-            # copy jar files
-            shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX), BASE_DIR)
-            shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX), BASE_DIR)
-        elif sut.platform == JS or sut.platform == DOTNET_3:
-            # copy folders, which include both SUT and EM Controller
-            # Note: if this fails when running on Windows, you need to increase the max path for
-            # files (default is 260 characters) by enabling "Enable Win32 long paths".
-            # See https://helpdeskgeek.com/how-to/how-to-fix-filename-is-too-long-issue-in-windows/
-            shutil.copytree(os.path.join(CASESTUDY_DIR, sut.name), os.path.join(BASE_DIR, sut.name))
-        else:
-            raise Exception("Unexpected platform" + sut.platform)
+    # Due to Windows limitations (ie crappy FS), we need to copy JARs over
+    if LOCAL_SUT:
+        for sut in SUTS:
+            if sut.platform == JDK_8 or sut.platform == JDK_11:
+                # copy jar files
+                shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX), BASE_DIR)
+                shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX), BASE_DIR)
+            elif sut.platform == JS:
+                # copy folders, which include both SUT and EM Controller
+                shutil.copytree(os.path.join(CASESTUDY_DIR, sut.name), os.path.join(BASE_DIR, sut.name))
 
-    shutil.copy(os.path.join(CASESTUDY_DIR, AGENT), BASE_DIR)
+        shutil.copy(os.path.join(CASESTUDY_DIR, AGENT), BASE_DIR)
+
     shutil.copy(os.path.join(EVOMASTER_DIR, "evomaster.jar"), BASE_DIR)
-
 
 
 # We could end up with many scripts, up to the max number of jobs we can run in parallel, eg. 400.
@@ -372,7 +358,6 @@ def createRunallScript():
 
     st = os.stat(script_path)
     os.chmod(script_path, st.st_mode | stat.S_IEXEC)
-
 
 
 def writeScript(code, port, sut):
@@ -404,6 +389,9 @@ def createJobHead(port, sut, timeoutMinutes):
 
     script.write(getScriptHead(timeoutMinutes))
 
+    if not LOCAL_SUT:
+        return script.getvalue()
+
     sut_log = LOG_DIR + "/log_sut_" + sut.name + "_" + str(port) + ".txt"
 
     # Start SUT as background process on the given port
@@ -415,7 +403,7 @@ def createJobHead(port, sut, timeoutMinutes):
         if sut.platform == JDK_8:
             script.write("\nmodule load Java/1.8.0_212\n\n")
         else:
-            print("ERROR: currently not handling " + sut.platform + " for experiments on cluster")
+            print("ERROR: currently not handling " + sut.platform)
             exit(1)
 
         # To speed-up I/O, copy files over to SCRATCH folder
@@ -440,33 +428,30 @@ def createJobHead(port, sut, timeoutMinutes):
     command = ""
 
     if sut.platform == JDK_8 or sut.platform == JDK_11:
-        params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart) + " " + getJavaCommand(sut)
+        params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart)
 
-        # Note: this is for the process of the Driver. The Xmx settings of the SUTs will need to be specified directly
-        #       in the Java/Kotlin code of the External Driver, under getJVMParameters(), if the default is not enough.
-        jvm = " -Xms1G -Xmx2G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
+        if not CLUSTER:
+            if sut.platform == JDK_8:
+                params += " \"" + JAVA_HOME_8 + "\"/bin/java "
+            elif sut.platform == JDK_11:
+                params += " \"" + JAVA_HOME_11 + "\"/bin/java "
+
+        jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path=" + AGENT
         JAVA = getJavaCommand(sut)
         command = JAVA + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
 
     elif sut.platform == JS:
         # TODO sutPort
         before = "pushd " + sut.name + "\n"
-        command = "node instrumented/em/em-main.js"
-        #command = "npm run em:run" # This does not work when trying then to kill this process
-        command = " EM_PORT=" + controllerPort + " " + command +" > " + sut_log + " 2>&1 & "
+        command = " EM_PORT=" + controllerPort + " npm run em > " + sut_log + " 2>&1 & "
         command = before + command
-
-    elif sut.platform == DOTNET_3:
-        params = " " + controllerPort + " " + sutPort
-        command = "dotnet " + sut.name+"/"+sut.name + EM_POSTFIX_DOTNET + " " + params + " > " + sut_log + " 2>&1 &"
 
     if not CLUSTER:
         script.write("\n\necho \"Starting EM Runner with: " + command + "\"\n")
         script.write("echo\n\n")
 
     script.write(command + "\n\n")
-    # as the process running NPM dies immediately after spawning Node, to make this work we need to run Node
-    # directly and not NPM
+    # FIXME: this does not work for JS... as the process running NPM dies immediately after spawning Node
     script.write(CONTROLLER_PID + "=$! \n\n")  # store pid of process, so can kill it
 
     if sut.platform == JS:
@@ -478,6 +463,9 @@ def createJobHead(port, sut, timeoutMinutes):
 
 
 def closeJob(port, sut_name):
+    if not LOCAL_SUT:
+        return ""
+
     return "kill $" + CONTROLLER_PID + "\n"
 
 
@@ -527,7 +515,7 @@ class State:
         # the timeout we want to wait for does depend not only on the number of runs, but
         # also on the weights of the SUT (this is captured by self.counter).
         # Note: we add a 10% just in case...
-        timeoutMinutes = TIMEOUT_SUT_START_MINUTES + int(math.ceil(1.1 * self.counter * TIMEOUT_MINUTES))
+        timeoutMinutes = TIMEOUT_SUT_START_MINUTES + int(math.ceil(1.1 * self.counter * MINUTES_PER_RUN))
         self.waits.append(timeoutMinutes)
         return timeoutMinutes
 
@@ -548,9 +536,8 @@ def writeWithHeadAndFooter(code, port, sut, timeout):
     writeScript(code, port, sut)
 
 
-
-def createOneJob(state, sut, seed, setting):
-    code = addJobBody(state.port, sut, seed, setting)
+def createOneJob(state, sut, seed, config):
+    code = addJobBody(state.port, sut, seed, config)
     state.updateBudget(sut.timeWeight)
     state.jobsLeft -= 1
     state.opened = True
@@ -562,60 +549,34 @@ def getJavaCommand(sut):
     JAVA = "java "
     if not CLUSTER:
         if sut.platform == JDK_8:
-            JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
+            JAVA = "\"" + JAVA_HOME_8 + "\"/bin/java "
         elif sut.platform == JDK_11:
-            JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
+            JAVA = "\"" + JAVA_HOME_11 + "\"/bin/java "
     return JAVA
 
 
-def addJobBody(port, sut, seed, setting):
+def addJobBody(port, sut, seed, config):
     script = io.StringIO()
 
     em_log = LOG_DIR + "/log_em_" + sut.name + "_" + str(port) + ".txt"
 
-    params = ""
-    label = ""
-
-    ### default, no parameter configuration
-    if len(setting) == 0:
-        label = "default"
-    else :
-        ### set parameter based on the setting
-        for ps in setting:
-            params += " --" + str(ps[0]) + "=" + str(ps[1])
-            ### set label based on each value of the parameter
-            if is_float(str(ps[1])) and float(ps[1]) <= 1.0:
-                label += "_" + str(int(float(ps[1]) * 100))
-            else:
-                label += "_" + str(ps[1])
-
-    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
-    params += " --labelForExperiments=" + label
-
-    identifier = "_" + sut.name  + "_" + label + "_" + str(seed)
+    params = customParameters(seed, config, sut)
 
     ### standard
-    if ("s" in BUDGET) or ("m" in BUDGET) or ("h" in BUDGET):
-        params += " --stoppingCriterion=TIME"
-        params += " --maxTime=" + BUDGET
-    else:
-        params += " --stoppingCriterion=FITNESS_EVALUATIONS"
-        params += " --maxActionEvaluations=" + BUDGET
-
+    params += " --stoppingCriterion=FITNESS_EVALUATIONS"
+    params += " --maxActionEvaluations=" + str(MAX_ACTIONS)
     params += " --statisticsColumnId=" + sut.name
     params += " --seed=" + str(seed)
     params += " --sutControllerPort=" + str(port)
     params += " --outputFolder=" + TEST_DIR + "/" + sut.name
-    params += " --statisticsFile=" + REPORT_DIR + "/statistics" + identifier + ".csv"
+    params += " --statisticsFile=" + \
+              REPORT_DIR + "/statistics_" + sut.name + "_" + str(seed) + ".csv"
     params += " --snapshotInterval=5"
-    params += " --snapshotStatisticsFile=" + REPORT_DIR + "/snapshot" + identifier + ".csv"
+    params += " --snapshotStatisticsFile=" + \
+              REPORT_DIR + "/snapshot_" + sut.name + "_" + str(seed) + ".csv"
     params += " --appendToStatisticsFile=true"
     params += " --writeStatistics=true"
     params += " --showProgress=false"
-    params += " --testSuiteSplitType=NONE"
-    params += " --exportCoveredTarget=true"
-    params += " --coveredTargetFile="+REPORT_DIR+"/covered_target_file" + identifier + ".txt"
-
 
     JAVA = getJavaCommand(sut)
     command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"
@@ -625,9 +586,9 @@ def addJobBody(port, sut, seed, setting):
         script.write("echo\n\n")
 
     if CLUSTER:
-        timeout = int(math.ceil(1.1 * sut.timeWeight * TIMEOUT_MINUTES * 60))
+        timeout = int(math.ceil(1.1 * sut.timeWeight * MINUTES_PER_RUN * 60))
         errorMsg = "ERROR: timeout for " + sut.name
-        command = "timeout " +str(timeout) + "  " + command \
+        command = "timeout " + str(timeout) + "  " + command \
                   + " || ([ $? -eq 124 ] && echo " + errorMsg + " >> " + em_log + " 2>&1" + ")"
 
     script.write(command + " \n\n")
@@ -636,23 +597,9 @@ def addJobBody(port, sut, seed, setting):
 
 
 def createJobs():
-
     CONFIGS = getConfigs()
 
-    ## filter configs if specified
-    if CONFIGFILTER is not None and CONFIGFILTER.lower() != "all":
-        filteredconfigs = []
-        for c in list(set(CONFIGFILTER.split(","))):
-            found = list(filter(lambda x: x.filterKey.lower() == c.lower(), CONFIGS))
-            if len(found) == 0:
-                print("ERROR: cannot find the specified config: "+c)
-                exit(1)
-            filteredconfigs.extend(found)
-
-        CONFIGS = filteredconfigs
-
-
-    NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * sum(map(lambda o: o.numOfSettings, CONFIGS))
+    NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
     SUT_WEIGHTS = sum(map(lambda x: x.timeWeight, SUTS))
     # For example, if we have 30 runs and 5 SUTs, the total budget
     # to distribute among the different jobs/scripts is 150.
@@ -678,36 +625,34 @@ def createJobs():
 
             for config in CONFIGS:
 
-                for setting in config.generateAllSettings():
+                # first run in current script: we need to create all the initializing preambles
+                if state.counter == 0:
+                    code = createOneJob(state, sut, seed, config)
 
-                    # first run in current script: we need to create all the initializing preambles
-                    if state.counter == 0:
-                        code = createOneJob(state, sut, seed, setting)
+                # can we add this new run to the current opened script?
+                elif (
+                        # we need to check if we would not exceed the budget limit per job
+                        (state.counter + sut.timeWeight) <= state.perJob
+                        # however, that check must be ignored if we cannot open/create any new script file
+                        # for the current SUT
+                        or not state.hasSpareJobs() or
+                        # this case is bit more tricky... let's say only few runs are left that
+                        # we need to allocate in a script, but they are so few that they would need
+                        # only a small percentage of a new script capacity (eg, less than 30%).
+                        # In such a case, to avoid getting very imbalanced execution times,
+                        # we could just add those few runs to the current script.
+                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight)
+                ):
+                    code += addJobBody(state.port, sut, seed, config)
+                    state.updateBudget(sut.timeWeight)
 
-                    # can we add this new run to the current opened script?
-                    elif(
-                            # we need to check if we would not exceed the budget limit per job
-                            (state.counter + sut.timeWeight) <= state.perJob
-                            # however, that check must be ignored if we cannot open/create any new script file
-                            # for the current SUT
-                            or not state.hasSpareJobs() or
-                            # this case is bit more tricky... let's say only few runs are left that
-                            # we need to allocate in a script, but they are so few that they would need
-                            # only a small percentage of a new script capacity (eg, less than 30%).
-                            # In such a case, to avoid getting very imbalanced execution times,
-                            # we could just add those few runs to the current script.
-                            (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight)
-                    ):
-                        code += addJobBody(state.port, sut, seed, setting)
-                        state.updateBudget(sut.timeWeight)
+                else:
+                    writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
+                    state.resetTmpForNewRun()
+                    code = createOneJob(state, sut, seed, config)
 
-                    else:
-                        writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
-                        state.resetTmpForNewRun()
-                        code = createOneJob(state, sut, seed, setting)
-
-                    # keep track that a new run has been handled
-                    completedForSut += 1
+                # keep track that a new run has been handled
+                completedForSut += 1
 
         if state.opened:
             writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
@@ -720,98 +665,55 @@ def createJobs():
     print("Total budget: " + str(CPUS * sum(state.waits) / 60) + " hours")
 
 
-class ParameterSetting:
-    # name is the same name used in the EM parameters
-    # values is an array of configured values regarding the parameter
-    def __init__(self, name, values):
-        self.name = name
-        self.values = values
-        self.count = len(self.values)
-
-    # get a parameter name with its value at index
-    def pvalue(self, index):
-        if index >= len(self.values):
-            exit("a value at the index "+ str(index) + " does not exist")
-        return (self.name, self.values[index])
-
-# Each Config object has a list of ParameterSetting objects
-class Config:
-    # settings is an array of ParameterSetting objects
-    def __init__(self, settings, filterKey=None):
-        self.filterKey = filterKey
-        self.settings = settings
-        self.numOfSettings = 1
-        for s in self.settings:
-            self.numOfSettings *= s.count
-
-    # generate all settings for configured parameters
-    def generateAllSettings(self):
-        if len(self.settings) == 0:
-            return [[]]
-        all = []
-        lst = [0] * len(self.settings)
-        while lst is not None:
-            e = []
-            for i in range(len(lst)):
-                e.append(self.settings[i].pvalue(lst[i]))
-            all.append(e)
-            lst = self.plus1(lst)
-        return all
-
-    # next setting
-    def plus1(self, lst):
-        if lst[0] < self.settings[0].count - 1:
-            lst[0] = lst[0] + 1
-            return lst
-        for i in range(len(lst)):
-            if lst[i] < self.settings[i].count-1:
-                lst[i] = lst[i] + 1
-                return lst
-            else:
-                lst[i] = 0
-        return None
-
-
-
-def is_float(input):
-    try:
-        float(input)
-    except ValueError:
-        return False
-    return True
-
-
 ############################################################################
 ### Custom
 ### Following will need to be changed based on what kind of experiments
 ### we want to run.
 ############################################################################
 
-def getConfigs():
 
+class Config:
+    def __init__(self, blackbox, bbExperiment, ratePerMinute):
+        self.blackbox = blackbox
+        self.bbExperiment = bbExperiment
+        self.ratePerMinute = ratePerMinute
+
+
+def customParameters(seed, config, sut):
+    params = ""
+
+    params += " --problemType GRAPHQL"
+
+    params += " --ratePerMinute " + str(config.ratePerMinute)
+    params += " --blackBox=" + str(config.blackbox)
+    params += " --bbExperiments=" + str(config.bbExperiment)
+
+    if config.blackbox and (not config.bbExperiment):
+        if sut.url is None:
+            raise Exception("bbTargetUrl must be specified when blackbox is enabled without bbExperiment")
+        params += " --bbTargetUrl " + str(sut.url)
+
+    label = "bbExp_" + str(config.bbExperiment) + "_rate_" + str(config.ratePerMinute)
+    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
+
+    params += " --outputFormat JAVA_JUNIT_4"
+
+    ## Man: check whether to enable this
+    params += " --testSuiteSplitType=NONE"
+
+    if sut.authInfo is not None:
+        params += " --header0 \"" + sut.authInfo.key + ": " + sut.authInfo.value+"\""
+
+
+    return params
+
+
+def getConfigs():
     # array of configuration objects. We will run experiments for each of
     # these configurations
-    # each Config object has a list of ParameterSetting objects
     CONFIGS = []
 
-    ### Example (step1) on how to specify ParameterSetting objects
-
-    # ALGO_MIO = ParameterSetting("algorithm",["MIO"])
-    # ALGO_RANDOM = ParameterSetting("algorithm",["RANDOM"])
-
-    # PR5 = ParameterSetting("probOfRandomSampling",[0.5])
-    # PR = ParameterSetting("probOfRandomSampling",[0.1, 0.2])
-
-    ### Example (step2) on how to define Config objects with specified ParameterSetting objects
-    # foo = Config([ALGO_MIO, PR5], "foo")
-    # bar = Config([ALGO_RANDOM, PR], "bar")
-
-    ### Example (step3) on employing Config objects for the experiments
-    # CONFIGS.append(foo)
-    # CONFIGS.append(bar)
-
-    ### Alternatively, an empty config will just use the default configurations in EM
-    CONFIGS.append(Config([], "EXP"))
+    CONFIGS.append(Config(True, False, 10))
 
     return CONFIGS
 
@@ -819,7 +721,6 @@ def getConfigs():
 ############################################################################
 #### END of custom configurations
 ############################################################################
-
 
 
 # Create the actual job scripts

@@ -130,10 +130,9 @@ TIMEOUT_MINUTES = int(sys.argv[7])
 # Also note that in the same .sh script there can be experiments only for a single SUT.
 NJOBS = int(sys.argv[8])
 
-# An optional string to filter CONFIGS to be included.
-# A string could refer to multiple CONFIGS separated by a `,` like a,b
-# None or `all` represents all CONFIGS should be included.
-# Default is None.
+# An optional string to filter CONFIGS to be included
+# None or `all` represents all CONFIGS should be included
+# Default is None
 CONFIGFILTER = None
 if len(sys.argv) > 9:
     CONFIGFILTER = str(sys.argv[9])
@@ -186,41 +185,36 @@ class Sut:
 
 SUTS = [
     # IND
-    #Sut("ind0", 1, JDK_8),
+    # Sut("ind0", 1, JDK_8),
     # REST JVM
-    Sut("features-service", 1, JDK_8),
-    Sut("scout-api", 2, JDK_8),
-    Sut("proxyprint", 2, JDK_8),
-    Sut("rest-ncs", 2, JDK_8),
-    Sut("rest-scs", 1, JDK_8),
-    Sut("rest-news", 1, JDK_8),
-    Sut("catwatch", 1, JDK_8),
-    Sut("restcountries", 2, JDK_8),
-    Sut("languagetool", 3, JDK_8),
-    Sut("ocvn-rest", 1, JDK_8),
-    Sut("gestaohospital-rest", 1, JDK_8),
-    Sut("cwa-verification", 1, JDK_11),
-    Sut("genome-nexus", 1, JDK_8),
-    Sut("market", 1, JDK_11),
+    # Sut("features-service", 1, JDK_8),
+    # Sut("scout-api", 2, JDK_8),
+    # Sut("proxyprint", 2, JDK_8),
+    # Sut("rest-ncs", 2, JDK_8),
+    # Sut("rest-scs", 1, JDK_8),
+    # Sut("rest-news", 1, JDK_8),
+    # Sut("catwatch", 1, JDK_8),
+    # Sut("restcountries", 2, JDK_8),
+    # Sut("languagetool", 3, JDK_8),
+    # Sut("ocvn-rest", 1, JDK_8),
+    # Sut("gestaohospital", 1, JDK_8),
+    # Sut("cwa-verification", 1, JDK_11),
     # GRAPHQL JVM
-    Sut("petclinic-graphql", 1, JDK_8),
+    Sut("petclinic", 1, JDK_8),
     Sut("patio-api", 1, JDK_11),
     Sut("timbuctoo", 1, JDK_11),
     Sut("graphql-ncs", 1, JDK_8),
     Sut("graphql-scs", 1, JDK_8),
     # REST NodeJS
-    Sut("js-rest-ncs", 1, JS),
-    Sut("js-rest-scs", 1, JS),
-    Sut("cyclotron", 1, JS),
-    Sut("disease-sh-api", 1, JS),
-    Sut("realworld-app", 1, JS),
-    Sut("spacex-api", 1, JS),
+    # Sut("js-rest-ncs", 1, JS),
+    # Sut("js-rest-scs", 1, JS),
+    # Sut("cyclotron", 1, JS),
+    # Sut("disease-sh-api", 1, JS),
+    # Sut("realworld-app", 1, JS),
+    # Sut("spacex-api", 1, JS),
     # GRAPHQL NodeJS
     Sut("react-finland", 1, JS),
-    Sut("ecommerce-server", 1, JS),
-    # RPC
-    Sut("rpc-thrift-ncs", 1, JDK_8),
-    Sut("rpc-thrift-scs", 1, JDK_8),
+    Sut("ecommerce-server", 1, JS)
     # .NET
     # Sut("cs-rest-ncs",1,DOTNET_3),
     # Sut("cs-rest-scs",1,DOTNET_3),
@@ -230,20 +224,20 @@ SUTS = [
 
 if SUTFILTER is not None and SUTFILTER.lower() != "all":
     filteredsut = []
+    unfound = []
 
     for s in list(set(SUTFILTER.split(","))):
         found = list(filter(lambda x: x.name.lower() == s.lower(), SUTS))
         if len(found) == 0:
-            print("ERROR: cannot find the specified SUT "+s)
+            print("ERROR: cannot find the specified sut "+s)
             exit(1)
         filteredsut.extend(found)
 
     SUTS = filteredsut
 
 
-# Specify if using any industrial case study.
-# If so, environment variables will be checked for them
-USING_IND = any(sut.name == 'ind0' for sut in SUTS)
+# Specify if using any industrial case study
+USING_IND = False
 
 
 ### We need different settings based on whether we are running the
@@ -344,8 +338,7 @@ if not CLUSTER:
             # files (default is 260 characters) by enabling "Enable Win32 long paths".
             # See https://helpdeskgeek.com/how-to/how-to-fix-filename-is-too-long-issue-in-windows/
             shutil.copytree(os.path.join(CASESTUDY_DIR, sut.name), os.path.join(BASE_DIR, sut.name))
-        else:
-            raise Exception("Unexpected platform" + sut.platform)
+
 
     shutil.copy(os.path.join(CASESTUDY_DIR, AGENT), BASE_DIR)
     shutil.copy(os.path.join(EVOMASTER_DIR, "evomaster.jar"), BASE_DIR)
@@ -442,9 +435,7 @@ def createJobHead(port, sut, timeoutMinutes):
     if sut.platform == JDK_8 or sut.platform == JDK_11:
         params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart) + " " + getJavaCommand(sut)
 
-        # Note: this is for the process of the Driver. The Xmx settings of the SUTs will need to be specified directly
-        #       in the Java/Kotlin code of the External Driver, under getJVMParameters(), if the default is not enough.
-        jvm = " -Xms1G -Xmx2G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
+        jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
         JAVA = getJavaCommand(sut)
         command = JAVA + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
 
@@ -573,26 +564,7 @@ def addJobBody(port, sut, seed, setting):
 
     em_log = LOG_DIR + "/log_em_" + sut.name + "_" + str(port) + ".txt"
 
-    params = ""
-    label = ""
-
-    ### default, no parameter configuration
-    if len(setting) == 0:
-        label = "default"
-    else :
-        ### set parameter based on the setting
-        for ps in setting:
-            params += " --" + str(ps[0]) + "=" + str(ps[1])
-            ### set label based on each value of the parameter
-            if is_float(str(ps[1])) and float(ps[1]) <= 1.0:
-                label += "_" + str(int(float(ps[1]) * 100))
-            else:
-                label += "_" + str(ps[1])
-
-    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
-    params += " --labelForExperiments=" + label
-
-    identifier = "_" + sut.name  + "_" + label + "_" + str(seed)
+    params = customParameters(seed, setting)
 
     ### standard
     if ("s" in BUDGET) or ("m" in BUDGET) or ("h" in BUDGET):
@@ -606,16 +578,15 @@ def addJobBody(port, sut, seed, setting):
     params += " --seed=" + str(seed)
     params += " --sutControllerPort=" + str(port)
     params += " --outputFolder=" + TEST_DIR + "/" + sut.name
-    params += " --statisticsFile=" + REPORT_DIR + "/statistics" + identifier + ".csv"
+    params += " --statisticsFile=" + \
+              REPORT_DIR + "/statistics_" + sut.name + "_" + str(seed) + ".csv"
     params += " --snapshotInterval=5"
-    params += " --snapshotStatisticsFile=" + REPORT_DIR + "/snapshot" + identifier + ".csv"
+    params += " --snapshotStatisticsFile=" + \
+              REPORT_DIR + "/snapshot_" + sut.name + "_" + str(seed) + ".csv"
     params += " --appendToStatisticsFile=true"
     params += " --writeStatistics=true"
     params += " --showProgress=false"
     params += " --testSuiteSplitType=NONE"
-    params += " --exportCoveredTarget=true"
-    params += " --coveredTargetFile="+REPORT_DIR+"/covered_target_file" + identifier + ".txt"
-
 
     JAVA = getJavaCommand(sut)
     command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"
@@ -639,17 +610,14 @@ def createJobs():
 
     CONFIGS = getConfigs()
 
-    ## filter configs if specified
+    ## filter config if specified
     if CONFIGFILTER is not None and CONFIGFILTER.lower() != "all":
-        filteredconfigs = []
-        for c in list(set(CONFIGFILTER.split(","))):
-            found = list(filter(lambda x: x.filterKey.lower() == c.lower(), CONFIGS))
-            if len(found) == 0:
-                print("ERROR: cannot find the specified config: "+c)
-                exit(1)
-            filteredconfigs.extend(found)
-
-        CONFIGS = filteredconfigs
+        filtered = list(filter(lambda x: x.filterKey is None or x.filterKey.lower() == CONFIGFILTER.lower(), CONFIGS))
+        if len(filtered) > 0:
+            CONFIGS = filtered
+        else:
+            print("ERROR: Specified filter tag is undefined")
+            exit(1)
 
 
     NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * sum(map(lambda o: o.numOfSettings, CONFIGS))
@@ -746,8 +714,6 @@ class Config:
 
     # generate all settings for configured parameters
     def generateAllSettings(self):
-        if len(self.settings) == 0:
-            return [[]]
         all = []
         lst = [0] * len(self.settings)
         while lst is not None:
@@ -771,7 +737,25 @@ class Config:
                 lst[i] = 0
         return None
 
+# set customized parameters
+def customParameters(seed, setting):
 
+    params = ""
+
+    label = ""
+
+    ### set parameter based on the setting
+    for ps in setting:
+        params += " --" + str(ps[0]) + "=" + str(ps[1])
+        ### set label based on each value of the parameter
+        if is_float(str(ps[1])) and float(ps[1]) <= 1.0:
+            label += "_" + str(int(float(ps[1]) * 100))
+        else:
+            label += "_" + str(ps[1])
+
+    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
+
+    return params
 
 def is_float(input):
     try:
@@ -794,24 +778,16 @@ def getConfigs():
     # each Config object has a list of ParameterSetting objects
     CONFIGS = []
 
-    ### Example (step1) on how to specify ParameterSetting objects
-
-    # ALGO_MIO = ParameterSetting("algorithm",["MIO"])
-    # ALGO_RANDOM = ParameterSetting("algorithm",["RANDOM"])
-
-    # PR5 = ParameterSetting("probOfRandomSampling",[0.5])
-    # PR = ParameterSetting("probOfRandomSampling",[0.1, 0.2])
+    ALGO_MIO = ParameterSetting("algorithm",["MIO"])
+    ALGO_RANDOM = ParameterSetting("algorithm",["RANDOM"])
 
     ### Example (step2) on how to define Config objects with specified ParameterSetting objects
-    # foo = Config([ALGO_MIO, PR5], "foo")
-    # bar = Config([ALGO_RANDOM, PR], "bar")
+    MIO = Config([ALGO_MIO], "MIO")
+    RAND = Config([ALGO_RANDOM], "RAND")
 
     ### Example (step3) on employing Config objects for the experiments
-    # CONFIGS.append(foo)
-    # CONFIGS.append(bar)
-
-    ### Alternatively, an empty config will just use the default configurations in EM
-    CONFIGS.append(Config([], "EXP"))
+    CONFIGS.append(MIO)
+    CONFIGS.append(RAND)
 
     return CONFIGS
 

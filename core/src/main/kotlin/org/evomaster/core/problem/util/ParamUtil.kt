@@ -16,7 +16,7 @@ import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
-import org.evomaster.core.search.gene.sql.SqlNullableGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 
@@ -286,7 +286,7 @@ class ParamUtil {
                 if (gene.gene is SqlAutoIncrementGene)
                     return gene
                 else return getValueGene(gene.gene)
-            } else if (gene is SqlNullableGene) {
+            } else if (gene is NullableGene) {
                 return getValueGene(gene.gene)
             }
             return gene

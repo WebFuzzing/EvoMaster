@@ -90,7 +90,6 @@ abstract class EnterpriseIndividual(
                 .map { it as DbAction }
         }
 
-
     final override fun seeActions(filter: ActionFilter) : List<Action>{
         return when (filter) {
             ActionFilter.ALL -> seeAllActions()
@@ -165,6 +164,7 @@ abstract class EnterpriseIndividual(
 
     private fun resetInitializingActions(actions: List<DbAction>){
         killChildren { it is DbAction }
+        // TODO: Can be merged with DbAction later
         addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
     }
 

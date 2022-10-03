@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.sql.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -73,14 +74,14 @@ class SqlJsonGeneStructureTest : GeneStructuralElementBaseTest() {
 }
 
 class SqlNullableGeneStructureTest : GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene = SqlNullableGene("nullable", IntegerGene("foo", 1))
+    override fun getCopyFromTemplate(): Gene = NullableGene("nullable", IntegerGene("foo", 1))
 
     override fun assertCopyFrom(base: Gene) {
-        assertTrue(base is SqlNullableGene)
-        assertEquals(1, ((base as SqlNullableGene).gene as IntegerGene).value)
+        assertTrue(base is NullableGene)
+        assertEquals(1, ((base as NullableGene).gene as IntegerGene).value)
     }
 
-    override fun getStructuralElement(): SqlNullableGene = SqlNullableGene("nullable", IntegerGene("foo", 0))
+    override fun getStructuralElement(): NullableGene = NullableGene("nullable", IntegerGene("foo", 0))
 
     override fun getExpectedChildrenSize(): Int  = 1
 }

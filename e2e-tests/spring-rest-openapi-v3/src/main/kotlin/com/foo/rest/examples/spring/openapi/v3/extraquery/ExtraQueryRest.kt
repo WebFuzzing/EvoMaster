@@ -1,11 +1,9 @@
 package com.foo.rest.examples.spring.openapi.v3.extraquery
 
-import com.sun.net.httpserver.HttpExchange
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import java.io.UnsupportedEncodingException
-import java.net.URI
 import java.net.URLDecoder
 import javax.servlet.http.HttpServletRequest
 
@@ -50,6 +48,10 @@ class ExtraQueryRest {
         } else "OK"
     }
 
+    @PostMapping
+    open fun post(){
+        //nothing needed to do, just make sure hidden filter is used
+    }
 
     private fun getParameterMap(query: String): Map<String, String> {
         val pairs = query.split("&".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()

@@ -407,7 +407,13 @@ public abstract class WsTestBase {
                 return;
             }catch (OutOfMemoryError e){
                 throw e;
-            }catch (Throwable t){
+            }
+            //FIXME this is problematic, as assert and JUnit throw the same kind of error :( ll need refactoring of Lazy
+            //catch (AssertionError e){
+                //this happens if there is an internal bug in EM which leads to a broken invariant
+              //  throw e;
+            //}
+            catch (Throwable t){
                 error = t;
             }
         }

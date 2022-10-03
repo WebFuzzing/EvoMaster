@@ -96,8 +96,13 @@ abstract class StructuralElement (
      * a pre-setup for the children if needed
      * the setup will be performed before the children to add
      */
-    open fun preChildrenSetup(c : Collection<StructuralElement>){
-        // do nothing
+    private fun preChildrenSetup(c : Collection<StructuralElement>){
+        // handle local id for new children to add into individual
+        if (this is Individual)
+            this.handleLocalIdsForAddition(c)
+        // handle local id for new children to add into composite structure of individual, ie ActionTree
+        if (this.getRoot() is Individual && this is ActionTree)
+            (this.getRoot() as Individual).handleLocalIdsForAddition(c)
     }
 
 
@@ -135,6 +140,8 @@ abstract class StructuralElement (
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
+        preChildrenSetup(listOf(child))
+
         val end = groups!!.endIndexForGroupInsertionInclusive(groupId)
         addChild(end, child) //appending at the end of the group
         groups!!.addedToGroup(groupId, child)
@@ -150,6 +157,7 @@ abstract class StructuralElement (
         if(position < start || position > end){
             throw IllegalArgumentException("Invalid position $position out of [$start,$end] for group $groupId")
         }
+        preChildrenSetup(listOf(child))
         addChild(position,child)
         groups!!.addedToGroup(groupId, child)
     }
@@ -172,6 +180,7 @@ abstract class StructuralElement (
         if(children.contains(child)){
             throw IllegalArgumentException("Child already present")
         }
+        preChildrenSetup(listOf(child))
         child.parent = this
         (children as MutableList<StructuralElement>).add(child)
     }
@@ -179,6 +188,7 @@ abstract class StructuralElement (
     open fun addChild(position: Int, child: StructuralElement){
         verifyChildrenToInsert(child)
         if(children.contains(child)) throw IllegalArgumentException("Child already present")
+        preChildrenSetup(listOf(child))
         child.parent = this
         (children as MutableList<StructuralElement>).add(position, child)
     }
@@ -195,6 +205,7 @@ abstract class StructuralElement (
         for(child in list){
             if(children.contains(child)) throw IllegalArgumentException("Child already present")
         }
+        preChildrenSetup(list)
         list.forEach { it.parent = this }
         (children as MutableList<StructuralElement>).addAll(position, list)
     }
@@ -376,4 +387,5 @@ abstract class StructuralElement (
         }
         return false
     }
+
 }

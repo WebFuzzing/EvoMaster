@@ -350,7 +350,7 @@ open class ImpactsOfIndividual(
         }
 
         if (!fixedIndexedAction){
-            return findDynamicImpactActionByLocalId(localId)!!.addGeneImpact(actionName, impacts)
+            return (findDynamicImpactActionByLocalId(localId)?:throw IllegalStateException("cannot find the dynamic action with the localId")).addGeneImpact(actionName, impacts)
         }
 
         if (actionIndex >= fixedMainActionImpacts.size) return false
