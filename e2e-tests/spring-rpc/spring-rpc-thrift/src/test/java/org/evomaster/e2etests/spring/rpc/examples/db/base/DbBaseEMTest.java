@@ -24,7 +24,7 @@ public class DbBaseEMTest extends SpringRPCTestBase {
     public void testRunEM() throws Throwable {
 
         //TODO check it later, only fail on CI
-//        CIUtils.skipIfOnGA();
+        CIUtils.skipIfOnGA();
 
         runTestHandlingFlakyAndCompilation(
                 "DbBaseEM",
