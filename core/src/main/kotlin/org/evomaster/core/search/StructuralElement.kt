@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.gene.Gene
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
