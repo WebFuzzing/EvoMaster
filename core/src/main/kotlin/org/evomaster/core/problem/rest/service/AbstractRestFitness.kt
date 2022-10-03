@@ -760,7 +760,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
 
         if (config.baseTaintAnalysisProbability > 0) {
-            assert(actionResults.size == dto.additionalInfoList.size)
+            Lazy.assert { actionResults.size == dto.additionalInfoList.size }
             //TODO add taint analysis for resource-based solution
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }

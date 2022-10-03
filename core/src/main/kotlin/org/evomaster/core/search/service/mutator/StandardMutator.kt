@@ -306,6 +306,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         if (mutatedIndividual is RestIndividual)
             mutatedIndividual.repairDbActionsInCalls()
+
+        // update MutatedGeneSpecification after the post-handling
+        if (mutated != null){
+            mutated.repairInitAndDbSpecification(mutatedIndividual)
+        }
+
     }
 
     /**
