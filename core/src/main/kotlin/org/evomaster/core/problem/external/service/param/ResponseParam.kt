@@ -5,7 +5,6 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.optional.OptionalGene
 
-
 /**
  * represent external service responses which contains
  * @property responseType the data type of the response
