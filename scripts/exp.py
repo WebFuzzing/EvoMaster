@@ -186,7 +186,7 @@ class Sut:
 
 SUTS = [
     # IND
-    Sut("ind0", 1, JDK_8),
+    #Sut("ind0", 1, JDK_8),
     # REST JVM
     Sut("features-service", 1, JDK_8),
     Sut("scout-api", 2, JDK_8),
@@ -203,21 +203,24 @@ SUTS = [
     Sut("genome-nexus", 1, JDK_8),
     Sut("market", 1, JDK_11),
     # GRAPHQL JVM
-    # Sut("petclinic", 1, JDK_8),
-    # Sut("patio-api", 1, JDK_11),
-    # Sut("timbuctoo", 1, JDK_11),
-    # Sut("graphql-ncs", 1, JDK_8),
-    # Sut("graphql-scs", 1, JDK_8),
+    Sut("petclinic-graphql", 1, JDK_8),
+    Sut("patio-api", 1, JDK_11),
+    Sut("timbuctoo", 1, JDK_11),
+    Sut("graphql-ncs", 1, JDK_8),
+    Sut("graphql-scs", 1, JDK_8),
     # REST NodeJS
-    # Sut("js-rest-ncs", 1, JS),
-    # Sut("js-rest-scs", 1, JS),
-    # Sut("cyclotron", 1, JS),
-    # Sut("disease-sh-api", 1, JS),
-    # Sut("realworld-app", 1, JS),
-    # Sut("spacex-api", 1, JS),
+    Sut("js-rest-ncs", 1, JS),
+    Sut("js-rest-scs", 1, JS),
+    Sut("cyclotron", 1, JS),
+    Sut("disease-sh-api", 1, JS),
+    Sut("realworld-app", 1, JS),
+    Sut("spacex-api", 1, JS),
     # GRAPHQL NodeJS
-    # Sut("react-finland", 1, JS),
-    # Sut("ecommerce-server", 1, JS),
+    Sut("react-finland", 1, JS),
+    Sut("ecommerce-server", 1, JS),
+    # RPC
+    Sut("rpc-thrift-ncs", 1, JDK_8),
+    Sut("rpc-thrift-scs", 1, JDK_8),
     # .NET
     # Sut("cs-rest-ncs",1,DOTNET_3),
     # Sut("cs-rest-scs",1,DOTNET_3),
@@ -573,14 +576,18 @@ def addJobBody(port, sut, seed, setting):
     params = ""
     label = ""
 
-    ### set parameter based on the setting
-    for ps in setting:
-        params += " --" + str(ps[0]) + "=" + str(ps[1])
-        ### set label based on each value of the parameter
-        if is_float(str(ps[1])) and float(ps[1]) <= 1.0:
-            label += "_" + str(int(float(ps[1]) * 100))
-        else:
-            label += "_" + str(ps[1])
+    ### default, no parameter configuration
+    if len(setting) == 0:
+        label = "default"
+    else :
+        ### set parameter based on the setting
+        for ps in setting:
+            params += " --" + str(ps[0]) + "=" + str(ps[1])
+            ### set label based on each value of the parameter
+            if is_float(str(ps[1])) and float(ps[1]) <= 1.0:
+                label += "_" + str(int(float(ps[1]) * 100))
+            else:
+                label += "_" + str(ps[1])
 
     params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
     params += " --labelForExperiments=" + label
@@ -739,6 +746,8 @@ class Config:
 
     # generate all settings for configured parameters
     def generateAllSettings(self):
+        if len(self.settings) == 0:
+            return [[]]
         all = []
         lst = [0] * len(self.settings)
         while lst is not None:
@@ -800,6 +809,9 @@ def getConfigs():
     ### Example (step3) on employing Config objects for the experiments
     # CONFIGS.append(foo)
     # CONFIGS.append(bar)
+
+    ### Alternatively, an empty config will just use the default configurations in EM
+    CONFIGS.append(Config([], "EXP"))
 
     return CONFIGS
 
