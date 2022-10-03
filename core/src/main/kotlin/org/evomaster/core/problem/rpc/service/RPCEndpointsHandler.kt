@@ -599,6 +599,9 @@ class RPCEndpointsHandler {
                     transformGeneToParamDto(f, pdto)
                 }
             }
+            is CycleObjectGene ->{
+                dto.setNullValue()
+            }
             else -> throw IllegalStateException("Not support transformGeneToParamDto with gene ${gene::class.java.simpleName} and dto (${dto.type.type})")
         }
     }
@@ -686,6 +689,11 @@ class RPCEndpointsHandler {
                         val pdto = dto.innerContent.find { it.name == f.name }
                             ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
                         setGeneBasedOnParamDto(f, pdto)
+                    }
+                }
+                is CycleObjectGene ->{
+                    if (dto.innerContent != null){
+                        LoggingUtil.uniqueWarn(log, "NOT support to handle cycle object with more than 2 depth")
                     }
                 }
                 else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and dto (${dto.type.type})")
