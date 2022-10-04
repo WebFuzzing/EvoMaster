@@ -81,42 +81,52 @@ class TupleGene(
         val buffer = StringBuffer()
 
         if (mode == GeneUtils.EscapeMode.GQL_NONE_MODE) {
-            //need the name for input and return
-            buffer.append("$name")
 
             if (lastElementTreatedSpecially) {
-                //printout the inputs. See later if a refactoring is needed
-                buffer.append("(")
-                val s = elements.dropLast(1).joinToString(",") {
-
-                    gqlInputsPrinting(it, targetFormat)
-
-                }.replace("\"", "\\\"")
-                buffer.append(s)
-                buffer.append(")")
-
-                //printout the return
                 val returnGene = elements.last()
-                buffer.append(
-                    if (returnGene is OptionalGene && returnGene.isActive) {
-                        assert(returnGene.gene is ObjectGene)
-                        returnGene.gene.getValueAsPrintableString(
-                            previousGenes,
-                            GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
-                            targetFormat,
-                            extraCheck = true
-                        )
-                    } else
-                        if (returnGene is ObjectGene) {
-                            returnGene.getValueAsPrintableString(
+
+                // The return is an optional non-active, we do not print the whole tuple
+                if (returnGene is OptionalGene && returnGene.isActive) {
+
+                    //need the name for input and return
+                    buffer.append(name)
+
+                    //printout the inputs. See later if a refactoring is needed
+                    buffer.append("(")
+                    val s = elements.dropLast(1).joinToString(",") {
+
+                        gqlInputsPrinting(it, targetFormat)
+
+                    }.replace("\"", "\\\"")
+                    buffer.append(s)
+                    buffer.append(")")
+
+                    //printout the return
+                    buffer.append(
+                        if (returnGene.isActive) {
+                            assert(returnGene.gene is ObjectGene)
+                            returnGene.gene.getValueAsPrintableString(
                                 previousGenes,
                                 GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
                                 targetFormat,
                                 extraCheck = true
                             )
-                        } else ""
-                )
-            } else { //printout only the inputs, since there is no return (is a primitive type)
+                        } else
+                            if (returnGene is ObjectGene) {
+                                returnGene.getValueAsPrintableString(
+                                    previousGenes,
+                                    GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
+                                    targetFormat,
+                                    extraCheck = true
+                                )
+                            } else ""
+                    )
+                }
+
+            } else {
+                //need the name for inputs only
+                buffer.append(name)
+                //printout only the inputs, since there is no return (is a primitive type)
                 val s = elements.filter { it !is OptionalGene || it.isActive }.joinToString(",") {
 
                     gqlInputsPrinting(it, targetFormat)
@@ -199,7 +209,6 @@ class TupleGene(
     }
 
 
-
     override fun bindValueBasedOn(gene: Gene): Boolean {
 
         if (gene is TupleGene
@@ -233,7 +242,6 @@ class TupleGene(
     override fun mutationWeight(): Double {
         return elements.sumOf { it.mutationWeight() }
     }
-
 
 
     override fun adaptiveSelectSubsetToMutate(
