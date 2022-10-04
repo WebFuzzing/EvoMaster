@@ -106,7 +106,16 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return copy
     }
 
+    /**
+     * do Initialize LocalId if any inclusive child which is ActionComponent or Gene
+     * does not have the assigned local id
+     */
+    fun doInitializeLocalId(){
+        handleLocalIdsForAddition(children)
+    }
+
     fun doGlobalInitialize(searchGlobalState : SearchGlobalState){
+        doInitializeLocalId()
 
         //TODO make sure that seeded individual get skipped here
 
@@ -163,7 +172,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
 
     open fun doInitialize(randomness: Randomness? = null){
-
+        doInitializeLocalId()
         seeAllActions()
             .forEach { it.doInitialize(randomness) }
     }
@@ -464,28 +473,30 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     /**
      * handle local ids of children (ie ActionComponent) to add
      */
-    fun handleLocalIdsForAddition(children: Collection<StructuralElement>){
-        children.forEach {child->
-            if (child is ActionComponent){
+    fun handleLocalIdsForAddition(children: Collection<StructuralElement>) {
+        children.forEach { child ->
+            if (child is ActionComponent) {
                 if (child is Action && !child.hasLocalId())
                     setLocalIdsForChildren(listOf(child), true)
 
-                child.flatView().filterIsInstance<ActionTree>().forEach { tree->
-                    if (!tree.hasLocalId()){
+                child.flatView().filterIsInstance<ActionTree>().forEach { tree ->
+                    if (!tree.hasLocalId()) {
                         setLocalIdsForChildren(listOf(tree), false)
 
-                    if (tree.flatten().none { it.hasLocalId() })
-                        setLocalIdsForChildren(child.flatten(), true)
-                    }else if (!tree.flatten().all { it.hasLocalId() }){
+                        // local id can be assigned for flatten of the tree
+                        // only if the tree itself and none of its flatten do not have local id
+                        if (tree.flatten().none { it.hasLocalId() })
+                            setLocalIdsForChildren(child.flatten(), true)
+                    } else if (!tree.flatten().all { it.hasLocalId() }) {
                         throw IllegalStateException("local ids of ActionTree are partially assigned")
                     }
                 }
-            }else if (child is Gene){
+            } else if (child is Gene) {
                 if (child.flatView().none { it.hasLocalId() })
                     setLocalIdForStructuralElement(child.flatView())
                 else if (!child.flatView().all { it.hasLocalId() })
                     throw IllegalStateException("local ids of Gene to add are partially assigned")
-            }else
+            } else
                 throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
         }
     }

@@ -50,10 +50,6 @@ abstract class StructuralElement (
      * note that the id can be assigned only if the current id is NONE_ACTION_ID
      */
     fun setLocalId(id: String) {
-        if (getRoot() is Individual){
-            throw IllegalStateException("cannot re-assign the id of the action if it belongs to the individual")
-        }
-
         if (!hasLocalId())
             this.localId = id
         else
@@ -86,12 +82,12 @@ abstract class StructuralElement (
 
     init {
         verifyChildrenToInsert(children)
-        preChildrenSetup(children)
         children.forEach {
             it.parent = this;
         }
         groups?.verifyGroups()
     }
+
 
     /**
      * a pre-setup for the children if needed
