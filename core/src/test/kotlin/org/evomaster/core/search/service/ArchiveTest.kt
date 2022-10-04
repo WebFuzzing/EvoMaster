@@ -293,7 +293,12 @@ class ArchiveTest{
                 .map{ind -> ind.individual.size()}
                 .distinct()
 
-        assertTrue(sizes.size in 2..3)
+        /*
+            Man: need to check with Andrea
+         */
+        assertEquals(2, sizes.size)
+        assertTrue(sizes.contains(1))
+        assertTrue(sizes.contains(2))
     }
 
     @Test
