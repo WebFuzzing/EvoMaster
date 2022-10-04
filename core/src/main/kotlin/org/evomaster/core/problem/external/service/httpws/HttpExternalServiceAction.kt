@@ -9,6 +9,8 @@ import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 
 /**
  * Action to execute the external service related need
@@ -158,6 +160,10 @@ class HttpExternalServiceAction(
      */
     private fun getUrlPattern(url: String) : UrlPattern {
         return urlEqualTo(url)
+    }
+
+    fun buildResponseGene(schema: String) {
+        // TODO: Create the reponse from the schema
     }
 
     /**

@@ -53,8 +53,6 @@ class ExternalServiceHandler {
 
     private var counter: Long = 0
 
-    private var responseDTOs: MutableMap<String, String> = mutableMapOf()
-
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
      *
@@ -71,14 +69,6 @@ class ExternalServiceHandler {
                 externalServices[externalServiceInfo.signature()] = ExternalService(externalServiceInfo, wm)
             }
         }
-    }
-
-    fun addResponseDTO(name: String, schema: String) {
-        responseDTOs[name] = schema
-    }
-
-    fun clearResponseDTOs() {
-        responseDTOs.clear()
     }
 
     fun getExternalServiceMappings(): Map<String, String> {
