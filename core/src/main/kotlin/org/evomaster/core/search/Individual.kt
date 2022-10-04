@@ -125,9 +125,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     fun isInitialized() : Boolean{
-        return seeGenes().all { it.initialized }
+        return areAllGeneInitialized()
                 && areAllLocalIdsAssigned() // local ids must be assigned
     }
+
+    private fun areAllGeneInitialized() = seeGenes().all { it.initialized }
 
 
     /**
@@ -172,9 +174,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
 
     open fun doInitialize(randomness: Randomness? = null){
-        doInitializeLocalId()
-        seeAllActions()
-            .forEach { it.doInitialize(randomness) }
+        if (!areAllLocalIdsAssigned())
+            doInitializeLocalId()
+        if (!areAllGeneInitialized())
+            seeAllActions()
+                .forEach { it.doInitialize(randomness) }
     }
 
     /**
