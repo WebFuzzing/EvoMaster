@@ -13,7 +13,7 @@ class ConstantFitness : FitnessFunction<ConstantIndividual>() {
     override fun doCalculateCoverage(individual: ConstantIndividual, targets: Set<Int>): EvaluatedIndividual<ConstantIndividual>? {
 
         val target = 123
-        val res = individual.gene.value
+        val res = individual.getGene().value
 
         val h = if (res == target) {
             1.0
