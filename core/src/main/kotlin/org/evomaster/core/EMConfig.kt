@@ -1827,4 +1827,11 @@ class EMConfig {
         if(instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         return categories.joinToString(",")
     }
+
+    /**
+     * @return whether to handle the external service mocking
+     */
+    fun isEnabledExternalServiceMocking(): Boolean {
+        return externalServiceIPSelectionStrategy != ExternalServiceIPSelectionStrategy.NONE
+    }
 }
