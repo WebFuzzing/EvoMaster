@@ -38,7 +38,7 @@ class FitnessSubsumeTest {
     fun currentCoverOneMoreTargets(){
         val n = 10
         val current = OneMaxIndividual(n)
-        current.initialize(Randomness())
+        current.doInitialize()
         (0 until n).forEach {
             current.setValue(it, 0.25)
         }
@@ -53,7 +53,7 @@ class FitnessSubsumeTest {
     fun currentReachBetter(){
         val n = 10
         val current = OneMaxIndividual(n)
-        current.initialize(Randomness())
+        current.doInitialize()
         (0 until n).forEach {
             current.setValue(it, 0.75)
         }
@@ -69,7 +69,7 @@ class FitnessSubsumeTest {
     fun mutatedReachBetter(){
         val n = 10
         val current = OneMaxIndividual(n)
-        current.initialize(Randomness())
+        current.doInitialize()
         (0 until n).forEach {
             current.setValue(it, 0.5)
         }
@@ -94,7 +94,7 @@ class FitnessSubsumeTest {
     fun mutatedCoverOneMoreTarget(){
         val n = 10
         val current = OneMaxIndividual(n)
-        current.initialize()
+        current.doInitialize()
         (1 until n).forEach {
             current.setValue(it, 0.5)
         }
