@@ -6,7 +6,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceInfo
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
@@ -128,9 +128,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.values.forEach {
             (it as RestCallAction).addParam(QueryParam(key,
                 CustomMutationRateGene(key,
-                    OptionalGene(key, CustomMutationRateGene(key, StringGene(key, "42"), 0.0)),
+                    OptionalGene(
+                        key,
+                        CustomMutationRateGene(key, StringGene(key, "42"), 0.0),
+                        searchPercentageActive = config.searchPercentageExtraHandling
+                    ),
                     probability = 1.0,
-                    searchPercentageActive = 0.1
+                    searchPercentageActive = config.searchPercentageExtraHandling
                 )
             ))
         }
@@ -143,9 +147,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.values.forEach {
             (it as RestCallAction).addParam(HeaderParam(key,
                 CustomMutationRateGene(key,
-                    OptionalGene(key, CustomMutationRateGene(key, StringGene(key, "42"), 0.0)),
+                    OptionalGene(
+                        key,
+                        CustomMutationRateGene(key, StringGene(key, "42"), 0.0),
+                        searchPercentageActive = config.searchPercentageExtraHandling
+                    ),
                     probability = 1.0,
-                    searchPercentageActive = 0.1
+                    searchPercentageActive = config.searchPercentageExtraHandling
                 )
             ))
         }
@@ -322,7 +330,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         if (info.bootTimeInfoDto?.externalServicesDto != null) {
             info.bootTimeInfoDto.externalServicesDto.forEach {
                 externalServiceHandler.addExternalService(
-                    ExternalServiceInfo(
+                    HttpExternalServiceInfo(
                         it.protocol,
                         it.remoteHostname,
                         it.remotePort

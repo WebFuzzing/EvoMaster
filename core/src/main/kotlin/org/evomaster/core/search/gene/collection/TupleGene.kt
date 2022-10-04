@@ -87,23 +87,27 @@ class TupleGene(
 
                 // The return is an optional non-active, we do not print the whole tuple
                 if (returnGene is OptionalGene && returnGene.isActive) {
-
                     //need the name for input and return
                     buffer.append(name)
 
                     //printout the inputs. See later if a refactoring is needed
-                    buffer.append("(")
-                    val s = elements.dropLast(1).joinToString(",") {
+                    val s = elements.dropLast(1)
+                        //.filter { it !is OptionalGene || it.isActive }
+                        .filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
+                        .joinToString(",") {
 
-                        gqlInputsPrinting(it, targetFormat)
+                            gqlInputsPrinting(it, targetFormat)
 
-                    }.replace("\"", "\\\"")
-                    buffer.append(s)
-                    buffer.append(")")
+                        }.replace("\"", "\\\"")
+                    if (s.isNotEmpty()) {
+                        buffer.append("(")
+                        buffer.append(s)
+                        buffer.append(")")
+                    }
 
                     //printout the return
                     buffer.append(
-                        if (returnGene.isActive) {
+                        if (returnGene is OptionalGene && returnGene.isActive) {
                             assert(returnGene.gene is ObjectGene)
                             returnGene.gene.getValueAsPrintableString(
                                 previousGenes,
@@ -122,16 +126,16 @@ class TupleGene(
                             } else ""
                     )
                 }
-
             } else {
                 //need the name for inputs only
                 buffer.append(name)
                 //printout only the inputs, since there is no return (is a primitive type)
-                val s = elements.filter { it !is OptionalGene || it.isActive }.joinToString(",") {
-
-                    gqlInputsPrinting(it, targetFormat)
-
-                }.replace("\"", "\\\"")
+                val s = elements
+                    //.filter { it !is OptionalGene || it.isActive }
+                    .filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
+                    .joinToString(",") {
+                        gqlInputsPrinting(it, targetFormat)
+                    }.replace("\"", "\\\"")
 
                 if (s.isNotEmpty()) {
                     buffer.append("(")

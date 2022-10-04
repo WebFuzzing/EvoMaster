@@ -30,7 +30,7 @@ class CustomMutationRateGene<out T>(
     name: String,
     val gene: T,
     var probability: Double,
-    val searchPercentageActive: Double = 1.0
+    var searchPercentageActive: Double = 1.0
 ) : CompositeFixedGene(name, gene)
         where T : Gene {
 
@@ -50,6 +50,14 @@ class CustomMutationRateGene<out T>(
         private val log: Logger = LoggerFactory.getLogger(CustomMutationRateGene::class.java)
     }
 
+
+    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+        if(this.javaClass == klass){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
+    }
+
     fun preventMutation(){
         probability = 0.0
     }
@@ -59,7 +67,7 @@ class CustomMutationRateGene<out T>(
     }
 
     override fun copyContent(): Gene {
-        return CustomMutationRateGene(name, gene.copy(), probability)
+        return CustomMutationRateGene(name, gene.copy(), probability, searchPercentageActive)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -121,6 +129,7 @@ class CustomMutationRateGene<out T>(
         }
         this.gene.copyValueFrom(other.gene)
         this.probability = other.probability
+        this.searchPercentageActive = other.searchPercentageActive
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -133,6 +142,7 @@ class CustomMutationRateGene<out T>(
          */
         return this.gene.containsSameValueAs(other.gene)
                 && this.probability == other.probability
+                && this.searchPercentageActive == other.searchPercentageActive
     }
 
 

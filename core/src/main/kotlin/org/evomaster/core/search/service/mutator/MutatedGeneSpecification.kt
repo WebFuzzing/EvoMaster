@@ -29,7 +29,10 @@ data class MutatedGeneSpecification (
 
         //SQL resource handling
         val addedDbActions : MutableList<List<DbAction>> = mutableListOf(),
-        val removedDbActions : MutableList<Pair<DbAction, Int>> = mutableListOf()
+        val removedDbActions : MutableList<Pair<DbAction, Int>> = mutableListOf(),
+
+        // external service actions
+        val addedExternalServiceActions : MutableList<Action> = mutableListOf()
 ){
 
     var mutatedIndividual: Individual? = null
@@ -78,11 +81,13 @@ data class MutatedGeneSpecification (
         )
     }
 
-    fun isActionMutated(actionIndex : Int, isInit: Boolean) : Boolean{
+    fun isActionMutated(actionIndex : Int?, actionLocalId: String?, isInit: Boolean) : Boolean{
         if (isInit)
             return mutatedInitGenes.any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
 
-        return (mutatedGenes.plus(mutatedDbGenes)).any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
+        return (mutatedGenes.plus(mutatedDbGenes)).any { it.type == MutatedType.MODIFY && (
+                it.actionPosition == actionIndex || it.localId == actionLocalId
+                ) }
     }
 
     fun getRemoved(isRest : Boolean) =

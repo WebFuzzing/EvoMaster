@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.string
 
 import org.apache.commons.text.StringEscapeUtils
+import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
@@ -72,16 +73,6 @@ class StringGene(
         private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
 
         private const val PROB_CHANGE_SPEC = 0.1
-
-        /**
-         * These are regex with no value, as they match everything.
-         * Note: we could have something more sophisticated, to check for any possible meaningless one.
-         * But this simple list should do for most cases.
-         *
-         * TODO: this is not really true, as by default . does not match line breakers like \n
-         * So, although they are not important, they are technically not "meaningless"
-         */
-        private val meaninglessRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
     }
 
     private var validChar: String? = null
@@ -254,7 +245,7 @@ class StringGene(
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
             additionalGeneMutationInfo.archiveGeneMutator.mutateStringGene(
-                    this, allGenes = allGenes, selectionStrategy = selectionStrategy, targets = additionalGeneMutationInfo.targets, additionalGeneMutationInfo = additionalGeneMutationInfo
+                    this, allGenes = allGenes, selectionStrategy = selectionStrategy, targets = additionalGeneMutationInfo.targets, additionalGeneMutationInfo = additionalGeneMutationInfo, changeSpecSetting = PROB_CHANGE_SPEC
             )
             return true
         }
@@ -599,14 +590,20 @@ class StringGene(
 
     private fun handleRegex(key: String, toAddSpecs: List<StringSpecializationInfo>, toAddGenes: MutableList<Gene>) {
 
-        val fullPredicate = { s: StringSpecializationInfo -> s.stringSpecialization == StringSpecialization.REGEX && s.type.isFullMatch }
-        val partialPredicate = { s: StringSpecializationInfo -> s.stringSpecialization == StringSpecialization.REGEX && s.type.isPartialMatch }
+        val fullPredicate = { s: StringSpecializationInfo -> s.stringSpecialization.isRegex && s.type.isFullMatch }
+        val partialPredicate = { s: StringSpecializationInfo -> s.stringSpecialization.isRegex && s.type.isPartialMatch }
 
         if (toAddSpecs.any(fullPredicate)) {
             val regex = toAddSpecs
                     .filter(fullPredicate)
-                    .filter{isMeaningfulRegex(it.value)}
-                    .map { it.value }
+                    .filter{RegexUtils.isMeaningfulRegex(it.value)}
+                    .map {
+                        if(it.stringSpecialization == StringSpecialization.REGEX_WHOLE) {
+                            RegexSharedUtils.forceFullMatch(it.value)
+                        } else {
+                            RegexSharedUtils.handlePartialMatch(it.value)
+                        }
+                    }
                     .joinToString("|")
 
             try {
@@ -630,11 +627,6 @@ class StringGene(
 //                    .joinToString("|")
 //            toAddGenes.add(RegexHandler.createGeneForJVM(regex))
 //        }
-    }
-
-    private fun isMeaningfulRegex(regex: String):  Boolean {
-
-        return ! meaninglessRegex.contains(regex)
     }
 
 

@@ -47,9 +47,8 @@ class RestCallAction(
     var locationId: String? = null,
     val produces: List<String> = listOf(),
     val responseRefs : MutableMap<String, String> = mutableMapOf(),
-    val skipOracleChecks : Boolean = false,
-    localId : String = NONE_ACTION_COMPONENT_ID
-) : HttpWsAction(auth, parameters, localId) {
+    val skipOracleChecks : Boolean = false
+) : HttpWsAction(auth, parameters) {
 
     /**
      * collect info of description and summary from swagger
@@ -70,7 +69,7 @@ class RestCallAction(
 
     override fun copyContent(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs, skipOracleChecks, getLocalId())
+        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs, skipOracleChecks)
     }
 
     override fun getName(): String {
@@ -196,6 +195,15 @@ class RestCallAction(
                 BindingBuilder.bindRestAction(param, this.path, otherPath, params, randomness = randomness)
             }
         }
+    }
+
+    /**
+     * reset [saveLocation], [locationId] and [responseRefs] properties of [this] RestCallAction
+     */
+    fun resetProperties(){
+        saveLocation = false
+        locationId = null
+        clearRefs()
     }
 
     fun getDescription() : String? = description

@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.sql.SqlNullableGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.UUIDGene
 import org.junit.jupiter.api.Assertions
@@ -126,8 +126,8 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
         val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is SqlNullableGene)
-        val uuidGene = (genes[0] as SqlNullableGene).gene  as UUIDGene
+        assertTrue(genes[0] is NullableGene)
+        val uuidGene = (genes[0] as NullableGene).gene  as UUIDGene
 
         val expectedUUID = UUID(0L, 0L)
 
@@ -144,7 +144,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
         val actions = builder.createSqlInsertionAction("y", setOf("uuid"))
         val genes = actions[0].seeTopGenes()
 
-        val uuidGene = (genes[0] as SqlNullableGene).gene as UUIDGene
+        val uuidGene = (genes[0] as NullableGene).gene as UUIDGene
 
         val expectedUUID = uuidGene.getValueAsUUID()
 

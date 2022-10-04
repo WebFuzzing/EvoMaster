@@ -16,6 +16,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeGene
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.*
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -24,6 +25,7 @@ import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.regex.*
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.string.NumericStringGene
@@ -73,7 +75,7 @@ class ImpactUtils {
                 is BigIntegerGene -> BigIntegerGeneImpact(id)
                 is NumericStringGene -> NumericStringGeneImpact(id, gene)
                 //sql
-                is SqlNullableGene -> SqlNullableImpact(id, gene)
+                is NullableGene -> SqlNullableImpact(id, gene)
                 is SqlJSONGene -> SqlJsonGeneImpact(id, gene)
                 is SqlXMLGene -> SqlXmlGeneImpact(id, gene)
                 is UUIDGene -> SqlUUIDGeneImpact(id, gene)
@@ -154,8 +156,8 @@ class ImpactUtils {
                     action.seeTopGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                         val id = generateGeneId(action, g)
                         val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
-                        val previous = findGeneById(previousIndividual, id, action.getName(), index, false)?: throw IllegalArgumentException("mismatched previous individual")
-                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous, mutatedGenes.size))
+                        val previous = findGeneById(previousIndividual, id, action.getName(), index, action.getLocalId(), action is ApiExternalServiceAction, false)?: throw IllegalArgumentException("mismatched previous individual")
+                        contexts.add(MutatedGeneWithContext(g, action.getName(), index, action.getLocalId(), action is ApiExternalServiceAction, previous, mutatedGenes.size))
                     }
                 }
             }
@@ -174,7 +176,7 @@ class ImpactUtils {
 
             actions.forEachIndexed { index, a ->
 
-                val manipulated = mutatedGeneSpecification.isActionMutated(index, isInit)
+                val manipulated = mutatedGeneSpecification.isActionMutated(index, a.getLocalId(), isInit)
                 if (manipulated){
                     a.seeTopGenes().filter {
                         if (isInit)
@@ -193,9 +195,11 @@ class ImpactUtils {
                                 id = id,
                                 actionName = a.getName(),
                                 indexOfAction = indexInPrevious,
+                                localId = a.getLocalId(),
+                                isDynamic = a is ApiExternalServiceAction,
                                 isDb = isInit
                         )
-                        list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName(), numOfMutatedGene = num))
+                        list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName(), actionLocalId = a.getLocalId(), isDynamicAction = a is ApiExternalServiceAction, numOfMutatedGene = num))
                     }
                 }
             }
@@ -230,12 +234,23 @@ class ImpactUtils {
         }
 
 
-        private fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int, isDb : Boolean):Gene?{
-            if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)).size) return null
-            val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
+        private fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int?, localId: String?, isDynamic : Boolean, isDb : Boolean):Gene?{
+            if (!isDynamic && indexOfAction == null)
+                throw IllegalArgumentException("indexOfAction must be specified if the action is not dynamic, ie, external service action")
+
+            if (isDynamic && localId == null)
+                throw IllegalArgumentException("localId must be specified if the action is dynamic, ie, external service action")
+
+            val action = if (indexOfAction!=null && !isDynamic){
+                if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)).size) return null
+                if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
+            }else {
+                individual.findActionByLocalId(localId!!)?:return null
+            }
             if (action.getName() != actionName)
                 throw IllegalArgumentException("mismatched gene mutated info ${action.getName()} vs. $actionName")
             return action.seeTopGenes().find { generateGeneId(action, it) == id }
+
         }
 
         private fun findGeneById(individual: Individual, id : String):Gene?{

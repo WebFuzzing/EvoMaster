@@ -907,6 +907,10 @@ class EMConfig {
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
     var statisticsColumnId = "-"
 
+    @Cfg("When running experiments and statistic files are generated, all configs are saved." +
+            " So, this one can be used as extra label for classifying the experiment")
+    var labelForExperiments = "-"
+
     @Cfg("Whether we should collect data on the extra heuristics. Only needed for experiments.")
     var writeExtraHeuristicsFile = false
 
@@ -1150,6 +1154,12 @@ class EMConfig {
             " that were not specified in the schema.")
     var extraHeader = false
 
+
+    @Experimental
+    @Cfg("Percentage [0.0,1.0] of elapsed time in the search while trying to infer any extra query parameter and" +
+            " header. After this time has passed, those attempts stop. ")
+    @PercentageAsProbability(false)
+    var searchPercentageExtraHandling = 0.1
 
     enum class ResourceSamplingStrategy(val requiredArchive: Boolean = false) {
         NONE,
@@ -1816,5 +1826,12 @@ class EMConfig {
         if(instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if(instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         return categories.joinToString(",")
+    }
+
+    /**
+     * @return whether to handle the external service mocking
+     */
+    fun isEnabledExternalServiceMocking(): Boolean {
+        return externalServiceIPSelectionStrategy != ExternalServiceIPSelectionStrategy.NONE
     }
 }
