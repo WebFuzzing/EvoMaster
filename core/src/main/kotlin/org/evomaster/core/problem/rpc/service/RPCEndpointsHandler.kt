@@ -3,10 +3,7 @@ package org.evomaster.core.problem.rpc.service
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.PostSearchActionDto
-import org.evomaster.client.java.controller.api.dto.RPCTestDto
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*
 import org.evomaster.core.EMConfig
@@ -19,6 +16,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.external.service.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -67,6 +65,9 @@ class RPCEndpointsHandler {
 
     @Inject(optional = true)
     private lateinit var remoteController: RemoteController
+
+
+    lateinit var infoDto: SutInfoDto
 
 
     /**
@@ -214,6 +215,7 @@ class RPCEndpointsHandler {
             TODO("NOT SUPPORT RULE-based Responses")
         }else{
             val node = readJson(dto.responses.first())
+            TODO("")
             val rgene = if (node != null){
                 jsonNodeAsObjectGene("return", node) as OptionalGene
             }else{
@@ -350,6 +352,8 @@ class RPCEndpointsHandler {
      * reset [actionCluster] based on interface schemas specified in [problem]
      */
     fun initActionCluster(problem: RPCProblemDto, actionCluster: MutableMap<String, Action>, infoDto: SutInfoDto){
+        this.infoDto = infoDto
+
         val clientVariableMap = problem.schemas.mapIndexed {i, e->
             e.interfaceId!! to nameClientVariable(i, e.interfaceId.split(".").last())
         }.toMap()
@@ -455,6 +459,27 @@ class RPCEndpointsHandler {
         }
 
         return rpcAction
+    }
+
+    private fun getJVMSchemaForDto(name: String, example : String): Gene {
+
+        if (!infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(name)) {
+            infoDto = remoteController.getSutInfo()!!
+
+            if (!infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(name)) {
+                LoggingUtil.uniqueWarn(log, "cannot extract schema for $name in the SUT driver and instrumentation agent")
+
+                val node = readJson(example)
+                if (node != null){
+                    return jsonNodeAsObjectGene("return", node) as OptionalGene
+                }else{
+                    throw RuntimeException("the example is not json object, cannot extract schema for $name")
+                }
+            }
+        }
+
+        val schema = infoDto.unitsInfoDto.extractedSpecifiedDtos[name]!!
+        return RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
     }
 
     private fun transformResponseDto(action: RPCCallAction) : EvaluatedRPCActionDto{

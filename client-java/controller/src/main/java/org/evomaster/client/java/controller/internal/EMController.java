@@ -213,11 +213,7 @@ public class EMController {
                 if (rpcSchemas == null || rpcSchemas.isEmpty()){
                     return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();
                 }
-                List<RPCInterfaceSchemaDto> schemas = new ArrayList<>();
-                for (InterfaceSchema s: rpcSchemas.values()){
-                    schemas.add(s.getDto());
-                }
-                dto.rpcProblem.schemas = schemas;
+
                 Map<Integer, LocalAuthSetupSchema> localMap = noKillSwitch(() ->sutController.getLocalAuthSetupSchemaMap());
                 if (localMap!= null && !localMap.isEmpty()){
                     dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
@@ -230,11 +226,13 @@ public class EMController {
                 // handled seeded tests
                 dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
 
-
                 if (dto.isSutRunning){
-
                     noKillSwitch(() -> sutController.getSeededExternalServiceResponseDto());
                 }
+
+                // set the schemas at the end
+                dto.rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
+
             }catch (RuntimeException e){
                 String msg = e.getMessage();
                 SimpleLogger.error(msg, e);

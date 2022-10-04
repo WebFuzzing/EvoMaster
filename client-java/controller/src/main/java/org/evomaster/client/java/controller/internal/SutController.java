@@ -576,6 +576,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                             }
                             RPCActionDto rpcActionDto = copy.getDto();
                             rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
+                            // FIXME try to extract the response dto here
+
                             test.add(rpcActionDto);
                         }else {
                             throw new IllegalStateException("Seeded Test Error: cannot find the action "+actionDto.functionName);
@@ -1048,6 +1050,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
         dto.unitNames = recorder.getUnitNames();
         dto.parsedDtos = recorder.getParsedDtos();
+        dto.extractedSpecifiedDtos = recorder.getExtractedSpecifiedDtos();
         dto.numberOfInstrumentedNumberComparisons = recorder.getNumberOfInstrumentedNumberComparisons();
         return dto;
     }

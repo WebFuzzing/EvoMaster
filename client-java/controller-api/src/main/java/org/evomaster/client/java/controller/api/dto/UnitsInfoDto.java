@@ -61,4 +61,12 @@ public class UnitsInfoDto {
         TODO should consider if also adding info on type, eg JSON vs XML
      */
     public Map<String,String> parsedDtos;
+
+
+    /*
+       This is to save dto schema for specified dto
+       Key -> DTO full name
+       Value -> OpenAPI object schema
+    */
+    public Map<String, String> extractedSpecifiedDtos;
 }
