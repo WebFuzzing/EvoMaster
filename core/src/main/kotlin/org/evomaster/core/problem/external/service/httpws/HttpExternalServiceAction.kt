@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import com.github.tomakehurst.wiremock.matching.UrlPattern
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.StructuralElement
@@ -162,8 +163,8 @@ class HttpExternalServiceAction(
         return urlEqualTo(url)
     }
 
-    fun buildResponseGene(schema: String) {
-        // TODO: Create the reponse from the schema
+    fun addResponseParam(param: HttpWsResponseParam){
+        addChild(param)
     }
 
     /**

@@ -7,8 +7,10 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceResponseBuilder
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
 import org.evomaster.core.problem.rest.*
@@ -269,21 +271,28 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 action.addParam(update)
             }
 
+            if (action.parent is EnterpriseActionGroup) {
+                val group = action.parent as EnterpriseActionGroup
+                val exActions = group.getExternalServiceActions()
 
-            val responseDtoNames = info.responseDtoNames
+                if (exActions.isNotEmpty()) {
+                    val responseDtoNames = info.responseDtoNames
 
-            // TODO: Most cases responseDtoNames is empty, so doing a force update to
-            //  fetch. Need to vertify the necessity of the below implementation
-            if (responseDtoNames.isNotEmpty()) {
-                infoDto = rc.getSutInfo()!!
-            }
+                    // TODO: Most cases responseDtoNames is empty, so doing a force update to
+                    //  fetch. Need to vertify the necessity of the below implementation
+                    if (responseDtoNames.isNotEmpty()) {
+                        infoDto = rc.getSutInfo()!!
+                    }
 
-            if (responseDtoNames.isNotEmpty()) {
-
-                responseDtoNames.forEach { name ->
-                    if (infoDto.unitsInfoDto.responseDTOs.containsKey(name)) {
-                        // TODO: create Reponse Gene using the schema and add it to the action
-                        //  as response
+                    if (responseDtoNames.isNotEmpty()) {
+                        val name = responseDtoNames.first()
+                        if (infoDto.unitsInfoDto.responseDTOs.containsKey(name)) {
+                            val schema = infoDto.unitsInfoDto.responseDTOs[name]!!
+                            val responseObj = HttpExternalServiceResponseBuilder
+                                .buildResponseGene(name, schema)
+                                .apply { doInitialize(randomness) }
+                            // TODO
+                        }
                     }
                 }
             }
