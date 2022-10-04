@@ -122,7 +122,7 @@ public class UnitsInfoRecorder implements Serializable {
         }
 
         if (!singleton.responseDTOs.containsKey(name)) {
-            singleton.parsedDtos.put(name, schema);
+            singleton.responseDTOs.put(name, schema);
         }
     }
 

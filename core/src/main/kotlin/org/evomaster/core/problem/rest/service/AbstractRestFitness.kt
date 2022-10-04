@@ -269,15 +269,21 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 action.addParam(update)
             }
 
+
             val responseDtoNames = info.responseDtoNames
 
+            // TODO: Most cases responseDtoNames is empty, so doing a force update to
+            //  fetch. Need to vertify the necessity of the below implementation
             if (responseDtoNames.isNotEmpty()) {
-                // Clear everything before adding new
-                externalServiceHandler.clearResponseDTOs()
+                infoDto = rc.getSutInfo()!!
+            }
+
+            if (responseDtoNames.isNotEmpty()) {
 
                 responseDtoNames.forEach { name ->
                     if (infoDto.unitsInfoDto.responseDTOs.containsKey(name)) {
-                        externalServiceHandler.addResponseDTO(name, infoDto.unitsInfoDto.parsedDtos[name].toString())
+                        // TODO: create Reponse Gene using the schema and add it to the action
+                        //  as response
                     }
                 }
             }
