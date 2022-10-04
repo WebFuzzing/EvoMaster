@@ -332,7 +332,7 @@ class TestCaseWriterTest {
 
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
-        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0.copy() as DbAction, insertIntoTable1.copy() as DbAction))
         val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
@@ -431,7 +431,7 @@ class TestCaseWriterTest {
 
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
-        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0.copy() as DbAction, insertIntoTable1.copy() as DbAction))
         val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
@@ -589,7 +589,7 @@ class TestCaseWriterTest {
 
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
-        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0.copy() as DbAction, insertIntoTable1.copy() as DbAction))
         val config = getConfig(format)
 
         val test = TestCase(test = ei, name = "test")
@@ -948,6 +948,7 @@ class TestCaseWriterTest {
         val action = RestCallAction("1", HttpVerb.GET, RestPath(""), mutableListOf())
         val restActions = listOf(action).toMutableList()
         val individual = RestIndividual(restActions, sampleType)
+        individual.doInitialize()
         val fitnessVal = FitnessValue(0.0)
         val result = RestCallResult()
         result.setTimedout(timedout = true)
@@ -1036,8 +1037,8 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
             groups = mutableListOf(
-                (mutableListOf(fooInsertion) to mutableListOf(fooAction)),
-                (mutableListOf(barInsertion) to mutableListOf(barAction))
+                (mutableListOf(fooInsertion.copy() as DbAction) to mutableListOf(fooAction.copy() as RestCallAction)),
+                (mutableListOf(barInsertion.copy() as DbAction) to mutableListOf(barAction.copy() as RestCallAction))
             )
         )
 
@@ -1105,15 +1106,17 @@ public void test() throws Exception {
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
         val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
 
-        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
-            dbInitialization = mutableListOf(),
-            groups = mutableListOf(
-                (mutableListOf(fooInsertion) to mutableListOf(fooAction)),
-                (mutableListOf(barInsertion) to mutableListOf(barAction))
-            )
+        val groups =  mutableListOf(
+            (mutableListOf(fooInsertion.copy() as DbAction) to mutableListOf(fooAction.copy() as RestCallAction)),
+            (mutableListOf(barInsertion.copy() as DbAction) to mutableListOf(barAction.copy() as RestCallAction))
         )
 
-        val fooInsertionResult = ei.seeResults(listOf(fooInsertion))
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = groups
+        )
+
+        val fooInsertionResult = ei.seeResults(groups[0].first)
         assertEquals(1, fooInsertionResult.size)
         assertTrue(fooInsertionResult[0] is DbActionResult)
         (fooInsertionResult[0] as DbActionResult).setInsertExecutionResult(false)
