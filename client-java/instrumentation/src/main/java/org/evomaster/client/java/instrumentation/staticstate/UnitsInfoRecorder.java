@@ -42,6 +42,13 @@ public class UnitsInfoRecorder implements Serializable {
      */
     private Map<String,String> parsedDtos;
 
+    /*
+        This is to save dto schema for specified dto
+        Key -> DTO full name
+        Value -> OpenAPI object schema
+     */
+    private Map<String, String> extractedSpecifiedDtos;
+
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
         numberOfLines = new AtomicInteger(0);
@@ -51,6 +58,7 @@ public class UnitsInfoRecorder implements Serializable {
         numberOfTrackedMethods = new AtomicInteger(0);
         numberOfInstrumentedNumberComparisons = new AtomicInteger(0);
         parsedDtos = new ConcurrentHashMap<>();
+        extractedSpecifiedDtos = new ConcurrentHashMap<>();
     }
 
     /**
@@ -105,6 +113,25 @@ public class UnitsInfoRecorder implements Serializable {
         }
     }
 
+    public static void registerSpecifiedDtoSchema(Map<String, String> schemaMap){
+        for (String name: schemaMap.keySet()){
+            if(name == null || name.isEmpty()){
+                throw new IllegalArgumentException("registerSpecifiedDtoSchema: empty dto name");
+            }
+
+            String schema = schemaMap.get(name);
+
+            if(schema == null || schema.isEmpty()){
+                throw new IllegalArgumentException("registerSpecifiedDtoSchema: empty schema");
+            }
+
+            if(! singleton.extractedSpecifiedDtos.containsKey(name)){
+                singleton.extractedSpecifiedDtos.put(name, schema);
+            }
+        }
+
+    }
+
     public  int getNumberOfUnits() {
         return unitNames.size();
     }
@@ -115,6 +142,10 @@ public class UnitsInfoRecorder implements Serializable {
 
     public Map<String,String> getParsedDtos(){
         return Collections.unmodifiableMap(parsedDtos);
+    }
+
+    public Map<String,String> getExtractedSpecifiedDtos(){
+        return Collections.unmodifiableMap(extractedSpecifiedDtos);
     }
 
     public  int getNumberOfLines() {
