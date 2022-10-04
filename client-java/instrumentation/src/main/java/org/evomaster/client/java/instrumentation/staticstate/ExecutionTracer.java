@@ -243,6 +243,10 @@ public class ExecutionTracer {
                 return;
             }
 
+            if(shouldSkipTaint()){
+                return;
+            }
+
             //TODO could have EQUAL_IGNORE_CASE
             String id = left + "___" + right;
             addStringSpecialization(left, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
@@ -254,12 +258,28 @@ public class ExecutionTracer {
                 : StringSpecialization.CONSTANT;
 
         if (taintedLeft || taintedRight) {
+
+            if(shouldSkipTaint()){
+                return;
+            }
+
             if (taintedLeft) {
                 addStringSpecialization(left, new StringSpecializationInfo(type, right));
             } else {
                 addStringSpecialization(right, new StringSpecializationInfo(type, left));
             }
         }
+    }
+
+    private static boolean shouldSkipTaint(){
+        /*
+            Very tricky... H2 can cache some results. When executing queries, it can check inputs in previous
+            queries to see if differences in results. but those could be tainted values... which mess up
+            the taint analysis :( so, as a special case, we need to skip it
+         */
+        return Arrays.stream(Thread.currentThread().getStackTrace())
+                .anyMatch(it -> it.getMethodName().equals("sameResultAsLast")
+                        && it.getClassName().equals("org.h2.command.query.Query"));
     }
 
     public static TaintType getTaintType(String input) {

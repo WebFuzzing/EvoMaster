@@ -165,4 +165,27 @@ data class MutatedGeneSpecification (
             || removedDbActions.map { it.first }.any { it.seeTopGenes().contains(gene) }
 
     fun mutatedActionOrInit() = setOf((mutatedGenes.plus(mutatedDbGenes)).isEmpty(), mutatedInitGenes.isNotEmpty())
+
+    /**
+     * repair mutated db genes based on [individual] after db repair
+     */
+    fun repairInitAndDbSpecification(individual: Individual) : Boolean{
+        val init = individual.seeInitializingActions()
+        var anyRemove = mutatedInitGenes.removeIf {
+            it.type == MutatedType.MODIFY && it.actionPosition != null && it.actionPosition >= init.size
+        }
+
+        val noInit = individual.seeFixedMainActions()
+        anyRemove = mutatedDbGenes.removeIf {
+            it.type == MutatedType.MODIFY && (if (it.actionPosition != null)
+                it.actionPosition >= noInit.size
+            else if (it.localId != null)
+                noInit.none { a-> a.getLocalId() == it.localId }
+            else
+                throw IllegalArgumentException("to represent mutated gene info, position or local id of an action which contains the gene must be specified"))
+        } || anyRemove
+
+
+        return anyRemove
+    }
 }
