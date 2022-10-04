@@ -183,7 +183,6 @@ public class EMController {
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
             info = noKillSwitch(() -> sutController.getProblemInfo());
             dto.bootTimeInfoDto = noKillSwitch(()-> sutController.getBootTimeInfoDto());
-
         } catch (RuntimeException e) {
             String msg = e.getMessage();
             SimpleLogger.error(msg, e);
@@ -230,6 +229,12 @@ public class EMController {
                 }
                 // handled seeded tests
                 dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
+
+
+                if (dto.isSutRunning){
+
+                    noKillSwitch(() -> sutController.getSeededExternalServiceResponseDto());
+                }
             }catch (RuntimeException e){
                 String msg = e.getMessage();
                 SimpleLogger.error(msg, e);

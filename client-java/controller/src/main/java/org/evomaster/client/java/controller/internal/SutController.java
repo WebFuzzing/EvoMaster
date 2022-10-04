@@ -1016,6 +1016,22 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return infoDto;
     }
 
+    public abstract void getJvmDtoSchema(List<String> dtoNames);
+
+    public void getSeededExternalServiceResponseDto(){
+        if (seedRPCTests() != null && !seedRPCTests().isEmpty() ){
+            /*
+                distinct might be a bit expensive, however, the specified responses are probably limited
+             */
+            List<String> dtoNames = seedRPCTests().stream()
+                    .flatMap(s-> s.rpcFunctions.stream()
+                            .flatMap(f-> f.mockRPCExternalServiceDtos.stream()
+                                    .flatMap(e-> e.responseTypes.stream())))
+                    .distinct().collect(Collectors.toList());
+            getJvmDtoSchema(dtoNames);
+        }
+    }
+
     public abstract String getExecutableFullPath();
 
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
