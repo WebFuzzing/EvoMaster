@@ -27,10 +27,13 @@ class WmUrlOpenEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM() {
+
+        defaultSeed = 123
+
         runTestHandlingFlakyAndCompilation(
             "WmUrlOpenEM",
             "org.foo.WmUrlOpenEM",
-            100
+            500
         ) { args: MutableList<String> ->
 
             args.add("--externalServiceIPSelectionStrategy")
