@@ -1,7 +1,9 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.root.CompositeGene
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
@@ -97,8 +99,11 @@ abstract class StructuralElement (
         // handle local id for new children to add into individual
         if (this is Individual)
             this.handleLocalIdsForAddition(c)
-        // handle local id for new children to add into composite structure of individual, ie ActionTree
-        if (this.getRoot() is Individual && this is ActionTree)
+        /*
+           handle local id for new children to add into composite structure of individual,
+           ie ActionTree (eg, add external service to group), Action (eg, add param to action), ArrayGene (eg, add element to gene)
+         */
+        if (this.getRoot() is Individual && (this is ActionComponent || this is CompositeGene))
             (this.getRoot() as Individual).handleLocalIdsForAddition(c)
     }
 
