@@ -879,6 +879,7 @@
                         <forkCount>1</forkCount>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
+                        <trimStackTrace>false</trimStackTrace>
                         <!--
                             @{argLine} is needed for JaCoCo
                             -Djdk.attach.allowAttachSelf=true is needed for Java 9+
