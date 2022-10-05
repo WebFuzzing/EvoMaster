@@ -126,7 +126,8 @@ abstract class TestCaseWriter {
                         lines.add("aResponse()")
                         lines.indented {
                             lines.add(".withStatus(${response.status.getValueAsRawString()})")
-                            // FIXME need major refactoring of escaping
+                            //TODO possible need to handle type, eg JSON vs XML
+                            //FIXME need major refactoring of escaping
                             lines.add(".withBody(\"${response.responseBody.getValueAsRawString().replace("\"", "\\\"")}\")")
                         }
                         lines.add(")")

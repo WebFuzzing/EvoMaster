@@ -110,8 +110,15 @@ public enum StringSpecialization implements Serializable {
     /**
      *  String should be a valid URI
      */
-    URI;
+    URI,
 
+    /**
+     * The string should represent the content of a valid JSON Object, ie {key:value,...}.
+     * Note that strings are valid JSON Elements, but not Objects
+     */
+    JSON_OBJECT
+
+    ;
 
     public boolean isRegex(){
         return this == REGEX_PARTIAL || this == REGEX_WHOLE;

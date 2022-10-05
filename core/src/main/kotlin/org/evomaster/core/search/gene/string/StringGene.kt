@@ -12,6 +12,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -550,6 +551,18 @@ class StringGene(
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.URI }){
             toAddGenes.add(UriGene(name))
             log.trace("URI, added specification size: {}", toAddGenes.size)
+        }
+
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_OBJECT }){
+            toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
+                    .forEach {
+                        val schema = it.value
+                        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+                        val ref = t.subSequence(1,t.length-1).toString()
+                        val obj = RestActionBuilderV3.createObjectGeneForDTO(ref, schema, ref)
+                        toAddGenes.add(obj)
+                    }
+            log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)
         }
 
         //all regex are combined with disjunction in a single gene

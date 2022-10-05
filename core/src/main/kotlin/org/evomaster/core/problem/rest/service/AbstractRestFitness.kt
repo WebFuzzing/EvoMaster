@@ -276,7 +276,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 parsedDto info is update throughout the search.
                 so, if info is missing, we re-fetch the whole data.
                 Would be more efficient to just fetch new data, but,
-                as this will happens seldom (at most N times for N dtos),
+                as this will happen seldom (at most N times for N dtos),
                 no much point in optimizing it
              */
             infoDto = rc.getSutInfo()!!
@@ -287,7 +287,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
 
         val schema: String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
-        //TODO neeed to check: referType is same with the name?
+        //TODO need to check: referType is same with the name?
         return RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
     }
 

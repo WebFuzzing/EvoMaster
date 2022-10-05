@@ -1,11 +1,10 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
+import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
-import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
@@ -34,11 +33,11 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
             throw new NullPointerException();
         }
 
-        if(classOfT != null) {
-            String name = classOfT.getName();
-            String schema = ClassToSchema.getOrDeriveSchema(classOfT);
-            UnitsInfoRecorder.registerNewParsedDto(name, schema);
-            ExecutionTracer.addParsedDtoName(name);
+        ClassToSchema.registerSchemaIfNeeded(classOfT);
+        if (ExecutionTracer.isTaintInput(json)) {
+            ExecutionTracer.addStringSpecialization(json,
+                    new StringSpecializationInfo(StringSpecialization.JSON_OBJECT,
+                            ClassToSchema.getOrDeriveSchema(classOfT)));
         }
 
         Method original = getOriginal(singleton, "fromJson_string_class", caller);
