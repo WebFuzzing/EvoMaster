@@ -126,8 +126,8 @@ abstract class TestCaseWriter {
                         lines.add("aResponse()")
                         lines.indented {
                             lines.add(".withStatus(${response.status.getValueAsRawString()})")
-                            // TODO: Response is empty for now
-                            lines.add(".withBody(\"${response.response.getValueAsRawString()}\")")
+                            // FIXME need major refactoring of escaping
+                            lines.add(".withBody(\"${response.responseBody.getValueAsRawString().replace("\"", "\\\"")}\")")
                         }
                         lines.add(")")
                     }

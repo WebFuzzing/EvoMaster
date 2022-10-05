@@ -405,8 +405,7 @@ class StringGene(
                                 (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
                         )
         ) {
-            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-            tainted = true
+            forceTaintedValue()
             return true
         }
 
@@ -416,6 +415,11 @@ class StringGene(
         }
 
         return false
+    }
+
+    fun forceTaintedValue() {
+        value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+        tainted = true
     }
 
     /**
@@ -674,12 +678,16 @@ class StringGene(
 
         val specializationGene = getSpecializationGene()
 
+        val rawValue = getValueAsRawString()
+
         if (specializationGene != null) {
+            //FIXME: really escaping is a total mess... need major refactoring
             // TODO: Don't we need to escape the raw string?
-            return "\"" + specializationGene.getValueAsRawString() + "\""
+            return "\"" + rawValue + "\""
+//            return specializationGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+//                    .replace("\"", "\\\"")
         }
 
-        val rawValue = getValueAsRawString()
         return if (mode != null && mode == GeneUtils.EscapeMode.XML) {
             StringEscapeUtils.escapeXml10(rawValue)
         } else {
