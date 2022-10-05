@@ -11,7 +11,8 @@ class PrimitiveTypeMatchSampler: Sampler<PrimitiveTypeMatchIndividual>() {
 
     override fun sampleAtRandom(): PrimitiveTypeMatchIndividual {
         val action = (template?.seeAllActions()?.get(0)?.copy() ?: throw IllegalArgumentException("there is no action")) as PrimitiveTypeMatchAction
-        action.doInitialize(randomness)
-        return PrimitiveTypeMatchIndividual(action)
+        val ind = PrimitiveTypeMatchIndividual(action)
+        ind.doInitialize(randomness)
+        return ind
     }
 }

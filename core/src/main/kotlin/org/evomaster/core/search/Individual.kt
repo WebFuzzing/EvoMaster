@@ -4,6 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
@@ -125,9 +126,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     fun isInitialized() : Boolean{
-        return seeGenes().all { it.initialized }
+        return areAllGeneInitialized()
                 && areAllLocalIdsAssigned() // local ids must be assigned
     }
+
+    private fun areAllGeneInitialized() = seeGenes().all { it.initialized }
 
 
     /**
@@ -172,9 +175,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
 
     open fun doInitialize(randomness: Randomness? = null){
-        doInitializeLocalId()
-        seeAllActions()
-            .forEach { it.doInitialize(randomness) }
+        if (!areAllLocalIdsAssigned())
+            doInitializeLocalId()
+        if (!areAllGeneInitialized())
+            seeAllActions()
+                .forEach { it.doInitialize(randomness) }
     }
 
     /**
@@ -496,7 +501,9 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                     setLocalIdForStructuralElement(child.flatView())
                 else if (!child.flatView().all { it.hasLocalId() })
                     throw IllegalStateException("local ids of Gene to add are partially assigned")
-            } else
+            } else if (child is Param){
+                setLocalIdForStructuralElement(child.genes.flatMap { it.flatView() })
+            }else
                 throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
         }
     }
