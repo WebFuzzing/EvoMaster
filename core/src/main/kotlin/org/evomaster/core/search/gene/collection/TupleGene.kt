@@ -86,7 +86,7 @@ class TupleGene(
                 val returnGene = elements.last()
 
                 // The return is an optional non-active, we do not print the whole tuple
-                if (returnGene is OptionalGene && returnGene.isActive) {
+                if ((returnGene is OptionalGene && returnGene.isActive)|| returnGene !is OptionalGene) {
                     //need the name for input and return
                     buffer.append(name)
 
