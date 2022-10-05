@@ -26,7 +26,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_InputStream_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) {
         Objects.requireNonNull(caller);
@@ -52,7 +52,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_Generic_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, String content, Class<T> valueType) {
         Objects.requireNonNull(caller);

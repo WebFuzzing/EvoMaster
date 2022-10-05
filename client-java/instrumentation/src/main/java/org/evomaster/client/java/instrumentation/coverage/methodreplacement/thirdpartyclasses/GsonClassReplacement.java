@@ -26,7 +26,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "fromJson_string_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.BASE)
     public static Object fromJson(Object caller, String json, Class<?> classOfT){
 
