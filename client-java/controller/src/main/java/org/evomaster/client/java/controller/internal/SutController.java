@@ -550,6 +550,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (rpcInterfaceSchema.isEmpty())
             throw new IllegalStateException("empty RPC interface: The RPC interface schemas are not extracted yet");
 
+        ProblemInfo rpcp = getProblemInfo();
+        if (!(rpcp instanceof  RPCProblem))
+            throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
+        RPCType rpcType = ((RPCProblem) rpcp).getType();
+
         List<List<RPCActionDto>> results = new ArrayList<>();
 
         for (SeededRPCTestDto dto: seedRPCTests()){
@@ -576,8 +581,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                             }
                             RPCActionDto rpcActionDto = copy.getDto();
                             rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
-                            // FIXME try to extract the response dto here
-
+                            RPCEndpointsBuilder.buildExternalServiceResponse(schema,
+                                    actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
+                                    rpcType);
                             test.add(rpcActionDto);
                         }else {
                             throw new IllegalStateException("Seeded Test Error: cannot find the action "+actionDto.functionName);
