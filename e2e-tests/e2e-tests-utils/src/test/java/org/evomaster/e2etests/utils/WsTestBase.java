@@ -397,7 +397,7 @@ public abstract class WsTestBase {
      */
     protected void handleFlaky(Runnable lambda) throws Throwable{
 
-        int attempts = 10;
+        int attempts = 3;
         Throwable error = null;
 
         for(int i=0; i<attempts; i++){
