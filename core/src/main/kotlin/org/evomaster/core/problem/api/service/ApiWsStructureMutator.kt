@@ -206,7 +206,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 randomness.choose(sampler.existingSqlData, config.maximumExistingDataToSampleInDb)
             } else {
                 sampler.existingSqlData
-            }
+            }.map { it.copy() }
 
             //add existing data only once
             ind.addInitializingDbActions(0, existing)

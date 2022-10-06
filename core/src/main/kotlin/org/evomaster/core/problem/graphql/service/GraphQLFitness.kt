@@ -88,7 +88,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
 
         if (config.baseTaintAnalysisProbability > 0) {
-            assert(graphQLActionResults.size == dto.additionalInfoList.size)
+            Lazy.assert { graphQLActionResults.size == dto.additionalInfoList.size }
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
 
