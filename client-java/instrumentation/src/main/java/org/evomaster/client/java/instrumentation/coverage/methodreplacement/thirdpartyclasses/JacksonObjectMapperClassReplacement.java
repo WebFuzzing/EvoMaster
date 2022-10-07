@@ -94,4 +94,32 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             throw (RuntimeException) e.getCause();
         }
     }
+
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_convertValue_Generic_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T convertValue(Object caller, Object fromValue, Class<T> valueType) {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+
+        if(fromValue instanceof String) {
+            JsonTaint.handlePossibleJsonTaint((String) fromValue, valueType);
+        }
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_convertValue_Generic_class", caller);
+
+        try {
+            return (T) original.invoke(caller, fromValue, valueType);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw (RuntimeException) e.getCause();
+        }
+    }
+
+    //public <T> T convertValue(Object fromValue, Class<T> toValueType)
 }

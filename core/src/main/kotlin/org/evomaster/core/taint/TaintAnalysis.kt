@@ -149,7 +149,7 @@ object TaintAnalysis {
 
             genes.forEach {
                 it.resolveTaint(
-                    ArrayGene(it.name, template.copy()).apply { it.doInitialize(randomness) }
+                    ArrayGene(it.name, template.copy()).apply { doInitialize(randomness) }
                 )
             }
         }

@@ -786,10 +786,12 @@ object GeneSamplerForTests {
     private fun sampleTaintedArrayGene(rand: Randomness): TaintedArrayGene {
 
         val array = if(rand.nextBoolean()) sampleArrayGene(rand) else null
+        val isActive = if(array == null) false else rand.nextBoolean()
 
         return TaintedArrayGene(
             "tainted array ${rand.nextInt()}",
             TaintInputName.getTaintName(rand.nextInt(0,1000)),
+            isActive,
             array
         )
     }
