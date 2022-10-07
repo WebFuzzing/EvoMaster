@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
@@ -96,6 +97,7 @@ object GeneSamplerForTests {
 
                 when genes need input genes, we sample those at random as well
              */
+            TaintedArrayGene::class -> sampleTaintedArrayGene(rand) as T
             ArrayGene::class -> sampleArrayGene(rand) as T
             Base64StringGene::class -> sampleBase64StringGene(rand) as T
             BigDecimalGene::class -> sampleBigDecimalGene(rand) as T
@@ -171,6 +173,8 @@ object GeneSamplerForTests {
             else -> throw IllegalStateException("No sampler for $klass")
         }
     }
+
+
 
     private fun sampleUrlDataGene(rand: Randomness): UriDataGene {
         return UriDataGene("rand UrlDataGene ${rand.nextInt()}")
@@ -776,6 +780,18 @@ object GeneSamplerForTests {
             chosen = sample(rand.choose(selection), rand)
         }
         return chosen
+    }
+
+
+    private fun sampleTaintedArrayGene(rand: Randomness): TaintedArrayGene {
+
+        val array = if(rand.nextBoolean()) sampleArrayGene(rand) else null
+
+        return TaintedArrayGene(
+            "tainted array ${rand.nextInt()}",
+            TaintInputName.getTaintName(rand.nextInt(0,1000)),
+            array
+        )
     }
 
     fun sampleArrayGene(rand: Randomness): ArrayGene<*> {

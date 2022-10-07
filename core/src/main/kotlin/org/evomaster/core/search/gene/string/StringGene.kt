@@ -15,6 +15,7 @@ import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.numeric.*
@@ -563,6 +564,11 @@ class StringGene(
                         toAddGenes.add(obj)
                     }
             log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)
+        }
+
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_ARRAY }){
+            toAddGenes.add(TaintedArrayGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
+            log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
         }
 
         //all regex are combined with disjunction in a single gene

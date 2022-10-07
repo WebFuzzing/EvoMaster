@@ -4,6 +4,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Repl
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
+import org.evomaster.client.java.instrumentation.object.JsonTaint;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -51,11 +52,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
                 .lines()
                 .collect(Collectors.joining("\n"));
 
-        if (ExecutionTracer.isTaintInput(content)) {
-            ExecutionTracer.addStringSpecialization(content,
-                    new StringSpecializationInfo(StringSpecialization.JSON_OBJECT,
-                            ClassToSchema.getOrDeriveSchema(valueType)));
-        }
+        JsonTaint.handlePossibleJsonTaint(content,valueType);
 
         src = new ByteArrayInputStream(content.getBytes());
 
@@ -79,11 +76,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
-        if (ExecutionTracer.isTaintInput(content)) {
-            ExecutionTracer.addStringSpecialization(content,
-                    new StringSpecializationInfo(StringSpecialization.JSON_OBJECT,
-                            ClassToSchema.getOrDeriveSchema(valueType)));
-        }
+        JsonTaint.handlePossibleJsonTaint(content,valueType);
 
         // JSON can be unwrapped using different approaches
         // val dto: FooDto = mapper.readValue(json)
