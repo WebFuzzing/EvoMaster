@@ -25,6 +25,8 @@ class RPCExternalServiceAction(
      * such as x > 1 return A, otherwise return B (could exist in the seeded test)
      * this property provides an identifier for such rules (eg, x>1) if exists.
      * the rule is provided by the user (eg, with customization) and it is immutable.
+     *
+     * note that null represents that it accepts any request
      */
     val requestRuleIdentifier: String?,
 
@@ -36,11 +38,11 @@ class RPCExternalServiceAction(
     companion object{
         private const val RPC_EX_NAME_SEPARATOR =":::"
 
-        fun getRPCExternalServiceActionName(interfaceName: String, functionName: String, requestRuleIdentifier: String?) = "$interfaceName$RPC_EX_NAME_SEPARATOR$functionName$RPC_EX_NAME_SEPARATOR${requestRuleIdentifier?:"ANY"}"
+        fun getRPCExternalServiceActionName(interfaceName: String, functionName: String, requestRuleIdentifier: String?, responseClassType: String) = "$interfaceName$RPC_EX_NAME_SEPARATOR$functionName$RPC_EX_NAME_SEPARATOR${requestRuleIdentifier?:"ANY"}$RPC_EX_NAME_SEPARATOR$responseClassType"
     }
 
     override fun getName(): String {
-        return getRPCExternalServiceActionName(interfaceName, functionName, requestRuleIdentifier)
+        return getRPCExternalServiceActionName(interfaceName, functionName, requestRuleIdentifier, (response as RPCResponseParam).className)
     }
 
     override fun seeTopGenes(): List<out Gene> {
@@ -53,5 +55,12 @@ class RPCExternalServiceAction(
 
     override fun copyContent(): RPCExternalServiceAction {
         return RPCExternalServiceAction(interfaceName, functionName, descriptiveInfo, requestRuleIdentifier, response.copy() as RPCResponseParam, active, used)
+    }
+
+    /**
+     * @return a copy of this and release its restricted request identifier
+     */
+    fun getUnrestrictedRPCExternalServiceAction(): RPCExternalServiceAction{
+        return RPCExternalServiceAction(interfaceName, functionName, descriptiveInfo, null, response.copy() as RPCResponseParam)
     }
 }

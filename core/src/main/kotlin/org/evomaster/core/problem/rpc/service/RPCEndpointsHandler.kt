@@ -106,18 +106,25 @@ class RPCEndpointsHandler {
     private val authEndpointCluster = mutableMapOf<Int, RPCActionDto>()
 
     /**
-     * a map of seeded external services for RPC-based SUT
+     * a map of RPC action to external services for RPC-based SUT
      * - key is the id of action (which is consistent with key of [actionSchemaCluster])
-     * - value is a list of seeded api external services for the RPC action
+     * - value is a list of seeded api external services for the RPC action which can be found with [externalServiceCluster]
      */
-    private val seededExternalServiceCluster = mutableMapOf<String, MutableList<ApiExternalServiceAction>>()
+    private val actionToExternalServiceMap = mutableMapOf<String, MutableSet<String>>()
 
+    /**
+     * a map of external service actions cluster
+     * - key is action id
+     * - value is the example of ApiExternalServiceAction that might be expanded
+     */
+    private val externalServiceCluster = mutableMapOf<String, ApiExternalServiceAction>()
 
     /**
      * key is type in the schema
      * value is object gene for it
      */
     private val typeCache = mutableMapOf<String, Gene>()
+
 
     // used to handle dto and its string json
     private val objectMapper = ObjectMapper()
@@ -162,18 +169,29 @@ class RPCEndpointsHandler {
             val rpcActions = td.map { d->
                 val name = actionName(d.interfaceId, d.actionName)
                 val ex = if (d.mockRPCExternalServiceDtos != null && d.mockRPCExternalServiceDtos.isNotEmpty())
-                    d.mockRPCExternalServiceDtos.map { e-> handleMockRPCExternalServiceDto(e) }.toMutableList()
+                    d.mockRPCExternalServiceDtos.map { e->
+                        e.responses.mapIndexed { index, r->
+                            val exAction = externalServiceCluster[
+                                    RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
+                            ]!!.copy() as ApiExternalServiceAction
+                            setGeneBasedOnString(exAction.response.gene, r)
+                            exAction
+                        }
+                    }.flatten()
                 else mutableListOf()
 
-                seededExternalServiceCluster.merge(name, ex){old, new-> old.plus(new).toMutableList()}
-
-                exActions.add(ex.map { it.copy() as ApiExternalServiceAction })
+                exActions.add(ex)
                 processEndpoint(name, d, true)
             }.toMutableList()
 
             RPCIndividual(actions = rpcActions, externalServicesActions = exActions)
         }
     }
+
+    private fun setGeneBasedOnString(gene: Gene, value: String){
+        TODO()
+    }
+
 
     private fun readJson(response: String) : JsonNode?{
         return try {
@@ -184,7 +202,7 @@ class RPCEndpointsHandler {
     }
 
     private fun jsonNodeAsObjectGene(name: String, jsonNode: JsonNode): Gene{
-        val gene = when{
+        return when{
             jsonNode.isBoolean -> BooleanGene(name, jsonNode.booleanValue())
             jsonNode.isBigDecimal -> BigDecimalGene(name, jsonNode.decimalValue())
             jsonNode.isDouble -> DoubleGene(name, jsonNode.doubleValue())
@@ -205,27 +223,58 @@ class RPCEndpointsHandler {
             }
             else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
         }
-        return OptionalGene(name, gene)
     }
 
-    private fun handleMockRPCExternalServiceDto(dto: MockRPCExternalServiceDto) : ApiExternalServiceAction{
-        if (dto.requestRules.isNotEmpty() && dto.requestRules != dto.responses)
-            throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size}")
-        if (dto.responses.size > 1){
-            TODO("NOT SUPPORT RULE-based Responses")
-        }else{
-            val node = readJson(dto.responses.first())
-            TODO("")
-            val rgene = if (node != null){
-                jsonNodeAsObjectGene("return", node) as OptionalGene
-            }else{
-                OptionalGene("return",StringGene("return", value = dto.responses.first()))
-            }
+    private fun extractRPCExternalServiceAction(sutInfoDto: SutInfoDto, rpcActionDto: RPCActionDto){
 
-            val response = RPCResponseParam(EnumGene("responseType", listOf("JSON")),rgene)
-            return RPCExternalServiceAction(
-                    interfaceName = dto.interfaceFullName,functionName = dto.functionName, descriptiveInfo = dto.appKey, requestRuleIdentifier = dto.requestRules?.first(),responseParam = response)
+        val interfaceDto = sutInfoDto.rpcProblem?.schemas?.find { it.interfaceId == rpcActionDto.interfaceId}
+            ?:throw IllegalStateException("cannot find the interface with id (${rpcActionDto.interfaceId})")
+
+        val actionKey = actionName(rpcActionDto.interfaceId, rpcActionDto.actionName)
+
+        rpcActionDto.mockRPCExternalServiceDtos.forEach { dto->
+
+            if (dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
+                throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
+
+            dto.responseTypes.forEachIndexed { index, s ->
+                val exkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
+                    dto.interfaceFullName, dto.functionName, dto.requestRules[index], s
+                )
+                if (!externalServiceCluster.containsKey(exkey)){
+                    val responseTypeClass = interfaceDto.identifiedResponseTypes.find { it.type.fullTypeName == s }
+                    val responseGene = (
+                            if (responseTypeClass != null){
+                                handleDtoParam(responseTypeClass)
+                            }else if(sutInfoDto.unitsInfoDto.extractedSpecifiedDtos?.containsKey(s) == true){
+                                val schema = sutInfoDto.unitsInfoDto.extractedSpecifiedDtos[s]!!
+                                RestActionBuilderV3.createObjectGeneForDTO("return", schema, s)
+                            }else{
+                                val node = readJson(dto.responses[index])
+                                if (node != null){
+                                    jsonNodeAsObjectGene("return", node) as OptionalGene
+                                }else{
+                                    StringGene("return")
+                                }
+                            }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
+
+                    val response = RPCResponseParam(className = s, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+
+                    val externalAction = RPCExternalServiceAction(
+                        interfaceName = dto.interfaceFullName,
+                        functionName = dto.functionName,
+                        descriptiveInfo = dto.appKey,
+                        requestRuleIdentifier = dto.requestRules[index],
+                        responseParam = response)
+                    Lazy.assert { exkey == externalAction.getName() }
+                    externalServiceCluster[exkey] = externalAction
+                }
+
+                actionToExternalServiceMap.getOrPut(actionKey){ mutableSetOf() }.add(exkey)
+            }
         }
+
+
     }
 
     private fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
@@ -359,7 +408,7 @@ class RPCEndpointsHandler {
         }.toMap()
 
         problem.schemas.forEach { i->
-            i.types.sortedBy { it.type.depth }
+            i.types.plus(i.identifiedResponseTypes).sortedBy { it.type.depth }
                 .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
                 buildTypeCache(t)
             }
@@ -392,7 +441,6 @@ class RPCEndpointsHandler {
                     authEndpointCluster[key] = e //processEndpoint(name, e, true)
                 }
             }
-
         }
 
         if (problem.localAuthEndpoints!= null && problem.localAuthEndpointReferences != null){
@@ -407,8 +455,15 @@ class RPCEndpointsHandler {
 
         setAuthInfo(infoDto)
 
+        // handle seeded test dto
+        infoDto.rpcProblem.seededTestDtos.forEach { t->
+            t.forEach { a->
+                extractRPCExternalServiceAction(infoDto, a)
+            }
+        }
+
         // report statistic of endpoints
-        reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 })
+        reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 }, infoDto.rpcProblem?.seededTestDtos?.size?:0)
     }
 
     private fun buildTypeCache(type: ParamDto){
@@ -419,9 +474,11 @@ class RPCEndpointsHandler {
 
     private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_client${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
 
-    private fun reportEndpointsStatistics(numSchema: Int, skipped: Int){
+    private fun reportEndpointsStatistics(numSchema: Int, skipped: Int, numSeededTest: Int){
         LoggingUtil.getInfoLogger().apply {
             info("There are $numSchema defined RPC interfaces with ${actionSchemaCluster.size} accessible endpoints and $skipped skipped endpoints.")
+            if (numSeededTest > 0)
+                info("$numSeededTest test${if (numSeededTest > 1) "s are" else " is"} seeded.")
         }
     }
 
@@ -461,20 +518,14 @@ class RPCEndpointsHandler {
         return rpcAction
     }
 
-    private fun getJVMSchemaForDto(name: String, example : String): Gene {
+    fun getJVMSchemaForDto(name: String): Gene? {
 
         if (!infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(name)) {
             infoDto = remoteController.getSutInfo()!!
 
             if (!infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(name)) {
                 LoggingUtil.uniqueWarn(log, "cannot extract schema for $name in the SUT driver and instrumentation agent")
-
-                val node = readJson(example)
-                if (node != null){
-                    return jsonNodeAsObjectGene("return", node) as OptionalGene
-                }else{
-                    throw RuntimeException("the example is not json object, cannot extract schema for $name")
-                }
+                return null
             }
         }
 

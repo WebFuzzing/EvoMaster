@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.optional.OptionalGene
  * need to consider the exception?
  */
 class RPCResponseParam(
+        val className: String,
         responseType: EnumGene<String>,
         response: OptionalGene
 ) : ResponseParam("return", responseType, response, listOf()) {
