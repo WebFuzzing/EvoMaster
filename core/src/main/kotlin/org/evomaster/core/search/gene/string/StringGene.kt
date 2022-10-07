@@ -12,6 +12,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -405,8 +406,7 @@ class StringGene(
                                 (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
                         )
         ) {
-            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-            tainted = true
+            forceTaintedValue()
             return true
         }
 
@@ -416,6 +416,11 @@ class StringGene(
         }
 
         return false
+    }
+
+    fun forceTaintedValue() {
+        value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+        tainted = true
     }
 
     /**
@@ -548,6 +553,18 @@ class StringGene(
             log.trace("URI, added specification size: {}", toAddGenes.size)
         }
 
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_OBJECT }){
+            toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
+                    .forEach {
+                        val schema = it.value
+                        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+                        val ref = t.subSequence(1,t.length-1).toString()
+                        val obj = RestActionBuilderV3.createObjectGeneForDTO(ref, schema, ref)
+                        toAddGenes.add(obj)
+                    }
+            log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)
+        }
+
         //all regex are combined with disjunction in a single gene
         handleRegex(key, toAddSpecs, toAddGenes)
 
@@ -674,12 +691,16 @@ class StringGene(
 
         val specializationGene = getSpecializationGene()
 
+        val rawValue = getValueAsRawString()
+
         if (specializationGene != null) {
+            //FIXME: really escaping is a total mess... need major refactoring
             // TODO: Don't we need to escape the raw string?
-            return "\"" + specializationGene.getValueAsRawString() + "\""
+            return "\"" + rawValue + "\""
+//            return specializationGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+//                    .replace("\"", "\\\"")
         }
 
-        val rawValue = getValueAsRawString()
         return if (mode != null && mode == GeneUtils.EscapeMode.XML) {
             StringEscapeUtils.escapeXml10(rawValue)
         } else {

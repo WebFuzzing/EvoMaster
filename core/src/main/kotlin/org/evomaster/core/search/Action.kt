@@ -69,7 +69,7 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
     /**
      * Initialize all the genes in this action
      */
-    fun doInitialize(randomness: Randomness? = null) {
+    open fun doInitialize(randomness: Randomness? = null) {
         seeTopGenes().forEach { it.doInitialize(randomness) }
         postRandomizedChecks(randomness)
     }
