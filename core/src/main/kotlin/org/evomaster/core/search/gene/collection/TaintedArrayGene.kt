@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.collection
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -23,9 +24,11 @@ class TaintedArrayGene(
 
     var taintedValue : String,
 
+    var isActive : Boolean = false,
+
     arrayGene:  ArrayGene<*>? = null
 
-) :  CompositeGene(name, if(arrayGene == null) mutableListOf() else mutableListOf(arrayGene)) {
+) : TaintableGene, CompositeGene(name, if(arrayGene == null) mutableListOf() else mutableListOf(arrayGene)) {
 
     init {
         if(! TaintInputName.isTaintInput(taintedValue)){
@@ -45,8 +48,15 @@ class TaintedArrayGene(
         addChild(gene.copy())
     }
 
+    fun activate(){
+        if(!isResolved()){
+            throw IllegalStateException("Cannot activate not resolved tainted array gene")
+        }
+        isActive = true
+    }
+
     override fun copyContent(): Gene {
-        return TaintedArrayGene(name, taintedValue, arrayGene?.copy() as ArrayGene<*>? )
+        return TaintedArrayGene(name, taintedValue, isActive, arrayGene?.copy() as ArrayGene<*>? )
     }
 
     override fun isLocallyValid(): Boolean {
@@ -62,7 +72,7 @@ class TaintedArrayGene(
     }
 
     override fun isPrintable(): Boolean {
-        return arrayGene == null || arrayGene!!.isPrintable()
+        return arrayGene == null || !isActive || arrayGene!!.isPrintable()
     }
 
     override fun customShouldApplyShallowMutation(
@@ -80,7 +90,7 @@ class TaintedArrayGene(
         targetFormat: OutputFormat?,
         extraCheck: Boolean
     ): String {
-        if(arrayGene == null) {
+        if(arrayGene == null || !isActive) {
             return "[\"$taintedValue\"]"
         }
         return arrayGene!!.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck)
@@ -91,6 +101,7 @@ class TaintedArrayGene(
             throw IllegalArgumentException("Other is not a TaintedArray: ${other::class.java}")
         }
         this.taintedValue = other.taintedValue
+        this.isActive = other.isActive
         this.arrayGene?.copyValueFrom(other.arrayGene!!)
     }
 
@@ -98,6 +109,11 @@ class TaintedArrayGene(
         if(other !is TaintedArrayGene){
             throw IllegalArgumentException("Other is not a TaintedArray: ${other::class.java}")
         }
+
+        if(this.isActive != other.isActive){
+            return  false
+        }
+
         if(arrayGene != null) {
             if(other.arrayGene == null){
                 return false
@@ -122,5 +138,12 @@ class TaintedArrayGene(
         }
 
         return false
+    }
+
+    override fun getPossiblyTaintedValue(): String {
+        if(isResolved()){
+            return ""
+        }
+        return taintedValue
     }
 }
