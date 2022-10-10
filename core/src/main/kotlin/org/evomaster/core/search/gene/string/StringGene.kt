@@ -15,8 +15,10 @@ import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -61,7 +63,7 @@ class StringGene(
          */
         specializationGenes: List<Gene> = listOf()
 
-) : ComparableGene, CompositeGene(name, specializationGenes.toMutableList()) {
+) : TaintableGene, ComparableGene, CompositeGene(name, specializationGenes.toMutableList()) {
 
     init {
         if (minLength>maxLength) {
@@ -565,6 +567,11 @@ class StringGene(
             log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)
         }
 
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_ARRAY }){
+            toAddGenes.add(TaintedArrayGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
+            log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
+        }
+
         //all regex are combined with disjunction in a single gene
         handleRegex(key, toAddSpecs, toAddGenes)
 
@@ -853,6 +860,10 @@ class StringGene(
             throw ClassCastException("Expected StringGene instance but ${other::javaClass} was found")
         }
         return getValueAsRawString().compareTo(other.getValueAsRawString())
+    }
+
+    override fun getPossiblyTaintedValue(): String {
+        return getValueAsRawString()
     }
 
 }
