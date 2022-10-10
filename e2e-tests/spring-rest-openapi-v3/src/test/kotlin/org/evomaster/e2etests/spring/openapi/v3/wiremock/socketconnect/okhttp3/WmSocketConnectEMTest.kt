@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.socketconnect.okhttp3
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect.okhttp3.WmSocketConnectController
+import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -24,6 +25,13 @@ class WmSocketConnectEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM() {
+
+        /*
+            The test fails on CI, but not local with WM 2.32.0
+
+            if updating WM to 2.34.0, the test fails on local windows as well (TO CHECK)
+         */
+        CIUtils.isRunningGA()
 
         runTestHandlingFlakyAndCompilation(
             "WmSocketConnectEM",
