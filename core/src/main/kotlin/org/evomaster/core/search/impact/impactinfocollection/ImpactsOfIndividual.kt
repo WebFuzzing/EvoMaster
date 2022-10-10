@@ -251,6 +251,16 @@ open class ImpactsOfIndividual(
         return true
     }
 
+    /**
+     * remove impacts for actions based on their localid
+     * @return whether the removal performs successfully
+     */
+    fun deleteDynamicActionGeneImpacts(localIds: Set<String>): Boolean {
+        return dynamicMainActionImpacts.removeIf {
+            localIds.contains(it.localId)
+        }
+    }
+
 
     /**
      * swap gene impacts based on their index
