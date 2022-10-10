@@ -28,8 +28,10 @@ public class ThreadMethodReplacement implements MethodReplacementClass {
             category = ReplacementCategory.EXT_0)
     public static void sleep(long millis, int nanos) throws InterruptedException {
 
-        if(millis >= 2000){
-            millis = 2000;
+        int limit = 1_000;
+
+        if(millis >= limit){
+            millis = limit;
             nanos = 0;
         }
 
