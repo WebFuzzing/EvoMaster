@@ -421,6 +421,68 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     /**
+     * handle local ids of children (ie ActionComponent) to add
+     */
+    fun handleLocalIdsForAddition(children: Collection<StructuralElement>){
+        children.forEach {child->
+            if (child is ActionComponent){
+                if (child is Action && !child.hasLocalId())
+                    setLocalIdsForChildren(listOf(child))
+
+                child.flatView().filterIsInstance<ActionTree>().forEach { tree->
+                    if (!tree.hasLocalId()){
+                        setLocalIdsForChildren(listOf(tree))
+
+                        if (tree.flatten().none { it.hasLocalId() })
+                            setLocalIdsForChildren(child.flatten())
+                    }else if (!tree.flatten().all { it.hasLocalId() }){
+                        throw IllegalStateException("local ids of ActionTree are partially assigned")
+                    }
+                }
+            }else
+                throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
+        }
+    }
+
+    /**
+     * @return Initializing actions with its relative index
+     * note that relative index indicates the index in terms of [seeInitializingActions()]
+     */
+    fun getRelativeIndexedInitActions() : List<Pair<Action, Int>>{
+        return seeInitializingActions().mapIndexed { index, action -> action to index }
+    }
+
+    /**
+     * @return non-init actions with its relative index
+     * note that relative index indicates the index in terms of [seeFixedMainActions()]
+     */
+    fun getRelativeIndexedNonInitAction() : List<Pair<Action, Int?>>{
+        return seeActions(ActionFilter.NO_INIT).map {
+            if (seeFixedMainActions().contains(it))
+                it to seeFixedMainActions().indexOf(it)
+            else
+                it to null
+        }
+    }
+
+    /**
+     * @return given [actions] with its relative index
+     * note that relative index indicates the index in terms of [seeFixedMainActions()] and [seeInitializingActions]
+     */
+    fun getRelativeInitAndFixedMainIndex(actions: List<Action>) : List<Pair<Action, Int?>>{
+        return actions.map {
+            if (seeInitializingActions().contains(it))
+                it to seeInitializingActions().indexOf(it)
+            else if (seeFixedMainActions().contains(it))
+                it to seeFixedMainActions().indexOf(it)
+            else if (seeDynamicMainActions().contains(it))
+                it to null
+            else
+                throw IllegalStateException("cannot find the action (name: ${it.getName()}) in this individual")
+        }
+    }
+
+    /**
      * @return if local ids are not initialized
      */
     private fun areAllLocalIdsNotInitialized() : Boolean{
@@ -453,27 +515,5 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
 
-    /**
-     * handle local ids of children (ie ActionComponent) to add
-     */
-    fun handleLocalIdsForAddition(children: Collection<StructuralElement>){
-        children.forEach {child->
-            if (child is ActionComponent){
-                if (child is Action && !child.hasLocalId())
-                    setLocalIdsForChildren(listOf(child))
 
-                child.flatView().filterIsInstance<ActionTree>().forEach { tree->
-                    if (!tree.hasLocalId()){
-                        setLocalIdsForChildren(listOf(tree))
-
-                    if (tree.flatten().none { it.hasLocalId() })
-                        setLocalIdsForChildren(child.flatten())
-                    }else if (!tree.flatten().all { it.hasLocalId() }){
-                        throw IllegalStateException("local ids of ActionTree are partially assigned")
-                    }
-                }
-            }else
-                throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
-        }
-    }
 }
