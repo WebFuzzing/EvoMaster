@@ -415,9 +415,9 @@ class EvaluatedIndividual<T>(
 
                 val dynamicLocalIds = mutatedGenes.getRemoved(true)
                     .filter { it.actionPosition == null || it.actionPosition < 0 }
-                    .map { it.localId ?:throw IllegalStateException("the mutated info is lack of position and local id ") }.toSet()
+                    .map { it.localId ?:throw IllegalStateException("the mutated info is lack of position and local id") }.toSet()
 
-                impactInfo!!.deleteDynamicActionGeneImpacts(
+                impactInfo.deleteDynamicActionGeneImpacts(
                     dynamicLocalIds
                 )
             }
