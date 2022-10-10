@@ -25,7 +25,8 @@ class HttpExternalServiceInfo(
      * Will be used in WireMock as it's identifier to simplify the tracking.
      */
     fun signature(): String {
-        return protocol + remoteHostname + remotePort.toString()
+        return "${protocol}__${remoteHostname}__$remotePort"
+        //return protocol + remoteHostname + remotePort.toString()
     }
 
     override fun equals(other: Any?): Boolean {
