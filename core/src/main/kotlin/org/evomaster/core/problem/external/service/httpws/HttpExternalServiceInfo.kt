@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.external.service.httpws
 
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import java.math.BigInteger
 import java.security.MessageDigest
 
@@ -20,13 +21,12 @@ class HttpExternalServiceInfo(
     }
 
     /**
-     * Generates a MD5 identifier based on the [protocol], [remoteHostname], and [remotePort]
+     * Generates an identifier based on the [protocol], [remoteHostname], and [remotePort]
      * then returns it as String.
-     * Will be used in WireMock as it's identifier to simplify the tracking.
+     * Will be used in WireMock as its identifier to simplify the tracking.
      */
     fun signature(): String {
-        return "${protocol}__${remoteHostname}__$remotePort"
-        //return protocol + remoteHostname + remotePort.toString()
+        return ExternalServiceSharedUtils.getSignature(protocol,remoteHostname,remotePort)
     }
 
     override fun equals(other: Any?): Boolean {
