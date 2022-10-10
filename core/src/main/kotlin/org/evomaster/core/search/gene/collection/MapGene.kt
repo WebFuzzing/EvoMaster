@@ -192,7 +192,7 @@ class MapGene<K, V>(
     }
 
     override fun isPrintable(): Boolean {
-        return isPrintable(template)
+        return isPrintable(template) && getViewOfChildren().all { it.isPrintable() }
     }
 
 
