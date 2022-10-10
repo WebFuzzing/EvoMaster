@@ -349,7 +349,7 @@ class ArchiveGeneMutator{
                 return
             }
         }
-        if (gene.redoTaint(apc, randomness, allGenes)) return
+        if (gene.redoTaint(apc, randomness)) return
 
         if(additionalGeneMutationInfo.hasHistory())
             historyBasedValueMutation(additionalGeneMutationInfo, gene, allGenes)

@@ -3,6 +3,7 @@ package org.evomaster.core.taint
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.client.java.instrumentation.shared.TaintType
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
@@ -235,7 +236,9 @@ object TaintAnalysis {
             if (fullMatch.isNotEmpty()) {
 
                 val genes = allTaintableGenes
-                        .filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
+                        .filter {
+                            TaintInputName.isTaintInput(it.getPossiblyTaintedValue())
+                                    && it.getPossiblyTaintedValue().equals(taintedInput, true) }
                         .filterIsInstance<StringGene>()
 
                 addSpecializationToGene(genes, taintedInput, fullMatch, randomness)
@@ -245,7 +248,9 @@ object TaintAnalysis {
             if (partialMatch.isNotEmpty()) {
 
                 val genes = allTaintableGenes
-                        .filter { taintedInput.contains(it.getPossiblyTaintedValue(), true) }
+                        .filter {
+                            TaintInputName.isTaintInput(it.getPossiblyTaintedValue())
+                                && taintedInput.contains(it.getPossiblyTaintedValue(), true) }
                         .filterIsInstance<StringGene>()
 
                 addSpecializationToGene(genes, taintedInput, partialMatch, randomness)
