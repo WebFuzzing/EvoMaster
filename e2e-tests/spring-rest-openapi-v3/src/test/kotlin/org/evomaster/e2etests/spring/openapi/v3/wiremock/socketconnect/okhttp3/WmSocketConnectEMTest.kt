@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.openapi.v3.wiremock.socketconnect
+package org.evomaster.e2etests.spring.openapi.v3.wiremock.socketconnect.okhttp3
 
-import com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect.WmSocketConnectController
+import com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect.okhttp3.WmSocketConnectController
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -8,9 +8,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-/**
- *
- */
 
 class WmSocketConnectEMTest : SpringTestBase() {
 
@@ -44,9 +41,11 @@ class WmSocketConnectEMTest : SpringTestBase() {
 
                 assertTrue(solution.individuals.size >= 1)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/string", "OK")
-//                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/string", "Hello There")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/string", "Hello There")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/wm/socketconnect/string", null)
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/socketconnect/string", null)
+
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/object", "OK")
             },
             3
         )

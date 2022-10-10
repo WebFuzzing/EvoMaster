@@ -58,8 +58,7 @@ public class ReplacementList {
                     new URIClassReplacement(),
                     new URLClassReplacement(),
                     new UUIDClassReplacement(),
-                    new SocketClassReplacement(),
-                    new InetAddressClassReplacement()
+                    new SocketClassReplacement()
             );
         }
 

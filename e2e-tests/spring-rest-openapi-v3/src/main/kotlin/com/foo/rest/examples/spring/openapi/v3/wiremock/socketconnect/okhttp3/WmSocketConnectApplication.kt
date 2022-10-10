@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect
+package com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect.okhttp3
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
