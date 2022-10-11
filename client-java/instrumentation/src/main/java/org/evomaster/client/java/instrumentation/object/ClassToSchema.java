@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -50,14 +51,23 @@ public class ClassToSchema {
     private static final Map<Type, String> cache = new ConcurrentHashMap<>();
 
 
-    public static void registerSchemaIfNeeded(Class<?> valueType){
+    public static void registerSchemaIfNeeded(Class<?> valueType) {
 
-        if (valueType != null) {
-            String name = valueType.getName();
-            String schema = ClassToSchema.getOrDeriveSchema(valueType);
-            UnitsInfoRecorder.registerNewParsedDto(name, schema);
-            ExecutionTracer.addParsedDtoName(name);
+        if (valueType == null) {
+            return;
         }
+
+        if(valueType.getName().startsWith("io.swagger.")){
+            //no point in dealing with this.
+            //also it happens in E2E, where it leads to a infinite recursion
+            return;
+        }
+
+        String name = valueType.getName();
+        String schema = ClassToSchema.getOrDeriveSchema(valueType);
+        UnitsInfoRecorder.registerNewParsedDto(name, schema);
+        ExecutionTracer.addParsedDtoName(name);
+
     }
 
 
@@ -122,6 +132,10 @@ public class ClassToSchema {
             if (Boolean.class.isAssignableFrom(klass) || Boolean.TYPE == klass) {
                 return fieldSchema("boolean");
             }
+            if (BigDecimal.class.isAssignableFrom(klass)) {
+                //TODO not 100% sure this is correct...
+                return fieldSchema("integer", "int64");
+            }
         }
         //TODO date fields
 
@@ -171,10 +185,10 @@ public class ClassToSchema {
             So, for now, just a simple check on annotation names should be fine.
             TODO: check if worthy if to have a full 100% support for Jackson and GSON
          */
-        for(Annotation a : field.getAnnotations()){
+        for (Annotation a : field.getAnnotations()) {
             String name = a.annotationType().getSimpleName();
-            if(name.equalsIgnoreCase("Ignore")
-            || name.equalsIgnoreCase("Ignored")
+            if (name.equalsIgnoreCase("Ignore")
+                    || name.equalsIgnoreCase("Ignored")
                     || name.equalsIgnoreCase("Exclude")
                     || name.equalsIgnoreCase("Excluded")
                     || name.equalsIgnoreCase("JsonIgnore")
@@ -189,14 +203,14 @@ public class ClassToSchema {
 
     private static String getName(Field field) {
         //TODO there are other ways to define names
-        for(Annotation a : field.getAnnotations()){
+        for (Annotation a : field.getAnnotations()) {
             String name = a.annotationType().getName();
-            if(name.equals("com.fasterxml.jackson.annotation.JsonProperty")
-                || name.equals("com.google.gson.annotations.SerializedName")){
+            if (name.equals("com.fasterxml.jackson.annotation.JsonProperty")
+                    || name.equals("com.google.gson.annotations.SerializedName")) {
                 try {
                     Method m = a.annotationType().getMethod("value");
                     String value = (String) m.invoke(a);
-                    if(value != null && !value.isEmpty()){
+                    if (value != null && !value.isEmpty()) {
                         return value;
                     }
                 } catch (Exception e) {
