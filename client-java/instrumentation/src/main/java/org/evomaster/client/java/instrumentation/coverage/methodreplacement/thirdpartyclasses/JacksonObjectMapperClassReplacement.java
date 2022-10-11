@@ -4,15 +4,23 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Repl
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
+import org.evomaster.client.java.instrumentation.object.JsonTaint;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplacementClass {
 
@@ -26,17 +34,27 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_InputStream_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) {
         Objects.requireNonNull(caller);
 
-        if (valueType != null) {
-            String name = valueType.getName();
-            String schema = ClassToSchema.getOrDeriveSchema(valueType);
-            UnitsInfoRecorder.registerNewParsedDto(name, schema);
-            ExecutionTracer.addParsedDtoName(name);
-        }
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+
+        /*
+            To be able to check the taint, we need to read the whole stream.
+
+            TODO: check if it has side-effects
+         */
+
+        String content = new BufferedReader(
+                new InputStreamReader(src, StandardCharsets.UTF_8))
+                .lines()
+                .collect(Collectors.joining("\n"));
+
+        JsonTaint.handlePossibleJsonTaint(content,valueType);
+
+        src = new ByteArrayInputStream(content.getBytes());
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_class", caller);
 
@@ -52,17 +70,14 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "Jackson_ObjectMapper_readValue_Generic_class",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
     public static <T> T readValue(Object caller, String content, Class<T> valueType) {
         Objects.requireNonNull(caller);
 
-        if (valueType != null) {
-            String name = valueType.getName();
-            String schema = ClassToSchema.getOrDeriveSchema(valueType);
-            UnitsInfoRecorder.registerNewParsedDto(name, schema);
-            ExecutionTracer.addParsedDtoName(name);
-        }
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+        JsonTaint.handlePossibleJsonTaint(content,valueType);
+
         // JSON can be unwrapped using different approaches
         // val dto: FooDto = mapper.readValue(json)
         // To support this way, Jackson should be used inside the instrumentation
@@ -79,4 +94,32 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             throw (RuntimeException) e.getCause();
         }
     }
+
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "Jackson_ObjectMapper_convertValue_Generic_class",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.EXT_0)
+    public static <T> T convertValue(Object caller, Object fromValue, Class<T> valueType) {
+        Objects.requireNonNull(caller);
+
+        ClassToSchema.registerSchemaIfNeeded(valueType);
+
+        if(fromValue instanceof String) {
+            JsonTaint.handlePossibleJsonTaint((String) fromValue, valueType);
+        }
+
+        Method original = getOriginal(singleton, "Jackson_ObjectMapper_convertValue_Generic_class", caller);
+
+        try {
+            return (T) original.invoke(caller, fromValue, valueType);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw (RuntimeException) e.getCause();
+        }
+    }
+
+    //public <T> T convertValue(Object fromValue, Class<T> toValueType)
 }

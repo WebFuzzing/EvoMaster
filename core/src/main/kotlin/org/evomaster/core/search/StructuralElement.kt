@@ -1,6 +1,9 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.root.CompositeGene
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
@@ -49,10 +52,6 @@ abstract class StructuralElement (
      * note that the id can be assigned only if the current id is NONE_ACTION_ID
      */
     fun setLocalId(id: String) {
-        if (getRoot() is Individual){
-            throw IllegalStateException("cannot re-assign the id of the action if it belongs to the individual")
-        }
-
         if (!hasLocalId())
             this.localId = id
         else
@@ -65,10 +64,18 @@ abstract class StructuralElement (
     fun hasLocalId() = localId != NONE_LOCAL_ID
 
     /**
-     * reset local id of the action
+     * reset local id of this structural element
      */
     fun resetLocalId() {
         localId = NONE_LOCAL_ID
+    }
+
+    /**
+     * reset local if of this structural element and its children
+     */
+    fun resetLocalIdRecursively(){
+        resetLocalId()
+        children.forEach(StructuralElement::resetLocalIdRecursively)
     }
 
     fun getLocalId() = localId
@@ -85,12 +92,12 @@ abstract class StructuralElement (
 
     init {
         verifyChildrenToInsert(children)
-        preChildrenSetup(children)
         children.forEach {
             it.parent = this;
         }
         groups?.verifyGroups()
     }
+
 
     /**
      * a pre-setup for the children if needed
@@ -100,8 +107,11 @@ abstract class StructuralElement (
         // handle local id for new children to add into individual
         if (this is Individual)
             this.handleLocalIdsForAddition(c)
-        // handle local id for new children to add into composite structure of individual, ie ActionTree
-        if (this.getRoot() is Individual && this is ActionTree)
+        /*
+           handle local id for new children to add into composite structure of individual,
+           ie ActionTree (eg, add external service to group), Action (eg, add param to action), ArrayGene (eg, add element to gene)
+         */
+        if (this.getRoot() is Individual && (this is ActionComponent || this is CompositeGene))
             (this.getRoot() as Individual).handleLocalIdsForAddition(c)
     }
 

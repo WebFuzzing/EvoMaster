@@ -1,7 +1,18 @@
 package org.evomaster.core
 
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.Randomness
+
 
 object TestUtils {
+
+    /**
+     * handle initialization of individual which are created in unit and integration tests
+     */
+    fun doInitializeIndividualForTesting(individual: Individual, randomness: Randomness? = null){
+        individual.doInitializeLocalId()
+        individual.doInitialize(randomness)
+    }
 
     /**
      * Unfortunately JUnit 5 does not handle flaky tests, and Maven is not upgraded yet.

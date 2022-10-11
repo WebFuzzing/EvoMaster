@@ -110,7 +110,7 @@ abstract class TestCaseWriter {
                 // Default behaviour of WireMock has been removed, since found no purpose
                 // in case if there is a failure regarding no routes found in WireMock
                 // consider adding that later
-                lines.add("assertNotNull(${name})")
+                lines.addStatement("assertNotNull(${name})", config.outputFormat)
                 lines.add("${name}.stubFor(")
                 lines.indented {
                     lines.add(
@@ -126,8 +126,9 @@ abstract class TestCaseWriter {
                         lines.add("aResponse()")
                         lines.indented {
                             lines.add(".withStatus(${response.status.getValueAsRawString()})")
-                            // TODO: Response is empty for now
-                            lines.add(".withBody(\"${response.response.getValueAsRawString()}\")")
+                            //TODO possible need to handle type, eg JSON vs XML
+                            //FIXME need major refactoring of escaping
+                            lines.add(".withBody(\"${response.responseBody.getValueAsRawString().replace("\"", "\\\"")}\")")
                         }
                         lines.add(")")
                     }

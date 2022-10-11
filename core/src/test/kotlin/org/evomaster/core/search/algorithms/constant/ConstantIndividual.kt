@@ -1,9 +1,6 @@
 package org.evomaster.core.search.algorithms.constant
 
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.service.Randomness
@@ -11,16 +8,20 @@ import org.evomaster.core.search.service.Randomness
 /**
  * Created by arcuri82 on 20-Feb-17.
  */
-class ConstantIndividual(val gene: IntegerGene) : Individual(children= mutableListOf(ConstantAction(gene))) {
+class ConstantIndividual(val action: ConstantAction) : Individual(children= mutableListOf(action)) {
+
+    constructor(gene: IntegerGene) : this(ConstantAction(gene))
 
     override fun copyContent(): Individual {
-        return ConstantIndividual(gene.copy() as IntegerGene)
+        return ConstantIndividual(action.copy() as ConstantAction)
     }
 
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
-        return listOf(gene)
+        return listOf(action.gene)
     }
+
+    fun getGene() : IntegerGene = action.gene
 
     override fun size(): Int {
         return 1

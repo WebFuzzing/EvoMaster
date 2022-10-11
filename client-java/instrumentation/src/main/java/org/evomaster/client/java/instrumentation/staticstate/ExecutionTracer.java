@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -76,6 +77,13 @@ public class ExecutionTracer {
     private static final List<AdditionalInfo> additionalInfoList = new ArrayList<>();
 
     /**
+     * Keep track of threads left sleeping, as we will need to interrupt them
+     * to avoid issues (eg, out of resources and instrumentation collection when threads wake up
+     * during a different action)
+     */
+    private static final List<Thread> sleepingThreads = new CopyOnWriteArrayList<>();
+
+    /**
      * Keep track of expensive operations. Might want to skip doing them if too many.
      * This should be re-set for each action
      */
@@ -106,7 +114,12 @@ public class ExecutionTracer {
             killSwitch = false;
             expensiveOperation = 0;
             executingAction = false;
+            sleepingThreads.clear();
         }
+    }
+
+    public static void reportSleeping(){
+        sleepingThreads.add(Thread.currentThread());
     }
 
     public static boolean isKillSwitch() {
@@ -115,6 +128,16 @@ public class ExecutionTracer {
 
     public static void setKillSwitch(boolean killSwitch) {
         ExecutionTracer.killSwitch = killSwitch;
+        if(killSwitch){
+            synchronized (lock){
+                for(Thread t : sleepingThreads){
+                    if(t.isAlive()){
+                        t.interrupt();
+                    }
+                }
+                sleepingThreads.clear();
+            }
+        }
     }
 
     public static boolean isExecutingInitSql() {

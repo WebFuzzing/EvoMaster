@@ -4,6 +4,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
@@ -87,7 +88,8 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     /**
      * get local id based on the given counter
      */
-    fun getLocalId(counter: Int) : String = "Action_COMPONENT_$counter"
+    private fun getLocalId(obj: StructuralElement, counter: Int) : String
+    = "${if (obj is ActionComponent) "ACTION_COMPONENT" else if (obj is Gene) "GENE" else throw IllegalStateException("Only Generate local id for ActionComponent and Gene")}_$counter"
 
     /**
      * Make a deep copy of this individual
@@ -105,7 +107,17 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return copy
     }
 
+    /**
+     * do Initialize LocalId if any inclusive child which is ActionComponent or Gene
+     * does not have the assigned local id
+     */
+    fun doInitializeLocalId(){
+        handleLocalIdsForAddition(children)
+    }
+
     fun doGlobalInitialize(searchGlobalState : SearchGlobalState){
+        if (!areAllLocalIdsAssigned())
+            doInitializeLocalId()
 
         //TODO make sure that seeded individual get skipped here
 
@@ -115,9 +127,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     fun isInitialized() : Boolean{
-        return seeGenes().all { it.initialized }
-                && areAllLocalIdsAssigned() // local ids must be assigned
+        return areAllGeneInitialized()
     }
+
+    private fun areAllGeneInitialized() = seeGenes().all { it.initialized }
 
 
     /**
@@ -162,9 +175,8 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
 
     open fun doInitialize(randomness: Randomness? = null){
-
-        seeAllActions()
-            .forEach { it.doInitialize(randomness) }
+            seeAllActions()
+                .forEach { it.doInitialize(randomness) }
     }
 
     /**
@@ -425,8 +437,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      */
     private fun areAllLocalIdsNotInitialized() : Boolean{
         return flatView().all { !it.hasLocalId ()
-                // FIXME Man need to check local id for gene for the moment
-                //&& (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> !i.hasLocalId() }})
+                && (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> !i.hasLocalId() }})
         }
     }
 
@@ -437,18 +448,26 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     private fun areAllLocalIdsAssigned() : Boolean{
         return  flatView().all { it.hasLocalId()
-                // FIXME Man need to check local id for gene for the moment
-                //&& (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> i.hasLocalId() }})
+                && (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> i.hasLocalId() }})
         }
     }
 
     /**
      * set local ids for all ActionComponents
      */
-    private fun setLocalIdsForChildren(children: List<ActionComponent>){
+    private fun setLocalIdsForChildren(children: List<ActionComponent>, withGene: Boolean){
         children.forEach {
+            setLocalIdForStructuralElement(listOf(it).plus(
+                if (it is Action && withGene){
+                    it.seeTopGenes().flatMap { t-> t.flatView() }
+                }else listOf()))
+        }
+    }
+
+    private fun setLocalIdForStructuralElement(elements: List<StructuralElement>){
+        elements.forEach {
             counter++
-            it.setLocalId(getLocalId(counter))
+            it.setLocalId(getLocalId(it, counter))
         }
     }
 
@@ -456,24 +475,71 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     /**
      * handle local ids of children (ie ActionComponent) to add
      */
-    fun handleLocalIdsForAddition(children: Collection<StructuralElement>){
-        children.forEach {child->
-            if (child is ActionComponent){
+    fun handleLocalIdsForAddition(children: Collection<StructuralElement>) {
+        children.forEach { child ->
+            if (child is ActionComponent) {
                 if (child is Action && !child.hasLocalId())
-                    setLocalIdsForChildren(listOf(child))
+                    setLocalIdsForChildren(listOf(child), true)
 
-                child.flatView().filterIsInstance<ActionTree>().forEach { tree->
-                    if (!tree.hasLocalId()){
-                        setLocalIdsForChildren(listOf(tree))
+                child.flatView().filterIsInstance<ActionTree>().forEach { tree ->
+                    if (!tree.hasLocalId()) {
+                        setLocalIdsForChildren(listOf(tree), false)
 
-                    if (tree.flatten().none { it.hasLocalId() })
-                        setLocalIdsForChildren(child.flatten())
-                    }else if (!tree.flatten().all { it.hasLocalId() }){
+                        // local id can be assigned for flatten of the tree
+                        // only if the tree itself and none of its flatten do not have local id
+                        if (tree.flatten().none { it.hasLocalId() })
+                            setLocalIdsForChildren(child.flatten(), true)
+                    } else if (!tree.flatten().all { it.hasLocalId() }) {
                         throw IllegalStateException("local ids of ActionTree are partially assigned")
                     }
                 }
+            } else if (child is Gene) {
+                if (child.flatView().none { it.hasLocalId() })
+                    setLocalIdForStructuralElement(child.flatView())
+                else if (!child.flatView().all { it.hasLocalId() })
+                    throw IllegalStateException("local ids of Gene to add are partially assigned")
+            } else if (child is Param){
+                setLocalIdForStructuralElement(child.genes.flatMap { it.flatView() })
             }else
                 throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
+        }
+    }
+
+    /**
+     * @return Initializing actions with its relative index
+     * note that relative index indicates the index in terms of [seeInitializingActions()]
+     */
+    fun getRelativeIndexedInitActions() : List<Pair<Action, Int>>{
+        return seeInitializingActions().mapIndexed { index, action -> action to index }
+    }
+
+    /**
+     * @return non-init actions with its relative index
+     * note that relative index indicates the index in terms of [seeFixedMainActions()]
+     */
+    fun getRelativeIndexedNonInitAction() : List<Pair<Action, Int?>>{
+        return seeActions(ActionFilter.NO_INIT).map {
+            if (seeFixedMainActions().contains(it))
+                it to seeFixedMainActions().indexOf(it)
+            else
+                it to null
+        }
+    }
+
+    /**
+     * @return given [actions] with its relative index
+     * note that relative index indicates the index in terms of [seeFixedMainActions()] and [seeInitializingActions]
+     */
+    fun getRelativeInitAndFixedMainIndex(actions: List<Action>) : List<Pair<Action, Int?>>{
+        return actions.map {
+            if (seeInitializingActions().contains(it))
+                it to seeInitializingActions().indexOf(it)
+            else if (seeFixedMainActions().contains(it))
+                it to seeFixedMainActions().indexOf(it)
+            else if (seeDynamicMainActions().contains(it))
+                it to null
+            else
+                throw IllegalStateException("cannot find the action (name: ${it.getName()}) in this individual")
         }
     }
 }
