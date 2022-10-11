@@ -581,9 +581,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                             }
                             RPCActionDto rpcActionDto = copy.getDto();
                             rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
-                            RPCEndpointsBuilder.buildExternalServiceResponse(schema,
-                                    actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
-                                    rpcType);
+                            if (actionDto.mockRPCExternalServiceDtos!= null && !actionDto.mockRPCExternalServiceDtos.isEmpty())
+                                RPCEndpointsBuilder.buildExternalServiceResponse(schema,
+                                        actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
+                                        rpcType);
                             test.add(rpcActionDto);
                         }else {
                             throw new IllegalStateException("Seeded Test Error: cannot find the action "+actionDto.functionName);
