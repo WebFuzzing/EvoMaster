@@ -8,6 +8,8 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsAction
+import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.service.param.UpdateForParam
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.RestIndividual
@@ -159,8 +161,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             if(a is ApiWsAction) {
                 val update = a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
                 if (update != null) {
-                    a.killChildren { it is BodyParam }
-                    a.killChildren { it is UpdateForBodyParam }
+//                    a.killChildren { it is BodyParam }
+                    a.killChildren { it is UpdateForParam || (it is Param && update.isUpdatedParam(it))  }
                     val copy = update.body
                     copy.resetLocalIdRecursively()
                     a.addChild(copy)

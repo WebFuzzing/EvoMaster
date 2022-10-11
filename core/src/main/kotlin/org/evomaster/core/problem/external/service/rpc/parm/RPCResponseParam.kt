@@ -27,7 +27,7 @@ class RPCResponseParam(
     }
 
     override fun copyContent(): ResponseParam {
-        return RPCResponseParam(className, responseType.copy() as EnumGene<String>, response.copy() as OptionalGene).also { it.fromClass = this.fromClass }
+        return RPCResponseParam(className, responseType.copy() as EnumGene<String>, responseBody.copy() as OptionalGene).also { it.fromClass = this.fromClass }
     }
 
 }
