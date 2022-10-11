@@ -16,6 +16,13 @@ class WmSocketConnectEMTest : SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
+            /*
+            The test fails on CI, but not local with WM 2.32.0
+
+            if updating WM to 2.34.0, the test fails on local windows as well (TO CHECK)
+            */
+            CIUtils.skipIfOnGA()
+
             val config = EMConfig()
             config.instrumentMR_NET = true
             initClass(WmSocketConnectController(), config)
@@ -25,13 +32,6 @@ class WmSocketConnectEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM() {
-
-        /*
-            The test fails on CI, but not local with WM 2.32.0
-
-            if updating WM to 2.34.0, the test fails on local windows as well (TO CHECK)
-         */
-        CIUtils.isRunningGA()
 
         runTestHandlingFlakyAndCompilation(
             "WmSocketConnectEM",
