@@ -616,19 +616,21 @@ class RPCEndpointsHandler {
         return rpcAction
     }
 
-    fun getJVMSchemaForDto(name: String): Gene? {
+    fun getJVMSchemaForDto(names: Set<String>): Map<String, Gene> {
 
-        if (!infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(name)) {
+        if (names.any { !infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(it)}) {
             infoDto = remoteController.getSutInfo()!!
 
-            if (!infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(name)) {
-                LoggingUtil.uniqueWarn(log, "cannot extract schema for $name in the SUT driver and instrumentation agent")
-                return null
+        names.filter { !infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(it) }.run {
+            if (isNotEmpty())
+                LoggingUtil.uniqueWarn(log, "cannot extract schema for dtos (ie, ${this.joinToString(",")}) in the SUT driver and instrumentation agent")
             }
         }
 
-        val schema = infoDto.unitsInfoDto.extractedSpecifiedDtos[name]!!
-        return RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
+        return names.filter { infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(it) }.associateWith { name ->
+            val schema = infoDto.unitsInfoDto.extractedSpecifiedDtos[name]!!
+            RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
+        }
     }
 
     private fun transformResponseDto(action: RPCCallAction) : EvaluatedRPCActionDto{
@@ -1129,7 +1131,7 @@ class RPCEndpointsHandler {
         return DateTimeGene(param.name)
     }
 
-    private fun wrapWithOptionalGene(gene: Gene, isOptional: Boolean): Gene{
+    fun wrapWithOptionalGene(gene: Gene, isOptional: Boolean): Gene{
         return if (isOptional && gene !is OptionalGene) OptionalGene(gene.name, gene) else gene
     }
 

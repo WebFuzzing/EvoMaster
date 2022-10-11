@@ -6,6 +6,12 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExc
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.api.service.ApiWsFitness
+import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
+import org.evomaster.core.problem.external.service.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.external.service.rpc.parm.UpdateForRPCResponseParam
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
@@ -15,7 +21,9 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.interfaces.CollectionGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -55,6 +63,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 ?: return null
         handleExtra(dto, fv)
 
+        expandIndividual(individual)
         /*
             TODO Man handle targets regarding info in responses,
             eg, exception
@@ -72,6 +81,26 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
         return EvaluatedIndividual(fv, individual.copy() as RPCIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
 
+    }
+
+    private fun expandIndividual(
+        individual: RPCIndividual
+    ){
+        val exMissingDto = individual.seeExternalServiceActions()
+            .filterIsInstance<RPCExternalServiceAction>()
+            .filter {
+                !(it.response as? RPCResponseParam?:throw IllegalStateException("response of RPCExternalServiceAction should be RPCResponseParam, but it is ${it.response::class.java.simpleName}")).fromClass
+            }
+        val missingDtoClass = exMissingDto.map { (it.response as RPCResponseParam).className }
+        rpcHandler.getJVMSchemaForDto(missingDtoClass.toSet()).forEach { expandResponse->
+            exMissingDto.filter { (it.response as RPCResponseParam).run { !this.fromClass && expandResponse.key == this.className} }.forEach { a->
+                val gene = rpcHandler.wrapWithOptionalGene(expandResponse.value, true) as OptionalGene
+                val updatedParam = (a.response as RPCResponseParam).copyWithSpecifiedResponseBody(gene)
+                updatedParam.responseParsedWithClass()
+                val update = UpdateForRPCResponseParam(updatedParam)
+                a.addUpdateForParam(update)
+            }
+        }
     }
 
     private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{

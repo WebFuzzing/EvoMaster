@@ -17,7 +17,11 @@ class UpdateForRPCResponseParam(val responseParam: RPCResponseParam)
         return responseParam.seeGenes()
     }
 
-    override fun isUpdatedParam(param: Param): Boolean {
+    override fun isSameTypeWithUpdatedParam(param: Param): Boolean {
         return param is RPCResponseParam
+    }
+
+    override fun getUpdatedParam(): Param {
+        return responseParam
     }
 }

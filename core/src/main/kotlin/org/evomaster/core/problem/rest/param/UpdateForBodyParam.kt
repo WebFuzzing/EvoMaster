@@ -29,8 +29,12 @@ class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body
         return body.seeGenes()
     }
 
-    override fun isUpdatedParam(param: Param) : Boolean {
+    override fun isSameTypeWithUpdatedParam(param: Param) : Boolean {
         return param is BodyParam
+    }
+
+    override fun getUpdatedParam(): Param {
+        return body
     }
 }
 

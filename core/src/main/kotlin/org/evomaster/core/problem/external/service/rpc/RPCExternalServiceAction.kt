@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.external.service.rpc
 
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.rpc.parm.RPCResponseParam
 import org.evomaster.core.search.gene.Gene
@@ -62,5 +63,9 @@ class RPCExternalServiceAction(
      */
     fun getUnrestrictedRPCExternalServiceAction(): RPCExternalServiceAction{
         return RPCExternalServiceAction(interfaceName, functionName, descriptiveInfo, null, response.copy() as RPCResponseParam)
+    }
+
+    fun addUpdateForParam(param: Param){
+        addChild(param)
     }
 }

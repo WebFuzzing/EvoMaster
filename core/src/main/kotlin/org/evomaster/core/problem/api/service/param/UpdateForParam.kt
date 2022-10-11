@@ -5,5 +5,7 @@ interface UpdateForParam{
     /**
      * @return if the [param] is updated as [this]
      */
-    fun isUpdatedParam(param: Param) : Boolean
+    fun isSameTypeWithUpdatedParam(param: Param) : Boolean
+
+    fun getUpdatedParam() : Param
 }
