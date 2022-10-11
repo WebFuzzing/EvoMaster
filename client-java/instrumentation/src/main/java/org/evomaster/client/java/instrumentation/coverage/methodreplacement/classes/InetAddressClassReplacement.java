@@ -18,6 +18,7 @@ import java.net.*;
  * in order to make it connected, we could do replacement for 1) collecting host info, and
  * 2) providing an ip address
  *
+ * note that it is not used now, ie, not register it into ReplacementList
  */
 public class InetAddressClassReplacement implements MethodReplacementClass {
     @Override
