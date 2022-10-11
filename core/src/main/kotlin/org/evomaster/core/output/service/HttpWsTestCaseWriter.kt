@@ -544,16 +544,20 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(".ok(res => res.status)")
         }
 
-        //Why this check? seems wrong...
-        //if (config.enableBasicAssertions) {
-        //lines.appendSemicolon(format)
-        //}
 
         if (lines.shouldUseSemicolon(format)) {
-            if (lines.currentContains("//")) {
+            /*
+                FIXME this is wrong when // is in a string of response, like a URL.
+                Need to check last //, and that is not inside  ""
+                Need tests for it... albeit tricky as Kotlin does not use ;, so need Java or unit test
+
+                However, currently we have comments _only_ on status codes, which does not use ".
+                so a dirty quick fix is to check if no " is used
+             */
+            if (lines.currentContains("//") && !lines.currentContains("\"")) {
                 //a ; after a comment // would be ignored otherwise
                 if (lines.isCurrentACommentLine()) {
-                    //let's not lose identation
+                    //let's not lose indentation
                     lines.replaceInCurrent(Regex("//"), "; //")
                 } else {
                     //there can be any number of spaces between the statement and the //
