@@ -13,11 +13,10 @@ class TestWriterUtils {
          * server inside generated test cases.
          */
         fun getWireMockVariableName(action: HttpExternalServiceAction): String {
-            return action
+            return "wireMock__" + action
                 .externalService
                 .getSignature()
-                .replace(".", "")
-                .plus("WireMock")
+                .replace(".", "_")
         }
     }
 }

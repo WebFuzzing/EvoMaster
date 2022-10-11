@@ -1,6 +1,8 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.Termination
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 
 
 class Solution<T>(
@@ -32,5 +34,13 @@ where T : Individual {
             return "$name$testSuiteNameSuffix"
         }
         return  "${name}_$testSuiteNameSuffix"
+    }
+
+    fun hasAnyActiveHttpExternalServiceAction() : Boolean{
+        return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is HttpExternalServiceAction && a.active } }
+    }
+
+    fun hasAnySqlAction() : Boolean{
+        return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is DbAction}}
     }
 }

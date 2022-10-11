@@ -9,6 +9,7 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxFitness
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
@@ -17,7 +18,6 @@ import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.monitor.StepOfSearchProcess
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
@@ -64,7 +64,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(config.processFiles)))
 
         val a = OneMaxIndividual(2)
-        a.doInitialize(randomness)
+        TestUtils.doInitializeIndividualForTesting(a,randomness)
         a.setValue(0, 1.0)
 
         val eval = ff.calculateCoverage(a)!!
@@ -89,7 +89,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
         val a = OneMaxIndividual(2)
-        a.doInitialize(randomness)
+        TestUtils.doInitializeIndividualForTesting(a, randomness)
         a.setValue(0, 1.0)
 
         val eval = ff.calculateCoverage(a)!!
@@ -117,7 +117,7 @@ class ProcessMonitorTest{
         assertFalse(Files.exists(Paths.get(processMonitor.getStepDirAsPath())))
 
         val individual = OneMaxIndividual(2)
-        individual.doInitialize(randomness)
+        TestUtils.doInitializeIndividualForTesting(individual, randomness)
         individual.resetAllToZero()
         individual.setValue(0, 1.0)
 
@@ -163,7 +163,7 @@ class ProcessMonitorTest{
         assertEquals(0, archive.getSnapshotOfBestIndividuals().size)
 
         val a = OneMaxIndividual(2)
-        a.doInitialize(randomness)
+        TestUtils.doInitializeIndividualForTesting(a, randomness)
         a.resetAllToZero()
         a.setValue(0, 1.0)
         val evalA = ff.calculateCoverage(a)!!
@@ -176,7 +176,7 @@ class ProcessMonitorTest{
 
         assertEquals(1, archive.getSnapshotOfBestIndividuals().size)
         val b = OneMaxIndividual(2)
-        b.doInitialize(randomness)
+        TestUtils.doInitializeIndividualForTesting(b,randomness)
         a.resetAllToZero()
         b.setValue(1, 1.0)
         val evalB = ff.calculateCoverage(b)!!

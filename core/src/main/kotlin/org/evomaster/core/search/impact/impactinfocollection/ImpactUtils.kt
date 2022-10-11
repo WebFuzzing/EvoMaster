@@ -170,11 +170,13 @@ class ImpactUtils {
         }
 
         private fun extractMutatedGeneWithContext(mutatedGeneSpecification: MutatedGeneSpecification,
-                                                  actions: List<Action>,
+                                                  actions: List<Pair<Action, Int?>>,
                                                   previousIndividual: Individual,
                                                   isInit : Boolean, list: MutableList<MutatedGeneWithContext>, num : Int) {
 
-            actions.forEachIndexed { index, a ->
+            actions.forEach { indexedAction ->
+                val a = indexedAction.first
+                val index = indexedAction.second
 
                 val manipulated = mutatedGeneSpecification.isActionMutated(index, a.getLocalId(), isInit)
                 if (manipulated){
@@ -185,11 +187,12 @@ class ImpactUtils {
                             mutatedGeneSpecification.mutatedGeneInfo().contains(it) || mutatedGeneSpecification.mutatedDbGeneInfo().contains(it)
                     }.forEach { mutatedg->
                         val id = generateGeneId(a, mutatedg)
+
                         /*
                            index for db gene might be changed if new insertions are added.
                            then there is a need to update the index in previous based on the number of added
                          */
-                        val indexInPrevious = index - (if (isInit && !mutatedGeneSpecification.addedExistingDataInitialization.contains(a)) mutatedGeneSpecification.addedExistingDataInitialization.size else 0)
+                        val indexInPrevious = if (index == null) null else index - (if (isInit && !mutatedGeneSpecification.addedExistingDataInitialization.contains(a)) mutatedGeneSpecification.addedExistingDataInitialization.size else 0)
                         val previous = findGeneById(
                                 individual=previousIndividual,
                                 id = id,
@@ -199,7 +202,11 @@ class ImpactUtils {
                                 isDynamic = a is ApiExternalServiceAction,
                                 isDb = isInit
                         )
-                        list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName(), actionLocalId = a.getLocalId(), isDynamicAction = a is ApiExternalServiceAction, numOfMutatedGene = num))
+                        list.add(MutatedGeneWithContext(
+                            current = mutatedg,
+                            previous = previous,
+                            position = index,
+                            action = a.getName(), actionLocalId = a.getLocalId(), isDynamicAction = index == null, numOfMutatedGene = num))
                     }
                 }
             }
@@ -216,9 +223,9 @@ class ImpactUtils {
             if (individual.hasAnyAction()){
                 if (isInit){
                     Lazy.assert { mutatedGeneSpecification.mutatedInitGenes.isEmpty() || individual.seeInitializingActions().isNotEmpty() }
-                    extractMutatedGeneWithContext(mutatedGeneSpecification, individual.seeInitializingActions(), previousIndividual, isInit, list, num)
+                    extractMutatedGeneWithContext(mutatedGeneSpecification, individual.getRelativeIndexedInitActions(), previousIndividual, isInit, list, num)
                 }else{
-                    extractMutatedGeneWithContext(mutatedGeneSpecification, individual.seeActions(ActionFilter.NO_INIT), previousIndividual, isInit, list, num)
+                    extractMutatedGeneWithContext(mutatedGeneSpecification, individual.getRelativeIndexedNonInitAction(), previousIndividual, isInit, list, num)
                 }
             }else{
                 Lazy.assert { !isInit }
@@ -242,8 +249,8 @@ class ImpactUtils {
                 throw IllegalArgumentException("localId must be specified if the action is dynamic, ie, external service action")
 
             val action = if (indexOfAction!=null && !isDynamic){
-                if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeActions(ActionFilter.NO_INIT)).size) return null
-                if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions(ActionFilter.NO_INIT)[indexOfAction]
+                if (indexOfAction >= (if (isDb) individual.seeInitializingActions() else individual.seeFixedMainActions()).size) return null
+                if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeFixedMainActions()[indexOfAction]
             }else {
                 individual.findActionByLocalId(localId!!)?:return null
             }

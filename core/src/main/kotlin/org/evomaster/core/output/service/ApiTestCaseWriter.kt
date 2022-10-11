@@ -393,6 +393,8 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
      * Null values, or content that is not yet handled are can lead to un-compilable generated tests.
      * Removing strings that contain "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
      * Such information can cause failures upon re-run, as object references and timestamps will differ.
+     *
+     * FIXME need to refactor when dealing with escape refactoring / flaky handling
      */
     protected fun isSuitableToPrint(printableContent: String): Boolean {
         return (

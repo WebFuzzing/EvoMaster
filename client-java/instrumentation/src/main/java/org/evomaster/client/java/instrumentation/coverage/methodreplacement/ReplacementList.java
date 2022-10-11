@@ -55,6 +55,7 @@ public class ReplacementList {
                     new ShortClassReplacement(),
                     new ServletRequestClassReplacement(),
                     new SocketClassReplacement(),
+                    new ThreadMethodReplacement(),
                     new WebRequestClassReplacement(),
                     new URIClassReplacement(),
                     new URLClassReplacement(),

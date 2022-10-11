@@ -45,5 +45,4 @@ class WmUrlOpenRest {
         }
     }
 
-    //TODO array
 }

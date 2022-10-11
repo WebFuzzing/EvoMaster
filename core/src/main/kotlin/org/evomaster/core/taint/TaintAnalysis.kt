@@ -6,9 +6,12 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintType
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.TaintedArrayGene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -19,15 +22,18 @@ object TaintAnalysis {
 
     private val log: Logger = LoggerFactory.getLogger(TaintAnalysis::class.java)
 
+
+
+    /**
+     *   Analyze if any tainted value was used in the SUT in some special way.
+     *   If that happened, then such info would end up in the AdditionalInfoDto.
+     *   Then, we would extend the genotype (but not the phenotype!!!) of this test.
+     */
     fun doTaintAnalysis(individual: Individual,
                         additionalInfoList: List<AdditionalInfoDto>,
                         randomness: Randomness) {
 
-        /*
-            Analyze if any tainted value was used in the SUT in some special way.
-            If that happened, then such info would end up in the AdditionalInfoDto.
-            Then, we would extend the genotype (but not the phenotype!!!) of this test.
-         */
+
 
         if (individual.seeMainExecutableActions().size < additionalInfoList.size) {
             throw IllegalArgumentException("Less main actions than info entries")
@@ -64,36 +70,92 @@ object TaintAnalysis {
     that a manipulated taint would still pass the taint regex check...)
          */
 
-        val allTaintableGenes : List<StringGene> = individual.seeAllActions().flatMap { a->
-            a.seeTopGenes().flatMap { it.flatView() }
-                .filterIsInstance<StringGene>()
+        val allTaintableGenes : List<TaintableGene> =
+            individual.seeAllActions()
+                .flatMap { a-> a.seeTopGenes().flatMap { it.flatView() }
+                .filterIsInstance<TaintableGene>()
         }
 
-        for (i in 0 until additionalInfoList.size) {
+        for (element in additionalInfoList) {
 
-            val dto = additionalInfoList[i]
-            if (dto.stringSpecializations == null || dto.stringSpecializations.isEmpty()) {
+            if (element.stringSpecializations == null || element.stringSpecializations.isEmpty()) {
                 continue
             }
 
-            val specsMap = dto.stringSpecializations.entries
-                    .map {
-                        it.key to it.value.map { s ->
-                            StringSpecializationInfo(
-                                    StringSpecialization.valueOf(s.stringSpecialization),
-                                    s.value,
-                                    TaintType.valueOf(s.type))
-                        }
-                    }.toMap()
+            val specsMap = element.stringSpecializations.entries
+                .map {
+                    it.key to it.value.map { s ->
+                        StringSpecializationInfo(
+                            StringSpecialization.valueOf(s.stringSpecialization),
+                            s.value,
+                            TaintType.valueOf(s.type)
+                        )
+                    }
+                }.toMap()
 
 
             handleSingleGenes(specsMap, allTaintableGenes, randomness)
 
             handleMultiGenes(specsMap, allTaintableGenes, randomness)
+
+            handleTaintedArrays(specsMap, allTaintableGenes, randomness)
         }
     }
 
-    private fun handleMultiGenes(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes : List<StringGene>, randomness: Randomness) {
+
+    private fun handleTaintedArrays(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes : List<TaintableGene>, randomness: Randomness){
+
+        val taintedArrays = allTaintableGenes.filterIsInstance<TaintedArrayGene>()
+
+        if(taintedArrays.isEmpty()){
+            return
+        }
+
+        for (entry in specsMap.entries) {
+
+            val taintedInput = entry.key
+            val specs = entry.value
+
+            if (specs.isEmpty()) {
+                throw IllegalArgumentException("No specialization info for value $taintedInput")
+            }
+
+            val genes = taintedArrays.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
+            if(genes.isEmpty()){
+                continue
+            }
+
+            if(specs.size > 1){
+                log.warn("More than one possible specialization for tainted array '$taintedInput': $specs")
+            }
+
+            val s = specs.find { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
+                ?: randomness.choose(specs)
+
+            val template = if(s.stringSpecialization == StringSpecialization.JSON_OBJECT){
+                val schema = s.value
+                val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+                val ref = t.subSequence(1,t.length-1).toString()
+                RestActionBuilderV3.createObjectGeneForDTO(ref, schema, ref)
+            } else {
+                /*
+                    TODO this could be more sophisticated, like considering numeric and boolean arrays as well,
+                    and already initializing the values in array with some of taints.
+                    but, as this "likely" would be rare (ie JSON array of non-objects as root element in parsing),
+                    no need for now.
+                 */
+                StringGene("element")
+            }
+
+            genes.forEach {
+                it.resolveTaint(
+                    ArrayGene(it.name, template.copy()).apply { doInitialize(randomness) }
+                )
+            }
+        }
+    }
+
+    private fun handleMultiGenes(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes : List<TaintableGene>, randomness: Randomness) {
 
         val specs = specsMap.entries
                 .flatMap { it.value }
@@ -104,9 +166,9 @@ object TaintAnalysis {
 
             val genes = allTaintableGenes.filter {
                         specsMap.entries
-                                .filter { e -> e.key.contains(it.getValueAsRawString(), true) }
+                                .filter { e -> e.key.contains(it.getPossiblyTaintedValue(), true) }
                                 .any { e -> e.value.any { d -> d == s } }
-                    }
+                    }.filterIsInstance<StringGene>()
 
             if(genes.size <= 1){
                 continue
@@ -157,7 +219,7 @@ object TaintAnalysis {
         }
     }
 
-    private fun handleSingleGenes(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes: List<StringGene>, randomness: Randomness) {
+    private fun handleSingleGenes(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes: List<TaintableGene>, randomness: Randomness) {
         for (entry in specsMap.entries) {
 
             val taintedInput = entry.key
@@ -173,7 +235,8 @@ object TaintAnalysis {
             if (fullMatch.isNotEmpty()) {
 
                 val genes = allTaintableGenes
-                        .filter { it.getValueAsRawString().equals(taintedInput, true) }
+                        .filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
+                        .filterIsInstance<StringGene>()
 
                 addSpecializationToGene(genes, taintedInput, fullMatch, randomness)
             }
@@ -182,7 +245,8 @@ object TaintAnalysis {
             if (partialMatch.isNotEmpty()) {
 
                 val genes = allTaintableGenes
-                        .filter { taintedInput.contains(it.getValueAsRawString(), true) }
+                        .filter { taintedInput.contains(it.getPossiblyTaintedValue(), true) }
+                        .filterIsInstance<StringGene>()
 
                 addSpecializationToGene(genes, taintedInput, partialMatch, randomness)
             }

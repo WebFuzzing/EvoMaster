@@ -51,7 +51,6 @@ class WmUrlOpenEMTest : SpringTestBase() {
                 //FIXME: this weird... fails on CI, even when incresing budget significantly... but passes local on all OS
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/object", "OK")
             }
-            //TODO array
         }
     }
 

@@ -20,6 +20,7 @@ import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -160,7 +161,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 if (update != null) {
                     a.killChildren { it is BodyParam }
                     a.killChildren { it is UpdateForBodyParam }
-                    a.addChild(update.body)
+                    val copy = update.body
+                    copy.resetLocalIdRecursively()
+                    a.addChild(copy)
                 }
             }
 
@@ -170,6 +173,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             allGenes.filterIsInstance<OptionalGene>()
                 .filter { it.selectable && it.requestSelection }
                 .forEach { it.isActive = true; it.requestSelection = false }
+
+            allGenes.filterIsInstance<TaintedArrayGene>()
+                .filter{!it.isActive && it.isResolved()}
+                .forEach { it.activate() }
 
             //disable genes that should no longer be mutated
             val state = individual.searchGlobalState
