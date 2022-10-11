@@ -188,8 +188,103 @@ class RPCEndpointsHandler {
         }
     }
 
-    private fun setGeneBasedOnString(gene: Gene, value: String){
-        TODO()
+    private fun setGeneBasedOnString(gene: Gene, stringValue: String?, format : String = "json"){
+        val valueGene = ParamUtil.getValueGene(gene)
+
+        if (stringValue != null){
+            when(valueGene){
+                is IntegerGene -> valueGene.setValueWithRawString(stringValue)
+                is DoubleGene -> valueGene.setValueWithRawString(stringValue)
+                is FloatGene -> valueGene.setValueWithRawString(stringValue)
+                is BooleanGene -> valueGene.setValueWithRawString(stringValue)
+                is StringGene -> valueGene.value = stringValue
+                is BigDecimalGene -> valueGene.setValueWithRawString(stringValue)
+                is BigIntegerGene -> valueGene.setValueWithRawString(stringValue)
+                is NumericStringGene -> valueGene.number.setValueWithRawString(stringValue)
+                is RegexGene -> {
+                    // TODO set value based on RegexGene
+                    LoggingUtil.uniqueWarn(log, "do not handle setGeneBasedOnString with stringValue($stringValue) for Regex")
+                }
+                is LongGene -> valueGene.setValueWithRawString(stringValue)
+                is EnumGene<*> -> valueGene.setValueWithRawString(stringValue)
+                is SeededGene<*> -> {
+                    valueGene.employSeeded = false
+                    setGeneBasedOnString(valueGene.gene as Gene, stringValue)
+                }
+                is PairGene<*, *> -> {
+                    throw IllegalStateException("should not really happen since this gene is only")
+                }
+                is DateTimeGene ->{
+                    // TODO
+                    LoggingUtil.uniqueWarn(log, "do not handle setGeneBasedOnString with stringValue($stringValue) for DateTimeGene")
+                }
+                is ArrayGene<*> -> {
+                    val template = valueGene.template
+                    val node = objectMapper.readTree(stringValue)
+                    if (node.isArray){
+                        node.run {
+                            if (valueGene.maxSize!=null && valueGene.maxSize!! < size()){
+                                log.warn("ArrayGene: responses have more elements than it allows, i.e., max is ${valueGene.maxSize} but the actual is ${size()}")
+                                this.filterIndexed { index, _ ->  index < valueGene.maxSize!!}
+                            }else
+                                this
+                        }.forEach { p->
+                            val copy = template.copy()
+                            // TODO need to handle cycle object gene in responses
+                            if (copy !is CycleObjectGene){
+                                setGeneBasedOnString(copy, p.toPrettyString())
+                                valueGene.addElement(copy)
+                            }
+                        }
+                    }else{
+                        throw IllegalStateException("stringValue ($stringValue) is not Array")
+                    }
+                }
+                is MapGene<*, *> ->{
+                    val template = valueGene.template
+                    val node = objectMapper.readTree(stringValue)
+                    if (node.isObject){
+                        node.fields().asSequence().forEachIndexed {index, p->
+
+                            if (valueGene.maxSize!=null && index >= valueGene.maxSize ){
+                                log.warn("MapGene: responses have more elements than it allows, i.e., max is ${valueGene.maxSize} but the actual is ${node.size()}")
+                            }else{
+                                val copy = template.copy() as PairGene<*, *>
+//                                setGeneBasedOnString(copy, p.toPrettyString())
+                                setGeneBasedOnString(copy.first, p.key)
+                                setGeneBasedOnString(copy.second, p.value.toPrettyString())
+                                valueGene.addElement(copy)
+                            }
+                        }
+                    }else{
+                        throw IllegalStateException("stringValue ($stringValue) is not Object or Map")
+                    }
+
+                }
+                is ObjectGene -> {
+                    val node = objectMapper.readTree(stringValue)
+                    if (node.isObject){
+                        valueGene.fields.forEach { f->
+                            val pdto = node.fields().asSequence().find { it.key == f.name }
+                                ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
+                            setGeneBasedOnString(f, pdto.value.toPrettyString())
+                        }
+                    }else{
+                        throw IllegalStateException("stringValue ($stringValue) is not Object")
+                    }
+                }
+                is CycleObjectGene ->{
+                    LoggingUtil.uniqueWarn(log, "NOT support to handle cycle object with more than 2 depth")
+
+                }
+                else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and stringValue ($stringValue)")
+            }
+        }else{
+            if (gene is OptionalGene)
+                gene.isActive = false
+            else
+                log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
+        }
     }
 
 
@@ -243,11 +338,13 @@ class RPCEndpointsHandler {
                 )
                 if (!externalServiceCluster.containsKey(exkey)){
                     val responseTypeClass = interfaceDto.identifiedResponseTypes.find { it.type.fullTypeName == s }
+                    var fromClass = false
                     val responseGene = (
                             if (responseTypeClass != null){
-                                handleDtoParam(responseTypeClass)
+                                handleDtoParam(responseTypeClass).also { fromClass = true }
                             }else if(sutInfoDto.unitsInfoDto.extractedSpecifiedDtos?.containsKey(s) == true){
                                 val schema = sutInfoDto.unitsInfoDto.extractedSpecifiedDtos[s]!!
+                                fromClass = true
                                 RestActionBuilderV3.createObjectGeneForDTO("return", schema, s)
                             }else{
                                 val node = readJson(dto.responses[index])
@@ -259,6 +356,7 @@ class RPCEndpointsHandler {
                             }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
 
                     val response = RPCResponseParam(className = s, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                    if (fromClass) response.responseParsedWithClass()
 
                     val externalAction = RPCExternalServiceAction(
                         interfaceName = dto.interfaceFullName,
@@ -695,19 +793,19 @@ class RPCEndpointsHandler {
 
         if (!isNullDto(dto)){
             when(valueGene){
-                is IntegerGene -> valueGene.value = dto.stringValue.toInt()
-                is DoubleGene -> valueGene.value = dto.stringValue.toDouble()
-                is FloatGene -> valueGene.value = dto.stringValue.toFloat()
-                is BooleanGene -> valueGene.value = dto.stringValue.toBoolean()
+                is IntegerGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is DoubleGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is FloatGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is BooleanGene -> valueGene.setValueWithRawString(dto.stringValue)
                 is StringGene -> valueGene.value = dto.stringValue
-                is BigDecimalGene -> valueGene.setValueWithString(dto.stringValue)
-                is BigIntegerGene -> valueGene.setValueWithString(dto.stringValue)
-                is NumericStringGene -> valueGene.number.setValueWithString(dto.stringValue)
+                is BigDecimalGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is BigIntegerGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is NumericStringGene -> valueGene.number.setValueWithRawString(dto.stringValue)
                 is RegexGene -> {
                     // TODO set value based on RegexGene
                 }
-                is LongGene -> valueGene.value = dto.stringValue.toLong()
-                is EnumGene<*> -> valueGene.index = dto.stringValue.toInt()
+                is LongGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is EnumGene<*> -> valueGene.setValueWithRawString(dto.stringValue)
                 is SeededGene<*> -> {
                     /*
                         response might refer to input dto, then it might exist seeded gene
