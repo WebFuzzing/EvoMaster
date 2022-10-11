@@ -20,7 +20,6 @@ public class SocketClassReplacement implements MethodReplacementClass {
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
-            id = "Socket_connect_Replacement",
             replacingStatic = false,
             usageFilter = UsageFilter.ANY
     )

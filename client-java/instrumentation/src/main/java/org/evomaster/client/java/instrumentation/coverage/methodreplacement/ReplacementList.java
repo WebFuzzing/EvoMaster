@@ -54,11 +54,11 @@ public class ReplacementList {
                     new StringClassReplacement(),
                     new ShortClassReplacement(),
                     new ServletRequestClassReplacement(),
+                    new SocketClassReplacement(),
                     new WebRequestClassReplacement(),
                     new URIClassReplacement(),
                     new URLClassReplacement(),
-                    new UUIDClassReplacement(),
-                    new SocketClassReplacement()
+                    new UUIDClassReplacement()
             );
         }
 

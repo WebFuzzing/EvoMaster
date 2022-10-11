@@ -10,6 +10,15 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.net.*;
 
+/**
+ * with socket connection, it will first do host lookup with java.net.InetAddress#getByName
+ * if it does not exist, UnknownHostException will be thrown,
+ * then the `socket.connect` cannot be reached.
+ *
+ * in order to make it connected, we could do replacement for 1) collecting host info, and
+ * 2) providing an ip address
+ *
+ */
 public class InetAddressClassReplacement implements MethodReplacementClass {
     @Override
     public Class<?> getTargetClass() {
@@ -19,7 +28,6 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
-            id = "InetAddress_getByName_Replacement",
             replacingStatic = true,
             usageFilter = UsageFilter.ANY
     )
@@ -43,7 +51,6 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
     @Replacement(
             type = ReplacementType.TRACKER,
             category = ReplacementCategory.NET,
-            id = "InetAddress_getAllByName_Replacement",
             replacingStatic = true,
             usageFilter = UsageFilter.ANY
     )
