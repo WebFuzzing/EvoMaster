@@ -12,10 +12,13 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -60,7 +63,7 @@ class StringGene(
          */
         specializationGenes: List<Gene> = listOf()
 
-) : ComparableGene, CompositeGene(name, specializationGenes.toMutableList()) {
+) : TaintableGene, ComparableGene, CompositeGene(name, specializationGenes.toMutableList()) {
 
     init {
         if (minLength>maxLength) {
@@ -405,8 +408,7 @@ class StringGene(
                                 (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
                         )
         ) {
-            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-            tainted = true
+            forceTaintedValue()
             return true
         }
 
@@ -416,6 +418,11 @@ class StringGene(
         }
 
         return false
+    }
+
+    fun forceTaintedValue() {
+        value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+        tainted = true
     }
 
     /**
@@ -548,6 +555,23 @@ class StringGene(
             log.trace("URI, added specification size: {}", toAddGenes.size)
         }
 
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_OBJECT }){
+            toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
+                    .forEach {
+                        val schema = it.value
+                        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+                        val ref = t.subSequence(1,t.length-1).toString()
+                        val obj = RestActionBuilderV3.createObjectGeneForDTO(ref, schema, ref)
+                        toAddGenes.add(obj)
+                    }
+            log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)
+        }
+
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_ARRAY }){
+            toAddGenes.add(TaintedArrayGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
+            log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
+        }
+
         //all regex are combined with disjunction in a single gene
         handleRegex(key, toAddSpecs, toAddGenes)
 
@@ -674,12 +698,16 @@ class StringGene(
 
         val specializationGene = getSpecializationGene()
 
+        val rawValue = getValueAsRawString()
+
         if (specializationGene != null) {
+            //FIXME: really escaping is a total mess... need major refactoring
             // TODO: Don't we need to escape the raw string?
-            return "\"" + specializationGene.getValueAsRawString() + "\""
+            return "\"" + rawValue + "\""
+//            return specializationGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+//                    .replace("\"", "\\\"")
         }
 
-        val rawValue = getValueAsRawString()
         return if (mode != null && mode == GeneUtils.EscapeMode.XML) {
             StringEscapeUtils.escapeXml10(rawValue)
         } else {
@@ -832,6 +860,10 @@ class StringGene(
             throw ClassCastException("Expected StringGene instance but ${other::javaClass} was found")
         }
         return getValueAsRawString().compareTo(other.getValueAsRawString())
+    }
+
+    override fun getPossiblyTaintedValue(): String {
+        return getValueAsRawString()
     }
 
 }

@@ -1,5 +1,8 @@
 package org.evomaster.client.java.instrumentation.object;
 
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.ArrayList;
@@ -45,6 +48,18 @@ public class ClassToSchema {
      * have any nasty negative side-effects.
      */
     private static final Map<Type, String> cache = new ConcurrentHashMap<>();
+
+
+    public static void registerSchemaIfNeeded(Class<?> valueType){
+
+        if (valueType != null) {
+            String name = valueType.getName();
+            String schema = ClassToSchema.getOrDeriveSchema(valueType);
+            UnitsInfoRecorder.registerNewParsedDto(name, schema);
+            ExecutionTracer.addParsedDtoName(name);
+        }
+    }
+
 
     /**
      * @return a schema representation of the class in the form "name: {...}", ie

@@ -28,6 +28,8 @@ class DbBaseEMTest : SpringTestBase() {
             10000
         ) { args: MutableList<String> ->
 
+            defaultSeed = 0
+
             args.add("--problemType")
             args.add(EMConfig.ProblemType.GRAPHQL.toString())
 

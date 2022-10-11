@@ -14,7 +14,7 @@ import org.evomaster.core.search.gene.Gene
 class MutatedGeneWithContext (
         val current : Gene,
         val action : String = NO_ACTION,
-        val position : Int = NO_POSITION,
+        val position : Int? = null,
         val actionLocalId : String = NO_ACTION,
         val isDynamicAction: Boolean = false,
         val previous : Gene?,
@@ -22,7 +22,6 @@ class MutatedGeneWithContext (
 ){
     companion object{
         const val NO_ACTION = "NONE"
-        const val NO_POSITION = -1
     }
 
     fun mainPosition(current: Gene, previous: Gene?, numOfMutatedGene: Int) : MutatedGeneWithContext{

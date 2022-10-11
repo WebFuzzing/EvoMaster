@@ -6,9 +6,12 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintType
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.TaintedArrayGene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -19,18 +22,21 @@ object TaintAnalysis {
 
     private val log: Logger = LoggerFactory.getLogger(TaintAnalysis::class.java)
 
+
+
+    /**
+     *   Analyze if any tainted value was used in the SUT in some special way.
+     *   If that happened, then such info would end up in the AdditionalInfoDto.
+     *   Then, we would extend the genotype (but not the phenotype!!!) of this test.
+     */
     fun doTaintAnalysis(individual: Individual,
                         additionalInfoList: List<AdditionalInfoDto>,
                         randomness: Randomness) {
 
-        /*
-            Analyze if any tainted value was used in the SUT in some special way.
-            If that happened, then such info would end up in the AdditionalInfoDto.
-            Then, we would extend the genotype (but not the phenotype!!!) of this test.
-         */
 
-        if (individual.seeAllActions().size < additionalInfoList.size) {
-            throw IllegalArgumentException("Less actions than info entries")
+
+        if (individual.seeMainExecutableActions().size < additionalInfoList.size) {
+            throw IllegalArgumentException("Less main actions than info entries")
         }
 
         if (log.isTraceEnabled){
@@ -46,32 +52,110 @@ object TaintAnalysis {
                 additionalInfoList.size, additionalInfoList.flatMap { a-> a.stringSpecializations.keys }.joinToString(","))
         }
 
-        for (i in 0 until additionalInfoList.size) {
+        /*
+    The old approach of checking the taint only for current main action was quite limiting:
+    1) it would ignore taint in SQL actions
+    2) a previous HTTP call could put a tainted value in the DB, read by a following action.
 
-            val dto = additionalInfoList[i]
-            if (dto.stringSpecializations == null || dto.stringSpecializations.isEmpty()) {
+    So, regardless of the main action in which the taint was detected, we check its gene in ALL
+    actions in the individual, including _previous_ ones. An optimization would be to ignore the _following_
+    actions.
+    Ideally, it should not be a problem, as tainted values are supposed to be unique. This is not currently
+    enforce, so with low chances it could happened that 2 different genes have same tainted value.
+    "Likely" rare, and "likely" with little to no side-effects if it happens (we ll see if it ll be indeed
+    the case).
+
+    Note, even if we force the invariant that 2 genes cannot share the same taint in a individual, we cannot guarantee
+    of the taint values detected in the SUT. The string there might be manipulated (although it is _extremely_ unlike
+    that a manipulated taint would still pass the taint regex check...)
+         */
+
+        val allTaintableGenes : List<TaintableGene> =
+            individual.seeAllActions()
+                .flatMap { a-> a.seeTopGenes().flatMap { it.flatView() }
+                .filterIsInstance<TaintableGene>()
+        }
+
+        for (element in additionalInfoList) {
+
+            if (element.stringSpecializations == null || element.stringSpecializations.isEmpty()) {
                 continue
             }
 
-            val action = individual.seeAllActions()[i]
+            val specsMap = element.stringSpecializations.entries
+                .map {
+                    it.key to it.value.map { s ->
+                        StringSpecializationInfo(
+                            StringSpecialization.valueOf(s.stringSpecialization),
+                            s.value,
+                            TaintType.valueOf(s.type)
+                        )
+                    }
+                }.toMap()
 
-            val specsMap = dto.stringSpecializations.entries
-                    .map {
-                        it.key to it.value.map { s ->
-                            StringSpecializationInfo(
-                                    StringSpecialization.valueOf(s.stringSpecialization),
-                                    s.value,
-                                    TaintType.valueOf(s.type))
-                        }
-                    }.toMap()
 
-            handleSingleGenes(specsMap, action, randomness)
+            handleSingleGenes(specsMap, allTaintableGenes, randomness)
 
-            handleMultiGenes(specsMap, action, randomness)
+            handleMultiGenes(specsMap, allTaintableGenes, randomness)
+
+            handleTaintedArrays(specsMap, allTaintableGenes, randomness)
         }
     }
 
-    private fun handleMultiGenes(specsMap: Map<String, List<StringSpecializationInfo>>, action: Action, randomness: Randomness) {
+
+    private fun handleTaintedArrays(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes : List<TaintableGene>, randomness: Randomness){
+
+        val taintedArrays = allTaintableGenes.filterIsInstance<TaintedArrayGene>()
+
+        if(taintedArrays.isEmpty()){
+            return
+        }
+
+        for (entry in specsMap.entries) {
+
+            val taintedInput = entry.key
+            val specs = entry.value
+
+            if (specs.isEmpty()) {
+                throw IllegalArgumentException("No specialization info for value $taintedInput")
+            }
+
+            val genes = taintedArrays.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
+            if(genes.isEmpty()){
+                continue
+            }
+
+            if(specs.size > 1){
+                log.warn("More than one possible specialization for tainted array '$taintedInput': $specs")
+            }
+
+            val s = specs.find { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
+                ?: randomness.choose(specs)
+
+            val template = if(s.stringSpecialization == StringSpecialization.JSON_OBJECT){
+                val schema = s.value
+                val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+                val ref = t.subSequence(1,t.length-1).toString()
+                RestActionBuilderV3.createObjectGeneForDTO(ref, schema, ref)
+            } else {
+                /*
+                    TODO this could be more sophisticated, like considering numeric and boolean arrays as well,
+                    and already initializing the values in array with some of taints.
+                    but, as this "likely" would be rare (ie JSON array of non-objects as root element in parsing),
+                    no need for now.
+                 */
+                StringGene("element")
+            }
+
+            genes.forEach {
+                it.resolveTaint(
+                    ArrayGene(it.name, template.copy()).apply { doInitialize(randomness) }
+                )
+            }
+        }
+    }
+
+    private fun handleMultiGenes(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes : List<TaintableGene>, randomness: Randomness) {
 
         val specs = specsMap.entries
                 .flatMap { it.value }
@@ -80,14 +164,11 @@ object TaintAnalysis {
 
         for (s in specs) {
 
-            val genes = action.seeTopGenes()
-                    .flatMap { it.flatView() }
-                    .filterIsInstance<StringGene>()
-                    .filter {
+            val genes = allTaintableGenes.filter {
                         specsMap.entries
-                                .filter { e -> e.key.contains(it.getValueAsRawString(), true) }
+                                .filter { e -> e.key.contains(it.getPossiblyTaintedValue(), true) }
                                 .any { e -> e.value.any { d -> d == s } }
-                    }
+                    }.filterIsInstance<StringGene>()
 
             if(genes.size <= 1){
                 continue
@@ -138,7 +219,7 @@ object TaintAnalysis {
         }
     }
 
-    private fun handleSingleGenes(specsMap: Map<String, List<StringSpecializationInfo>>, action: Action, randomness: Randomness) {
+    private fun handleSingleGenes(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes: List<TaintableGene>, randomness: Randomness) {
         for (entry in specsMap.entries) {
 
             val taintedInput = entry.key
@@ -147,47 +228,52 @@ object TaintAnalysis {
                 throw IllegalArgumentException("No specialization info for value $taintedInput")
             }
 
-
+            //TODO what was the difference between these 2?
             val fullMatch = specsMap[taintedInput]!!.filter { it.type == TaintType.FULL_MATCH }
             val partialMatch = specsMap[taintedInput]!!.filter { it.type == TaintType.PARTIAL_MATCH }
 
             if (fullMatch.isNotEmpty()) {
 
-                val genes = action.seeTopGenes()
-                        .flatMap { it.flatView() }
+                val genes = allTaintableGenes
+                        .filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
                         .filterIsInstance<StringGene>()
-                        .filter { it.getValueAsRawString().equals(taintedInput, true) }
 
-                if (genes.isEmpty()) {
-                    /*
-                        This can happen if the taint input is manipulated, but still with
-                        same prefix and postfix
-                        TODO: this debug log might lead to non-determinate logs
-                    */
-                    //log.debug("No taint input '{}'",taintedInput)
-                } else {
-                    genes.forEach { it.addSpecializations(taintedInput, fullMatch, randomness) }
-                }
+                addSpecializationToGene(genes, taintedInput, fullMatch, randomness)
             }
 
             //partial match on single genes
             if (partialMatch.isNotEmpty()) {
 
-                val genes = action.seeTopGenes()
-                        .flatMap { it.flatView() }
+                val genes = allTaintableGenes
+                        .filter { taintedInput.contains(it.getPossiblyTaintedValue(), true) }
                         .filterIsInstance<StringGene>()
-                        .filter { taintedInput.contains(it.getValueAsRawString(), true) }
 
-                if (genes.isEmpty()) {
-                    /*
-                            This can happen if the taint input is manipulated, but still with
-                            same prefix and postfix
-                         */
-                    log.debug("No taint input '{}'", taintedInput)
-                } else {
-                    genes.forEach { it.addSpecializations(taintedInput, partialMatch, randomness) }
-                }
+                addSpecializationToGene(genes, taintedInput, partialMatch, randomness)
             }
+        }
+    }
+
+    private fun addSpecializationToGene(
+        genes: List<StringGene>,
+        taintedInput: String,
+        specializations: List<StringSpecializationInfo>,
+        randomness: Randomness
+    ) {
+        if (genes.isEmpty()) {
+            /*
+                        This can happen if the taint input is manipulated, but still with
+                        same prefix and postfix. However, it would be extremely rare, and for sure
+                        not in any of E2E, unless we explicitly write one for it
+                    */
+            log.warn("No taint input found '{}'", taintedInput)
+            //FIXME put back once debug issue on Linux
+            //assert(false) // crash in tests, but not production
+        } else {
+            if (genes.size > 1) {
+                //shouldn't really be a problem... but let keep track for it, for now at least
+                log.warn("More than 2 gens have the taint '{}'", taintedInput)
+            }
+            genes.forEach { it.addSpecializations(taintedInput, specializations, randomness) }
         }
     }
 }

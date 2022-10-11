@@ -9,6 +9,8 @@ import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
 
 /**
  * Action to execute the external service related need
@@ -60,6 +62,14 @@ class HttpExternalServiceAction(
      */
     override fun getName(): String {
         return request.id.toString()
+    }
+
+    override fun doInitialize(randomness: Randomness?) {
+        super.doInitialize(randomness)
+        //randomization might modify those values
+        (response as HttpWsResponseParam).status.index = 0 // start with 200, otherwise can lose taint
+        response.responseBody.isActive = true
+        (response.responseBody.gene as StringGene).forceTaintedValue()
     }
 
     override fun seeTopGenes(): List<out Gene> {
@@ -177,7 +187,7 @@ class HttpExternalServiceAction(
     private fun viewResponse(): String {
         // TODO: Need to extend further to handle the response body based on the
         //  unmarshalled object inside SUT using the ParsedDto information.
-        return (response as HttpWsResponseParam).response.getValueAsRawString()
+        return (response as HttpWsResponseParam).responseBody.getValueAsRawString()
     }
 
 }

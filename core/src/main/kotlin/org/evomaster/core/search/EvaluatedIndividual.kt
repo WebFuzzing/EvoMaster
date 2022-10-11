@@ -410,8 +410,15 @@ class EvaluatedIndividual<T>(
 
             //handle removed
             if (mutatedGenes.getRemoved(true).isNotEmpty()) { //delete an action
-                impactInfo!!.deleteFixedActionGeneImpacts(
-                    actionIndex = mutatedGenes.getRemoved(true).mapNotNull { it.actionPosition }.toSet()
+                val fixedIndexed = mutatedGenes.getRemoved(true).filter { it.actionPosition != null && it.actionPosition > 0 }.map { it.actionPosition!! }.toSet()
+                impactInfo!!.deleteFixedActionGeneImpacts(fixedIndexed)
+
+                val dynamicLocalIds = mutatedGenes.getRemoved(true)
+                    .filter { it.actionPosition == null || it.actionPosition < 0 }
+                    .map { it.localId ?:throw IllegalStateException("the mutated info is lack of position and local id") }.toSet()
+
+                impactInfo.deleteDynamicActionGeneImpacts(
+                    dynamicLocalIds
                 )
             }
 

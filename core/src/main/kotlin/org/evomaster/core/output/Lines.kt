@@ -15,13 +15,18 @@ class Lines {
         private set
 
     //TODO what about C#???
-    fun shouldUseSemicolon(format: OutputFormat) = format.isJava() || format.isJavaScript()
+    fun shouldUseSemicolon(format: OutputFormat) = format.isJava() || format.isJavaScript() || format.isCsharp()
 
     fun appendSemicolon(format: OutputFormat) {
 
         if (shouldUseSemicolon(format)) {
             append(";")
         }
+    }
+
+    fun addStatement(statement: String, format: OutputFormat) {
+        add(statement)
+        appendSemicolon(format)
     }
 
     fun block(indentention: Int = 1, expression: () -> Any){
