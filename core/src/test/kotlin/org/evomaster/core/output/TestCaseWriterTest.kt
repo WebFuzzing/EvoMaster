@@ -2,6 +2,7 @@ package org.evomaster.core.output
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionGeneBuilder
 import org.evomaster.core.database.DbActionResult
@@ -116,7 +117,7 @@ class TestCaseWriterTest {
         val restActions = emptyList<RestCallAction>().toMutableList()
 
         val individual = RestIndividual(restActions, sampleType, dbInitialization)
-        individual.doInitialize()
+        TestUtils.doInitializeIndividualForTesting(individual)
 
         val fitnessVal = FitnessValue(0.0)
 
@@ -948,7 +949,8 @@ class TestCaseWriterTest {
         val action = RestCallAction("1", HttpVerb.GET, RestPath(""), mutableListOf())
         val restActions = listOf(action).toMutableList()
         val individual = RestIndividual(restActions, sampleType)
-        individual.doInitialize()
+        TestUtils.doInitializeIndividualForTesting(individual)
+
         val fitnessVal = FitnessValue(0.0)
         val result = RestCallResult()
         result.setTimedout(timedout = true)

@@ -5,12 +5,12 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.ManipulatedOneMaxModule
 import org.evomaster.core.search.algorithms.onemax.ManipulatedOneMaxMutator
 import org.evomaster.core.search.algorithms.onemax.OneMaxFitness
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.service.Archive
-import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
@@ -38,7 +38,7 @@ class FitnessSubsumeTest {
     fun currentCoverOneMoreTargets(){
         val n = 10
         val current = OneMaxIndividual(n)
-        current.doInitialize()
+        TestUtils.doInitializeIndividualForTesting(current)
         (0 until n).forEach {
             current.setValue(it, 0.25)
         }
@@ -53,7 +53,7 @@ class FitnessSubsumeTest {
     fun currentReachBetter(){
         val n = 10
         val current = OneMaxIndividual(n)
-        current.doInitialize()
+        TestUtils.doInitializeIndividualForTesting(current)
         (0 until n).forEach {
             current.setValue(it, 0.75)
         }
@@ -69,7 +69,7 @@ class FitnessSubsumeTest {
     fun mutatedReachBetter(){
         val n = 10
         val current = OneMaxIndividual(n)
-        current.doInitialize()
+        TestUtils.doInitializeIndividualForTesting(current)
         (0 until n).forEach {
             current.setValue(it, 0.5)
         }
@@ -94,7 +94,7 @@ class FitnessSubsumeTest {
     fun mutatedCoverOneMoreTarget(){
         val n = 10
         val current = OneMaxIndividual(n)
-        current.doInitialize()
+        TestUtils.doInitializeIndividualForTesting(current)
         (1 until n).forEach {
             current.setValue(it, 0.5)
         }

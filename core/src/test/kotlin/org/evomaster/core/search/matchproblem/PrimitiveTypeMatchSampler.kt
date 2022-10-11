@@ -13,6 +13,7 @@ class PrimitiveTypeMatchSampler: Sampler<PrimitiveTypeMatchIndividual>() {
         val action = (template?.seeAllActions()?.get(0)?.copy() ?: throw IllegalArgumentException("there is no action")) as PrimitiveTypeMatchAction
         val ind = PrimitiveTypeMatchIndividual(action)
         ind.doInitialize(randomness)
+        ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
 }
