@@ -64,10 +64,18 @@ abstract class StructuralElement (
     fun hasLocalId() = localId != NONE_LOCAL_ID
 
     /**
-     * reset local id of the action
+     * reset local id of this structural element
      */
     fun resetLocalId() {
         localId = NONE_LOCAL_ID
+    }
+
+    /**
+     * reset local if of this structural element and its children
+     */
+    fun resetLocalIdRecursively(){
+        resetLocalId()
+        children.forEach(StructuralElement::resetLocalIdRecursively)
     }
 
     fun getLocalId() = localId
