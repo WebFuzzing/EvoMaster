@@ -139,11 +139,14 @@ class WMHttpsTest {
             at okhttp3.internal.connection.RealConnection.connectTls(RealConnection.kt:379)
 
          */
-        assertThrows<IOException> {
+        assertThrows<Exception> {
             client.newCall(request).execute()
         }
 
-        assertThrows<SSLException> {
+        assertThrows<Exception> {
+            /*
+                it is SSLException on my windows, but SocketException on Andrea's windows and CI
+             */
             client.newCall(request).execute()
         }
 
