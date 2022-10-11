@@ -52,6 +52,8 @@ class BodyParam(gene: Gene,
 
         contenTypeGene = EnumGene(typeGene.name, options, typeGene.index)
         if(typeGene.initialized) contenTypeGene.markAllAsInitialized()
+        // local id of typeGene needs to be assigned for the newly created contenTypeGene since it is from copy
+        if (typeGene.hasLocalId()) contenTypeGene.setLocalId(typeGene.getLocalId())
         addChild(contenTypeGene)
     }
 

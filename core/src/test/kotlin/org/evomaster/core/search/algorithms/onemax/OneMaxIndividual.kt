@@ -31,9 +31,9 @@ class OneMaxIndividual(
 
     private fun getAction() = children[0] as OneMaxAction
 
-    fun initialize(rand: Randomness? = null){
-        children.forEach{a -> (a as Action).doInitialize(rand)}
-    }
+//    fun initialize(rand: Randomness? = null){
+//        children.forEach{a -> (a as Action).doInitialize(rand)}
+//    }
 
     fun resetAllToZero(){
         (0 until size()).forEach {

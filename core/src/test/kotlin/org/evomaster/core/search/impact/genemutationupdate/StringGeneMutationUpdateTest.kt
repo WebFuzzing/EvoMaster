@@ -7,6 +7,7 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.gene.string.StringGene
@@ -109,7 +110,7 @@ class StringGeneMutationUpdateTest {
         val history = mutableListOf<EvaluatedIndividual<PrimitiveTypeMatchIndividual>>()
         specified.forEach {
             val ind = template.copy() as PrimitiveTypeMatchIndividual
-            ind.doInitialize(Randomness().apply { updateSeed(42) })
+            TestUtils.doInitializeIndividualForTesting(ind, Randomness().apply { updateSeed(42) })
             (ind.gene as StringGene).value = it
             val eval = ff.calculateCoverage(ind, archive.notCoveredTargets())
             assertNotNull(eval)

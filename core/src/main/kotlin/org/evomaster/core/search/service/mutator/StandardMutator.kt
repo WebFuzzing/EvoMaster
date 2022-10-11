@@ -161,7 +161,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 if (update != null) {
                     a.killChildren { it is BodyParam }
                     a.killChildren { it is UpdateForBodyParam }
-                    a.addChild(update.body)
+                    val copy = update.body
+                    copy.resetLocalIdRecursively()
+                    a.addChild(copy)
                 }
             }
 
