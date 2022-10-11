@@ -44,8 +44,6 @@ class WMHttpsTest {
             }
         )
 
-        val sc: SSLContext = SSLContext.getInstance("SSL")
-
         private val wm = WireMockServer(
             wireMockConfig()
                 .httpsPort(8443)
@@ -79,7 +77,7 @@ class WMHttpsTest {
 
     @Test
     fun testUrlConnectionHttps(){
-
+        val sc = SSLContext.getInstance("SSL")
         sc.init(null, trustAllCerts, SecureRandom())
 
         HttpsURLConnection.setDefaultSSLSocketFactory(sc.socketFactory)
@@ -94,6 +92,7 @@ class WMHttpsTest {
 
     @Test
     fun testOkClientHttps(){
+        val sc = SSLContext.getInstance("SSL")
 
         /*
             somehow, the okHttpClient only works with Standalone jar (see https://wiremock.org/docs/running-standalone/)
