@@ -507,4 +507,42 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                 throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
         }
     }
+
+    /**
+     * @return Initializing actions with its relative index
+     * note that relative index indicates the index in terms of [seeInitializingActions()]
+     */
+    fun getRelativeIndexedInitActions() : List<Pair<Action, Int>>{
+        return seeInitializingActions().mapIndexed { index, action -> action to index }
+    }
+
+    /**
+     * @return non-init actions with its relative index
+     * note that relative index indicates the index in terms of [seeFixedMainActions()]
+     */
+    fun getRelativeIndexedNonInitAction() : List<Pair<Action, Int?>>{
+        return seeActions(ActionFilter.NO_INIT).map {
+            if (seeFixedMainActions().contains(it))
+                it to seeFixedMainActions().indexOf(it)
+            else
+                it to null
+        }
+    }
+
+    /**
+     * @return given [actions] with its relative index
+     * note that relative index indicates the index in terms of [seeFixedMainActions()] and [seeInitializingActions]
+     */
+    fun getRelativeInitAndFixedMainIndex(actions: List<Action>) : List<Pair<Action, Int?>>{
+        return actions.map {
+            if (seeInitializingActions().contains(it))
+                it to seeInitializingActions().indexOf(it)
+            else if (seeFixedMainActions().contains(it))
+                it to seeFixedMainActions().indexOf(it)
+            else if (seeDynamicMainActions().contains(it))
+                it to null
+            else
+                throw IllegalStateException("cannot find the action (name: ${it.getName()}) in this individual")
+        }
+    }
 }
