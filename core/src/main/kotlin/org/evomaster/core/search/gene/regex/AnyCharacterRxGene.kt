@@ -37,6 +37,13 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
         return copy
     }
 
+    override fun setValueWithRawString(value: String) {
+        // need to check
+        val c = value.toCharArray().firstOrNull()
+        if (c!= null)
+            this.value = c
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         //TODO properly... this is just a tmp hack
         value = randomness.nextWordChar()
