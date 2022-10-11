@@ -321,13 +321,18 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaOrKotlin()) {
+
+            addImport("java.util.List", lines)
+            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
+            addImport("org.evomaster.client.java.controller.SutHandler", lines)
+
             if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)
                 addImport("io.restassured.RestAssured.given", lines, true)
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (config.isEnabledExternalServiceMocking()) {
+            if (config.isEnabledExternalServiceMocking() && solution.hasAnyActiveHttpExternalServiceAction()) {
                 if (format.isKotlin()) {
                     addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
                 } else if (format.isJava()) {
@@ -342,12 +347,12 @@ class TestSuiteWriter {
                 addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
             }
 
-            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
-            addImport("org.evomaster.client.java.controller.SutHandler", lines)
-            addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
-            addImport("org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto", lines)
-            addImport(InsertionDto::class.qualifiedName!!, lines)
-            addImport("java.util.List", lines)
+
+            if(solution.hasAnySqlAction()) {
+                addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto", lines)
+                addImport(InsertionDto::class.qualifiedName!!, lines)
+            }
 
 
             // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
@@ -364,7 +369,6 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
             }
-
 
             if (config.expectationsActive) {
                 addImport(
@@ -475,7 +479,7 @@ class TestSuiteWriter {
             if (config.isEnabledExternalServiceMocking()) {
                 wireMockServers
                     .forEach { action ->
-                        addStatement("private static WireMockServer ${getWireMockVariableName(action)};", lines)
+                        addStatement("private static WireMockServer ${getWireMockVariableName(action)}", lines)
                     }
             }
         } else if (config.outputFormat.isKotlin()) {
@@ -575,7 +579,7 @@ class TestSuiteWriter {
                 }
             }
 
-            if (config.problemType != EMConfig.ProblemType.RPC) {
+            if (config.problemType == EMConfig.ProblemType.REST || config.problemType == EMConfig.ProblemType.GRAPHQL) {
                 if (format.isJavaOrKotlin()) {
                     addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
                     addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
@@ -588,7 +592,7 @@ class TestSuiteWriter {
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
                     }
-                    appendSemicolon(lines)
+                    lines.appendSemicolon(config.outputFormat)
                 }
             }
 
@@ -668,7 +672,10 @@ class TestSuiteWriter {
                     }
                     else -> {
                         addStatement("$controller.stopSut()", lines)
-                        if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking()) {
+                        if (format.isJavaOrKotlin()
+                            && config.isEnabledExternalServiceMocking()
+                            && solution.hasAnyActiveHttpExternalServiceAction()
+                        ) {
                             getWireMockServerActions(solution)
                                 .forEach { action ->
                                     addStatement("${getWireMockVariableName(action)}.stop()", lines)
@@ -823,14 +830,7 @@ class TestSuiteWriter {
     }
 
     private fun addStatement(statement: String, lines: Lines) {
-        lines.add(statement)
-        appendSemicolon(lines)
-    }
-
-    private fun appendSemicolon(lines: Lines) {
-        if (config.outputFormat.let { it.isJava() || it.isJavaScript() || it.isCsharp() }) {
-            lines.append(";")
-        }
+        lines.addStatement(statement,config.outputFormat)
     }
 
 
