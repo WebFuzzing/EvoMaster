@@ -67,11 +67,7 @@ object BindingBuilder {
     fun bindParamsInRestAction(restAction: RestCallAction, doBuildBindingGene: Boolean = false, randomness: Randomness?){
         val pairs = buildBindingPairsInRestAction(restAction, randomness)
         pairs.forEach {
-            val ok = it.first.bindValueBasedOn(it.second)
-            if (ok && doBuildBindingGene){
-                it.first.addBindingGene(it.second)
-                it.second.addBindingGene(it.first)
-            }
+            bindValues(it, doBuildBindingGene)
         }
     }
 
@@ -107,22 +103,27 @@ object BindingBuilder {
     fun bindRestAction(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, doBuildBindingGene: Boolean = false, randomness: Randomness?): Boolean{
         val pairs = buildBindBetweenParams(target, targetPath, sourcePath, params, false, randomness)
         pairs.forEach { p->
-            val ok = p.first.bindValueBasedOn(p.second)
-            if (ok && doBuildBindingGene){
-                p.first.addBindingGene(p.second)
-                p.second.addBindingGene(p.first)
-            }
-            if(!doBuildBindingGene && p.first is StringGene && TaintInputName.isTaintInput((p.first as StringGene).value)){
-                //do not use same tainted value in non-bound genes
-                if(p.second is StringGene){
-                    (p.second as StringGene).value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-                } else {
-                    //can this happen?
-                    log.warn("Possible issue in dealing with uniqueness of tainted values. Gene type: ${p.second.javaClass}")
-                }
-            }
+            bindValues(p, doBuildBindingGene)
         }
         return pairs.isNotEmpty()
+    }
+
+    private fun bindValues(p: Pair<Gene,Gene>, doBuildBindingGene: Boolean){
+        val ok = p.first.bindValueBasedOn(p.second)
+        if (ok && doBuildBindingGene){
+            p.first.addBindingGene(p.second)
+            p.second.addBindingGene(p.first)
+        }
+        if(!doBuildBindingGene && p.first is StringGene && TaintInputName.isTaintInput((p.first as StringGene).value)){
+            //do not use same tainted value in non-bound genes
+            if(p.second is StringGene){
+                (p.second as StringGene).value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+            } else {
+                //can this happen?
+                log.warn("Possible issue in dealing with uniqueness of tainted values. Gene type: ${p.second.javaClass}")
+            }
+        }
+
     }
 
     /**
@@ -142,11 +143,7 @@ object BindingBuilder {
                             dbRemovedDueToRepair : Boolean,
                             doBuildBindingGene: Boolean){
         buildBindRestActionBasedOnDbActions(restAction, restNode, paramGeneBindMap, dbActions, forceBindParamBasedOnDB, dbRemovedDueToRepair).forEach { p->
-            val ok = p.first.bindValueBasedOn(p.second)
-            if (ok && doBuildBindingGene){
-                p.first.addBindingGene(p.second)
-                p.second.addBindingGene(p.first)
-            }
+            bindValues(p, doBuildBindingGene)
         }
     }
 
