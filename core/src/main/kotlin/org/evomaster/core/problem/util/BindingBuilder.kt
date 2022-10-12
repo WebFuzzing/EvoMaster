@@ -1,7 +1,9 @@
 package org.evomaster.core.problem.util
 
 import com.google.common.annotations.VisibleForTesting
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
@@ -109,6 +111,15 @@ object BindingBuilder {
             if (ok && doBuildBindingGene){
                 p.first.addBindingGene(p.second)
                 p.second.addBindingGene(p.first)
+            }
+            if(!doBuildBindingGene && p.first is StringGene && TaintInputName.isTaintInput((p.first as StringGene).value)){
+                //do not use same tainted value in non-bound genes
+                if(p.second is StringGene){
+                    (p.second as StringGene).value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+                } else {
+                    //can this happen?
+                    log.warn("Possible issue in dealing with uniqueness of tainted values. Gene type: ${p.second.javaClass}")
+                }
             }
         }
         return pairs.isNotEmpty()
