@@ -327,7 +327,7 @@ class RPCEndpointsHandler {
 
         val actionKey = actionName(rpcActionDto.interfaceId, rpcActionDto.actionName)
 
-        rpcActionDto.mockRPCExternalServiceDtos.forEach { dto->
+        rpcActionDto.mockRPCExternalServiceDtos?.forEach { dto->
 
             if (dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
                 throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
@@ -506,7 +506,7 @@ class RPCEndpointsHandler {
         }.toMap()
 
         problem.schemas.forEach { i->
-            i.types.plus(i.identifiedResponseTypes).sortedBy { it.type.depth }
+            i.types.plus(i.identifiedResponseTypes?: listOf()).sortedBy { it.type.depth }
                 .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
                 buildTypeCache(t)
             }
@@ -554,7 +554,7 @@ class RPCEndpointsHandler {
         setAuthInfo(infoDto)
 
         // handle seeded test dto
-        infoDto.rpcProblem.seededTestDtos.forEach { t->
+        infoDto.rpcProblem.seededTestDtos?.forEach { t->
             t.forEach { a->
                 extractRPCExternalServiceAction(infoDto, a)
             }
@@ -618,16 +618,16 @@ class RPCEndpointsHandler {
 
     fun getJVMSchemaForDto(names: Set<String>): Map<String, Gene> {
 
-        if (names.any { !infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(it)}) {
+        if (names.any { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it) == false} ) {
             infoDto = remoteController.getSutInfo()!!
 
-        names.filter { !infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(it) }.run {
+        names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == false}.run {
             if (isNotEmpty())
                 LoggingUtil.uniqueWarn(log, "cannot extract schema for dtos (ie, ${this.joinToString(",")}) in the SUT driver and instrumentation agent")
             }
         }
 
-        return names.filter { infoDto.unitsInfoDto.extractedSpecifiedDtos.containsKey(it) }.associateWith { name ->
+        return names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == true}.associateWith { name ->
             val schema = infoDto.unitsInfoDto.extractedSpecifiedDtos[name]!!
             RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
         }

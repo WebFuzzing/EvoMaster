@@ -50,6 +50,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -1033,9 +1034,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 distinct might be a bit expensive, however, the specified responses are probably limited
              */
             List<String> dtoNames = seedRPCTests().stream()
-                    .flatMap(s-> s.rpcFunctions.stream()
-                            .flatMap(f-> f.mockRPCExternalServiceDtos.stream()
-                                    .flatMap(e-> e.responseTypes.stream())))
+                    .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
+                            .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
+                                    .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream())))
                     .distinct().collect(Collectors.toList());
             getJvmDtoSchema(dtoNames);
         }
