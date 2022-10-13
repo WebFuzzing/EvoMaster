@@ -72,6 +72,8 @@ public class AdditionalInfo implements Serializable {
      */
     private final Set<ExternalServiceInfo> externalServices = new CopyOnWriteArraySet<>();
 
+    private final Set<ExternalServiceInfo> employDefaultWM = new CopyOnWriteArraySet<>();
+
     /**
      * In case we pop all elements from stack, keep track of last one separately.
      */
@@ -242,6 +244,14 @@ public class AdditionalInfo implements Serializable {
 
     public Set<ExternalServiceInfo> getExternalServices() {
         return Collections.unmodifiableSet(externalServices);
+    }
+
+    public void addEmployedDefaultWM(ExternalServiceInfo hostInfo) {
+        employDefaultWM.add(hostInfo);
+    }
+
+    public Set<ExternalServiceInfo> getEmployedDefaultWM() {
+        return Collections.unmodifiableSet(employDefaultWM);
     }
 
 }

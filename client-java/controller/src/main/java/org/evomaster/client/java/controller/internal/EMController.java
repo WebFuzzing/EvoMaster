@@ -507,7 +507,13 @@ public class EMController {
                                     es.getRemotePort()
                             ))
                             .collect(Collectors.toList());
-
+                    info.employedDefaultWM = a.getEmployedDefaultWM().stream().map(
+                            des -> new ExternalServiceInfoDto(
+                                    des.getProtocol(),
+                                    des.getHostname(),
+                                    des.getRemotePort()
+                            )
+                    ).collect(Collectors.toList());
                     info.stringSpecializations = new LinkedHashMap<>();
                     for (Map.Entry<String, Set<StringSpecializationInfo>> entry :
                             a.getStringSpecializationsView().entrySet()) {

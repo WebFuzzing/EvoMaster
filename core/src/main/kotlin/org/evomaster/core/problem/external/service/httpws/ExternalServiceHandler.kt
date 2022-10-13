@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.generateRandomIPAddress
@@ -14,6 +15,7 @@ import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.n
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
 
 /**
  * To manage the external service related activities
@@ -51,6 +53,7 @@ class ExternalServiceHandler {
      */
     private val externalServices: MutableMap<String, ExternalService> = mutableMapOf()
 
+
     /**
      * Contains last used loopback address for reference when creating
      * a new address
@@ -58,6 +61,31 @@ class ExternalServiceHandler {
     private var lastIPAddress: String = ""
 
     private var counter: Long = 0
+
+    private var isDefaultInitialized = false
+
+    /*
+       cannot preform the init in postconstruct
+       an exception thrown from evomaster insturmentation
+     */
+    @PostConstruct
+    fun initialize() {
+        log.debug("Initializing {}", ExternalServiceHandler::class.simpleName)
+        initDefaultWM()
+    }
+
+    /**
+     * init default WM
+     */
+    private fun initDefaultWM(){
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE){
+            if (!isDefaultInitialized){
+//                registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps(DEFAULT_WM_HTTPS_PORT))
+                registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
+                isDefaultInitialized = true
+            }
+        }
+    }
 
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
@@ -67,13 +95,16 @@ class ExternalServiceHandler {
      */
     fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (!externalServices.containsKey(externalServiceInfo.signature())) {
-                val ip = getIP(externalServiceInfo.remotePort)
-                lastIPAddress = ip
-                val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo)
+            registerHttpExternalServiceInfo(externalServiceInfo)
+        }
+    }
 
-                externalServices[externalServiceInfo.signature()] = ExternalService(externalServiceInfo, wm)
-            }
+    private fun registerHttpExternalServiceInfo(externalServiceInfo : HttpExternalServiceInfo){
+        if (!externalServices.containsKey(externalServiceInfo.signature())) {
+            val ip = getIP(externalServiceInfo.remotePort)
+            lastIPAddress = ip
+            val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo)
+            externalServices[externalServiceInfo.signature()] = ExternalService(externalServiceInfo, wm)
         }
     }
 
@@ -155,7 +186,7 @@ class ExternalServiceHandler {
      */
     fun getAllServedExternalServiceRequests(): List<HttpExternalServiceRequest> {
         val output: MutableList<HttpExternalServiceRequest> = mutableListOf()
-        externalServices.forEach { (_, u) ->
+        externalServices.filter { !isDefaultSignature(it.key) }.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
                 output.add(it)
             }

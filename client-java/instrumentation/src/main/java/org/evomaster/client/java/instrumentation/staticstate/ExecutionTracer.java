@@ -614,6 +614,13 @@ public class ExecutionTracer {
     }
 
     /**
+     * track what host is used the default WM
+     */
+    public static void addEmployedDefaultWMHost(ExternalServiceInfo hostInfo) {
+        getCurrentAdditionalInfo().addEmployedDefaultWM(hostInfo);
+    }
+
+    /**
      * Return the WireMock IP if there is a mapping for the hostname. If there is
      * no mapping NULL will be returned
      */
