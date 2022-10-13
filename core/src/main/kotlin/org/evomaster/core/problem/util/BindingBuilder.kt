@@ -114,7 +114,7 @@ object BindingBuilder {
             p.first.addBindingGene(p.second)
             p.second.addBindingGene(p.first)
         }
-        if(!doBuildBindingGene && p.first is StringGene && TaintInputName.isTaintInput((p.first as StringGene).value)){
+        if(ok && !doBuildBindingGene && p.first is StringGene && TaintInputName.isTaintInput((p.first as StringGene).value)){
             //do not use same tainted value in non-bound genes
             if(p.second is StringGene){
                 (p.second as StringGene).value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
