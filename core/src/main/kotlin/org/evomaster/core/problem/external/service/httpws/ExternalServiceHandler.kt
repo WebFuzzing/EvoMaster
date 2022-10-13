@@ -80,7 +80,7 @@ class ExternalServiceHandler {
     private fun initDefaultWM(){
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE){
             if (!isDefaultInitialized){
-//                registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps(DEFAULT_WM_HTTPS_PORT))
+                registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
                 isDefaultInitialized = true
             }
