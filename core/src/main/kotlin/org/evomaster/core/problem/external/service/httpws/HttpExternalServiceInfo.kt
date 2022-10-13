@@ -1,8 +1,6 @@
 package org.evomaster.core.problem.external.service.httpws
 
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
-import java.math.BigInteger
-import java.security.MessageDigest
 
 
 class HttpExternalServiceInfo(
@@ -48,4 +46,10 @@ class HttpExternalServiceInfo(
         result = 31 * result + remotePort
         return result
     }
+
+    fun isHttps() = protocol.equals("https", ignoreCase = true)
+
+    fun isHttp() = protocol.equals("http", ignoreCase = true)
+
+    fun isDerivedHttps() = remotePort == 443 || remotePort == 8443
 }

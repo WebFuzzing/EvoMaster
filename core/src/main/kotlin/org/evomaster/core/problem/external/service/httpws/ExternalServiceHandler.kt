@@ -6,11 +6,14 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isReservedIP
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.nextIPAddress
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * To manage the external service related activities
@@ -20,6 +23,9 @@ class ExternalServiceHandler {
     companion object {
         const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
         const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
+
+        private val log: Logger = LoggerFactory.getLogger(ExternalServiceHandler::class.java)
+
     }
 
     /**
@@ -64,7 +70,7 @@ class ExternalServiceHandler {
             if (!externalServices.containsKey(externalServiceInfo.signature())) {
                 val ip = getIP(externalServiceInfo.remotePort)
                 lastIPAddress = ip
-                val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
+                val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo)
 
                 externalServices[externalServiceInfo.signature()] = ExternalService(externalServiceInfo, wm)
             }
@@ -204,21 +210,34 @@ class ExternalServiceHandler {
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
      */
-    private fun initWireMockServer(address: String, port: Int): WireMockServer {
+    private fun initWireMockServer(address: String, info: HttpExternalServiceInfo): WireMockServer {
+        val port = info.remotePort
+
         // TODO: Port need to be changed to the remote service port
         //  In CI also using remote ports as 80 and 443 fails
-        val wm = WireMockServer(
-            WireMockConfiguration()
-                .bindAddress(address)
-                .port(port)
-                .extensions(ResponseTemplateTransformer(false))
-        )
+        val config =  WireMockConfiguration()
+            .bindAddress(address)
+            .extensions(ResponseTemplateTransformer(false))
+
+        if (!info.isHttp() && !info.isHttps())
+            LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($address)")
+        val applyHttps = info.isHttps() || (!info.isHttp() && info.isDerivedHttps())
+
+        if (applyHttps){
+            config.httpsPort(port)
+        }else {
+            config.port(port)
+        }
+
+        val wm = WireMockServer(config)
         wm.start()
 
         wireMockSetDefaults(wm)
 
         return wm
     }
+
+
 
     /**
      * To prevent from the 404 when no matching stub below stub is added
