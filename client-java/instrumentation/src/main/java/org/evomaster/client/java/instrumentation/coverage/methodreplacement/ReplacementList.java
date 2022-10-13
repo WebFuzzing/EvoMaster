@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.*;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses.*;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -97,6 +98,15 @@ public class ReplacementList {
                     */
 
 //                            boolean jdk = targetClassName.startsWith("java.");
+
+                    if(targetClassName.equals("java.lang.Module")){
+                        return false;
+                        //this for sure will fail on JDK 8 when using WireMock.
+                        // might need more check if it happens for other classes as well
+                        // See try/catch below here
+                        // Note: the if statement here is just to avoid flooding the logs...
+                    }
+
                             //TODO based on actual packages used in the list
                             Set<String> prefixes = new HashSet<>();
                             prefixes.add("java.lang.");
@@ -118,7 +128,16 @@ public class ReplacementList {
                                 try {
                                     klass = Class.forName(targetClassName);
                                 } catch (Exception e) {
-                                    throw new RuntimeException(e);
+                                    /*
+                                        This can, and does happen, when libraries refer to classes after JDK 8,
+                                        and have internal logic to do not crash when running on JDK 8.
+                                        This is the case for WireMock trying to load java.lang.Module, by first
+                                        checking the JDK version.
+                                        But this does not work here when loading the classes directly
+                                     */
+                                    SimpleLogger.warn("Cannot load JDK class " + targetClassName);
+                                    //throw new RuntimeException(e);
+                                    return false;
                                 }
                                 return t.getTargetClass().isAssignableFrom(klass);
                             }
