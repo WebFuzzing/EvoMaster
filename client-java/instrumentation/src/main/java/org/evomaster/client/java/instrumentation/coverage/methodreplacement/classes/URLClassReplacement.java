@@ -6,10 +6,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Meth
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
-import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -141,17 +138,24 @@ public class URLClassReplacement implements MethodReplacementClass {
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(protocol, caller.getHost(), port);
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
-            if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-                String ip  = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
-
-                // Usage of ports below 1024 require root privileges to run
-                String url = "http://" + ip + ":" + caller.getPort() + caller.getPath();
-
-                URL newURL = new URL(url);
-                return newURL.openConnection();
+            String signature  = remoteHostInfo.signature();
+            int connectPort = caller.getPort();
+            if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
+                ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
+                signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), port);
+                connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
             }
-        }
 
+            String ip = ExecutionTracer.getExternalMapping(signature);
+
+            // Usage of ports below 1024 require root privileges to run
+            String url = caller.getProtocol()+"://" + ip + ":" + connectPort + caller.getPath();
+
+            URL newURL = new URL(url);
+            return newURL.openConnection();
+        }
+        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
+            SimpleLogger.uniqueWarn("not handle the protocol with:"+caller.getProtocol());
         return caller.openConnection();
     }
 }
