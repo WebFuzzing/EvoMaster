@@ -40,10 +40,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
     ): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
-        /*
-            later move it to [FitnessFunction.calculateCoverage]
-         */
-//        externalServiceHandler.initDefaultWM()
+
 
         /*
             there might some dbaction between rest actions.
