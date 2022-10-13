@@ -316,6 +316,8 @@ object TaintAnalysis {
                 // any kind of string...
                 // also if genes are bound, then of course going to be more than 2...
                 log.warn("More than 2 gens have the taint '{}'", taintedInput)
+                //FIXME possible bug in binding handling.
+                //assert(false)
             }
             genes.forEach { it.addSpecializations(taintedInput, specializations, randomness) }
         }
