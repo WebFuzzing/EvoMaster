@@ -1,11 +1,13 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.ExternalServiceInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.problem.external.service.httpws.ExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.Action
@@ -93,6 +95,22 @@ abstract class TestCaseWriter {
         return lines
     }
 
+    protected fun handleDnsForExternalServiceActions(lines: Lines, actions: List<HttpExternalServiceAction>, exToWM: Map<String, ExternalService>?) : Boolean{
+        var any = false
+        exToWM?.forEach {
+            lines.add("DnsCacheManipulator.setDnsCache(\"${it.key}\", \"${it.value.getWireMockAddress()}\")")
+            lines.appendSemicolon(format)
+            any = true
+        }
+
+        actions.forEach {action->
+            lines.add("DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${action.externalService.getWireMockAddress()}\")")
+            lines.appendSemicolon(format)
+            any = true
+        }
+        return any
+    }
+
     protected fun handleExternalServiceActions(
         lines: Lines,
         actions: List<HttpExternalServiceAction>
@@ -105,7 +123,7 @@ abstract class TestCaseWriter {
             .filter { it.active }
             .forEachIndexed { index, action ->
                 val response = action.response as HttpWsResponseParam
-                val name = getWireMockVariableName(action)
+                val name = getWireMockVariableName(action.externalService)
 
                 // Default behaviour of WireMock has been removed, since found no purpose
                 // in case if there is a failure regarding no routes found in WireMock

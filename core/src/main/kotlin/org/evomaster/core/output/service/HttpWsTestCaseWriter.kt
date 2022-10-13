@@ -14,6 +14,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
@@ -209,12 +210,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     protected fun handleSingleCall(
         evaluatedAction: EvaluatedAction,
+        index: Int,
+        fv : FitnessValue,
         lines: Lines,
         baseUrlOfSut: String
     ) {
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
-
+        var anyDnsCache = false
         // add all used external service actions for the action
         if (config.isEnabledExternalServiceMocking()) {
             if (evaluatedAction.action.parent !is EnterpriseActionGroup)
@@ -223,6 +226,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             exActions.addAll(
                 group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active })
+            if (format.isJavaOrKotlin())
+                anyDnsCache = handleDnsForExternalServiceActions(lines, exActions, fv.getViewExternalRequestToDefaultWMByAction(index))
+
             if (exActions.isNotEmpty()) {
                 if (format.isJavaOrKotlin()) {
                     handleExternalServiceActions(lines, exActions)
@@ -252,10 +258,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 exActions
                     .distinctBy { it.externalService.getSignature() }
                     .forEach { action ->
-                        lines.add("${TestWriterUtils.getWireMockVariableName(action)}.resetAll()")
+                        lines.add("${TestWriterUtils.getWireMockVariableName(action.externalService)}.resetAll()")
                         lines.appendSemicolon(format)
                     }
             }
+        }
+        if (anyDnsCache){
+            lines.add("DnsCacheManipulator.clearDnsCache()")
+            lines.appendSemicolon(format)
         }
     }
 

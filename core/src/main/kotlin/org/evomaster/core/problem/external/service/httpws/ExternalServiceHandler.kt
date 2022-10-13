@@ -26,6 +26,9 @@ class ExternalServiceHandler {
         const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
         const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
 
+        const val DEFAULT_WIREMOCK_RESPONSE_CODE = 500
+        const val DEFAULT_WIREMOCK_RESPONSE_MESSAGE = "Internal Error (EM Default)"
+
         private val log: Logger = LoggerFactory.getLogger(ExternalServiceHandler::class.java)
 
     }
@@ -185,13 +188,14 @@ class ExternalServiceHandler {
      * as [HttpExternalServiceRequest]
      */
     fun getAllServedExternalServiceRequests(): List<HttpExternalServiceRequest> {
-        val output: MutableList<HttpExternalServiceRequest> = mutableListOf()
-        externalServices.filter { !isDefaultSignature(it.key) }.forEach { (_, u) ->
-            u.getAllServedRequests().forEach {
-                output.add(it)
-            }
-        }
-        return output
+        return externalServices.values.filter { !isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
+    }
+
+    /**
+     * @return a list of the served requests to the default WM
+     */
+    fun getAllServedRequestsToDefaultWM(): List<HttpExternalServiceRequest> {
+        return externalServices.values.filter { isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
     }
 
     /**
@@ -263,7 +267,7 @@ class ExternalServiceHandler {
         val wm = WireMockServer(config)
         wm.start()
 
-        wireMockSetDefaults(wm)
+        wireMockSetDefaults(wm, info is DefaultHttpExternalServiceInfo)
 
         return wm
     }
@@ -275,14 +279,17 @@ class ExternalServiceHandler {
      * WireMock throws an exception when there is no stub for the request
      * to avoid the exception it handled manually
      */
-    fun wireMockSetDefaults(wireMockServer: WireMockServer) {
+    private fun wireMockSetDefaults(wireMockServer: WireMockServer, isDefaultWM : Boolean) {
+        val code = if (isDefaultWM) DEFAULT_WIREMOCK_RESPONSE_CODE else WIREMOCK_DEFAULT_RESPONSE_CODE
+        val msg = if (isDefaultWM) DEFAULT_WIREMOCK_RESPONSE_MESSAGE else WIREMOCK_DEFAULT_RESPONSE_MESSAGE
+
         wireMockServer.stubFor(
             any(anyUrl())
                 .atPriority(100)
                 .willReturn(
                     aResponse()
-                        .withStatus(WIREMOCK_DEFAULT_RESPONSE_CODE)
-                        .withBody(WIREMOCK_DEFAULT_RESPONSE_MESSAGE)
+                        .withStatus(code)
+                        .withBody(msg)
                 )
         )
     }

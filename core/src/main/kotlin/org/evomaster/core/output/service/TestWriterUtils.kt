@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import org.evomaster.core.problem.external.service.httpws.ExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 
 /**
@@ -12,11 +13,8 @@ class TestWriterUtils {
          * Takes the [HttpExternalServiceAction] and generates a name to use for WireMock
          * server inside generated test cases.
          */
-        fun getWireMockVariableName(action: HttpExternalServiceAction): String {
-            return "wireMock__" + action
-                .externalService
-                .getSignature()
-                .replace(".", "_")
+        fun getWireMockVariableName(externalService: ExternalService): String {
+            return "wireMock__" + externalService.getSignature().replace(".", "_")
         }
     }
 }

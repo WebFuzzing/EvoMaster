@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.external.service.httpws.ExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
@@ -478,8 +479,8 @@ class TestSuiteWriter {
             }
             if (config.isEnabledExternalServiceMocking()) {
                 wireMockServers
-                    .forEach { action ->
-                        addStatement("private static WireMockServer ${getWireMockVariableName(action)}", lines)
+                    .forEach { externalService ->
+                        addStatement("private static WireMockServer ${getWireMockVariableName(externalService)}", lines)
                     }
             }
         } else if (config.outputFormat.isKotlin()) {
@@ -600,14 +601,14 @@ class TestSuiteWriter {
             if (config.isEnabledExternalServiceMocking() && wireMockServers.isNotEmpty()) {
                 if (format.isJavaOrKotlin()) {
                     wireMockServers
-                        .forEach { action ->
-                            val address = action.externalService.getWireMockAddress()
-                            val name = getWireMockVariableName(action)
+                        .forEach { externalService ->
+                            val address = externalService.getWireMockAddress()
+                            val name = getWireMockVariableName(externalService)
 
-                            addStatement(
-                                "DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${address}\")",
-                                lines
-                            )
+//                            addStatement(
+//                                "DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${address}\")",
+//                                lines
+//                            )
 
                             if (format.isJava()) {
                                 lines.add("${name} = new WireMockServer(new WireMockConfiguration()")
@@ -619,7 +620,7 @@ class TestSuiteWriter {
 
                             lines.indented {
                                 lines.add(".bindAddress(\"$address\")")
-                                lines.add(".port(${action.externalService.getWireMockPort()})")
+                                lines.add(".port(${externalService.getWireMockPort()})")
                                 if (format.isJava()) {
                                     addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
                                 }
@@ -737,8 +738,14 @@ class TestSuiteWriter {
                 //TODO add resetDatabase
                 addStatement("$fixture.controller.ResetStateOfSut()", lines)
             }
-        }
 
+            if (format.isJavaOrKotlin()
+                && config.isEnabledExternalServiceMocking()
+                && solution.hasAnyActiveHttpExternalServiceAction()
+            ) {
+                addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+            }
+        }
 
         if (format.isJavaScript()) {
             lines.append(");")
@@ -848,10 +855,16 @@ class TestSuiteWriter {
     /**
      * Returns a distinct List of [HttpExternalServiceAction] from the given solution
      */
-    private fun getWireMockServerActions(solution: Solution<*>): List<HttpExternalServiceAction> {
+    private fun getWireMockServerActions(solution: Solution<*>): List<ExternalService> {
         return solution.individuals.filter { i -> i.individual is RestIndividual }
-            .flatMap { it.individual.seeExternalServiceActions()
-                .filterIsInstance<HttpExternalServiceAction>()
-                .filter { it.active } }.distinctBy { it.externalService.getSignature() }.toList()
+            .flatMap {
+                it.individual.seeExternalServiceActions()
+                    .filterIsInstance<HttpExternalServiceAction>()
+                    .filter { it.active }
+                    .map { it.externalService }
+                    .plus( it.fitness.getViewEmployedDefaultWM())
+            }
+            .distinctBy { it.getSignature() }.toList()
     }
+
 }
