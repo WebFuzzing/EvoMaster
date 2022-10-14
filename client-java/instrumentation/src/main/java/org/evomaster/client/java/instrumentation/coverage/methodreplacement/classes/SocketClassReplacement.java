@@ -7,11 +7,12 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.IOException;
 import java.net.*;
+
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
 
 public class SocketClassReplacement implements MethodReplacementClass {
     @Override
@@ -32,18 +33,9 @@ public class SocketClassReplacement implements MethodReplacementClass {
             if (socketAddress.getAddress() instanceof Inet4Address){
 
                 ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, socketAddress.getHostName(), socketAddress.getPort());
-                ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+                String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, socketAddress.getPort());
 
-                String signature = remoteHostInfo.signature();
-                int port = socketAddress.getPort();
-                if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-                    ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
-                    signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), socketAddress.getPort());
-                    port = ExternalServiceSharedUtils.getDefaultWMPort(signature);
-                }
-                String ip  = ExecutionTracer.getExternalMapping(signature);
-
-                InetSocketAddress replaced = new InetSocketAddress(InetAddress.getByName(ip), port);
+                InetSocketAddress replaced = new InetSocketAddress(InetAddress.getByName(ipAndPort[0]), Integer.getInteger(ipAndPort[1]));
                 caller.connect(replaced, timeout);
                 return;
             }

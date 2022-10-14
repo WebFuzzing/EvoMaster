@@ -13,6 +13,7 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.net.*;
 import java.util.Objects;
 
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils.parseLongHeuristic;
 
 public class URLClassReplacement implements MethodReplacementClass {
@@ -136,20 +137,10 @@ public class URLClassReplacement implements MethodReplacementClass {
                 }
             }
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(protocol, caller.getHost(), port);
-            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-
-            String signature  = remoteHostInfo.signature();
-            int connectPort = caller.getPort();
-            if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-                ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
-                signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), port);
-                connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
-            }
-
-            String ip = ExecutionTracer.getExternalMapping(signature);
+            String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, port);
 
             // Usage of ports below 1024 require root privileges to run
-            String url = caller.getProtocol()+"://" + ip + ":" + connectPort + caller.getPath();
+            String url = caller.getProtocol()+"://" + ipAndPort[0]+":"+ipAndPort[1] + caller.getPath();
 
             URL newURL = new URL(url);
             return newURL.openConnection();

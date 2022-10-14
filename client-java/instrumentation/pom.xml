@@ -85,6 +85,12 @@
             <artifactId>okhttp</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp</groupId>
+            <artifactId>okhttp</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <!--
             But at a certain point we went with full reflection, and scope "test",
             at least for method replacements.

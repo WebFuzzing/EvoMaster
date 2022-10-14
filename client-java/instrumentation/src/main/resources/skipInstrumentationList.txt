@@ -34,3 +34,4 @@ sun.
 org.glassfish.jersey.uri.PatternWithGroups
 org.springframework.web.util.UriTemplate
 okhttp3.
+com.squareup.okhttp.
