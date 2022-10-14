@@ -19,7 +19,7 @@ class WmHttpsSocketConnectEMTest : SpringTestBase() {
 
             val config = EMConfig()
             config.instrumentMR_NET = true
-            initClass(WmSocketConnectController(listOf("/api/wm/socketconnect/string","/api/wm/socketconnect/string")), config)
+            initClass(WmSocketConnectController(listOf("/api/wm/socketconnect/string","/api/wm/socketconnect/object")), config)
 
             /*
             The test fails on CI, but not local with WM 2.32.0
