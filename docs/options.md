@@ -199,6 +199,7 @@ There are 3 types of options:
 |`saveExecutedSQLToFile`| __String__. Specify a path to save all executed sql commands to a file (default is 'sql.txt'). *Default value*: `sql.txt`.|
 |`saveImpactAfterMutation`| __Boolean__. Whether to save impact info after each of mutation, which is typically useful debugging impact driven solutions and mutation. *Default value*: `false`.|
 |`saveMutationInfo`| __Boolean__. Whether to save mutated gene info, which is typically used for debugging mutation. *Default value*: `false`.|
+|`searchPercentageExtraHandling`| __Double__. Percentage [0.0,1.0] of elapsed time in the search while trying to infer any extra query parameter and header. After this time has passed, those attempts stop. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
 |`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|
 |`seedTestCasesFormat`| __Enum__. Format of the test cases seeded to EvoMaster. *Valid values*: `POSTMAN`. *Default value*: `POSTMAN`.|
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|

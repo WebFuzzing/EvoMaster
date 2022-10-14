@@ -4,8 +4,11 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
+import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
 import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.BlackBoxUtils
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
@@ -84,7 +87,7 @@ class TestSuiteWriter {
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
-        if (! config.outputFormat.isJavaScript()) {
+        if (!config.outputFormat.isJavaScript()) {
             /*
                 In Java/Kotlin/C# the tests are inside a class, but not in JS
              */
@@ -98,10 +101,10 @@ class TestSuiteWriter {
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             // TODO skip to sort RPC for the moment
-            if (solution.individuals.any { it.individual is RPCIndividual }){
+            if (solution.individuals.any { it.individual is RPCIndividual }) {
                 var counter = 0
                 solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
-            }else
+            } else
                 testSuiteOrganizer.sortTests(solution, config.customNaming)
         } catch (ex: Exception) {
             var counter = 0
@@ -133,7 +136,7 @@ class TestSuiteWriter {
             lines.add(testLines)
         }
 
-        if (! config.outputFormat.isJavaScript()) {
+        if (!config.outputFormat.isJavaScript()) {
             lines.deindent()
         }
 
@@ -145,17 +148,17 @@ class TestSuiteWriter {
         return lines.toString()
     }
 
-    private fun handleResetDatabaseInput(solution: Solution<*>): String{
+    private fun handleResetDatabaseInput(solution: Solution<*>): String {
         if (!config.outputFormat.isJavaOrKotlin())
-            throw IllegalStateException("DO NOT SUPPORT resetDatabased for "+ config.outputFormat)
+            throw IllegalStateException("DO NOT SUPPORT resetDatabased for " + config.outputFormat)
 
         val accessedTable = mutableSetOf<String>()
-        solution.individuals.forEach { e->
+        solution.individuals.forEach { e ->
             //TODO will need to be refactored when supporting Web Frontend
-            if (e.individual is ApiWsIndividual){
-               accessedTable.addAll(e.individual.getInsertTableNames())
+            if (e.individual is ApiWsIndividual) {
+                accessedTable.addAll(e.individual.getInsertTableNames())
             }
-            e.fitness.databaseExecutions.values.forEach { de->
+            e.fitness.databaseExecutions.values.forEach { de ->
                 accessedTable.addAll(de.insertedData.map { it.key })
                 accessedTable.addAll(de.updatedData.map { it.key })
                 accessedTable.addAll(de.deletedData)
@@ -166,10 +169,10 @@ class TestSuiteWriter {
         if (all.isEmpty()) return "null"
 
         val input = all.joinToString(",") { "\"$it\"" }
-        return when{
+        return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
             config.outputFormat.isKotlin() -> "listOf($input)"
-            else -> throw IllegalStateException("DO NOT SUPPORT resetDatabased for "+ config.outputFormat)
+            else -> throw IllegalStateException("DO NOT SUPPORT resetDatabased for " + config.outputFormat)
         }
     }
 
@@ -318,25 +321,45 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaOrKotlin()) {
-            if (useRestAssured()){
+
+            addImport("java.util.List", lines)
+            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
+            addImport("org.evomaster.client.java.controller.SutHandler", lines)
+
+            if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)
                 addImport("io.restassured.RestAssured.given", lines, true)
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
-            addImport("org.evomaster.client.java.controller.SutHandler", lines)
-            addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
-            addImport("org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto", lines)
-            addImport(InsertionDto::class.qualifiedName!!, lines)
-            addImport("java.util.List", lines)
+            if (config.isEnabledExternalServiceMocking() && solution.hasAnyActiveHttpExternalServiceAction()) {
+                if (format.isKotlin()) {
+                    addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines)
+                } else if (format.isJava()) {
+                    addImport("static com.github.tomakehurst.wiremock.client.WireMock.*", lines)
+                }
+                addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
+                addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
+                addImport(
+                    "com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer",
+                    lines
+                )
+                addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
+            }
+
+
+            if(solution.hasAnySqlAction()) {
+                addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
+                addImport("org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto", lines)
+                addImport(InsertionDto::class.qualifiedName!!, lines)
+            }
 
 
             // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
             if (config.enableBasicAssertions) {
                 addImport("org.hamcrest.Matchers.*", lines, true)
                 //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
-                if (useRestAssured()){
+                if (useRestAssured()) {
                     addImport("io.restassured.config.JsonConfig", lines)
                     addImport("io.restassured.path.json.config.JsonPathConfig", lines)
                     addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
@@ -347,9 +370,12 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
             }
 
-
             if (config.expectationsActive) {
-                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
+                addImport(
+                    "org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler",
+                    lines,
+                    true
+                )
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
 
                 if (useRestAssured())
@@ -364,7 +390,7 @@ class TestSuiteWriter {
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
             }
-            if(config.testTimeout > 0 ) {
+            if (config.testTimeout > 0) {
                 lines.add("jest.setTimeout(${config.testTimeout * 1000});")
             }
         }
@@ -402,36 +428,43 @@ class TestSuiteWriter {
     }
 
     private fun classFields(lines: Lines, format: OutputFormat) {
-        if(format.isCsharp()){
+        if (format.isCsharp()) {
             lines.addEmpty()
             addStatement("private $fixtureClass $fixture", lines)
             lines.addEmpty()
         }
     }
 
-    private fun getJaCoCoInit() : String{
-        if(config.jaCoCoAgentLocation.isNotBlank()){
-            val agent = config.jaCoCoAgentLocation.replace("\\","\\\\")
-            val cli = config.jaCoCoCliLocation.replace("\\","\\\\")
-            val exec = config.jaCoCoOutputFile.replace("\\","\\\\")
+    private fun getJaCoCoInit(): String {
+        if (config.jaCoCoAgentLocation.isNotBlank()) {
+            val agent = config.jaCoCoAgentLocation.replace("\\", "\\\\")
+            val cli = config.jaCoCoCliLocation.replace("\\", "\\\\")
+            val exec = config.jaCoCoOutputFile.replace("\\", "\\\\")
             val port = config.jaCoCoPort
             return ".setJaCoCo(\"$agent\",\"$cli\",\"${exec}\",$port)"
         }
         return ""
     }
 
-    private fun getJavaCommand() : String{
-        if(config.javaCommand != "java"){
-            val java = config.javaCommand.replace("\\","\\\\")
+    private fun getJavaCommand(): String {
+        if (config.javaCommand != "java") {
+            val java = config.javaCommand.replace("\\", "\\\\")
             return ".setJavaCommand(\"$java\")"
         }
         return ""
     }
 
-    private fun staticVariables(controllerName: String?, controllerInput: String?, lines: Lines) {
+    private fun staticVariables(
+        controllerName: String?,
+        controllerInput: String?,
+        lines: Lines,
+        solution: Solution<*>
+    ) {
 
-        val executable = if(controllerInput.isNullOrBlank()) ""
-            else "\"$controllerInput\"".replace("\\","\\\\")
+        val wireMockServers = getWireMockServerActions(solution)
+
+        val executable = if (controllerInput.isNullOrBlank()) ""
+        else "\"$controllerInput\"".replace("\\", "\\\\")
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
@@ -443,6 +476,12 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
             }
+            if (config.isEnabledExternalServiceMocking()) {
+                wireMockServers
+                    .forEach { action ->
+                        addStatement("private static WireMockServer ${getWireMockVariableName(action)}", lines)
+                    }
+            }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
@@ -451,6 +490,12 @@ class TestSuiteWriter {
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\"")
+            }
+            if (config.isEnabledExternalServiceMocking()) {
+                wireMockServers
+                    .forEach { action ->
+                        addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
+                    }
             }
         } else if (config.outputFormat.isJavaScript()) {
 
@@ -489,7 +534,7 @@ class TestSuiteWriter {
         // for generated code should be false.
     }
 
-    private fun initClassMethod(lines: Lines) {
+    private fun initClassMethod(solution: Solution<*>, lines: Lines) {
 
         // Note: for C#, this is done in the Fixture class
 
@@ -522,7 +567,7 @@ class TestSuiteWriter {
                             now only support white-box
                             TODO remove this later if we do not use test generation with driver
                          */
-                        if (config.problemType == EMConfig.ProblemType.RPC){
+                        if (config.problemType == EMConfig.ProblemType.RPC) {
                             addStatement("$controller.extractRPCSchema()", lines)
                         }
                     }
@@ -534,7 +579,7 @@ class TestSuiteWriter {
                 }
             }
 
-            if (config.problemType != EMConfig.ProblemType.RPC){
+            if (config.problemType == EMConfig.ProblemType.REST || config.problemType == EMConfig.ProblemType.GRAPHQL) {
                 if (format.isJavaOrKotlin()) {
                     addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
                     addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
@@ -547,20 +592,58 @@ class TestSuiteWriter {
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
                     }
-                    appendSemicolon(lines)
+                    lines.appendSemicolon(config.outputFormat)
                 }
             }
+
+            val wireMockServers = getWireMockServerActions(solution)
+            if (config.isEnabledExternalServiceMocking() && wireMockServers.isNotEmpty()) {
+                if (format.isJavaOrKotlin()) {
+                    wireMockServers
+                        .forEach { action ->
+                            val address = action.externalService.getWireMockAddress()
+                            val name = getWireMockVariableName(action)
+
+                            addStatement(
+                                "DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${address}\")",
+                                lines
+                            )
+
+                            if (format.isJava()) {
+                                lines.add("${name} = new WireMockServer(new WireMockConfiguration()")
+                            }
+
+                            if (format.isKotlin()) {
+                                lines.add("${name} = WireMockServer(WireMockConfiguration()")
+                            }
+
+                            lines.indented {
+                                lines.add(".bindAddress(\"$address\")")
+                                lines.add(".port(${action.externalService.getWireMockPort()})")
+                                if (format.isJava()) {
+                                    addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
+                                }
+
+                                if (format.isKotlin()) {
+                                    addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
+                                }
+                            }
+                            addStatement("${name}.start()", lines)
+                        }
+                } else {
+                    log.warn("In mocking of external services, we do NOT support for other format ($format) except JavaOrKotlin")
+                }
+            }
+
             testCaseWriter.addExtraInitStatement(lines)
         }
-
-
 
         if (format.isJavaScript()) {
             lines.append(");")
         }
     }
 
-    private fun tearDownMethod(lines: Lines) {
+    private fun tearDownMethod(lines: Lines, solution: Solution<*>) {
 
         if (config.blackBox) {
             return
@@ -589,6 +672,16 @@ class TestSuiteWriter {
                     }
                     else -> {
                         addStatement("$controller.stopSut()", lines)
+                        if (format.isJavaOrKotlin()
+                            && config.isEnabledExternalServiceMocking()
+                            && solution.hasAnyActiveHttpExternalServiceAction()
+                        ) {
+                            getWireMockServerActions(solution)
+                                .forEach { action ->
+                                    addStatement("${getWireMockVariableName(action)}.stop()", lines)
+                                }
+                            addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                        }
                     }
                 }
             }
@@ -628,10 +721,17 @@ class TestSuiteWriter {
                 //TODO add resetDatabase
                 addStatement("await $controller.resetStateOfSUT()", lines)
             } else if (format.isJavaOrKotlin()) {
-                if (config.employSmartDbClean == true){
+                if (config.employSmartDbClean == true) {
                     addStatement("$controller.resetDatabase(${handleResetDatabaseInput(solution)})", lines)
                 }
                 addStatement("$controller.resetStateOfSUT()", lines)
+
+                if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking()) {
+                    getWireMockServerActions(solution)
+                        .forEach { action ->
+                            addStatement("${getWireMockVariableName(action)}.resetAll()", lines)
+                        }
+                }
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)
                 //TODO add resetDatabase
@@ -657,14 +757,14 @@ class TestSuiteWriter {
         lines.addEmpty()
 
         val staticInit = {
-            staticVariables(controllerName, controllerInput, lines)
+            staticVariables(controllerName, controllerInput, lines, solution)
 
             if (!format.isCsharp()) {
                 lines.addEmpty(2)
-                initClassMethod(lines)
+                initClassMethod(solution, lines)
                 lines.addEmpty(2)
 
-                tearDownMethod(lines)
+                tearDownMethod(lines, solution)
             }
         }
 
@@ -730,16 +830,8 @@ class TestSuiteWriter {
     }
 
     private fun addStatement(statement: String, lines: Lines) {
-        lines.add(statement)
-        appendSemicolon(lines)
+        lines.addStatement(statement,config.outputFormat)
     }
-
-    private fun appendSemicolon(lines: Lines) {
-        if (config.outputFormat.let { it.isJava() || it.isJavaScript() || it.isCsharp() }) {
-            lines.append(";")
-        }
-    }
-
 
 
     /**
@@ -752,4 +844,14 @@ class TestSuiteWriter {
 
 
     private fun useRestAssured() = config.problemType != EMConfig.ProblemType.RPC
+
+    /**
+     * Returns a distinct List of [HttpExternalServiceAction] from the given solution
+     */
+    private fun getWireMockServerActions(solution: Solution<*>): List<HttpExternalServiceAction> {
+        return solution.individuals.filter { i -> i.individual is RestIndividual }
+            .flatMap { it.individual.seeExternalServiceActions()
+                .filterIsInstance<HttpExternalServiceAction>()
+                .filter { it.active } }.distinctBy { it.externalService.getSignature() }.toList()
+    }
 }

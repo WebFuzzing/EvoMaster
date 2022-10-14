@@ -19,9 +19,8 @@ class GraphQLAction(
     val methodName: String,
     val methodType: GQMethodType,
     parameters: MutableList<Param>,
-    auth: HttpWsAuthenticationInfo = NoAuth(),
-    localId : String = NONE_ACTION_COMPONENT_ID
-        ) : HttpWsAction(auth, parameters, localId) {
+    auth: HttpWsAuthenticationInfo = NoAuth()
+        ) : HttpWsAction(auth, parameters) {
 
     override fun getName(): String {
         //TODO what if have same name but different inputs? need to add input list as well
@@ -36,7 +35,7 @@ class GraphQLAction(
 
     override fun copyContent(): Action {
 
-        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(), auth, localId= getLocalId())
+        return GraphQLAction(id, methodName, methodType, parameters.map { it.copy() }.toMutableList(), auth)
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {

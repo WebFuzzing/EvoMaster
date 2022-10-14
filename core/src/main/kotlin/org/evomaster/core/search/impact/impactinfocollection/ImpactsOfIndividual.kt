@@ -251,6 +251,16 @@ open class ImpactsOfIndividual(
         return true
     }
 
+    /**
+     * remove impacts for actions based on their localid
+     * @return whether the removal performs successfully
+     */
+    fun deleteDynamicActionGeneImpacts(localIds: Set<String>): Boolean {
+        return dynamicMainActionImpacts.removeIf {
+            localIds.contains(it.localId)
+        }
+    }
+
 
     /**
      * swap gene impacts based on their index
@@ -350,7 +360,7 @@ open class ImpactsOfIndividual(
         }
 
         if (!fixedIndexedAction){
-            return findDynamicImpactActionByLocalId(localId)!!.addGeneImpact(actionName, impacts)
+            return (findDynamicImpactActionByLocalId(localId)?:throw IllegalStateException("cannot find the dynamic action with the localId")).addGeneImpact(actionName, impacts)
         }
 
         if (actionIndex >= fixedMainActionImpacts.size) return false

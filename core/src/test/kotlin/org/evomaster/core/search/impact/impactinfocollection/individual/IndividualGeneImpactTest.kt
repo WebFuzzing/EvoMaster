@@ -297,11 +297,12 @@ class IndividualGeneImpactTest {
     class Ind(actions : MutableList<IndMainAction>, initialization : MutableList<IndInitAction> = mutableListOf()) : Individual(children = initialization.plus(actions).toMutableList()){
         companion object{
             fun getInd() : Ind{
-                return Ind(IndAction.getIndMainAction(2).toMutableList())
+                return Ind(IndAction.getIndMainAction(2).toMutableList()).apply { this.doInitializeLocalId() }
             }
 
             fun getIndWithInitialization(actionSize: Int, initializationSize: Int) : Ind{
                 return Ind(IndAction.getIndMainAction(actionSize).toMutableList(), IndAction.getSeqIndInitAction(initializationSize).toMutableList())
+                    .apply { this.doInitializeLocalId() }
             }
         }
         override fun copyContent(): Individual {
@@ -328,7 +329,7 @@ class IndividualGeneImpactTest {
         override fun repairInitializationActions(randomness: Randomness) {}
     }
 
-   abstract class IndAction(genes : List<out Gene>) : Action(genes, localId = NONE_ACTION_COMPONENT_ID){
+   abstract class IndAction(genes : List<out Gene>) : Action(genes){
 
 
 

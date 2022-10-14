@@ -5,6 +5,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
+import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -25,8 +28,10 @@ abstract class TestCaseWriter {
      */
     protected var counter = 0
 
-    protected val format : OutputFormat
-        get(){ return config.outputFormat}
+    protected val format: OutputFormat
+        get() {
+            return config.outputFormat
+        }
 
 
     companion object {
@@ -34,10 +39,9 @@ abstract class TestCaseWriter {
     }
 
 
-
     fun convertToCompilableTestCode(
-            test: TestCase,
-            baseUrlOfSut: String
+        test: TestCase,
+        baseUrlOfSut: String
     ): Lines {
 
         counter = 0
@@ -45,12 +49,13 @@ abstract class TestCaseWriter {
         val lines = Lines()
 
         if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
-                && test.test.getClusters().size != 0) {
+            && test.test.getClusters().size != 0
+        ) {
             clusterComment(lines, test)
         }
 
         if (format.isJUnit()) {
-            if(config.testTimeout <= 0){
+            if (config.testTimeout <= 0) {
                 lines.add("@Test")
             } else {
                 if (format.isJUnit4()) {
@@ -88,14 +93,65 @@ abstract class TestCaseWriter {
         return lines
     }
 
+    protected fun handleExternalServiceActions(
+        lines: Lines,
+        actions: List<HttpExternalServiceAction>
+    ) {
+        // TODO: Handle same request pattern exists multiple time.
+        //  Currently we don't handle the same request pattern exists multiple
+        //  time. For that, need to create WireMock scenario to have multiple
+        //  responses for the same request pattern.
+        actions
+            .filter { it.active }
+            .forEachIndexed { index, action ->
+                val response = action.response as HttpWsResponseParam
+                val name = getWireMockVariableName(action)
+
+                // Default behaviour of WireMock has been removed, since found no purpose
+                // in case if there is a failure regarding no routes found in WireMock
+                // consider adding that later
+                lines.addStatement("assertNotNull(${name})", config.outputFormat)
+                lines.add("${name}.stubFor(")
+                lines.indented {
+                    lines.add(
+                        "${
+                            action.request.method.lowercase()
+                        }(urlEqualTo(\"${action.request.url}\"))"
+                    )
+                    // adding priority from the index of the respective action
+                    // TODO: when handling multiple calls need to fix this
+                    lines.add(".atPriority(${index + 1})")
+                    lines.add(".willReturn(")
+                    lines.indented {
+                        lines.add("aResponse()")
+                        lines.indented {
+                            lines.add(".withStatus(${response.status.getValueAsRawString()})")
+                            //TODO possible need to handle type, eg JSON vs XML
+                            //FIXME need major refactoring of escaping
+                            lines.add(".withBody(\"${response.responseBody.getValueAsRawString().replace("\"", "\\\"")}\")")
+                        }
+                        lines.add(")")
+                    }
+                }
+                lines.add(")")
+                lines.appendSemicolon(format)
+                lines.addEmpty(1)
+            }
+    }
+
     /**
-     * Before starting to make actions (eg HTTP calls in web apis), check if we need to declare any field, ie variable,
+     * Before starting to make actions (e.g. HTTP calls in web apis), check if we need to declare any field, ie variable,
      * for this test.
      * @param lines are generated lines which save the generated test scripts
      * @param ind is the final individual (ie test) to be generated into the test scripts
      * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
      */
-    protected abstract fun handleFieldDeclarations(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>)
+    protected abstract fun handleFieldDeclarations(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>
+    )
 
     /**
      * handle action call generation
@@ -104,7 +160,12 @@ abstract class TestCaseWriter {
      * @param ind is the final individual (ie test) to be generated into the test scripts
      * @param insertionVars contains variable names of sql insertions (Pair.first) with their results (Pair.second).
      */
-    protected abstract fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>)
+    protected abstract fun handleActionCalls(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>
+    )
 
     /**
      * handle action call generation
@@ -128,10 +189,12 @@ abstract class TestCaseWriter {
      */
     open fun addExtraInitStatement(lines: Lines) {}
 
-    protected fun addActionInTryCatch(call: Action,
-                                      lines: Lines,
-                                      res: ActionResult,
-                                      baseUrlOfSut: String) {
+    protected fun addActionInTryCatch(
+        call: Action,
+        lines: Lines,
+        res: ActionResult,
+        baseUrlOfSut: String
+    ) {
         when {
             /*
                 TODO do we need to handle differently in JS due to Promises?
@@ -165,7 +228,7 @@ abstract class TestCaseWriter {
 
         res.getErrorMessage()?.let {
             lines.indented {
-                lines.add("//${it.replace('\n', ' ').replace('\r',' ')}")
+                lines.add("//${it.replace('\n', ' ').replace('\r', ' ')}")
             }
         }
         lines.add("}")
@@ -173,7 +236,7 @@ abstract class TestCaseWriter {
 
 
     protected fun capitalizeFirstChar(name: String): String {
-        return name[0].toUpperCase() + name.substring(1)
+        return name[0].uppercaseChar() + name.substring(1)
     }
 
 
@@ -191,8 +254,7 @@ abstract class TestCaseWriter {
     /**
      * an optional handling for handling generated tests
      */
-    open fun additionalTestHandling(tests: List<TestCase>){
+    open fun additionalTestHandling(tests: List<TestCase>) {
         // do nothing
     }
-
 }

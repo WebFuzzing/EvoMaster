@@ -22,19 +22,29 @@ class EnterpriseActionGroup(
                 , { e -> e is ApiExternalServiceAction }),
             ChildGroup(GroupsOfChildren.MAIN, { k -> mainClass.isAssignableFrom(k.javaClass) }, 0, 0, 1)
         )
-    ),
-    localId : String = NONE_ACTION_COMPONENT_ID
+    )
 ) : ActionDependentGroup(
     children,
-    groups = groups,
-    localId = localId
+    groups = groups
 ) {
 
-     constructor(action: Action, localId: String = NONE_ACTION_COMPONENT_ID): this(mutableListOf(action), action.javaClass, localId = localId)
+     constructor(action: Action): this(mutableListOf(action), action.javaClass)
 
-
+    /**
+     * @return the main action toward the SUT. the can be only 1 in this group
+     */
     fun getMainAction() = children[groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.MAIN)]
         as Action
+
+
+    /**
+     * @return all the actions related to setup the main actions.
+     * This might be empty.
+     */
+    fun getExternalServiceActions() : List<ApiExternalServiceAction>{
+        return groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES) as List<ApiExternalServiceAction>
+    }
+
 
     override fun copyContent(): EnterpriseActionGroup {
 
@@ -43,8 +53,7 @@ class EnterpriseActionGroup(
         return EnterpriseActionGroup(
             k,
             mainClass,
-            groupsView()!!.copy(k) as GroupsOfChildren<Action>,
-            localId = getLocalId()
+            groupsView()!!.copy(k) as GroupsOfChildren<Action>
         )
     }
 }

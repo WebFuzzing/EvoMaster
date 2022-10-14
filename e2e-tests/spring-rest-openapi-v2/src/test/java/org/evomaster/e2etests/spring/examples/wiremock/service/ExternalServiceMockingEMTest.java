@@ -56,7 +56,7 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
 
         RestResourceFitness restResourceFitness = injector.getInstance(RestResourceFitness.class);
         ResourceSampler resourceSampler = injector.getInstance(ResourceSampler.class);
-        RestIndividual restIndividual = resourceSampler.sample();
+        RestIndividual restIndividual = resourceSampler.sample(false);
 
         // asserts whether the call made during the start-up is captured
         assertEquals(1, externalServiceHandler.getExternalServices().size(), externalServiceHandler.getExternalServiceMappings().size());

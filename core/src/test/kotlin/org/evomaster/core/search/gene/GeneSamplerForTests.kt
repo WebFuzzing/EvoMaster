@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
@@ -15,6 +16,7 @@ import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
@@ -95,6 +97,7 @@ object GeneSamplerForTests {
 
                 when genes need input genes, we sample those at random as well
              */
+            TaintedArrayGene::class -> sampleTaintedArrayGene(rand) as T
             ArrayGene::class -> sampleArrayGene(rand) as T
             Base64StringGene::class -> sampleBase64StringGene(rand) as T
             BigDecimalGene::class -> sampleBigDecimalGene(rand) as T
@@ -141,7 +144,7 @@ object GeneSamplerForTests {
             SqlJSONGene::class -> sampleSqlJSONGene(rand) as T
             SqlTextSearchQueryGene::class -> sampleSqlTextSearchQueryGene(rand) as T
             SqlPrimaryKeyGene::class -> sampleSqlPrimaryKeyGene(rand) as T
-            SqlNullableGene::class -> sampleSqlNullableGene(rand) as T
+            NullableGene::class -> sampleSqlNullableGene(rand) as T
             SqlMultidimensionalArrayGene::class -> sampleSqlMultidimensionalArrayGene(rand) as T
             MacAddrGene::class -> sampleSqlMacAddrGene(rand) as T
             InetGene::class -> sampleSqlInetGene(rand) as T
@@ -170,6 +173,8 @@ object GeneSamplerForTests {
             else -> throw IllegalStateException("No sampler for $klass")
         }
     }
+
+
 
     private fun sampleUrlDataGene(rand: Randomness): UriDataGene {
         return UriDataGene("rand UrlDataGene ${rand.nextInt()}")
@@ -309,10 +314,10 @@ object GeneSamplerForTests {
                 numberOfDimensions = rand.nextInt(1, MAX_NUMBER_OF_DIMENSIONS))
     }
 
-    private fun sampleSqlNullableGene(rand: Randomness): SqlNullableGene {
+    private fun sampleSqlNullableGene(rand: Randomness): NullableGene {
         val selection = geneClasses.filter { !it.isAbstract }
                 .filter { it.java != SqlForeignKeyGene::class.java }
-        return SqlNullableGene("rand SqlNullableGene",
+        return NullableGene("rand NullableGene",
                 gene = sample(rand.choose(selection), rand))
     }
 
@@ -775,6 +780,20 @@ object GeneSamplerForTests {
             chosen = sample(rand.choose(selection), rand)
         }
         return chosen
+    }
+
+
+    private fun sampleTaintedArrayGene(rand: Randomness): TaintedArrayGene {
+
+        val array = if(rand.nextBoolean()) sampleArrayGene(rand) else null
+        val isActive = if(array == null) false else rand.nextBoolean()
+
+        return TaintedArrayGene(
+            "tainted array ${rand.nextInt()}",
+            TaintInputName.getTaintName(rand.nextInt(0,1000)),
+            isActive,
+            array
+        )
     }
 
     fun sampleArrayGene(rand: Randomness): ArrayGene<*> {

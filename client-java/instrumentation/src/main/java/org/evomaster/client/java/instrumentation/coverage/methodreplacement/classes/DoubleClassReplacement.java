@@ -76,7 +76,7 @@ public class DoubleClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
-    public static double valueOf(String input, String idTemplate) {
+    public static Double valueOf(String input, String idTemplate) {
         return parseDouble(input,idTemplate);
     }
 }

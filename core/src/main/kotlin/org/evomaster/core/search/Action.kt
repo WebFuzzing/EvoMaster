@@ -9,11 +9,10 @@ import org.slf4j.LoggerFactory
  * A variable-length individual will be composed by 1 or more "actions".
  * Actions can be: REST call, setup Wiremock, setup database, etc.
  */
-abstract class Action(children: List<StructuralElement>, localId : String) : ActionComponent(
+abstract class Action(children: List<StructuralElement>) : ActionComponent(
     children.toMutableList(),
     {k -> !ActionComponent::class.java.isAssignableFrom(k)
-            && !Individual::class.java.isAssignableFrom(k)}, //action should not have other actions nor individuals
-    localId = localId
+            && !Individual::class.java.isAssignableFrom(k)} //action should not have other actions nor individuals
 ) {
 
     companion object {
@@ -70,7 +69,7 @@ abstract class Action(children: List<StructuralElement>, localId : String) : Act
     /**
      * Initialize all the genes in this action
      */
-    fun doInitialize(randomness: Randomness? = null) {
+    open fun doInitialize(randomness: Randomness? = null) {
         seeTopGenes().forEach { it.doInitialize(randomness) }
         postRandomizedChecks(randomness)
     }

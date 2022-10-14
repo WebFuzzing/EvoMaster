@@ -71,7 +71,7 @@ public class ShortClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
-    public static short valueOf(String input, String idTemplate) {
+    public static Short valueOf(String input, String idTemplate) {
         return parseShort(input, idTemplate);
     }
 }

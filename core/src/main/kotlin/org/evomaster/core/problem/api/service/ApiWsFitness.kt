@@ -24,6 +24,7 @@ import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.*
+import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -90,7 +91,9 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
                 searchTimeController.newIndividualsWithSqlFailedWhere()
             }
         } else if (configuration.extractSqlExecutionInfo) {
-
+            /*
+                this code here is done in previous block as well
+             */
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
                 fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
@@ -257,11 +260,7 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
         return ActionDto().apply {
             this.index = index
             //for now, we only include specialized regex
-            this.inputVariables = action.seeTopGenes()
-                .flatMap { it.flatView() }
-                .filterIsInstance<StringGene>()
-                .filter { it.getSpecializationGene() != null && it.getSpecializationGene() is RegexGene }
-                .map { it.getSpecializationGene()!!.getValueAsRawString()}
+            this.inputVariables = TaintAnalysis.getRegexTaintedValues(action)
         }
     }
 }

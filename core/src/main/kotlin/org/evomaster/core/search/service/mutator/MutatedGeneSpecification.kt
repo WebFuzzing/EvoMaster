@@ -29,7 +29,10 @@ data class MutatedGeneSpecification (
 
         //SQL resource handling
         val addedDbActions : MutableList<List<DbAction>> = mutableListOf(),
-        val removedDbActions : MutableList<Pair<DbAction, Int>> = mutableListOf()
+        val removedDbActions : MutableList<Pair<DbAction, Int>> = mutableListOf(),
+
+        // external service actions
+        val addedExternalServiceActions : MutableList<Action> = mutableListOf()
 ){
 
     var mutatedIndividual: Individual? = null
@@ -78,11 +81,13 @@ data class MutatedGeneSpecification (
         )
     }
 
-    fun isActionMutated(actionIndex : Int, isInit: Boolean) : Boolean{
+    fun isActionMutated(actionIndex : Int?, actionLocalId: String?, isInit: Boolean) : Boolean{
         if (isInit)
             return mutatedInitGenes.any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
 
-        return (mutatedGenes.plus(mutatedDbGenes)).any { it.type == MutatedType.MODIFY && it.actionPosition == actionIndex }
+        return (mutatedGenes.plus(mutatedDbGenes)).any { it.type == MutatedType.MODIFY && (
+                it.actionPosition == actionIndex || it.localId == actionLocalId
+                ) }
     }
 
     fun getRemoved(isRest : Boolean) =
@@ -160,4 +165,27 @@ data class MutatedGeneSpecification (
             || removedDbActions.map { it.first }.any { it.seeTopGenes().contains(gene) }
 
     fun mutatedActionOrInit() = setOf((mutatedGenes.plus(mutatedDbGenes)).isEmpty(), mutatedInitGenes.isNotEmpty())
+
+    /**
+     * repair mutated db genes based on [individual] after db repair
+     */
+    fun repairInitAndDbSpecification(individual: Individual) : Boolean{
+        val init = individual.seeInitializingActions()
+        var anyRemove = mutatedInitGenes.removeIf {
+            it.type == MutatedType.MODIFY && it.actionPosition != null && it.actionPosition >= init.size
+        }
+
+        val noInit = individual.seeFixedMainActions()
+        anyRemove = mutatedDbGenes.removeIf {
+            it.type == MutatedType.MODIFY && (if (it.actionPosition != null)
+                it.actionPosition >= noInit.size
+            else if (it.localId != null)
+                noInit.none { a-> a.getLocalId() == it.localId }
+            else
+                throw IllegalArgumentException("to represent mutated gene info, position or local id of an action which contains the gene must be specified"))
+        } || anyRemove
+
+
+        return anyRemove
+    }
 }

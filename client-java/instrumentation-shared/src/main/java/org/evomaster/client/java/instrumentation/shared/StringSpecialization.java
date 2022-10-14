@@ -57,9 +57,17 @@ public enum StringSpecialization implements Serializable {
 
 
     /**
-     * String constrained by a regular expression
+     * String constrained by a regular expression.
+     * Should match whole text
      */
-    REGEX,
+    REGEX_WHOLE,
+
+    /**
+     * String constrained by a regular expression.
+     * Should match a part of the text, and not necessarely all of it
+     */
+    REGEX_PARTIAL,
+
 
     /**
      * String parsed to double
@@ -102,6 +110,25 @@ public enum StringSpecialization implements Serializable {
     /**
      *  String should be a valid URI
      */
-    URI
+    URI,
 
+    /**
+     * The string should represent the content of a valid JSON Object, ie {key:value,...}.
+     * Note that strings are valid JSON Elements, but not Objects
+     */
+    JSON_OBJECT,
+
+    /**
+     * The string is representing a valid JSON array, ie [...,...,...]
+     * Note that, at this point, we might have no info on the internal structure of its elements,
+     * which are handled as generic maps.
+     * Those might be marshalled later, in a so called 2-phase parsing, eg see Jackson convertValue()
+     */
+    JSON_ARRAY
+
+    ;
+
+    public boolean isRegex(){
+        return this == REGEX_PARTIAL || this == REGEX_WHOLE;
+    }
 }

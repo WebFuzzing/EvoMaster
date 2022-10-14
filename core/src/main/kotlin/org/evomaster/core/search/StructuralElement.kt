@@ -1,5 +1,9 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.Lazy
+import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.root.CompositeGene
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
@@ -34,7 +38,47 @@ abstract class StructuralElement (
 
     companion object{
         private val log = LoggerFactory.getLogger(StructuralElement::class.java)
+
+        const val NONE_LOCAL_ID = "NONE_LOCAL_ID"
     }
+
+    /**
+     * a unique id is used to identify this structural element in the context of an individual
+     */
+    private var localId : String = NONE_LOCAL_ID
+
+    /**
+     * set a local id of the action
+     * note that the id can be assigned only if the current id is NONE_ACTION_ID
+     */
+    fun setLocalId(id: String) {
+        if (!hasLocalId())
+            this.localId = id
+        else
+            throw IllegalStateException("cannot re-assign the id of the action, the current id is ${this.localId}")
+    }
+
+    /**
+     * return if the action has been assigned with a local id
+     */
+    fun hasLocalId() = localId != NONE_LOCAL_ID
+
+    /**
+     * reset local id of this structural element
+     */
+    fun resetLocalId() {
+        localId = NONE_LOCAL_ID
+    }
+
+    /**
+     * reset local if of this structural element and its children
+     */
+    fun resetLocalIdRecursively(){
+        resetLocalId()
+        children.forEach(StructuralElement::resetLocalIdRecursively)
+    }
+
+    fun getLocalId() = localId
 
     /**
      * parent of the element, which contains current the element
@@ -48,19 +92,27 @@ abstract class StructuralElement (
 
     init {
         verifyChildrenToInsert(children)
-        preChildrenSetup(children)
         children.forEach {
             it.parent = this;
         }
         groups?.verifyGroups()
     }
 
+
     /**
      * a pre-setup for the children if needed
      * the setup will be performed before the children to add
      */
-    open fun preChildrenSetup(c : Collection<StructuralElement>){
-        // do nothing
+    private fun preChildrenSetup(c : Collection<StructuralElement>){
+        // handle local id for new children to add into individual
+        if (this is Individual)
+            this.handleLocalIdsForAddition(c)
+        /*
+           handle local id for new children to add into composite structure of individual,
+           ie ActionTree (eg, add external service to group), Action (eg, add param to action), ArrayGene (eg, add element to gene)
+         */
+        if (this.getRoot() is Individual && (this is ActionComponent || this is CompositeGene))
+            (this.getRoot() as Individual).handleLocalIdsForAddition(c)
     }
 
 
@@ -98,6 +150,8 @@ abstract class StructuralElement (
         if(groups == null){
             throw IllegalArgumentException("No groups are defined")
         }
+        preChildrenSetup(listOf(child))
+
         val end = groups!!.endIndexForGroupInsertionInclusive(groupId)
         addChild(end, child) //appending at the end of the group
         groups!!.addedToGroup(groupId, child)
@@ -113,6 +167,7 @@ abstract class StructuralElement (
         if(position < start || position > end){
             throw IllegalArgumentException("Invalid position $position out of [$start,$end] for group $groupId")
         }
+        preChildrenSetup(listOf(child))
         addChild(position,child)
         groups!!.addedToGroup(groupId, child)
     }
@@ -135,6 +190,7 @@ abstract class StructuralElement (
         if(children.contains(child)){
             throw IllegalArgumentException("Child already present")
         }
+        preChildrenSetup(listOf(child))
         child.parent = this
         (children as MutableList<StructuralElement>).add(child)
     }
@@ -142,6 +198,7 @@ abstract class StructuralElement (
     open fun addChild(position: Int, child: StructuralElement){
         verifyChildrenToInsert(child)
         if(children.contains(child)) throw IllegalArgumentException("Child already present")
+        preChildrenSetup(listOf(child))
         child.parent = this
         (children as MutableList<StructuralElement>).add(position, child)
     }
@@ -158,6 +215,7 @@ abstract class StructuralElement (
         for(child in list){
             if(children.contains(child)) throw IllegalArgumentException("Child already present")
         }
+        preChildrenSetup(list)
         list.forEach { it.parent = this }
         (children as MutableList<StructuralElement>).addAll(position, list)
     }
@@ -246,6 +304,11 @@ abstract class StructuralElement (
      */
     open fun copy() : StructuralElement {
         val copy = copyContent()
+        if (hasLocalId())
+            copy.setLocalId(localId)
+        Lazy.assert {
+            copy.getLocalId() == localId
+        }
         copy.postCopy(this)
         return copy
     }
@@ -334,4 +397,5 @@ abstract class StructuralElement (
         }
         return false
     }
+
 }

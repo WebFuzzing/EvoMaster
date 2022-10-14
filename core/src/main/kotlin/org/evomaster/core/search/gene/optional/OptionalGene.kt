@@ -17,21 +17,25 @@ import org.slf4j.LoggerFactory
 /**
  * A gene that might or might not be active.
  * An example are for query parameters in URLs
+ *
+ * @param isActive whether the enclosed gene will be expressed in the phenotype
+ * @param requestSelection In some cases, we might add new optional genes that are off by default.
+ *                         This is the case for we "expand" the genotype of an individual with new
+ *                         info coming from the search.
+ *                         But, in these cases, to avoid modifying the phenotype, we must leave them off
+ *                         by default.
+ *                         However, we might want to tell the search that, at the next mutation, we should
+ *                         put them on.
+ * @param searchPercentageActive for how long the gene can be active. After this percentage [0.0,1.0] of time has passed,
+ *                      then we deactivate it and forbid its selection.
+ *                      By default, it can be used during whole search (ie, 1.0).
  */
 class OptionalGene(name: String,
                    val gene: Gene,
                    var isActive: Boolean = true,
-                   /**
-                    * In some cases, we might add new optional genes that are off by default.
-                    * This is the case for we "expand" the genotype of an individual with new
-                    * info coming from the search.
-                    * But, in these cases, to avoid modifying the phenotype, we must leave them off
-                    * by default.
-                    * However, we might want to tell the search that, at the next mutation, we should
-                    * put them on.
-                    */
-                   var requestSelection: Boolean = false)
-    : CompositeFixedGene(name, gene) {
+                   var requestSelection: Boolean = false,
+                   var searchPercentageActive: Double = 1.0
+) : CompositeFixedGene(name, gene) {
 
 
     companion object{
@@ -45,6 +49,13 @@ class OptionalGene(name: String,
     var selectable = true
         private set
 
+    init {
+        if(searchPercentageActive < 0 || searchPercentageActive > 1){
+            throw IllegalArgumentException("Invalid searchPercentageActive value: $searchPercentageActive")
+        }
+    }
+
+
     override fun isLocallyValid() : Boolean{
         return getViewOfChildren().all { it.isLocallyValid() }
     }
@@ -55,13 +66,20 @@ class OptionalGene(name: String,
     }
 
     override fun copyContent(): Gene {
-        val copy = OptionalGene(name, gene.copy(), isActive, requestSelection)
+        val copy = OptionalGene(name, gene.copy(), isActive, requestSelection, searchPercentageActive)
         copy.selectable = this.selectable
         return copy
     }
 
     override fun isMutable(): Boolean {
         return selectable
+    }
+
+    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+        if(this.javaClass == klass){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -71,6 +89,7 @@ class OptionalGene(name: String,
         this.isActive = other.isActive
         this.selectable = other.selectable
         this.requestSelection = other.requestSelection
+        this.searchPercentageActive = other.searchPercentageActive
         this.gene.copyValueFrom(other.gene)
     }
 
@@ -80,6 +99,8 @@ class OptionalGene(name: String,
         }
         return this.isActive == other.isActive
                 && this.gene.containsSameValueAs(other.gene)
+                && this.selectable == other.selectable
+                && this.searchPercentageActive == other.searchPercentageActive
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -163,10 +184,15 @@ class OptionalGene(name: String,
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
+        if(!isActive)
+            return ""
+
         return gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
     }
 
     override fun getValueAsRawString(): String {
+        if(!isActive)
+            return ""
         return gene.getValueAsRawString()
     }
 
@@ -184,6 +210,14 @@ class OptionalGene(name: String,
     }
 
     override fun isPrintable(): Boolean {
-        return gene.isPrintable()
+        /*
+            A non active gene would end up in being an empty string, that could still be part of the phenotype.
+            For example, when dealing with JavaScript, we could have array with empty elements, like
+            x = [,,]
+            which is different from
+            x = [null,null,null]
+            as in the former case the values are 'undefined'
+         */
+        return !isActive || gene.isPrintable()
     }
 }

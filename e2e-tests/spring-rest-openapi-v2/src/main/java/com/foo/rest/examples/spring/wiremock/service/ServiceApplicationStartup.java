@@ -1,13 +1,11 @@
 package com.foo.rest.examples.spring.wiremock.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 

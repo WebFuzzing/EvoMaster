@@ -173,7 +173,9 @@ class MioAlgorithmOnTrackOneMaxTest {
             s.tracking?.history?.forEachIndexed{ index, t->
                 assertNotNull(t.trackOperator)
                 assertTrue(index < maxLengthOfTraces)
-                assertEquals(StandardMutator::class.java.simpleName, t.trackOperator!!.operatorTag())
+                //the first one might be sampler
+                if(index > 0)
+                    assertEquals(StandardMutator::class.java.simpleName, t.trackOperator!!.operatorTag())
             }
         }
     }

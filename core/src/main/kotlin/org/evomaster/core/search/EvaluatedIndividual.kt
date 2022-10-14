@@ -10,6 +10,8 @@ import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionResult
+import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -132,8 +134,7 @@ class EvaluatedIndividual<T>(
         if (results.isEmpty()) {
             return listOf()
         }
-        val list = actions ?: individual.seeAllActions()
-        //TODO Man: need to fix for external services
+        val list = actions ?: individual.seeActions(NO_EXTERNAL_SERVICE)
         val all = individual.seeActions(NO_EXTERNAL_SERVICE)
         val last = results.indexOfFirst { it.stopping }
         return list.mapNotNull {
@@ -182,7 +183,9 @@ class EvaluatedIndividual<T>(
             val dbActions = c.seeActions(ONLY_SQL)
             val dbResults = seeResults(dbActions)
 
-            val restActions = c.seeActions(NO_SQL)
+            // TODO: with the current ActionFilter seeActions returns everything except DbActions
+            //  so filtering only the RestCallAction/s for now. It's a temporary fix.
+            val restActions = c.seeActions(NO_SQL).filterIsInstance<RestCallAction>()
             val restResult = seeResults(restActions)
 
             // get evaluated action based on the list of action results
@@ -319,7 +322,7 @@ class EvaluatedIndividual<T>(
         }
 
         if (previous.getSizeOfImpact(false) != mutated.getSizeOfImpact(false)) {
-            log.warn("impacts should be same before updating")
+            LoggingUtil.uniqueWarn(log, "impacts should be same before updating")
         }
 
         compareWithLatest(next = mutated, previous = previous, targetsInfo = targetsInfo, mutatedGenes = mutatedGenes)
@@ -407,8 +410,15 @@ class EvaluatedIndividual<T>(
 
             //handle removed
             if (mutatedGenes.getRemoved(true).isNotEmpty()) { //delete an action
-                impactInfo!!.deleteFixedActionGeneImpacts(
-                    actionIndex = mutatedGenes.getRemoved(true).mapNotNull { it.actionPosition }.toSet()
+                val fixedIndexed = mutatedGenes.getRemoved(true).filter { it.actionPosition != null && it.actionPosition > 0 }.map { it.actionPosition!! }.toSet()
+                impactInfo!!.deleteFixedActionGeneImpacts(fixedIndexed)
+
+                val dynamicLocalIds = mutatedGenes.getRemoved(true)
+                    .filter { it.actionPosition == null || it.actionPosition < 0 }
+                    .map { it.localId ?:throw IllegalStateException("the mutated info is lack of position and local id") }.toSet()
+
+                impactInfo.deleteDynamicActionGeneImpacts(
+                    dynamicLocalIds
                 )
             }
 
@@ -553,8 +563,8 @@ class EvaluatedIndividual<T>(
 
             mutatedGenesWithContext.forEach { gc ->
                 val impact = impactInfo!!.getGene(
-                    localId = null,
-                    fixedIndexedAction = true,
+                    localId = gc.actionLocalId,
+                    fixedIndexedAction = !gc.isDynamicAction,
                     actionName = gc.action,
                     actionIndex = gc.position,
                     geneId = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, gc.current),
@@ -704,6 +714,25 @@ class EvaluatedIndividual<T>(
             geneId = id,
             fromInitialization = individual.seeGenes(GeneFilter.ONLY_SQL).contains(gene)
         )
+    }
+
+    fun updateImpactGeneDueToAddedExternalService(
+        mutatedGenes: MutatedGeneSpecification,
+        addedExActions: List<ApiExternalServiceAction>
+    ){
+        impactInfo ?: throw IllegalStateException("there is no any impact initialized when adding impacts for external service actions")
+        addedExActions.forEach { e->
+            impactInfo.addOrUpdateMainActionGeneImpacts(
+                localId = e.getLocalId(),
+                fixedIndexedAction = false,
+                actionName = e.getName(),
+                actionIndex = -1,
+                newAction = true,
+                impacts = mutableMapOf()
+            )
+        }
+        mutatedGenes.addedExternalServiceActions.addAll(addedExActions)
+
     }
 
     //TODO check this when integrating with SQL resource handling

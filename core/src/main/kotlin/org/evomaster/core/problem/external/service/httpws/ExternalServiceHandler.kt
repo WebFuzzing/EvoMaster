@@ -1,19 +1,27 @@
 package org.evomaster.core.problem.external.service.httpws
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isAddressAvailable
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.nextIPAddress
-
-import com.github.tomakehurst.wiremock.client.WireMock.*
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isReservedIP
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.nextIPAddress
 import org.evomaster.core.search.service.Randomness
 
+/**
+ * To manage the external service related activities
+ */
 class ExternalServiceHandler {
+
+    companion object {
+        const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
+        const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
+    }
+
     /**
      * This will hold the information about the external service
      * calls inside the SUT. Information will be passed to the core
@@ -31,9 +39,9 @@ class ExternalServiceHandler {
     private lateinit var config: EMConfig
 
     /**
-     * Contains the information about external services as map.
+     * Contains the information about [ExternalService] as map.
      *
-     * Mapped against to hostname with ExternalService.
+     * Mapped against to signature of the [ExternalService].
      */
     private val externalServices: MutableMap<String, ExternalService> = mutableMapOf()
 
@@ -46,24 +54,19 @@ class ExternalServiceHandler {
     private var counter: Long = 0
 
     /**
-     * Collection of captured external service requests under SUT
-     */
-    private val externalServiceRequests: MutableList<ExternalServiceRequest> = mutableListOf()
-
-    /**
      * This will allow adding ExternalServiceInfo to the Collection.
      *
-     * If there is a WireMock instance is available for the hostname,
+     * If there is a WireMock instance is available for the [ExternalService] signature,
      * it will be skipped from creating a new one.
      */
-    fun addExternalService(externalServiceInfo: ExternalServiceInfo) {
+    fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (!externalServices.containsKey(externalServiceInfo.remoteHostname)) {
+            if (!externalServices.containsKey(externalServiceInfo.signature())) {
                 val ip = getIP(externalServiceInfo.remotePort)
                 lastIPAddress = ip
                 val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
 
-                externalServices[externalServiceInfo.remoteHostname] = ExternalService(externalServiceInfo, wm)
+                externalServices[externalServiceInfo.signature()] = ExternalService(externalServiceInfo, wm)
             }
         }
     }
@@ -110,35 +113,48 @@ class ExternalServiceHandler {
     }
 
     /**
-     * This takes all the served requests from WireMock server and creates them
-     * as ExternalServiceAction. It ignores if the same absolute URL is added
-     * already.
-     *
-     * This is not perfect yet, have to explore more scenarios and perfect the
-     * implementation.
+     * Reset all the served requests.
+     * The WireMock instances will still be up and running
      */
-    fun getExternalServiceActions(): MutableList<ExternalServiceAction> {
-        val actions = mutableListOf<ExternalServiceAction>()
+    fun resetServedRequests() {
+        externalServices.forEach { it.value.resetServedRequests() }
+    }
+
+    /**
+     * Creates an [HttpExternalServiceAction] based on the given [HttpExternalServiceRequest]
+     */
+    fun createExternalServiceAction(request: HttpExternalServiceRequest): HttpExternalServiceAction {
+        val externalService = getExternalService(request.wireMockSignature)
+
+        val action = HttpExternalServiceAction(
+            request,
+            "",
+            externalService,
+            counter++
+        )
+        action.doInitialize(randomness)
+        return action
+    }
+
+    /**
+     * Returns the [ExternalService] if the signature exists
+     */
+    fun getExternalService(signature: String): ExternalService {
+        return externalServices.getValue(signature)
+    }
+
+    /**
+     * Returns a list of the served requests related to the specific WireMock
+     * as [HttpExternalServiceRequest]
+     */
+    fun getAllServedExternalServiceRequests(): List<HttpExternalServiceRequest> {
+        val output: MutableList<HttpExternalServiceRequest> = mutableListOf()
         externalServices.forEach { (_, u) ->
             u.getAllServedRequests().forEach {
-                // TODO: This needs to be revised to make it nicer
-                if (externalServiceRequests.none { r -> r.absoluteURL == it.absoluteURL }) {
-                    externalServiceRequests.add(it)
-                }
-                if (actions.none { a -> a.request.url == it.url }) {
-                    actions.add(
-                        ExternalServiceAction(
-                            it,
-                            "",
-                            u,
-                            counter++
-                        )
-                    )
-                }
-
+                output.add(it)
             }
         }
-        return actions
+        return output
     }
 
     /**
@@ -167,10 +183,10 @@ class ExternalServiceHandler {
                         if (isAddressAvailable(config.externalServiceIP, port)) {
                             config.externalServiceIP
                         } else {
-                            throw IllegalStateException("User provided IP address is not available")
+                            throw IllegalStateException("User provided IP address is not available: ${config.externalServiceIP}:$port")
                         }
                     } else {
-                        throw IllegalStateException("Can not use a reserved IP address")
+                        throw IllegalStateException("Can not use a reserved IP address: ${config.externalServiceIP}")
                     }
                 }
             }
@@ -199,23 +215,25 @@ class ExternalServiceHandler {
         )
         wm.start()
 
-        // to prevent from the 404 when no matching stub below stub is added
-        // TODO: Need to decide what should be the default behaviour
-        wm.stubFor(
-            any(anyUrl())
-                .atPriority(10)
-                .willReturn(
-                    aResponse()
-                        .withStatus(500)
-                        .withBody("Internal Server Error")
-                )
-        )
+        wireMockSetDefaults(wm)
 
         return wm
     }
 
-    fun getExternalServiceRequests(): MutableList<ExternalServiceRequest> {
-        return externalServiceRequests
+    /**
+     * To prevent from the 404 when no matching stub below stub is added
+     * WireMock throws an exception when there is no stub for the request
+     * to avoid the exception it handled manually
+     */
+    fun wireMockSetDefaults(wireMockServer: WireMockServer) {
+        wireMockServer.stubFor(
+            any(anyUrl())
+                .atPriority(100)
+                .willReturn(
+                    aResponse()
+                        .withStatus(WIREMOCK_DEFAULT_RESPONSE_CODE)
+                        .withBody(WIREMOCK_DEFAULT_RESPONSE_MESSAGE)
+                )
+        )
     }
-
 }

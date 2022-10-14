@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.httpws.service
 
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
@@ -7,11 +8,12 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.api.service.ApiWsSampler
-// here, we might need to use ApiExternalServiceAction instead of ExternalServiceAction
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceAction
-import org.evomaster.core.problem.rest.service.ResourceSampler
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -25,55 +27,131 @@ import kotlin.math.min
 /**
  * the abstract structure mutator for API based SUT, such as REST, GraphQL, RPC
  */
-abstract class ApiWsStructureMutator : StructureMutator(){
+abstract class ApiWsStructureMutator : StructureMutator() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ApiWsStructureMutator::class.java)
     }
 
+    // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
+    @Inject
+    protected lateinit var externalServiceHandler: ExternalServiceHandler
 
-    @Deprecated("External Actions will be moved into EnterpriseActionGroup")
-    private fun <T : ApiWsIndividual> addInitializingExternalServiceActions(
+    private fun addExternalServiceActions(
         individual: EvaluatedIndividual<*>,
+        /**
+         * TODO add why
+         */
         mutatedGenes: MutatedGeneSpecification?,
-        sampler: ApiWsSampler<T>
     ) {
-        // TODO: Incomplete code, under development
 
         if (config.externalServiceIPSelectionStrategy == EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
             return
         }
 
-        if (sampler is ResourceSampler) {
-            val ind = individual.individual as? T
-                ?: throw IllegalArgumentException("Invalid individual type")
+        val ind = individual.individual as? ApiWsIndividual
+            ?: throw IllegalArgumentException("Invalid individual type")
 
-            // TODO: Under review
-            val fw = individual.fitness.getAccessedExternalServiceRequests()
+        val esr = individual.fitness.getViewAccessedExternalServiceRequests()
+        if (esr.isEmpty()) {
+            //nothing to do
+            return
+        }
 
-            val actions = mutableListOf<ExternalServiceAction>().plus(
-                sampler.getExternalService().getExternalServiceActions()
-            )
+        val newActions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
-            ind.addInitializingDbActions(0, actions)
+        ind.seeMainExecutableActions().forEachIndexed { index, action ->
+            val parent = action.parent
+            if (parent !is EnterpriseActionGroup) {
+                //TODO this should not really happen
+                val msg = "Action is not inside an EnterpriseActionGroup"
+                log.error(msg)
+                throw RuntimeException(msg)
+            }
 
-            if (log.isTraceEnabled)
-                log.trace("{} existingExternalServiceData are added", actions)
+            // Adding the new [HttpExternalServiceAction] will be handled here. Handling
+            // used and not used external service actions will be handled in Fitness using
+            // [used] property in action.
+            if (esr.containsKey(index)) {
+                val requests = esr[index]
+
+                if (requests!!.isNotEmpty()) {
+                    val existingActions = parent.getExternalServiceActions()
+
+                    val actions: MutableList<HttpExternalServiceAction> = mutableListOf()
+
+                    requests
+                        .groupBy { it.absoluteURL }
+                        .forEach { (url, grequests) ->
+                            // here, we assume that the front external service actions should be accessed
+                            val startingIndex = existingActions.filterIsInstance<HttpExternalServiceAction>().count { it.request.absoluteURL == url}
+                            if (startingIndex < grequests.size){
+                                (startingIndex until  grequests.size).forEach {i->
+                                    val a = externalServiceHandler
+                                        .createExternalServiceAction(grequests[i])
+                                    a.confirmUsed()
+                                    actions.add(a)
+                                }
+                            }
+                    }
+
+                    if (actions.isNotEmpty()) {
+                        newActions.addAll(actions)
+                        parent.addChildrenToGroup(
+                            actions,
+                            GroupsOfChildren.EXTERNAL_SERVICES
+                        )
+                    }
+                }
+            }
+        }
+
+        // all actions should have local ids
+        Lazy.assert {
+            ind.seeAllActions().all { it.hasLocalId() }
+        }
+
+        if (log.isTraceEnabled)
+            log.trace("{} existingExternalServiceData are added", newActions.size)
+
+        // update impact based on added genes
+        // TODO: Refactored this, Man to review the place where impacts get updated.
+        if (mutatedGenes != null && newActions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
+            individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, newActions)
         }
     }
 
-    fun<T : ApiWsIndividual> addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
-        addInitializingExternalServiceActions(individual, mutatedGenes, sampler)
+    fun <T : ApiWsIndividual> addInitializingActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
+        addExternalServiceActions(individual, mutatedGenes)
     }
 
-    private fun<T : ApiWsIndividual> addInitializingDbActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>) {
+    private fun <T : ApiWsIndividual> addInitializingDbActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        sampler: ApiWsSampler<T>
+    ) {
         if (!config.shouldGenerateSqlData()) {
             return
         }
 
         val ind = individual.individual as? T
             ?: throw IllegalArgumentException("Invalid individual type")
+
+        /**
+         * This is done on an already evaluated individual from a PREVIOUS fitness evaluation.
+         * IF, in the previous evaluation it uses a DB and some SELECTs did not return data, THEN
+         * create new actions for setting up SQL data.
+         *
+         * So adding these new actions count as a sort of mutation operator, based on fitness feedback
+         * from a PREVIOUS evaluation.
+         * Recall, EXTREMELY IMPORTANT, once an individual is evaluated for fitness, we CANNOT change
+         * its phenotype (otherwise the fitness value would be meaningless).
+         */
 
         val fw = individual.fitness.getViewOfAggregatedFailedWhere()
             //TODO likely to remove/change once we ll support VIEWs
@@ -89,7 +167,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
 
         ind.repairInitializationActions(randomness)
         // update impact based on added genes
-        if(mutatedGenes != null && config.isEnabledArchiveGeneSelection()){
+        if (mutatedGenes != null && config.isEnabledArchiveGeneSelection()) {
             individual.updateImpactGeneDueToAddedInitializationGenes(
                 mutatedGenes,
                 old,
@@ -98,14 +176,14 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         }
     }
 
-    private fun<T : ApiWsIndividual> handleFailedWhereSQL(
+    private fun <T : ApiWsIndividual> handleFailedWhereSQL(
         ind: T,
         /**
          * Map of FAILED WHERE clauses. from table name key to column name values
          */
         fw: Map<String, Set<String>>,
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
-    ): MutableList<List<Action>>?{
+    ): MutableList<List<Action>>? {
 
         /*
             because there might exist representExistingData in db actions which are in between rest actions,
@@ -115,18 +193,20 @@ abstract class ApiWsStructureMutator : StructureMutator(){
             Man: with config.maximumExistingDataToSampleInD,
                 we might remove the condition check on representExistingData.
          */
-        if(ind.seeDbActions().isEmpty()
-            || ! ind.seeDbActions().any { it is DbAction && it.representExistingData }) {
+        if (ind.seeDbActions().isEmpty()
+            || !ind.seeDbActions().any { it is DbAction && it.representExistingData }
+        ) {
 
             /*
                 tmp solution to set maximum size of executing existing data in sql
              */
             val existing = if (config.maximumExistingDataToSampleInDb > 0
-                && sampler.existingSqlData.size > config.maximumExistingDataToSampleInDb) {
+                && sampler.existingSqlData.size > config.maximumExistingDataToSampleInDb
+            ) {
                 randomness.choose(sampler.existingSqlData, config.maximumExistingDataToSampleInDb)
             } else {
                 sampler.existingSqlData
-            }
+            }.map { it.copy() }
 
             //add existing data only once
             ind.addInitializingDbActions(0, existing)
@@ -189,7 +269,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         return fw.filter { e ->
             //shouldn't have already an action adding such SQL data
             dbactions
-                .filter { ! it.representExistingData }
+                .filter { !it.representExistingData }
                 .none { a ->
                     a.table.name.equals(e.key, ignoreCase = true) && e.value.all { c ->
                         // either the selected column is already in existing action
@@ -203,7 +283,12 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         }
     }
 
-    override fun mutateInitStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
+    override fun mutateInitStructure(
+        individual: Individual,
+        evaluatedIndividual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?,
+        targets: Set<Int>
+    ) {
         Lazy.assert { individual is ApiWsIndividual }
         individual as ApiWsIndividual
 
@@ -212,7 +297,8 @@ abstract class ApiWsStructureMutator : StructureMutator(){
            note that if there is no any init sql, we randomly select one table to add.
         */
 
-        val candidatesToMutate = individual.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }
+        val candidatesToMutate =
+            individual.seeInitializingActions().filterIsInstance<DbAction>().filterNot { it.representExistingData }
         val tables = candidatesToMutate.map { it.table.name }.run {
             ifEmpty { getSqlInsertBuilder()!!.getTableNames() }
         }
@@ -220,15 +306,15 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         val table = randomness.choose(tables)
         val total = tables.count { it == table }
 
-        if (total == 1 || randomness.nextBoolean()){
+        if (total == 1 || randomness.nextBoolean()) {
             // add action
             val num = randomness.nextInt(1, max(1, getMaxSizeOfMutatingInitAction()))
             val add = createInsertSqlAction(table, num)
             handleInitSqlAddition(individual, add, mutatedGenes)
 
-        }else{
+        } else {
             // remove action
-            val num = randomness.nextInt(1, max(1, min(total-1, getMaxSizeOfMutatingInitAction())))
+            val num = randomness.nextInt(1, max(1, min(total - 1, getMaxSizeOfMutatingInitAction())))
             val candidates = candidatesToMutate.filter { it.table.name == table }
             val remove = randomness.choose(candidates, num)
 
@@ -239,7 +325,11 @@ abstract class ApiWsStructureMutator : StructureMutator(){
     /**
      * add specified actions (i.e., [add]) into initialization of [individual]
      */
-    fun handleInitSqlAddition(individual: ApiWsIndividual, add: List<List<DbAction>>, mutatedGenes: MutatedGeneSpecification?){
+    fun handleInitSqlAddition(
+        individual: ApiWsIndividual,
+        add: List<List<DbAction>>,
+        mutatedGenes: MutatedGeneSpecification?
+    ) {
         individual.addInitializingDbActions(actions = add.flatten())
         mutatedGenes?.addedDbActions?.addAll(add)
     }
@@ -247,7 +337,11 @@ abstract class ApiWsStructureMutator : StructureMutator(){
     /**
      * remove specified actions (i.e., [remove]) from initialization of [individual]
      */
-    fun handleInitSqlRemoval(individual: ApiWsIndividual, remove: List<DbAction>, mutatedGenes: MutatedGeneSpecification?){
+    fun handleInitSqlRemoval(
+        individual: ApiWsIndividual,
+        remove: List<DbAction>,
+        mutatedGenes: MutatedGeneSpecification?
+    ) {
         val relatedRemove = mutableListOf<DbAction>()
         relatedRemove.addAll(remove)
         remove.forEach {
@@ -258,14 +352,20 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         individual.removeInitDbActions(set)
     }
 
-    private fun getRelatedRemoveDbActions(ind: ApiWsIndividual, remove : DbAction, relatedRemove: MutableList<DbAction>){
+    private fun getRelatedRemoveDbActions(
+        ind: ApiWsIndividual,
+        remove: DbAction,
+        relatedRemove: MutableList<DbAction>
+    ) {
         val pks = remove.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<SqlPrimaryKeyGene>()
         val index = ind.seeInitializingActions().indexOf(remove)
-        if (index < ind.seeInitializingActions().size - 1 && pks.isNotEmpty()){
+        if (index < ind.seeInitializingActions().size - 1 && pks.isNotEmpty()) {
 
-            val removeDbFKs = ind.seeInitializingActions().filterIsInstance<DbAction>().subList(index + 1, ind.seeInitializingActions().filterIsInstance<DbAction>().size).filter {
-                it.seeTopGenes().flatMap { g-> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
-                        .any {fk-> pks.any {pk->fk.uniqueIdOfPrimaryKey == pk.uniqueId} } }
+            val removeDbFKs = ind.seeInitializingActions().filterIsInstance<DbAction>()
+                .subList(index + 1, ind.seeInitializingActions().filterIsInstance<DbAction>().size).filter {
+                    it.seeTopGenes().flatMap { g -> g.flatView() }.filterIsInstance<SqlForeignKeyGene>()
+                        .any { fk -> pks.any { pk -> fk.uniqueIdOfPrimaryKey == pk.uniqueId } }
+                }
             relatedRemove.addAll(removeDbFKs)
             removeDbFKs.forEach {
                 getRelatedRemoveDbActions(ind, it, relatedRemove)
@@ -277,18 +377,19 @@ abstract class ApiWsStructureMutator : StructureMutator(){
      * @param name is the table name
      * @param num is a number of table with [name] to be added
      */
-    fun createInsertSqlAction(name : String, num : Int) : List<List<DbAction>>{
-        getSqlInsertBuilder() ?:throw IllegalStateException("attempt to create resource with SQL but the sqlBuilder is null")
+    fun createInsertSqlAction(name: String, num: Int): List<List<DbAction>> {
+        getSqlInsertBuilder()
+            ?: throw IllegalStateException("attempt to create resource with SQL but the sqlBuilder is null")
         if (num <= 0)
             throw IllegalArgumentException("invalid num (i.e.,$num) for creating resource")
 
-        val list= (0 until num).map { getSqlInsertBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
+        val list = (0 until num).map { getSqlInsertBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
 
-        if (log.isTraceEnabled){
+        if (log.isTraceEnabled) {
             log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,
-                    list.flatten().joinToString(",") {
-                        it.getResolvedName()
-                    })
+                list.flatten().joinToString(",") {
+                    it.getResolvedName()
+                })
         }
 
         DbActionUtils.randomizeDbActionGenes(list.flatten(), randomness)
@@ -299,7 +400,7 @@ abstract class ApiWsStructureMutator : StructureMutator(){
         return list
     }
 
-    abstract fun getSqlInsertBuilder() : SqlInsertBuilder?
+    abstract fun getSqlInsertBuilder(): SqlInsertBuilder?
 
     override fun canApplyInitStructureMutator(): Boolean {
         return (config.initStructureMutationProbability > 0 && config.maxSizeOfMutatingInitAction > 0) && getSqlInsertBuilder() != null

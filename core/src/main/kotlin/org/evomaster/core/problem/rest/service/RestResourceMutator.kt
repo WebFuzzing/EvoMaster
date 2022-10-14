@@ -23,11 +23,6 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     @Inject
     private lateinit var dm : ResourceDepManageService
 
-    override fun postActionAfterMutation(mutatedIndividual: RestIndividual, mutated: MutatedGeneSpecification?) {
-        // repair db among dbactions
-        super.postActionAfterMutation(mutatedIndividual, null)
-    }
-
     override fun genesToMutation(individual: RestIndividual, evi: EvaluatedIndividual<RestIndividual>, targets: Set<Int>): List<Gene> {
         val restGenes = individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(
             GeneFilter.NO_SQL
@@ -39,7 +34,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
         return individual.seeInitializingActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable)
             .plus(individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(GeneFilter.ONLY_SQL) })
             .plus(restGenes)
-            .plus(individual.seeExternalServiceActions().flatMap { it.seeTopGenes() })
+            .plus(individual.seeExternalServiceActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable))
 
     }
 

@@ -19,7 +19,7 @@ public class IntegerClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
-    public static int valueOf(String input, String idTemplate) {
+    public static Integer valueOf(String input, String idTemplate) {
         return parseInt(input,idTemplate);
     }
 

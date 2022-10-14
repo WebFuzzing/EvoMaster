@@ -72,7 +72,7 @@ public class FloatClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true, category = ReplacementCategory.BASE)
-    public static float valueOf(String input, String idTemplate) {
+    public static Float valueOf(String input, String idTemplate) {
         return parseFloat(input, idTemplate);
     }
 }
