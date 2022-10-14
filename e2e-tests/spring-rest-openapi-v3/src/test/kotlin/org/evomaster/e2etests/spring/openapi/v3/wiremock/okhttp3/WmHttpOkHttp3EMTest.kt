@@ -38,7 +38,7 @@ class WmHttpOkHttp3EMTest : SpringTestBase() {
             "WmHttpOkHttp3EM",
             "org.foo.WmHttpOkHttp3EM",
             500,
-            true,
+            false,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
