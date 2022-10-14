@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.output.service.TestWriterUtils.Companion.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.external.service.httpws.ExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
@@ -729,8 +730,11 @@ class TestSuiteWriter {
 
                 if (format.isJavaOrKotlin() && config.isEnabledExternalServiceMocking()) {
                     getWireMockServerActions(solution)
-                        .forEach { action ->
-                            addStatement("${getWireMockVariableName(action)}.resetAll()", lines)
+                        .forEach { es ->
+                            addStatement("${getWireMockVariableName(es)}.resetAll()", lines)
+                            // set the default responses for all wm
+                            handleDefaultStubForAsJavaOrKotlin(lines, es)
+                            lines.appendSemicolon(format)
                         }
                 }
             } else if (format.isCsharp()) {
@@ -862,7 +866,7 @@ class TestSuiteWriter {
                     .filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active }
                     .map { it.externalService }
-                    .plus( it.fitness.getViewEmployedDefaultWM())
+                    //.plus( it.fitness.getViewEmployedDefaultWM())
             }
             .distinctBy { it.getSignature() }.toList()
     }
