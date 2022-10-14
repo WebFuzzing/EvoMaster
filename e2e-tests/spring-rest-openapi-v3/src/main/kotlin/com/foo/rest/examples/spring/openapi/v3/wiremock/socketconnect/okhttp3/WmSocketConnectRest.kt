@@ -69,7 +69,7 @@ class WmSocketConnectRest {
     @GetMapping(path = ["/sstring"])
     fun getSString() : ResponseEntity<String> {
 
-        val url = URL("$protocol{s}://$host:7777/api/sstring")
+        val url = URL("${protocol}s://$host:7777/api/sstring")
 
         val request = Request.Builder().url(url).build()
 
