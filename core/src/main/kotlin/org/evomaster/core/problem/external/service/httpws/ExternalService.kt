@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.external.service.httpws
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.MappingBuilder
+import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import java.util.*
 
@@ -18,6 +20,32 @@ class ExternalService(
      */
     private val wireMockServer: WireMockServer
 ) {
+
+    companion object{
+
+        private const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
+        private const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
+    }
+
+    fun getWMDefaultPriority() = 100
+    fun getWMDefaultUrlSetting() = "anyUrl()"
+    fun getWMDefaultMethod() = "any"
+    fun getWMDefaultCode() = WIREMOCK_DEFAULT_RESPONSE_CODE
+    fun getWMDefaultMessage() = WIREMOCK_DEFAULT_RESPONSE_MESSAGE
+    fun getWMDefaultConnectionHeader() = "close"
+
+    fun getDefaultWMMappingBuilder() : MappingBuilder{
+        return WireMock.any(WireMock.anyUrl()).atPriority(getWMDefaultPriority()).willReturn(
+                WireMock.aResponse()
+                    .withStatus(getWMDefaultCode())
+                    .withBody(getWMDefaultMessage())
+                    /*
+                        do not set close connection in search
+                        however, it will be needed in the generated tests
+                     */
+//                    .withHeader("Connection",getWMDefaultConnectionHeader())
+            )
+    }
 
     /**
      * Return the IP address of WireMock instance

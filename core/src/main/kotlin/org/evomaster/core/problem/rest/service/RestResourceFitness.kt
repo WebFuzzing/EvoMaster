@@ -134,6 +134,15 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     fv.registerExternalServiceRequest(indexOfAction, requestedExternalServiceRequests)
                 }
 
+                val employedDefault = requestedExternalServiceRequests.map { it.wireMockSignature }.distinct().filter {
+                    externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
+                        .none { a -> a.request.wireMockSignature == it }
+                }.associate {
+                    val es = externalServiceHandler.getExternalService(it)
+                    es.getRemoteHostName() to es
+                }
+                fv.registerExternalRequestToDefaultWM(indexOfAction, employedDefault)
+
                 externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
                     .groupBy { it.request.absoluteURL }
                     .forEach { (url, actions) ->
@@ -148,6 +157,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                             }
                         }
                     }
+
+
 
                 if (!ok) {
                     terminated = true

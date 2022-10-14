@@ -25,14 +25,16 @@ class HttpWsResponseParam (
      *
      * TODO: might want to extend StringGene to avoid cases in which taint is lost due to mutation
      */
-    responseBody: OptionalGene = OptionalGene(RESPONSE_GENE_NAME, StringGene(RESPONSE_GENE_NAME))
+    responseBody: OptionalGene = OptionalGene(RESPONSE_GENE_NAME, StringGene(RESPONSE_GENE_NAME)),
+    val connectionHeader : String? = DEFAULT_HEADER_CONNECTION
 ): ResponseParam("response", responseType, responseBody, listOf(status)) {
 
     companion object{
         const val RESPONSE_GENE_NAME = "WireMockResponseGene"
+        const val DEFAULT_HEADER_CONNECTION : String = "close"
     }
 
     override fun copyContent(): Param {
-        return HttpWsResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, responseBody.copy() as OptionalGene)
+        return HttpWsResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, responseBody.copy() as OptionalGene, connectionHeader)
     }
 }

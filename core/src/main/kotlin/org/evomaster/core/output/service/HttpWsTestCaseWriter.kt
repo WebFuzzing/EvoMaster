@@ -227,7 +227,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active })
             if (format.isJavaOrKotlin())
-                anyDnsCache = handleDnsForExternalServiceActions(lines, exActions, fv.getViewExternalRequestToDefaultWMByAction(index))
+                anyDnsCache = handleDnsForExternalServiceActions(
+                    lines, exActions, fv.getViewExternalRequestToDefaultWMByAction(index))
 
             if (exActions.isNotEmpty()) {
                 if (format.isJavaOrKotlin()) {

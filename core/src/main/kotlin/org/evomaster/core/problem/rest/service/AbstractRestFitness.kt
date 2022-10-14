@@ -810,9 +810,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             // register the external service info which re-direct to the default WM
             fv.registerExternalRequestToDefaultWM(
                 index,
-                info.employedDefaultWM.associate { info ->
-                    val signature = getWMDefaultSignature(info.protocol, info.remotePort)
-                    info.remoteHostname to externalServiceHandler.getExternalService(signature)
+                info.employedDefaultWM.associate { it ->
+                    val signature = getWMDefaultSignature(it.protocol, it.remotePort)
+                    it.remoteHostname to externalServiceHandler.getExternalService(signature)
                 }
             )
         }

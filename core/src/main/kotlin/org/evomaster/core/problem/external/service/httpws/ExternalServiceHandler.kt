@@ -23,12 +23,6 @@ import javax.annotation.PostConstruct
 class ExternalServiceHandler {
 
     companion object {
-        const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
-        const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
-
-        const val DEFAULT_WIREMOCK_RESPONSE_CODE = 500
-        const val DEFAULT_WIREMOCK_RESPONSE_MESSAGE = "Internal Error (EM Default)"
-
         private val log: Logger = LoggerFactory.getLogger(ExternalServiceHandler::class.java)
 
     }
@@ -106,8 +100,7 @@ class ExternalServiceHandler {
         if (!externalServices.containsKey(externalServiceInfo.signature())) {
             val ip = getIP(externalServiceInfo.remotePort)
             lastIPAddress = ip
-            val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo)
-            externalServices[externalServiceInfo.signature()] = ExternalService(externalServiceInfo, wm)
+            externalServices[externalServiceInfo.signature()] = initWireMockServer(ip, externalServiceInfo)
         }
     }
 
@@ -245,7 +238,7 @@ class ExternalServiceHandler {
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
      */
-    private fun initWireMockServer(address: String, info: HttpExternalServiceInfo): WireMockServer {
+    private fun initWireMockServer(address: String, info: HttpExternalServiceInfo): ExternalService {
         val port = info.remotePort
 
         // TODO: Port need to be changed to the remote service port
@@ -265,11 +258,18 @@ class ExternalServiceHandler {
         }
 
         val wm = WireMockServer(config)
-        wm.start()
+        val es = ExternalService(info, wm)
 
-        wireMockSetDefaults(wm, info is DefaultHttpExternalServiceInfo)
+        /*
+            for SUT, its first connection is re-directed to a given ip address,
+            to keep same behavior in generated tests, we do not start the WM accordingly
+         */
+        if (info !is DefaultHttpExternalServiceInfo){
+            wm.start()
+            wireMockSetDefaults(es)
+        }
 
-        return wm
+        return es
     }
 
 
@@ -279,18 +279,8 @@ class ExternalServiceHandler {
      * WireMock throws an exception when there is no stub for the request
      * to avoid the exception it handled manually
      */
-    private fun wireMockSetDefaults(wireMockServer: WireMockServer, isDefaultWM : Boolean) {
-        val code = if (isDefaultWM) DEFAULT_WIREMOCK_RESPONSE_CODE else WIREMOCK_DEFAULT_RESPONSE_CODE
-        val msg = if (isDefaultWM) DEFAULT_WIREMOCK_RESPONSE_MESSAGE else WIREMOCK_DEFAULT_RESPONSE_MESSAGE
+    private fun wireMockSetDefaults(es: ExternalService) {
 
-        wireMockServer.stubFor(
-            any(anyUrl())
-                .atPriority(100)
-                .willReturn(
-                    aResponse()
-                        .withStatus(code)
-                        .withBody(msg)
-                )
-        )
+        es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
     }
 }
