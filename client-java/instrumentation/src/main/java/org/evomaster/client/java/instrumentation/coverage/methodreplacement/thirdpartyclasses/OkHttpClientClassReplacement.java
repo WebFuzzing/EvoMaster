@@ -46,7 +46,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "okhttpclient_constructor",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET,
             replacingConstructor = true
     )
