@@ -1,4 +1,4 @@
-package org.evomaster.e2etests.spring.openapi.v3.wiremock.socketconnect.okhttp3
+package org.evomaster.e2etests.spring.openapi.v3.wiremock.okhttp3
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock

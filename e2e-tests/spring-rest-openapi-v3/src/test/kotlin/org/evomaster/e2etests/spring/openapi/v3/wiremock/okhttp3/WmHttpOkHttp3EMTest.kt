@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.openapi.v3.wiremock.socketconnect.okhttp3
+package org.evomaster.e2etests.spring.openapi.v3.wiremock.okhttp3
 
-import com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect.okhttp3.WmSocketConnectController
+import com.foo.rest.examples.spring.openapi.v3.wiremock.okhttp3.WmOkHttp3Controller
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 
-class WmSocketConnectEMTest : SpringTestBase() {
+class WmHttpOkHttp3EMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -19,7 +19,7 @@ class WmSocketConnectEMTest : SpringTestBase() {
 
             val config = EMConfig()
             config.instrumentMR_NET = true
-            initClass(WmSocketConnectController(listOf("/api/wm/socketconnect/sstring")), config)
+            initClass(WmOkHttp3Controller(listOf("/api/wm/socketconnect/sstring")), config)
 
             /*
             The test fails on CI, but not local with WM 2.32.0
@@ -35,8 +35,8 @@ class WmSocketConnectEMTest : SpringTestBase() {
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-            "WmSocketConnectEM",
-            "org.foo.WmSocketConnectOpenEM",
+            "WmHttpOkHttp3EM",
+            "org.foo.WmHttpOkHttp3EM",
             500,
             true,
             { args: MutableList<String> ->

@@ -1,10 +1,10 @@
-package com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect.okhttp3
+package com.foo.rest.examples.spring.openapi.v3.wiremock.okhttp3
 
 import com.foo.rest.examples.spring.openapi.v3.SpringController
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 
-class WmSocketConnectController(val skip : List<String> = listOf()) : SpringController(WmSocketConnectApplication::class.java){
+class WmOkHttp3Controller(val skip : List<String> = listOf()) : SpringController(WmOkHttp3Application::class.java){
 
     override fun getProblemInfo(): ProblemInfo {
         return RestProblem(

@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.openapi.v3.wiremock.socketconnect.okhttp3
+package org.evomaster.e2etests.spring.openapi.v3.wiremock.okhttp
 
-import com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect.okhttp3.WmSocketConnectController
+import com.foo.rest.examples.spring.openapi.v3.wiremock.okhttp.WmOkHttpController
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 
-class WmHttpsSocketConnectEMTest : SpringTestBase() {
+class WmOkHttpEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -19,7 +19,7 @@ class WmHttpsSocketConnectEMTest : SpringTestBase() {
 
             val config = EMConfig()
             config.instrumentMR_NET = true
-            initClass(WmSocketConnectController(listOf("/api/wm/socketconnect/string","/api/wm/socketconnect/object")), config)
+            initClass(WmOkHttpController(), config)
 
             /*
             The test fails on CI, but not local with WM 2.32.0
@@ -35,10 +35,10 @@ class WmHttpsSocketConnectEMTest : SpringTestBase() {
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-            "WmSocketConnectEM",
-            "org.foo.WmSocketConnectOpenEM",
+            "WmOkHttpEM",
+            "org.foo.WmOkHttpEM",
             500,
-            false,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -49,6 +49,13 @@ class WmHttpsSocketConnectEMTest : SpringTestBase() {
                 val solution = initAndRun(args)
 
                 assertTrue(solution.individuals.size >= 1)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/string", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/string", "Hello There")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/wm/socketconnect/string", null)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/socketconnect/string", null)
+
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/object", "OK")
+
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "OK")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "Hello There")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/wm/socketconnect/sstring", null)

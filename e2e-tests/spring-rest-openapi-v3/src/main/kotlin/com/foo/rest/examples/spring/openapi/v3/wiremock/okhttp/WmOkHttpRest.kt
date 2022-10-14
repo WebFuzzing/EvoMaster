@@ -1,8 +1,8 @@
-package com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect.okhttp3
+package com.foo.rest.examples.spring.openapi.v3.wiremock.okhttp
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import com.squareup.okhttp.OkHttpClient
+import com.squareup.okhttp.Request
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -11,7 +11,7 @@ import java.net.URL
 
 @RestController
 @RequestMapping(path = ["/api/wm/socketconnect"])
-class WmSocketConnectRest {
+class WmOkHttpRest {
 
     private val host = "github.com"
     private val protocol = "http"
@@ -27,9 +27,8 @@ class WmSocketConnectRest {
 
         try {
             val data = client.newCall(request).execute()
-            val body = data.body?.string()
-            val code = data.code
-            data.close()
+            val body = data.body()?.string()
+            val code = data.code()
             return if (code in 200..299){
                 if (body == "\"HELLO THERE!!!\""){
                     ResponseEntity.ok("Hello There")
@@ -54,10 +53,9 @@ class WmSocketConnectRest {
         val request = Request.Builder().url(url).build()
 
         val data = client.newCall(request).execute()
-        val body= data.body?.string()
-        data.close()
+        val body= data.body()?.string()
         val mapper = ObjectMapper()
-        val dto = mapper.readValue(body, WmSocketConnectDto::class.java)
+        val dto = mapper.readValue(body, WmOkHttpDto::class.java)
 
         return if (dto.x!! > 0){
             ResponseEntity.ok("OK")
@@ -75,9 +73,8 @@ class WmSocketConnectRest {
 
         try {
             val data = client.newCall(request).execute()
-            val body = data.body?.string()
-            val code = data.code
-            data.close()
+            val body = data.body()?.string()
+            val code = data.code()
             return if (code in 200..299){
                 if (body == "\"HELLO THERE!!!\""){
                     ResponseEntity.ok("Hello There")
