@@ -203,26 +203,25 @@ object GraphQLActionBuilder {
         gene: Gene
     ): Boolean {
 
-       // val obj = gene
+        val obj = gene.getWrappedGene(ObjectGene::class.java)
+            ?: return false
 
-        when (gene) {
-            is ObjectGene -> gene.flatView().forEach { g ->
-                when {
-                    g is OptionalGene && g.gene is ObjectGene ->
-                        if (!isAllLimitInObjectFields(g.gene))
-                            return false
+        return obj.fields.all {
 
-                    g is ObjectGene -> {
-                        if (!isAllLimitInObjectFields(gene))
-                            return false
-                    }
+            val childObj = it.getWrappedGene(ObjectGene::class.java)
+            val childLim = it.getWrappedGene(LimitObjectGene::class.java)
 
-                    g is OptionalGene && g.gene is LimitObjectGene -> return true
-                }
+            if(childObj == null && childLim == null){
+                 false
+            } else if(childLim != null){
+                 true
+            } else if(childObj != null){
+                  isAllLimitInObjectFields(childObj)
+            } else {
+                //should never be reached
+                false
             }
         }
-
-        return false
     }
 
     /********************************************************/
