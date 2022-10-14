@@ -47,6 +47,8 @@ public class ReplacementList {
                     new MapClassReplacement(),
                     new MatcherClassReplacement(),
                     new MethodClassReplacement(),
+//                    new OkHttpClientBuilderClassReplacement(),
+//                    new OkHttpClientClassReplacement(),
                     new ObjectClassReplacement(),
                     new ObjectsClassReplacement(),
                     new PatternClassReplacement(),

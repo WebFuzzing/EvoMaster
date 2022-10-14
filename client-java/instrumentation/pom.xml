@@ -79,6 +79,12 @@
             <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <!--
             But at a certain point we went with full reflection, and scope "test",
             at least for method replacements.
@@ -92,6 +98,7 @@
             <artifactId>gson</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
