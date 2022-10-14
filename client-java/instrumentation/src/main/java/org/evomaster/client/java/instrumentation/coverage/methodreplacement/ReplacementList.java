@@ -50,6 +50,7 @@ public class ReplacementList {
                     new OkHttpClient3BuilderClassReplacement(),
                     new OkHttpClient3ClassReplacement(),
                     new OkHttpClientClassReplacement(),
+                    new OkUrlFactoryClassReplacement(),
                     new ObjectClassReplacement(),
                     new ObjectsClassReplacement(),
                     new PatternClassReplacement(),
