@@ -4,8 +4,6 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -82,21 +80,39 @@ class WMHttpsTest {
     }
 
     @Test
+    fun testOkClient3Https(){
+        val sc = SSLContext.getInstance("SSL")
+
+        sc.init(null, trustAllCerts, SecureRandom())
+
+        val okClientBuilder = okhttp3.OkHttpClient.Builder()
+            .sslSocketFactory(sc.socketFactory, trustAllCerts[0] as X509TrustManager)
+            .hostnameVerifier { _, _ -> true }
+        val client = okClientBuilder.build()
+
+        val request = okhttp3.Request.Builder().url(url).build()
+
+        val data = client.newCall(request).execute()
+        val res = data.body?.string()
+        data.close()
+        assertEquals("Hello", res)
+
+    }
+
+    @Test
     fun testOkClientHttps(){
         val sc = SSLContext.getInstance("SSL")
 
         sc.init(null, trustAllCerts, SecureRandom())
 
-        val okClientBuilder = OkHttpClient.Builder()
-            .sslSocketFactory(sc.socketFactory, trustAllCerts[0] as X509TrustManager)
-            .hostnameVerifier { _, _ -> true }
-        val client = okClientBuilder.build()
+        val client = com.squareup.okhttp.OkHttpClient()
+        client.setSslSocketFactory(sc.socketFactory)
+        client.setHostnameVerifier({ _, _ -> true })
 
-        val request = Request.Builder().url(url).build()
+        val request = com.squareup.okhttp.Request.Builder().url(url).build()
 
         val data = client.newCall(request).execute()
-        val res = data.body?.string()
-        data.close()
+        val res = data.body()?.string()
         assertEquals("Hello", res)
 
     }
