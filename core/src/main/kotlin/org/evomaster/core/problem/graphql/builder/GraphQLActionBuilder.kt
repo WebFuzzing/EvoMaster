@@ -136,11 +136,21 @@ object GraphQLActionBuilder {
          In this case the return gene should not be repaired but rather removed from the actions (as a simple solution).
          *Note: It seems like a very edge case, since the limit gene was added to avoid too large trees.
          */
-        if (!isAllLimitInObjectFields(params)) {
+
+        if (params.any { p -> p is GQReturnParam }) {
+
+            if (!params.find { p -> p is GQReturnParam }?.let { isAllLimitInObjectFields(it) }!!  ) {
+                //Create the action
+                val action = GraphQLAction(actionId, element.fieldName, type, params)
+                actionCluster[action.getName()] = action
+            }
+
+        }else {
             //Create the action
             val action = GraphQLAction(actionId, element.fieldName, type, params)
             actionCluster[action.getName()] = action
         }
+
     }
 
     private fun handleAllCyclesAndLimitInObjectFields(
@@ -187,9 +197,14 @@ object GraphQLActionBuilder {
      * Check if there is any top gene in any param for which we cannot make a selection due to limit genes
      */
     private fun isAllLimitInObjectFields(
-        params: List<Param>
+        params: Param
     ): Boolean {
-        return params.flatMap { it.genes }
+        /*return params.flatMap { it.genes }
+            .any {
+                isAllLimitInObjectFields(it)
+            }*/
+
+        return params.genes
             .any {
                 isAllLimitInObjectFields(it)
             }
