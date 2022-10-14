@@ -14,13 +14,12 @@ import javax.net.ssl.X509TrustManager;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URL;
 
-public class OkHttpClientBuilderClassReplacement extends ThirdPartyMethodReplacementClass {
+public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplacementClass {
 
     private static ThreadLocal<OkHttpClient.Builder> instance = new ThreadLocal<>();
 
-    private static final OkHttpClientBuilderClassReplacement singleton = new OkHttpClientBuilderClassReplacement();
+    private static final OkHttpClient3BuilderClassReplacement singleton = new OkHttpClient3BuilderClassReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {

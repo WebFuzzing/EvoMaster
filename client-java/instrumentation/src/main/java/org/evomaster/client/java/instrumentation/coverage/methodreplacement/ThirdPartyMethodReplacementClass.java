@@ -153,10 +153,6 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
     protected abstract String getNameOfThirdPartyTargetClass();
 
-    protected List<ThirdPartyMethodReplacementClass> preInitFor(){
-        return Collections.emptyList();
-    }
-
     /**
      *
      * @param singleton a reference to an instance of the subclass. As reflection is expensive,

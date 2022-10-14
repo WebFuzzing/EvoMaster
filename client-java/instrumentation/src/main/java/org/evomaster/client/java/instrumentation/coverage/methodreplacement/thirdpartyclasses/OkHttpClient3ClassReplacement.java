@@ -8,16 +8,14 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementClass {
+public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementClass {
 
     private static ThreadLocal<OkHttpClient> instance = new ThreadLocal<>();
 
-    private static final OkHttpClientClassReplacement singleton = new OkHttpClientClassReplacement();
+    private static final OkHttpClient3ClassReplacement singleton = new OkHttpClient3ClassReplacement();
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
@@ -55,11 +53,11 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
         //Constructor original = getOriginalConstructor(singleton, "okhttpclient_constructor");
 
        // try {
-            if (!OkHttpClientBuilderClassReplacement.hasInstance())
-                OkHttpClientBuilderClassReplacement.Builder();
+            if (!OkHttpClient3BuilderClassReplacement.hasInstance())
+                OkHttpClient3BuilderClassReplacement.Builder();
 
             //OkHttpClient client = (OkHttpClient) original.newInstance(OkHttpClientBuilderClassReplacement.consumeInstance());
-            OkHttpClient.Builder builder = OkHttpClientBuilderClassReplacement.consumeInstance();
+            OkHttpClient.Builder builder = OkHttpClient3BuilderClassReplacement.consumeInstance();
 
             addInstance(builder.build());
 //        } catch (InstantiationException | IllegalAccessException e) {
@@ -68,10 +66,5 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
 //            throw (RuntimeException) e.getCause();
 //        }
 
-    }
-
-    @Override
-    protected List<ThirdPartyMethodReplacementClass> preInitFor() {
-        return ReplacementList.getList().stream().filter(s-> s.getTargetClassName().equals("okhttp3.OkHttpClient$Builder")).map(ThirdPartyMethodReplacementClass.class::cast).collect(Collectors.toList());
     }
 }
