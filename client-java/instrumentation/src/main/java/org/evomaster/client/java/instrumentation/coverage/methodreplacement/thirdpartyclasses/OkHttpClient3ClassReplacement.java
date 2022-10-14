@@ -92,7 +92,7 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
         if (url.scheme().equalsIgnoreCase("https") || url.scheme().equalsIgnoreCase("http")){
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.scheme(), url.host(), url.port());
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, url.port());
-            replaced = new Request.Builder().url(url.scheme()+"//"+ipAndPort[0]+":"+ipAndPort[1]+url.encodedPath()).build();
+            replaced = new Request.Builder().url(url.scheme()+"://"+ipAndPort[0]+":"+ipAndPort[1]+url.encodedPath()).build();
         }
 
         try{

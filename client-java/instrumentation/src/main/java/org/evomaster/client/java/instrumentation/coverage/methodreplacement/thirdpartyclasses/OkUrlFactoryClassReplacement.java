@@ -7,12 +7,12 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Thir
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URL;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
@@ -39,6 +39,40 @@ public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementCla
 
         Method original = getOriginal(singleton, "okhttpclient_OkUrlFactory_open", caller);
 
+        URL replaced = getReplacedURL(url);
+        try{
+            return (HttpURLConnection) original.invoke(caller, replaced);
+        } catch (IllegalAccessException e){
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e){
+            throw (RuntimeException) e.getCause();
+        }
+    }
+
+    @Replacement(replacingStatic = false,
+            type = ReplacementType.TRACKER,
+            id = "okhttpclient_OkUrlFactory_open_proxy",
+            usageFilter = UsageFilter.ANY,
+            category = ReplacementCategory.NET
+    )
+    public static HttpURLConnection open(Object caller, URL url, Proxy proxy) {
+        if(caller == null){
+            throw new NullPointerException();
+        }
+
+        Method original = getOriginal(singleton, "okhttpclient_OkUrlFactory_open_proxy", caller);
+
+        URL replaced = getReplacedURL(url);
+        try{
+            return (HttpURLConnection) original.invoke(caller, replaced, proxy);
+        } catch (IllegalAccessException e){
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e){
+            throw (RuntimeException) e.getCause();
+        }
+    }
+
+    private static URL getReplacedURL(URL url){
         URL replaced = url;
         if (url.getProtocol().equalsIgnoreCase("https") || url.getProtocol().equalsIgnoreCase("http")){
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.getProtocol(), url.getHost(), url.getPort());
@@ -50,12 +84,6 @@ public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementCla
                 throw new RuntimeException(e);
             }
         }
-        try{
-            return (HttpURLConnection) original.invoke(caller, replaced);
-        } catch (IllegalAccessException e){
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e){
-            throw (RuntimeException) e.getCause();
-        }
+        return replaced;
     }
 }
