@@ -82,7 +82,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET
     )
-    public OkHttpClient setSslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory) {
+    public static OkHttpClient setSslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory) {
         if(caller == null){
             throw new NullPointerException();
         }
@@ -104,7 +104,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET
     )
-    public OkHttpClient setHostnameVerifier(Object caller, HostnameVerifier hostnameVerifier) {
+    public static OkHttpClient setHostnameVerifier(Object caller, HostnameVerifier hostnameVerifier) {
         if(caller == null){
             throw new NullPointerException();
         }
@@ -126,7 +126,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET
     )
-    public Call newCall(Object caller, Request request){
+    public static Call newCall(Object caller, Request request){
         if(caller == null){
             throw new NullPointerException();
         }
