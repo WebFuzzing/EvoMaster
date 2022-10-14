@@ -42,7 +42,7 @@ class ExternalService(
                 WireMock.aResponse()
                     .withStatus(getWMDefaultCode())
                     .withBody(getWMDefaultMessage())
-                    .withHeader("Connection",getWMDefaultConnectionHeader())
+//                    .withHeader("Connection",getWMDefaultConnectionHeader())
             )
     }
 

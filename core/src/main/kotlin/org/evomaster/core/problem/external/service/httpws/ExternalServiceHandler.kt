@@ -281,20 +281,6 @@ class ExternalServiceHandler {
      */
     private fun wireMockSetDefaults(es: ExternalService) {
 
-        /*
-            currently, we set all responses with close Connection
-            need to think about whether we need to make all or only for Default WM
-            however, in the generated tests, we need to make all as close connection to avoid
-            dependency among tests
-         */
-//        val response = aResponse()
-//            .withStatus(code)
-//            .withBody(msg)
-//            .withHeader("Connection","close")
-//        // close the connection if it accesses the default WM
-//        if (isDefaultWM)
-//            response.withHeader("Connection","close")
-
         es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
     }
 }
