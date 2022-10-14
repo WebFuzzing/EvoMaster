@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 
-class WmSocketConnectEMTest : SpringTestBase() {
+class WmHttpsSocketConnectEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -19,7 +19,7 @@ class WmSocketConnectEMTest : SpringTestBase() {
 
             val config = EMConfig()
             config.instrumentMR_NET = true
-            initClass(WmSocketConnectController(listOf("/api/wm/socketconnect/sstring")), config)
+            initClass(WmSocketConnectController(listOf("/api/wm/socketconnect/string","/api/wm/socketconnect/string")), config)
 
             /*
             The test fails on CI, but not local with WM 2.32.0
@@ -49,12 +49,10 @@ class WmSocketConnectEMTest : SpringTestBase() {
                 val solution = initAndRun(args)
 
                 assertTrue(solution.individuals.size >= 1)
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/string", "OK")
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/string", "Hello There")
-                assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/wm/socketconnect/string", null)
-                assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/socketconnect/string", null)
-
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/object", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "Hello There")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/wm/socketconnect/sstring", null)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/socketconnect/sstring", null)
             },
             3
         )

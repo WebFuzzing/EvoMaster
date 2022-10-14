@@ -47,23 +47,50 @@ class WmSocketConnectRest {
     }
 
 
+    @GetMapping(path = ["/object"])
+    fun getObject() : ResponseEntity<String> {
 
-//    @GetMapping(path = ["/object"])
-//    fun getObject() : ResponseEntity<String> {
-//
-//        val url = URL("$protocol://$host:6666/api/object")
-//        val request = Request.Builder().url(url).build()
-//
-//        val data = client.newCall(request).execute()
-//        val body= data.body?.string()
-//        data.close()
-//        val mapper = ObjectMapper()
-//        val dto = mapper.readValue(body, WmSocketConnectDto::class.java)
-//
-//        return if (dto.x!! > 0){
-//            ResponseEntity.ok("OK")
-//        } else{
-//            ResponseEntity.status(500).build()
-//        }
-//    }
+        val url = URL("$protocol://$host:6666/api/object")
+        val request = Request.Builder().url(url).build()
+
+        val data = client.newCall(request).execute()
+        val body= data.body?.string()
+        data.close()
+        val mapper = ObjectMapper()
+        val dto = mapper.readValue(body, WmSocketConnectDto::class.java)
+
+        return if (dto.x!! > 0){
+            ResponseEntity.ok("OK")
+        } else{
+            ResponseEntity.status(500).build()
+        }
+    }
+
+    @GetMapping(path = ["/sstring"])
+    fun getSString() : ResponseEntity<String> {
+
+        val url = URL("$protocol{s}://$host:7777/api/sstring")
+
+        val request = Request.Builder().url(url).build()
+
+        try {
+            val data = client.newCall(request).execute()
+            val body = data.body?.string()
+            val code = data.code
+            data.close()
+            return if (code in 200..299){
+                if (body == "\"HELLO THERE!!!\""){
+                    ResponseEntity.ok("Hello There")
+                }else{
+                    ResponseEntity.ok("OK")
+                }
+            } else if (code in 300..499){
+                ResponseEntity.status(400).build()
+            }else{
+                ResponseEntity.status(500).build()
+            }
+        }catch (e: Exception){
+            return ResponseEntity.status(500).build()
+        }
+    }
 }
