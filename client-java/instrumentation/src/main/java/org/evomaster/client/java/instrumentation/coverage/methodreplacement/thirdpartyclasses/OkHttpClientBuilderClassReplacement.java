@@ -52,7 +52,7 @@ public class OkHttpClientBuilderClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "okhttpclient_builder_constructor",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET,
             replacingConstructor = true
     )
@@ -76,7 +76,7 @@ public class OkHttpClientBuilderClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "okhttpclient_builder_hostnameVerifier",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET
     )
     public static OkHttpClient.Builder hostnameVerifier(Object caller, HostnameVerifier hostnameVerifier)  {
@@ -99,7 +99,7 @@ public class OkHttpClientBuilderClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "okhttpclient_builder_sslSocketFactory",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET
     )
     public static OkHttpClient.Builder sslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory, X509TrustManager trustManager)  {
@@ -123,7 +123,7 @@ public class OkHttpClientBuilderClassReplacement extends ThirdPartyMethodReplace
     @Replacement(replacingStatic = false,
             type = ReplacementType.TRACKER,
             id = "okhttpclient_builder_sslSocketFactory_onearg",
-            usageFilter = UsageFilter.ONLY_SUT,
+            usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET
     )
     public static OkHttpClient.Builder sslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory)  {
