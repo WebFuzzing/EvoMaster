@@ -130,10 +130,17 @@ object GraphQLActionBuilder {
        */
         handleAllCyclesAndLimitInObjectFields(params)
 
-        //Create the action
-        val action = GraphQLAction(actionId, element.fieldName, type, params)
-        actionCluster[action.getName()] = action
 
+        /*In some cases when fixing the depth to n. The return object gives paths to only Limit genes.
+        In this case the return gene should not be repaired but rather removed from the actions (as a simple solution).
+        *Note: It seems like a very edge case, since the limit gene was added to avoid too large trees.*/
+        //Not working
+       if (!handleAllLimitInObjectFields(params))
+        //Create the action
+       {
+           val action = GraphQLAction(actionId, element.fieldName, type, params)
+           actionCluster[action.getName()] = action
+       }
     }
 
     private fun handleAllCyclesAndLimitInObjectFields(
@@ -170,6 +177,47 @@ object GraphQLActionBuilder {
             }
         }
     }
+
+/*************************************/
+
+    private fun handleAllLimitInObjectFields(
+        params: MutableList<Param>
+    ): Boolean {
+
+
+        params.map { it.gene }.forEach { g ->
+        if (isAllLimitInObjectFields(g))
+            return true
+
+        }
+        return false
+    }
+
+
+    //return true if we get the limit pattern, false if not
+    private fun isAllLimitInObjectFields(
+        gene: Gene
+    ): Boolean {
+
+        when (gene) {
+            is ObjectGene -> gene.flatView().forEach { g ->
+                when {
+                    g is OptionalGene && g.gene is ObjectGene ->
+                        if (!isAllLimitInObjectFields(g.gene))
+                            return false
+                     g is ObjectGene -> {
+                         if (!isAllLimitInObjectFields(gene))
+                             return false
+                     }
+                    g is OptionalGene && g.gene is LimitObjectGene -> return true
+                }
+            }
+        }
+
+        return false
+
+    }
+    /********************************************************/
 
     fun handleAllCyclesAndLimitInObjectFields(gene: ObjectGene) {
         if (gene.fields.all {
