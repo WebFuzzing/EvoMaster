@@ -131,16 +131,16 @@ object GraphQLActionBuilder {
         handleAllCyclesAndLimitInObjectFields(params)
 
 
-        /*In some cases when fixing the depth to n. The return object gives paths to only Limit genes.
-        In this case the return gene should not be repaired but rather removed from the actions (as a simple solution).
-        *Note: It seems like a very edge case, since the limit gene was added to avoid too large trees.*/
-        //Not working
-       if (!handleAllLimitInObjectFields(params))
-        //Create the action
-       {
-           val action = GraphQLAction(actionId, element.fieldName, type, params)
-           actionCluster[action.getName()] = action
-       }
+        /*
+         In some cases when fixing the depth to n. The return object gives paths to only Limit genes.
+         In this case the return gene should not be repaired but rather removed from the actions (as a simple solution).
+         *Note: It seems like a very edge case, since the limit gene was added to avoid too large trees.
+         */
+        if (!isAllLimitInObjectFields(params)) {
+            //Create the action
+            val action = GraphQLAction(actionId, element.fieldName, type, params)
+            actionCluster[action.getName()] = action
+        }
     }
 
     private fun handleAllCyclesAndLimitInObjectFields(
@@ -154,11 +154,13 @@ object GraphQLActionBuilder {
                         g
                     )
                 }
+
                 it is OptionalGene && it.gene is ObjectGene -> it.flatView().forEach { g ->
                     if (g is OptionalGene && g.gene is ObjectGene) handleAllCyclesAndLimitInObjectFields(g.gene) else if (g is ObjectGene) handleAllCyclesAndLimitInObjectFields(
                         g
                     )
                 }
+
                 it is ArrayGene<*> && it.template is ObjectGene -> it.flatView().forEach { g ->
                     it.template.fields.forEach { f ->
                         if (f is OptionalGene && f.gene is ObjectGene) handleAllCyclesAndLimitInObjectFields(
@@ -166,6 +168,7 @@ object GraphQLActionBuilder {
                         ) else if (f is ObjectGene) handleAllCyclesAndLimitInObjectFields(f)
                     }
                 }
+
                 it is OptionalGene && it.gene is ArrayGene<*> && it.gene.template is ObjectGene -> it.flatView()
                     .forEach { g ->
                         it.gene.template.fields.forEach { f ->
@@ -178,26 +181,29 @@ object GraphQLActionBuilder {
         }
     }
 
-/*************************************/
+    /*************************************/
 
-    private fun handleAllLimitInObjectFields(
-        params: MutableList<Param>
+    /**
+     * Check if there is any top gene in any param for which we cannot make a selection due to limit genes
+     */
+    private fun isAllLimitInObjectFields(
+        params: List<Param>
     ): Boolean {
-
-
-        params.map { it.gene }.forEach { g ->
-        if (isAllLimitInObjectFields(g))
-            return true
-
-        }
-        return false
+        return params.flatMap { it.genes }
+            .any {
+                isAllLimitInObjectFields(it)
+            }
     }
 
 
-    //return true if we get the limit pattern, false if not
+    /**
+     * @return true if we get the limit pattern, false if not.
+     */
     private fun isAllLimitInObjectFields(
         gene: Gene
     ): Boolean {
+
+       // val obj = gene
 
         when (gene) {
             is ObjectGene -> gene.flatView().forEach { g ->
@@ -205,18 +211,20 @@ object GraphQLActionBuilder {
                     g is OptionalGene && g.gene is ObjectGene ->
                         if (!isAllLimitInObjectFields(g.gene))
                             return false
-                     g is ObjectGene -> {
-                         if (!isAllLimitInObjectFields(gene))
-                             return false
-                     }
+
+                    g is ObjectGene -> {
+                        if (!isAllLimitInObjectFields(gene))
+                            return false
+                    }
+
                     g is OptionalGene && g.gene is LimitObjectGene -> return true
                 }
             }
         }
 
         return false
-
     }
+
     /********************************************************/
 
     fun handleAllCyclesAndLimitInObjectFields(gene: ObjectGene) {
@@ -296,21 +304,24 @@ object GraphQLActionBuilder {
     private fun isReturnNotPrimitive(
         gene: Gene,
     ) = (
-             !(gene is OptionalGene && isScalar(gene.gene))
-            && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && isScalar(gene.gene.template.gene))
-            && !(gene is ArrayGene<*> && isScalar(gene.template))
-            && !(gene is ArrayGene<*> && gene.template is OptionalGene && isScalar(gene.template.gene))
-            && !(gene is OptionalGene && gene.gene is ArrayGene<*> && isScalar(gene.gene.template))
-            //enum cases
-            && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
-            && !(gene is ArrayGene<*> && gene.template is EnumGene<*>)
-            && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
-            && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>)
-            && gene !is EnumGene<*>
-            && !(gene is OptionalGene && gene.gene is EnumGene<*>)
+            !(gene is OptionalGene && isScalar(gene.gene))
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && isScalar(
+                gene.gene.template.gene
+            ))
+                    && !(gene is ArrayGene<*> && isScalar(gene.template))
+                    && !(gene is ArrayGene<*> && gene.template is OptionalGene && isScalar(gene.template.gene))
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && isScalar(gene.gene.template))
+                    //enum cases
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>)
+                    && !(gene is ArrayGene<*> && gene.template is EnumGene<*>)
+                    && !(gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
+                    && !(gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>)
+                    && gene !is EnumGene<*>
+                    && !(gene is OptionalGene && gene.gene is EnumGene<*>)
             )
 
-    private fun isScalar( gene: Gene) = gene is IntegerGene || gene is StringGene || gene is FloatGene || gene is BooleanGene|| gene is LongGene || gene is DateGene
+    private fun isScalar(gene: Gene) =
+        gene is IntegerGene || gene is StringGene || gene is FloatGene || gene is BooleanGene || gene is LongGene || gene is DateGene
 
 
     /**Note: There are tree functions containing blocs of "when": two functions for inputs and one for return.
@@ -351,31 +362,37 @@ object GraphQLActionBuilder {
                     val template = getInputScalarListOrEnumListGene(state, copy)
                     ArrayGene(element.fieldName, template)
                 }
+
             "int" ->
                 if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, IntegerGene(element.fieldName))
                 else
                     IntegerGene(element.fieldName)
+
             "string" ->
                 if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, StringGene(element.fieldName))
                 else
                     StringGene(element.fieldName)
+
             "float" ->
                 if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, FloatGene(element.fieldName))
                 else
                     FloatGene(element.fieldName)
+
             "boolean" ->
                 if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, BooleanGene(element.fieldName))
                 else
                     BooleanGene(element.fieldName)
+
             "long" ->
                 if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, LongGene(element.fieldName))
                 else
                     LongGene(element.fieldName)
+
             "null" -> {
                 val copy = element.copy(
                     fieldType = element.typeName, KindOfFieldName = element.kindOfFieldType,
@@ -384,11 +401,13 @@ object GraphQLActionBuilder {
                 )
                 getInputScalarListOrEnumListGene(state, copy)
             }
+
             "date" ->
                 if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, BooleanGene(element.fieldName))
                 else
                     DateGene(element.fieldName)
+
             GqlConst.SCALAR -> {
                 val copy = element.copy(
                     KindOfFieldName = element.typeName,
@@ -396,11 +415,13 @@ object GraphQLActionBuilder {
                 )
                 getInputScalarListOrEnumListGene(state, copy)
             }
+
             "id" ->
                 if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, StringGene(element.fieldName))
                 else
                     StringGene(element.fieldName)
+
             GqlConst.ENUM ->
                 if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, EnumGene(element.fieldName, element.enumValues))
@@ -411,10 +432,12 @@ object GraphQLActionBuilder {
                 LoggingUtil.uniqueWarn(log, "GQL does not support union in input type: ${element.KindOfFieldName}")
                 StringGene("Not supported type")
             }
+
             GqlConst.INTERFACE -> {
                 LoggingUtil.uniqueWarn(log, "GQL does not support union in input type: ${element.KindOfFieldName}")
                 StringGene("Not supported type")
             }
+
             else ->
                 if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.fieldName, StringGene(element.fieldName))
@@ -457,12 +480,14 @@ object GraphQLActionBuilder {
 
                     ArrayGene(element.fieldName, template)
                 }
+
             GqlConst.OBJECT ->
                 return if (element.isKindOfFieldTypeOptional) {
                     val optObjGene = createObjectGene(state, history, 0, maxTreeDepth, element)
                     OptionalGene(element.fieldName, optObjGene)
                 } else
                     createObjectGene(state, history, 0, maxTreeDepth, element)
+
             GqlConst.INPUT_OBJECT ->
                 return if (element.isKindOfFieldTypeOptional) {
                     val optInputObjGene = createInputObjectGene(state, history, maxTreeDepth, element)
@@ -475,26 +500,31 @@ object GraphQLActionBuilder {
                     OptionalGene(element.typeName, IntegerGene(element.typeName))
                 else
                     IntegerGene(element.typeName)
+
             "string" ->
                 return if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.typeName, StringGene(element.typeName))
                 else
                     StringGene(element.typeName)
+
             "float" ->
                 return if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.typeName, FloatGene(element.typeName))
                 else
                     FloatGene(element.typeName)
+
             "boolean" ->
                 return if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.typeName, BooleanGene(element.typeName))
                 else
                     BooleanGene(element.typeName)
+
             "long" ->
                 return if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.typeName, LongGene(element.typeName))
                 else
                     LongGene(element.typeName)
+
             "null" -> {
                 val copy = element.copy(
                     fieldType = element.typeName, KindOfFieldName = element.kindOfFieldType,
@@ -503,16 +533,19 @@ object GraphQLActionBuilder {
                 return getInputGene(state, history, maxTreeDepth, copy)
 
             }
+
             "date" ->
                 return if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.typeName, DateGene(element.typeName))
                 else
                     DateGene(element.typeName)
+
             GqlConst.ENUM ->
                 return if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.typeName, EnumGene(element.typeName, element.enumValues))
                 else
                     EnumGene(element.typeName, element.enumValues)
+
             GqlConst.SCALAR -> {
                 val copy = element.copy(
                     fieldType = element.fieldType, KindOfFieldName = element.typeName,
@@ -520,6 +553,7 @@ object GraphQLActionBuilder {
                 )
                 return getInputGene(state, history, maxTreeDepth, copy)
             }
+
             "id" ->
                 return if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.typeName, StringGene(element.typeName))
@@ -530,6 +564,7 @@ object GraphQLActionBuilder {
                 LoggingUtil.uniqueWarn(log, " GQL does not support union in input type: ${element.KindOfFieldName}")
                 return StringGene("Not supported type")
             }
+
             GqlConst.INTERFACE -> {
                 LoggingUtil.uniqueWarn(
                     log,
@@ -537,6 +572,7 @@ object GraphQLActionBuilder {
                 )
                 return StringGene("Not supported type")
             }
+
             else ->
                 return if (element.isKindOfFieldTypeOptional)
                     OptionalGene(element.typeName, StringGene(element.typeName))
@@ -629,6 +665,7 @@ object GraphQLActionBuilder {
 
                 return OptionalGene(element.fieldName, ArrayGene(element.fieldName, template))
             }
+
             GqlConst.OBJECT -> {
                 val accum = initAccum + 1
                 return if (checkDepthIsOK(accum, treeDepth)) {
@@ -657,6 +694,7 @@ object GraphQLActionBuilder {
                     OptionalGene(element.fieldName, LimitObjectGene(element.fieldName))
                 }
             }
+
             GqlConst.UNION -> {
                 history.addLast(element.typeName)
                 return if (history.count { it == element.typeName } == 1) {
@@ -674,6 +712,7 @@ object GraphQLActionBuilder {
                     (OptionalGene(element.fieldName, CycleObjectGene(element.fieldName)))
                 }
             }
+
             GqlConst.INTERFACE -> {
                 history.addLast(element.typeName)
 
@@ -686,39 +725,40 @@ object GraphQLActionBuilder {
                         if (gene != null) {
                             gene.copy()
                         } else {
-                        //will contain basic interface fields, and had as name the methode name
-                        var interfaceBaseOptObjGene = createObjectGene(
-                            state, history, accum, treeDepth, element
-                        )
-                        interfaceBaseOptObjGene = interfaceBaseOptObjGene as ObjectGene
-
-                        interfaceBaseOptObjGene.name = interfaceBaseOptObjGene.name.plus(GqlConst.INTERFACE_BASE_TAG)
-
-                        accum = initAccum //because #Base# and additional interface fields are in the same level
-
-                        //will contain additional interface fields, and had as name the name of the objects
-                        val interfaceAdditionalOptObjGene = createInterfaceObjectGene(
-                            state,
-                            history,
-                            interfaceBaseOptObjGene,
-                            accum,
-                            treeDepth,
-                            element
-                        )
-
-                        //merge basic interface fields with additional interface fields
-                        interfaceAdditionalOptObjGene.add(
-                            OptionalGene(
-                                element.fieldName + GqlConst.INTERFACE_BASE_TAG,
-                                interfaceBaseOptObjGene
+                            //will contain basic interface fields, and had as name the methode name
+                            var interfaceBaseOptObjGene = createObjectGene(
+                                state, history, accum, treeDepth, element
                             )
-                        )
-                        history.removeLast()
-                        //will return a single optional object gene with optional basic interface fields and optional additional interface fields
+                            interfaceBaseOptObjGene = interfaceBaseOptObjGene as ObjectGene
+
+                            interfaceBaseOptObjGene.name =
+                                interfaceBaseOptObjGene.name.plus(GqlConst.INTERFACE_BASE_TAG)
+
+                            accum = initAccum //because #Base# and additional interface fields are in the same level
+
+                            //will contain additional interface fields, and had as name the name of the objects
+                            val interfaceAdditionalOptObjGene = createInterfaceObjectGene(
+                                state,
+                                history,
+                                interfaceBaseOptObjGene,
+                                accum,
+                                treeDepth,
+                                element
+                            )
+
+                            //merge basic interface fields with additional interface fields
+                            interfaceAdditionalOptObjGene.add(
+                                OptionalGene(
+                                    element.fieldName + GqlConst.INTERFACE_BASE_TAG,
+                                    interfaceBaseOptObjGene
+                                )
+                            )
+                            history.removeLast()
+                            //will return a single optional object gene with optional basic interface fields and optional additional interface fields
                             val g = OptionalGene(
-                            element.fieldName + GqlConst.INTERFACE_TAG,
-                            ObjectGene(element.fieldName + GqlConst.INTERFACE_TAG, interfaceAdditionalOptObjGene)
-                        )
+                                element.fieldName + GqlConst.INTERFACE_TAG,
+                                ObjectGene(element.fieldName + GqlConst.INTERFACE_TAG, interfaceAdditionalOptObjGene)
+                            )
                             depthBasedCache[id] = g
                             g
                         }
@@ -731,6 +771,7 @@ object GraphQLActionBuilder {
                     (OptionalGene(element.fieldName, CycleObjectGene(element.fieldName)))
                 }
             }
+
             "null" -> {
                 val copy = element.copy(
                     fieldType = element.typeName, KindOfFieldName = element.kindOfFieldType,
@@ -739,23 +780,26 @@ object GraphQLActionBuilder {
                 )
                 return getReturnGene(state, history, initAccum, treeDepth, copy)
             }
+
             GqlConst.ENUM ->
                 return createEnumGene(
                     element.KindOfFieldName,
                     element.enumValues,
                 )
+
             GqlConst.SCALAR -> {
                 if (element.kindOfFieldType.lowercase() == GqlConst.LIST)
                     return createScalarGene(
                         element.typeName,
                         element.fieldName,
                     )
-                 else
+                else
                     return createScalarGene(
                         element.typeName,
                         element.KindOfFieldName,
                     )
             }
+
             else ->
                 return OptionalGene(element.fieldName, StringGene(element.fieldName))
         }
@@ -896,6 +940,7 @@ object GraphQLActionBuilder {
                 val gene = getReturnGene(state, history, accum, maxTreeDepth, copy)
                 tupleElements.add(gene)
             }
+
             GqlConst.SCALAR -> {
                 val gene = createScalarGene(
                     tableElement.fieldType,
@@ -903,6 +948,7 @@ object GraphQLActionBuilder {
                 )
                 tupleElements.add(gene)
             }
+
             GqlConst.ENUM -> {
                 val gene = createEnumGene(
                     tableElement.fieldName,
@@ -910,6 +956,7 @@ object GraphQLActionBuilder {
                 )
                 tupleElements.add(gene)
             }
+
             GqlConst.UNION -> {
                 val copy = tableElement.copy(
                     isKindOfFieldTypeOptional = isKindOfTableFieldTypeOptional,
@@ -920,6 +967,7 @@ object GraphQLActionBuilder {
                 tupleElements.add(template)
 
             }
+
             GqlConst.INTERFACE -> {
                 val copy = tableElement.copy(
                     isKindOfFieldTypeOptional = isKindOfTableFieldTypeOptional,
@@ -971,19 +1019,19 @@ object GraphQLActionBuilder {
     }
 
     private fun createInterfaceObjectGene(
-            state: TempState,
-            history: Deque<String>,
-            interfaceBaseOptObjGene: Gene,
-            currentDepth: Int,
-            maxTreeDepth: Int,
-            element: Table
+        state: TempState,
+        history: Deque<String>,
+        interfaceBaseOptObjGene: Gene,
+        currentDepth: Int,
+        maxTreeDepth: Int,
+        element: Table
 
     ): MutableList<Gene> {
 
         val fields: MutableList<Gene> = mutableListOf()
 
         for (elementInInterfaceTypes in element.interfaceTypes) {//Browse all additional objects in the interface
-            val accum=currentDepth+1
+            val accum = currentDepth + 1
             if (checkDepthIsOK(accum, maxTreeDepth)) {
                 history.addLast(elementInInterfaceTypes)
                 //todo need better id for the interfaces
@@ -1035,18 +1083,25 @@ object GraphQLActionBuilder {
         when (kindOfTableField?.lowercase()) {
             "int" ->
                 return OptionalGene(tableType, IntegerGene(tableType))
+
             "string" ->
                 return OptionalGene(tableType, StringGene(tableType))
+
             "float" ->
                 return OptionalGene(tableType, FloatGene(tableType))
+
             "boolean" ->
                 return OptionalGene(tableType, BooleanGene(tableType))
+
             "long" ->
                 return OptionalGene(tableType, LongGene(tableType))
+
             "date" ->
                 return OptionalGene(tableType, DateGene(tableType))
+
             "id" ->
                 return OptionalGene(tableType, StringGene(tableType))
+
             else ->
                 return OptionalGene(tableType, StringGene(tableType))
         }
