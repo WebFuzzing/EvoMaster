@@ -46,24 +46,22 @@ class WmSocketConnectRest {
         }
     }
 
+    @GetMapping(path = ["/object"])
+    fun getObject() : ResponseEntity<String> {
 
+        val url = URL("$protocol://$host:6666/api/object")
+        val request = Request.Builder().url(url).build()
 
-//    @GetMapping(path = ["/object"])
-//    fun getObject() : ResponseEntity<String> {
-//
-//        val url = URL("$protocol://$host:6666/api/object")
-//        val request = Request.Builder().url(url).build()
-//
-//        val data = client.newCall(request).execute()
-//        val body= data.body?.string()
-//        data.close()
-//        val mapper = ObjectMapper()
-//        val dto = mapper.readValue(body, WmSocketConnectDto::class.java)
-//
-//        return if (dto.x!! > 0){
-//            ResponseEntity.ok("OK")
-//        } else{
-//            ResponseEntity.status(500).build()
-//        }
-//    }
+        val data = client.newCall(request).execute()
+        val body= data.body?.string()
+        data.close()
+        val mapper = ObjectMapper()
+        val dto = mapper.readValue(body, WmSocketConnectDto::class.java)
+
+        return if (dto.x!! > 0){
+            ResponseEntity.ok("OK")
+        } else{
+            ResponseEntity.status(500).build()
+        }
+    }
 }

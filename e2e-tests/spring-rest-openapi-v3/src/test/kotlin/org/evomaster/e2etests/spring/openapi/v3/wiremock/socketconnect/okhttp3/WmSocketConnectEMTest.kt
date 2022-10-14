@@ -38,7 +38,7 @@ class WmSocketConnectEMTest : SpringTestBase() {
             "WmSocketConnectEM",
             "org.foo.WmSocketConnectOpenEM",
             500,
-            false,
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
