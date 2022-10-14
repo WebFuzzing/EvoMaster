@@ -52,19 +52,21 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
     )
     public static void OkHttpClient()  {
 
-        Constructor original = getOriginalConstructor(singleton, "okhttpclient_constructor");
+        //Constructor original = getOriginalConstructor(singleton, "okhttpclient_constructor");
 
-        try {
+       // try {
             if (!OkHttpClientBuilderClassReplacement.hasInstance())
                 OkHttpClientBuilderClassReplacement.Builder();
-            OkHttpClient client = (OkHttpClient) original.newInstance(OkHttpClientBuilderClassReplacement.consumeInstance());
 
-            addInstance(client);
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            throw (RuntimeException) e.getCause();
-        }
+            //OkHttpClient client = (OkHttpClient) original.newInstance(OkHttpClientBuilderClassReplacement.consumeInstance());
+            OkHttpClient.Builder builder = OkHttpClientBuilderClassReplacement.consumeInstance();
+
+            addInstance(builder.build());
+//        } catch (InstantiationException | IllegalAccessException e) {
+//            throw new RuntimeException(e);
+//        } catch (InvocationTargetException e) {
+//            throw (RuntimeException) e.getCause();
+//        }
 
     }
 
