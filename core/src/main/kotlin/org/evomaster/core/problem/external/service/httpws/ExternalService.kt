@@ -25,16 +25,13 @@ class ExternalService(
 
         private const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
         private const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
-
-        private const val DEFAULT_WIREMOCK_RESPONSE_CODE = 500
-        private const val DEFAULT_WIREMOCK_RESPONSE_MESSAGE = "Internal Error (EM Default)"
     }
 
     fun getWMDefaultPriority() = 100
     fun getWMDefaultUrlSetting() = "anyUrl()"
     fun getWMDefaultMethod() = "any"
-    fun getWMDefaultCode() = if (externalServiceInfo is DefaultHttpExternalServiceInfo) DEFAULT_WIREMOCK_RESPONSE_CODE else WIREMOCK_DEFAULT_RESPONSE_CODE
-    fun getWMDefaultMessage() = if (externalServiceInfo is DefaultHttpExternalServiceInfo) DEFAULT_WIREMOCK_RESPONSE_MESSAGE else WIREMOCK_DEFAULT_RESPONSE_MESSAGE
+    fun getWMDefaultCode() = WIREMOCK_DEFAULT_RESPONSE_CODE
+    fun getWMDefaultMessage() = WIREMOCK_DEFAULT_RESPONSE_MESSAGE
     fun getWMDefaultConnectionHeader() = "close"
 
     fun getDefaultWMMappingBuilder() : MappingBuilder{
@@ -42,6 +39,10 @@ class ExternalService(
                 WireMock.aResponse()
                     .withStatus(getWMDefaultCode())
                     .withBody(getWMDefaultMessage())
+                    /*
+                        do not set close connection in search
+                        however, it will be needed in the generated tests
+                     */
 //                    .withHeader("Connection",getWMDefaultConnectionHeader())
             )
     }
