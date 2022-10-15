@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 
 import com.squareup.okhttp.Request;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
@@ -75,8 +76,11 @@ public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementCla
     private static URL getReplacedURL(URL url){
         URL replaced = url;
         if (url.getProtocol().equalsIgnoreCase("https") || url.getProtocol().equalsIgnoreCase("http")){
-            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.getProtocol(), url.getHost(), url.getPort());
-            String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, url.getPort());
+
+            int port = ExternalServiceInfoUtils.inferPort(url.getPort(), url.getProtocol());
+
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.getProtocol(), url.getHost(), port);
+            String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, port);
             try {
                 String urlString = url.getProtocol()+"://" + ipAndPort[0]+":"+ipAndPort[1] + url.getPath();
                 replaced = new URL(urlString);
