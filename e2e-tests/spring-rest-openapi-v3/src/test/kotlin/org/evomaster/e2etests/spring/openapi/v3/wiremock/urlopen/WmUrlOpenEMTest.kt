@@ -34,24 +34,28 @@ class WmUrlOpenEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmUrlOpenEM",
             "org.foo.WmUrlOpenEM",
-            500
-        ) { args: MutableList<String> ->
+            500,
+            false,
+            { args: MutableList<String> ->
 
-            args.add("--externalServiceIPSelectionStrategy")
-            args.add("USER")
-            args.add("--externalServiceIP")
-            args.add("127.0.0.12")
+                args.add("--externalServiceIPSelectionStrategy")
+                args.add("USER")
+                args.add("--externalServiceIP")
+                args.add("127.0.0.12")
 
-            val solution = initAndRun(args)
+                val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/string", "OK")
+                assertTrue(solution.individuals.size >= 1)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/string", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/sstring", "OK")
 
-            if(!CIUtils.isRunningGA()) {
-                //FIXME: this weird... fails on CI, even when incresing budget significantly... but passes local on all OS
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/object", "OK")
-            }
-        }
+                if(!CIUtils.isRunningGA()) {
+                    //FIXME: this weird... fails on CI, even when incresing budget significantly... but passes local on all OS
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/urlopen/object", "OK")
+                }
+            },
+            3,
+        )
     }
 
 }
