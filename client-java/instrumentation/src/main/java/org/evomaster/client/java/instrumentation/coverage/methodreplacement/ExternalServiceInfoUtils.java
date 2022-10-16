@@ -26,6 +26,13 @@ public class ExternalServiceInfoUtils {
         return new String[]{ExecutionTracer.getExternalMapping(signature), "" + connectPort};
     }
 
+    /**
+     * skip method replacement for some hostname, eg,
+     */
+    public static boolean skipHostnameOrIp(String hostname){
+        return hostname.isEmpty() || hostname.startsWith("localhost") || hostname.startsWith("0.0.0") || hostname.startsWith("127.0.0.1");
+    }
+
 
     /**
      *  Unless the port number is specified in a URL, the default will be -1.

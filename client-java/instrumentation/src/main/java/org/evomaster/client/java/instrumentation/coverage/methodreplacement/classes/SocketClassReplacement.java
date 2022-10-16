@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
@@ -30,6 +31,10 @@ public class SocketClassReplacement implements MethodReplacementClass {
         if (endpoint instanceof InetSocketAddress){
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
+            if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName())){
+                caller.connect(endpoint, timeout);
+                return;
+            }
             if (socketAddress.getAddress() instanceof Inet4Address){
 
                 ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, socketAddress.getHostName(), socketAddress.getPort());
