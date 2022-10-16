@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.*;
@@ -115,6 +116,10 @@ public class URLClassReplacement implements MethodReplacementClass {
           Add the external service hostname to the ExecutionTracer
           */
         if (caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) {
+
+            if (caller.getProtocol().equalsIgnoreCase("https"))
+                PreDefinedSSLInfo.setTrustAllForHttpsURLConnection();
+
             String protocol = caller.getProtocol();
             int port = caller.getPort();
             port = ExternalServiceInfoUtils.inferPort(port, protocol);

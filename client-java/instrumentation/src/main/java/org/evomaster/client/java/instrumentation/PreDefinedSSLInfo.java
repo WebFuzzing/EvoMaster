@@ -59,4 +59,8 @@ public class PreDefinedSSLInfo {
         return TrustAllX509TrustManager.singleton;
     }
 
+    public static void setTrustAllForHttpsURLConnection(){
+        HttpsURLConnection.setDefaultSSLSocketFactory(getTrustAllSSLSocketFactory());
+        HttpsURLConnection.setDefaultHostnameVerifier(allowAllHostNames());
+    }
 }
