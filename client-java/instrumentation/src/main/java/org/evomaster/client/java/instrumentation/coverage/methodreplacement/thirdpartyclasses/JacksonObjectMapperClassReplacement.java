@@ -28,7 +28,12 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        return "com.fasterxml.jackson.databind.ObjectMapper";
+        /*
+            this is to avoid a 2013 bug in shade plugin:
+            https://issues.apache.org/jira/browse/MSHADE-156
+            note that Jackson is shaded in pom of controller
+         */
+        return "   com.fasterxml.jackson.databind.ObjectMapper".trim();
     }
 
     @Replacement(replacingStatic = false,

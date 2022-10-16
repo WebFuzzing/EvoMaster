@@ -66,6 +66,19 @@ public class ReplacementList {
                     new URLClassReplacement(),
                     new UUIDClassReplacement()
             );
+
+            /*
+                This can happen if we use a method replacement for a third-party library we shade.
+                Note: this will not be detectable in our current E2E tests that do not build the
+                JAR file of client with Maven first.
+             */
+            List<String> shaded = listCache.stream().map(c -> c.getTargetClassName())
+                    .filter(n -> n.startsWith("shaded."))
+                    .collect(Collectors.toList());
+            if(shaded.size() > 0){
+                throw new IllegalStateException("Shaded dependencies ended up in the ReplacementList: "
+                + String.join(",", shaded));
+            }
         }
 
         return listCache;

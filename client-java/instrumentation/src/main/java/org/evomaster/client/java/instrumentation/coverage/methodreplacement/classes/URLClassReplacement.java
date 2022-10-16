@@ -1,10 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -118,24 +115,10 @@ public class URLClassReplacement implements MethodReplacementClass {
           Add the external service hostname to the ExecutionTracer
           */
         if (caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) {
-            int port = caller.getPort();
             String protocol = caller.getProtocol();
+            int port = caller.getPort();
+            port = ExternalServiceInfoUtils.inferPort(port, protocol);
 
-            // Unless the port number is specified, the default will be -1.
-            // Which indicates that the port should be assigned according to the
-            // protocol. Since the URLConnection openConnection is an abstract, this
-            // assignment will be handled under the respective implementation.
-            // Here it's manually handled assuming these default will never change. :)
-            if (port == -1) {
-                switch (protocol) {
-                    case "https":
-                        port = 443;
-                        break;
-                    case "http":
-                        port = 80;
-                        break;
-                }
-            }
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(protocol, caller.getHost(), port);
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, port);
 
