@@ -14,6 +14,7 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -869,6 +870,17 @@ class StringGene(
 
     override fun getPossiblyTaintedValue(): String {
         return getValueAsRawString()
+    }
+
+    /**
+     * if its parent is ArrayGene, it cannot have the same taint input value with any other elements in this ArrayGene
+     */
+    override fun mutationCheck(): Boolean {
+        val arrayGeneParent = getFirstParent { it is ArrayGene<*> } ?: return true
+        if (arrayGeneParent.getViewOfChildren().size == 1) return true
+
+        val otherelements  = arrayGeneParent.getViewOfChildren().filter { it is Gene && !it.flatView().contains(this) }
+        return otherelements.none { it is Gene && it.flatView().any { g-> g is StringGene && g.getPossiblyTaintedValue().equals(getPossiblyTaintedValue(), ignoreCase = true) } }
     }
 
 }

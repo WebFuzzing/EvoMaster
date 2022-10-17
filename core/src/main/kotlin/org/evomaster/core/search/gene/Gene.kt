@@ -548,6 +548,7 @@ abstract class Gene(
                     mutateCounter +=1
                 }while (!mutationCheck() && mutateCounter <=3)
                 if (!mutationCheck()){
+                    LoggingUtil.uniqueWarn(log, "the mutated value for Gene ($name with type ${this::class.java.simpleName}) cannot satisfy its `mutationCheck` after 3 attempts")
                     if (log.isTraceEnabled)
                         log.trace("invoke GeneUtils.repairGenes")
                     GeneUtils.repairGenes(listOf(this))
