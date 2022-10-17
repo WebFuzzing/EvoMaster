@@ -141,4 +141,12 @@ public class ClassToSchemaTest {
         verifyTypeOfFieldInProperties(obj, "string", "hello_world");
         verifyTypeOfFieldInProperties(obj, "string", "foo");
     }
+
+    @Test
+    public void testCycleDto(){
+        assertThrows(StackOverflowError.class,  () ->{
+                ClassToSchema.getOrDeriveSchema(CycleDtoA.class);
+        });
+
+    }
 }
