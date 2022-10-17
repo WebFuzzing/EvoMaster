@@ -233,8 +233,8 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                     (postBody1 as ObjectGene).fields.forEachIndexed { index, g->
                         val gene1 = ParamUtil.getValueGene(g)
                         val gene2 = ParamUtil.getValueGene((postBody2 as ObjectGene).fields[index])
-                        assertTrue(gene1.isBoundWith(gene2))
-                        assertTrue(gene2.isBoundWith(gene1))
+                        assertTrue(gene1.isDirectBoundWith(gene2))
+                        assertTrue(gene2.isDirectBoundWith(gene1))
                     }
 
                 }
@@ -249,8 +249,8 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                     val firstField = ParamUtil.getValueGene((postBody1 as ObjectGene).fields[0])
                     assertEquals(queryGene2::class.java.simpleName, firstField::class.java.simpleName)
 
-                    assertTrue(firstField.isBoundWith(queryGene2))
-                    assertTrue(queryGene2.isBoundWith(firstField))
+                    assertTrue(firstField.isDirectBoundWith(queryGene2))
+                    assertTrue(queryGene2.isDirectBoundWith(firstField))
 
                 }
 

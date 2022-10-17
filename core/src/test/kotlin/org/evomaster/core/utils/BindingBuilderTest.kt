@@ -49,8 +49,8 @@ class BindingBuilderTest {
         assertNotNull(patchBody)
         val patchBodyId = patchBody!!.fields.find { it.name == "id" } as? LongGene
         assertNotNull(patchBodyId)
-        assertTrue(patchBodyId!!.isBoundWith(patchRfooId!!))
-        assertTrue(patchRfooId.isBoundWith(patchBodyId))
+        assertTrue(patchBodyId!!.isDirectBoundWith(patchRfooId!!))
+        assertTrue(patchRfooId.isDirectBoundWith(patchBodyId))
         assertEquals(patchBodyId.value, patchRfooId.value)
     }
 
@@ -73,19 +73,19 @@ class BindingBuilderTest {
         postXyz.bindBasedOn(getXyz, randomness)
         val postBodyXyzId = ((postXyz.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == "id" } as LongGene
         assertNotNull(postBodyXyzId)
-        assertTrue(postBodyXyzId.isBoundWith(getXyzId!!))
-        assertTrue(getXyzId.isBoundWith(postBodyXyzId))
+        assertTrue(postBodyXyzId.isDirectBoundWith(getXyzId!!))
+        assertTrue(getXyzId.isDirectBoundWith(postBodyXyzId))
 
         val postXyzBarId = ((postXyz.parameters.find { it is PathParam && it.name == "rbarId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(postXyzBarId)
-        assertTrue(postXyzBarId!!.isBoundWith(getXyzBarId!!))
-        assertTrue(getXyzBarId.isBoundWith(postXyzBarId))
+        assertTrue(postXyzBarId!!.isDirectBoundWith(getXyzBarId!!))
+        assertTrue(getXyzBarId.isDirectBoundWith(postXyzBarId))
         assertTrue(getXyzBarId.isSameBinding(setOf(postXyzBarId)))
 
         val postXyzFooId = ((postXyz.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(postXyzFooId)
-        assertTrue(postXyzFooId!!.isBoundWith(getXyzFooId!!))
-        assertTrue(getXyzFooId.isBoundWith(postXyzFooId))
+        assertTrue(postXyzFooId!!.isDirectBoundWith(getXyzFooId!!))
+        assertTrue(getXyzFooId.isDirectBoundWith(postXyzFooId))
         assertTrue(getXyzFooId.isSameBinding(setOf(postXyzFooId)))
 
         assertTrue(getXyzId.isSameBinding(setOf(postBodyXyzId)))
@@ -98,13 +98,13 @@ class BindingBuilderTest {
         postBar.bindBasedOn(getXyz, randomness)
         val postBodyBarId = ((postBar.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == "id" } as? LongGene
         assertNotNull(postBodyBarId)
-        assertTrue(postBodyBarId!!.isBoundWith(getXyzBarId))
-        assertTrue(getXyzBarId.isBoundWith(postBodyBarId))
+        assertTrue(postBodyBarId!!.isDirectBoundWith(getXyzBarId))
+        assertTrue(getXyzBarId.isDirectBoundWith(postBodyBarId))
 
         val postBarFooId = ((postBar.parameters.find { it is PathParam && it.name == "rfooId"} as? PathParam)?.gene as? CustomMutationRateGene<*>)?.gene as? LongGene
         assertNotNull(postBarFooId)
-        assertTrue(postBarFooId!!.isBoundWith(getXyzFooId))
-        assertTrue(getXyzFooId.isBoundWith(postBarFooId))
+        assertTrue(postBarFooId!!.isDirectBoundWith(getXyzFooId))
+        assertTrue(getXyzFooId.isDirectBoundWith(postBarFooId))
 
         assertTrue(getXyzBarId.isSameBinding(setOf(postXyzBarId, postBodyBarId)))
         assertTrue(getXyzFooId.isSameBinding(setOf(postXyzFooId, postBarFooId)))
@@ -117,8 +117,8 @@ class BindingBuilderTest {
 
         val postBodyFooId = ((postFoo.parameters.find { it is BodyParam } as? BodyParam)?.gene as? ObjectGene)?.fields?.find { it.name == "id" } as? LongGene
         assertNotNull(postBodyFooId)
-        assertTrue(postBodyFooId!!.isBoundWith(getXyzFooId))
-        assertTrue(getXyzFooId.isBoundWith(postBodyFooId))
+        assertTrue(postBodyFooId!!.isDirectBoundWith(getXyzFooId))
+        assertTrue(getXyzFooId.isDirectBoundWith(postBodyFooId))
 
 
         assertTrue(getXyzFooId.isSameBinding(setOf(postXyzFooId, postBarFooId, postBodyFooId)))

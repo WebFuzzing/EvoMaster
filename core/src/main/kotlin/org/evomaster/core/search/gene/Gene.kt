@@ -15,7 +15,6 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.search.RootElement
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.SearchGlobalState
-import kotlin.reflect.KClass
 
 
 /**
@@ -889,9 +888,21 @@ abstract class Gene(
     }
 
     /**
-     * @return whether [this] is bound with [gene]
+     * @return whether [this] is directly bound with [gene]
      */
-    fun isBoundWith(gene: Gene) = bindingGenes.contains(gene)
+    fun isDirectBoundWith(gene: Gene) = bindingGenes.contains(gene)
+
+    /**
+     * @return whether [this] parent is bound with [gene]'s parent
+     */
+    fun isAnyParentBoundWith(gene: Gene) : Boolean{
+        if ((this.parent as? Gene) != null && (gene.parent as? Gene) != null){
+            val direct = (this.parent as Gene).isDirectBoundWith(gene.parent as Gene)
+            if (direct) return true
+            return (this.parent as Gene).isDirectBoundWith((gene.parent as Gene))
+        }
+        return false
+    }
 
 
     /**
