@@ -27,5 +27,10 @@ data class TempState(
          */
         var tempUnionTables: MutableList<Table> = mutableListOf(),
 
+        /*
+         * A map used to link each function name to a unique ID.
+         * @Key: unique ID
+         * @Value: function name
+         */
         var inputTypeName: MutableMap<String,String> = mutableMapOf()
 )

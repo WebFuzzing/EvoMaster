@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.graphql.builder
 
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.graphql.schema.*
 import org.slf4j.Logger
@@ -18,11 +19,6 @@ object StateBuilder {
         "__Schema", "__Directive", "__DirectiveLocation", "__EnumValue",
         "__Field", "__InputValue", "__Type", "__TypeKind"
     )
-
-    /**
-     * Used to create unique IDs
-     */
-    private val idGenerator = AtomicInteger()
 
     fun initTablesInfo(schemaObj: SchemaObj): TempState {
 
@@ -44,7 +40,7 @@ object StateBuilder {
                     if (state.tables.isNotEmpty())
                         for (entry in state.tables) {
                             if (entry.fieldName == elementInfields.name) {
-                                fieldName = "${elementInfields.name}${idGenerator.incrementAndGet()}"
+                                fieldName = "${elementInfields.name}${StaticCounter.getAndIncrease()}"
                                 state.inputTypeName[fieldName]= elementInfields.name
                             }
                         }
@@ -115,6 +111,37 @@ object StateBuilder {
             state.tables.distinctBy { Pair(it.typeName, it.fieldName) }.toMutableList()//remove redundant elements
 
         initTablesAndArgsTablesIndexedByName(state)
+
+        println("I am the table: ")
+        for (element in state.tables) {
+            println("{Table Name: ${element?.typeName}, " +
+                    "Field: ${element?.fieldName}, " +
+                    "KindOfTableField: ${element?.KindOfFieldName}, " +
+                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfFieldNameOptional}, " +
+                    "Type: ${element?.fieldType}, " +
+                    "KindOfTableType: ${element?.kindOfFieldType} " +
+                    "IsKindOfKindOfTableTypeOptional?: ${element.isKindOfFieldTypeOptional}}")
+        }
+        println(state.tables.size)
+        println("I am the args table: ")
+        for (element in state.argsTables) {
+            println("{Table Name: ${element?.typeName}, " +
+                    "Field: ${element?.fieldName}, " +
+                    "KindOfTableField: ${element?.KindOfFieldName}, " +
+                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfFieldNameOptional}, " +
+                    "Type: ${element?.fieldType}, " +
+                    "KindOfTableType: ${element?.kindOfFieldType} " +
+                    "IsKindOfKindOfTableTypeOptional?: ${element.isKindOfFieldTypeOptional}}"+
+                    "withArgs?: ${element.isFieldNameWithArgs}}"
+            )
+        }
+        println(state.argsTables.size)
+
+        println("I am the table: ")
+       println( state.inputTypeName.keys)
+        println(state.inputTypeName.values)
+
+
 
         return state
     }
