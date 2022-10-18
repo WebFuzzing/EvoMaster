@@ -12,6 +12,8 @@ public class ExternalServiceInfoUtils {
      * @return redirected an array with two elements
      */
     public static String[] collectExternalServiceInfo(ExternalServiceInfo remoteHostInfo, int remotePort) {
+        if (remoteHostInfo.getHostname().equals("info.services.auth.zalando.com"))
+            return new String[]{remoteHostInfo.getHostname(), "" + remotePort};
 
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
