@@ -282,27 +282,6 @@ internal class GeneUtilsTest {
 
     }
 
-
-    @Test
-    fun testRepairInAllimitReached() {
-
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = PetClinicCheckMain::class.java.getResource("/graphql/artificial/allLimitReached.json").readText()
-
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster,2)
-        val book = actionCluster.get("books") as GraphQLAction
-        assertTrue(book.parameters[0] is GQReturnParam)
-        assertTrue(book.parameters[0].gene is ObjectGene)
-        val objBook = book.parameters[0].gene as ObjectGene
-        assertEquals(1, objBook.fields.size)
-
-        assertTrue(objBook.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "author" })
-
-        GeneUtils.repairBooleanSelection(objBook)
-
-    }
-
-
     @Test
     fun testInterfaceSelectionName(){
 
