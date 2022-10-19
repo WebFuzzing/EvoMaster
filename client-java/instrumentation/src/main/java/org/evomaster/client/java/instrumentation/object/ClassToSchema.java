@@ -68,8 +68,10 @@ public class ClassToSchema {
             String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded);
             UnitsInfoRecorder.registerNewParsedDto(name, schema);
             ExecutionTracer.addParsedDtoName(name);
-            if (!embedded.isEmpty())
+            if (!embedded.isEmpty()){
                 embedded.forEach(ClassToSchema::registerSchemaIfNeeded);
+            }
+
         }
     }
 
@@ -88,12 +90,18 @@ public class ClassToSchema {
 
     public static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> embedded) {
 
-        if (cache.containsKey(type)) {
+
+        if (cache.containsKey(type) && !useRefObject) {
             return named(name, cache.get(type));
         }
 
         String schema = getSchema(type, useRefObject, embedded);
-        cache.put(type, schema);
+
+        /*
+            we only put the complete schema into schema
+         */
+        if (!schema.startsWith(fieldRefPrefix))
+            cache.put(type, schema);
         return named(name, schema);
     }
 
@@ -268,7 +276,7 @@ public class ClassToSchema {
     }
 
     private static String fieldObjectRefSchema(String name) {
-        return "{\"$ref\":\""+OPENAPI_REF_PATH+name+"\"}";
+        return fieldRefPrefix + OPENAPI_REF_PATH + name + fieldRefPostfix;
     }
 
     private static String fieldSchema(String type) {
@@ -278,4 +286,8 @@ public class ClassToSchema {
     private static String fieldSchema(String type, String format) {
         return "{\"type\":\"" + type + "\", \"format\":\"" + format + "\"}";
     }
+
+    private static final String fieldRefPrefix = "{\"$ref\":\"";
+
+    private static final String fieldRefPostfix = "\"}";
 }

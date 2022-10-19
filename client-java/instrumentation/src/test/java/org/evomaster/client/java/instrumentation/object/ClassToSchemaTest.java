@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClassToSchemaTest {
@@ -52,7 +53,7 @@ public class ClassToSchemaTest {
 
     private void verifyRefOfFieldInProperties(JsonObject obj, String expected, String fieldName){
         assertEquals(expected, obj.get("properties").getAsJsonObject()
-                .get(fieldName).getAsJsonObject().get("#ref").getAsString());
+                .get(fieldName).getAsJsonObject().get("$ref").getAsString());
     }
 
     @Test
@@ -151,17 +152,25 @@ public class ClassToSchemaTest {
 
     @Test
     public void testCycleDto(){
-        List<Class<?>> embedded = new ArrayList<>();
-        String cycleDtoASchema = ClassToSchema.getOrDeriveSchema(CycleDtoA.class, embedded);
-        assertEquals(1, embedded.size());
-        JsonObject json = parse(cycleDtoASchema);
-        JsonObject obj = json.get(CycleDtoA.class.getName()).getAsJsonObject();
-        assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
-
         UnitsInfoRecorder.reset();
         assertTrue(UnitsInfoRecorder.getInstance().getParsedDtos().isEmpty());
         ClassToSchema.registerSchemaIfNeeded(CycleDtoA.class);
         assertEquals(2, UnitsInfoRecorder.getInstance().getParsedDtos().size());
 
+        List<Class<?>> embedded = new ArrayList<>();
+        String cycleDtoASchema = ClassToSchema.getOrDeriveSchema(CycleDtoA.class, embedded);
+        JsonObject json = parse(cycleDtoASchema);
+        JsonObject obj = json.get(CycleDtoA.class.getName()).getAsJsonObject();
+        assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeOfFieldInProperties(obj, "string", "cycleAId");
+        verifyRefOfFieldInProperties(obj, OPENAPI_REF_PATH+""+CycleDtoB.class.getName(), "cycleDtoB");
+
+
+        String cycleDtoBSchema = ClassToSchema.getOrDeriveSchema(CycleDtoB.class, embedded);
+        JsonObject jsonB = parse(cycleDtoBSchema);
+        JsonObject objB = jsonB.get(CycleDtoB.class.getName()).getAsJsonObject();
+        assertEquals(2, objB.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeOfFieldInProperties(objB, "string", "cycleBId");
+        verifyRefOfFieldInProperties(objB, OPENAPI_REF_PATH+""+CycleDtoA.class.getName(), "cycleDtoA");
     }
 }
