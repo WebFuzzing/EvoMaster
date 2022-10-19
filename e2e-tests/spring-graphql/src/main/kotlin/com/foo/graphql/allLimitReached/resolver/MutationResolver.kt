@@ -19,7 +19,7 @@ class MutationResolver(
 
     }*/
 
-    fun addBook( name: String): String {
+    fun addBook( name: String?): String {
         return dataRepo.saveBook(name)
 
     }
