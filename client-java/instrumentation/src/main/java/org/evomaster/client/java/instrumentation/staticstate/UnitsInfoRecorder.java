@@ -105,6 +105,10 @@ public class UnitsInfoRecorder implements Serializable {
         }
     }
 
+    public static Boolean isDtoSchemaRegister(String name){
+        return singleton.parsedDtos.containsKey(name);
+    }
+
     public  int getNumberOfUnits() {
         return unitNames.size();
     }

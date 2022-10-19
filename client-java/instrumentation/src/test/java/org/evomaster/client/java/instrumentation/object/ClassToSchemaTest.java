@@ -4,7 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.evomaster.client.java.instrumentation.object.dtos.*;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,7 +23,7 @@ public class ClassToSchemaTest {
     @Test
     public void testBase(){
 
-        String schema = ClassToSchema.getOrDeriveSchema(DtoBase.class);
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoBase.class);
         JsonObject json = parse(schema);
 
         JsonObject obj = json.get(DtoBase.class.getName()).getAsJsonObject();
@@ -46,12 +50,15 @@ public class ClassToSchemaTest {
         assertEquals(format, field.get("format").getAsString());
     }
 
-
+    private void verifyRefOfFieldInProperties(JsonObject obj, String expected, String fieldName){
+        assertEquals(expected, obj.get("properties").getAsJsonObject()
+                .get(fieldName).getAsJsonObject().get("#ref").getAsString());
+    }
 
     @Test
     public void testNumeric(){
 
-        String schema = ClassToSchema.getOrDeriveSchema(DtoNumeric.class);
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoNumeric.class);
         JsonObject json = parse(schema);
 
         JsonObject obj = json.get(DtoNumeric.class.getName()).getAsJsonObject();
@@ -88,7 +95,7 @@ public class ClassToSchemaTest {
 
     @Test
     public void testExtending(){
-        String schema = ClassToSchema.getOrDeriveSchema(DtoExtending.class);
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoExtending.class);
         JsonObject json = parse(schema);
         JsonObject obj = json.get(DtoExtending.class.getName()).getAsJsonObject();
 
@@ -106,7 +113,7 @@ public class ClassToSchemaTest {
     @Test
     public void testArray(){
 
-        String schema = ClassToSchema.getOrDeriveSchema(DtoArray.class);
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoArray.class);
         JsonObject json = parse(schema);
         JsonObject obj = json.get(DtoArray.class.getName()).getAsJsonObject();
 
@@ -121,7 +128,7 @@ public class ClassToSchemaTest {
     @Test
     public void testIgnore(){
 
-        String schema = ClassToSchema.getOrDeriveSchema(DtoIgnore.class);
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoIgnore.class);
         JsonObject json = parse(schema);
         JsonObject obj = json.get(DtoIgnore.class.getName()).getAsJsonObject();
 
@@ -132,7 +139,7 @@ public class ClassToSchemaTest {
     @Test
     public void testNaming(){
 
-        String schema = ClassToSchema.getOrDeriveSchema(DtoNaming.class);
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoNaming.class);
         JsonObject json = parse(schema);
         JsonObject obj = json.get(DtoNaming.class.getName()).getAsJsonObject();
 
@@ -144,9 +151,17 @@ public class ClassToSchemaTest {
 
     @Test
     public void testCycleDto(){
-        assertThrows(StackOverflowError.class,  () ->{
-                ClassToSchema.getOrDeriveSchema(CycleDtoA.class);
-        });
+        List<Class<?>> embedded = new ArrayList<>();
+        String cycleDtoASchema = ClassToSchema.getOrDeriveSchema(CycleDtoA.class, embedded);
+        assertEquals(1, embedded.size());
+        JsonObject json = parse(cycleDtoASchema);
+        JsonObject obj = json.get(CycleDtoA.class.getName()).getAsJsonObject();
+        assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
+
+        UnitsInfoRecorder.reset();
+        assertTrue(UnitsInfoRecorder.getInstance().getParsedDtos().isEmpty());
+        ClassToSchema.registerSchemaIfNeeded(CycleDtoA.class);
+        assertEquals(2, UnitsInfoRecorder.getInstance().getParsedDtos().size());
 
     }
 }

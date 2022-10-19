@@ -6,12 +6,11 @@ import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH;
 
 /**
  * The SUT when getting data, it might unmarshal/deserialize it into a specif class.
@@ -64,10 +63,14 @@ public class ClassToSchema {
         }
 
         String name = valueType.getName();
-        String schema = ClassToSchema.getOrDeriveSchema(valueType);
-        UnitsInfoRecorder.registerNewParsedDto(name, schema);
-        ExecutionTracer.addParsedDtoName(name);
-
+        if (!UnitsInfoRecorder.isDtoSchemaRegister(name)){
+            List<Class<?>> embedded = new ArrayList<>();
+            String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded);
+            UnitsInfoRecorder.registerNewParsedDto(name, schema);
+            ExecutionTracer.addParsedDtoName(name);
+            if (!embedded.isEmpty())
+                embedded.forEach(ClassToSchema::registerSchemaIfNeeded);
+        }
     }
 
 
@@ -75,17 +78,21 @@ public class ClassToSchema {
      * @return a schema representation of the class in the form "name: {...}", ie
      * like a field entry in an OpenAPI object definition
      */
-    public static String getOrDeriveSchema(Class<?> klass) {
-        return getOrDeriveSchema(klass.getName(), klass);
+    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> embedded) {
+        return getOrDeriveSchema(klass.getName(), klass, false, embedded);
     }
 
-    public static String getOrDeriveSchema(String name, Type type) {
+    public static String getOrDeriveNonNestedSchema(Class<?> klass) {
+        return getOrDeriveSchema(klass.getName(), klass, false, Collections.emptyList());
+    }
+
+    public static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> embedded) {
 
         if (cache.containsKey(type)) {
             return named(name, cache.get(type));
         }
 
-        String schema = getSchema(type);
+        String schema = getSchema(type, useRefObject, embedded);
         cache.put(type, schema);
         return named(name, schema);
     }
@@ -95,7 +102,7 @@ public class ClassToSchema {
     }
 
 
-    private static String getSchema(Type type) {
+    private static String getSchema(Type type, Boolean useRefObject, List<Class<?>> embedded) {
 
         Class<?> klass = null;
         if (type instanceof Class) {
@@ -143,10 +150,19 @@ public class ClassToSchema {
         if ((klass != null && (klass.isArray() || List.class.isAssignableFrom(klass) || Set.class.isAssignableFrom(klass)))
                 ||
                 (pType != null && (List.class.isAssignableFrom((Class) pType.getRawType()) || Set.class.isAssignableFrom((Class) pType.getRawType())))) {
-            return fieldArraySchema(klass, pType);
+            return fieldArraySchema(klass, pType, embedded);
         }
 
         //TOOD Map
+
+
+        if (useRefObject){
+            // register this class
+            if (!UnitsInfoRecorder.isDtoSchemaRegister(klass.getName()))
+                embedded.add(klass);
+            return fieldObjectRefSchema(klass.getName());
+        }
+
 
         List<String> properties = new ArrayList<>();
 
@@ -158,7 +174,7 @@ public class ClassToSchema {
                     continue;
                 }
                 String fieldName = getName(f);
-                properties.add(getOrDeriveSchema(fieldName, f.getGenericType()));
+                properties.add(getOrDeriveSchema(fieldName, f.getGenericType(), true, embedded));
             }
             target = target.getSuperclass();
         }
@@ -222,24 +238,24 @@ public class ClassToSchema {
         return field.getName();
     }
 
-    private static String fieldArraySchema(Class<?> klass, ParameterizedType pType) {
+    private static String fieldArraySchema(Class<?> klass, ParameterizedType pType, List<Class<?>> embedded) {
 
         String item;
 
         if (klass != null) {
             if (klass.isArray()) {
-                item = getSchema(klass.getComponentType());
+                item = getSchema(klass.getComponentType(), true, embedded);
             } else {
                 /*
                     This would happen if we have non-generic List or Set?
                     What to do? I guess can just use String
                  */
-                item = getSchema(String.class);
+                item = getSchema(String.class,true, embedded);
             }
         } else {
             //either List<> or Set<>
             Type generic = pType.getActualTypeArguments()[0];
-            item = getSchema(generic);
+            item = getSchema(generic,true, embedded);
         }
 
         return "{\"type\":\"array\", \"items\":" + item + "}";
@@ -249,6 +265,10 @@ public class ClassToSchema {
         String p = properties.stream().collect(Collectors.joining(","));
 
         return "{\"type\":\"object\", \"properties\": {" + p + "}}";
+    }
+
+    private static String fieldObjectRefSchema(String name) {
+        return "{\"$ref\":\""+OPENAPI_REF_PATH+name+"\"}";
     }
 
     private static String fieldSchema(String type) {

@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest
 
 import io.swagger.parser.OpenAPIParser
+import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
@@ -95,7 +96,7 @@ class RestActionBuilderV3Test{
                  "type": "object",
                  "properties": {
                         "bar": { 
-                            "${'$'}ref": "#/components/schemas/evo.Bar"
+                            "${'$'}ref": "${OPENAPI_REF_PATH}evo.Bar"
                         }
                  },
                  "required": [
@@ -109,7 +110,7 @@ class RestActionBuilderV3Test{
                  "type": "object",
                  "properties": {
                         "foo": { 
-                            "${'$'}ref": "#/components/schemas/evo.Foo"
+                            "${'$'}ref": "${OPENAPI_REF_PATH}evo.Foo"
                         }
                  },
                  "required": [

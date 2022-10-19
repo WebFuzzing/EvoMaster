@@ -8,6 +8,8 @@ import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
+import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
+import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
@@ -175,8 +177,8 @@ object RestActionBuilderV3 {
         val schema = """
             {
                 "openapi": "3.0.0",
-                "components": {
-                    "schemas": {
+                "$OPENAPI_COMPONENT_NAME": {
+                    "$OPENAPI_SCHEMA_NAME": {
                         ${unidentified.joinToString(",") { it.second }}
                     }
                 }
