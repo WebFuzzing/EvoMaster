@@ -60,6 +60,9 @@ object GraphQLUtils {
 
                 val printableInputGenes = getPrintableInputGenes(printableInputGene)
 
+
+                if (printableInputGenes.isNotEmpty()){
+
                 //primitive type in Return
                 bodyEntity = if (returnGene == null) {
                     Entity.json(
@@ -86,7 +89,41 @@ object GraphQLUtils {
                     )
 
                 }
-            } else {//request without arguments
+            }
+                else {// need to remove the ()
+
+                    //primitive type in Return
+                    bodyEntity = if (returnGene == null) {
+                        Entity.json(
+                            """
+                    {"query" : "  { ${a.methodName}  $printableInputGenes         } ","variables":null}
+                """.trimIndent()
+                        )
+
+                    } else if (returnGene.name.endsWith(GqlConst.UNION_TAG)) {//The first is a union type
+
+                        var query = getQuery(returnGene, a)//todo remove the name for the first union
+                        Entity.json(
+                            """
+                   {"query" : " {  ${a.methodName} $printableInputGenes  { $query }  }   ","variables":null}
+                """.trimIndent()
+                        )
+
+                    } else {
+                        val query = getQuery(returnGene, a)
+                        Entity.json(
+                            """
+                    {"query" : "  { ${a.methodName}  $printableInputGenes  $query       } ","variables":null}
+                """.trimIndent()
+                        )
+
+                    }
+
+
+                }
+            }
+
+            else {//request without arguments
                 bodyEntity = if (returnGene == null) { //primitive type
                     Entity.json(
                         """
@@ -186,8 +223,11 @@ object GraphQLUtils {
                          */
                         val mode =
                             if (ParamUtil.getValueGene(gene) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
+
                         val i = gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
+                        if (gene !is OptionalGene)
                         printableInputGene.add("${gene.name} : $i")
+                        else if (gene.isActive) printableInputGene.add("${gene.name} : $i")
                     }
                 }
             }

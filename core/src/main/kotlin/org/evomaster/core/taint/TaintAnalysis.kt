@@ -3,15 +3,18 @@ package org.evomaster.core.taint
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.client.java.instrumentation.shared.TaintType
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -23,6 +26,13 @@ object TaintAnalysis {
     private val log: Logger = LoggerFactory.getLogger(TaintAnalysis::class.java)
 
 
+    fun getRegexTaintedValues(action: Action): List<String> {
+        return action.seeTopGenes()
+                .flatMap { it.flatView() }
+                .filterIsInstance<StringGene>()
+                .filter { it.getSpecializationGene() != null && it.getSpecializationGene() is RegexGene }
+                .map { it.getSpecializationGene()!!.getValueAsRawString() }
+    }
 
     /**
      *   Analyze if any tainted value was used in the SUT in some special way.
@@ -34,22 +44,21 @@ object TaintAnalysis {
                         randomness: Randomness) {
 
 
-
         if (individual.seeMainExecutableActions().size < additionalInfoList.size) {
             throw IllegalArgumentException("Less main actions than info entries")
         }
 
-        if (log.isTraceEnabled){
+        if (log.isTraceEnabled) {
             log.trace("do taint analysis for individual which contains dbactions: {} and rest actions: {}",
-                individual.seeInitializingActions().joinToString(",") {
-                    if (it is DbAction) it.getResolvedName() else it.getName()
-                },
-                individual.seeAllActions().joinToString(","){
-                    if (it is RestCallAction) it.resolvedPath() else it.getName()
-                }
+                    individual.seeInitializingActions().joinToString(",") {
+                        if (it is DbAction) it.getResolvedName() else it.getName()
+                    },
+                    individual.seeAllActions().joinToString(",") {
+                        if (it is RestCallAction) it.resolvedPath() else it.getName()
+                    }
             )
             log.trace("do taint analysis for {} additionalInfoList: {}",
-                additionalInfoList.size, additionalInfoList.flatMap { a-> a.stringSpecializations.keys }.joinToString(","))
+                    additionalInfoList.size, additionalInfoList.flatMap { a -> a.stringSpecializations.keys }.joinToString(","))
         }
 
         /*
@@ -70,11 +79,16 @@ object TaintAnalysis {
     that a manipulated taint would still pass the taint regex check...)
          */
 
-        val allTaintableGenes : List<TaintableGene> =
-            individual.seeAllActions()
-                .flatMap { a-> a.seeTopGenes().flatMap { it.flatView() }
-                .filterIsInstance<TaintableGene>()
-        }
+        val allTaintableGenes: List<TaintableGene> =
+                individual.seeAllActions()
+                        .flatMap { a ->
+                            a.seeTopGenes().flatMap { it.flatView() }
+                                    .filterIsInstance<TaintableGene>()
+                        }
+
+        val inputVariables = individual.seeAllActions()
+                .flatMap { getRegexTaintedValues(it) }
+                .toSet()
 
         for (element in additionalInfoList) {
 
@@ -83,31 +97,35 @@ object TaintAnalysis {
             }
 
             val specsMap = element.stringSpecializations.entries
-                .map {
-                    it.key to it.value.map { s ->
-                        StringSpecializationInfo(
-                            StringSpecialization.valueOf(s.stringSpecialization),
-                            s.value,
-                            TaintType.valueOf(s.type)
-                        )
-                    }
-                }.toMap()
+                    .map {
+                        it.key to it.value.map { s ->
+                            StringSpecializationInfo(
+                                    StringSpecialization.valueOf(s.stringSpecialization),
+                                    s.value,
+                                    TaintType.valueOf(s.type)
+                            )
+                        }
+                    }.toMap()
 
 
-            handleSingleGenes(specsMap, allTaintableGenes, randomness)
+            handleSingleGenes(specsMap, allTaintableGenes, randomness, inputVariables)
 
-            handleMultiGenes(specsMap, allTaintableGenes, randomness)
+            handleMultiGenes(specsMap, allTaintableGenes, randomness, inputVariables)
 
-            handleTaintedArrays(specsMap, allTaintableGenes, randomness)
+            handleTaintedArrays(specsMap, allTaintableGenes, randomness, inputVariables)
         }
     }
 
 
-    private fun handleTaintedArrays(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes : List<TaintableGene>, randomness: Randomness){
+    private fun handleTaintedArrays(
+            specsMap: Map<String, List<StringSpecializationInfo>>,
+            allTaintableGenes: List<TaintableGene>,
+            randomness: Randomness,
+            inputVariables: Set<String>) {
 
         val taintedArrays = allTaintableGenes.filterIsInstance<TaintedArrayGene>()
 
-        if(taintedArrays.isEmpty()){
+        if (taintedArrays.isEmpty()) {
             return
         }
 
@@ -121,22 +139,22 @@ object TaintAnalysis {
             }
 
             val genes = taintedArrays.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
-            if(genes.isEmpty()){
+            if (genes.isEmpty()) {
                 continue
             }
 
-            if(specs.size > 1){
+            if (specs.size > 1) {
                 log.warn("More than one possible specialization for tainted array '$taintedInput': $specs")
             }
 
             val s = specs.find { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
-                ?: randomness.choose(specs)
+                    ?: randomness.choose(specs)
 
-            val template = if(s.stringSpecialization == StringSpecialization.JSON_OBJECT){
+            val template = if (s.stringSpecialization == StringSpecialization.JSON_OBJECT) {
                 val schema = s.value
                 val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
-                val ref = t.subSequence(1,t.length-1).toString()
-                RestActionBuilderV3.createObjectGeneForDTO(ref, schema, ref)
+                val ref = t.subSequence(1, t.length - 1).toString()
+                RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
             } else {
                 /*
                     TODO this could be more sophisticated, like considering numeric and boolean arrays as well,
@@ -149,13 +167,17 @@ object TaintAnalysis {
 
             genes.forEach {
                 it.resolveTaint(
-                    ArrayGene(it.name, template.copy()).apply { doInitialize(randomness) }
+                        ArrayGene(it.name, template.copy()).apply { doInitialize(randomness) }
                 )
             }
         }
     }
 
-    private fun handleMultiGenes(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes : List<TaintableGene>, randomness: Randomness) {
+    private fun handleMultiGenes(
+            specsMap: Map<String, List<StringSpecializationInfo>>,
+            allTaintableGenes: List<TaintableGene>,
+            randomness: Randomness,
+            inputVariables: Set<String>) {
 
         val specs = specsMap.entries
                 .flatMap { it.value }
@@ -165,12 +187,12 @@ object TaintAnalysis {
         for (s in specs) {
 
             val genes = allTaintableGenes.filter {
-                        specsMap.entries
-                                .filter { e -> e.key.contains(it.getPossiblyTaintedValue(), true) }
-                                .any { e -> e.value.any { d -> d == s } }
-                    }.filterIsInstance<StringGene>()
+                specsMap.entries
+                        .filter { e -> e.key.contains(it.getPossiblyTaintedValue(), true) }
+                        .any { e -> e.value.any { d -> d == s } }
+            }.filterIsInstance<StringGene>()
 
-            if(genes.size <= 1){
+            if (genes.size <= 1) {
                 continue
             }
 
@@ -179,7 +201,7 @@ object TaintAnalysis {
                 but for now we just keep a very basic, ad-hoc solution
              */
 
-            if(!s.stringSpecialization.isRegex || genes.size != 2){
+            if (!s.stringSpecialization.isRegex || genes.size != 2) {
                 continue
             }
 
@@ -189,16 +211,16 @@ object TaintAnalysis {
             val divider = "\\Q-\\E"
             val pos = s.value.indexOf(divider)
 
-            if(pos < 0){
+            if (pos < 0) {
                 continue
             }
 
-            val left = "("+s.value.subSequence(0, pos).toString() + ")$"
-            val right = "^(" + s.value.subSequence(pos + divider.length, s.value.length).toString()+")"
+            val left = "(" + s.value.subSequence(0, pos).toString() + ")$"
+            val right = "^(" + s.value.subSequence(pos + divider.length, s.value.length).toString() + ")"
 
             val taintInput = specsMap.entries.first { it.value.any { it == s } }.key
 
-            val choices = if(taintInput.indexOf(genes[0].getValueAsRawString()) == 0 ){
+            val choices = if (taintInput.indexOf(genes[0].getValueAsRawString()) == 0) {
                 listOf(left, right)
             } else {
                 listOf(right, left)
@@ -213,13 +235,17 @@ object TaintAnalysis {
                         genes[1].getValueAsRawString(),
                         listOf(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, choices[1])),
                         randomness)
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 LoggingUtil.uniqueWarn(log, "Cannot handle partial match on regex: ${s.value}")
             }
         }
     }
 
-    private fun handleSingleGenes(specsMap: Map<String, List<StringSpecializationInfo>>, allTaintableGenes: List<TaintableGene>, randomness: Randomness) {
+    private fun handleSingleGenes(
+            specsMap: Map<String, List<StringSpecializationInfo>>,
+            allTaintableGenes: List<TaintableGene>,
+            randomness: Randomness,
+            inputVariables: Set<String>) {
         for (entry in specsMap.entries) {
 
             val taintedInput = entry.key
@@ -235,7 +261,11 @@ object TaintAnalysis {
             if (fullMatch.isNotEmpty()) {
 
                 val genes = allTaintableGenes
-                        .filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
+                        .filter {
+                            (TaintInputName.isTaintInput(it.getPossiblyTaintedValue())
+                                    || inputVariables.contains(it.getPossiblyTaintedValue()))
+                                    && it.getPossiblyTaintedValue().equals(taintedInput, true)
+                        }
                         .filterIsInstance<StringGene>()
 
                 addSpecializationToGene(genes, taintedInput, fullMatch, randomness)
@@ -245,7 +275,11 @@ object TaintAnalysis {
             if (partialMatch.isNotEmpty()) {
 
                 val genes = allTaintableGenes
-                        .filter { taintedInput.contains(it.getPossiblyTaintedValue(), true) }
+                        .filter {
+                            (TaintInputName.isTaintInput(it.getPossiblyTaintedValue())
+                                    || inputVariables.contains(it.getPossiblyTaintedValue()))
+                                    && taintedInput.contains(it.getPossiblyTaintedValue(), true)
+                        }
                         .filterIsInstance<StringGene>()
 
                 addSpecializationToGene(genes, taintedInput, partialMatch, randomness)
@@ -254,10 +288,10 @@ object TaintAnalysis {
     }
 
     private fun addSpecializationToGene(
-        genes: List<StringGene>,
-        taintedInput: String,
-        specializations: List<StringSpecializationInfo>,
-        randomness: Randomness
+            genes: List<StringGene>,
+            taintedInput: String,
+            specializations: List<StringSpecializationInfo>,
+            randomness: Randomness
     ) {
         if (genes.isEmpty()) {
             /*
@@ -266,12 +300,24 @@ object TaintAnalysis {
                         not in any of E2E, unless we explicitly write one for it
                     */
             log.warn("No taint input found '{}'", taintedInput)
-            //FIXME put back once debug issue on Linux
+            /*
+                FIXME put back once debug issue on Linux.
+                The issue is that H2 is caching requests... our fix for that work on local machines (including
+                Linux) but fails somehow on CI
+             */
             //assert(false) // crash in tests, but not production
         } else {
-            if (genes.size > 1) {
-                //shouldn't really be a problem... but let keep track for it, for now at least
+            if (genes.size > 1
+                    && TaintInputName.isTaintInput(taintedInput)
+                    && genes.none { x -> genes.any { y -> x.isBoundWith(y) } }
+            ) {
+                //shouldn't really be a problem... but let keep track for it, for now at least.
+                // note, cannot really guarantee that a taint from regex is unique, as regex could generate
+                // any kind of string...
+                // also if genes are bound, then of course going to be more than 2...
                 log.warn("More than 2 gens have the taint '{}'", taintedInput)
+                //FIXME possible bug in binding handling.
+                //assert(false)
             }
             genes.forEach { it.addSpecializations(taintedInput, specializations, randomness) }
         }

@@ -215,7 +215,7 @@ class StringGene(
                 assert(specializationGenes.size == 1)
                 selectedSpecialization = specializationGenes.lastIndex
             } else {
-                redoTaint(state.apc, state.randomness, listOf())
+                redoTaint(state.apc, state.randomness)
             }
         }
 
@@ -313,7 +313,7 @@ class StringGene(
             return true
         }
 
-        if (redoTaint(apc, randomness, allGenes)) return true
+        if (redoTaint(apc, randomness)) return true
 
         return false
     }
@@ -323,6 +323,11 @@ class StringGene(
         allGenes: List<Gene>,
         apc: AdaptiveParameterControl
     ){
+        if(TaintInputName.isTaintInput(value)){
+            //standard mutation on a tainted value makes little sense, so randomize instead
+            randomize(randomness, true)
+        }
+
         val p = randomness.nextDouble()
         val s = value
 
@@ -342,7 +347,7 @@ class StringGene(
 
         value = when {
             //seeding: replace
-            p < 0.02 && !others.isEmpty() -> {
+            p < 0.02 && others.isNotEmpty() -> {
                 randomness.choose(others)
             }
             //change
@@ -383,7 +388,7 @@ class StringGene(
         handleBinding(allGenes)
     }
 
-    fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness, allGenes: List<Gene>) : Boolean{
+    fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness) : Boolean{
 
         if(TaintInputName.getTaintNameMaxLength() > actualMaxLength()){
             return false
@@ -561,7 +566,7 @@ class StringGene(
                         val schema = it.value
                         val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
                         val ref = t.subSequence(1,t.length-1).toString()
-                        val obj = RestActionBuilderV3.createObjectGeneForDTO(ref, schema, ref)
+                        val obj = RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
                         toAddGenes.add(obj)
                     }
             log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)

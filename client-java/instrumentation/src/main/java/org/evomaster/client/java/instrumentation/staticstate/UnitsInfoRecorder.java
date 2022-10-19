@@ -113,6 +113,10 @@ public class UnitsInfoRecorder implements Serializable {
         }
     }
 
+    public static Boolean isDtoSchemaRegister(String name){
+        return singleton.parsedDtos.containsKey(name);
+    }
+
     public static void registerSpecifiedDtoSchema(Map<String, String> schemaMap){
         for (String name: schemaMap.keySet()){
             if(name == null || name.isEmpty()){

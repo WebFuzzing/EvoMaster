@@ -1,0 +1,12 @@
+type Query {
+
+entryCollection(skip: Int, preview: Boolean): EntryCollection
+lessonCodeSnippets: LessonCodeSnippets
+}
+type EntryCollection{
+total: Int
+}
+
+type LessonCodeSnippets{
+entryCollection(skip:Int): EntryCollection
+}

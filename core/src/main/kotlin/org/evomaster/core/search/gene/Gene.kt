@@ -902,6 +902,9 @@ abstract class Gene(
      * TODO what if this lead to isLocallyValid to be false? can we prevent it?
      * or just return false here?
      *
+     * FIXME: change name, because it is not modifying binding, and just copy over
+     * the values
+     *
      */
     abstract fun bindValueBasedOn(gene: Gene) : Boolean
 
