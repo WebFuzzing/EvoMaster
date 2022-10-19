@@ -21,6 +21,13 @@ import java.util.*;
  * Still, we need to have mechanism in place to avoid crashing EM at runtime if
  * such libraries are missing. This should be automatically handled here
  * by checking {@link #isAvailable()}.
+ *
+ * UPDATE:
+ * it seems that using library in provided mode works fine... this would mean that
+ * maybe we do not need to deal with reflection here when creating these replacements.
+ *
+ * TODO: when creating new method replacements for third-party, let's try with provided
+ * and no reflection first, and see if any side-effects
  */
 public abstract class ThirdPartyMethodReplacementClass implements MethodReplacementClass{
 
