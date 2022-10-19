@@ -154,7 +154,7 @@ object TaintAnalysis {
                 val schema = s.value
                 val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
                 val ref = t.subSequence(1, t.length - 1).toString()
-                RestActionBuilderV3.createObjectGeneForDTO(ref, schema, ref)
+                RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
             } else {
                 /*
                     TODO this could be more sophisticated, like considering numeric and boolean arrays as well,
