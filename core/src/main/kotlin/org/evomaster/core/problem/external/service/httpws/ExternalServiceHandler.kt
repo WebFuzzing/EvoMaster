@@ -59,12 +59,12 @@ class ExternalServiceHandler {
 
     private var counter: Long = 0
 
+    /**
+     * whether the fake WM is initialized that the SUT will connect for the first time
+     */
     private var isDefaultInitialized = false
 
-    /*
-       cannot preform the init in postconstruct
-       an exception thrown from evomaster insturmentation
-     */
+
     @PostConstruct
     fun initialize() {
         log.debug("Initializing {}", ExternalServiceHandler::class.simpleName)

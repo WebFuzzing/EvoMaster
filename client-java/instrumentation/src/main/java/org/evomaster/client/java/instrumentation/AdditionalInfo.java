@@ -72,6 +72,9 @@ public class AdditionalInfo implements Serializable {
      */
     private final Set<ExternalServiceInfo> externalServices = new CopyOnWriteArraySet<>();
 
+    /**
+     * info for external services which have been referred to the default setup (eg, specified ip and port)
+     */
     private final Set<ExternalServiceInfo> employDefaultWM = new CopyOnWriteArraySet<>();
 
     /**

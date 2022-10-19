@@ -4,6 +4,10 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getDefaultWMHttpPort
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getDefaultWMHttpsPort
 
+/**
+ * as the default behavior, instead of connecting to the real external services,
+ * we make the SUT connect to our specified default WM as this info
+ */
 class DefaultHttpExternalServiceInfo private constructor(protocol: String, remotePort: Int)
     : HttpExternalServiceInfo(protocol, "no_host_name", remotePort) {
 
