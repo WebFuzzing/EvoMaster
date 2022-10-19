@@ -18,6 +18,4 @@ open class QueryResolver(
         return  repository.books().toList()
     }
 
-
-
 }
