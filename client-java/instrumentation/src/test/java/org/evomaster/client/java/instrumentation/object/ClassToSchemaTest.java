@@ -161,14 +161,29 @@ public class ClassToSchemaTest {
         String cycleDtoASchema = ClassToSchema.getOrDeriveSchema(CycleDtoA.class, embedded);
         JsonObject json = parse(cycleDtoASchema);
         JsonObject obj = json.get(CycleDtoA.class.getName()).getAsJsonObject();
-        assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
-        verifyTypeOfFieldInProperties(obj, "string", "cycleAId");
-        verifyRefOfFieldInProperties(obj, OPENAPI_REF_PATH+""+CycleDtoB.class.getName(), "cycleDtoB");
-
+        checkCycleA(obj);
 
         String cycleDtoBSchema = ClassToSchema.getOrDeriveSchema(CycleDtoB.class, embedded);
         JsonObject jsonB = parse(cycleDtoBSchema);
         JsonObject objB = jsonB.get(CycleDtoB.class.getName()).getAsJsonObject();
+        checkCycleB(objB);
+
+        String allNested = ClassToSchema.getOrDeriveSchemaWithItsRef(CycleDtoA.class);
+        JsonObject all = parse(allNested);
+        JsonObject jsonAandB = all.get(CycleDtoA.class.getName()).getAsJsonObject();
+        assertEquals(2, jsonAandB.size());
+        checkCycleA(jsonAandB.get(CycleDtoA.class.getName()).getAsJsonObject());
+        checkCycleB(jsonAandB.get(CycleDtoB.class.getName()).getAsJsonObject());
+
+    }
+
+    private void checkCycleA(JsonObject obj){
+        assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeOfFieldInProperties(obj, "string", "cycleAId");
+        verifyRefOfFieldInProperties(obj, OPENAPI_REF_PATH+""+CycleDtoB.class.getName(), "cycleDtoB");
+    }
+
+    private void checkCycleB(JsonObject objB){
         assertEquals(2, objB.get("properties").getAsJsonObject().entrySet().size());
         verifyTypeOfFieldInProperties(objB, "string", "cycleBId");
         verifyRefOfFieldInProperties(objB, OPENAPI_REF_PATH+""+CycleDtoA.class.getName(), "cycleDtoA");
