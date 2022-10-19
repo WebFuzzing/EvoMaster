@@ -49,6 +49,9 @@ public class ClassToSchema {
      */
     private static final Map<Type, String> cache = new ConcurrentHashMap<>();
 
+    private static final String fieldRefPrefix = "{\"$ref\":\"";
+
+    private static final String fieldRefPostfix = "\"}";
 
     public static void registerSchemaIfNeeded(Class<?> valueType) {
 
@@ -74,7 +77,11 @@ public class ClassToSchema {
 
         }
     }
-
+    /**
+     *
+     * @return a schema representation of the class along with schemas of its ref classes in the form
+     *      "name: { "type name": "schema", "type name": "schema", .... }"
+     */
     public static String getOrDeriveSchemaWithItsRef(Class<?> klass){
         StringBuilder sb = new StringBuilder();
         List<Class<?>> nested = new ArrayList<>();
@@ -90,24 +97,29 @@ public class ClassToSchema {
     }
 
     /**
+     * @param nested is a list of nested classes
      * @return a schema representation of the class in the form "name: {...}", ie
      * like a field entry in an OpenAPI object definition
      */
-    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> embedded) {
-        return getOrDeriveSchema(klass.getName(), klass, false, embedded);
+    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> nested) {
+        return getOrDeriveSchema(klass.getName(), klass, false, nested);
     }
 
+    /**
+     *
+     * @return a schema representation of the class in the form "name: {...}"
+     */
     public static String getOrDeriveNonNestedSchema(Class<?> klass) {
         return getOrDeriveSchema(klass.getName(), klass, false, Collections.emptyList());
     }
 
-    private static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> embedded) {
+    private static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> nested) {
 
         if (cache.containsKey(type) && !useRefObject) {
             return named(name, cache.get(type));
         }
 
-        String schema = getSchema(type, useRefObject, embedded, false);
+        String schema = getSchema(type, useRefObject, nested, false);
 
         /*
             we only put the complete schema into schema
@@ -118,9 +130,9 @@ public class ClassToSchema {
     }
 
 
-    private static String getOrDeriveSchemaAndEmbeddedClasses(Class<?> klass, List<Class<?>> embedded) {
+    private static String getOrDeriveSchemaAndEmbeddedClasses(Class<?> klass, List<Class<?>> nested) {
 
-        String schema = getSchema(klass, false, embedded, true);
+        String schema = getSchema(klass, false, nested, true);
 
         return named(klass.getName(), schema);
     }
@@ -130,7 +142,13 @@ public class ClassToSchema {
     }
 
 
-    private static String getSchema(Type type, Boolean useRefObject, List<Class<?>> embedded, boolean allEmbedded) {
+    /**
+     *
+     * @param useRefObject represents whether to represent the object with ref
+     * @param nested is a list of nested classes
+     * @param allNested represents whether to add all nested into [nested]
+     */
+    private static String getSchema(Type type, Boolean useRefObject, List<Class<?>> nested, boolean allNested) {
 
         Class<?> klass = null;
         if (type instanceof Class) {
@@ -178,7 +196,7 @@ public class ClassToSchema {
         if ((klass != null && (klass.isArray() || List.class.isAssignableFrom(klass) || Set.class.isAssignableFrom(klass)))
                 ||
                 (pType != null && (List.class.isAssignableFrom((Class) pType.getRawType()) || Set.class.isAssignableFrom((Class) pType.getRawType())))) {
-            return fieldArraySchema(klass, pType, embedded, allEmbedded);
+            return fieldArraySchema(klass, pType, nested, allNested);
         }
 
         //TOOD Map
@@ -186,8 +204,8 @@ public class ClassToSchema {
 
         if (useRefObject){
             // register this class
-            if ((allEmbedded || !UnitsInfoRecorder.isDtoSchemaRegister(klass.getName())) && !embedded.contains(klass))
-                embedded.add(klass);
+            if ((allNested || !UnitsInfoRecorder.isDtoSchemaRegister(klass.getName())) && !nested.contains(klass))
+                nested.add(klass);
             return fieldObjectRefSchema(klass.getName());
         }
 
@@ -203,10 +221,10 @@ public class ClassToSchema {
                 }
                 String fieldName = getName(f);
                 String fieldSchema = null;
-                if (allEmbedded){
-                    fieldSchema = named(fieldName, getSchema(f.getGenericType(), true, embedded, true));
+                if (allNested){
+                    fieldSchema = named(fieldName, getSchema(f.getGenericType(), true, nested, true));
                 }else
-                    fieldSchema = getOrDeriveSchema(fieldName, f.getGenericType(), true, embedded);
+                    fieldSchema = getOrDeriveSchema(fieldName, f.getGenericType(), true, nested);
                 properties.add(fieldSchema);
             }
             target = target.getSuperclass();
@@ -311,8 +329,4 @@ public class ClassToSchema {
     private static String fieldSchema(String type, String format) {
         return "{\"type\":\"" + type + "\", \"format\":\"" + format + "\"}";
     }
-
-    private static final String fieldRefPrefix = "{\"$ref\":\"";
-
-    private static final String fieldRefPostfix = "\"}";
 }

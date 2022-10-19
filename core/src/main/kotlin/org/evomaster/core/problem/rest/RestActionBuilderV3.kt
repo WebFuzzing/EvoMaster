@@ -133,11 +133,18 @@ object RestActionBuilderV3 {
         checkSkipped(skipped, endpointsToSkip, actionCluster, errorEndpoints)
     }
 
+    /**
+     * @param name of the Dto to parse
+     * @param allSchemas contains all schemas of dto and its ref classes in the form
+     *      "name: { "type name": "schema", "ref name": "schema", .... }"
+     * @return a gene of the dto
+     */
     fun createObjectGenesForDTOs(name: String, allSchemas: String) : Gene{
         if(!allSchemas.startsWith("\"$name\"")){
             throw IllegalArgumentException("Invalid name $name for schema $allSchemas")
         }
-        val allSchemasValue = allSchemas.substring(1+name.length+2)
+
+        val allSchemasValue = allSchemas.substring(1 + name.length + 2)
 
         val schemas = getMapStringFromSchemas(allSchemasValue)
         val dtoSchema = schemas[name] ?: throw IllegalStateException("cannot find the schema with $name from $allSchemas")
@@ -149,8 +156,8 @@ object RestActionBuilderV3 {
         val schema = """
             {
                 "openapi": "3.0.0",
-                "components": {
-                    "schemas": $allSchemasValue
+                "$OPENAPI_COMPONENT_NAME": {
+                    "$OPENAPI_SCHEMA_NAME": $allSchemasValue
                 }
             }          
         """.trimIndent()
@@ -183,8 +190,8 @@ object RestActionBuilderV3 {
         val schema = """
             {
                 "openapi": "3.0.0",
-                "components": {
-                    "schemas": {
+                "$OPENAPI_COMPONENT_NAME": {
+                    "$OPENAPI_SCHEMA_NAME": {
                         $dtoSchema
                     }
                 }
