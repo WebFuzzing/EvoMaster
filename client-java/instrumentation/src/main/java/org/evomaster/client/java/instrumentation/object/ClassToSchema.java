@@ -85,7 +85,7 @@ public class ClassToSchema {
     public static String getOrDeriveSchemaWithItsRef(Class<?> klass){
         StringBuilder sb = new StringBuilder();
         List<Class<?>> nested = new ArrayList<>();
-        String schema = ClassToSchema.getOrDeriveSchemaAndEmbeddedClasses(klass, nested);
+        String schema = ClassToSchema.getOrDeriveSchemaAndNestedClasses(klass, nested);
         sb.append("{");
         sb.append(schema);
 
@@ -129,8 +129,10 @@ public class ClassToSchema {
         return named(name, schema);
     }
 
-
-    private static String getOrDeriveSchemaAndEmbeddedClasses(Class<?> klass, List<Class<?>> nested) {
+    /**
+     * @return a schema representation of the given class in the form "name: {...}" and add all its nested class into nested
+     */
+    public static String getOrDeriveSchemaAndNestedClasses(Class<?> klass, List<Class<?>> nested) {
 
         String schema = getSchema(klass, false, nested, true);
 

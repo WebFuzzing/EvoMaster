@@ -27,8 +27,12 @@ public class ExtractJvmClass {
                     the class to extract will be cached inside ClassToSchema.getOrDeriveSchema
                     need to check whether we need to cache such specified class
                  */
-                String schema = ClassToSchema.getOrDeriveSchema(clazz);
-                schemas.put(dtoName, schema);
+                List<Class<?>> nested = new ArrayList<>();
+                String schema = ClassToSchema.getOrDeriveSchemaAndNestedClasses(clazz, nested);
+                schemas.putIfAbsent(dtoName, schema);
+                for (Class<?> s : nested){
+                    schemas.putIfAbsent(s.getName(), ClassToSchema.getOrDeriveNonNestedSchema(s));
+                }
             } catch (ClassNotFoundException e) {
                 SimpleLogger.uniqueWarn("Fail to extract Jvm DTO as schema:"+e.getMessage());
             }
