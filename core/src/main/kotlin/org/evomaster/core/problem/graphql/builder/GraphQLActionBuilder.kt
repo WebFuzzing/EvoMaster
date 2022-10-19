@@ -597,8 +597,13 @@ object GraphQLActionBuilder {
                             g
                         }
                         history.removeLast()
-                        OptionalGene(element.fieldName, objGene)
-                    } else {
+
+                        if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true)
+                        {OptionalGene(state.inputTypeName[element.fieldName].toString(), objGene)}
+                        else {OptionalGene(element.fieldName, objGene)}
+
+                    }
+                    else {
                         //we have a cycle, in which same object has been seen in ancestor
                         history.removeLast()
                         (OptionalGene(element.fieldName, CycleObjectGene(element.fieldName)))
@@ -638,39 +643,40 @@ object GraphQLActionBuilder {
                         if (gene != null) {
                             gene.copy()
                         } else {
-                        //will contain basic interface fields, and had as name the methode name
-                        var interfaceBaseOptObjGene = createObjectGene(
-                            state, history, accum, treeDepth, element
-                        )
-                        interfaceBaseOptObjGene = interfaceBaseOptObjGene as ObjectGene
-
-                        interfaceBaseOptObjGene.name = interfaceBaseOptObjGene.name.plus(GqlConst.INTERFACE_BASE_TAG)
-
-                        accum = initAccum //because #Base# and additional interface fields are in the same level
-
-                        //will contain additional interface fields, and had as name the name of the objects
-                        val interfaceAdditionalOptObjGene = createInterfaceObjectGene(
-                            state,
-                            history,
-                            interfaceBaseOptObjGene,
-                            accum,
-                            treeDepth,
-                            element
-                        )
-
-                        //merge basic interface fields with additional interface fields
-                        interfaceAdditionalOptObjGene.add(
-                            OptionalGene(
-                                element.fieldName + GqlConst.INTERFACE_BASE_TAG,
-                                interfaceBaseOptObjGene
+                            //will contain basic interface fields, and had as name the methode name
+                            var interfaceBaseOptObjGene = createObjectGene(
+                                state, history, accum, treeDepth, element
                             )
-                        )
-                        history.removeLast()
-                        //will return a single optional object gene with optional basic interface fields and optional additional interface fields
+                            interfaceBaseOptObjGene = interfaceBaseOptObjGene as ObjectGene
+
+                            interfaceBaseOptObjGene.name =
+                                interfaceBaseOptObjGene.name.plus(GqlConst.INTERFACE_BASE_TAG)
+
+                            accum = initAccum //because #Base# and additional interface fields are in the same level
+
+                            //will contain additional interface fields, and had as name the name of the objects
+                            val interfaceAdditionalOptObjGene = createInterfaceObjectGene(
+                                state,
+                                history,
+                                interfaceBaseOptObjGene,
+                                accum,
+                                treeDepth,
+                                element
+                            )
+
+                            //merge basic interface fields with additional interface fields
+                            interfaceAdditionalOptObjGene.add(
+                                OptionalGene(
+                                    element.fieldName + GqlConst.INTERFACE_BASE_TAG,
+                                    interfaceBaseOptObjGene
+                                )
+                            )
+                            history.removeLast()
+                            //will return a single optional object gene with optional basic interface fields and optional additional interface fields
                             val g = OptionalGene(
-                            element.fieldName + GqlConst.INTERFACE_TAG,
-                            ObjectGene(element.fieldName + GqlConst.INTERFACE_TAG, interfaceAdditionalOptObjGene)
-                        )
+                                element.fieldName + GqlConst.INTERFACE_TAG,
+                                ObjectGene(element.fieldName + GqlConst.INTERFACE_TAG, interfaceAdditionalOptObjGene)
+                            )
                             depthBasedCache[id] = g
                             g
                         }
@@ -702,7 +708,7 @@ object GraphQLActionBuilder {
                         element.typeName,
                         element.fieldName,
                     )
-                 else
+                else
                     return createScalarGene(
                         element.typeName,
                         element.KindOfFieldName,
@@ -772,7 +778,14 @@ object GraphQLActionBuilder {
                 )
 
                 val constructedTuple = if (isLastNotPrimitive(tupleElements.last()))
+
+                    if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
                     OptionalGene(
+                        state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
+                            state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
+                            lastElementTreatedSpecially = true
+                        )
+                    )else OptionalGene(
                         tupleElements.last().name, TupleGene(
                             tupleElements.last().name, tupleElements,
                             lastElementTreatedSpecially = true
@@ -780,7 +793,14 @@ object GraphQLActionBuilder {
                     )
                 else
                 //Dropping the last element since it is a primitive type
-                    OptionalGene(
+                    if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
+                        OptionalGene(
+                            state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
+                                state.inputTypeName[tupleElements.last().name].toString(), tupleElements.dropLast(1),
+                                lastElementTreatedSpecially = false
+                            )
+                        )
+                    else OptionalGene(
                         tupleElements.last().name, TupleGene(
                             tupleElements.last().name, tupleElements.dropLast(1),
                             lastElementTreatedSpecially = false
@@ -806,7 +826,9 @@ object GraphQLActionBuilder {
                 )
         }
 
-        return ObjectGene(element.fieldName, fields)
+        return if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true)
+            ObjectGene(state.inputTypeName[element.fieldName].toString(), fields)
+        else ObjectGene(element.fieldName, fields)
     }
 
     private fun isLastNotPrimitive(lastElements: Gene) = ((lastElements is ObjectGene) ||

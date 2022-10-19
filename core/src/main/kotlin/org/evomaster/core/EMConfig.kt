@@ -1620,7 +1620,7 @@ class EMConfig {
      *  but there are issues of performance (time and memory) in analysis of large graphs, that
      *  would need to be optimized
      */
-    val defaultTreeDepth = 3
+    val defaultTreeDepth = 4
 
     @Experimental
     @Cfg("Maximum tree depth in mutations/queries to be evaluated." +

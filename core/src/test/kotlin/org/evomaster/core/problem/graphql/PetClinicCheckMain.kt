@@ -14,7 +14,7 @@ class PetClinicCheckMain {
         fun main(args: Array<String>) {
 
             //reading the gson file
-            val json = PetClinicCheckMain::class.java.getResource("/graphql/PetsClinic.json").readText()
+            val json = PetClinicCheckMain::class.java.getResource("/graphql/online/PetsClinic.json").readText()
 
             //converting json to object
             val gson = Gson()
