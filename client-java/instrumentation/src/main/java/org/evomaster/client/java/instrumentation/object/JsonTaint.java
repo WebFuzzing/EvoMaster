@@ -23,8 +23,7 @@ public class JsonTaint {
             // TODO are there cases in which the content structure would be available? to check
             info = new StringSpecializationInfo(StringSpecialization.JSON_ARRAY,null);
         } else {
-           info = new StringSpecializationInfo(StringSpecialization.JSON_OBJECT,
-                   ClassToSchema.getOrDeriveNonNestedSchema(klass));
+            info = new StringSpecializationInfo(StringSpecialization.JSON_OBJECT, ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
         }
 
         ExecutionTracer.addStringSpecialization(taint, info);
