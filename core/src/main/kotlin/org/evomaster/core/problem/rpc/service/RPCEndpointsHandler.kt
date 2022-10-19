@@ -627,6 +627,11 @@ class RPCEndpointsHandler {
             }
         }
 
+
+        val allDtoNames = infoDto.unitsInfoDto.parsedDtos.keys.toList()
+        val allDtoSchemas = allDtoNames.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
+        RestActionBuilderV3.createObjectGeneForDTOs(allDtoNames, allDtoSchemas, allDtoNames)
+
         return names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == true}.associateWith { name ->
             val schema = infoDto.unitsInfoDto.extractedSpecifiedDtos[name]!!
             RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
