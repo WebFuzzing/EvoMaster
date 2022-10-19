@@ -696,8 +696,13 @@ object GraphQLActionBuilder {
                             g
                         }
                         history.removeLast()
-                        OptionalGene(element.fieldName, objGene)
-                    } else {
+
+                        if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true)
+                        {OptionalGene(state.inputTypeName[element.fieldName].toString(), objGene)}
+                        else {OptionalGene(element.fieldName, objGene)}
+
+                    }
+                    else {
                         //we have a cycle, in which same object has been seen in ancestor
                         history.removeLast()
                         (OptionalGene(element.fieldName, CycleObjectGene(element.fieldName)))
@@ -878,7 +883,14 @@ object GraphQLActionBuilder {
                 )
 
                 val constructedTuple = if (isLastNotPrimitive(tupleElements.last()))
+
+                    if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
                     OptionalGene(
+                        state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
+                            state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
+                            lastElementTreatedSpecially = true
+                        )
+                    )else OptionalGene(
                         tupleElements.last().name, TupleGene(
                             tupleElements.last().name, tupleElements,
                             lastElementTreatedSpecially = true
@@ -886,7 +898,14 @@ object GraphQLActionBuilder {
                     )
                 else
                 //Dropping the last element since it is a primitive type
-                    OptionalGene(
+                    if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
+                        OptionalGene(
+                            state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
+                                state.inputTypeName[tupleElements.last().name].toString(), tupleElements.dropLast(1),
+                                lastElementTreatedSpecially = false
+                            )
+                        )
+                    else OptionalGene(
                         tupleElements.last().name, TupleGene(
                             tupleElements.last().name, tupleElements.dropLast(1),
                             lastElementTreatedSpecially = false
@@ -912,7 +931,9 @@ object GraphQLActionBuilder {
                 )
         }
 
-        return ObjectGene(element.fieldName, fields)
+        return if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true)
+            ObjectGene(state.inputTypeName[element.fieldName].toString(), fields)
+        else ObjectGene(element.fieldName, fields)
     }
 
     private fun isLastNotPrimitive(lastElements: Gene) = ((lastElements is ObjectGene) ||
