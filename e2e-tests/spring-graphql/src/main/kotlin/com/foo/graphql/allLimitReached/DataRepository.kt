@@ -87,7 +87,7 @@ open class DataRepository {
 
     }*/
 
-    fun saveBook( name:String): String{
+    fun saveBook( name:String?): String{
         val id = counter.getAndIncrement()
         return Book(Author( Address("address-X","street name-X"))).toString()
 
