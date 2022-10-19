@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
@@ -156,6 +157,40 @@ object RestActionBuilderV3 {
         val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque(), referenceTypeName)
         dtoCache[dtoSchema] = gene
         return gene.copy()
+    }
+
+    fun createObjectGeneForDTOs(names: List<String>, dtoSchemas: List<String>, referenceTypeNames: List<String?>) : List<Gene>{
+        Lazy.assert { names.size == dtoSchemas.size }
+
+        dtoSchemas.forEachIndexed { index, s ->
+            if(! s.startsWith("\"${names[index]}\"")){
+                throw IllegalArgumentException("Invalid name ${names[index]} for schema $s")
+            }
+        }
+
+
+        val unidentified = dtoSchemas.mapIndexed { index, s -> index to s  }.filter{ !dtoCache.containsKey(it.second) }
+
+        //Note to simplify code, we just create a whole OpenAPI schema
+        val schema = """
+            {
+                "openapi": "3.0.0",
+                "components": {
+                    "schemas": {
+                        ${unidentified.joinToString(",") { it.second }}
+                    }
+                }
+            }          
+        """.trimIndent()
+
+        val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
+        unidentified.forEach {s->
+            val gene = getGene(names[s.first], swagger.components.schemas[names[s.first]]!!,swagger, ArrayDeque(), referenceTypeNames[s.first])
+            if (!dtoCache.containsKey(s.second))
+                dtoCache[s.second] = gene
+        }
+
+        return dtoSchemas.map { dtoCache[it]!!.copy() }
     }
 
 
