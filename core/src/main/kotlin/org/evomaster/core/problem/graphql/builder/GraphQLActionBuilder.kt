@@ -130,7 +130,6 @@ object GraphQLActionBuilder {
        */
         handleAllCyclesAndLimitInObjectFields(params)
 
-
         /*
          In some cases when fixing the depth to n. The return object gives paths to only Limit genes.
          In this case the return gene should not be repaired but rather removed from the actions (as a simple solution).
@@ -140,13 +139,11 @@ object GraphQLActionBuilder {
         if (params.any { p -> p is GQReturnParam }) {
 
             if (!params.find { p -> p is GQReturnParam }?.let { isAllLimitInObjectFields(it) }!!  ) {
-                //Create the action
                 val action = GraphQLAction(actionId, element.fieldName, type, params)
                 actionCluster[action.getName()] = action
             }
 
         }else {
-            //Create the action
             val action = GraphQLAction(actionId, element.fieldName, type, params)
             actionCluster[action.getName()] = action
         }
@@ -191,18 +188,12 @@ object GraphQLActionBuilder {
         }
     }
 
-    /*************************************/
-
     /**
      * Check if there is any top gene in any param for which we cannot make a selection due to limit genes
      */
     private fun isAllLimitInObjectFields(
         params: Param
     ): Boolean {
-        /*return params.flatMap { it.genes }
-            .any {
-                isAllLimitInObjectFields(it)
-            }*/
 
         return params.genes
             .any {
@@ -238,8 +229,6 @@ object GraphQLActionBuilder {
             }
         }
     }
-
-    /********************************************************/
 
     fun handleAllCyclesAndLimitInObjectFields(gene: ObjectGene) {
         if (gene.fields.all {
