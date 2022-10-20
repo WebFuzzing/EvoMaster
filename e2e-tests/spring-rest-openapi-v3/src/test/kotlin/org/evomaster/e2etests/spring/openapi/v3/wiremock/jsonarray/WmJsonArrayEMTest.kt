@@ -33,23 +33,26 @@ class WmJsonArrayEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
-            500
-        ) { args: MutableList<String> ->
+            500,
+                !CIUtils.isRunningGA(),
+            { args: MutableList<String> ->
 
-            args.add("--externalServiceIPSelectionStrategy")
-            args.add("USER")
-            args.add("--externalServiceIP")
-            args.add("127.0.0.46")
+                args.add("--externalServiceIPSelectionStrategy")
+                args.add("USER")
+                args.add("--externalServiceIP")
+                args.add("127.0.0.46")
 
-            val solution = initAndRun(args)
+                val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.size >= 1)
+                assertTrue(solution.individuals.size >= 1)
 
-            if(!CIUtils.isRunningGA()) {
-                //FIXME same issue as other WM tests... pass locally. Maybe should try again on CircleCI
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK")
-            }
-        }
+                if(!CIUtils.isRunningGA()) {
+                    //FIXME same issue as other WM tests... pass locally. Maybe should try again on CircleCI
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK")
+                }
+            },
+            3
+        )
     }
 
 }

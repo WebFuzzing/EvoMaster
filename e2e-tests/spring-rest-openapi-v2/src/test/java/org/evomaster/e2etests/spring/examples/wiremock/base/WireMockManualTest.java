@@ -6,6 +6,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import io.restassured.http.ContentType;
+import org.evomaster.ci.utils.CIUtils;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,6 +23,8 @@ public class WireMockManualTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
+        CIUtils.skipIfOnGA();
+
         // DNS cache manipulator sets the IP for foo.bar to a different loopback address
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
 
@@ -62,6 +65,7 @@ public class WireMockManualTest extends SpringTestBase {
 
     @Test
     public void testEqualsFoo() {
+        CIUtils.skipIfOnGA();
 
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/equalsFoo/bar")
@@ -79,6 +83,7 @@ public class WireMockManualTest extends SpringTestBase {
 
     @Test
     public void testExternalCall() {
+        CIUtils.skipIfOnGA();
         /*
          * The test will check whether the external call is a success or
          * not. If the target host replaced with the Wiremock, it'll respond

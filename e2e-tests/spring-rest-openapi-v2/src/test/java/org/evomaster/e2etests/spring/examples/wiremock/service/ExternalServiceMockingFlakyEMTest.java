@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.examples.wiremock.service;
 
 import com.foo.rest.examples.spring.wiremock.service.ServiceController;
+import org.evomaster.ci.utils.CIUtils;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
@@ -34,6 +35,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                 "ExternalServiceMockingEMGeneratedTest",
                 "org.bar.ExternalServiceMockingEMGeneratedTest",
                 1000,
+                !CIUtils.isRunningGA(),
                 (args) -> {
 
                     // IP set to 127.0.0.5 to confirm the test failure
@@ -67,6 +69,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/complex", "true");
                     // TODO: Disabled till the Jackson method replacement handled to unmarshall the JSON
 //                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wiremock/external/json", "false");
-                });
+                },
+                3);
     }
 }
