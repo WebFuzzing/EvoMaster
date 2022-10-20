@@ -35,7 +35,7 @@ public class ExternalServiceMockingFlakyEMTest extends SpringTestBase {
                 "ExternalServiceMockingEMGeneratedTest",
                 "org.bar.ExternalServiceMockingEMGeneratedTest",
                 1000,
-                !CIUtils.isRunningGA(),
+                !CIUtils.isRunningGA(), //TODO skip test generation due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
                 (args) -> {
 
                     // IP set to 127.0.0.5 to confirm the test failure
