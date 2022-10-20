@@ -80,7 +80,10 @@ public class ClassToSchema {
             }
         }catch (Exception e){
             SimpleLogger.warn("Fail to get schema for Class:"+valueType.getName(), e);
-            throw e;
+            /*
+                fail with tests
+             */
+            assert(false);
         }
 
     }
