@@ -60,6 +60,9 @@ public class WireMockManualTest extends SpringTestBase {
 
     @AfterAll
     public static void shutdownServer() {
+        //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
+        CIUtils.skipIfOnGA();
+
         wireMockServer.stop();
         DnsCacheManipulator.clearDnsCache();
     }
