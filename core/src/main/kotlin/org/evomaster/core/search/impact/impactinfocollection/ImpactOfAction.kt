@@ -23,10 +23,10 @@ data class ImpactsOfAction(
     constructor(action: Action) : this(
             localId = action.getLocalId(),
             actionName = action.getName(),
-            geneImpacts = action.seeTopGenes().map {
+            geneImpacts = action.seeTopGenes().associate {
                 val id = ImpactUtils.generateGeneId(action, it)
                 id to ImpactUtils.createGeneImpact(it, id)
-            }.toMap().toMutableMap())
+            }.toMutableMap())
 
 //    constructor(individual: Individual, genes: List<Gene>) : this(
 //            actionName = null,
@@ -39,7 +39,7 @@ data class ImpactsOfAction(
     constructor(localId: String, actionName: String?, geneImpacts: List<GeneImpact>) : this(
             localId = localId,
             actionName = actionName,
-            geneImpacts = geneImpacts.map { it.getId() to it }.toMap().toMutableMap()
+            geneImpacts = geneImpacts.associateBy { it.getId() }.toMutableMap()
     )
 
     /**

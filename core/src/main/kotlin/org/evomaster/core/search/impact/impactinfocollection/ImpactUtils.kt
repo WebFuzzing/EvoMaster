@@ -304,9 +304,18 @@ class ImpactUtils {
             return genes.filter {o->
                 val g = ParamUtil.getValueGene(o)
                 g.name == template.name && g::class.java.simpleName == template::class.java.simpleName && (includeSameValue || !g.containsSameValueAs(template))
-            }.also {
-                if (it.size > 1)
-                    log.warn("{} genes have been mutated with the name {}",it.size, gene.name)
+            }.run {
+                if (this.size <= 1)
+                    this
+                else {
+                    val sameLocalId = this.filter { s-> s.getLocalId() == template.getLocalId() }
+                    if (sameLocalId.size == 1)
+                        sameLocalId
+                    else {
+                        LoggingUtil.uniqueWarn(log, "${this.size} genes have been mutated with the name ${gene.name}, and the size of genes which has the same local is ${sameLocalId.size}")
+                        this
+                    }
+                }
             }.firstOrNull()
         }
     }
