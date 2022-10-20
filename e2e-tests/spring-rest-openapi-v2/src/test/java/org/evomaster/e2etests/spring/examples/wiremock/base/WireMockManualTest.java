@@ -23,6 +23,9 @@ public class WireMockManualTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
+        WireMockController wireMockController = new WireMockController();
+        SpringTestBase.initClass(wireMockController);
+
         //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
         CIUtils.skipIfOnGA();
 
@@ -54,8 +57,6 @@ public class WireMockManualTest extends SpringTestBase {
                         .withStatus(200)
                         .withBody("Not found!!")));
 
-        WireMockController wireMockController = new WireMockController();
-        SpringTestBase.initClass(wireMockController);
     }
 
     @AfterAll
