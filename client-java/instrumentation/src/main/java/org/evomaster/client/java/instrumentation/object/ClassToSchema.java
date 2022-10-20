@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.object;
 
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -65,17 +66,23 @@ public class ClassToSchema {
             return;
         }
 
-        String name = valueType.getName();
-        if (!UnitsInfoRecorder.isDtoSchemaRegister(name)){
-            List<Class<?>> embedded = new ArrayList<>();
-            String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded);
-            UnitsInfoRecorder.registerNewParsedDto(name, schema);
-            ExecutionTracer.addParsedDtoName(name);
-            if (!embedded.isEmpty()){
-                embedded.forEach(ClassToSchema::registerSchemaIfNeeded);
-            }
+        try {
+            String name = valueType.getName();
+            if (!UnitsInfoRecorder.isDtoSchemaRegister(name)){
+                List<Class<?>> embedded = new ArrayList<>();
+                String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded);
+                UnitsInfoRecorder.registerNewParsedDto(name, schema);
+                ExecutionTracer.addParsedDtoName(name);
+                if (!embedded.isEmpty()){
+                    embedded.forEach(ClassToSchema::registerSchemaIfNeeded);
+                }
 
+            }
+        }catch (Exception e){
+            SimpleLogger.warn("Fail to get schema for Class:"+valueType.getName(), e);
+            throw e;
         }
+
     }
     /**
      *
