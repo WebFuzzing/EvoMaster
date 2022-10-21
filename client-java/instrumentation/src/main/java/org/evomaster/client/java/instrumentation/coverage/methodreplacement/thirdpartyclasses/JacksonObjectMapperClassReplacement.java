@@ -47,14 +47,14 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             TODO: check if it has side-effects
          */
 
-        String content = new BufferedReader(
-                new InputStreamReader(src, StandardCharsets.UTF_8))
-                .lines()
-                .collect(Collectors.joining("\n"));
-
-        JsonTaint.handlePossibleJsonTaint(content,valueType);
-
-        src = new ByteArrayInputStream(content.getBytes());
+//        String content = new BufferedReader(
+//                new InputStreamReader(src, StandardCharsets.UTF_8))
+//                .lines()
+//                .collect(Collectors.joining("\n"));
+//
+//        JsonTaint.handlePossibleJsonTaint(content,valueType);
+//
+//        src = new ByteArrayInputStream(content.getBytes());
 
         Method original = getOriginal(singleton, "Jackson_ObjectMapper_readValue_InputStream_class", caller);
 
