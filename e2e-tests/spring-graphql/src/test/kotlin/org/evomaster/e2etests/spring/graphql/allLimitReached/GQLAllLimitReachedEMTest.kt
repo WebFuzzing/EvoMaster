@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.graphql.allLimitReached
 
 
-import com.foo.graphql.allLimitReached.allLimitReachedController
+import com.foo.graphql.alllimitreached.allLimitReachedController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions

@@ -1,9 +1,9 @@
-package com.foo.graphql.allLimitReached
+package com.foo.graphql.alllimitreached
 
 
-import com.foo.graphql.allLimitReached.type.Address
-import com.foo.graphql.allLimitReached.type.Author
-import com.foo.graphql.allLimitReached.type.Book
+import com.foo.graphql.alllimitreached.type.Address
+import com.foo.graphql.alllimitreached.type.Author
+import com.foo.graphql.alllimitreached.type.Book
 import org.springframework.stereotype.Component
 import java.util.concurrent.atomic.AtomicInteger
 

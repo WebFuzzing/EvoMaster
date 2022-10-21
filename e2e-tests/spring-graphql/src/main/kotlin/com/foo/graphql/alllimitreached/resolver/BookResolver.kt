@@ -1,9 +1,9 @@
-package com.foo.graphql.allLimitReached.resolver
+package com.foo.graphql.alllimitreached.resolver
 
-import com.foo.graphql.allLimitReached.DataRepository
-import com.foo.graphql.allLimitReached.type.Address
-import com.foo.graphql.allLimitReached.type.Author
-import com.foo.graphql.allLimitReached.type.Book
+import com.foo.graphql.alllimitreached.DataRepository
+import com.foo.graphql.alllimitreached.type.Address
+import com.foo.graphql.alllimitreached.type.Author
+import com.foo.graphql.alllimitreached.type.Book
 
 import graphql.kickstart.tools.GraphQLResolver
 import org.springframework.stereotype.Component

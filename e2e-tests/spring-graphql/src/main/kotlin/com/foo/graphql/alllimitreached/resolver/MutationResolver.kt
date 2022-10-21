@@ -1,6 +1,6 @@
-package com.foo.graphql.allLimitReached.resolver
+package com.foo.graphql.alllimitreached.resolver
 
-import com.foo.graphql.allLimitReached.DataRepository
+import com.foo.graphql.alllimitreached.DataRepository
 import graphql.kickstart.tools.GraphQLMutationResolver
 import org.springframework.stereotype.Component
 

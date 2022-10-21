@@ -1,4 +1,4 @@
-package com.foo.graphql.allLimitReached
+package com.foo.graphql.alllimitreached
 
 import com.foo.graphql.SpringController
 
