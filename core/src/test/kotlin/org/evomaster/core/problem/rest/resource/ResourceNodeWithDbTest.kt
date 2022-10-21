@@ -178,9 +178,9 @@ class ResourceNodeWithDbTest {
         val dbFooIdInGetBar = getGenePredict(getBar.seeActions(ActionFilter.ONLY_SQL).first(), "id"){g: Gene -> g is LongGene }
         val dbBarIdInGetBar = getGenePredict(getBar.seeActions(ActionFilter.ONLY_SQL)[1], "id"){g: Gene -> g is LongGene }
         assertEquals((barFooId as LongGene).value, (dbFooIdInGetBar as LongGene).value)
-        assertTrue(dbFooIdInGetBar.isBoundWith(barFooId))
+        assertTrue(dbFooIdInGetBar.isDirectBoundWith(barFooId))
         assertEquals((barId as LongGene).value, (dbBarIdInGetBar as LongGene).value)
-        assertTrue(barId.isBoundWith(dbBarIdInGetBar))
+        assertTrue(barId.isDirectBoundWith(dbBarIdInGetBar))
 
         // /v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}
         val xYZNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")!!
@@ -206,13 +206,13 @@ class ResourceNodeWithDbTest {
 
         assertEquals((xyzFooId as LongGene).value, (dbXYZFooId as LongGene).value)
         assertEquals(42, xyzFooId.value)
-        assertTrue(xyzFooId.isBoundWith(dbXYZFooId))
+        assertTrue(xyzFooId.isDirectBoundWith(dbXYZFooId))
         assertEquals((xyzBarId as LongGene).value, (dbXYZBarId as LongGene).value)
         assertEquals(43, xyzBarId.value)
-        assertTrue(xyzBarId.isBoundWith(dbXYZBarId))
+        assertTrue(xyzBarId.isDirectBoundWith(dbXYZBarId))
         assertEquals((xyzId as LongGene).value, (dbXYZId as LongGene).value)
         assertEquals(44, xyzId.value)
-        assertTrue(xyzId.isBoundWith(dbXYZId))
+        assertTrue(xyzId.isDirectBoundWith(dbXYZId))
     }
 
     @Test

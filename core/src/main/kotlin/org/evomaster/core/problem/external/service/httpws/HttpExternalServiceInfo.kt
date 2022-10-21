@@ -1,11 +1,9 @@
 package org.evomaster.core.problem.external.service.httpws
 
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
-import java.math.BigInteger
-import java.security.MessageDigest
 
 
-class HttpExternalServiceInfo(
+open class HttpExternalServiceInfo(
     val protocol: String,
     val remoteHostname: String,
     val remotePort: Int
@@ -25,7 +23,7 @@ class HttpExternalServiceInfo(
      * then returns it as String.
      * Will be used in WireMock as its identifier to simplify the tracking.
      */
-    fun signature(): String {
+    open fun signature(): String {
         return ExternalServiceSharedUtils.getSignature(protocol,remoteHostname,remotePort)
     }
 
@@ -48,4 +46,19 @@ class HttpExternalServiceInfo(
         result = 31 * result + remotePort
         return result
     }
+
+    /**
+     * @return whether the protocol is clear https
+     */
+    fun isHttps() = protocol.equals("https", ignoreCase = true)
+
+    /**
+     * @return whether the protocol is clear http
+     */
+    fun isHttp() = protocol.equals("http", ignoreCase = true)
+
+    /**
+     * @return whether the protocol is likely https based on the given port when protocol is neither https nor http
+     */
+    fun isDerivedHttps() : Boolean = ExternalServiceSharedUtils.isHttps(protocol, remotePort)
 }

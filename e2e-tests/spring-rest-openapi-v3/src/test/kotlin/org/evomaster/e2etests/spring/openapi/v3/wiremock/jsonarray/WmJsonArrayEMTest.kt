@@ -33,23 +33,27 @@ class WmJsonArrayEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
-                1000
-        ) { args: MutableList<String> ->
+            1000,
+                !CIUtils.isRunningGA(), //TODO skip test generation due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
+            { args: MutableList<String> ->
 
-            args.add("--externalServiceIPSelectionStrategy")
-            args.add("USER")
-            args.add("--externalServiceIP")
-            args.add("127.0.0.46")
+                args.add("--externalServiceIPSelectionStrategy")
+                args.add("USER")
+                args.add("--externalServiceIP")
+                args.add("127.0.0.46")
 
-            val solution = initAndRun(args)
+                val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.size >= 1)
+                assertTrue(solution.individuals.size >= 1)
 
-            if(!CIUtils.isRunningGA()) {
-                //FIXME same issue as other WM tests... pass locally. Maybe should try again on CircleCI
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
-            }
+                if(!CIUtils.isRunningGA()) {
+                    //FIXME same issue as other WM tests... pass locally. Maybe should try again on CircleCI
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK")
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
+                }
+            },
+                3
+                )
         }
     }
 
