@@ -405,8 +405,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         chainState: MutableMap<String, String>,
         cookies: Map<String, List<NewCookie>>,
         tokens: Map<String, String>
-    )
-            : Boolean {
+    ): Boolean {
 
         searchTimeController.waitForRateLimiter()
 

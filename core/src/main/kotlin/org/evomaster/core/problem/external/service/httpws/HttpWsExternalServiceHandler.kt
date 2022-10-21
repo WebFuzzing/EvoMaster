@@ -5,16 +5,31 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
+import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isReservedIP
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.nextIPAddress
+import org.evomaster.core.problem.httpws.service.HttpWsFitness
+import org.evomaster.core.problem.rest.service.AbstractRestFitness
+import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.service.Randomness
+import org.glassfish.jersey.client.ClientConfig
+import org.glassfish.jersey.client.ClientProperties
+import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
+import javax.net.ssl.HttpsURLConnection
+import javax.ws.rs.ProcessingException
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.ClientBuilder
+import javax.ws.rs.client.Invocation
+import javax.ws.rs.core.Response
 
 /**
  * To manage the external service related activities
@@ -26,6 +41,9 @@ class HttpWsExternalServiceHandler {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpWsExternalServiceHandler::class.java)
 
+        init{
+            System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+        }
     }
 
     /**
@@ -43,6 +61,8 @@ class HttpWsExternalServiceHandler {
 
     @Inject
     private lateinit var config: EMConfig
+
+    private lateinit var client : Client
 
     /**
      * Contains the information about [HttpWsExternalService] as map.
@@ -68,8 +88,28 @@ class HttpWsExternalServiceHandler {
 
     @PostConstruct
     fun initialize() {
+
         log.debug("Initializing {}", HttpWsExternalServiceHandler::class.simpleName)
+
+        val clientConfiguration = ClientConfig()
+            .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
+            .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
+            //workaround bug in Jersey client
+            .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+            .property(ClientProperties.FOLLOW_REDIRECTS, false)
+
+
+        client = ClientBuilder.newBuilder()
+            .sslContext(PreDefinedSSLInfo.getSSLContext())  // configure ssl certificate
+            .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames())
+            .withConfig(clientConfiguration).build()
+
         initDefaultWM()
+    }
+
+    @PreDestroy
+    private fun preDestroy() {
+        client.close()
     }
 
     /**
@@ -283,5 +323,47 @@ class HttpWsExternalServiceHandler {
     private fun wireMockSetDefaults(es: HttpWsExternalService) {
 
         es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
+    }
+
+    private fun createInvocationToRealExternalService(url : String) : Response?{
+        return try {
+            client.target(url).request("*/*").buildGet().invoke()
+        } catch (e: ProcessingException) {
+
+            log.debug("There has been an issue in accessing external service with url ($url): {}", e)
+
+            when {
+                TcpUtils.isTooManyRedirections(e) -> {
+                    return null
+                }
+
+                TcpUtils.isTimeout(e) -> {
+                    return null
+                }
+
+                TcpUtils.isOutOfEphemeralPorts(e) -> {
+                    client.close() //make sure to release any resource
+                    client = ClientBuilder.newClient()
+
+                    TcpUtils.handleEphemeralPortIssue()
+
+                    createInvocationToRealExternalService(url)
+                }
+
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
+                    log.warn("TCP connection to Real External Service: ${e.cause!!.message}")
+                    return null
+                }
+
+                TcpUtils.isRefusedConnection(e) -> {
+
+                    log.warn("Failed to connect Real External Service with TCP with url ($url).")
+                    return null
+                }
+
+                else -> throw e
+            }
+        }
+
     }
 }
