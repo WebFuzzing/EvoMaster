@@ -138,16 +138,24 @@ object GraphQLActionBuilder {
 
         if (params.any { p -> p is GQReturnParam }) {
 
-            if (!params.find { p -> p is GQReturnParam }?.let { isAllLimitInObjectFields(it) }!!  ) {
-                val action = GraphQLAction(actionId, element.fieldName, type, params)
-                actionCluster[action.getName()] = action
-            }
+            if (!params.find { p -> p is GQReturnParam }?.let { isAllLimitInObjectFields(it) }!!)
+                createAction(actionId, element, type, params, actionCluster)
 
-        }else {
-            val action = GraphQLAction(actionId, element.fieldName, type, params)
-            actionCluster[action.getName()] = action
-        }
+        } else
+            createAction(actionId, element, type, params, actionCluster)
 
+
+    }
+
+    private fun createAction(
+        actionId: String,
+        element: Table,
+        type: GQMethodType,
+        params: MutableList<Param>,
+        actionCluster: MutableMap<String, Action>
+    ) {
+        val action = GraphQLAction(actionId, element.fieldName, type, params)
+        actionCluster[action.getName()] = action
     }
 
     private fun handleAllCyclesAndLimitInObjectFields(
