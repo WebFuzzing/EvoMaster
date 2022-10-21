@@ -167,8 +167,8 @@ class ResourceNodeTest {
             val postXyzIdGene = ((postXyzId as BodyParam).gene as? ObjectGene)?.fields?.find { it.name == "id" }
             assertNotNull(postXyzIdGene)
             //binding
-            assertTrue(postXyzIdGene!!.isBoundWith(getXyzIdGene!!))
-            assertTrue(getXyzIdGene.isBoundWith(postXyzIdGene))
+            assertTrue(postXyzIdGene!!.isDirectBoundWith(getXyzIdGene!!))
+            assertTrue(getXyzIdGene.isDirectBoundWith(postXyzIdGene))
         }
     }
 
@@ -194,8 +194,8 @@ class ResourceNodeTest {
             val postFooName = post.parameters.find { it is QueryParam && it.name == "fooName" }
             assertNotNull(postFooName)
             //binding
-            assertTrue(postFooName!!.gene.isBoundWith(getFooName!!.gene))
-            assertTrue(postFooIdGene!!.isBoundWith((getFooId!!.gene as CustomMutationRateGene<*>).gene))
+            assertTrue(postFooName!!.gene.isDirectBoundWith(getFooName!!.gene))
+            assertTrue(postFooIdGene!!.isDirectBoundWith((getFooId!!.gene as CustomMutationRateGene<*>).gene))
         }
     }
 

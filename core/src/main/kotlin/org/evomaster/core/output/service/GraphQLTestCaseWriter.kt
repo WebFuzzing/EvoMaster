@@ -26,8 +26,8 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
         if (ind.individual is GraphQLIndividual) {
-            ind.evaluatedMainActions().forEach { a ->
-                handleSingleCall(a, lines, baseUrlOfSut)
+            ind.evaluatedMainActions().forEachIndexed { index,  a ->
+                handleSingleCall(a, index, ind.fitness, lines, baseUrlOfSut)
             }
         }
     }
