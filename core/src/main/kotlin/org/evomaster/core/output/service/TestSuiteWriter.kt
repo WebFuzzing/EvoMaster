@@ -7,7 +7,7 @@ import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
 import org.evomaster.core.output.service.TestWriterUtils.Companion.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.external.service.httpws.ExternalService
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
@@ -859,7 +859,7 @@ class TestSuiteWriter {
     /**
      * Returns a distinct List of [HttpExternalServiceAction] from the given solution
      */
-    private fun getWireMockServerActions(solution: Solution<*>): List<ExternalService> {
+    private fun getWireMockServerActions(solution: Solution<*>): List<HttpWsExternalService> {
         return solution.individuals.filter { i -> i.individual is RestIndividual }
             .flatMap {
                 it.individual.seeExternalServiceActions()

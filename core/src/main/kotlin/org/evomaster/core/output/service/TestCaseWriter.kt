@@ -6,9 +6,8 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
-import org.evomaster.core.problem.external.service.httpws.ExternalService
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
@@ -98,7 +97,7 @@ abstract class TestCaseWriter {
     protected fun handleDnsForExternalServiceActions(
         lines: Lines,
         actions: List<HttpExternalServiceAction>,
-        exToWM: Map<String, ExternalService>?) : Boolean{
+        exToWM: Map<String, HttpWsExternalService>?) : Boolean{
         var any = false
         exToWM?.forEach {
             lines.add("DnsCacheManipulator.setDnsCache(\"${it.key}\", \"${it.value.getWireMockAddress()}\")")

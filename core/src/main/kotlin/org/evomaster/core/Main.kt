@@ -15,7 +15,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
@@ -696,7 +696,7 @@ class Main {
          * WireMock instances to free up the IP addresses.
          */
         private fun resetExternalServiceHandler(injector: Injector) {
-            val externalServiceHandler = injector.getInstance(ExternalServiceHandler::class.java)
+            val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
             externalServiceHandler.reset()
         }
     }

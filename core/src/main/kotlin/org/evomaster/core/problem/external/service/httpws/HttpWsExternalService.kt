@@ -10,7 +10,7 @@ import java.util.*
  * Represent the external service related information including
  * WireMock server and ExternalServiceInfo collected from SUT.
  */
-class ExternalService(
+class HttpWsExternalService(
     /**
      * External service information collected from SUT
      */

@@ -9,7 +9,7 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
@@ -35,7 +35,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     @Inject
-    protected lateinit var externalServiceHandler: ExternalServiceHandler
+    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
     private fun addExternalServiceActions(
         individual: EvaluatedIndividual<*>,

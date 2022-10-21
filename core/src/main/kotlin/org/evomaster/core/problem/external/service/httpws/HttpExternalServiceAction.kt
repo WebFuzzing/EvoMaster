@@ -37,7 +37,7 @@ class HttpExternalServiceAction(
     /**
      * WireMock server which received the request
      */
-    val externalService: ExternalService,
+    val externalService: HttpWsExternalService,
     active: Boolean = false,
     used: Boolean = false,
     private val id: Long
@@ -50,7 +50,7 @@ class HttpExternalServiceAction(
         }
     }
 
-    constructor(request: HttpExternalServiceRequest, template: String, externalService: ExternalService, id: Long) :
+    constructor(request: HttpExternalServiceRequest, template: String, externalService: HttpWsExternalService, id: Long) :
             this(request, buildResponse(template), externalService, id = id)
 
     /**

@@ -1,7 +1,7 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.output.Lines
-import org.evomaster.core.problem.external.service.httpws.ExternalService
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 
@@ -15,14 +15,14 @@ class TestWriterUtils {
          * Takes the [HttpExternalServiceAction] and generates a name to use for WireMock
          * server inside generated test cases.
          */
-        fun getWireMockVariableName(externalService: ExternalService): String {
+        fun getWireMockVariableName(externalService: HttpWsExternalService): String {
             return "wireMock__" + externalService.getSignature().replace(".", "_")
         }
 
         /**
          * generate scripts to configure the default settings for WM
          */
-        fun handleDefaultStubForAsJavaOrKotlin(lines: Lines, wm : ExternalService){
+        fun handleDefaultStubForAsJavaOrKotlin(lines: Lines, wm : HttpWsExternalService){
             val name = getWireMockVariableName(wm)
             handleStubForAsJavaOrKotlin(
                 lines,
@@ -36,7 +36,7 @@ class TestWriterUtils {
             )
         }
 
-        fun handleStubForAsJavaOrKotlin(lines: Lines, wm : ExternalService, response: HttpWsResponseParam, method: String, urlSetting: String, priority: Int){
+        fun handleStubForAsJavaOrKotlin(lines: Lines, wm : HttpWsExternalService, response: HttpWsResponseParam, method: String, urlSetting: String, priority: Int){
             val name = getWireMockVariableName(wm)
             handleStubForAsJavaOrKotlin(lines, name, method, urlSetting, response.connectionHeader, response.status.getValueAsRawString().toInt(), response.responseBody.getValueAsRawString().replace("\"", "\\\""), priority)
         }

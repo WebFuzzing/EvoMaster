@@ -7,7 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
@@ -51,7 +51,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
     @Inject
-    protected lateinit var externalServiceHandler: ExternalServiceHandler
+    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
     @PostConstruct
     open fun initialize() {
@@ -341,7 +341,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
     }
 
-    fun getExternalService(): ExternalServiceHandler {
+    fun getExternalService(): HttpWsExternalServiceHandler {
         return externalServiceHandler
     }
 }

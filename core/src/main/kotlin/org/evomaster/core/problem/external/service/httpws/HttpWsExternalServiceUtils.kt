@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.*
 
-object ExternalServiceUtils {
+object HttpWsExternalServiceUtils {
 
-    private val log: Logger = LoggerFactory.getLogger(ExternalServiceUtils::class.java)
+    private val log: Logger = LoggerFactory.getLogger(HttpWsExternalServiceUtils::class.java)
 
     /**
      * This method provides the next IP address from the given value for
