@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
@@ -193,17 +194,26 @@ public class EMController {
             String msg = "Undefined problem type in the EM Controller";
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
-        } else if (info instanceof RestProblem) {
+        }
+
+        List<ExternalServiceDto> servicesToNotMock = info.getServicesToNotMock().stream()
+                .map(s -> new ExternalServiceDto(){{hostname = s.getHostname(); port = s.getPort();}})
+                .collect(Collectors.toList());
+
+        if (info instanceof RestProblem) {
             RestProblem rp = (RestProblem) info;
             dto.restProblem = new RestProblemDto();
             dto.restProblem.openApiUrl = rp.getOpenApiUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
             dto.restProblem.openApiSchema = rp.getOpenApiSchema();
+            dto.restProblem.servicesToNotMock = servicesToNotMock;
 
         } else if (info instanceof GraphQlProblem) {
             GraphQlProblem p = (GraphQlProblem) info;
             dto.graphQLProblem = new GraphQLProblemDto();
             dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
+            dto.restProblem.servicesToNotMock = servicesToNotMock;
+
         } else if(info instanceof RPCProblem){
             try {
                 dto.rpcProblem = new RPCProblemDto();
@@ -232,7 +242,7 @@ public class EMController {
 
                 // set the schemas at the end
                 dto.rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
-
+                dto.restProblem.servicesToNotMock = servicesToNotMock;
             }catch (RuntimeException e){
                 String msg = e.getMessage();
                 SimpleLogger.error(msg, e);

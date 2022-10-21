@@ -10,7 +10,7 @@ import java.util.List;
  * a dto to collect info of RPC problem to be tested
  * that is sent to core
  */
-public class RPCProblemDto {
+public class RPCProblemDto extends ProblemInfoDto{
     /**
      * a list of accessible endpoints grouped by interface
      */
