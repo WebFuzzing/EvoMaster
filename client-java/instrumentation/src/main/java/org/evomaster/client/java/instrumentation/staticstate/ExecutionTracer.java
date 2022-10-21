@@ -614,7 +614,7 @@ public class ExecutionTracer {
     }
 
     /**
-     * track what host is used the default WM
+     * track what host uses the default WM
      */
     public static void addEmployedDefaultWMHost(ExternalServiceInfo hostInfo) {
         getCurrentAdditionalInfo().addEmployedDefaultWM(hostInfo);

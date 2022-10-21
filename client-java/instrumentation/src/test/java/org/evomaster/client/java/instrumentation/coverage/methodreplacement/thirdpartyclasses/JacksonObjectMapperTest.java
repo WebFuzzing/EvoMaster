@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class JacksonObjectMapperTest {
 
     @Test
-    public void testReadValue() throws JsonProcessingException {
+    public void testReadValue() throws Throwable {
         String json = "{\n\"count\": 10\n}";
         ObjectMapper objectMapper = new ObjectMapper();
         JacksonObjectMapperClassReplacement.readValue(objectMapper,json, JacksonTestDto.class);

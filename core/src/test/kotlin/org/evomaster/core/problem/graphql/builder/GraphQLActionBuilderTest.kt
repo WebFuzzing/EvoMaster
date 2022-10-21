@@ -167,7 +167,7 @@ class GraphQLActionBuilderTest {
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
-        assertEquals(22, actionCluster.size)
+        assertEquals(23, actionCluster.size)
 
         val asset = actionCluster["asset"] as GraphQLAction
         assertEquals(4, asset.parameters.size)
@@ -188,6 +188,36 @@ class GraphQLActionBuilderTest {
         assertTrue((categoryCollection.parameters[0].gene as OptionalGene).gene is IntegerGene)
         assertTrue((categoryCollection.parameters[4].gene as OptionalGene).gene is ObjectGene)
         assertTrue((((categoryCollection.parameters[4].gene as OptionalGene).gene as ObjectGene).fields[6] as OptionalGene).gene is StringGene)
+
+        /**/
+        val lessonCodeSnippets = actionCluster["lessonCodeSnippets"] as GraphQLAction
+        assertEquals(4, lessonCodeSnippets.parameters.size)
+        assertTrue(lessonCodeSnippets.parameters[0] is GQInputParam)
+        assertTrue(lessonCodeSnippets.parameters[1] is GQInputParam)
+        assertTrue(lessonCodeSnippets.parameters[2] is GQInputParam)
+        assertTrue(lessonCodeSnippets.parameters[3] is GQReturnParam)
+        assertTrue(lessonCodeSnippets.parameters[3].gene is ObjectGene)
+
+        val objLessonCodeSnippets= lessonCodeSnippets.parameters[3].gene as ObjectGene
+        assertTrue(objLessonCodeSnippets.fields.any { it is TupleGene && it.name == "linkedFrom" })
+
+        val tupleLinkedFrom = objLessonCodeSnippets.fields.first { it.name == "linkedFrom" } as TupleGene
+        assertEquals(2, tupleLinkedFrom.elements.size)
+        assertTrue(tupleLinkedFrom.elements.any { it is OptionalGene && it.gene is ObjectGene  && it.name == "linkedFrom" })
+
+        val objLinkedFrom = (tupleLinkedFrom.elements[1] as OptionalGene).gene as ObjectGene
+        assertEquals(2, objLinkedFrom.fields.size)
+        assertTrue(objLinkedFrom.fields.any { it is TupleGene && it.name == "entryCollection" })
+
+        val tupleEntryCollection = objLinkedFrom.fields.first { it.name == "entryCollection" } as TupleGene
+        assertEquals(5, tupleEntryCollection.elements.size)
+
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "skip" })
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "limit" })
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "preview" })
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "locale" })
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "entryCollection" })
+
     }
 
     @Test
@@ -1177,11 +1207,11 @@ class GraphQLActionBuilderTest {
         assertTrue(objAboutMe.fields.any { it is TupleGene && it.name == "dataSetMetadataList" })
 
         val tupleDataSetMetadataList = objAboutMe.fields.first { it.name == "dataSetMetadataList" } as TupleGene
-        assertEquals(5, tupleDataSetMetadataList.elements.size)
+        assertEquals(3, tupleDataSetMetadataList.elements.size)
         assertTrue((tupleDataSetMetadataList.elements.last() as OptionalGene).gene !is CycleObjectGene)
     }
 
-    @Disabled("this gives lot of GC issues")
+    //@Disabled("this gives lot of GC issues")
     @Test
     fun zoraTest() {
         val actionCluster = mutableMapOf<String, Action>()
@@ -1442,5 +1472,54 @@ class GraphQLActionBuilderTest {
 
         assertEquals(19, actionCluster.size)
     }
+
+    @Test
+    fun fieldWithDifferentArgumentTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/fieldWithDifferentArgument.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(2, actionCluster.size)
+
+
+        val entryCollection = actionCluster["entryCollection"] as GraphQLAction
+        assertEquals(3, entryCollection.parameters.size)
+        assertTrue(entryCollection.parameters[0] is GQInputParam)
+        assertTrue((entryCollection.parameters[0].gene as OptionalGene).gene.name == "skip" )
+        assertTrue((entryCollection.parameters[0].gene as OptionalGene).gene is IntegerGene)
+
+        assertTrue(entryCollection.parameters[1] is GQInputParam)
+        assertTrue((entryCollection.parameters[1].gene as OptionalGene).gene is BooleanGene)
+        assertTrue((entryCollection.parameters[1].gene as OptionalGene).gene.name == "preview")
+
+        assertTrue(entryCollection.parameters[2] is GQReturnParam)
+        assertTrue(entryCollection.parameters[2].gene is ObjectGene)
+
+        val objEntryCollection= entryCollection.parameters[2].gene as ObjectGene
+        assertTrue(objEntryCollection.fields.any { it is BooleanGene && it.name == "total" })
+
+        /**/
+
+        val lessonCodeSnippets = actionCluster["lessonCodeSnippets"] as GraphQLAction
+        assertEquals(1, lessonCodeSnippets.parameters.size)
+        assertTrue(lessonCodeSnippets.parameters[0] is GQReturnParam)
+        assertTrue(lessonCodeSnippets.parameters[0].gene is ObjectGene)
+
+        val objLessonCodeSnippets= lessonCodeSnippets.parameters[0].gene as ObjectGene
+        assertTrue(objLessonCodeSnippets.fields.any { it is TupleGene && it.name == "entryCollection" })
+
+        val tupleEntryCollection = objLessonCodeSnippets.fields.first { it.name == "entryCollection" } as TupleGene
+        assertEquals(2, tupleEntryCollection.elements.size)//should not fail
+
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "skip" })
+        assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "entryCollection" })
+
+
+
+    }
+
 
 }

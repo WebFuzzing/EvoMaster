@@ -19,6 +19,9 @@ class TestWriterUtils {
             return "wireMock__" + externalService.getSignature().replace(".", "_")
         }
 
+        /**
+         * generate scripts to configure the default settings for WM
+         */
         fun handleDefaultStubForAsJavaOrKotlin(lines: Lines, wm : ExternalService){
             val name = getWireMockVariableName(wm)
             handleStubForAsJavaOrKotlin(

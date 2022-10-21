@@ -1,0 +1,21 @@
+type Query {
+
+flower(id: Int, color: String): Flower
+
+store: Store
+
+}
+
+type Flower{
+id:Int
+name: String
+color: String
+
+}
+
+type Store{
+id: Int
+name: String
+flower(id:Int): Flower
+
+}

@@ -34,6 +34,9 @@ class ExternalService(
     fun getWMDefaultMessage() = WIREMOCK_DEFAULT_RESPONSE_MESSAGE
     fun getWMDefaultConnectionHeader() = "close"
 
+    /**
+     * @return the default response setup for WM instance
+     */
     fun getDefaultWMMappingBuilder() : MappingBuilder{
         return WireMock.any(WireMock.anyUrl()).atPriority(getWMDefaultPriority()).willReturn(
                 WireMock.aResponse()

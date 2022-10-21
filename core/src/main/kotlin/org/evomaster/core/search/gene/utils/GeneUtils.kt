@@ -474,8 +474,8 @@ object GeneUtils {
         val selected = obj.fields.filter {
             ((it is OptionalGene && it.isActive) ||
                     (it is BooleanGene && it.value) ||
-                    (it is OptionalGene && it.gene is TupleGene && isLastSelected(it.gene)) ||
-                    (it is TupleGene && isLastSelected(it))
+                    (it is OptionalGene && it.gene is TupleGene && isLastSelected(it.gene) && it.gene.lastElementTreatedSpecially) ||
+                    (it is TupleGene && isLastSelected(it)&& it.lastElementTreatedSpecially)
                     )
         }
 

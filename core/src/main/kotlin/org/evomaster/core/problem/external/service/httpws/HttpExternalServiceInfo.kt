@@ -47,9 +47,18 @@ open class HttpExternalServiceInfo(
         return result
     }
 
+    /**
+     * @return whether the protocol is clear https
+     */
     fun isHttps() = protocol.equals("https", ignoreCase = true)
 
+    /**
+     * @return whether the protocol is clear http
+     */
     fun isHttp() = protocol.equals("http", ignoreCase = true)
 
+    /**
+     * @return whether the protocol is likely https based on the given port when protocol is neither https nor http
+     */
     fun isDerivedHttps() : Boolean = ExternalServiceSharedUtils.isHttps(protocol, remotePort)
 }
