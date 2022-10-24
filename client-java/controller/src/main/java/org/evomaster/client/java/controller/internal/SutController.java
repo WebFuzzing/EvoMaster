@@ -49,6 +49,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -99,6 +100,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * - value is extracted interface schema
      */
     private final Map<String, InterfaceSchema> rpcInterfaceSchema = new LinkedHashMap <>();
+
+    /**
+     * a list of jvm classes which are required to extract their schema
+     */
+    private final List<String> jvmClassToExtract = new CopyOnWriteArrayList<>();
 
     /**
      * a map of local auth setup schemas for RPC service under test
@@ -1030,15 +1036,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public void getSeededExternalServiceResponseDto(){
         if (seedRPCTests() != null && !seedRPCTests().isEmpty() ){
-            /*
-                distinct might be a bit expensive, however, the specified responses are probably limited
-             */
-            List<String> dtoNames = seedRPCTests().stream()
-                    .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
-                            .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
-                                    .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream())))
-                    .distinct().collect(Collectors.toList());
-            getJvmDtoSchema(dtoNames);
+
+            if (jvmClassToExtract.isEmpty()){
+                /*
+                    distinct might be a bit expensive, however, the specified responses are probably limited
+                 */
+                Set<String> dtoNames = seedRPCTests().stream()
+                        .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
+                                .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
+                                        .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
+                if (dtoNames != null && !dtoNames.isEmpty())
+                    jvmClassToExtract.addAll(dtoNames);
+            }
+
+            if (!jvmClassToExtract.isEmpty())
+                getJvmDtoSchema(jvmClassToExtract);
         }
     }
 
