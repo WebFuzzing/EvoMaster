@@ -316,6 +316,9 @@ class RPCEndpointsHandler {
                 else
                     ArrayGene(name, template = StringGene(name + "_item"))
             }
+            jsonNode.isTextual -> {
+                StringGene(name, jsonNode.textValue())
+            }
             else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
         }
     }
