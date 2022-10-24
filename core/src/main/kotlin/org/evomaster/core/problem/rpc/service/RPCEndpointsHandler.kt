@@ -337,7 +337,7 @@ class RPCEndpointsHandler {
                     dto.interfaceFullName, dto.functionName, dto.requestRules[index], s
                 )
                 if (!externalServiceCluster.containsKey(exkey)){
-                    val responseTypeClass = interfaceDto.identifiedResponseTypes.find { it.type.fullTypeName == s }
+                    val responseTypeClass = interfaceDto.identifiedResponseTypes?.find { it.type.fullTypeName == s }
                     var fromClass = false
                     val responseGene = (
                             if (responseTypeClass != null){
