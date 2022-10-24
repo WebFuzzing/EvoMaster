@@ -1,0 +1,10 @@
+type Query {
+    # id could be null, Flower could also be null
+    flowers(id: [Int]): Flower
+
+}
+
+type Flower {
+    id: Int!
+    name: String!
+}
