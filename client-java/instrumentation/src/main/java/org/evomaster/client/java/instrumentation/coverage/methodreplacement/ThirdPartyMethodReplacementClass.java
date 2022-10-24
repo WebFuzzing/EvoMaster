@@ -2,11 +2,9 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Third-party libraries might or might not be on the classpath.
@@ -23,6 +21,13 @@ import java.util.Objects;
  * Still, we need to have mechanism in place to avoid crashing EM at runtime if
  * such libraries are missing. This should be automatically handled here
  * by checking {@link #isAvailable()}.
+ *
+ * UPDATE:
+ * it seems that using library in provided mode works fine... this would mean that
+ * maybe we do not need to deal with reflection here when creating these replacements.
+ *
+ * TODO: when creating new method replacements for third-party, let's try with provided
+ * and no reflection first, and see if any side-effects
  */
 public abstract class ThirdPartyMethodReplacementClass implements MethodReplacementClass{
 
@@ -35,6 +40,12 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
      * Value -> original target method that was replaced
      */
     private final Map<String, Method> methods = new HashMap<>();
+
+    /**
+     * Key -> id defined in @Replacement
+     * Value -> original target method that was replaced
+     */
+    private final Map<String, Constructor> constructors = new HashMap<>();
 
     protected ThirdPartyMethodReplacementClass(){
 
@@ -60,6 +71,8 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
             if (r == null || r.id().isEmpty()) {
                 continue;
             }
+            if (r.replacingConstructor())
+                continue;
 
             Class[] inputs = m.getParameterTypes();
 
@@ -96,6 +109,52 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
             }
 
             methods.put(id, targetMethod);
+
+        }
+    }
+
+    private  void initConstructors() {
+
+        Class<? extends ThirdPartyMethodReplacementClass> subclass = this.getClass();
+
+        for (Method m : subclass.getDeclaredMethods()) {
+
+            Replacement r = m.getAnnotation(Replacement.class);
+
+            if (r == null || r.id().isEmpty()) {
+                continue;
+            }
+
+            if (!r.replacingConstructor())
+                continue;
+
+            Class[] inputs = m.getParameterTypes();
+
+            int start = 0;
+
+            int end = inputs.length-1;
+            if(r.type() == ReplacementType.TRACKER){
+                //no idTemplate at the end
+                end = inputs.length;
+            }
+
+            Class[] reducedInputs = Arrays.copyOfRange(inputs, start, end);
+
+            Constructor targetConstructor = null;
+            try {
+                targetConstructor = targetClass.getConstructor(reducedInputs);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("BUG in EvoMaster: " + e);
+            }
+
+            String id = r.id();
+
+            if(constructors.containsKey(id)){
+                throw new IllegalStateException("Non-unique id: " + id);
+            }
+
+            constructors.put(id, targetConstructor);
+
         }
     }
 
@@ -129,6 +188,33 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
         Method original = singleton.methods.get(id);
         if(original == null){
             throw new IllegalArgumentException("No method exists with id: " + id);
+        }
+        return original;
+    }
+
+
+    /**
+     *
+     * @param singleton a reference to an instance of the subclass. As reflection is expensive,
+     *                  we suggest to create it only once, and save it in final static field
+     * @param id    of a replacement method
+     * @return  original constructor that was replaced
+     */
+    public static Constructor getOriginalConstructor(ThirdPartyMethodReplacementClass singleton, String id){
+        if(id == null || id.isEmpty()){
+            throw new IllegalArgumentException("Invalid empty id");
+        }
+
+        if(singleton.getTargetClass()==null){
+            singleton.retryLoadingClass(singleton.getTargetClass().getClassLoader());
+        }
+
+        if(singleton.constructors.isEmpty()){
+            singleton.initConstructors();
+        }
+        Constructor original = singleton.constructors.get(id);
+        if(original == null){
+            throw new IllegalArgumentException("No constructor exists with id: " + id);
         }
         return original;
     }

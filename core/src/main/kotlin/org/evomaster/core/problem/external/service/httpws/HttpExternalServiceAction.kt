@@ -19,7 +19,6 @@ import org.evomaster.core.search.service.Randomness
  * Typically, handle WireMock responses
  */
 class HttpExternalServiceAction(
-
     /**
      * Received request to the respective WireMock instance
      *

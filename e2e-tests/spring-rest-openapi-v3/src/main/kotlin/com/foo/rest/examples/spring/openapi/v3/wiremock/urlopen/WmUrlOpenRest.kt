@@ -13,7 +13,7 @@ import java.net.URL
 class WmUrlOpenRest {
 
     @GetMapping(path = ["/string"])
-    open fun getString() : ResponseEntity<String> {
+    fun getString() : ResponseEntity<String> {
 
         val url = URL("http://hello.there:8123/api/string")
         val connection = url.openConnection()
@@ -29,7 +29,7 @@ class WmUrlOpenRest {
 
 
     @GetMapping(path = ["/object"])
-    open fun getObject() : ResponseEntity<String> {
+    fun getObject() : ResponseEntity<String> {
 
         val url = URL("http://hello.there:8877/api/object")
         val connection = url.openConnection()
@@ -39,6 +39,21 @@ class WmUrlOpenRest {
         val dto = mapper.readValue(connection.getInputStream(), WmUrlOpenDto::class.java)
 
         return if (dto.x!! > 0){
+            ResponseEntity.ok("OK")
+        } else{
+            ResponseEntity.status(500).build()
+        }
+    }
+
+    @GetMapping(path = ["/sstring"])
+    fun getSString() : ResponseEntity<String> {
+
+        val url = URL("https://hello.there:8443/api/string")
+        val connection = url.openConnection()
+        connection.setRequestProperty("accept", "application/json")
+        val data = connection.getInputStream().bufferedReader().use(BufferedReader::readText)
+
+        return if (data == "\"HELLO THERE!!!\""){
             ResponseEntity.ok("OK")
         } else{
             ResponseEntity.status(500).build()

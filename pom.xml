@@ -47,7 +47,7 @@
                 <jdk>17</jdk>
             </activation>
             <properties>
-                <addOpens>--add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
+                <addOpens> --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
             </properties>
         </profile>
         <profile>
@@ -136,8 +136,9 @@
         <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
         <wiremock.version>2.32.0</wiremock.version>
         <apache.http.client.version>4.5.13</apache.http.client.version>
-        <okhttp.client.version>4.9.3</okhttp.client.version>
-        <dns.cache.manipulator.version>1.7.1</dns.cache.manipulator.version>
+        <okhttp3.client.version>4.9.3</okhttp3.client.version>
+        <okhttp.client.version>2.4.0</okhttp.client.version>
+        <dns.cache.manipulator.version>1.8.0-RC1</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
         <micronaut.version>3.2.7</micronaut.version>
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
@@ -755,6 +756,19 @@
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
+                <version>${okhttp3.client.version}</version>
+            </dependency>
+
+            <!--     the version used in catwatch       -->
+            <dependency>
+                <groupId>com.squareup.okhttp</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.client.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.okhttp</groupId>
+                <artifactId>okhttp-urlconnection</artifactId>
                 <version>${okhttp.client.version}</version>
             </dependency>
 
