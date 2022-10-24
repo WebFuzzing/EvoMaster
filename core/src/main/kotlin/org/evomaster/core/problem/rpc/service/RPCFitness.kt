@@ -88,9 +88,13 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
     ){
         val exMissingDto = individual.seeExternalServiceActions()
             .filterIsInstance<RPCExternalServiceAction>()
-            .filter {
-                !(it.response as? RPCResponseParam?:throw IllegalStateException("response of RPCExternalServiceAction should be RPCResponseParam, but it is ${it.response::class.java.simpleName}")).fromClass
+            .filterNot {
+                ((it.response as? RPCResponseParam)?:throw IllegalStateException("response of RPCExternalServiceAction should be RPCResponseParam, but it is ${it.response::class.java.simpleName}")).fromClass
             }
+
+        if (exMissingDto.isEmpty()) {
+            return
+        }
         val missingDtoClass = exMissingDto.map { (it.response as RPCResponseParam).className }
         rpcHandler.getJVMSchemaForDto(missingDtoClass.toSet()).forEach { expandResponse->
             exMissingDto.filter { (it.response as RPCResponseParam).run { !this.fromClass && expandResponse.key == this.className} }.forEach { a->

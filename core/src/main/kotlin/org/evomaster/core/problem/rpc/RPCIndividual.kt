@@ -40,17 +40,22 @@ class RPCIndividual(
         dbInitialization: MutableList<DbAction> = mutableListOf(),
         trackOperator: TrackOperator? = null,
         index: Int = -1
-    ) : this(trackOperator, index, mutableListOf<ActionComponent>().apply {
-        addAll(dbInitialization);
-        addAll(actions.mapIndexed { index, rpcCallAction ->
-            if (externalServicesActions.isNotEmpty())
-                Lazy.assert { actions.size == externalServicesActions.size }
-            EnterpriseActionGroup(rpcCallAction).apply {
-                if(externalServicesActions.isNotEmpty()){
-                addChildren(0, externalServicesActions[index])
-            }
-        } })
-    }, actions.size, dbInitialization.size)
+    ) : this(
+        trackOperator = trackOperator,
+        index = index,
+        allActions = mutableListOf<ActionComponent>().apply {
+            addAll(dbInitialization);
+            addAll(actions.mapIndexed { index, rpcCallAction ->
+                if (externalServicesActions.isNotEmpty())
+                    Lazy.assert { actions.size == externalServicesActions.size }
+                EnterpriseActionGroup(mutableListOf(rpcCallAction), RPCCallAction::class.java).apply {
+                    addChildrenToGroup(
+                        externalServicesActions[index],
+                        GroupsOfChildren.EXTERNAL_SERVICES
+                    )
+                }})
+        },
+        mainSize = actions.size, dbSize = dbInitialization.size)
 
     /**
      * TODO: Verify the implementation

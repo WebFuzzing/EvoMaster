@@ -174,7 +174,11 @@ class RPCEndpointsHandler {
                             val exAction = externalServiceCluster[
                                     RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
                             ]!!.copy() as ApiExternalServiceAction
-                            setGeneBasedOnString(exAction.response.gene, r)
+                            try {
+                                setGeneBasedOnString(exAction.response.responseBody, r)
+                            }catch (e: Exception){
+                                throw RuntimeException("Fail to handle mocked responses", e)
+                            }
                             exAction
                         }
                     }.flatten()
@@ -266,8 +270,13 @@ class RPCEndpointsHandler {
                     if (node.isObject){
                         valueGene.fields.forEach { f->
                             val pdto = node.fields().asSequence().find { it.key == f.name }
-                                ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
-                            setGeneBasedOnString(f, pdto.value.toPrettyString())
+                                //?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
+                            if (pdto == null && f is OptionalGene)
+                                f.isActive = false
+                            else if (pdto != null)
+                                setGeneBasedOnString(f, pdto.value.toPrettyString())
+                            else
+                                throw IllegalStateException("could not set value for the field (${f.name})")
                         }
                     }else{
                         throw IllegalStateException("stringValue ($stringValue) is not Object")
@@ -306,14 +315,17 @@ class RPCEndpointsHandler {
             jsonNode.isLong -> LongGene(name, jsonNode.longValue())
             jsonNode.isShort -> IntegerGene(name, jsonNode.shortValue().toInt(), min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
             jsonNode.isObject ->{
-                val fields = jsonNode.fields().asSequence().map { jsonNodeAsObjectGene(it.key, it.value) }.toMutableList()
+                val fields = jsonNode.fields().asSequence().map { wrapWithOptionalGene(jsonNodeAsObjectGene(it.key, it.value), true) }.toMutableList()
                 ObjectGene(name, fields)
             }
             jsonNode.isArray -> {
                 val elements = jsonNode.map { jsonNodeAsObjectGene(name + "_item", it) }
-                if (elements.isNotEmpty())
-                    ArrayGene(name, template = elements.first().copy(), elements = elements.toMutableList())
-                else
+                if (elements.isNotEmpty()){
+                    val template = if (elements.any { ParamUtil.getValueGene(it) is ObjectGene })
+                        elements.maxByOrNull { (ParamUtil.getValueGene(it) as? ObjectGene)?.fields?.size ?: -1 }!!
+                    else elements.first()
+                    ArrayGene(name, template = template.copy(), elements = elements.toMutableList())
+                } else
                     ArrayGene(name, template = StringGene(name + "_item"))
             }
             jsonNode.isTextual -> {
@@ -374,8 +386,6 @@ class RPCEndpointsHandler {
                 actionToExternalServiceMap.getOrPut(actionKey){ mutableSetOf() }.add(exkey)
             }
         }
-
-
     }
 
     private fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
