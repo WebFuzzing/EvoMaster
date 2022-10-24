@@ -95,7 +95,7 @@ public class ClassToSchema {
      *     private CycleDtoA cycleDtoA;
      * }
      *
-     * then will return
+     * for CycleDtoA, it will return
      * "org.evomaster.client.java.instrumentation.object.dtos.CycleDtoA":{
      *      "org.evomaster.client.java.instrumentation.object.dtos.CycleDtoA":{"type":"object", "properties": {"cycleAId":{"type":"string"},"cycleDtoB":{"$ref":"#/components/schemas/org.evomaster.client.java.instrumentation.object.dtos.CycleDtoB"}}},
      *      "org.evomaster.client.java.instrumentation.object.dtos.CycleDtoB":{"type":"object", "properties": {"cycleBId":{"type":"string"},"cycleDtoA":{"$ref":"#/components/schemas/org.evomaster.client.java.instrumentation.object.dtos.CycleDtoA"}}}}
