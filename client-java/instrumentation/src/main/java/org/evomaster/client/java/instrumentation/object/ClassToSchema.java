@@ -80,7 +80,26 @@ public class ClassToSchema {
     /**
      *
      * @return a schema representation of the class along with schemas of its ref classes in the form
-     *      "name: { "type name": "schema", "type name": "schema", .... }"
+     *      "kclass name: { "kclass name": "schema", "ref class name": "schema", .... }"
+     *
+     * it is mainly used by [JsonTaint.handlePossibleJsonTaint]
+     *
+     * For example (see more details with ClassToSchemaTest.testCycleDto),
+     * public class CycleDtoA {
+     *     private String cycleAId;
+     *     private CycleDtoB cycleDtoB;
+     * }
+     *
+     * public class CycleDtoB {
+     *     private String cycleBId;
+     *     private CycleDtoA cycleDtoA;
+     * }
+     *
+     * then will return
+     * "org.evomaster.client.java.instrumentation.object.dtos.CycleDtoA":{
+     *      "org.evomaster.client.java.instrumentation.object.dtos.CycleDtoA":{"type":"object", "properties": {"cycleAId":{"type":"string"},"cycleDtoB":{"$ref":"#/components/schemas/org.evomaster.client.java.instrumentation.object.dtos.CycleDtoB"}}},
+     *      "org.evomaster.client.java.instrumentation.object.dtos.CycleDtoB":{"type":"object", "properties": {"cycleBId":{"type":"string"},"cycleDtoA":{"$ref":"#/components/schemas/org.evomaster.client.java.instrumentation.object.dtos.CycleDtoA"}}}}
+     *
      */
     public static String getOrDeriveSchemaWithItsRef(Class<?> klass){
         StringBuilder sb = new StringBuilder();
