@@ -112,37 +112,6 @@ object StateBuilder {
 
         initTablesAndArgsTablesIndexedByName(state)
 
-        println("I am the table: ")
-        for (element in state.tables) {
-            println("{Table Name: ${element?.typeName}, " +
-                    "Field: ${element?.fieldName}, " +
-                    "KindOfTableField: ${element?.KindOfFieldName}, " +
-                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfFieldNameOptional}, " +
-                    "Type: ${element?.fieldType}, " +
-                    "KindOfTableType: ${element?.kindOfFieldType} " +
-                    "IsKindOfKindOfTableTypeOptional?: ${element.isKindOfFieldTypeOptional}}")
-        }
-        println(state.tables.size)
-        println("I am the args table: ")
-        for (element in state.argsTables) {
-            println("{Table Name: ${element?.typeName}, " +
-                    "Field: ${element?.fieldName}, " +
-                    "KindOfTableField: ${element?.KindOfFieldName}, " +
-                    "IsKindOfKindOfTableFieldOptional?: ${element?.isKindOfFieldNameOptional}, " +
-                    "Type: ${element?.fieldType}, " +
-                    "KindOfTableType: ${element?.kindOfFieldType} " +
-                    "IsKindOfKindOfTableTypeOptional?: ${element.isKindOfFieldTypeOptional}}"+
-                    "withArgs?: ${element.isFieldNameWithArgs}}"
-            )
-        }
-        println(state.argsTables.size)
-
-        println("I am the table: ")
-       println( state.inputTypeName.keys)
-        println(state.inputTypeName.values)
-
-
-
         return state
     }
 
