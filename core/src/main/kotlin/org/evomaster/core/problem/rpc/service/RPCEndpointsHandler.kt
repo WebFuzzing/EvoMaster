@@ -352,7 +352,7 @@ class RPCEndpointsHandler {
                             }else{
                                 val node = readJson(dto.responses[index])
                                 if (node != null){
-                                    jsonNodeAsObjectGene("return", node) as OptionalGene
+                                    jsonNodeAsObjectGene("return", node)
                                 }else{
                                     StringGene("return")
                                 }
