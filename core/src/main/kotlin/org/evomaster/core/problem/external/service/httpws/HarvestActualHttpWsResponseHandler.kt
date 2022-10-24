@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.external.service
+package org.evomaster.core.problem.external.service.httpws
 
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo
@@ -16,10 +16,10 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.Response
 
-class HarvestActualApiResponseHandler {
+class HarvestActualHttpWsResponseHandler {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(HarvestActualApiResponseHandler::class.java)
+        private val log: Logger = LoggerFactory.getLogger(HarvestActualHttpWsResponseHandler::class.java)
 
         init{
             System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
@@ -31,6 +31,11 @@ class HarvestActualApiResponseHandler {
 
     private lateinit var httpWsClient : Client
 
+    /**
+     * key is actual request based on [HttpExternalServiceRequest.getDescription]
+     * value is an actual response info
+     */
+    private val actualResponses = mutableMapOf<String, ActualResponseInfo>()
 
     @PostConstruct
     fun initialize() {
@@ -52,6 +57,8 @@ class HarvestActualApiResponseHandler {
     private fun preDestroy() {
         httpWsClient.close()
     }
+
+
 
     private fun createInvocationToRealExternalService(url : String) : Response?{
         return try {

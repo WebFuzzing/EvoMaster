@@ -27,4 +27,9 @@ class HttpExternalServiceRequest(
     fun getId() : String {
         return id.toString()
     }
+
+    /**
+     * get description of this an HTTP request to external service
+     */
+    fun getDescription() = "$method:$absoluteURL"
 }
