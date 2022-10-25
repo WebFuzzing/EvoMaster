@@ -225,9 +225,21 @@ object GraphQLUtils {
                             if (ParamUtil.getValueGene(gene) is StringGene) GeneUtils.EscapeMode.GQL_STR_VALUE else GeneUtils.EscapeMode.GQL_INPUT_MODE
 
                         val i = gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
-                        if (gene !is OptionalGene)
+
+                        if (gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)
+                            printableInputGene.add("${gene.name} : $i")
+                        else if(gene.getWrappedGene(OptionalGene::class.java)==null)
+                            printableInputGene.add("${gene.name} : $i")
+                        /*
+                        //if (gene !is OptionalGene)
+                        if(gene.getWrappedGene(OptionalGene::class.java)==null)
                         printableInputGene.add("${gene.name} : $i")
-                        else if (gene.isActive) printableInputGene.add("${gene.name} : $i")
+                        else
+                            //if (gene.isActive)
+                                if (gene.getWrappedGene(OptionalGene::class.java)?.isActive != false)
+                                printableInputGene.add("${gene.name} : $i")*/
+
+
                     }
                 }
             }
