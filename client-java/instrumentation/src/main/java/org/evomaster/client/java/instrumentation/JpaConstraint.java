@@ -26,6 +26,10 @@ public class JpaConstraint {
         this.maxValue = maxValue;
     }
 
+    public boolean isMeaningful(){
+        return isNullable!=null || isOptional!=null || minValue!=null || maxValue!=null;
+    }
+
     public String getTableName() {
         return tableName;
     }

@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
+import org.evomaster.client.java.instrumentation.ClassAnalyzer;
 import org.evomaster.client.java.instrumentation.JpaConstraint;
 
 import java.io.Serializable;
@@ -48,6 +49,8 @@ public class UnitsInfoRecorder implements Serializable {
 
     private List<JpaConstraint> jpaConstraints;
 
+    private volatile boolean analyzedClasses = false;
+
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
         numberOfLines = new AtomicInteger(0);
@@ -58,6 +61,7 @@ public class UnitsInfoRecorder implements Serializable {
         numberOfInstrumentedNumberComparisons = new AtomicInteger(0);
         parsedDtos = new ConcurrentHashMap<>();
         jpaConstraints = new CopyOnWriteArrayList<>();
+        analyzedClasses = false;
     }
 
     /**
@@ -117,6 +121,17 @@ public class UnitsInfoRecorder implements Serializable {
     }
 
     public List<JpaConstraint> getJpaConstraints(){
+
+        /*
+            Tricky, could not find a good way to intercept where classes are loaded...
+            when using transformation in Agent , we can intercept _before_ loading, but not _after_.
+            so, here we do it lazily, by forcing loading on get()
+         */
+        if(!analyzedClasses){
+            ClassAnalyzer.doAnalyze(unitNames);
+            analyzedClasses = true;
+        }
+
         return Collections.unmodifiableList(jpaConstraints);
     }
 
