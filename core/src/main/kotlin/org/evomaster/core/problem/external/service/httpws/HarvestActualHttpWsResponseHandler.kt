@@ -96,11 +96,12 @@ class HarvestActualHttpWsResponseHandler {
                 lock.wait()
             }
             val first = queue.remove()
-            createInvocationToRealExternalService(first)
+            val response = createInvocationToRealExternalService(first)
+            val body = response?.readEntity(String::class.java)
+            TODO()
         }
     }
 
-    @Synchronized
     fun addRequests(requests : List<String>) {
         if (config.probOfHarvestingResponsesFromActualExternalServices == 0.0)
             return

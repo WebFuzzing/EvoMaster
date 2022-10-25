@@ -131,7 +131,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 // get visited wiremock instances
                 val requestedExternalServiceRequests = externalServiceHandler.getAllServedExternalServiceRequests()
 
-                harvestResponseHandler.addRequests(requestedExternalServiceRequests.map { it.absoluteURL })
+                harvestResponseHandler.addRequests(requestedExternalServiceRequests.map { it.actualAbsoluteURL })
 
                 if (requestedExternalServiceRequests.isNotEmpty()) {
                     fv.registerExternalServiceRequest(indexOfAction, requestedExternalServiceRequests)

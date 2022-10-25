@@ -5,6 +5,7 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.external.service.httpws.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
@@ -89,6 +90,9 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : AbstractModu
 
         bind(HttpWsExternalServiceHandler::class.java)
                 .asEagerSingleton()
+
+        bind(HarvestActualHttpWsResponseHandler::class.java)
+            .asEagerSingleton()
 
     }
 }

@@ -21,7 +21,9 @@ class HttpExternalServiceRequest(
     /**
      * refers to the WireMock instance which received the request.
      */
-    val wireMockSignature: String
+    val wireMockSignature: String,
+
+    val actualAbsoluteURL : String
 ) {
 
     fun getId() : String {

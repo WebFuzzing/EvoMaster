@@ -109,7 +109,8 @@ class HttpWsExternalService(
                 it.request.url,
                 it.request.absoluteUrl,
                 it.wasMatched,
-                getSignature()
+                getSignature(),
+                externalServiceInfo.getDescriptiveURLPath()+it.request.url
             )
         }.toList()
     }
