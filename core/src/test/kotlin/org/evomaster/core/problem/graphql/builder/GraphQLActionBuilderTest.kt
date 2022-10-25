@@ -10,6 +10,7 @@ import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
@@ -1541,8 +1542,31 @@ class GraphQLActionBuilderTest {
         assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "skip" })
         assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "entryCollection" })
 
+    }
 
+    @Test
+    fun nullableArrayTest() {
 
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/nullableArray.json").readText()
+        val config = EMConfig()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(1, actionCluster.size)
+
+        val flowers = actionCluster["flowers"] as GraphQLAction
+        assertEquals(2, flowers.parameters.size)
+        assertTrue(flowers.parameters[0] is GQInputParam)
+        assertTrue(flowers.parameters[0].name == "id")
+        //before using nullable gene
+        //assertTrue((((flowers.parameters[0].gene as OptionalGene).gene as ArrayGene<*>).template as OptionalGene).gene is IntegerGene)
+
+        assertTrue(((flowers.parameters[0].gene as NullableGene).gene as OptionalGene).gene is ArrayGene<*>)
+        val array=((flowers.parameters[0].gene as NullableGene).gene as OptionalGene).gene as ArrayGene<*>
+        assertTrue(((array.template as NullableGene).gene as OptionalGene).gene is IntegerGene)
+        assertTrue(flowers.parameters[1] is GQReturnParam)
+        assertTrue(flowers.parameters[1].gene is ObjectGene)
     }
 
 
