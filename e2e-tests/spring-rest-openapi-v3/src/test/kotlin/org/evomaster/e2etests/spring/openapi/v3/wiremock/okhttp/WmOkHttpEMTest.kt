@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.openapi.v3.wiremock.socketconnect.okhttp3
+package org.evomaster.e2etests.spring.openapi.v3.wiremock.okhttp
 
-import com.foo.rest.examples.spring.openapi.v3.wiremock.socketconnect.okhttp3.WmSocketConnectController
+import com.foo.rest.examples.spring.openapi.v3.wiremock.okhttp.WmOkHttpController
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 
-class WmSocketConnectEMTest : SpringTestBase() {
+class WmOkHttpEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -19,7 +19,7 @@ class WmSocketConnectEMTest : SpringTestBase() {
 
             val config = EMConfig()
             config.instrumentMR_NET = true
-            initClass(WmSocketConnectController(), config)
+            initClass(WmOkHttpController(), config)
 
             /*
             The test fails on CI, but not local with WM 2.32.0
@@ -35,8 +35,8 @@ class WmSocketConnectEMTest : SpringTestBase() {
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-            "WmSocketConnectEM",
-            "org.foo.WmSocketConnectOpenEM",
+            "WmOkHttpEM",
+            "org.foo.WmOkHttpEM",
             500,
             false,
             { args: MutableList<String> ->
@@ -55,6 +55,11 @@ class WmSocketConnectEMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/socketconnect/string", null)
 
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/object", "OK")
+
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/socketconnect/sstring", "Hello There")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/wm/socketconnect/sstring", null)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/socketconnect/sstring", null)
             },
             3
         )

@@ -5,6 +5,8 @@ import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
@@ -786,7 +788,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             done on WM directly, and it must be done at SUT call (as WM get reset there)
          */
 
-        infoDto.forEachIndexed { _, info ->
+        infoDto.forEachIndexed { index, info ->
             info.externalServices.forEach { es ->
 
                 /*
@@ -808,6 +810,16 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     )
                 )
             }
+
+
+            // register the external service info which re-direct to the default WM
+            fv.registerExternalRequestToDefaultWM(
+                index,
+                info.employedDefaultWM.associate { it ->
+                    val signature = getWMDefaultSignature(it.protocol, it.remotePort)
+                    it.remoteHostname to externalServiceHandler.getExternalService(signature)
+                }
+            )
         }
     }
 

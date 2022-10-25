@@ -398,4 +398,14 @@ abstract class StructuralElement (
         return false
     }
 
+    /**
+     * @return the first parent satisfies the specified predicate
+     */
+    fun getFirstParent(predicate: (StructuralElement) -> Boolean) : StructuralElement?{
+        if (parent == null) return null
+        if (predicate(parent!!))
+            return parent
+        return parent!!.getFirstParent(predicate)
+    }
+
 }

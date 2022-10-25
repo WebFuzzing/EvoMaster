@@ -809,7 +809,16 @@ object RestActionBuilderV3 {
     }
 
 
-    private fun checkSkipped(skipped: MutableList<String>, endpointsToSkip: List<String>, actionCluster: MutableMap<String, Action>, errorEndpoints: MutableList<String>) {
+    private fun checkSkipped(
+        skipped: List<String>,
+        endpointsToSkip: List<String>,
+        actionCluster: Map<String, Action>,
+        errorEndpoints: List<String>
+    ) {
+        if(endpointsToSkip.toSet().size != endpointsToSkip.size){
+            throw SutProblemException("There are repeated, non-unique endpoint-to-skip declarations")
+        }
+
         if (skipped.size != endpointsToSkip.size) {
             val msg = "${endpointsToSkip.size} were set to be skipped, but only ${skipped.size}" +
                     " were found in the schema"
@@ -820,7 +829,7 @@ object RestActionBuilderV3 {
         }
 
         LoggingUtil.getInfoLogger().apply {
-            if (skipped.size != 0) {
+            if (skipped.isNotEmpty()) {
                 info("Skipped ${skipped.size} path endpoints from the schema configuration")
             }
 

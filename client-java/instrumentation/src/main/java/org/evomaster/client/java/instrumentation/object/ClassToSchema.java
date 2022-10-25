@@ -48,7 +48,14 @@ public class ClassToSchema {
      * WARNING: this is a mutable static state, but, being just a cache, should not hopefully
      * have any nasty negative side-effects.
      */
-    private static final Map<Type, String> cache = new ConcurrentHashMap<>();
+    private static final Map<Type, String> cacheSchema = new ConcurrentHashMap<>();
+
+    /**
+     * Key -> DTO class
+     * Value -> the schema representations of the DTO class and its ref DTO class
+     */
+    private static final Map<Type, String> cacheSchemaWithItsRef = new ConcurrentHashMap<>();
+
 
     private static final String fieldRefPrefix = "{\"$ref\":\"";
 
@@ -66,7 +73,7 @@ public class ClassToSchema {
             return;
         }
 
-        try {
+        try{
             String name = valueType.getName();
             if (!UnitsInfoRecorder.isDtoSchemaRegister(name)){
                 List<Class<?>> embedded = new ArrayList<>();
@@ -90,29 +97,43 @@ public class ClassToSchema {
     /**
      *
      * @return a schema representation of the class along with schemas of its ref classes in the form
-     *      "name: { "type name": "schema", "type name": "schema", .... }"
+     *      "kclass name: { "kclass name": "schema", "ref class name": "schema", .... }"
+     *
+     * it is mainly used by [JsonTaint.handlePossibleJsonTaint]
+     *
+     * For example (see more details with ClassToSchemaTest.testCycleDto),
+     * public class CycleDtoA {
+     *     private String cycleAId;
+     *     private CycleDtoB cycleDtoB;
+     * }
+     *
+     * public class CycleDtoB {
+     *     private String cycleBId;
+     *     private CycleDtoA cycleDtoA;
+     * }
+     *
+     * for CycleDtoA, it will return
+     * "org.evomaster.client.java.instrumentation.object.dtos.CycleDtoA":{
+     *      "org.evomaster.client.java.instrumentation.object.dtos.CycleDtoA":{"type":"object", "properties": {"cycleAId":{"type":"string"},"cycleDtoB":{"$ref":"#/components/schemas/org.evomaster.client.java.instrumentation.object.dtos.CycleDtoB"}}},
+     *      "org.evomaster.client.java.instrumentation.object.dtos.CycleDtoB":{"type":"object", "properties": {"cycleBId":{"type":"string"},"cycleDtoA":{"$ref":"#/components/schemas/org.evomaster.client.java.instrumentation.object.dtos.CycleDtoA"}}}}
+     *
      */
     public static String getOrDeriveSchemaWithItsRef(Class<?> klass){
-        StringBuilder sb = new StringBuilder();
-        List<Class<?>> nested = new ArrayList<>();
-        String schema = ClassToSchema.getOrDeriveSchemaAndNestedClasses(klass, nested);
-        sb.append("{");
-        sb.append(schema);
+        if (!cacheSchemaWithItsRef.containsKey(klass)){
+            StringBuilder sb = new StringBuilder();
+            List<Class<?>> nested = new ArrayList<>();
+            String schema = ClassToSchema.getOrDeriveSchemaAndEmbeddedClasses(klass, nested);
+            sb.append("{");
+            sb.append(schema);
 
-        nested.forEach(s->
-                sb.append(",").append(ClassToSchema.getOrDeriveNonNestedSchema(s)));
+            nested.forEach(s->
+                    sb.append(",").append(ClassToSchema.getOrDeriveNonNestedSchema(s)));
 
-        sb.append("}");
-        return named(klass.getName(), sb.toString());
-    }
+            sb.append("}");
+            cacheSchemaWithItsRef.put(klass, named(klass.getName(), sb.toString()));
+        }
 
-    /**
-     * @param nested is a list of nested classes
-     * @return a schema representation of the class in the form "name: {...}", ie
-     * like a field entry in an OpenAPI object definition
-     */
-    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> nested) {
-        return getOrDeriveSchema(klass.getName(), klass, false, nested);
+        return cacheSchemaWithItsRef.get(klass);
     }
 
     /**
@@ -120,29 +141,45 @@ public class ClassToSchema {
      * @return a schema representation of the class in the form "name: {...}"
      */
     public static String getOrDeriveNonNestedSchema(Class<?> klass) {
-        return getOrDeriveSchema(klass.getName(), klass, false, Collections.emptyList());
+        return getOrDeriveSchema(klass, Collections.emptyList());
+    }
+
+
+    /**
+     * @param nested is a list of nested classes
+     * @return a schema representation of the class in the form "name: {...}", ie
+     * like a field entry in an OpenAPI object definition
+     */
+    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> nested) {
+        if (!cacheSchema.containsKey(klass)){
+            cacheSchema.put(klass, getOrDeriveSchema(klass.getName(), klass, false, nested));
+        }
+
+        return cacheSchema.get(klass);
     }
 
     private static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> nested) {
 
-        if (cache.containsKey(type) && !useRefObject) {
-            return named(name, cache.get(type));
+        if (cacheSchema.containsKey(type) && !useRefObject) {
+            return cacheSchema.get(type);
         }
+
 
         String schema = getSchema(type, useRefObject, nested, false);
 
+        String namedSchema = named(name, schema);
+
         /*
-            we only put the complete schema into schema
+            we put the complete schema into cacheSchema
          */
         if (!schema.startsWith(fieldRefPrefix))
-            cache.put(type, schema);
-        return named(name, schema);
+            cacheSchema.put(type, namedSchema);
+
+        return namedSchema;
     }
 
-    /**
-     * @return a schema representation of the given class in the form "name: {...}" and add all its nested class into nested
-     */
-    public static String getOrDeriveSchemaAndNestedClasses(Class<?> klass, List<Class<?>> nested) {
+
+    private static String getOrDeriveSchemaAndEmbeddedClasses(Class<?> klass, List<Class<?>> nested) {
 
         String schema = getSchema(klass, false, nested, true);
 

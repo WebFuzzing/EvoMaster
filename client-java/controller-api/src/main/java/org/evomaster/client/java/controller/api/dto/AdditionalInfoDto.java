@@ -60,4 +60,9 @@ public class AdditionalInfoDto {
      * To keep track of all external service calls used under SUT.
      */
     public List<ExternalServiceInfoDto> externalServices = new ArrayList<>();
+
+    /**
+     * a list of external service info which is direct to default WM
+     */
+    public List<ExternalServiceInfoDto> employedDefaultWM = new ArrayList<>();
 }

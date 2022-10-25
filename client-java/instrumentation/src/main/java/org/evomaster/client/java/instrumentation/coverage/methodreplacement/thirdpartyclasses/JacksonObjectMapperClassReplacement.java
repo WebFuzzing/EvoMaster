@@ -7,10 +7,7 @@ import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.object.JsonTaint;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -28,7 +25,12 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        return "com.fasterxml.jackson.databind.ObjectMapper";
+        /*
+            this is to avoid a 2013 bug in shade plugin:
+            https://issues.apache.org/jira/browse/MSHADE-156
+            note that Jackson is shaded in pom of controller
+         */
+        return "   com.fasterxml.jackson.databind.ObjectMapper".trim();
     }
 
     @Replacement(replacingStatic = false,
@@ -36,7 +38,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             id = "Jackson_ObjectMapper_readValue_InputStream_class",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
-    public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) {
+    public static <T> T readValue(Object caller, InputStream src, Class<T> valueType) throws Throwable {
         Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
@@ -63,7 +65,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw (RuntimeException) e.getCause();
+            throw  e.getCause();
         }
     }
 
@@ -72,7 +74,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             id = "Jackson_ObjectMapper_readValue_Generic_class",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
-    public static <T> T readValue(Object caller, String content, Class<T> valueType) {
+    public static <T> T readValue(Object caller, String content, Class<T> valueType) throws Throwable {
         Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
@@ -91,7 +93,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw (RuntimeException) e.getCause();
+            throw  e.getCause();
         }
     }
 
@@ -101,7 +103,7 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
             id = "Jackson_ObjectMapper_convertValue_Generic_class",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.EXT_0)
-    public static <T> T convertValue(Object caller, Object fromValue, Class<T> valueType) {
+    public static <T> T convertValue(Object caller, Object fromValue, Class<T> valueType) throws Throwable {
         Objects.requireNonNull(caller);
 
         ClassToSchema.registerSchemaIfNeeded(valueType);
@@ -117,9 +119,8 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw (RuntimeException) e.getCause();
+            throw  e.getCause();
         }
     }
 
-    //public <T> T convertValue(Object fromValue, Class<T> toValueType)
 }

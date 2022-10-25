@@ -1248,7 +1248,7 @@ class GraphQLActionBuilderTest {
     @Test
     fun primitivesTest() {
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/Primitives.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/Primitives.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1460,6 +1460,30 @@ class GraphQLActionBuilderTest {
 
         assertEquals(9, actionCluster.size)
     }
+
+    @Test
+    fun allLimitReachedTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/allLimitReached.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, 2)
+
+        assertEquals(1, actionCluster.size)
+    }
+
+    @Test
+    fun allLimitNotReachedTest() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/allLimitNotReached.json").readText()
+
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, 2)
+
+        assertEquals(2, actionCluster.size)
+    }
+
+
 
     @Test
     fun stratzTest() {

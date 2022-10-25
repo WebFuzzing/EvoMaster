@@ -67,10 +67,10 @@ class BindingCopyTest {
         val ind = BindingIndividual(mutableListOf(geneA, geneB, geneC, geneD, geneE))
         geneA.addBindingGene(geneE)
         geneE.addBindingGene(geneA)
-        assertTrue(ind.genes.first().isBoundWith(ind.genes.last()))
+        assertTrue(ind.genes.first().isDirectBoundWith(ind.genes.last()))
 
         val copy = ind.copy() as BindingIndividual
-        assertTrue(copy.genes.first().isBoundWith(copy.genes.last()))
+        assertTrue(copy.genes.first().isDirectBoundWith(copy.genes.last()))
     }
 
 }

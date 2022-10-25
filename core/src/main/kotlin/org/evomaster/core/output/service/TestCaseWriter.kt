@@ -6,7 +6,9 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.problem.external.service.httpws.ExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
@@ -93,6 +95,25 @@ abstract class TestCaseWriter {
         return lines
     }
 
+    protected fun handleDnsForExternalServiceActions(
+        lines: Lines,
+        actions: List<HttpExternalServiceAction>,
+        exToWM: Map<String, ExternalService>?) : Boolean{
+        var any = false
+        exToWM?.forEach {
+            lines.add("DnsCacheManipulator.setDnsCache(\"${it.key}\", \"${it.value.getWireMockAddress()}\")")
+            lines.appendSemicolon(format)
+            any = true
+        }
+
+        actions.forEach {action->
+            lines.add("DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${action.externalService.getWireMockAddress()}\")")
+            lines.appendSemicolon(format)
+            any = true
+        }
+        return any
+    }
+
     protected fun handleExternalServiceActions(
         lines: Lines,
         actions: List<HttpExternalServiceAction>
@@ -105,35 +126,21 @@ abstract class TestCaseWriter {
             .filter { it.active }
             .forEachIndexed { index, action ->
                 val response = action.response as HttpWsResponseParam
-                val name = getWireMockVariableName(action)
+                val name = getWireMockVariableName(action.externalService)
 
                 // Default behaviour of WireMock has been removed, since found no purpose
                 // in case if there is a failure regarding no routes found in WireMock
                 // consider adding that later
                 lines.addStatement("assertNotNull(${name})", config.outputFormat)
-                lines.add("${name}.stubFor(")
-                lines.indented {
-                    lines.add(
-                        "${
-                            action.request.method.lowercase()
-                        }(urlEqualTo(\"${action.request.url}\"))"
-                    )
-                    // adding priority from the index of the respective action
-                    // TODO: when handling multiple calls need to fix this
-                    lines.add(".atPriority(${index + 1})")
-                    lines.add(".willReturn(")
-                    lines.indented {
-                        lines.add("aResponse()")
-                        lines.indented {
-                            lines.add(".withStatus(${response.status.getValueAsRawString()})")
-                            //TODO possible need to handle type, eg JSON vs XML
-                            //FIXME need major refactoring of escaping
-                            lines.add(".withBody(\"${response.responseBody.getValueAsRawString().replace("\"", "\\\"")}\")")
-                        }
-                        lines.add(")")
-                    }
-                }
-                lines.add(")")
+
+                TestWriterUtils.handleStubForAsJavaOrKotlin(
+                    lines,
+                    action.externalService,
+                    response,
+                    action.request.method.lowercase(),
+                    "urlEqualTo(\"${action.request.url}\")",
+                    index+1
+                )
                 lines.appendSemicolon(format)
                 lines.addEmpty(1)
             }
