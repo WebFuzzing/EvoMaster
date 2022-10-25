@@ -47,9 +47,14 @@ public class ClassToSchema {
      * WARNING: this is a mutable static state, but, being just a cache, should not hopefully
      * have any nasty negative side-effects.
      */
-    private static final Map<Type, String> cache = new ConcurrentHashMap<>();
+    private static final Map<Type, String> cacheSchema = new ConcurrentHashMap<>();
 
-    private static final Map<Type, String> refCache = new ConcurrentHashMap<>();
+    /**
+     * Key -> DTO class
+     * Value -> the schema representations of the DTO class and its ref DTO class
+     */
+    private static final Map<Type, String> cacheSchemaWithItsRef = new ConcurrentHashMap<>();
+
 
     private static final String fieldRefPrefix = "{\"$ref\":\"";
 
@@ -104,26 +109,21 @@ public class ClassToSchema {
      *
      */
     public static String getOrDeriveSchemaWithItsRef(Class<?> klass){
-        StringBuilder sb = new StringBuilder();
-        List<Class<?>> nested = new ArrayList<>();
-        String schema = ClassToSchema.getOrDeriveSchemaAndEmbeddedClasses(klass, nested);
-        sb.append("{");
-        sb.append(schema);
+        if (!cacheSchemaWithItsRef.containsKey(klass)){
+            StringBuilder sb = new StringBuilder();
+            List<Class<?>> nested = new ArrayList<>();
+            String schema = ClassToSchema.getOrDeriveSchemaAndEmbeddedClasses(klass, nested);
+            sb.append("{");
+            sb.append(schema);
 
-        nested.forEach(s->
-                sb.append(",").append(ClassToSchema.getOrDeriveNonNestedSchema(s)));
+            nested.forEach(s->
+                    sb.append(",").append(ClassToSchema.getOrDeriveNonNestedSchema(s)));
 
-        sb.append("}");
-        return named(klass.getName(), sb.toString());
-    }
+            sb.append("}");
+            cacheSchemaWithItsRef.put(klass, named(klass.getName(), sb.toString()));
+        }
 
-    /**
-     * @param nested is a list of nested classes
-     * @return a schema representation of the class in the form "name: {...}", ie
-     * like a field entry in an OpenAPI object definition
-     */
-    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> nested) {
-        return getOrDeriveSchema(klass.getName(), klass, false, nested);
+        return cacheSchemaWithItsRef.get(klass);
     }
 
     /**
@@ -131,17 +131,29 @@ public class ClassToSchema {
      * @return a schema representation of the class in the form "name: {...}"
      */
     public static String getOrDeriveNonNestedSchema(Class<?> klass) {
-        return getOrDeriveSchema(klass.getName(), klass, false, Collections.emptyList());
+        return getOrDeriveSchema(klass, Collections.emptyList());
+    }
+
+
+    /**
+     * @param nested is a list of nested classes
+     * @return a schema representation of the class in the form "name: {...}", ie
+     * like a field entry in an OpenAPI object definition
+     */
+    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> nested) {
+        if (!cacheSchema.containsKey(klass)){
+            cacheSchema.put(klass, getOrDeriveSchema(klass.getName(), klass, false, nested));
+        }
+
+        return cacheSchema.get(klass);
     }
 
     private static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> nested) {
 
-        if (cache.containsKey(type) && !useRefObject) {
-            return cache.get(type);
+        if (cacheSchema.containsKey(type) && !useRefObject) {
+            return cacheSchema.get(type);
         }
 
-        if (refCache.containsKey(type) && useRefObject)
-            return refCache.get(type);
 
         String schema = getSchema(type, useRefObject, nested, false);
 
@@ -150,10 +162,8 @@ public class ClassToSchema {
         /*
             we put the complete schema into cache, and ref schema to refCache
          */
-        if (schema.startsWith(fieldRefPrefix))
-            refCache.put(type, namedSchema);
-        else
-            cache.put(type, namedSchema);
+        if (!schema.startsWith(fieldRefPrefix))
+            cacheSchema.put(type, namedSchema);
 
         return namedSchema;
     }
