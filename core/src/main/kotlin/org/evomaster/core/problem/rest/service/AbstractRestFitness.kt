@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.external.service.httpws.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
@@ -45,6 +46,9 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     @Inject
     protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+
+    @Inject
+    protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)

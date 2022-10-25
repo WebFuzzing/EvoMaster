@@ -9,6 +9,7 @@ import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentLinkedQueue
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.ws.rs.ProcessingException
@@ -18,6 +19,23 @@ import javax.ws.rs.core.Response
 
 class HarvestActualHttpWsResponseHandler {
 
+    @Inject
+    private lateinit var config: EMConfig
+
+    private lateinit var httpWsClient : Client
+
+    private lateinit var threadToHandleRequest: Thread
+
+    /**
+     * need it for wait and notify in kotlin
+     */
+    private val lock = Object()
+
+    /**
+     * an queue for handling urls for
+     */
+    private val queue = ConcurrentLinkedQueue<String>()
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HarvestActualHttpWsResponseHandler::class.java)
 
@@ -26,10 +44,6 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-    @Inject
-    private lateinit var config: EMConfig
-
-    private lateinit var httpWsClient : Client
 
     /**
      * key is actual request based on [HttpExternalServiceRequest.getDescription]
@@ -37,27 +51,71 @@ class HarvestActualHttpWsResponseHandler {
      */
     private val actualResponses = mutableMapOf<String, ActualResponseInfo>()
 
+
+
     @PostConstruct
     fun initialize() {
-        val clientConfiguration = ClientConfig()
-            .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
-            .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
-            //workaround bug in Jersey client
-            .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-            .property(ClientProperties.FOLLOW_REDIRECTS, false)
+        if (config.probOfHarvestingResponsesFromActualExternalServices > 0){
+            val clientConfiguration = ClientConfig()
+                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
+                .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
+                //workaround bug in Jersey client
+                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+                .property(ClientProperties.FOLLOW_REDIRECTS, false)
 
 
-        httpWsClient = ClientBuilder.newBuilder()
-            .sslContext(PreDefinedSSLInfo.getSSLContext())  // configure ssl certificate
-            .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
-            .withConfig(clientConfiguration).build()
+            httpWsClient = ClientBuilder.newBuilder()
+                .sslContext(PreDefinedSSLInfo.getSSLContext())  // configure ssl certificate
+                .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
+                .withConfig(clientConfiguration).build()
+
+            threadToHandleRequest = object :Thread() {
+                override fun run() {
+                    while (true) {
+                        sendRequestToRealExternalService()
+                    }
+                }
+            }
+            threadToHandleRequest.start()
+        }
     }
 
     @PreDestroy
     private fun preDestroy() {
-        httpWsClient.close()
+        if (config.probOfHarvestingResponsesFromActualExternalServices > 0){
+            threadToHandleRequest.interrupt()
+            httpWsClient.close()
+        }
+
     }
 
+    @Synchronized
+    private fun sendRequestToRealExternalService() {
+        synchronized(lock){
+            while (queue.size == 0) {
+                lock.wait()
+            }
+            val first = queue.remove()
+            createInvocationToRealExternalService(first)
+        }
+    }
+
+    @Synchronized
+    fun addRequests(requests : List<String>) {
+        if (config.probOfHarvestingResponsesFromActualExternalServices == 0.0)
+            return
+
+        val notInCollected = requests.filterNot { actualResponses.containsKey(it) }.distinct()
+        if (notInCollected.isEmpty()) return
+
+        synchronized(lock){
+            val newRequests = notInCollected.filterNot { queue.contains(it) }
+            if (newRequests.isEmpty())
+                return
+            lock.notify()
+            queue.addAll(newRequests)
+        }
+    }
 
 
     private fun createInvocationToRealExternalService(url : String) : Response?{
