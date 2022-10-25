@@ -727,9 +727,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         Object response;
         try {
+            if (dto.mockRPCExternalServiceDtos != null && !dto.mockRPCExternalServiceDtos.isEmpty()){
+                try {
+                    boolean ok = customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, true);
+                    if (!ok)
+                        SimpleLogger.warn("Warning: Fail to start mocked instances of RPC-based external services");
+                }catch (Exception e){
+                    SimpleLogger.error("ERROR: Fail to process mocking of RPC-based external services:", e);
+                }
+            }
             response = executeRPCEndpoint(dto, false);
         } catch (Exception e) {
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
+        } finally {
+            if (dto.mockRPCExternalServiceDtos != null && !dto.mockRPCExternalServiceDtos.isEmpty())
+                customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, false); // disable mocked responses
         }
 
         //handle exception
