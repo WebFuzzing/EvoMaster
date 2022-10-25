@@ -1,6 +1,9 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
+
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -61,4 +64,9 @@ public class UnitsInfoDto {
         TODO should consider if also adding info on type, eg JSON vs XML
      */
     public Map<String,String> parsedDtos;
+
+    /**
+     * Extra information extracted for example from JPA entities
+     */
+    public List<ExtraConstraintsDto> extraDatabaseConstraintsDtos;
 }

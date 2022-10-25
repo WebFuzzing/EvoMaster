@@ -1,10 +1,14 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
+import org.evomaster.client.java.instrumentation.JpaConstraint;
+
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -42,6 +46,8 @@ public class UnitsInfoRecorder implements Serializable {
      */
     private Map<String,String> parsedDtos;
 
+    private List<JpaConstraint> jpaConstraints;
+
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
         numberOfLines = new AtomicInteger(0);
@@ -51,6 +57,7 @@ public class UnitsInfoRecorder implements Serializable {
         numberOfTrackedMethods = new AtomicInteger(0);
         numberOfInstrumentedNumberComparisons = new AtomicInteger(0);
         parsedDtos = new ConcurrentHashMap<>();
+        jpaConstraints = new CopyOnWriteArrayList<>();
     }
 
     /**
@@ -103,6 +110,14 @@ public class UnitsInfoRecorder implements Serializable {
         if(! singleton.parsedDtos.containsKey(name)){
             singleton.parsedDtos.put(name, schema);
         }
+    }
+
+    public static void registerNewJpaConstraint(JpaConstraint constraint){
+        singleton.jpaConstraints.add(constraint);
+    }
+
+    public List<JpaConstraint> getJpaConstraints(){
+        return Collections.unmodifiableList(jpaConstraints);
     }
 
     public  int getNumberOfUnits() {
