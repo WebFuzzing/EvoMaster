@@ -139,7 +139,10 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
         if (url.scheme().equalsIgnoreCase("https") || url.scheme().equalsIgnoreCase("http")){
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.scheme(), url.host(), url.port());
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, url.port());
-            replaced = new Request.Builder().url(url.scheme()+"://"+ipAndPort[0]+":"+ipAndPort[1]+url.encodedPath()).build();
+            String replacedURL = url.scheme()+"://"+ipAndPort[0]+":"+ipAndPort[1]+url.encodedPath();
+            if (url.encodedQuery() != null && !url.encodedQuery().isEmpty())
+                replacedURL = replacedURL + "?" + url.encodedQuery();
+            replaced = new Request.Builder().url(replacedURL).build();
         }
         try{
             return (Call) original.invoke(caller, replaced);
