@@ -160,7 +160,7 @@ public class ClassToSchema {
         String namedSchema = named(name, schema);
 
         /*
-            we put the complete schema into cache, and ref schema to refCache
+            we put the complete schema into cacheSchema
          */
         if (!schema.startsWith(fieldRefPrefix))
             cacheSchema.put(type, namedSchema);
