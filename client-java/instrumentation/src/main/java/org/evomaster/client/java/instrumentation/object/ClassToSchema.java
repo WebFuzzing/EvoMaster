@@ -49,6 +49,8 @@ public class ClassToSchema {
      */
     private static final Map<Type, String> cache = new ConcurrentHashMap<>();
 
+    private static final Map<Type, String> refCache = new ConcurrentHashMap<>();
+
     private static final String fieldRefPrefix = "{\"$ref\":\"";
 
     private static final String fieldRefPostfix = "\"}";
@@ -135,17 +137,25 @@ public class ClassToSchema {
     private static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> nested) {
 
         if (cache.containsKey(type) && !useRefObject) {
-            return named(name, cache.get(type));
+            return cache.get(type);
         }
 
+        if (refCache.containsKey(type) && useRefObject)
+            return refCache.get(type);
+
         String schema = getSchema(type, useRefObject, nested, false);
+
+        String namedSchema = named(name, schema);
 
         /*
             we only put the complete schema into schema
          */
-        if (!schema.startsWith(fieldRefPrefix))
-            cache.put(type, schema);
-        return named(name, schema);
+        if (schema.startsWith(fieldRefPrefix))
+            refCache.put(type, namedSchema);
+        else
+            cache.put(type, namedSchema);
+
+        return namedSchema;
     }
 
 
