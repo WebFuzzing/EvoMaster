@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
@@ -363,8 +364,10 @@ object GraphQLActionBuilder {
                         typeName = element.fieldType
                     )
                     val template = getInputScalarListOrEnumListGene(state, copy)
-                    OptionalGene(element.fieldName, ArrayGene(element.fieldName, template))
-                } else {
+                    NullableGene(element.fieldName,OptionalGene(element.fieldName, ArrayGene(element.fieldName, template)))
+                }
+
+                else {
                     val copy = element.copy(
                         fieldType = element.typeName, KindOfFieldName = element.kindOfFieldType,
                         kindOfFieldType = element.KindOfFieldName,
@@ -372,11 +375,14 @@ object GraphQLActionBuilder {
                     )
                     val template = getInputScalarListOrEnumListGene(state, copy)
                     ArrayGene(element.fieldName, template)
+                    //todo generalize
+                    //NullableGene(element.fieldName,ArrayGene(element.fieldName, template))
+
                 }
 
             "int" ->
                 if (element.isKindOfFieldTypeOptional)
-                    OptionalGene(element.fieldName, IntegerGene(element.fieldName))
+                    NullableGene(element.fieldName,OptionalGene(element.fieldName, IntegerGene(element.fieldName)))
                 else
                     IntegerGene(element.fieldName)
 
