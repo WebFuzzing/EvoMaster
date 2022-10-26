@@ -1111,7 +1111,16 @@ class ResourceDepManageService {
 
         val relatedTables = getAllRelatedTables(ind).flatMap { t->  (0 until randomness.nextInt(1, maxPerResource)).map { t } }
 
-        val added = rm.cluster.createSqlAction(relatedTables, rm.getSqlBuilder()!!, mutableListOf(), false, true, randomness)
+        val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+
+        val added = rm.cluster.createSqlAction(
+                relatedTables,
+                rm.getSqlBuilder()!!,
+                mutableListOf(),
+                false,
+                true,
+                randomness,
+                useExtraSqlDbConstraints = extraConstraints)
 
         DbActionUtils.repairBrokenDbActionsList(added,randomness)
 

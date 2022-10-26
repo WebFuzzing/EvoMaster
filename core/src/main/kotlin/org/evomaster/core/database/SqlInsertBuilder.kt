@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.QueryRes
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
+import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.database.schema.*
 import org.evomaster.core.database.schema.ColumnFactory.createColumnFromDto
@@ -15,6 +16,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.dbconstraint.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.evomaster.core.Lazy
 
 
 class SqlInsertBuilder(
@@ -31,7 +33,16 @@ class SqlInsertBuilder(
     /*
         All the objects here are immutable
      */
+
+    /**
+     * Information about tables, indexed by name
+     */
     private val tables = mutableMapOf<String, Table>()
+
+    /**
+     * Same as table, but possibly with extended info on constraints, derived from analyzing the SUT
+     */
+    private val extendedTables = mutableMapOf<String, Table>()
 
     private val compositeTypes = mutableMapOf<String, CompositeType>()
 
@@ -162,6 +173,47 @@ class SqlInsertBuilder(
             tables[t.name] = table
         }
 
+        setUpExtendedTables(schemaDto)
+    }
+
+    private fun setUpExtendedTables(schemaDto: DbSchemaDto){
+
+        tables.forEach { e ->
+            val t = e.value
+
+            val extrasForTable = schemaDto.extraConstraintDtos
+                    .filter { it.tableName.equals(t.name, true) }
+
+            val columns = t.columns
+                    .map { c ->
+                        val extra = extrasForTable.find { it.columnName.equals(c.name, true) }
+                        if(extra == null){
+                            c // recall immutable
+                        } else {
+                            mergeConstraints(c,extra)
+                        }
+                    }.toSet()
+
+            val copy = t.copy(columns = columns)
+
+            extendedTables[e.key] = copy
+        }
+    }
+
+    private fun mergeConstraints(column: Column, extra: ExtraConstraintsDto) : Column{
+        Lazy.assert { column.name.equals(extra.columnName, true) }
+
+        val isNullable = if(!column.nullable){
+            false
+        } else if(extra.constraints.isNullable == null){
+            column.nullable
+        } else {
+            extra.constraints.isNullable
+        }
+
+        //TODO all other constraints
+
+        return column.copy(nullable = isNullable)
     }
 
     private fun findUpperLoweBoundOfRangeConstraints(
@@ -366,12 +418,15 @@ class SqlInsertBuilder(
      */
     fun isTable(tableName: String) = tables.keys.any { it.equals(tableName, ignoreCase = true) }
 
-    fun getTable(tableName: String): Table {
-        /**
+    fun getTable(tableName: String, useExtraConstraints: Boolean): Table {
+
+        val data = if(useExtraConstraints) extendedTables else tables
+
+        /*
          * SQL is not case sensitivity, table/column must ignore case sensitivity.
          */
-        val tableNameKey = tables.keys.find() { tableName.equals(it, ignoreCase = true) }
-        return tables[tableNameKey] ?: throw IllegalArgumentException("No table called $tableName")
+        val tableNameKey = data.keys.find{ tableName.equals(it, ignoreCase = true) }
+        return data[tableNameKey] ?: throw IllegalArgumentException("No table called $tableName")
 
     }
 
@@ -412,14 +467,14 @@ class SqlInsertBuilder(
              */
             forceAll: Boolean = false,
             /**
-             *
+             *  whether to use extra constraints identified in the business logic
              */
-            useExtraSqlDbConstraints : Boolean = true
+            useExtraSqlDbConstraints : Boolean = false
     ): List<DbAction> {
 
         history.add(tableName)
 
-        val table = getTable(tableName)
+        val table = getTable(tableName, useExtraSqlDbConstraints)
 
         val takeAll = columnNames.contains("*")
 
@@ -542,6 +597,7 @@ class SqlInsertBuilder(
      *
      * @param tableName specified the data of table to extract
      * @param pkValues specified the values
+     * @param useExtraSqlDbConstraints whether to use extra constraints identified in the business logic
      * @param columnIds specified the columns for the [pkValues].
      *          for the table, there might exist more than one pks, here we allow to define the specific columns for values.
      *          Note that the specified [columnIds] can be empty, then we take all pks by default
@@ -552,6 +608,7 @@ class SqlInsertBuilder(
     fun extractExistingByCols(
             tableName: String,
             pkValues: DataRowDto,
+            useExtraSqlDbConstraints: Boolean,
             columnIds: List<String> = mutableListOf()
     ): DbAction {
 
@@ -559,9 +616,7 @@ class SqlInsertBuilder(
             throw IllegalStateException("No Database Executor registered for this object")
         }
 
-        val table = tables.values.find { it.name.equals(tableName, ignoreCase = true) }
-                ?: throw  IllegalArgumentException("cannot find the table by name $tableName")
-
+        val table = getTable(tableName, useExtraSqlDbConstraints)
 
         val pks =
                 if (columnIds.isNotEmpty()) table.columns.filter { columnIds.contains(it.name) } else table.columns.filter { it.primaryKey }
