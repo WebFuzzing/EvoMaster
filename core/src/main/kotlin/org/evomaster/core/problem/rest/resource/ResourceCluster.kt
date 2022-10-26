@@ -185,9 +185,8 @@ class ResourceCluster {
                         listOf(sqlInsertBuilder.extractExistingByCols(t.name, row))
                     }
                 } else{
+                    //TODO useExtraSqlDbConstraints
                     sqlInsertBuilder.createSqlInsertionAction(t.name).also {
-                        //FIXME need refactoring after getting rid of allGenes
-                       // it.forEach { a-> a.randomize(randomness,false, it.flatMap { a -> a.seeGenes()}) }
                         it.forEach { a -> a.doInitialize(randomness) }
                     }
                 }

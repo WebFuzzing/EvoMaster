@@ -51,7 +51,9 @@ abstract class ApiWsSampler<T> : Sampler<T>() where T : Individual {
 
     fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
 
-        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
+        val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+
+        val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns, mutableListOf(),false, extraConstraints)
             ?: throw IllegalStateException("No DB schema is available")
         actions.flatMap{it.seeTopGenes()}.forEach{it.doInitialize(randomness)}
 

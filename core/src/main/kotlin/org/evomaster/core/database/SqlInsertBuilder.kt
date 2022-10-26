@@ -410,7 +410,11 @@ class SqlInsertBuilder(
              *   should get all columns for those new insertions, or just the minimal
              *   needed to satisfy all the constraints
              */
-            forceAll: Boolean = false
+            forceAll: Boolean = false,
+            /**
+             *
+             */
+            useExtraSqlDbConstraints : Boolean = true
     ): List<DbAction> {
 
         history.add(tableName)
@@ -462,9 +466,9 @@ class SqlInsertBuilder(
             }
 
             val pre = if (forceAll) {
-                createSqlInsertionAction(target, setOf("*"), history, true)
+                createSqlInsertionAction(target, setOf("*"), history, true, useExtraSqlDbConstraints)
             } else {
-                createSqlInsertionAction(target, setOf(), history, false)
+                createSqlInsertionAction(target, setOf(), history, false, useExtraSqlDbConstraints)
             }
             actions.addAll(0, pre)
         }
