@@ -165,11 +165,14 @@ class HttpWsExternalServiceHandler {
         val externalService = getExternalService(request.wireMockSignature)
 
         val action = if (responseParam == null)
-            HttpExternalServiceAction(request, "", externalService, counter++)
+            HttpExternalServiceAction(request, "", externalService, counter++).apply {
+                doInitialize(randomness)
+            }
         else
-            HttpExternalServiceAction(request = request, response= responseParam, externalService =  externalService, id = counter++)
+            HttpExternalServiceAction(request = request, response= responseParam, externalService =  externalService, id = counter++).apply {
+                seeTopGenes().forEach { g-> g.markAllAsInitialized() }
+            }
 
-        action.doInitialize(randomness)
         return action
     }
 

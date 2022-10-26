@@ -130,9 +130,10 @@ class HarvestActualHttpWsResponseHandler {
             }
             val first = queue.remove()
             val info = handleActualResponse(createInvocationToRealExternalService(cachedRequests[first]?:throw IllegalStateException("Fail to get Http request with description $first")))
-            if (info != null)
+            if (info != null){
+                info.param.responseBody.markAllAsInitialized()
                 actualResponses[first] = info
-            else
+            }else
                 LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses from GET $first")
         }
     }
@@ -142,9 +143,12 @@ class HarvestActualHttpWsResponseHandler {
         val exAction = gene.getFirstParent { it is ApiExternalServiceAction }?:return null
 
         // only support HttpExternalServiceAction, TODO for others
-        if (exAction is HttpExternalServiceAction && randomness.nextBoolean(probability)){
+        if (exAction is HttpExternalServiceAction ){
             Lazy.assert { gene.parent == exAction.response}
-            return getACopyOfActualResponse(exAction.request)
+            if (exAction.response.responseBody == gene && randomness.nextBoolean(probability)){
+                return getACopyOfActualResponse(exAction.request)
+            }
+
         }
         return null
     }
@@ -153,7 +157,7 @@ class HarvestActualHttpWsResponseHandler {
         val harvest = probability == null || (probability > 0.0 && randomness.nextBoolean(probability))
         if (!harvest) return null
         synchronized(actualResponses){
-            return actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam
+            return (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
         }
     }
 

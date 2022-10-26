@@ -68,7 +68,8 @@ class HttpExternalServiceAction(
         //randomization might modify those values
         (response as HttpWsResponseParam).status.index = 0 // start with 200, otherwise can lose taint
         response.responseBody.isActive = true
-        (response.responseBody.gene as StringGene).forceTaintedValue()
+        if (response.responseBody.gene is StringGene)
+            (response.responseBody.gene as StringGene).forceTaintedValue()
     }
 
     override fun seeTopGenes(): List<out Gene> {

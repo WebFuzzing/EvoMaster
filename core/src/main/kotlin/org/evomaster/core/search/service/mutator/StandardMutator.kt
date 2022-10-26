@@ -16,6 +16,7 @@ import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter
@@ -25,6 +26,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -252,9 +254,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
             // plugin seeding response here
             val employSeeded = harvestResponseHandler.getACopyOfItsActualResponseIfExist(gene, config.probOfMutatingResponsesBasedOnActualResponse)?.responseBody
-            if (employSeeded!=null)
-                gene.copyValueFrom(employSeeded)
-            else
+
+            val mutated = if (employSeeded!=null){
+                mutateGeneBasedOn(gene, employSeeded)
+            } else false
+
+            if (!mutated)
                 gene.standardMutation(
                     randomness,
                     apc,
@@ -263,6 +268,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                     enableAGM,
                     additionalGeneMutationInfo = additionInfo
                 )
+
         }
 
         if (config.trackingEnabled()) tag(copy, time.evaluatedIndividuals)
@@ -487,4 +493,25 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return additionInfo
     }
 
+
+    private fun mutateGeneBasedOn(geneToMutate: Gene, template: Gene) : Boolean{
+        try {
+            val v = ParamUtil.getValueGene(geneToMutate)
+            val t = ParamUtil.getValueGene(template)
+            if (v::class.java == t::class.java){
+                v.copyValueFrom(t)
+                return true
+            }else if (v is StringGene){
+                // add template as part of specialization
+                v.addChild(t)
+                v.selectedSpecialization = v.specializationGenes.indexOf(t)
+                return true
+            }
+            LoggingUtil.uniqueWarn(log, "Fail to mutate gene (${geneToMutate::class.java.name}) based on a given gene (${template::class.java.name})")
+            return false
+        }catch (e: Exception){
+            LoggingUtil.uniqueWarn(log, "Fail to mutate gene based on a given gene and an exception (${e.message}) is thrown")
+            return false
+        }
+    }
 }
