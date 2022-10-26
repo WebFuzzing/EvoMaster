@@ -131,6 +131,11 @@ class HarvestActualHttpWsResponseHandler {
     }
 
     fun addHttpRequests(requests: List<HttpExternalServiceRequest>){
+        if (requests.isEmpty())  return
+
+        if (config.probOfHarvestingResponsesFromActualExternalServices == 0.0)
+            return
+
         // only harvest responses with GET method
         val filter = requests.filter { it.method.equals("GET", ignoreCase = true) }
         synchronized(cachedRequests){
@@ -143,9 +148,6 @@ class HarvestActualHttpWsResponseHandler {
     private fun addRequests(requests : List<String>) {
         if (requests.isEmpty()) return
 
-        if (config.probOfHarvestingResponsesFromActualExternalServices == 0.0)
-            return
-
         val notInCollected = requests.filterNot { actualResponses.containsKey(it) }.distinct()
         if (notInCollected.isEmpty()) return
 
@@ -153,6 +155,7 @@ class HarvestActualHttpWsResponseHandler {
             val newRequests = notInCollected.filterNot { queue.contains(it) }
             if (newRequests.isEmpty())
                 return
+            updateExtractedObjectDto()
             lock.notify()
             queue.addAll(newRequests)
         }
@@ -208,7 +211,7 @@ class HarvestActualHttpWsResponseHandler {
         val body = response.readEntity(String::class.java)
         val node = handleJsonResponse(body)
         val responseParam = if(node != null){
-            getHttpResponse(node, 0)
+            getHttpResponse(node)
         }else{
             HttpWsResponseParam(responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, StringGene(ACTUAL_RESPONSE_GENE_NAME, value = body)))
         }
@@ -223,28 +226,22 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-    private fun getHttpResponse(node: JsonNode, times : Int) : ResponseParam{
-        var anotherAttempt = (times == 0)
-        if (extractedObjectDto.isEmpty()){
-            updateExtractedObjectDto()
-            anotherAttempt = false
+    private fun getHttpResponse(node: JsonNode) : ResponseParam{
+        synchronized(extractedObjectDto){
+            val found = if (extractedObjectDto.isEmpty()) null else parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node, extractedObjectDto)
+            return if (found != null)
+                HttpWsResponseParam(responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, found))
+            else {
+                val parsed = parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node)
+                HttpWsResponseParam(responseBody = wrapWithOptionalGene(parsed, true) as OptionalGene)
+            }
         }
 
-        val found = if (extractedObjectDto.isEmpty()) null else parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node, extractedObjectDto)
-        return if (found != null)
-            HttpWsResponseParam(responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, found))
-        else if (anotherAttempt){
-            updateExtractedObjectDto()
-            getHttpResponse(node, 1)
-        } else {
-            val parsed = parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node)
-            HttpWsResponseParam(responseBody = wrapWithOptionalGene(parsed, true) as OptionalGene)
-        }
     }
 
 
     private fun updateExtractedObjectDto(){
-        synchronized(rc){
+        synchronized(extractedObjectDto){
             val infoDto = rc.getSutInfo()!!
             val map = ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto)
             if (map.isNotEmpty()){
