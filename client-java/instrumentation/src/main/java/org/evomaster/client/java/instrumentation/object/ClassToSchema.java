@@ -56,6 +56,12 @@ public class ClassToSchema {
      */
     private static final Map<Type, String> cacheSchemaWithItsRef = new ConcurrentHashMap<>();
 
+    /**
+     * Key -> DTO class
+     * Value -> the schema representations of the DTO class and its ref DTO class
+     */
+    private static final Map<Type, Map<String, String>> cacheMapOfDtoAndItsRefToSchemas = new ConcurrentHashMap<>();
+
 
     private static final String fieldRefPrefix = "{\"$ref\":\"";
 
@@ -121,13 +127,11 @@ public class ClassToSchema {
     public static String getOrDeriveSchemaWithItsRef(Class<?> klass){
         if (!cacheSchemaWithItsRef.containsKey(klass)){
             StringBuilder sb = new StringBuilder();
-            List<Class<?>> nested = new ArrayList<>();
-            String schema = ClassToSchema.getOrDeriveSchemaAndEmbeddedClasses(klass, nested);
+            Map<String, String> map = ClassToSchema.getOrDeriveSchemaAndNestedClasses(klass);
             sb.append("{");
-            sb.append(schema);
-
-            nested.forEach(s->
-                    sb.append(",").append(ClassToSchema.getOrDeriveNonNestedSchema(s)));
+            sb.append(map.get(klass.getName()));
+            map.keySet().stream().filter(s-> !s.equals(klass.getName())).forEach(s->
+                    sb.append(",").append(map.get(s)));
 
             sb.append("}");
             cacheSchemaWithItsRef.put(klass, named(klass.getName(), sb.toString()));
@@ -179,11 +183,17 @@ public class ClassToSchema {
     }
 
 
-    private static String getOrDeriveSchemaAndEmbeddedClasses(Class<?> klass, List<Class<?>> nested) {
-
-        String schema = getSchema(klass, false, nested, true);
-
-        return named(klass.getName(), schema);
+    public static Map<String, String> getOrDeriveSchemaAndNestedClasses(Class<?> klass) {
+        if (!cacheMapOfDtoAndItsRefToSchemas.containsKey(klass)){
+            List<Class<?>> nested = new ArrayList<>();
+            String schema = getSchema(klass, false, nested, true);
+            Map<String, String> map = new LinkedHashMap<>();
+            map.put(klass.getName(), named(klass.getName(), schema));
+            for (Class<?> nkclass : nested)
+                map.putIfAbsent(nkclass.getName(), ClassToSchema.getOrDeriveNonNestedSchema(nkclass));
+            cacheMapOfDtoAndItsRefToSchemas.put(klass, map);
+        }
+        return cacheMapOfDtoAndItsRefToSchemas.get(klass);
     }
 
     private static String named(String name, String jsonObject) {
