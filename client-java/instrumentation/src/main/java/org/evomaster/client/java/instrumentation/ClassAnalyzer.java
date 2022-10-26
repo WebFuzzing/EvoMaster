@@ -72,6 +72,8 @@ public class ClassAnalyzer {
             tableName = klass.getSimpleName();
         }
 
+        //TODO: should check if need to consider getters as well (likely yes...)
+
         //TODO: this does NOT include fields in super-classes
         for(Field f : klass.getDeclaredFields()){
 
