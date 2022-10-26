@@ -35,6 +35,7 @@ import javax.ws.rs.core.Response
 
 class HarvestActualHttpWsResponseHandler {
 
+    // note rc should never be used in the thread of sending requests to external services
     @Inject(optional = true)
     private lateinit var rc: RemoteController
 
@@ -51,7 +52,7 @@ class HarvestActualHttpWsResponseHandler {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HarvestActualHttpWsResponseHandler::class.java)
-        const val ACTUAL_RESPONSE_GENE_NAME = "ActualResponse"
+        private const val ACTUAL_RESPONSE_GENE_NAME = "ActualResponse"
 
         init{
             System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
@@ -64,6 +65,10 @@ class HarvestActualHttpWsResponseHandler {
      */
     private val actualResponses = mutableMapOf<String, ActualResponseInfo>()
 
+    /**
+     * key is description of request with [HttpExternalServiceRequest.getDescription]
+     * value is an example of HttpExternalServiceRequest
+     */
     private val cachedRequests = mutableMapOf<String, HttpExternalServiceRequest>()
 
     /**
@@ -76,13 +81,17 @@ class HarvestActualHttpWsResponseHandler {
      */
     private val queue = ConcurrentLinkedQueue<String>()
 
+    /**
+     * key is dto class name
+     * value is parsed gene based on schema
+     */
     private val extractedObjectDto = mutableMapOf<String, Gene>()
 
     private val jacksonMapper = ObjectMapper()
 
     /*
         skip headers if they depend on the client
-        shall we skip Connection
+        shall we skip Connection?
      */
     private val skipHeaders = listOf("user-agent","host","accept-encoding")
 
@@ -137,7 +146,14 @@ class HarvestActualHttpWsResponseHandler {
                 LoggingUtil.uniqueWarn(log, "Fail to harvest actual responses from GET $first")
         }
     }
-
+    /**
+     * @return a copy of gene of actual responses based on the given [gene] and probability
+     *
+     * note that this method is used in mutation phase to mutate the given [gene] based on actual response if it exists
+     * and based on the given [probability]
+     *
+     * the given [gene] should be the response body gene of ResponseParam
+     */
     fun getACopyOfItsActualResponseIfExist(gene: Gene, probability : Double) : ResponseParam?{
         if (probability == 0.0) return null
         val exAction = gene.getFirstParent { it is ApiExternalServiceAction }?:return null
@@ -153,6 +169,9 @@ class HarvestActualHttpWsResponseHandler {
         return null
     }
 
+    /**
+     * @return a copy of actual responses based on the given [httpRequest] and probability
+     */
     fun getACopyOfActualResponse(httpRequest: HttpExternalServiceRequest, probability: Double?=null) : ResponseParam?{
         val harvest = probability == null || (probability > 0.0 && randomness.nextBoolean(probability))
         if (!harvest) return null
@@ -161,6 +180,9 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
+    /**
+     * add http request to queue for sending them to real external services
+     */
     fun addHttpRequests(requests: List<HttpExternalServiceRequest>){
         if (requests.isEmpty())  return
 
