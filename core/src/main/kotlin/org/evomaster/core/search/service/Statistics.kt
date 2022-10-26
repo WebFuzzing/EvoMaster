@@ -252,6 +252,9 @@ class Statistics : SearchListener {
             add(Pair("searchTimeCoveredLines", "${linesInfo.searchTime}"))
             add(Pair("searchTimeCoveredBranches", "${branchesInfo.searchTime}"))
 
+            // statistic info for extractedSpecifiedDtos
+            add(Pair("numOfExtractedSpecifiedDtos", "${unitsInfo?.extractedSpecifiedDtos?.size?:0}"))
+
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
             add(Pair("maxReturnCodes", "" + codes.maxOrNull()))

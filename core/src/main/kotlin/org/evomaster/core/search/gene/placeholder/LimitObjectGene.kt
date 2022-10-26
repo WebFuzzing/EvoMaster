@@ -25,7 +25,9 @@ class LimitObjectGene(name: String) : SimpleGene(name) {
         //nothing to do
     }
 
-
+    override fun setValueWithRawString(value: String) {
+        throw IllegalStateException("cannot set value with string ($value) for LimitObjectGene")
+    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         throw IllegalStateException("LimitObjectGene has no value")
