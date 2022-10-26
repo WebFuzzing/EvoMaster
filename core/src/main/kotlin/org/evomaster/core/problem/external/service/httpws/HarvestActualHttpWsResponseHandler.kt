@@ -10,6 +10,7 @@ import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponsePa
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
+import org.evomaster.core.problem.util.ParserDtoUtil.setGeneBasedOnString
 import org.evomaster.core.problem.util.ParserDtoUtil.wrapWithOptionalGene
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.remote.service.RemoteController
@@ -211,10 +212,13 @@ class HarvestActualHttpWsResponseHandler {
         val body = response.readEntity(String::class.java)
         val node = handleJsonResponse(body)
         val responseParam = if(node != null){
-            getHttpResponse(node)
+            getHttpResponse(node).apply {
+                setGeneBasedOnString(responseBody, body)
+            }
         }else{
             HttpWsResponseParam(responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, StringGene(ACTUAL_RESPONSE_GENE_NAME, value = body)))
         }
+
         return ActualResponseInfo(body, responseParam)
     }
 
