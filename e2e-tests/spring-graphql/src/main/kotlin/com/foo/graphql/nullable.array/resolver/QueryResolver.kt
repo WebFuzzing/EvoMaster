@@ -12,10 +12,24 @@ open class QueryResolver(
 ) : GraphQLQueryResolver {
 
 
-    fun flowers(id: Array<Int?>?): Flower?{
-        return dataRepo.findFlowers(id)
+    fun flowersNullInNullOut(id: Array<Int?>?): Flower?{
+        return dataRepo.findFlowersNullInNullOut(id)
     }
 
+    //flowersNullIn(id: [Int]!): Flower
+    fun flowersNullIn(id: Array<Int?>): Flower? {
+        return dataRepo.findFlowersNullIn(id)
+    }
+
+    //flowersNullOut(id: [Int!]): Flower
+    fun flowersNullOut(id: Array<Int>?): Flower? {
+        return dataRepo.findFlowersNullOut(id)
+    }
+
+    // flowersNotNullInOut(id: [Int!]!): Flower
+    fun flowersNotNullInOut(id: Array<Int>): Flower?{
+        return dataRepo.findFlowersNotNullInOut(id)
+    }
 }
 
 

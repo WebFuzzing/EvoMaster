@@ -1,6 +1,12 @@
 type Query {
-    # id could be null, Flower could also be null
-    flowers(id: [Int]): Flower
+
+    flowersNullInNullOut(id: [Int]): Flower
+
+    flowersNullIn(id: [Int]!): Flower
+
+    flowersNullOut(id: [Int!]): Flower
+
+    flowersNotNullInOut(id: [Int!]!): Flower
 
 }
 
