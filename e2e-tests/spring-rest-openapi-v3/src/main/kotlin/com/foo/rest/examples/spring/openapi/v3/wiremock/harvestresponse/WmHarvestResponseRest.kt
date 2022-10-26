@@ -13,18 +13,20 @@ import java.net.URL
 @RestController
 @RequestMapping(path = ["/api/wm/harvestresponse"])
 class WmHarvestResponseRest {
-    private val urlToGetEUCCountries = "https://api.first.org/data/v1/countries?q=norway"
+    private val urlToGetABCMetaData = "https://list.ly/api/v4/meta?url=http%3A%2F%2Fabc.com"
     private val urlToGETGoRESTUsers = "https://gorest.co.in/public/v2/users"
+
+    private val token = System.getenv("GOREST_AUTH_KEY")?: "ACCESS-TOKEN"
 
     private val mapper = ObjectMapper()
 
     val client = OkHttpClient()
 
 
-    @GetMapping(path = ["/country"])
+    @GetMapping(path = ["/images"])
     fun getNumCountry() : ResponseEntity<String> {
 
-        val url = URL(urlToGetEUCCountries)
+        val url = URL(urlToGetABCMetaData)
 
         val request = Request.Builder().url(url).build()
 
@@ -32,39 +34,48 @@ class WmHarvestResponseRest {
             val data = client.newCall(request).execute()
             val body = data.body()?.string()
             val code = data.code()
-            val dto = mapper.readValue(body, ApiFirstCountriesResponseDto::class.java)
+            val dto = mapper.readValue(body, ListlyMetaSearchResponseDto::class.java)
             if (code != 200)
                 return ResponseEntity.status(400).build()
-            val msg = "$code:${if ((dto?.data?.size?:0) == 1) dto.data!!.keys.first() else if ((dto?.data?.size ?: 0) > 3) "MORE THAN 3" else "NONE OR TWO"}"
+            val num = dto?.metadata?.images?.size?:0
+            val msg = "$code:${if (num in 1..9) "ANY FROM ONE TO NINE" else if (num >= 10) "MORE THAN 10" else "NONE"}"
             return ResponseEntity.ok(msg)
         }catch (e: Exception){
             return ResponseEntity.status(500).build()
         }
     }
 
-    @GetMapping(path = ["/users"])
-    fun getNumUsers() : ResponseEntity<String> {
-
-        val url = URL(urlToGETGoRESTUsers)
-
-        val request = Request.Builder()
-            .url(url)
-            .header("Accept","application/json")
-            .header("Content-Type","application/json")
-            .header("Authorization","Bearer ACCESS-TOKEN")
-            .build()
-
-        try {
-            val data = client.newCall(request).execute()
-            val body = data.body()?.string()
-            val code = data.code()
-            val dto = mapper.readValue(body, object : TypeReference<List<UserDto>>() {})
-            return if (code == 200 && dto.size == 10)
-                ResponseEntity.ok("10 users as expected")
-            else
-                ResponseEntity.status(400).build()
-        }catch (e: Exception){
-            return ResponseEntity.status(500).build()
-        }
-    }
+    /*
+        TODO
+         disable due to lack of support on readValue(String content, JavaType valueType) for Jackson
+         note that need to import jackson jar for JavaType
+     */
+//    @GetMapping(path = ["/users"])
+//    fun getNumUsers() : ResponseEntity<String> {
+//
+//        val url = URL(urlToGETGoRESTUsers)
+//
+//        val request = Request.Builder()
+//            .url(url)
+//            .header("Accept","application/json")
+//            .header("Content-Type","application/json")
+//            .header("Authorization","Bearer $token")
+//            .build()
+//
+//        return try {
+//            val data = client.newCall(request).execute()
+//            val body = data.body()?.string()
+//            val code = data.code()
+//            val dto = mapper.readValue(body, object :TypeReference<List<UserDto>>() {})
+//            if (code == 200){
+//                var msg = "${if (dto.size > 10) ">10" else "<10"} users"
+//                if (dto.any { d-> d.email == "foo@foo.com" && d.id == 5388})
+//                    msg += " which has foo user"
+//                ResponseEntity.ok(msg)
+//            } else
+//                ResponseEntity.status(400).build()
+//        }catch (e: Exception){
+//            ResponseEntity.status(500).build()
+//        }
+//    }
 }

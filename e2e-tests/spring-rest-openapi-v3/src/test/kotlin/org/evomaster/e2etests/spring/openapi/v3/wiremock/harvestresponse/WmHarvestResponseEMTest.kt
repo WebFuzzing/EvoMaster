@@ -43,11 +43,20 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 args.add("127.0.0.22")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.5")
+                args.add("--probOfMutatingResponsesBasedOnActualResponse")
+                args.add("0.1")
 
                 val solution = initAndRun(args)
 
                 assertTrue(solution.individuals.size >= 1)
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/norway", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "ANY FROM ONE TO NINE")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "MORE THAN 10")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "NONE")
+
+
+//                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", ">10")
+//                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", "<10")
+//                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", "which has foo user")
             },
             3
         )
