@@ -12,6 +12,7 @@ import java.net.*;
 import java.util.Objects;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.skipHostnameOrIp;
 
 public class URLClassReplacement implements MethodReplacementClass {
 
@@ -114,7 +115,10 @@ public class URLClassReplacement implements MethodReplacementClass {
         /*
           Add the external service hostname to the ExecutionTracer
           */
-        if (caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) {
+        if ((caller.getProtocol().equals("http") || caller.getProtocol().equals("https"))
+                && !skipHostnameOrIp(caller.getHost())
+                && !ExecutionTracer.skipHostname(caller.getHost()))
+        {
 
             if (caller.getProtocol().equalsIgnoreCase("https"))
                 PreDefinedSSLInfo.setTrustAllForHttpsURLConnection();

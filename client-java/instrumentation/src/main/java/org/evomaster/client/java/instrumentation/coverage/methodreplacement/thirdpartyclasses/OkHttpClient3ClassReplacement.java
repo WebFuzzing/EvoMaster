@@ -10,12 +10,14 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Thir
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.skipHostnameOrIp;
 
 public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementClass {
 
@@ -89,7 +91,10 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
         Request replaced = request;
 
         HttpUrl url = request.url();
-        if (url.scheme().equalsIgnoreCase("https") || url.scheme().equalsIgnoreCase("http")){
+        if ((url.scheme().equalsIgnoreCase("https") || url.scheme().equalsIgnoreCase("http"))
+                && !skipHostnameOrIp(url.host())
+                && !ExecutionTracer.skipHostname(url.host())
+        ){
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.scheme(), url.host(), url.port());
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, url.port());
             String replacedURL = url.scheme()+"://"+ipAndPort[0]+":"+ipAndPort[1]+url.encodedPath();

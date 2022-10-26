@@ -1,6 +1,5 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
-import com.squareup.okhttp.Request;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
@@ -8,6 +7,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Thir
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -17,6 +17,7 @@ import java.net.Proxy;
 import java.net.URL;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.skipHostnameOrIp;
 
 public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementClass {
 
@@ -75,7 +76,10 @@ public class OkUrlFactoryClassReplacement extends ThirdPartyMethodReplacementCla
 
     private static URL getReplacedURL(URL url){
         URL replaced = url;
-        if (url.getProtocol().equalsIgnoreCase("https") || url.getProtocol().equalsIgnoreCase("http")){
+        if ((url.getProtocol().equalsIgnoreCase("https") || url.getProtocol().equalsIgnoreCase("http"))
+                && !skipHostnameOrIp(url.getHost())
+                && !ExecutionTracer.skipHostname(url.getHost()))
+        {
 
             int port = ExternalServiceInfoUtils.inferPort(url.getPort(), url.getProtocol());
 

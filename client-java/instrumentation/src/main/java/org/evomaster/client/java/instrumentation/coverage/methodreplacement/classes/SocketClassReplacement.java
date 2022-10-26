@@ -8,6 +8,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
         if (endpoint instanceof InetSocketAddress){
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
-            if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName())){
+            if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName()) || ExecutionTracer.skipHostname(socketAddress.getHostName())){
                 caller.connect(endpoint, timeout);
                 return;
             }

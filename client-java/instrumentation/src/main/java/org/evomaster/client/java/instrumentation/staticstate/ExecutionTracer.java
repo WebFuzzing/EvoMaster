@@ -91,7 +91,7 @@ public class ExecutionTracer {
 
     private static final Object lock = new Object();
 
-
+    private static final List<String> skippedHostName = new CopyOnWriteArrayList<>();
     /**
      * One problem is that, once a test case is evaluated, some background tests might still be running.
      * We want to kill them to avoid issue (eg, when evaluating new tests while previous threads
@@ -630,6 +630,17 @@ public class ExecutionTracer {
 
     public static boolean hasExternalMapping(String hostname) {
         return externalServiceMapping.containsKey(hostname);
+    }
+
+    public static void registerSkippedHostname(List<String> skipped){
+        for(String s: skipped){
+            if (!skippedHostName.contains(s.toLowerCase()))
+                skipped.add(s.toLowerCase());
+        }
+    }
+
+    public static boolean skipHostname(String hostname) {
+        return skippedHostName.contains(hostname.toLowerCase());
     }
 
 
