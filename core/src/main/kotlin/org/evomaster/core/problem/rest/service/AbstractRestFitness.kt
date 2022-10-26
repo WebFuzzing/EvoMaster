@@ -18,6 +18,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.Action
@@ -290,15 +291,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 throw RuntimeException("BUG: info for DTO $name is not available in the SUT driver")
             }
         }
-        /*
-            need to get all for handling `ref`
-         */
-        val names = infoDto.unitsInfoDto.parsedDtos.keys.toList()
-        val schemas = names.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
-//        val schema: String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
-        //TODO need to check: referType is same with the name?
-        val genes = RestActionBuilderV3.createObjectGeneForDTOs(names, schemas, names)
-        return genes[names.indexOf(name)]
+
+        return ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto)[name]!!
     }
 
     /**
