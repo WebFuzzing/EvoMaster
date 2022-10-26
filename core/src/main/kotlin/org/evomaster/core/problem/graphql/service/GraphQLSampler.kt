@@ -25,9 +25,6 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         private val log: Logger = LoggerFactory.getLogger(GraphQLSampler::class.java)
     }
 
-    @Inject(optional = true)
-    private lateinit var rc: RemoteController
-
 
     @PostConstruct
     open fun initialize() {

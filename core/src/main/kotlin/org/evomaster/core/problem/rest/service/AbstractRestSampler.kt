@@ -33,9 +33,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestSampler::class.java)
     }
 
-    @Inject(optional = true)
-    protected lateinit var rc: RemoteController
-
     @Inject
     protected lateinit var configuration: EMConfig
 

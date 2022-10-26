@@ -28,8 +28,6 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
     @Inject
     protected lateinit var configuration: EMConfig
 
-    @Inject(optional = true)
-    protected lateinit var rc: RemoteController
 
     @Inject
     protected lateinit var rpcHandler: RPCEndpointsHandler
