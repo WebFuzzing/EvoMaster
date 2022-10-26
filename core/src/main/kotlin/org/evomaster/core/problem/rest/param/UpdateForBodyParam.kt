@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.param
 
 import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.service.param.UpdateForParam
 import org.evomaster.core.search.gene.Gene
 
 /**
@@ -12,7 +13,7 @@ import org.evomaster.core.search.gene.Gene
  * So we add info to modify the individual at its next mutation
  *
  */
-class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body.seeGenes().toMutableList()) {
+class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body.seeGenes().toMutableList()), UpdateForParam {
 
     /*
         TODO check if issue after refactoring. Previously it was:
@@ -26,6 +27,14 @@ class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body
 
     override fun seeGenes(): List<Gene> {
         return body.seeGenes()
+    }
+
+    override fun isSameTypeWithUpdatedParam(param: Param) : Boolean {
+        return param is BodyParam
+    }
+
+    override fun getUpdatedParam(): Param {
+        return body
     }
 }
 

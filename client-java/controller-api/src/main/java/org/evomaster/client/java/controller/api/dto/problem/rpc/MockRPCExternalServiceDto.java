@@ -20,6 +20,11 @@ public class MockRPCExternalServiceDto {
     public String functionName;
 
     /**
+     * a list of types of input parameters of the function
+     */
+    public List<String> inputParameterTypes;
+
+    /**
      * a list of requests that are used to specify the rules if they have
      *
      * the param is nullable, if it is null, the size of [responses] would be 1,
@@ -29,7 +34,8 @@ public class MockRPCExternalServiceDto {
      * then specify possible requests with corresponding responses, by using [requests] and [responses]
      * Note that request and response will be matched based on index of the list
      */
-    public List<String> requests;
+    public List<String> requestRules;
+
 
     /**
      * a list of responses to return
@@ -37,4 +43,10 @@ public class MockRPCExternalServiceDto {
      * there could exist multiples if there exist rules
      */
     public List<String> responses;
+
+
+    /**
+     * type info of the responses
+     */
+    public List<String> responseTypes;
 }

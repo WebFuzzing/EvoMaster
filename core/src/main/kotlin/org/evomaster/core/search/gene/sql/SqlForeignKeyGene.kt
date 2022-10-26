@@ -56,6 +56,10 @@ class SqlForeignKeyGene(
 
     override fun copyContent() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
+    override fun setValueWithRawString(value: String) {
+        throw IllegalStateException("cannot set value with string ($value) for ${this.javaClass.simpleName}")
+    }
+
     override fun checkForGloballyValid(): Boolean {
         return nullable || isBound()
     }

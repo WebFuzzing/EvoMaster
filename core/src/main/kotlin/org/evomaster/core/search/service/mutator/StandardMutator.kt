@@ -8,10 +8,12 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsAction
+import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.service.param.UpdateForParam
+import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
@@ -156,15 +158,16 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     private fun mutationPreProcessing(individual: T) {
 
         for(a in individual.seeAllActions()){
-            if(a is ApiWsAction) {
-                val update = a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
-                if (update != null) {
-                    a.killChildren { it is BodyParam }
-                    a.killChildren { it is UpdateForBodyParam }
-                    val copy = update.body
-                    copy.resetLocalIdRecursively()
-                    a.addChild(copy)
-                }
+            val update =if(a is ApiWsAction ) {
+                a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
+            }else if (a is RPCExternalServiceAction){
+                a.responses.find { it is UpdateForParam } as? UpdateForParam
+            } else null
+            if (update != null) {
+                a.killChildren { it is UpdateForParam || (it is Param && update.isSameTypeWithUpdatedParam(it))  }
+                val copy = update.getUpdatedParam()
+                copy.resetLocalIdRecursively()
+                a.addChild(copy)
             }
 
             val allGenes = a.seeTopGenes().flatMap { it.flatView() }
