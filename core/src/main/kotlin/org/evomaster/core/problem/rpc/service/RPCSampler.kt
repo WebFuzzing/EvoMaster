@@ -75,12 +75,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         return sampleAtRandom()
     }
 
-    override fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
-            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
-            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
-        }
-    }
+
 
     /**
      * sample an action from [actionCluster] at random

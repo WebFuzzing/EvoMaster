@@ -126,11 +126,5 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         number of Mutation before
      */
 
-    override fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && config.shouldGenerateSqlData()) {
 
-            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
-            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
-        }
-    }
 }

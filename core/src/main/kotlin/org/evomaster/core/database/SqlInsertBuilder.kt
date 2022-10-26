@@ -17,6 +17,7 @@ import org.evomaster.dbconstraint.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
+import org.evomaster.core.logging.LoggingUtil
 
 
 class SqlInsertBuilder(
@@ -197,6 +198,22 @@ class SqlInsertBuilder(
             val copy = t.copy(columns = columns)
 
             extendedTables[e.key] = copy
+        }
+
+        schemaDto.extraConstraintDtos.forEach { c ->
+            val t = tables.values.find{it.name.equals(c.tableName, true)}
+            if(t == null){
+                LoggingUtil.uniqueWarn(log, "Handling of extra constraints failed." +
+                        " There is no SQL table called ${c.tableName}")
+                assert(false)
+            } else {
+                val k = t.columns.find { it.name.equals(c.columnName,true) }
+                if(k == null){
+                    LoggingUtil.uniqueWarn(log, "Handling of extra constraints failed." +
+                            " There is no column called ${c.columnName} in SQL table ${t.name}")
+                    assert(false)
+                }
+            }
         }
     }
 
