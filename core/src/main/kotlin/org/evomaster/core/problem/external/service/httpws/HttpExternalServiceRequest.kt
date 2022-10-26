@@ -23,7 +23,9 @@ class HttpExternalServiceRequest(
      */
     val wireMockSignature: String,
 
-    val actualAbsoluteURL : String
+    val actualAbsoluteURL : String,
+
+    val headers : Map<String, String>
 ) {
 
     fun getId() : String {
@@ -33,5 +35,5 @@ class HttpExternalServiceRequest(
     /**
      * get description of this an HTTP request to external service
      */
-    fun getDescription() = "$method:$absoluteURL"
+    fun getDescription() = "$method:$absoluteURL[${headers.keys.joinToString(";") { "$it:${headers[it]}" }}]"
 }
