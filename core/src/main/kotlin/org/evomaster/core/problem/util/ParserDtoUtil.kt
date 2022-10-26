@@ -107,6 +107,10 @@ object ParserDtoUtil {
                         }
                 }
             }
+            jsonNode.isNull -> {
+                Lazy.assert {  objectGeneCluster == null }
+                return null
+            }
             else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
         }
     }
