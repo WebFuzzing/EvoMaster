@@ -64,8 +64,8 @@ public class UnitsInfoDto {
 
 
     /**
-     * Key -> DTO full name
-     * Value -> OpenAPI object schema
+     * Key is DTO full name
+     * Value is OpenAPI object schema
      *
      * User might need to get schema of specific jvm dto classes
      * and such jvm classes might not be read with jackson or gson
