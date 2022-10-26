@@ -1,5 +1,8 @@
 package org.evomaster.core.problem.rest
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.gson.JsonParser
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
@@ -8,6 +11,9 @@ import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
+import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
+import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
@@ -38,6 +44,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.collections.HashMap
 
 /**
  * https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md
@@ -58,6 +65,8 @@ object RestActionBuilderV3 {
      * Value -> object gene for it
      */
     private val dtoCache = mutableMapOf<String, Gene>()
+
+    private val mapper = ObjectMapper()
 
 
     /**
@@ -124,11 +133,48 @@ object RestActionBuilderV3 {
         checkSkipped(skipped, endpointsToSkip, actionCluster, errorEndpoints)
     }
 
+    /**
+     * @param name of the Dto to parse
+     * @param allSchemas contains all schemas of dto and its ref classes in the form
+     *      "name: { "type name": "schema", "ref name": "schema", .... }"
+     * @return a gene of the dto
+     */
+    fun createObjectGenesForDTOs(name: String, allSchemas: String) : Gene{
+        if(!allSchemas.startsWith("\"$name\"")){
+            throw IllegalArgumentException("Invalid name $name for schema $allSchemas")
+        }
+
+        val allSchemasValue = allSchemas.substring(1 + name.length + 2)
+
+        val schemas = getMapStringFromSchemas(allSchemasValue)
+        val dtoSchema = schemas[name] ?: throw IllegalStateException("cannot find the schema with $name from $allSchemas")
+
+        if(dtoCache.containsKey(dtoSchema)){
+            return dtoCache[dtoSchema]!!.copy()
+        }
+
+        val schema = """
+            {
+                "openapi": "3.0.0",
+                "$OPENAPI_COMPONENT_NAME": {
+                    "$OPENAPI_SCHEMA_NAME": $allSchemasValue
+                }
+            }          
+        """.trimIndent()
+
+        val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
+
+
+        schemas.forEach { (t, u) ->
+            val gene = createObjectGene(t, swagger.components.schemas[t]!!,swagger, ArrayDeque(), t)
+            dtoCache[u] = gene
+        }
+
+        return dtoCache[dtoSchema]!!.copy()
+    }
 
     /**
-     * Create an [ObjectGene] based on schema info of a DTO, given in the format
-     * "name: {...}"
-     * @param referenceTypeName specifies refType (i.e., [ObjectGene.refType]]) of the [ObjectGene] to be created that could be same with [name]
+     *
      */
     fun createObjectGeneForDTO(name: String, dtoSchema: String, referenceTypeName: String?) : Gene{
 
@@ -144,8 +190,8 @@ object RestActionBuilderV3 {
         val schema = """
             {
                 "openapi": "3.0.0",
-                "components": {
-                    "schemas": {
+                "$OPENAPI_COMPONENT_NAME": {
+                    "$OPENAPI_SCHEMA_NAME": {
                         $dtoSchema
                     }
                 }
@@ -156,6 +202,40 @@ object RestActionBuilderV3 {
         val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque(), referenceTypeName)
         dtoCache[dtoSchema] = gene
         return gene.copy()
+    }
+
+    fun createObjectGeneForDTOs(names: List<String>, dtoSchemas: List<String>, referenceTypeNames: List<String?>) : List<Gene>{
+        Lazy.assert { names.size == dtoSchemas.size }
+
+        dtoSchemas.forEachIndexed { index, s ->
+            if(! s.startsWith("\"${names[index]}\"")){
+                throw IllegalArgumentException("Invalid name ${names[index]} for schema $s")
+            }
+        }
+
+
+        val unidentified = dtoSchemas.mapIndexed { index, s -> index to s  }.filter{ !dtoCache.containsKey(it.second) }
+
+        //Note to simplify code, we just create a whole OpenAPI schema
+        val schema = """
+            {
+                "openapi": "3.0.0",
+                "$OPENAPI_COMPONENT_NAME": {
+                    "$OPENAPI_SCHEMA_NAME": {
+                        ${unidentified.joinToString(",") { it.second }}
+                    }
+                }
+            }          
+        """.trimIndent()
+
+        val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
+        unidentified.forEach {s->
+            val gene = getGene(names[s.first], swagger.components.schemas[names[s.first]]!!,swagger, ArrayDeque(), referenceTypeNames[s.first])
+            if (!dtoCache.containsKey(s.second))
+                dtoCache[s.second] = gene
+        }
+
+        return dtoSchemas.map { dtoCache[it]!!.copy() }
     }
 
 
@@ -841,6 +921,16 @@ object RestActionBuilderV3 {
             }
         }?.toMutableList()?: mutableListOf()
         return RestCallAction(id, verb, path, query, skipOracleChecks= skipOracleChecks)
+    }
+
+    private fun getMapStringFromSchemas(schemas: String) : Map<String, String>{
+        val objs = mapper.readTree(schemas)
+        val maps = mutableMapOf<String, String>()
+        objs.fields().forEach { f->
+            maps[f.key] = f.value.toString()
+        }
+
+        return maps
     }
 
 }

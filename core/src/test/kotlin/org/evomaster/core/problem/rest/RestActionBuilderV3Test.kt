@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest
 
 import io.swagger.parser.OpenAPIParser
+import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
@@ -11,6 +12,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
@@ -80,6 +82,65 @@ class RestActionBuilderV3Test{
 
         val nr = gene.fields.find { it is OptionalGene } as OptionalGene
         assertEquals(bar, nr.name)
+    }
+
+
+    @Test
+    fun testParseDtos(){
+
+        val nameFoo = "evo.Foo"
+        val nameBar = "evo.Bar"
+
+        val dtoSchemaFoo = """
+            "$nameFoo": {
+                 "type": "object",
+                 "properties": {
+                        "bar": { 
+                            "${'$'}ref": "${OPENAPI_REF_PATH}evo.Bar"
+                        }
+                 },
+                 "required": [
+                    "bar"
+                 ]
+            }     
+        """.trimIndent()
+
+        val dtoSchemaBar = """
+            "$nameBar": {
+                 "type": "object",
+                 "properties": {
+                        "foo": { 
+                            "${'$'}ref": "${OPENAPI_REF_PATH}evo.Foo"
+                        }
+                 },
+                 "required": [
+                    "foo"
+                 ]
+            }     
+        """.trimIndent()
+
+        val objGenes = RestActionBuilderV3.createObjectGeneForDTOs(listOf(nameFoo, nameBar), listOf(dtoSchemaFoo, dtoSchemaBar), listOf(nameFoo, nameBar))
+        assertEquals(2, objGenes.size)
+
+        assertEquals(nameFoo, objGenes[0].name)
+        assertTrue(objGenes[0] is ObjectGene)
+        assertEquals(1, (objGenes[0] as ObjectGene).fields.size)
+
+        val barField = ((objGenes[0] as ObjectGene).fields.find { it is ObjectGene } as ObjectGene)
+        assertEquals("bar", barField.name)
+        val cycleBar = (barField.fields[0] as ObjectGene).fields[0]
+        assertTrue(cycleBar is CycleObjectGene)
+
+
+        assertEquals(nameBar, objGenes[1].name)
+        assertTrue(objGenes[1] is ObjectGene)
+        assertEquals(1, (objGenes[1] as ObjectGene).fields.size)
+
+        val fooField = ((objGenes[1] as ObjectGene).fields.find { it is ObjectGene } as ObjectGene)
+        assertEquals("foo", fooField.name)
+        val cycleFoo = (fooField.fields[0] as ObjectGene).fields[0]
+        assertTrue(cycleFoo is CycleObjectGene)
+
     }
 
 
