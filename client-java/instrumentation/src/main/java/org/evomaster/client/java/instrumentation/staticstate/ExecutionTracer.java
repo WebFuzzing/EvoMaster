@@ -91,7 +91,10 @@ public class ExecutionTracer {
 
     private static final Object lock = new Object();
 
-    private static final List<String> skippedHostName = new CopyOnWriteArrayList<>();
+    // tmp solution
+    private static final List<String> skippedHostName = new CopyOnWriteArrayList<String>(){{
+        add("info.services.auth.zalando.com".toLowerCase());
+    }};
     /**
      * One problem is that, once a test case is evaluated, some background tests might still be running.
      * We want to kill them to avoid issue (eg, when evaluating new tests while previous threads
