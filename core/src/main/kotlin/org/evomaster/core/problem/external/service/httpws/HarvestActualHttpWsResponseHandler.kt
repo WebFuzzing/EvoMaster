@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.problem.util.ParserDtoUtil
@@ -17,6 +19,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -37,6 +40,9 @@ class HarvestActualHttpWsResponseHandler {
 
     @Inject
     private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var randomness: Randomness
 
     private lateinit var httpWsClient : Client
 
@@ -82,7 +88,7 @@ class HarvestActualHttpWsResponseHandler {
 
     @PostConstruct
     fun initialize() {
-        if (config.probOfHarvestingResponsesFromActualExternalServices > 0){
+        if (config.doHarvestActualResponse()){
             val clientConfiguration = ClientConfig()
                 .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
                 .property(ClientProperties.READ_TIMEOUT, config.tcpTimeoutMs)
@@ -109,7 +115,7 @@ class HarvestActualHttpWsResponseHandler {
 
     @PreDestroy
     private fun preDestroy() {
-        if (config.probOfHarvestingResponsesFromActualExternalServices > 0){
+        if (config.doHarvestActualResponse()){
             threadToHandleRequest.interrupt()
             httpWsClient.close()
         }
@@ -131,10 +137,30 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
+    fun getACopyOfItsActualResponseIfExist(gene: Gene, probability : Double) : ResponseParam?{
+        if (probability == 0.0) return null
+        val exAction = gene.getFirstParent { it is ApiExternalServiceAction }?:return null
+
+        // only support HttpExternalServiceAction, TODO for others
+        if (exAction is HttpExternalServiceAction && randomness.nextBoolean(probability)){
+            Lazy.assert { gene.parent == exAction.response}
+            return getACopyOfActualResponse(exAction.request)
+        }
+        return null
+    }
+
+    fun getACopyOfActualResponse(httpRequest: HttpExternalServiceRequest, probability: Double?=null) : ResponseParam?{
+        val harvest = probability == null || (probability > 0.0 && randomness.nextBoolean(probability))
+        if (!harvest) return null
+        synchronized(actualResponses){
+            return actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam
+        }
+    }
+
     fun addHttpRequests(requests: List<HttpExternalServiceRequest>){
         if (requests.isEmpty())  return
 
-        if (config.probOfHarvestingResponsesFromActualExternalServices == 0.0)
+        if (!config.doHarvestActualResponse())
             return
 
         // only harvest responses with GET method

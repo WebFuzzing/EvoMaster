@@ -11,6 +11,8 @@ import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceU
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isReservedIP
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.nextIPAddress
+import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
+import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -159,15 +161,14 @@ class HttpWsExternalServiceHandler {
     /**
      * Creates an [HttpExternalServiceAction] based on the given [HttpExternalServiceRequest]
      */
-    fun createExternalServiceAction(request: HttpExternalServiceRequest): HttpExternalServiceAction {
+    fun createExternalServiceAction(request: HttpExternalServiceRequest, responseParam: HttpWsResponseParam?): HttpExternalServiceAction {
         val externalService = getExternalService(request.wireMockSignature)
 
-        val action = HttpExternalServiceAction(
-            request,
-            "",
-            externalService,
-            counter++
-        )
+        val action = if (responseParam == null)
+            HttpExternalServiceAction(request, "", externalService, counter++)
+        else
+            HttpExternalServiceAction(request = request, response= responseParam, externalService =  externalService, id = counter++)
+
         action.doInitialize(randomness)
         return action
     }

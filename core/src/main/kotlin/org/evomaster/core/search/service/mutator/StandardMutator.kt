@@ -250,14 +250,19 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 mutatedGene = mutatedGene
             )
 
-            gene.standardMutation(
-                randomness,
-                apc,
-                mwc,
-                selectionStrategy,
-                enableAGM,
-                additionalGeneMutationInfo = additionInfo
-            )
+            // plugin seeding response here
+            val employSeeded = harvestResponseHandler.getACopyOfItsActualResponseIfExist(gene, config.probOfMutatingResponsesBasedOnActualResponse)?.responseBody
+            if (employSeeded!=null)
+                gene.copyValueFrom(employSeeded)
+            else
+                gene.standardMutation(
+                    randomness,
+                    apc,
+                    mwc,
+                    selectionStrategy,
+                    enableAGM,
+                    additionalGeneMutationInfo = additionInfo
+                )
         }
 
         if (config.trackingEnabled()) tag(copy, time.evaluatedIndividuals)
