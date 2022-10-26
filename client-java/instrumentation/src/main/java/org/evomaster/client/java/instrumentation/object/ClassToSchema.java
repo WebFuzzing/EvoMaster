@@ -96,7 +96,7 @@ public class ClassToSchema {
             /*
                 fail with tests
              */
-            assert(false);
+            //assert(false);
         }
 
     }

@@ -63,10 +63,13 @@ public class UnitsInfoDto {
     public Map<String,String> parsedDtos;
 
 
-    /*
-       This is to save dto schema for specified dto
-       Key -> DTO full name
-       Value -> OpenAPI object schema
-    */
+    /**
+     * Key -> DTO full name
+     * Value -> OpenAPI object schema
+     *
+     * User might need to get schema of specific jvm dto classes
+     * and such jvm classes might not be read with jackson or gson
+     * this field is to collect a map of such specified jvm dto classes to their schema
+     * */
     public Map<String, String> extractedSpecifiedDtos;
 }
