@@ -24,7 +24,7 @@ import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.problem.util.ParserDtoUtil.jsonNodeAsObjectGene
+import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
 import org.evomaster.core.problem.util.ParserDtoUtil.setGeneBasedOnString
 import org.evomaster.core.problem.util.ParserDtoUtil.wrapWithOptionalGene
 import org.evomaster.core.remote.service.RemoteController
@@ -235,7 +235,7 @@ class RPCEndpointsHandler {
                             }else{
                                 val node = readJson(dto.responses[index])
                                 if (node != null){
-                                    jsonNodeAsObjectGene("return", node)
+                                    parseJsonNodeAsGene("return", node)
                                 }else{
                                     StringGene("return")
                                 }
@@ -270,7 +270,7 @@ class RPCEndpointsHandler {
             functionName = action.functionName
             appKey = action.descriptiveInfo
             requestRules = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
-            responses = listOf(action.response.gene.getValueAsPrintableString(mode = mode))
+            responses = listOf(action.response.responseBody.getValueAsPrintableString(mode = mode))
         }
     }
 

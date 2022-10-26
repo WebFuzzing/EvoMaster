@@ -26,9 +26,13 @@ import org.slf4j.LoggerFactory
 
 object ParserDtoUtil {
 
-    private final val objectMapper = ObjectMapper()
+    private val objectMapper = ObjectMapper()
     private val log: Logger = LoggerFactory.getLogger(ParserDtoUtil::class.java)
 
+    /**
+     * get or parse schema of dto classes from [infoDto] as gene
+     * @return a map of dto class name to corresponding gene
+     */
     fun getOrParseDtoWithSutInfo(infoDto: SutInfoDto) : Map<String, Gene>{
         /*
             need to get all for handling `ref`
@@ -41,7 +45,18 @@ object ParserDtoUtil {
         return names.mapIndexed { index, s -> s to genes[index] }.toMap()
     }
 
-    fun jsonNodeAsObjectGene(name: String, jsonNode: JsonNode): Gene{
+    /**
+     * parse gene based on json node
+     */
+    fun parseJsonNodeAsGene(name: String, jsonNode: JsonNode): Gene{
+        return parseJsonNodeAsGene(name, jsonNode, null) ?:throw IllegalStateException("Fail to parse the given json node: ${jsonNode.toPrettyString()}")
+    }
+
+
+    /**
+     * parse gene based on json node and optionally employ given [objectGeneCluster] to parse object gene
+     */
+    fun parseJsonNodeAsGene(name: String, jsonNode: JsonNode, objectGeneCluster: Map<String, Gene>?): Gene?{
         return when{
             jsonNode.isBoolean -> BooleanGene(name, jsonNode.booleanValue())
             jsonNode.isBigDecimal -> BigDecimalGene(name, jsonNode.decimalValue())
@@ -53,29 +68,70 @@ object ParserDtoUtil {
             jsonNode.isTextual -> {
                 StringGene(name, jsonNode.textValue())
             }
-            jsonNode.isObject ->{
-                val fields = jsonNode.fields().asSequence().map { wrapWithOptionalGene(jsonNodeAsObjectGene(it.key, it.value), true) }.toMutableList()
-                ObjectGene(name, fields)
-            }
             jsonNode.isArray -> {
-                val elements = jsonNode.map { jsonNodeAsObjectGene(name + "_item", it) }
+                val elements = jsonNode.map { parseJsonNodeAsGene(name + "_item", it, objectGeneCluster) }
+                if (elements.any { it == null }) return null
+
                 if (elements.isNotEmpty()){
-                    val template = if (elements.any { ParamUtil.getValueGene(it) is ObjectGene })
-                        elements.maxByOrNull { (ParamUtil.getValueGene(it) as? ObjectGene)?.fields?.size ?: -1 }!!
+                    val template = if (elements.any { ParamUtil.getValueGene(it!!) is ObjectGene })
+                        elements.maxByOrNull { (ParamUtil.getValueGene(it!!) as? ObjectGene)?.fields?.size ?: -1 }!!
                     else elements.first()
-                    ArrayGene(name, template = template.copy(), elements = elements.toMutableList())
+                    ArrayGene(name, template = template!!.copy(), elements = elements.filterNotNull().toMutableList())
                 } else
                     ArrayGene(name, template = StringGene(name + "_item"))
+            }
+            jsonNode.isObject ->{
+                if (objectGeneCluster == null){
+                    if (jsonNode.size() == 0)
+                        MapGene(name, StringGene("key"), StringGene("value"))
+                    else{
+                        val values = jsonNode.fields().asSequence().map { parseJsonNodeAsGene(it.key, it.value, objectGeneCluster) }.toMutableList()
+                        if (values.any { it == null }) return null
+                        val groupedValues  = values.filterNotNull().groupBy { g->
+                            val v = ParamUtil.getValueGene(g)
+                            if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
+                        }
+                        if (groupedValues.size == 1){
+                            MapGene(name, StringGene("key"), values.first()!!.copy())
+                        }else
+                            ObjectGene(name, values.map { wrapWithOptionalGene(it!!, true) })
+                    }
+                }else {
+                    findAndCopyExtractedObjectDto(jsonNode, objectGeneCluster)
+                        ?: if (jsonNode.size() >= 1) {
+                            val template = parseJsonNodeAsGene("template", jsonNode.first(), objectGeneCluster)
+                                ?: return null
+                            MapGene(name, StringGene("key"), template)
+                        } else {
+                            MapGene(name, StringGene("key"), StringGene("value"))
+                        }
+                }
             }
             else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
         }
     }
 
+    private fun findAndCopyExtractedObjectDto(node: JsonNode, objectGeneMap: Map<String, Gene>) : ObjectGene? {
+        return objectGeneMap.values.filterIsInstance<ObjectGene>().firstOrNull { o->
+            var all = true
+            node.fields().forEach { f ->
+                all = all && o.fields.any { of -> of.name.equals(f.key, ignoreCase = true) }
+            }
+            all
+        }?.copy() as? ObjectGene
+    }
+
+    /**
+     * wrap the given [gene] with OptionalGene if the gene is not
+     */
     fun wrapWithOptionalGene(gene: Gene, isOptional: Boolean): Gene{
         return if (isOptional && gene !is OptionalGene) OptionalGene(gene.name, gene) else gene
     }
 
-    fun setGeneBasedOnString(gene: Gene, stringValue: String?, format : String = "json"){
+    /**
+     * set value of gene based on [stringValue] with json format
+     */
+    fun setGeneBasedOnString(gene: Gene, stringValue: String?){
         val valueGene = ParamUtil.getValueGene(gene)
 
         if (stringValue != null){

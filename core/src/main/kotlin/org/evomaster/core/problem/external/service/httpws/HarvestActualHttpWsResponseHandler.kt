@@ -216,16 +216,6 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
-    private fun findExtractedObjectDto(node: JsonNode) : ObjectGene? {
-        return extractedObjectDto.values.filterIsInstance<ObjectGene>().firstOrNull {o->
-            var all = true
-            node.fields().forEach { f ->
-                all = all && o.fields.any { of -> of.name.equals(f.key, ignoreCase = true) }
-            }
-            all
-        }
-    }
-
     private fun getHttpResponse(node: JsonNode, times : Int) : ResponseParam{
         val found = getResponseGene(ACTUAL_RESPONSE_GENE_NAME, node)
         if (found != null)
@@ -239,7 +229,7 @@ class HarvestActualHttpWsResponseHandler {
 
     private fun getResponseGene(name: String, node: JsonNode): Gene?{
         return when{
-            node.isObject-> findExtractedObjectDto(node)
+
             else -> TODO()
         }
     }
