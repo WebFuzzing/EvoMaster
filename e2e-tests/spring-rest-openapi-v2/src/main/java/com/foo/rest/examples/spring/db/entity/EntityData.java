@@ -4,9 +4,11 @@ package com.foo.rest.examples.spring.db.entity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-@Entity(name = "FOO")
+@Entity(name = "BAR")
+@Table(name = "HelloThere")
 public class EntityData {
     public int getX0() {
         return x0;

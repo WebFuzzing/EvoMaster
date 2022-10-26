@@ -5,8 +5,11 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 
 public class ClassAnalyzer {
@@ -53,6 +56,12 @@ public class ClassAnalyzer {
     }
 
 
+    private static String convertToSnakeCase(String s){
+        String regex = "([a-z])([A-Z]+)";
+        String replacement = "$1_$2";
+        return s.replaceAll(regex, replacement).toLowerCase();
+    }
+
     private static void analyzeJpaConstraints(Class<?> klass){
 
         //TODO recall to handle new Jakarta namespace as well
@@ -67,23 +76,52 @@ public class ClassAnalyzer {
             return; //nothing to do
         }
 
-        String tableName = entity.name();
-        if(tableName == null || tableName.isEmpty()){
+        String tableName;
+
+        /*
+            Default table naming is a fucking mess in Hibernate/Spring...
+            https://www.jpa-buddy.com/blog/hibernate-naming-strategies-jpa-specification-vs-springboot-opinionation/
+         */
+
+        Table table = klass.getAnnotation(Table.class);
+        if(table != null){
+            tableName = table.name();
+        } else if(entity.name() != null && !entity.name().isEmpty()){
+            tableName = entity.name();
+        } else {
             tableName = klass.getSimpleName();
         }
+
+        /*
+            TODO guaranteed there are going to be edge cases in which this one ll not work... :(
+            https://stackoverflow.com/questions/10310321/regex-for-converting-camelcase-to-camel-case-in-java
+         */
+        tableName = convertToSnakeCase(tableName);
+
 
         //TODO: should check if need to consider getters as well (likely yes...)
 
         //TODO: this does NOT include fields in super-classes
         for(Field f : klass.getDeclaredFields()){
 
-            String columnName;
+            if(Modifier.isStatic(f.getModifiers()) || f.getAnnotation(Transient.class) != null){
+                /*
+                    Likely other cases to skip
+                 */
+                continue;
+            }
+
+            String columnName = null;
             Column column = f.getAnnotation(Column.class);
-            if(column == null){
-                columnName = f.getName();
-            } else {
+            if(column != null){
                 columnName = column.name();
             }
+
+            if(columnName == null || columnName.isEmpty()){
+                columnName = f.getName();
+            }
+
+            columnName = convertToSnakeCase(columnName);
 
             Boolean isNullable = null;
             if(f.getType().isPrimitive() || f.getAnnotation(NotNull.class)!=null){

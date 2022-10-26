@@ -26,8 +26,8 @@ class ClassAnalyzerTest {
         List<JpaConstraint> jpa = UnitsInfoRecorder.getInstance().getJpaConstraints();
         assertTrue(jpa.size() > 0);
 
-        List<JpaConstraint> x = jpa.stream().filter(j -> j.getTableName().equals("EntityX")).collect(Collectors.toList());
-        List<JpaConstraint> y = jpa.stream().filter(j -> j.getTableName().equals("BAR")).collect(Collectors.toList());
+        List<JpaConstraint> x = jpa.stream().filter(j -> j.getTableName().equals("entity_x")).collect(Collectors.toList());
+        List<JpaConstraint> y = jpa.stream().filter(j -> j.getTableName().equals("bar")).collect(Collectors.toList());
 
         assertEquals(2, x.size());
         assertEquals(4, y.size());

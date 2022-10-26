@@ -1,4 +1,4 @@
-create table IF NOT EXISTS FOO  (
+create table IF NOT EXISTS hello_there  (
   x0 integer primary key,
   x1 integer,
   x2 integer,
