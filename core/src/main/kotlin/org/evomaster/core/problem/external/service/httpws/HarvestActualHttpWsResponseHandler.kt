@@ -9,10 +9,11 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.problem.util.ParserDtoUtil
+import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
+import org.evomaster.core.problem.util.ParserDtoUtil.wrapWithOptionalGene
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.glassfish.jersey.client.ClientConfig
@@ -39,7 +40,6 @@ class HarvestActualHttpWsResponseHandler {
     private lateinit var httpWsClient : Client
 
     private lateinit var threadToHandleRequest: Thread
-
 
 
     companion object {
@@ -72,6 +72,12 @@ class HarvestActualHttpWsResponseHandler {
     private val extractedObjectDto = mutableMapOf<String, Gene>()
 
     private val jacksonMapper = ObjectMapper()
+
+    /*
+        skip headers if they depend on the client
+        shall we skip Connection
+     */
+    private val skipHeaders = listOf("user-agent","host","accept-encoding")
 
     @PostConstruct
     fun initialize() {
@@ -155,8 +161,9 @@ class HarvestActualHttpWsResponseHandler {
     private fun createInvocationToRealExternalService(httpRequest : HttpExternalServiceRequest) : Response?{
         return try {
             httpWsClient.target(httpRequest.actualAbsoluteURL).request("*/*").apply {
-                if (httpRequest.headers.isNotEmpty())
-                    httpRequest.headers.forEach { (t, u) -> this.header(t, u) }
+                val handledHeaders = httpRequest.headers.filterNot { skipHeaders.contains(it.key.lowercase()) }
+                if (handledHeaders.isNotEmpty())
+                    handledHeaders.forEach { (t, u) -> this.header(t, u) }
             }.buildGet().invoke()
         } catch (e: ProcessingException) {
 
@@ -217,29 +224,33 @@ class HarvestActualHttpWsResponseHandler {
     }
 
     private fun getHttpResponse(node: JsonNode, times : Int) : ResponseParam{
-        val found = getResponseGene(ACTUAL_RESPONSE_GENE_NAME, node)
-        if (found != null)
-            return HttpWsResponseParam(responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, found))
-        else if (times == 0)
-            return getHttpResponse(node, 1)
-        else {
-            TODO()
+        var anotherAttempt = (times == 0)
+        if (extractedObjectDto.isEmpty()){
+            updateExtractedObjectDto()
+            anotherAttempt = false
+        }
+
+        val found = if (extractedObjectDto.isEmpty()) null else parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node, extractedObjectDto)
+        return if (found != null)
+            HttpWsResponseParam(responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, found))
+        else if (anotherAttempt){
+            updateExtractedObjectDto()
+            getHttpResponse(node, 1)
+        } else {
+            val parsed = parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node)
+            HttpWsResponseParam(responseBody = wrapWithOptionalGene(parsed, true) as OptionalGene)
         }
     }
 
-    private fun getResponseGene(name: String, node: JsonNode): Gene?{
-        return when{
-
-            else -> TODO()
-        }
-    }
 
     private fun updateExtractedObjectDto(){
-        val infoDto = rc.getSutInfo()!!
-        val map = ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto)
-        if (map.isNotEmpty()){
-            map.forEach { (t, u) ->
-               extractedObjectDto.putIfAbsent(t, u)
+        synchronized(rc){
+            val infoDto = rc.getSutInfo()!!
+            val map = ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto)
+            if (map.isNotEmpty()){
+                map.forEach { (t, u) ->
+                    extractedObjectDto.putIfAbsent(t, u)
+                }
             }
         }
     }
