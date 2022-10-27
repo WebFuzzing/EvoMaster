@@ -125,13 +125,17 @@ class HarvestActualHttpWsResponseHandler {
     @PreDestroy
     private fun preDestroy() {
         if (config.doHarvestActualResponse()){
-            synchronized(lock){
-                if (threadToHandleRequest.isAlive)
-                    threadToHandleRequest.interrupt()
-                httpWsClient.close()
-            }
+            shutdown()
         }
+    }
 
+    fun shutdown(){
+        Lazy.assert { config.doHarvestActualResponse() }
+        synchronized(lock){
+            if (threadToHandleRequest.isAlive)
+                threadToHandleRequest.interrupt()
+            httpWsClient.close()
+        }
     }
 
     @Synchronized
