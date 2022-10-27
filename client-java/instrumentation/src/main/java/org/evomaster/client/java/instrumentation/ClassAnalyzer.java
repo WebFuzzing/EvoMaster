@@ -95,6 +95,9 @@ public class ClassAnalyzer {
         /*
             TODO guaranteed there are going to be edge cases in which this one ll not work... :(
             https://stackoverflow.com/questions/10310321/regex-for-converting-camelcase-to-camel-case-in-java
+
+            for example, seen cases in which ExistingDataEntityX gets transformed into existing_data_entityx
+            instead of existing_data_entity_x
          */
         tableName = convertToSnakeCase(tableName);
 
@@ -110,6 +113,15 @@ public class ClassAnalyzer {
                  */
                 continue;
             }
+
+            /*
+                TODO Following will not work for field that points to other Entities, eg
+
+                @NotNull @OneToOne
+                private ExistingDataEntityX x;
+
+                as the names of column are different, eg "x_id"... :(
+             */
 
             String columnName = null;
             Column column = f.getAnnotation(Column.class);
