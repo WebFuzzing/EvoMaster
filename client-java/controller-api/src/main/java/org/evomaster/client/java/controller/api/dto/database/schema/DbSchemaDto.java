@@ -16,4 +16,9 @@ public class DbSchemaDto {
     public boolean employSmartDbClean;
 
     public List<CompositeTypeDto> compositeTypes = new ArrayList<>();
+
+    /**
+     * This is inferred with heuristics, eg parsing JPA Entities
+     */
+    public List<ExtraConstraintsDto> extraConstraintDtos = new ArrayList<>();
 }

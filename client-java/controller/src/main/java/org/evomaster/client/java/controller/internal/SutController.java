@@ -10,6 +10,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.CustomizationHandler;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
@@ -484,6 +486,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     });
                 }
             });
+        }
+
+        UnitsInfoDto unitsInfoDto = getUnitsInfoDto();
+        List<ExtraConstraintsDto> extra = unitsInfoDto.extraDatabaseConstraintsDtos;
+        if( extra != null && !extra.isEmpty()) {
+            schemaDto.extraConstraintDtos = new ArrayList<>();
+            schemaDto.extraConstraintDtos.addAll(extra);
         }
 
         return schemaDto;
@@ -1084,6 +1093,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         dto.parsedDtos = recorder.getParsedDtos();
         dto.extractedSpecifiedDtos = recorder.getExtractedSpecifiedDtos();
         dto.numberOfInstrumentedNumberComparisons = recorder.getNumberOfInstrumentedNumberComparisons();
+        dto.extraDatabaseConstraintsDtos = recorder.getJpaConstraints().stream()
+                .map(c -> {
+                    ElementConstraintsDto ec = new ElementConstraintsDto();
+                    ec.isNullable = c.getNullable();
+                    ec.isOptional = c.getOptional();
+                    ec.maxValue = c.getMaxValue();
+                    ec.minValue = c.getMinValue();
+                    ec.enumValuesAsStrings = c.getEnumValuesAsStrings() == null ? null : new ArrayList<>(c.getEnumValuesAsStrings());
+                    ExtraConstraintsDto jpa = new ExtraConstraintsDto();
+                    jpa.tableName = c.getTableName();
+                    jpa.columnName = c.getColumnName();
+                    jpa.constraints = ec;
+                    return jpa;
+                }).collect(Collectors.toList());
+
         return dto;
     }
 
