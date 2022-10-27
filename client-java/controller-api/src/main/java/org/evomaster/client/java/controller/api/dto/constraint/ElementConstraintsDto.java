@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.constraint;
 
 
+import java.util.List;
+
 /**
  * Set of possible constraints applicable to a single element (ie, no intra-dependency constraints among
  * different elements).
@@ -19,6 +21,8 @@ public class ElementConstraintsDto {
     public String minValue = null;
 
     public String maxValue = null;
+
+    public List<String> enumValuesAsStrings;
 
     //TODO much more can be added here
 }

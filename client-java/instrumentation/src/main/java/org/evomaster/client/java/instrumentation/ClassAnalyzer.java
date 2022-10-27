@@ -3,14 +3,14 @@ package org.evomaster.client.java.instrumentation;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ClassAnalyzer {
 
@@ -140,12 +140,26 @@ public class ClassAnalyzer {
                 isNullable = false;
             }
 
+            List<String> enumValuesAsStrings = null;
+            if(f.getType().isEnum()){
+
+                //TODO probably for enum of ints could just use a min-max range
+
+                Enumerated enumerated = f.getAnnotation(Enumerated.class);
+                if(enumerated != null && enumerated.value().equals(EnumType.STRING)){
+                    enumValuesAsStrings = Arrays.stream(f.getType().getEnumConstants())
+                            .map(e -> e.toString())
+                            .collect(Collectors.toList());
+                }
+            }
+
             //TODO
             Boolean isOptional = null;
             String maxValue = null;
             String minValue = null;
 
-            JpaConstraint jpaConstraint = new JpaConstraint(tableName,columnName,isNullable,isOptional,minValue,maxValue);
+
+            JpaConstraint jpaConstraint = new JpaConstraint(tableName,columnName,isNullable,isOptional,minValue,maxValue, enumValuesAsStrings);
             if(jpaConstraint.isMeaningful()) {
                 UnitsInfoRecorder.registerNewJpaConstraint(jpaConstraint);
             }

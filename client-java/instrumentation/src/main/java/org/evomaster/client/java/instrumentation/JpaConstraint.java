@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation;
 
+import java.util.List;
 import java.util.Objects;
 
 public class JpaConstraint {
@@ -16,18 +17,21 @@ public class JpaConstraint {
 
     private final  String maxValue;
 
+    private final List<String> enumValuesAsStrings;
 
-    public JpaConstraint(String tableName, String columnName, Boolean isNullable, Boolean isOptional, String minValue, String maxValue) {
+    public JpaConstraint(String tableName, String columnName, Boolean isNullable, Boolean isOptional, String minValue, String maxValue, List<String> enumValuesAsStrings) {
         this.tableName = Objects.requireNonNull(tableName);
         this.columnName = Objects.requireNonNull(columnName);
         this.isNullable = isNullable;
         this.isOptional = isOptional;
         this.minValue = minValue;
         this.maxValue = maxValue;
+        this.enumValuesAsStrings = enumValuesAsStrings;
     }
 
     public boolean isMeaningful(){
-        return isNullable!=null || isOptional!=null || minValue!=null || maxValue!=null;
+        return isNullable!=null || isOptional!=null || minValue!=null || maxValue!=null
+                || (enumValuesAsStrings != null && ! enumValuesAsStrings.isEmpty());
     }
 
     public String getTableName() {
@@ -52,5 +56,9 @@ public class JpaConstraint {
 
     public String getMaxValue() {
         return maxValue;
+    }
+
+    public List<String> getEnumValuesAsStrings() {
+        return enumValuesAsStrings;
     }
 }
