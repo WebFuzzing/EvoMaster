@@ -65,6 +65,17 @@ public class UnitsInfoDto {
      */
     public Map<String,String> parsedDtos;
 
+
+    /**
+     * Key is DTO full name
+     * Value is OpenAPI object schema
+     *
+     * User might need to get schema of specific jvm dto classes
+     * and such jvm classes might not be read with jackson or gson
+     * this field is to collect a map of such specified jvm dto classes to their schema
+     * */
+    public Map<String, String> extractedSpecifiedDtos;
+
     /**
      * Extra information extracted for example from JPA entities
      */

@@ -51,6 +51,16 @@ public class UnitsInfoRecorder implements Serializable {
 
     private volatile boolean analyzedClasses = false;
 
+    /*
+        Key -> DTO full name
+        Value -> OpenAPI object schema
+
+        User might need to get schema of specific jvm dto classes
+        and such jvm classes might not be read with jackson or gson
+        this field is to collect a map of such specified jvm dto classes to their schema
+     */
+    private Map<String, String> extractedSpecifiedDtos;
+
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
         numberOfLines = new AtomicInteger(0);
@@ -62,6 +72,7 @@ public class UnitsInfoRecorder implements Serializable {
         parsedDtos = new ConcurrentHashMap<>();
         jpaConstraints = new CopyOnWriteArrayList<>();
         analyzedClasses = false;
+        extractedSpecifiedDtos = new ConcurrentHashMap<>();
     }
 
     /**
@@ -116,6 +127,29 @@ public class UnitsInfoRecorder implements Serializable {
         }
     }
 
+    public static Boolean isDtoSchemaRegister(String name){
+        return singleton.parsedDtos.containsKey(name);
+    }
+
+    public static void registerSpecifiedDtoSchema(Map<String, String> schemaMap){
+        for (String name: schemaMap.keySet()){
+            if(name == null || name.isEmpty()){
+                throw new IllegalArgumentException("registerSpecifiedDtoSchema: empty dto name");
+            }
+
+            String schema = schemaMap.get(name);
+
+            if(schema == null || schema.isEmpty()){
+                throw new IllegalArgumentException("registerSpecifiedDtoSchema: empty schema");
+            }
+
+            if(! singleton.extractedSpecifiedDtos.containsKey(name)){
+                singleton.extractedSpecifiedDtos.put(name, schema);
+            }
+        }
+
+    }
+
     public static void registerNewJpaConstraint(JpaConstraint constraint){
         singleton.jpaConstraints.add(constraint);
     }
@@ -145,6 +179,10 @@ public class UnitsInfoRecorder implements Serializable {
 
     public Map<String,String> getParsedDtos(){
         return Collections.unmodifiableMap(parsedDtos);
+    }
+
+    public Map<String,String> getExtractedSpecifiedDtos(){
+        return Collections.unmodifiableMap(extractedSpecifiedDtos);
     }
 
     public  int getNumberOfLines() {

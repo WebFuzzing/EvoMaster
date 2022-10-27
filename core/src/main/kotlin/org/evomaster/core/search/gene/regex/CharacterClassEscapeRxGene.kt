@@ -46,6 +46,10 @@ class CharacterClassEscapeRxGene(
         return copy
     }
 
+    override fun setValueWithRawString(value: String) {
+        this.value = value
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         val previous = value

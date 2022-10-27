@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.rpc.examples.thrifttest;
 
 import com.foo.rpc.examples.spring.thrifttest.ThriftTestRPCController;
+import org.evomaster.ci.utils.CIUtils;
 import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.rpc.examples.SpringRPCTestBase;
@@ -19,10 +20,10 @@ public class ThriftTestRPCEMTest extends SpringRPCTestBase {
         SpringRPCTestBase.initClass(controller);
     }
 
-    @Disabled
     @Test
     public void testRunEM() throws Throwable {
 
+        CIUtils.skipIfOnGA();
         /*
             just for basic check
             but it has some problems on kotlin compile, and it is flaky

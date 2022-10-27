@@ -77,6 +77,25 @@ public class RPCEndpointsBuilder {
         });
     }
 
+    /**
+     * attempt to identify class from the given client
+     * @param schema is the interface schema which might request the responses from the external service
+     * @param responseTypes are a list of types to identify
+     * @param rpcType  is the rpc type
+     */
+    public static void buildExternalServiceResponse(InterfaceSchema schema, List<String> responseTypes, RPCType rpcType){
+
+        for (String responseType: responseTypes){
+            try {
+                // TODO cannot get generic types
+                Class<?> clazz = Class.forName(responseType);
+                build(schema, clazz, null, "return", rpcType, new ArrayList<>(), null, null, null, null, null, null, true);
+            } catch (ClassNotFoundException e) {
+                SimpleLogger.uniqueWarn("Driver Config Error: cannot identify the class from the driver"+e.getMessage());
+            }
+        }
+    }
+
 
     private static void validateKeyValues(List<CustomizedRequestValueDto> customizedRequestValueDtos){
         List<String> handled = new ArrayList<>();
@@ -363,7 +382,7 @@ public class RPCEndpointsBuilder {
         NamedTypedValue response = null;
         if (!method.getReturnType().equals(Void.TYPE)) {
             Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
-            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null, null, null, null, null, genericTypeMap);
+            response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), null, null, null, null, null, genericTypeMap, false);
         }
 
         List<NamedTypedValue> exceptions = null;
@@ -371,7 +390,7 @@ public class RPCEndpointsBuilder {
             exceptions = new ArrayList<>();
             for (int i = 0; i < method.getExceptionTypes().length; i++){
                 NamedTypedValue exception = build(schema, method.getExceptionTypes()[i],
-                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>(), null, null, null, null, null, null);
+                        method.getGenericExceptionTypes()[i], "exception_"+i, rpcType, new ArrayList<>(), null, null, null, null, null, null, false);
                 exceptions.add(exception);
             }
         }
@@ -411,7 +430,7 @@ public class RPCEndpointsBuilder {
         Class<?> clazz = parameter.getType();
         List<String> depth = new ArrayList<>();
         Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
-        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
+        NamedTypedValue namedTypedValue = build(schema, clazz, parameter.getParameterizedType(), name, type, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, false);
 
         for (Annotation annotation: parameter.getAnnotations()){
             handleConstraint(namedTypedValue, annotation, notNullAnnotations);
@@ -420,8 +439,7 @@ public class RPCEndpointsBuilder {
     }
 
     private static NamedTypedValue build(InterfaceSchema schema, Class<?> clazz, Type genericType, String name, RPCType rpcType, List<String> depth,
-                                         Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization, AccessibleSchema accessibleSchema,
-                                         List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations, Class<?> originalType, Map<TypeVariable, Type> genericTypeMap) {
+                                         Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization, AccessibleSchema accessibleSchema, List<CustomizedNotNullAnnotationForRPCDto> notNullAnnotations, Class<?> originalType, Map<TypeVariable, Type> genericTypeMap, boolean isTypeToIdentify) {
         handleGenericSuperclass(clazz, genericTypeMap);
         List<String> genericTypes = handleGenericType(clazz, genericType, genericTypeMap);
         String clazzWithGenericTypes = CodeJavaGenerator.handleClassNameWithGeneric(clazz.getName(), genericTypes);
@@ -446,7 +464,7 @@ public class RPCEndpointsBuilder {
                 EnumType enumType = new EnumType(clazz.getSimpleName(), clazz.getName(), items, clazz);
                 EnumParam param = new EnumParam(name, enumType, accessibleSchema);
                 //register this type in the schema
-                schema.registerType(enumType.copy(), param.copyStructureWithProperties());
+                schema.registerType(enumType.copy(), param.copyStructureWithProperties(), isTypeToIdentify);
                 namedValue = param;
             } else if (clazz.isArray()){
 
@@ -459,7 +477,7 @@ public class RPCEndpointsBuilder {
                     templateClazz = clazz.getComponentType();
                 }
 
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
@@ -473,7 +491,7 @@ public class RPCEndpointsBuilder {
                     throw new RuntimeException("genericType should not be null for List and Set class");
                 Type type = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 Class<?> templateClazz = getTemplateClass(type, genericTypeMap);
-                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
+                NamedTypedValue template = build(schema, templateClazz, type,"template", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
                 template.setNullable(false);
                 CollectionType ctype = new CollectionType(clazz.getSimpleName(),clazz.getName(), template, clazz);
                 ctype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
@@ -488,11 +506,11 @@ public class RPCEndpointsBuilder {
                 Type valueType = ((ParameterizedType) genericType).getActualTypeArguments()[1];
 
                 Class<?> keyTemplateClazz = getTemplateClass(keyType, genericTypeMap);
-                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
+                NamedTypedValue keyTemplate = build(schema, keyTemplateClazz, keyType,"keyTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
                 keyTemplate.setNullable(false);
 
                 Class<?> valueTemplateClazz = getTemplateClass(valueType, genericTypeMap);
-                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap);
+                NamedTypedValue valueTemplate = build(schema, valueTemplateClazz, valueType,"valueTemplate", rpcType, depth, customizationDtos, relatedCustomization, null, notNullAnnotations, null, genericTypeMap, isTypeToIdentify);
                 MapType mtype = new MapType(clazz.getSimpleName(), clazz.getName(), new PairParam(new PairType(keyTemplate, valueTemplate), null), clazz);
                 mtype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                 namedValue = new MapParam(name, mtype, accessibleSchema);
@@ -562,7 +580,7 @@ public class RPCEndpointsBuilder {
                             }
                         }
 
-                        NamedTypedValue field = build(schema, fType, fGType,f.getName(), rpcType, depth, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, foriginalType, genericTypeMap);
+                        NamedTypedValue field = build(schema, fType, fGType,f.getName(), rpcType, depth, objRelatedCustomizationDtos, relatedCustomization, faccessSchema, notNullAnnotations, foriginalType, genericTypeMap, isTypeToIdentify);
                         for (Annotation annotation : f.getAnnotations()){
                             handleConstraint(field, annotation, notNullAnnotations);
                         }
@@ -575,13 +593,13 @@ public class RPCEndpointsBuilder {
                     otype.setOriginalType(originalType);
                     otype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
-                    schema.registerType(otype.copy(), oparam);
+                    schema.registerType(otype.copy(), oparam, isTypeToIdentify);
                     namedValue = oparam;
                 }else {
                     CycleObjectType otype = new CycleObjectType(clazz.getSimpleName(), clazz.getName(), clazz, genericTypes);
                     otype.depth = getDepthLevel(clazz, depth, clazzWithGenericTypes);
                     ObjectParam oparam = new ObjectParam(name, otype, accessibleSchema);
-                    schema.registerType(otype.copy(), oparam);
+                    schema.registerType(otype.copy(), oparam, isTypeToIdentify);
                     namedValue = oparam;
                 }
             }

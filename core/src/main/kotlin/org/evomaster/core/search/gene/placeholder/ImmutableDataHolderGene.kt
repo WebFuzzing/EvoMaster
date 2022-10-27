@@ -29,6 +29,10 @@ class ImmutableDataHolderGene(
         return ImmutableDataHolderGene(name, value, inQuotes) // recall it is immutable
     }
 
+    override fun setValueWithRawString(value: String) {
+        throw IllegalStateException("cannot set value with string ($value) for ImmutableDataHolderGene")
+    }
+
     override fun isMutable() = false
 
     override fun isPrintable() = true

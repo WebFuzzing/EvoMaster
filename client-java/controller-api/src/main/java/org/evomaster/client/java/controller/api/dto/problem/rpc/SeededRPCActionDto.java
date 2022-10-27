@@ -18,6 +18,11 @@ public class SeededRPCActionDto {
     public String functionName;
 
     /**
+     * a list of info to set up responses of external services with mocking if exists
+     */
+    public List<MockRPCExternalServiceDto> mockRPCExternalServiceDtos;
+
+    /**
      * input parameters with json format
      * note the length of [inputParamTypes] must be same as [inputParams]
      */

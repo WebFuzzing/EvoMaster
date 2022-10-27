@@ -33,8 +33,8 @@ class WmJsonArrayEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
-            500,
-                !CIUtils.isRunningGA(), //TODO skip test generation due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
+            1000,
+            !CIUtils.isRunningGA(), //TODO skip test generation due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -46,9 +46,10 @@ class WmJsonArrayEMTest : SpringTestBase() {
 
                 assertTrue(solution.individuals.size >= 1)
 
-                if(!CIUtils.isRunningGA()) {
+                if (!CIUtils.isRunningGA()) {
                     //FIXME same issue as other WM tests... pass locally. Maybe should try again on CircleCI
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK")
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X")
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonarray", "OK X and Y")
                 }
             },
             3

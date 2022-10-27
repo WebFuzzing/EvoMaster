@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -50,9 +50,9 @@ public class JacksonObjectMapperClassReplacement extends ThirdPartyMethodReplace
          */
 
         String content = new BufferedReader(
-                new InputStreamReader(src, StandardCharsets.UTF_8))
+                new InputStreamReader(src, Charset.defaultCharset()))
                 .lines()
-                .collect(Collectors.joining("\n"));
+                .collect(Collectors.joining(System.lineSeparator()));
 
         JsonTaint.handlePossibleJsonTaint(content,valueType);
 

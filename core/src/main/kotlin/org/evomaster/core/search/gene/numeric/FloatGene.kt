@@ -57,6 +57,10 @@ class FloatGene(name: String,
 
     override fun copyContent() = FloatGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
+    override fun setValueWithRawString(value: String) {
+        this.value = value.toFloat()
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         val rand =
             NumberMutatorUtils.randomizeDouble(getMinimum().toDouble(), getMaximum().toDouble(), scale, randomness)

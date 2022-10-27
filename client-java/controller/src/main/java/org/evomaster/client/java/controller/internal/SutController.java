@@ -51,7 +51,9 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -100,6 +102,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * - value is extracted interface schema
      */
     private final Map<String, InterfaceSchema> rpcInterfaceSchema = new LinkedHashMap <>();
+
+    /**
+     * a list of jvm classes which are required to extract their schema
+     */
+    private final List<String> jvmClassToExtract = new CopyOnWriteArrayList<>();
 
     /**
      * a map of local auth setup schemas for RPC service under test
@@ -559,6 +566,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (rpcInterfaceSchema.isEmpty())
             throw new IllegalStateException("empty RPC interface: The RPC interface schemas are not extracted yet");
 
+        ProblemInfo rpcp = getProblemInfo();
+        if (!(rpcp instanceof  RPCProblem))
+            throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
+        RPCType rpcType = ((RPCProblem) rpcp).getType();
+
         List<List<RPCActionDto>> results = new ArrayList<>();
 
         for (SeededRPCTestDto dto: seedRPCTests()){
@@ -583,7 +595,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                             String.format("Seeded Test Error: cannot parse the seeded test %s at the parameter %d with error msg: %s", actionDto, i, e.getMessage()));
                                 }
                             }
-                            test.add(copy.getDto());
+                            RPCActionDto rpcActionDto = copy.getDto();
+                            rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
+                            if (actionDto.mockRPCExternalServiceDtos!= null && !actionDto.mockRPCExternalServiceDtos.isEmpty())
+                                RPCEndpointsBuilder.buildExternalServiceResponse(schema,
+                                        actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
+                                        rpcType);
+                            test.add(rpcActionDto);
                         }else {
                             throw new IllegalStateException("Seeded Test Error: cannot find the action "+actionDto.functionName);
                         }
@@ -718,9 +736,21 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         Object response;
         try {
+            if (dto.mockRPCExternalServiceDtos != null && !dto.mockRPCExternalServiceDtos.isEmpty()){
+                try {
+                    boolean ok = customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, true);
+                    if (!ok)
+                        SimpleLogger.warn("Warning: Fail to start mocked instances of RPC-based external services");
+                }catch (Exception e){
+                    SimpleLogger.error("ERROR: Fail to process mocking of RPC-based external services:", e);
+                }
+            }
             response = executeRPCEndpoint(dto, false);
         } catch (Exception e) {
             throw new RuntimeException("ERROR: target exception should be caught, but "+ e.getMessage());
+        } finally {
+            if (dto.mockRPCExternalServiceDtos != null && !dto.mockRPCExternalServiceDtos.isEmpty())
+                customizeMockingRPCExternalService(dto.mockRPCExternalServiceDtos, false); // disable mocked responses
         }
 
         //handle exception
@@ -1023,6 +1053,28 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return infoDto;
     }
 
+    public abstract void getJvmDtoSchema(List<String> dtoNames);
+
+    public void getSeededExternalServiceResponseDto(){
+        if (seedRPCTests() != null && !seedRPCTests().isEmpty() ){
+
+            if (jvmClassToExtract.isEmpty()){
+                /*
+                    distinct might be a bit expensive, however, the specified responses are probably limited
+                 */
+                Set<String> dtoNames = seedRPCTests().stream()
+                        .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
+                                .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
+                                        .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
+                if (dtoNames != null && !dtoNames.isEmpty())
+                    jvmClassToExtract.addAll(dtoNames);
+            }
+
+            if (!jvmClassToExtract.isEmpty())
+                getJvmDtoSchema(jvmClassToExtract);
+        }
+    }
+
     public abstract String getExecutableFullPath();
 
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
@@ -1039,6 +1091,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
         dto.unitNames = recorder.getUnitNames();
         dto.parsedDtos = recorder.getParsedDtos();
+        dto.extractedSpecifiedDtos = recorder.getExtractedSpecifiedDtos();
         dto.numberOfInstrumentedNumberComparisons = recorder.getNumberOfInstrumentedNumberComparisons();
         dto.extraDatabaseConstraintsDtos = recorder.getJpaConstraints().stream()
                 .map(c -> {
@@ -1095,7 +1148,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public boolean customizeMockingRPCExternalService(List<MockRPCExternalServiceDto> externalServiceDtos) {
+    public boolean customizeMockingRPCExternalService(List<MockRPCExternalServiceDto> externalServiceDtos, boolean enabled) {
         return false;
     }
 

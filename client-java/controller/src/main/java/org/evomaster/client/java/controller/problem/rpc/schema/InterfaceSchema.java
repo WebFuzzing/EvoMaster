@@ -76,6 +76,11 @@ public final class InterfaceSchema{
     private final List<String> skippedEndpoints;
 
     /**
+     * key is the full name of type
+     */
+    private Map<String, NamedTypedValue> identifiedResponseTypes = new HashMap<>();
+
+    /**
      *
      * @param name is the name of the interface
      * @param endpoints is a list of endpoints which are involved for testing
@@ -114,19 +119,26 @@ public final class InterfaceSchema{
      * @param param is the concrete param example
      *              note that multiple params could belong to the same type schema
      */
-    public void registerType(TypeSchema type, NamedTypedValue param){
-        String typeName = type.getFullTypeNameWithGenericType();
-        if (!(type instanceof CycleObjectType)){
-            TypeSchema t = typeCollections.get(typeName);
-            if (t == null || t.depth < type.depth)
-                typeCollections.put(typeName, type);
+    public void registerType(TypeSchema type, NamedTypedValue param, boolean isTypeToIdentify){
+        if (isTypeToIdentify){
+            if (!(type instanceof CycleObjectType)){
+                NamedTypedValue r = identifiedResponseTypes.get(param.getType().getFullTypeNameWithGenericType());
+                if (r == null || param.getType().depth > r.getType().depth)
+                    identifiedResponseTypes.put(param.getType().getFullTypeNameWithGenericType(), param);
+            }
+        }else{
+            String typeName = type.getFullTypeNameWithGenericType();
+            if (!(type instanceof CycleObjectType)){
+                TypeSchema t = typeCollections.get(typeName);
+                if (t == null || t.depth < type.depth)
+                    typeCollections.put(typeName, type);
+            }
+            if (!(param.getType() instanceof CycleObjectType)){
+                NamedTypedValue p = objParamCollections.get(param.getType().getFullTypeNameWithGenericType());
+                if (p == null || param.getType().depth > p.getType().depth)
+                    objParamCollections.put(param.getType().getFullTypeNameWithGenericType(), param);
+            }
         }
-        if (!(param.getType() instanceof CycleObjectType)){
-            NamedTypedValue p = objParamCollections.get(param.getType().getFullTypeNameWithGenericType());
-            if (p == null || param.getType().depth > p.getType().depth)
-                objParamCollections.put(param.getType().getFullTypeNameWithGenericType(), param);
-        }
-
     }
 
     public Map<String, NamedTypedValue> getObjParamCollections() {
@@ -230,6 +242,8 @@ public final class InterfaceSchema{
                 dto.authEndpoints.add(v.getDto());
             });
         }
+        if (!identifiedResponseTypes.isEmpty())
+            dto.identifiedResponseTypes = identifiedResponseTypes.values().stream().map(NamedTypedValue::getDto).collect(Collectors.toList());
         return dto;
     }
 }
