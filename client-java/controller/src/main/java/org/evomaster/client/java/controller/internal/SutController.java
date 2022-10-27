@@ -1100,6 +1100,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     ec.isOptional = c.getOptional();
                     ec.maxValue = c.getMaxValue();
                     ec.minValue = c.getMinValue();
+                    ec.enumValuesAsStrings = c.getEnumValuesAsStrings() == null ? null : new ArrayList<>(c.getEnumValuesAsStrings());
                     ExtraConstraintsDto jpa = new ExtraConstraintsDto();
                     jpa.tableName = c.getTableName();
                     jpa.columnName = c.getColumnName();

@@ -247,9 +247,26 @@ class SqlInsertBuilder(
             extra.constraints.isNullable
         }
 
+        val enumValuesAsStrings = if(column.enumValuesAsStrings.isNullOrEmpty()){
+            extra.constraints.enumValuesAsStrings // take other current is empty
+        } else if(extra.constraints.enumValuesAsStrings.isNullOrEmpty()){
+            column.enumValuesAsStrings // no change
+        } else {
+            /*
+                TODO unsure about this one. we still only wants value that are valid, and will not fail the SQL INSERT.
+                So, should be subset of column constraints.
+                This might mean that business logic (ie JPA) could define fewer valid values, whereas more would make
+                little sense. but what if intersection is empty? would that make any sense?
+             */
+            val intersection = column.enumValuesAsStrings.filter { extra.constraints.enumValuesAsStrings.contains(it) }
+            intersection.ifEmpty {
+                column.enumValuesAsStrings // unsure on this one
+            }
+        }
+
         //TODO all other constraints
 
-        return column.copy(nullable = isNullable)
+        return column.copy(nullable = isNullable, enumValuesAsStrings = enumValuesAsStrings)
     }
 
     private fun findUpperLoweBoundOfRangeConstraints(
