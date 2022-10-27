@@ -28,5 +28,6 @@ create table IF NOT EXISTS hello_there  (
   x26 FLOAT,
   x27 FLOAT,
   x28 FLOAT,
-  x29 FLOAT
+  x29 FLOAT,
+  z varchar not null
 );

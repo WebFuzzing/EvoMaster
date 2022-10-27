@@ -1,10 +1,7 @@
 package com.foo.rest.examples.spring.db.entity;
 
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
 @Entity(name = "BAR")
@@ -280,4 +277,9 @@ public class EntityData {
     @Column(name = "x27") @NotNull private Double y27;
     @Column(name = "x28") @NotNull private Double y28;
     @Column(name = "x29") @NotNull private Double y29;
+
+    @NotNull
+    @Column(name="z")
+    @Enumerated(EnumType.STRING)
+    private EntityEnum entityEnum;
 }
