@@ -606,7 +606,7 @@ abstract class RestIndividualTestBase {
                         if (employFakeDbHeuristicResult && randomness.nextBoolean()){
                             databaseExecutionDto = ExecutionDto().apply {
                                 val table = randomness.choose( sqlInsertBuilder!!.getTableNames())
-                                val failed = randomness.choose(sqlInsertBuilder!!.getTable(table).columns.map { it.name })
+                                val failed = randomness.choose(sqlInsertBuilder!!.getTable(table,true).columns.map { it.name })
                                 failedWhere = mapOf(table to setOf(failed))
                             }
                         }

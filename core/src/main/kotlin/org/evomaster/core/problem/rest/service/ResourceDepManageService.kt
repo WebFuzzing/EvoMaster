@@ -25,6 +25,7 @@ import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.ActionFilter.*
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
@@ -47,6 +48,9 @@ class ResourceDepManageService {
 
     @Inject
     private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var apc: AdaptiveParameterControl
 
     companion object{
         private const val DERIVE_RELATED = 1.0
@@ -1047,7 +1051,11 @@ class ResourceDepManageService {
         if (num <= 0)
             throw IllegalArgumentException("invalid num (i.e.,$num) for creating resource")
 
-        val list= (0 until num).map { rm.getSqlBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
+        val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+
+        val list= (0 until num)
+                .map { rm.getSqlBuilder()!!.createSqlInsertionAction(name, setOf(), mutableListOf(),true, extraConstraints) }
+                .toMutableList()
 
         if (log.isTraceEnabled){
             log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,
@@ -1103,7 +1111,16 @@ class ResourceDepManageService {
 
         val relatedTables = getAllRelatedTables(ind).flatMap { t->  (0 until randomness.nextInt(1, maxPerResource)).map { t } }
 
-        val added = rm.cluster.createSqlAction(relatedTables, rm.getSqlBuilder()!!, mutableListOf(), false, true, randomness)
+        val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+
+        val added = rm.cluster.createSqlAction(
+                relatedTables,
+                rm.getSqlBuilder()!!,
+                mutableListOf(),
+                false,
+                true,
+                randomness,
+                useExtraSqlDbConstraints = extraConstraints)
 
         DbActionUtils.repairBrokenDbActionsList(added,randomness)
 

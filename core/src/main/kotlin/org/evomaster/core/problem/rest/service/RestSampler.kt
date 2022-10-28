@@ -18,13 +18,7 @@ class RestSampler : AbstractRestSampler(){
         private val log: Logger = LoggerFactory.getLogger(RestSampler::class.java)
     }
 
-    override fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
 
-            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
-            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
-        }
-    }
 
     override fun sampleAtRandom(): RestIndividual {
 

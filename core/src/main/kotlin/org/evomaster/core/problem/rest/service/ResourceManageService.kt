@@ -261,10 +261,13 @@ class ResourceManageService {
 
         val employSQLSelect = (!forceInsert) && (forceSelect || employSelect(relatedTables))
 
+        val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+
         val dbActions = cluster.createSqlAction(
             relatedTables, getSqlBuilder()!!, previousDbActions,
             doNotCreateDuplicatedAction = true, isInsertion = !employSQLSelect,
-            randomness = randomness)
+            randomness = randomness,
+        useExtraSqlDbConstraints = extraConstraints)
 
         if(dbActions.isNotEmpty()){
             //FIXME cannot repair before it is mounted
