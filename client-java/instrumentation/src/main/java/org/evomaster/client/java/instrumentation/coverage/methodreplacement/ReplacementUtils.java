@@ -80,9 +80,7 @@ public class ReplacementUtils {
                     catch (Throwable t){
                         String msg = "FAILED TO LOAD METHOD DECLARATIONS FOR: " + i.getClass().getName();
                         SimpleLogger.error(msg);
-                        //TODO remove once finished debugging
-                        throw new IllegalStateException(msg);
-                        //return false;
+                        return false;
                     }
                 })
                 .flatMap(i -> Stream.of(i.getClass().getDeclaredMethods()))
