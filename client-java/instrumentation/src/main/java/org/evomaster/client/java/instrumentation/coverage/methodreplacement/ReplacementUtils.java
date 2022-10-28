@@ -3,9 +3,11 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -75,7 +77,13 @@ public class ReplacementUtils {
                         TODO: should try to understand exactly what happens there...
                      */
                     try{i.getClass().getDeclaredMethods(); return true;}
-                    catch (Throwable t){return false;}
+                    catch (Throwable t){
+                        String msg = "FAILED TO LOAD METHOD DECLARATIONS FOR: " + i.getClass().getName();
+                        SimpleLogger.error(msg);
+                        //TODO remove once finished debugging
+                        throw new IllegalStateException(msg);
+                        //return false;
+                    }
                 })
                 .flatMap(i -> Stream.of(i.getClass().getDeclaredMethods()))
                 .filter(m -> m.getDeclaredAnnotation(Replacement.class) != null)
@@ -92,7 +100,8 @@ public class ReplacementUtils {
                     }
                     String ctg = br.category().toString();
                     String categories = System.getProperty(InputProperties.REPLACEMENT_CATEGORIES);
-                    if(categories == null || ! categories.contains(ctg)){
+
+                    if(categories == null || !Arrays.stream(categories.split(",")).anyMatch(c -> c.equals(ctg))){
                         return false;
                     }
 

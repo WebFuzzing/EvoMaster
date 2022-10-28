@@ -26,6 +26,15 @@ import java.util.*;
  * it seems that using library in provided mode works fine... this would mean that
  * maybe we do not need to deal with reflection here when creating these replacements.
  *
+ * UPDATE 2:
+ * no, it does not work for External Driver when there are custom classloaders, like in Spring :(
+ * TODO trying workaround to remove references in signatures, and force casting in instrumentation
+ *
+ * UPDATE 3:
+ * putting Object as return type, with actual type specified in "castTo" seems to work.
+ * TODO still have to deal with input parameters. Just using Object might not be enough, as
+ * can endup with method signature ambiguity. Might need new annotation for it.
+ *
  * TODO: when creating new method replacements for third-party, let's try with provided
  * and no reflection first, and see if any side-effects
  */

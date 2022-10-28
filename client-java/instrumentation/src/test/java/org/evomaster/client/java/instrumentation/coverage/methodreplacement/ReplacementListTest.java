@@ -102,9 +102,7 @@ class ReplacementListTest {
                         }
                     }
                     assertEquals(r.replacingStatic(), Modifier.isStatic(targetMethod.getModifiers()));
-
-                    assertEquals(targetMethod.getReturnType(),m.getReturnType()
-                            , "Mismatched return type for " + targetClass.getName()+"."+targetMethod.getName()+"()");
+                    checkReturnType(m, r, targetMethod.getReturnType(), m);
 
                 } else{
                     Constructor targetConstructor = null;
@@ -121,16 +119,50 @@ class ReplacementListTest {
                     if(!orc.isPresent()){
                         fail("No instance consume method: "+MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME+"()");
                     }
-                    Method rc = orc.get();
-                    if (rc.getAnnotation(Replacement.class) != null) {
+                    Method rconsume = orc.get();
+                    if (rconsume.getAnnotation(Replacement.class) != null) {
                         fail("Consume method should not be marked with replacement annotation");
                     }
-                    assertEquals(0, rc.getParameterCount());
-                    assertEquals(targetClass, rc.getReturnType());
+                    assertEquals(0, rconsume.getParameterCount());
+                    checkReturnType(m, r, targetClass, rconsume);
                 }
             }
 
         }
 
+    }
+
+    private void checkReturnType(
+            Method replacementMethod,
+            Replacement r,
+            Class<?> expectedReturnedType,
+            Method emMethodReturningInstance) {
+        Class returnType = emMethodReturningInstance.getReturnType();
+
+        //TODO what about array of arrays?
+        Class baseReturnType = returnType.isArray() ? returnType.getComponentType() : returnType;
+
+        assertTrue(baseReturnType.isPrimitive()
+                        || baseReturnType.getName().startsWith("java."),
+                "Return types must be basic from JDK API, ie java.*." +
+                        " If not, use 'castTo'. This is a must to avoid issues in multi-classloader contexts," +
+                        " eg, like in Spring applications." +
+                        " Wrong return type " + returnType.getName() + " in " +
+                        emMethodReturningInstance.getDeclaringClass().getName() + "#" + emMethodReturningInstance.getName()
+        );
+
+        if(!r.castTo().isEmpty()) {
+            Class cast = null;
+            try {
+                cast = this.getClass().getClassLoader().loadClass(r.castTo());
+            } catch (ClassNotFoundException e) {
+                fail("Cannot find class " + r.castTo());
+            }
+
+            assertEquals(Object.class, emMethodReturningInstance.getReturnType(),"When using 'castTo', return type MUST be Object");
+            returnType = cast;
+        }
+
+        assertEquals(expectedReturnedType, returnType);
     }
 }

@@ -17,7 +17,7 @@ import java.lang.reflect.Method;
 
 public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplacementClass {
 
-    private static ThreadLocal<OkHttpClient.Builder> instance = new ThreadLocal<>();
+    private static ThreadLocal<Object> instance = new ThreadLocal<>();
 
     private static final OkHttpClient3BuilderClassReplacement singleton = new OkHttpClient3BuilderClassReplacement();
 
@@ -30,9 +30,9 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
         return  instance.get() != null;
     }
 
-    public static OkHttpClient.Builder consumeInstance(){
+    public static Object consumeInstance(){
 
-        OkHttpClient.Builder builder = instance.get();
+        OkHttpClient.Builder builder = (OkHttpClient.Builder) instance.get();
         if(builder == null){
             throw new IllegalStateException("No instance to consume");
         }
@@ -41,7 +41,7 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
     }
 
     private static void addInstance(OkHttpClient.Builder x){
-        OkHttpClient.Builder builder = instance.get();
+        OkHttpClient.Builder builder = (OkHttpClient.Builder) instance.get();
         if(builder != null){
             throw new IllegalStateException("Previous instance was not consumed");
         }
@@ -53,7 +53,8 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
             id = "okhttpclient3_builder_constructor",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET,
-            replacingConstructor = true
+            replacingConstructor = true,
+            castTo = "okhttp3.OkHttpClient$Builder"
     )
     public static void Builder()  {
 
@@ -76,9 +77,10 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
             type = ReplacementType.TRACKER,
             id = "okhttpclient3_builder_hostnameVerifier",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.NET
+            category = ReplacementCategory.NET,
+            castTo = "okhttp3.OkHttpClient$Builder"
     )
-    public static OkHttpClient.Builder hostnameVerifier(Object caller, HostnameVerifier hostnameVerifier)  {
+    public static Object hostnameVerifier(Object caller, HostnameVerifier hostnameVerifier)  {
 
         if(caller == null){
             throw new NullPointerException();
@@ -99,9 +101,10 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
             type = ReplacementType.TRACKER,
             id = "okhttpclient3_builder_sslSocketFactory",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.NET
+            category = ReplacementCategory.NET,
+            castTo = "okhttp3.OkHttpClient$Builder"
     )
-    public static OkHttpClient.Builder sslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory, X509TrustManager trustManager)  {
+    public static Object sslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory, X509TrustManager trustManager)  {
 
         if(caller == null){
             throw new NullPointerException();
@@ -123,9 +126,10 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
             type = ReplacementType.TRACKER,
             id = "okhttpclient3_builder_sslSocketFactory_onearg",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.NET
+            category = ReplacementCategory.NET,
+            castTo = "okhttp3.OkHttpClient$Builder"
     )
-    public static OkHttpClient.Builder sslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory)  {
+    public static Object sslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory)  {
 
         if(caller == null){
             throw new NullPointerException();

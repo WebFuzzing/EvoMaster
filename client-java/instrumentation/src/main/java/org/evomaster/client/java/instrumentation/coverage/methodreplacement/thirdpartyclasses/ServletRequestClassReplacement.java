@@ -25,8 +25,10 @@ public class ServletRequestClassReplacement extends ThirdPartyMethodReplacementC
             type = ReplacementType.TRACKER,
             id = "getInputStream",
             usageFilter = UsageFilter.ONLY_SUT,
-            category = ReplacementCategory.BASE)
-    public static ServletInputStream getInputStream(Object caller) throws IOException {
+            category = ReplacementCategory.BASE,
+            castTo = "javax.servlet.ServletInputStream"
+    )
+    public static  Object getInputStream(Object caller) throws IOException {
 
         if(caller == null){
             throw new NullPointerException();

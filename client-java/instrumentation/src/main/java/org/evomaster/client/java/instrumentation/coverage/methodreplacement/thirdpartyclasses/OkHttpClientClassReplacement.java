@@ -22,7 +22,7 @@ import static org.evomaster.client.java.instrumentation.coverage.methodreplaceme
 
 public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementClass {
 
-    private static ThreadLocal<OkHttpClient> instance = new ThreadLocal<>();
+    private static ThreadLocal<Object> instance = new ThreadLocal<>();
 
     private static final OkHttpClientClassReplacement singleton = new OkHttpClientClassReplacement();
 
@@ -32,9 +32,9 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
     }
 
 
-    public static OkHttpClient consumeInstance(){
+    public static Object consumeInstance(){
 
-        OkHttpClient client = instance.get();
+        OkHttpClient client = (OkHttpClient)instance.get();
         if(client == null){
             throw new IllegalStateException("No instance to consume");
         }
@@ -43,7 +43,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
     }
 
     private static void addInstance(OkHttpClient x){
-        OkHttpClient client = instance.get();
+        OkHttpClient client = (OkHttpClient)instance.get();
         if(client != null){
             throw new IllegalStateException("Previous instance was not consumed");
         }
@@ -55,7 +55,8 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             id = "okhttpclient_constructor",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET,
-            replacingConstructor = true
+            replacingConstructor = true,
+            castTo = "com.squareup.okhttp.OkHttpClient"
     )
     public static void OkHttpClient()  {
 
@@ -80,9 +81,10 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             type = ReplacementType.TRACKER,
             id = "okhttpclient_setSslSocketFactory",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.NET
+            category = ReplacementCategory.NET,
+            castTo = "com.squareup.okhttp.OkHttpClient"
     )
-    public static OkHttpClient setSslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory) {
+    public static Object setSslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory) {
         if(caller == null){
             throw new NullPointerException();
         }
@@ -102,9 +104,10 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             type = ReplacementType.TRACKER,
             id = "okhttpclient_setHostnameVerifier",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.NET
+            category = ReplacementCategory.NET,
+            castTo = "com.squareup.okhttp.OkHttpClient"
     )
-    public static OkHttpClient setHostnameVerifier(Object caller, HostnameVerifier hostnameVerifier) {
+    public static Object setHostnameVerifier(Object caller, HostnameVerifier hostnameVerifier) {
         if(caller == null){
             throw new NullPointerException();
         }
@@ -124,9 +127,10 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             type = ReplacementType.TRACKER,
             id = "okhttpclient_newCall",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.NET
+            category = ReplacementCategory.NET,
+            castTo = "com.squareup.okhttp.Call"
     )
-    public static Call newCall(Object caller, Request request){
+    public static Object newCall(Object caller, Request request){
         if(caller == null){
             throw new NullPointerException();
         }

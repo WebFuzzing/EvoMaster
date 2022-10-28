@@ -19,7 +19,7 @@ import static org.evomaster.client.java.instrumentation.coverage.methodreplaceme
 
 public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementClass {
 
-    private static ThreadLocal<OkHttpClient> instance = new ThreadLocal<>();
+    private static ThreadLocal<Object> instance = new ThreadLocal<>();
 
     private static final OkHttpClient3ClassReplacement singleton = new OkHttpClient3ClassReplacement();
 
@@ -29,9 +29,9 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
     }
 
 
-    public static OkHttpClient consumeInstance(){
+    public static Object consumeInstance(){
 
-        OkHttpClient client = instance.get();
+        OkHttpClient client = (OkHttpClient) instance.get();
         if(client == null){
             throw new IllegalStateException("No instance to consume");
         }
@@ -40,7 +40,7 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
     }
 
     private static void addInstance(OkHttpClient x){
-        OkHttpClient client = instance.get();
+        OkHttpClient client = (OkHttpClient) instance.get();
         if(client != null){
             throw new IllegalStateException("Previous instance was not consumed");
         }
@@ -52,7 +52,8 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
             id = "okhttpclient3_constructor",
             usageFilter = UsageFilter.ANY,
             category = ReplacementCategory.NET,
-            replacingConstructor = true
+            replacingConstructor = true,
+            castTo = "okhttp3.OkHttpClient"
     )
     public static void OkHttpClient()  {
 
@@ -63,7 +64,7 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
                 OkHttpClient3BuilderClassReplacement.Builder();
 
             //OkHttpClient client = (OkHttpClient) original.newInstance(OkHttpClientBuilderClassReplacement.consumeInstance());
-            OkHttpClient.Builder builder = OkHttpClient3BuilderClassReplacement.consumeInstance();
+            OkHttpClient.Builder builder = (OkHttpClient.Builder) OkHttpClient3BuilderClassReplacement.consumeInstance();
 
             addInstance(builder.build());
 //        } catch (InstantiationException | IllegalAccessException e) {
@@ -78,9 +79,10 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
             type = ReplacementType.TRACKER,
             id = "okhttpclient3_newCall",
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.NET
+            category = ReplacementCategory.NET,
+            castTo = "okhttp3.Call"
     )
-    public static Call newCall(Object caller, Request request){
+    public static Object newCall(Object caller, Request request){
         if(caller == null){
             throw new NullPointerException();
         }
