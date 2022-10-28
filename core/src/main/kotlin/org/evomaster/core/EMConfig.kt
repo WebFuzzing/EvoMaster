@@ -1763,6 +1763,14 @@ class EMConfig {
     @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
     var externalServiceIP : String = "127.0.0.2"
 
+
+    @Experimental
+    @Cfg("Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic." +
+            " An example is javax/jakarta annotation constraints defined on JPA entities.")
+    @Probability(true)
+    var useExtraSqlDbConstraintsProbability = 0.0
+
+
     @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Experimental
     @Probability

@@ -25,9 +25,6 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         private val log: Logger = LoggerFactory.getLogger(GraphQLSampler::class.java)
     }
 
-    @Inject(optional = true)
-    private lateinit var rc: RemoteController
-
 
     @PostConstruct
     open fun initialize() {
@@ -126,11 +123,5 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
         number of Mutation before
      */
 
-    override fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && config.shouldGenerateSqlData()) {
 
-            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
-            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
-        }
-    }
 }
