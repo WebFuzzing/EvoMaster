@@ -6,6 +6,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
@@ -82,15 +83,17 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
             category = ReplacementCategory.NET,
             castTo = "okhttp3.Call"
     )
-    public static Object newCall(Object caller, Request request){
+    public static Object newCall(
+            Object caller,
+            @ThirdPartyCast(actualType = "okhttp3.Request") Object request){
         if(caller == null){
             throw new NullPointerException();
         }
 
         Method original = getOriginal(singleton, "okhttpclient3_newCall", caller);
-        Request replaced = request;
+        Request replaced = (Request) request;
 
-        HttpUrl url = request.url();
+        HttpUrl url = ((Request)request).url();
         if (url.scheme().equalsIgnoreCase("https") || url.scheme().equalsIgnoreCase("http")){
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.scheme(), url.host(), url.port());
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, url.port());

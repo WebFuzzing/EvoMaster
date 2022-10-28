@@ -7,13 +7,13 @@ import com.squareup.okhttp.Request;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSocketFactory;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -84,7 +84,9 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             category = ReplacementCategory.NET,
             castTo = "com.squareup.okhttp.OkHttpClient"
     )
-    public static Object setSslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory) {
+    public static Object setSslSocketFactory(
+            Object caller,
+            @ThirdPartyCast(actualType = "javax.net.ssl.SSLSocketFactory") Object sslSocketFactory) {
         if(caller == null){
             throw new NullPointerException();
         }
@@ -107,7 +109,9 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             category = ReplacementCategory.NET,
             castTo = "com.squareup.okhttp.OkHttpClient"
     )
-    public static Object setHostnameVerifier(Object caller, HostnameVerifier hostnameVerifier) {
+    public static Object setHostnameVerifier(
+            Object caller,
+            @ThirdPartyCast(actualType = "javax.net.ssl.HostnameVerifier") Object hostnameVerifier) {
         if(caller == null){
             throw new NullPointerException();
         }
@@ -130,7 +134,9 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             category = ReplacementCategory.NET,
             castTo = "com.squareup.okhttp.Call"
     )
-    public static Object newCall(Object caller, Request request){
+    public static Object newCall(
+            Object caller,
+            @ThirdPartyCast(actualType = "com.squareup.okhttp.Request") Object request){
         if(caller == null){
             throw new NullPointerException();
         }
@@ -138,8 +144,8 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
         Method original = getOriginal(singleton, "okhttpclient_newCall", caller);
 
 
-        Request replaced = request;
-        HttpUrl url = request.httpUrl();
+        Request replaced = (Request) request;
+        HttpUrl url = ((Request)request).httpUrl();
         if (url.scheme().equalsIgnoreCase("https") || url.scheme().equalsIgnoreCase("http")){
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.scheme(), url.host(), url.port());
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, url.port());

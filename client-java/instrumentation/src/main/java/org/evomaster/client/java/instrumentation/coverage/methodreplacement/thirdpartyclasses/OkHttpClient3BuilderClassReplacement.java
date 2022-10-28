@@ -3,14 +3,14 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 import okhttp3.OkHttpClient;
 import org.evomaster.client.java.instrumentation.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.X509TrustManager;
+
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -80,7 +80,9 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
             category = ReplacementCategory.NET,
             castTo = "okhttp3.OkHttpClient$Builder"
     )
-    public static Object hostnameVerifier(Object caller, HostnameVerifier hostnameVerifier)  {
+    public static Object hostnameVerifier(
+            Object caller,
+            @ThirdPartyCast(actualType = "javax.net.ssl.HostnameVerifier") Object hostnameVerifier)  {
 
         if(caller == null){
             throw new NullPointerException();
@@ -104,7 +106,10 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
             category = ReplacementCategory.NET,
             castTo = "okhttp3.OkHttpClient$Builder"
     )
-    public static Object sslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory, X509TrustManager trustManager)  {
+    public static Object sslSocketFactory(
+            Object caller,
+            @ThirdPartyCast(actualType = "javax.net.ssl.SSLSocketFactory") Object sslSocketFactory,
+            @ThirdPartyCast(actualType = "javax.net.ssl.X509TrustManager") Object trustManager)  {
 
         if(caller == null){
             throw new NullPointerException();
@@ -129,7 +134,9 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
             category = ReplacementCategory.NET,
             castTo = "okhttp3.OkHttpClient$Builder"
     )
-    public static Object sslSocketFactory(Object caller, SSLSocketFactory sslSocketFactory)  {
+    public static Object sslSocketFactory(
+            Object caller,
+            @ThirdPartyCast(actualType = "javax.net.ssl.SSLSocketFactory") Object sslSocketFactory)  {
 
         if(caller == null){
             throw new NullPointerException();
