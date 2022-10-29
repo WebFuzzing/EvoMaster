@@ -40,7 +40,7 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
         return builder;
     }
 
-    private static void addInstance(OkHttpClient.Builder x){
+    private static void addInstance(Object x){
         OkHttpClient.Builder builder = (OkHttpClient.Builder) instance.get();
         if(builder != null){
             throw new IllegalStateException("Previous instance was not consumed");

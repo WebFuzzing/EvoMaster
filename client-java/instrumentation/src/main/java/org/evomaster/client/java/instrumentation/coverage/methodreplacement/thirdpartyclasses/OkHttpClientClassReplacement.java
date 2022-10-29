@@ -42,7 +42,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
         return client;
     }
 
-    private static void addInstance(OkHttpClient x){
+    private static void addInstance(Object x){
         OkHttpClient client = (OkHttpClient)instance.get();
         if(client != null){
             throw new IllegalStateException("Previous instance was not consumed");
