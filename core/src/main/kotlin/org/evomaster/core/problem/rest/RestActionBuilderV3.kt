@@ -648,6 +648,16 @@ object RestActionBuilderV3 {
             //TODO could add extra fields for robustness testing
         }
         if (additional is Schema<*>) {
+
+            /*
+                support additionalProperties with ref
+             */
+            if (!additional.`$ref`.isNullOrBlank()) {
+                val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history)
+                val pairTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
+                return MapGene(name, pairTemplate)
+            }
+
             /*
                TODO could add extra fields for robustness testing,
                with and without following the given schema for their type
@@ -658,7 +668,7 @@ object RestActionBuilderV3 {
                 Using a map is just a temp solution
              */
 
-            if (fields.isEmpty()) {
+            else if (fields.isEmpty()) {
                 // here, the first of pairgene should not be mutable
                 return MapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null), isFixedFirst = true))
             }

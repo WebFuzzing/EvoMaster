@@ -259,7 +259,15 @@ public class ClassToSchema {
         }
 
         //TOOD Map
-
+        if ((klass != null && Map.class.isAssignableFrom(klass))|| pType!=null && Map.class.isAssignableFrom((Class) pType.getRawType())){
+            if (pType.getActualTypeArguments().length != 2)
+                throw new IllegalStateException("for Map, there should have two actual type arguments");
+            Type keyType = pType.getActualTypeArguments()[0];
+            if (keyType != String.class){
+                throw new IllegalStateException("only support Map with String key");
+            }
+            return fieldStringKeyMapSchema(klass, pType, nested, allNested);
+        }
 
         if (useRefObject){
             // register this class
@@ -369,6 +377,20 @@ public class ClassToSchema {
         }
 
         return "{\"type\":\"array\", \"items\":" + item + "}";
+    }
+
+    private static String fieldStringKeyMapSchema(Class<?> klass, ParameterizedType pType, List<Class<?>> embedded, boolean allEmbedded) {
+
+        String value;
+
+        if (klass != null) {
+            value = getSchema(String.class,true, embedded, allEmbedded);
+        } else {
+            Type generic = pType.getActualTypeArguments()[1];
+            value = getSchema(generic,true, embedded, allEmbedded);
+        }
+
+        return "{\"type\":\"object\", \"additionalProperties\":" + value + "}";
     }
 
     private static String fieldObjectSchema(List<String> properties) {
