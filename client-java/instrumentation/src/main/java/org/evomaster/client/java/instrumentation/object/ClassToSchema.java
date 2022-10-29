@@ -127,7 +127,7 @@ public class ClassToSchema {
     public static String getOrDeriveSchemaWithItsRef(Class<?> klass){
         if (!cacheSchemaWithItsRef.containsKey(klass)){
             StringBuilder sb = new StringBuilder();
-            Map<String, String> map = ClassToSchema.getOrDeriveSchemaAndNestedClasses(klass);
+            Map<String, String> map = getOrDeriveSchemaAndNestedClasses(klass);
             sb.append("{");
             sb.append(map.get(klass.getName()));
             map.keySet().stream().filter(s-> !s.equals(klass.getName())).forEach(s->
@@ -186,14 +186,27 @@ public class ClassToSchema {
     public static Map<String, String> getOrDeriveSchemaAndNestedClasses(Class<?> klass) {
         if (!cacheMapOfDtoAndItsRefToSchemas.containsKey(klass)){
             List<Class<?>> nested = new ArrayList<>();
-            String schema = getSchema(klass, false, nested, true);
+            registerSchemaIfNeeded(klass);
+            findAllNestedClassAndRegisterThemIfNeeded(klass, nested);
             Map<String, String> map = new LinkedHashMap<>();
-            map.put(klass.getName(), named(klass.getName(), schema));
-            for (Class<?> nkclass : nested)
-                map.putIfAbsent(nkclass.getName(), ClassToSchema.getOrDeriveNonNestedSchema(nkclass));
+            for (Class<?> nkclass : nested){
+                map.putIfAbsent(nkclass.getName(), getOrDeriveNonNestedSchema(nkclass));
+            }
+
             cacheMapOfDtoAndItsRefToSchemas.put(klass, map);
         }
         return cacheMapOfDtoAndItsRefToSchemas.get(klass);
+    }
+
+    private static void findAllNestedClassAndRegisterThemIfNeeded(Class<?> klass, List<Class<?>> nested){
+        if (!nested.contains(klass)){
+            List<Class<?>> innerNested = new ArrayList<>();
+            getSchema(klass, false, innerNested, true);
+            nested.add(klass);
+            List<Class<?>> toAdd = innerNested.stream().filter(s-> !nested.contains(s)).collect(Collectors.toList());
+            if (toAdd.isEmpty()) return;
+            toAdd.forEach(a-> findAllNestedClassAndRegisterThemIfNeeded(a, nested));
+        }
     }
 
     private static String named(String name, String jsonObject) {
@@ -271,8 +284,9 @@ public class ClassToSchema {
 
         if (useRefObject){
             // register this class
-            if ((allNested || !UnitsInfoRecorder.isDtoSchemaRegister(klass.getName())) && !nested.contains(klass))
+            if ((allNested || !UnitsInfoRecorder.isDtoSchemaRegister(klass.getName())) && !nested.contains(klass)){
                 nested.add(klass);
+            }
             return fieldObjectRefSchema(klass.getName());
         }
 
