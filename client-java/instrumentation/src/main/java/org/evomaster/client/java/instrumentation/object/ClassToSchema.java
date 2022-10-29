@@ -164,7 +164,8 @@ public class ClassToSchema {
 
     private static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> nested) {
 
-        if (cacheSchema.containsKey(type) && !useRefObject) {
+        // TODO might handle collection and map in the cache later
+        if (cacheSchema.containsKey(type) && !useRefObject && !isCollectionOrMap(type)) {
             return cacheSchema.get(type);
         }
 
@@ -176,10 +177,16 @@ public class ClassToSchema {
         /*
             we put the complete schema into cacheSchema
          */
-        if (!schema.startsWith(fieldRefPrefix))
+        if (!schema.startsWith(fieldRefPrefix) && !isCollectionOrMap(type))
             cacheSchema.put(type, namedSchema);
 
         return namedSchema;
+    }
+
+    private static boolean isCollectionOrMap(Type type){
+        if (!(type instanceof Class)) return false;
+        Class<?> kclazz = (Class<?>) type;
+        return kclazz.isArray() || List.class.isAssignableFrom(kclazz) || Set.class.isAssignableFrom(kclazz) || Map.class.isAssignableFrom(kclazz);
     }
 
 
@@ -273,12 +280,13 @@ public class ClassToSchema {
 
         //TOOD Map
         if ((klass != null && Map.class.isAssignableFrom(klass))|| pType!=null && Map.class.isAssignableFrom((Class) pType.getRawType())){
-            if (pType.getActualTypeArguments().length != 2)
-                throw new IllegalStateException("for Map, there should have two actual type arguments");
-            Type keyType = pType.getActualTypeArguments()[0];
-            if (keyType != String.class){
-                throw new IllegalStateException("only support Map with String key");
+            if (pType!=null && pType.getActualTypeArguments().length > 0){
+                Type keyType = pType.getActualTypeArguments()[0];
+                if (keyType != String.class){
+                    throw new IllegalStateException("only support Map with String key");
+                }
             }
+
             return fieldStringKeyMapSchema(klass, pType, nested, allNested);
         }
 

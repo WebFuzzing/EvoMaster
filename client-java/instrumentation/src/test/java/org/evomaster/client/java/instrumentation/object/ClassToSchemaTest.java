@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH;
 import static org.junit.jupiter.api.Assertions.*;
@@ -151,6 +152,14 @@ public class ClassToSchemaTest {
     }
 
     @Test
+    public void testPureJvmMap(){
+        String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(Map.class);
+        JsonObject all = parse(schema);
+        JsonObject jvmMap = all.get(Map.class.getName()).getAsJsonObject().get(Map.class.getName()).getAsJsonObject();
+        verifyMapField(jvmMap, "string", false);
+    }
+
+    @Test
     public void testCycleDto(){
         UnitsInfoRecorder.reset();
         assertTrue(UnitsInfoRecorder.getInstance().getParsedDtos().isEmpty());
@@ -177,6 +186,7 @@ public class ClassToSchemaTest {
 
     }
 
+
     private void checkDtoArray(JsonObject obj){
         assertEquals(5, obj.get("properties").getAsJsonObject().entrySet().size());
         verifyTypeInArray(obj, "string", "array");
@@ -192,9 +202,19 @@ public class ClassToSchemaTest {
         verifyMapFieldInProperties(obj, "integer",false, "mapInteger");
     }
 
+    private void checkJvmMap(JsonObject obj){
+        assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyMapFieldInProperties(obj, OPENAPI_REF_PATH+""+DtoArray.class.getName(),true, "mapDtoArray");
+        verifyMapFieldInProperties(obj, "integer",false, "mapInteger");
+    }
+
     private void verifyMapFieldInProperties(JsonObject obj, String valueType, boolean isRef, String fieldName){
         JsonObject field = obj.get("properties").getAsJsonObject()
                 .get(fieldName).getAsJsonObject();
+        verifyMapField(field, valueType, isRef);
+    }
+
+    private void verifyMapField(JsonObject field, String valueType, boolean isRef){
         assertEquals("object", field.get("type").getAsString());
         assertTrue(field.has("additionalProperties"));
         String actualValueType;
@@ -203,7 +223,6 @@ public class ClassToSchemaTest {
         else
             actualValueType = field.get("additionalProperties").getAsJsonObject().get("type").getAsString();
         assertEquals(valueType, actualValueType);
-
     }
 
     private void checkCycleA(JsonObject obj){

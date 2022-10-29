@@ -65,7 +65,12 @@ class IntegerGene(
     }
 
     override fun setValueWithRawString(value: String) {
-        this.value = value.toInt()
+        try {
+            this.value = value.toInt()
+        }catch (e: Exception){
+            LoggingUtil.uniqueWarn(log, "fail to set IntegerGene with a value which is not int format (ie, $value)")
+        }
+
     }
 
     override fun copyValueFrom(other: Gene) {

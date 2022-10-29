@@ -85,7 +85,7 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
         if (currentSelect != NEVER_EMPLOY_SPECIALIZATION && allImpacts?.size == gc.current.specializationGenes.size){
 
             val sImpact = allImpacts[gc.current.selectedSpecialization]
-            val previousSelect = (gc.previous as StringGene).selectedSpecialization
+            val previousSelect = (gc.previous as? StringGene)?.selectedSpecialization
 
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (previousSelect == currentSelect) gc.previous.specializationGenes[previousSelect] else null, current =  gc.current.specializationGenes[currentSelect], action = "none", position = -1, numOfMutatedGene = 1)
             (sImpact as GeneImpact).countImpactWithMutatedGeneWithContext(

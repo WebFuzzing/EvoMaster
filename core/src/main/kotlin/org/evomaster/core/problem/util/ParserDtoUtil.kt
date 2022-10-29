@@ -82,29 +82,10 @@ object ParserDtoUtil {
             }
             jsonNode.isObject ->{
                 if (objectGeneCluster == null){
-                    if (jsonNode.size() == 0)
-                        MapGene(name, StringGene("key"), StringGene("value"))
-                    else{
-                        val values = jsonNode.fields().asSequence().map { parseJsonNodeAsGene(it.key, it.value, objectGeneCluster) }.toMutableList()
-                        if (values.any { it == null }) return null
-                        val groupedValues  = values.filterNotNull().groupBy { g->
-                            val v = ParamUtil.getValueGene(g)
-                            if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
-                        }
-                        if (groupedValues.size == 1){
-                            MapGene(name, StringGene("key"), values.first()!!.copy())
-                        }else
-                            ObjectGene(name, values.map { wrapWithOptionalGene(it!!, true) })
-                    }
+                    inferGeneBasedOnJsonNode(name, jsonNode, objectGeneCluster)?: return null
                 }else {
-                    findAndCopyExtractedObjectDto(jsonNode, objectGeneCluster)
-                        ?: if (jsonNode.size() >= 1) {
-                            val template = parseJsonNodeAsGene("template", jsonNode.first(), objectGeneCluster)
-                                ?: return null
-                            MapGene(name, StringGene("key"), template)
-                        } else {
-                            MapGene(name, StringGene("key"), StringGene("value"))
-                        }
+                    (findAndCopyExtractedObjectDto(jsonNode, objectGeneCluster)
+                        ?: inferGeneBasedOnJsonNode(name, jsonNode, objectGeneCluster))?:return null
                 }
             }
             jsonNode.isNull -> {
@@ -113,6 +94,22 @@ object ParserDtoUtil {
             }
             else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
         }
+    }
+
+    private fun inferGeneBasedOnJsonNode(name: String, jsonNode : JsonNode, objectGeneCluster: Map<String, Gene>?) : Gene?{
+        if (jsonNode.size() == 0)
+            return MapGene(name, StringGene("key"), StringGene("value"))
+
+        val values = jsonNode.fields().asSequence().map { parseJsonNodeAsGene(it.key, it.value, objectGeneCluster) }.toMutableList()
+        if (values.any { it == null }) return null
+        val groupedValues  = values.filterNotNull().groupBy { g->
+            val v = ParamUtil.getValueGene(g)
+            if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
+        }
+        return if (groupedValues.size == 1){
+            MapGene(name, StringGene("key"), values.first()!!.copy())
+        }else
+            ObjectGene(name, values.map { wrapWithOptionalGene(it!!, true) })
     }
 
     private fun findAndCopyExtractedObjectDto(node: JsonNode, objectGeneMap: Map<String, Gene>) : ObjectGene? {

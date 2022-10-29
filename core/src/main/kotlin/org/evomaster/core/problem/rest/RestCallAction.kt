@@ -202,12 +202,14 @@ class RestCallAction(
      */
     fun resetProperties(){
         saveLocation = false
+        locationId = null
         resetLocalId()
         seeTopGenes().flatMap { it.flatView() }.forEach { it.resetLocalId() }
         clearRefs()
     }
 
     fun getDescription() : String? = description
+
     fun clearRefs(){
         responseRefs.clear()
     }
