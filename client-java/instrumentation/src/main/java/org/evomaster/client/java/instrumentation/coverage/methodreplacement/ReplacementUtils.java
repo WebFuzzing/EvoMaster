@@ -25,7 +25,7 @@ public class ReplacementUtils {
         String returnType = Type.getDescriptor(m.getReturnType());
         if(applyThirdPartyCast){
             Replacement r = m.getAnnotation(Replacement.class);
-            if(!r.castTo().isEmpty()){
+            if(!r.castTo().isEmpty() && !r.replacingConstructor()){
                 Class<?> casted = loadClass(r.castTo());
                 if(casted != null){
                     returnType = Type.getDescriptor(casted);

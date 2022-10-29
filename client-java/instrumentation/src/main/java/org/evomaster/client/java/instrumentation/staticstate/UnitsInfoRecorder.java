@@ -61,6 +61,15 @@ public class UnitsInfoRecorder implements Serializable {
      */
     private Map<String, String> extractedSpecifiedDtos;
 
+    /**
+     * Keeping track, for each instrumented class, of which classloader was used.
+     * Note: a class can loaded several times from different classloaders.
+     *
+     * Key -> full class name, with dots
+     * Value -> non-empty list of classloaders
+     */
+    private transient Map<String, List<Class<?>>> classLoaders;
+
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
         numberOfLines = new AtomicInteger(0);
@@ -73,6 +82,7 @@ public class UnitsInfoRecorder implements Serializable {
         jpaConstraints = new CopyOnWriteArrayList<>();
         analyzedClasses = false;
         extractedSpecifiedDtos = new ConcurrentHashMap<>();
+        classLoaders = new ConcurrentHashMap<>();
     }
 
     /**
