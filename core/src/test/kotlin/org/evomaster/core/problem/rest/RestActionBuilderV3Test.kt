@@ -11,6 +11,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.MapGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -143,7 +144,78 @@ class RestActionBuilderV3Test{
 
     }
 
+    @Test
+    fun testParseMapDto(){
+        val mapDto = "org.evomaster.client.java.instrumentation.object.dtos.MapDto"
 
+        val allSchema = """
+            "$mapDto":{
+               "org.evomaster.client.java.instrumentation.object.dtos.MapDto":{
+                  "type":"object",
+                  "properties":{
+                     "mapDtoArray":{
+                        "type":"object",
+                        "additionalProperties":{
+                           "${'$'}ref":"#/components/schemas/org.evomaster.client.java.instrumentation.object.dtos.DtoArray"
+                        }
+                     }
+                  }
+               },
+               "org.evomaster.client.java.instrumentation.object.dtos.DtoArray":{
+                  "type":"object",
+                  "properties":{
+                     "array":{
+                        "type":"array",
+                        "items":{
+                           "type":"string"
+                        }
+                     },
+                     "set":{
+                        "type":"array",
+                        "items":{
+                           "type":"integer",
+                           "format":"int32"
+                        }
+                     },
+                     "set_raw":{
+                        "type":"array",
+                        "items":{
+                           "type":"string"
+                        }
+                     },
+                     "list":{
+                        "type":"array",
+                        "items":{
+                           "type":"boolean"
+                        }
+                     },
+                     "list_raw":{
+                        "type":"array",
+                        "items":{
+                           "type":"string"
+                        }
+                     }
+                  }
+               }
+            }
+        """.trimIndent()
+
+        val mapGene = RestActionBuilderV3.createObjectGenesForDTOs(mapDto, allSchema)
+        assertTrue(mapGene is ObjectGene)
+        (mapGene as ObjectGene).apply {
+            assertEquals(1, fields.size)
+            assertTrue(ParamUtil.getValueGene(fields[0]) is MapGene<*, *>)
+            (ParamUtil.getValueGene(fields[0]) as MapGene<*,*>).apply {
+                assertTrue(template.first is StringGene)
+                assertTrue(template.second is ObjectGene)
+
+                (template.second as ObjectGene).apply {
+                    assertEquals(5, fields.size)
+                    assertEquals("org.evomaster.client.java.instrumentation.object.dtos.DtoArray", refType)
+                }
+            }
+        }
+    }
 
 
     //---------------------------------
