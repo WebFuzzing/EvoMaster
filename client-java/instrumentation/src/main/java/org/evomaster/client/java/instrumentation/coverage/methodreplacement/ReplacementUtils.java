@@ -21,7 +21,34 @@ public class ReplacementUtils {
     }
 
     public static String getDescriptor(Method m, int skipFirsts, int skipLast, boolean applyThirdPartyCast) {
-        return getDescriptor(m,skipFirsts,skipLast,Type.getDescriptor(m.getReturnType()),applyThirdPartyCast);
+
+        String returnType = Type.getDescriptor(m.getReturnType());
+        if(applyThirdPartyCast){
+            Replacement r = m.getAnnotation(Replacement.class);
+            if(!r.castTo().isEmpty()){
+                Class<?> casted = loadClass(r.castTo());
+                if(casted != null){
+                    returnType = Type.getDescriptor(casted);
+                }
+            }
+        }
+
+        return getDescriptor(m,skipFirsts,skipLast,returnType,applyThirdPartyCast);
+    }
+
+
+    private static String getDescriptor(Method m, int skipFirsts, int skipLast, String returnType, boolean applyThirdPartyCast) {
+        List<Class<?>> types = getParameterTypes(m,skipFirsts,skipLast,applyThirdPartyCast);
+        StringBuilder buf = new StringBuilder();
+
+        buf.append('(');
+        types.stream().forEach( t ->
+                buf.append(Type.getDescriptor(t))
+        );
+        buf.append(')');
+        buf.append(returnType);
+
+        return buf.toString();
     }
 
     public static List<Class<?>> getParameterTypes(Method m, int skipFirsts, int skipLast, boolean applyThirdPartyCast){
@@ -52,27 +79,21 @@ public class ReplacementUtils {
         ThirdPartyCast thirdPartyCast = (ThirdPartyCast) Arrays.stream(annotations).filter(a -> a instanceof ThirdPartyCast)
                 .findFirst().orElse(null);
         if(thirdPartyCast != null){
-            try {
-                return ReplacementUtils.class.getClassLoader().loadClass(thirdPartyCast.actualType());
-            } catch (ClassNotFoundException e) {
-                SimpleLogger.error("Cannot load third-party cast class: " + thirdPartyCast.actualType(),e);
-            }
+            return loadClass(thirdPartyCast.actualType());
         }
         return null;
     }
 
-    public static String getDescriptor(Method m, int skipFirsts, int skipLast, String returnType, boolean applyThirdPartyCast) {
-        List<Class<?>> types = getParameterTypes(m,skipFirsts,skipLast,applyThirdPartyCast);
-        StringBuilder buf = new StringBuilder();
-
-        buf.append('(');
-        types.stream().forEach( t ->
-                buf.append(Type.getDescriptor(t))
-        );
-        buf.append(')');
-        buf.append(returnType);
-
-        return buf.toString();
+    private static Class<?> loadClass(String className){
+        try {
+            /*
+                TODO use correct classloader
+             */
+            return ReplacementUtils.class.getClassLoader().loadClass(className);
+        } catch (ClassNotFoundException e) {
+            SimpleLogger.error("Cannot load third-party cast class: " + className,e);
+            return null;
+        }
     }
 
     public static Optional<Method> chooseMethodFromCandidateReplacement(
