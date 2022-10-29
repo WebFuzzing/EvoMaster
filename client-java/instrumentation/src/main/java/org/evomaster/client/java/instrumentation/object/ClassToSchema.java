@@ -273,12 +273,13 @@ public class ClassToSchema {
 
         //TOOD Map
         if ((klass != null && Map.class.isAssignableFrom(klass))|| pType!=null && Map.class.isAssignableFrom((Class) pType.getRawType())){
-            if (pType.getActualTypeArguments().length != 2)
-                throw new IllegalStateException("for Map, there should have two actual type arguments");
-            Type keyType = pType.getActualTypeArguments()[0];
-            if (keyType != String.class){
-                throw new IllegalStateException("only support Map with String key");
+            if (pType!=null && pType.getActualTypeArguments().length > 0){
+                Type keyType = pType.getActualTypeArguments()[0];
+                if (keyType != String.class){
+                    throw new IllegalStateException("only support Map with String key");
+                }
             }
+
             return fieldStringKeyMapSchema(klass, pType, nested, allNested);
         }
 
