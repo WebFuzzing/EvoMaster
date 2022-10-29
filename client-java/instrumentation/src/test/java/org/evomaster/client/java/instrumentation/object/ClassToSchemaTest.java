@@ -113,7 +113,7 @@ public class ClassToSchemaTest {
         JsonObject json = parse(schema);
         JsonObject obj = json.get(DtoArray.class.getName()).getAsJsonObject();
 
-        checkCycleA(obj);
+        checkDtoArray(obj);
     }
 
     @Test
