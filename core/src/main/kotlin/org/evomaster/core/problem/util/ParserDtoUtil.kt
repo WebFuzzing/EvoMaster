@@ -49,7 +49,8 @@ object ParserDtoUtil {
      * parse gene based on json node
      */
     fun parseJsonNodeAsGene(name: String, jsonNode: JsonNode): Gene{
-        return parseJsonNodeAsGene(name, jsonNode, null) ?:throw IllegalStateException("Fail to parse the given json node: ${jsonNode.toPrettyString()}")
+        return parseJsonNodeAsGene(name, jsonNode, null)
+            ?:throw IllegalStateException("Fail to parse the given json node: ${jsonNode.toPrettyString()}")
     }
 
 
@@ -70,7 +71,8 @@ object ParserDtoUtil {
             }
             jsonNode.isArray -> {
                 val elements = jsonNode.map { parseJsonNodeAsGene(name + "_item", it, objectGeneCluster) }
-                if (elements.any { it == null }) return null
+                if (elements.any { it == null })
+                    return null
 
                 if (elements.isNotEmpty()){
                     val template = if (elements.any { ParamUtil.getValueGene(it!!) is ObjectGene })
@@ -90,7 +92,8 @@ object ParserDtoUtil {
             }
             jsonNode.isNull -> {
                 Lazy.assert {  objectGeneCluster == null }
-                return null
+                // TODO change it to NullGene later
+                return OptionalGene(name, StringGene(name)).also { it.isActive = false }
             }
             else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
         }
@@ -101,7 +104,8 @@ object ParserDtoUtil {
             return MapGene(name, StringGene("key"), StringGene("value"))
 
         val values = jsonNode.fields().asSequence().map { parseJsonNodeAsGene(it.key, it.value, objectGeneCluster) }.toMutableList()
-        if (values.any { it == null }) return null
+        if (values.any { it == null })
+            return null
         val groupedValues  = values.filterNotNull().groupBy { g->
             val v = ParamUtil.getValueGene(g)
             if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
