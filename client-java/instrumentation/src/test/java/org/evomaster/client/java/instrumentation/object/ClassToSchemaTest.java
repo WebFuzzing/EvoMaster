@@ -51,11 +51,6 @@ public class ClassToSchemaTest {
         assertEquals(format, field.get("format").getAsString());
     }
 
-    private void verifyRefOfFieldInProperties(JsonObject obj, String expected, String fieldName){
-        assertEquals(expected, obj.get("properties").getAsJsonObject()
-                .get(fieldName).getAsJsonObject().get("$ref").getAsString());
-    }
-
     @Test
     public void testNumeric(){
 
@@ -118,12 +113,7 @@ public class ClassToSchemaTest {
         JsonObject json = parse(schema);
         JsonObject obj = json.get(DtoArray.class.getName()).getAsJsonObject();
 
-        assertEquals(5, obj.get("properties").getAsJsonObject().entrySet().size());
-        verifyTypeInArray(obj, "string", "array");
-        verifyTypeInArray(obj, "integer", "set");
-        verifyTypeInArray(obj, "string", "set_raw");
-        verifyTypeInArray(obj, "boolean", "list");
-        verifyTypeInArray(obj, "string", "list_raw");
+        checkCycleA(obj);
     }
 
     @Test
@@ -148,6 +138,16 @@ public class ClassToSchemaTest {
         verifyTypeOfFieldInProperties(obj, "string", "foo_bar");
         verifyTypeOfFieldInProperties(obj, "string", "hello_world");
         verifyTypeOfFieldInProperties(obj, "string", "foo");
+    }
+
+    @Test
+    public void testMapDto(){
+        String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(MapDto.class);
+        JsonObject all = parse(schema);
+        JsonObject jsonMapAndArray = all.get(MapDto.class.getName()).getAsJsonObject();
+        assertEquals(2, jsonMapAndArray.size());
+        checkMapDto(jsonMapAndArray.get(MapDto.class.getName()).getAsJsonObject());
+        checkDtoArray(jsonMapAndArray.get(DtoArray.class.getName()).getAsJsonObject());
     }
 
     @Test
@@ -177,6 +177,34 @@ public class ClassToSchemaTest {
 
     }
 
+    private void checkDtoArray(JsonObject obj){
+        assertEquals(5, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeInArray(obj, "string", "array");
+        verifyTypeInArray(obj, "integer", "set");
+        verifyTypeInArray(obj, "string", "set_raw");
+        verifyTypeInArray(obj, "boolean", "list");
+        verifyTypeInArray(obj, "string", "list_raw");
+    }
+
+    private void checkMapDto(JsonObject obj){
+        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyMapFieldInProperties(obj, OPENAPI_REF_PATH+""+DtoArray.class.getName(),true, "mapDtoArray");
+    }
+
+    private void verifyMapFieldInProperties(JsonObject obj, String valueType, boolean isRef, String fieldName){
+        JsonObject field = obj.get("properties").getAsJsonObject()
+                .get(fieldName).getAsJsonObject();
+        assertEquals("object", field.get("type").getAsString());
+        assertTrue(field.has("additionalProperties"));
+        String actualValueType;
+        if (isRef)
+            actualValueType = field.get("additionalProperties").getAsJsonObject().get("$ref").getAsString();
+        else
+            actualValueType = field.get("additionalProperties").getAsString();
+        assertEquals(valueType, actualValueType);
+
+    }
+
     private void checkCycleA(JsonObject obj){
         assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
         verifyTypeOfFieldInProperties(obj, "string", "cycleAId");
@@ -187,5 +215,10 @@ public class ClassToSchemaTest {
         assertEquals(2, objB.get("properties").getAsJsonObject().entrySet().size());
         verifyTypeOfFieldInProperties(objB, "string", "cycleBId");
         verifyRefOfFieldInProperties(objB, OPENAPI_REF_PATH+""+CycleDtoA.class.getName(), "cycleDtoA");
+    }
+
+    private void verifyRefOfFieldInProperties(JsonObject obj, String expected, String fieldName){
+        assertEquals(expected, obj.get("properties").getAsJsonObject()
+                .get(fieldName).getAsJsonObject().get("$ref").getAsString());
     }
 }
