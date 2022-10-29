@@ -12,6 +12,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -158,6 +159,13 @@ class RestActionBuilderV3Test{
                         "additionalProperties":{
                            "${'$'}ref":"#/components/schemas/org.evomaster.client.java.instrumentation.object.dtos.DtoArray"
                         }
+                     },
+                     "mapInteger":{
+                        "type":"object",
+                        "additionalProperties":{
+                           "type":"integer",
+                           "format":"int32"
+                        }
                      }
                   }
                },
@@ -203,9 +211,10 @@ class RestActionBuilderV3Test{
         val mapGene = RestActionBuilderV3.createObjectGenesForDTOs(mapDto, allSchema)
         assertTrue(mapGene is ObjectGene)
         (mapGene as ObjectGene).apply {
-            assertEquals(1, fields.size)
-            assertTrue(ParamUtil.getValueGene(fields[0]) is MapGene<*, *>)
-            (ParamUtil.getValueGene(fields[0]) as MapGene<*,*>).apply {
+            assertEquals(2, fields.size)
+            val mapArrayField = ParamUtil.getValueGene(fields.find { it.name == "mapDtoArray" }!!)
+            assertTrue(mapArrayField is MapGene<*, *>)
+            (mapArrayField as MapGene<*,*>).apply {
                 assertTrue(template.first is StringGene)
                 assertTrue(template.second is ObjectGene)
 
@@ -213,6 +222,13 @@ class RestActionBuilderV3Test{
                     assertEquals(5, fields.size)
                     assertEquals("org.evomaster.client.java.instrumentation.object.dtos.DtoArray", refType)
                 }
+            }
+
+            val mapIntField = ParamUtil.getValueGene(fields.find { it.name == "mapInteger" }!!)
+            assertTrue(mapIntField is MapGene<*,*>)
+            (mapIntField as MapGene<*,*>).apply {
+                assertTrue(template.first is StringGene)
+                assertTrue(template.second is IntegerGene)
             }
         }
     }

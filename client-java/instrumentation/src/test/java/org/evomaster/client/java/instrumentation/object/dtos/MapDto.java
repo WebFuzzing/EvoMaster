@@ -5,4 +5,6 @@ import java.util.Map;
 public class MapDto {
 
     public Map<String, DtoArray> mapDtoArray;
+
+    public Map<String, Integer> mapInteger;
 }

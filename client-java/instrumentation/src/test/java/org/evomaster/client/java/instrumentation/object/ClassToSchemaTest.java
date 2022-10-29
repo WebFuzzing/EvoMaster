@@ -187,8 +187,9 @@ public class ClassToSchemaTest {
     }
 
     private void checkMapDto(JsonObject obj){
-        assertEquals(1, obj.get("properties").getAsJsonObject().entrySet().size());
+        assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
         verifyMapFieldInProperties(obj, OPENAPI_REF_PATH+""+DtoArray.class.getName(),true, "mapDtoArray");
+        verifyMapFieldInProperties(obj, "integer",false, "mapInteger");
     }
 
     private void verifyMapFieldInProperties(JsonObject obj, String valueType, boolean isRef, String fieldName){
@@ -200,7 +201,7 @@ public class ClassToSchemaTest {
         if (isRef)
             actualValueType = field.get("additionalProperties").getAsJsonObject().get("$ref").getAsString();
         else
-            actualValueType = field.get("additionalProperties").getAsString();
+            actualValueType = field.get("additionalProperties").getAsJsonObject().get("type").getAsString();
         assertEquals(valueType, actualValueType);
 
     }
