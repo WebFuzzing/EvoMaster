@@ -31,7 +31,8 @@ public class ClassAnalyzer {
 
             Class<?> klass;
             try {
-                klass = ClassAnalyzer.class.getClassLoader().loadClass(name);
+                ClassLoader loader = UnitsInfoRecorder.getInstance().getClassLoaders(name).get(0);
+                klass = loader.loadClass(name);
             } catch (ClassNotFoundException e) {
                 SimpleLogger.error("Failed to load class " + name, e);
                 continue;
@@ -46,6 +47,7 @@ public class ClassAnalyzer {
     private static boolean canUseJavaxJPA(){
 
         try {
+            FIXME
             ClassAnalyzer.class.getClassLoader().loadClass("javax.persistence.Entity");
             ClassAnalyzer.class.getClassLoader().loadClass("javax.validation.constraints.NotNull");
             return true;

@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.objectweb.asm.Label;
@@ -152,6 +153,8 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             return;
         }
 
+        handleLastCallerClass();
+
         Method m = r.get();
         replaceMethod(m);
         if(isConstructor){
@@ -170,6 +173,17 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
         }
     }
 
+    private void handleLastCallerClass(){
+
+        this.visitLdcInsn(className);
+
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                ClassName.get(ExecutionTracer.class).getBytecodeName(),
+                ExecutionTracer.SET_LAST_CALLER_CLASS_METHOD_NAME,
+                ExecutionTracer.SET_LAST_CALLER_CLASS_DESC,
+                ExecutionTracer.class.isInterface()); //false
+    }
 
     private void handleConstruct(Method m, Class<? extends MethodReplacementClass> mrc){
 

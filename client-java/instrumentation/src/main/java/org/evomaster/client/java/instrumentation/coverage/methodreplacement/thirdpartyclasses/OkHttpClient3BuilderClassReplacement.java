@@ -1,6 +1,5 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
-import okhttp3.OkHttpClient;
 import org.evomaster.client.java.instrumentation.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
@@ -10,7 +9,9 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 
-
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -32,7 +33,7 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
 
     public static Object consumeInstance(){
 
-        OkHttpClient.Builder builder = (OkHttpClient.Builder) instance.get();
+        Object builder =  instance.get();
         if(builder == null){
             throw new IllegalStateException("No instance to consume");
         }
@@ -41,7 +42,7 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
     }
 
     private static void addInstance(Object x){
-        OkHttpClient.Builder builder = (OkHttpClient.Builder) instance.get();
+        Object builder =  instance.get();
         if(builder != null){
             throw new IllegalStateException("Previous instance was not consumed");
         }
@@ -56,19 +57,23 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
             replacingConstructor = true,
             castTo = "okhttp3.OkHttpClient$Builder"
     )
-    public static void Builder()  {
+    public static void Builder()  throws Exception{
 
         Constructor original = getOriginalConstructor(singleton, "okhttpclient3_builder_constructor");
 
         try {
-            OkHttpClient.Builder builder = (OkHttpClient.Builder) original.newInstance();
-            builder.sslSocketFactory(PreDefinedSSLInfo.getTrustAllSSLSocketFactory(), PreDefinedSSLInfo.getTrustAllX509TrustManager());
-            builder.hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames());
+            Object builder =  original.newInstance();
+            builder.getClass().getMethod("sslSocketFactory", SSLSocketFactory.class, X509TrustManager.class)
+                    .invoke(builder, PreDefinedSSLInfo.getTrustAllSSLSocketFactory(), PreDefinedSSLInfo.getTrustAllX509TrustManager());
+            builder.getClass().getMethod("hostnameVerifier", HostnameVerifier.class)
+                    .invoke(builder,PreDefinedSSLInfo.allowAllHostNames());
+//            builder.sslSocketFactory(PreDefinedSSLInfo.getTrustAllSSLSocketFactory(), PreDefinedSSLInfo.getTrustAllX509TrustManager());
+//            builder.hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames());
             addInstance(builder);
         } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw (RuntimeException) e.getCause();
+            throw (Exception) e.getCause();
         }
 
     }
@@ -80,9 +85,10 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
             category = ReplacementCategory.NET,
             castTo = "okhttp3.OkHttpClient$Builder"
     )
-    public static Object hostnameVerifier(
+    public static Object hostnameVerifier (
             Object caller,
-            @ThirdPartyCast(actualType = "javax.net.ssl.HostnameVerifier") Object hostnameVerifier)  {
+            @ThirdPartyCast(actualType = "javax.net.ssl.HostnameVerifier") Object hostnameVerifier)
+    throws Exception {
 
         if(caller == null){
             throw new NullPointerException();
@@ -91,11 +97,11 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
         Method original = getOriginal(singleton, "okhttpclient3_builder_hostnameVerifier", caller);
 
         try {
-            return (OkHttpClient.Builder)original.invoke(caller, PreDefinedSSLInfo.allowAllHostNames());
+            return original.invoke(caller, PreDefinedSSLInfo.allowAllHostNames());
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);
         } catch (InvocationTargetException e){
-            throw (RuntimeException) e.getCause();
+            throw (Exception) e.getCause();
         }
     }
 
@@ -118,7 +124,7 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
         Method original = getOriginal(singleton, "okhttpclient3_builder_sslSocketFactory", caller);
 
         try {
-            return (OkHttpClient.Builder)original.invoke(
+            return original.invoke(
                     caller, PreDefinedSSLInfo.getTrustAllSSLSocketFactory(), PreDefinedSSLInfo.getTrustAllX509TrustManager());
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);
@@ -145,7 +151,7 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
         Method original = getOriginal(singleton, "okhttpclient3_builder_sslSocketFactory_onearg", caller);
 
         try {
-            return (OkHttpClient.Builder)original.invoke(
+            return original.invoke(
                     caller, PreDefinedSSLInfo.getTrustAllSSLSocketFactory(), PreDefinedSSLInfo.getTrustAllX509TrustManager());
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);

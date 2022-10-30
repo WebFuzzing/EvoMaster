@@ -1,9 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
-import com.squareup.okhttp.Call;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
+
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
@@ -12,8 +9,11 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Thir
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSocketFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -34,7 +34,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
 
     public static Object consumeInstance(){
 
-        OkHttpClient client = (OkHttpClient)instance.get();
+        Object client = instance.get();
         if(client == null){
             throw new IllegalStateException("No instance to consume");
         }
@@ -43,7 +43,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
     }
 
     private static void addInstance(Object x){
-        OkHttpClient client = (OkHttpClient)instance.get();
+        Object client = instance.get();
         if(client != null){
             throw new IllegalStateException("Previous instance was not consumed");
         }
@@ -58,15 +58,16 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             replacingConstructor = true,
             castTo = "com.squareup.okhttp.OkHttpClient"
     )
-    public static void OkHttpClient()  {
+    public static void OkHttpClient() throws Exception {
 
         Constructor original = getOriginalConstructor(singleton, "okhttpclient_constructor");
 
         try {
-
-            OkHttpClient client = (OkHttpClient) original.newInstance();
-            client.setSslSocketFactory(PreDefinedSSLInfo.getTrustAllSSLSocketFactory());
-            client.setHostnameVerifier(PreDefinedSSLInfo.allowAllHostNames());
+            Object client =  original.newInstance();
+            client.getClass().getMethod("sslSocketFactory", SSLSocketFactory.class)
+                    .invoke(client, PreDefinedSSLInfo.getTrustAllSSLSocketFactory());
+            client.getClass().getMethod("hostnameVerifier", HostnameVerifier.class)
+                    .invoke(client,PreDefinedSSLInfo.allowAllHostNames());
             addInstance(client);
         } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -86,7 +87,9 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
     )
     public static Object setSslSocketFactory(
             Object caller,
-            @ThirdPartyCast(actualType = "javax.net.ssl.SSLSocketFactory") Object sslSocketFactory) {
+            @ThirdPartyCast(actualType = "javax.net.ssl.SSLSocketFactory") Object sslSocketFactory
+    ) throws Exception{
+
         if(caller == null){
             throw new NullPointerException();
         }
@@ -94,11 +97,11 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
         Method original = getOriginal(singleton, "okhttpclient_setSslSocketFactory", caller);
 
         try{
-            return (OkHttpClient) original.invoke(caller, PreDefinedSSLInfo.getTrustAllSSLSocketFactory());
+            return  original.invoke(caller, PreDefinedSSLInfo.getTrustAllSSLSocketFactory());
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);
         } catch (InvocationTargetException e){
-            throw (RuntimeException) e.getCause();
+            throw (Exception) e.getCause();
         }
     }
 
@@ -111,7 +114,8 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
     )
     public static Object setHostnameVerifier(
             Object caller,
-            @ThirdPartyCast(actualType = "javax.net.ssl.HostnameVerifier") Object hostnameVerifier) {
+            @ThirdPartyCast(actualType = "javax.net.ssl.HostnameVerifier") Object hostnameVerifier
+    )throws Exception {
         if(caller == null){
             throw new NullPointerException();
         }
@@ -119,11 +123,11 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
         Method original = getOriginal(singleton, "okhttpclient_setHostnameVerifier", caller);
 
         try{
-            return (OkHttpClient) original.invoke(caller, PreDefinedSSLInfo.allowAllHostNames());
+            return original.invoke(caller, PreDefinedSSLInfo.allowAllHostNames());
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);
         } catch (InvocationTargetException e){
-            throw (RuntimeException) e.getCause();
+            throw (Exception) e.getCause();
         }
     }
 
@@ -136,23 +140,34 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
     )
     public static Object newCall(
             Object caller,
-            @ThirdPartyCast(actualType = "com.squareup.okhttp.Request") Object request){
+            @ThirdPartyCast(actualType = "com.squareup.okhttp.Request") Object request
+    ) throws Exception{
         if(caller == null){
             throw new NullPointerException();
         }
 
         Method original = getOriginal(singleton, "okhttpclient_newCall", caller);
 
+        Object replaced = request;
+        Object url = request.getClass().getMethod("httpUrl").invoke(request);
+        String urlScheme = (String) url.getClass().getMethod("scheme").invoke(url);
+        String urlHost = (String) url.getClass().getMethod("host").invoke(url);
+        int urlPort = (int) url.getClass().getMethod("port").invoke(url);
+        String urlEncodedPath = (String) url.getClass().getMethod("encodedPath").invoke(url);
 
-        Request replaced = (Request) request;
-        HttpUrl url = ((Request)request).httpUrl();
-        if (url.scheme().equalsIgnoreCase("https") || url.scheme().equalsIgnoreCase("http")){
-            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(url.scheme(), url.host(), url.port());
-            String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, url.port());
-            replaced = new Request.Builder().url(url.scheme()+"://"+ipAndPort[0]+":"+ipAndPort[1]+url.encodedPath()).build();
+        if (urlScheme.equalsIgnoreCase("https") || urlScheme.equalsIgnoreCase("http")){
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(urlScheme, urlHost, urlPort);
+            String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, urlPort);
+
+            String replacedUrl = urlScheme+"://"+ipAndPort[0]+":"+ipAndPort[1]+urlEncodedPath;
+            ClassLoader loader = ExecutionTracer.getLastCallerClassLoader();
+            Object builder = loader.loadClass("okhttp3.Request$Builder").newInstance();
+            builder = builder.getClass().getMethod("url", String.class).invoke(builder, replacedUrl);
+            replaced = builder.getClass().getMethod("build").invoke(builder);
         }
+
         try{
-            return (Call) original.invoke(caller, replaced);
+            return  original.invoke(caller, replaced);
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);
         } catch (InvocationTargetException e){

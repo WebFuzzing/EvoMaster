@@ -1,6 +1,8 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -216,8 +218,20 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
 
         if(singleton.getTargetClass()==null){
 
+            /*
+                we do not have access to the caller directly here, so we need to use what registered
+                in ExecutionTracer
+             */
 
-            singleton.retryLoadingClass(singleton.getTargetClass().getClassLoader());
+            String callerName = ExecutionTracer.getLastCallerClass();
+            if(callerName == null){
+                //this would be clearly a bug...
+                throw new IllegalStateException("No access to last caller class");
+            }
+            //TODO what if more than 1 available ???
+            ClassLoader loader = UnitsInfoRecorder.getInstance().getClassLoaders(callerName).get(0);
+
+            singleton.retryLoadingClass(loader);
         }
 
         if(singleton.constructors.isEmpty()){

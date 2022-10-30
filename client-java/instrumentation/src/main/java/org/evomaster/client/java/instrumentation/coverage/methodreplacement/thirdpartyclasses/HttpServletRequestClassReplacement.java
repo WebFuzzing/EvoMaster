@@ -7,7 +7,6 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
-import javax.servlet.ServletInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -42,7 +41,7 @@ public class HttpServletRequestClassReplacement extends ThirdPartyMethodReplacem
         Method original = getOriginal(singleton, "getInputStream", caller);
 
         try {
-            return (ServletInputStream) original.invoke(caller);
+            return original.invoke(caller);
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);// ah, the beauty of Java...
         } catch (InvocationTargetException e){
