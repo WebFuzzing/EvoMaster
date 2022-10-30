@@ -215,6 +215,8 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
         }
 
         if(singleton.getTargetClass()==null){
+
+
             singleton.retryLoadingClass(singleton.getTargetClass().getClassLoader());
         }
 

@@ -5,6 +5,7 @@ package org.evomaster.client.java.instrumentation;
 import org.evomaster.client.java.instrumentation.coverage.CoverageClassVisitor;
 import org.evomaster.client.java.instrumentation.coverage.ThirdPartyClassVisitor;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -80,6 +81,8 @@ public class Instrumentator {
              */
             return null;
         }
+
+        UnitsInfoRecorder.registerClassLoader(className.getBytecodeName(), classLoader);
 
         return writer.toByteArray();
     }

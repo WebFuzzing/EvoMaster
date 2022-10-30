@@ -68,7 +68,7 @@ public class UnitsInfoRecorder implements Serializable {
      * Key -> full class name, with dots
      * Value -> non-empty list of classloaders
      */
-    private transient Map<String, List<Class<?>>> classLoaders;
+    private transient Map<String, List<ClassLoader>> classLoaders;
 
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
@@ -96,8 +96,19 @@ public class UnitsInfoRecorder implements Serializable {
         return singleton;
     }
 
+    public static void forceLoadingLazyDataStructures(){
+        singleton.getJpaConstraints();
+    }
+
+    public static void registerClassLoader(String className, ClassLoader classLoader){
+        singleton.classLoaders.putIfAbsent(className, new CopyOnWriteArrayList<>());
+        singleton.classLoaders.get(className).add(classLoader);
+    }
+
     public static void markNewUnit(String name){
         singleton.unitNames.add(name);
+        singleton.analyzedClasses = false;
+        singleton.jpaConstraints.clear();
     }
 
     public static void markNewLine(){
@@ -217,5 +228,9 @@ public class UnitsInfoRecorder implements Serializable {
 
     public  int getNumberOfInstrumentedNumberComparisons(){
         return numberOfInstrumentedNumberComparisons.get();
+    }
+
+    public List<ClassLoader> getClassLoaders(String className){
+        return classLoaders.get(className);
     }
 }
