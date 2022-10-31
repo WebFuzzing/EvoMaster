@@ -6,8 +6,7 @@ import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
-import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
-import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

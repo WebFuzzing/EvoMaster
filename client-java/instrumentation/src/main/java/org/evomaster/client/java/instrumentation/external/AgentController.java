@@ -124,6 +124,7 @@ public class AgentController {
 
     private static void handleUnitsInfo() {
         try {
+            UnitsInfoRecorder.forceLoadingLazyDataStructures();
             sendObject(UnitsInfoRecorder.getInstance());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling units info: "+e.getMessage());
