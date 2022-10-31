@@ -124,7 +124,12 @@ public enum StringSpecialization implements Serializable {
      * which are handled as generic maps.
      * Those might be marshalled later, in a so called 2-phase parsing, eg see Jackson convertValue()
      */
-    JSON_ARRAY
+    JSON_ARRAY,
+
+    /**
+     * The string is representing a valid JSON Map, ie {}
+     */
+    JSON_MAP
 
     ;
 

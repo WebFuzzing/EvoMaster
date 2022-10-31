@@ -11,8 +11,7 @@ import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.TaintedArrayGene
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -113,9 +112,64 @@ object TaintAnalysis {
             handleMultiGenes(specsMap, allTaintableGenes, randomness, inputVariables)
 
             handleTaintedArrays(specsMap, allTaintableGenes, randomness, inputVariables)
+
+            handleTaintedMaps(specsMap, allTaintableGenes, randomness, inputVariables)
         }
     }
 
+
+    private fun handleTaintedMaps(
+        specsMap: Map<String, List<StringSpecializationInfo>>,
+        allTaintableGenes: List<TaintableGene>,
+        randomness: Randomness,
+        inputVariables: Set<String>) {
+
+        val taintedMaps = allTaintableGenes.filterIsInstance<TaintedMapGene>().filter { !it.isResolved() || it.isStringMap()}
+
+        if (taintedMaps.isEmpty()) {
+            return
+        }
+
+        for (entry in specsMap.entries) {
+
+            val taintedInput = entry.key
+            val specs = entry.value
+
+            if (specs.isEmpty()) {
+                throw IllegalArgumentException("No specialization info for value $taintedInput")
+            }
+
+            val genes = taintedMaps.filter { it.getPossiblyTaintedValue().equals(taintedInput, true) }
+            if (genes.isEmpty()) {
+                continue
+            }
+
+            if (specs.size > 1) {
+                log.warn("More than one possible specialization for tainted map '$taintedInput': $specs")
+            }
+
+            //TODO specification for key
+            val keyTemplate = StringGene("keyTemplate")
+
+            val s = specs.find { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
+                ?: randomness.choose(specs)
+
+            val valueTemplate = if (s.stringSpecialization == StringSpecialization.JSON_OBJECT) {
+                val schema = s.value
+                val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+                val ref = t.subSequence(1, t.length - 1).toString()
+                RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
+            } else {
+                StringGene("valueTemplate")
+            }
+
+            genes.forEach {
+                it.resolveTaint(
+                    MapGene(it.name, PairGene("template", keyTemplate, valueTemplate)).apply { doInitialize(randomness) }
+                )
+            }
+        }
+    }
 
     private fun handleTaintedArrays(
             specsMap: Map<String, List<StringSpecializationInfo>>,

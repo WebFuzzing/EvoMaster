@@ -55,6 +55,8 @@ class MapGene<K, V>(
     companion object{
         private val log: Logger = LoggerFactory.getLogger(MapGene::class.java)
         const val MAX_SIZE = 5
+
+        fun isStringMap(gene: MapGene<*, *>) = gene.template.first is StringGene && gene.template.second is StringGene
     }
 
     override fun isLocallyValid(): Boolean {
