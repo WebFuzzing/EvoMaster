@@ -114,11 +114,11 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
         }
 
         try{
-            return (Call) original.invoke(caller, replaced);
+            return  original.invoke(caller, replaced);
         } catch (IllegalAccessException e){
             throw new RuntimeException(e);
         } catch (InvocationTargetException e){
-            throw (RuntimeException) e.getCause();
+            throw (Exception) e.getCause();
         }
     }
 }
