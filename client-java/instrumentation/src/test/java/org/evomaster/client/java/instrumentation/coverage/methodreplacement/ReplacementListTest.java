@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.junit.jupiter.api.Test;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -71,6 +72,8 @@ class ReplacementListTest {
                     assertEquals(Void.TYPE, m.getReturnType());
                 }
 
+                checkInputParameters(m);
+
                 int start = 0;
                 if (!r.replacingStatic()) {
 
@@ -81,13 +84,13 @@ class ReplacementListTest {
                     }
                 }
 
-                int end = inputs.length - 1;
+                int skipLast = 1;
                 if (r.type() == ReplacementType.TRACKER) {
                     //no idTemplate at the end
-                    end = inputs.length;
+                    skipLast = 0;
                 }
 
-                Class[] reducedInputs = Arrays.copyOfRange(inputs, start, end);
+                Class[] reducedInputs = ReplacementUtils.getParameterTypes(m, start, skipLast, true).toArray(new Class[0]);
 
                 if (!r.replacingConstructor()) {
 
@@ -102,9 +105,7 @@ class ReplacementListTest {
                         }
                     }
                     assertEquals(r.replacingStatic(), Modifier.isStatic(targetMethod.getModifiers()));
-
-                    assertEquals(targetMethod.getReturnType(),m.getReturnType()
-                            , "Mismatched return type for " + targetClass.getName()+"."+targetMethod.getName()+"()");
+                    checkReturnType(r, targetMethod.getReturnType(), m);
 
                 } else{
                     Constructor targetConstructor = null;
@@ -121,16 +122,70 @@ class ReplacementListTest {
                     if(!orc.isPresent()){
                         fail("No instance consume method: "+MethodReplacementClass.CONSUME_INSTANCE_METHOD_NAME+"()");
                     }
-                    Method rc = orc.get();
-                    if (rc.getAnnotation(Replacement.class) != null) {
+                    Method rconsume = orc.get();
+                    if (rconsume.getAnnotation(Replacement.class) != null) {
                         fail("Consume method should not be marked with replacement annotation");
                     }
-                    assertEquals(0, rc.getParameterCount());
-                    assertEquals(targetClass, rc.getReturnType());
+                    assertEquals(0, rconsume.getParameterCount());
+                    checkReturnType(r, targetClass, rconsume);
                 }
             }
 
         }
 
+    }
+
+    private void checkInputParameters(Method m){
+
+        Class<?>[] parameters = m.getParameterTypes();
+        Annotation[][] annotations = m.getParameterAnnotations();
+
+        for(int i=0; i<parameters.length; i++){
+            Class<?> p = parameters[i];
+            checkBaseJdkType(m,p);
+
+            Class<?> casted = ReplacementUtils.getCastedToThirdParty(annotations[i]);
+            if(casted != null) {
+                assertEquals(Object.class, p); //all casts must use Object in signature
+            }
+        }
+    }
+
+    private void checkReturnType(
+            Replacement r,
+            Class<?> expectedReturnedType,
+            Method emMethodReturningInstance) {
+        Class returnType = emMethodReturningInstance.getReturnType();
+
+        checkBaseJdkType(emMethodReturningInstance, returnType);
+
+        if(!r.castTo().isEmpty()) {
+            Class cast = null;
+            try {
+                cast = this.getClass().getClassLoader().loadClass(r.castTo());
+            } catch (ClassNotFoundException e) {
+                fail("Cannot find class " + r.castTo());
+            }
+
+            assertEquals(Object.class, emMethodReturningInstance.getReturnType(),"When using 'castTo', return type MUST be Object");
+            returnType = cast;
+        }
+
+        assertEquals(expectedReturnedType, returnType);
+    }
+
+    private static void checkBaseJdkType(Method m, Class typeToCheck) {
+        //TODO what about array of arrays?
+        Class baseReturnType = typeToCheck.isArray() ? typeToCheck.getComponentType() : typeToCheck;
+
+        assertTrue(baseReturnType.isPrimitive()
+                        || baseReturnType.getName().startsWith("java."),
+                "Types in signature (eg return and input parameters) must be basic from JDK API, ie java.*." +
+                        " If not, use 'castTo' (for return) or 'ThirdPartyCast' (for inputs)." +
+                        " This is a must to avoid issues in multi-classloader contexts," +
+                        " eg, like in Spring applications." +
+                        " Wrong type " + typeToCheck.getName() + " in " +
+                        m.getDeclaringClass().getName() + "#" + m.getName()
+        );
     }
 }

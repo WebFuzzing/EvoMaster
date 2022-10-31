@@ -61,6 +61,15 @@ public class UnitsInfoRecorder implements Serializable {
      */
     private Map<String, String> extractedSpecifiedDtos;
 
+    /**
+     * Keeping track, for each instrumented class, of which classloader was used.
+     * Note: a class can loaded several times from different classloaders.
+     *
+     * Key -> full class name, with dots
+     * Value -> non-empty list of classloaders
+     */
+    private transient Map<String, List<ClassLoader>> classLoaders;
+
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
         numberOfLines = new AtomicInteger(0);
@@ -73,6 +82,7 @@ public class UnitsInfoRecorder implements Serializable {
         jpaConstraints = new CopyOnWriteArrayList<>();
         analyzedClasses = false;
         extractedSpecifiedDtos = new ConcurrentHashMap<>();
+        classLoaders = new ConcurrentHashMap<>();
     }
 
     /**
@@ -86,8 +96,19 @@ public class UnitsInfoRecorder implements Serializable {
         return singleton;
     }
 
+    public static void forceLoadingLazyDataStructures(){
+        singleton.getJpaConstraints();
+    }
+
+    public static void registerClassLoader(String className, ClassLoader classLoader){
+        singleton.classLoaders.putIfAbsent(className, new CopyOnWriteArrayList<>());
+        singleton.classLoaders.get(className).add(classLoader);
+    }
+
     public static void markNewUnit(String name){
         singleton.unitNames.add(name);
+        singleton.analyzedClasses = false;
+        singleton.jpaConstraints.clear();
     }
 
     public static void markNewLine(){
@@ -154,6 +175,13 @@ public class UnitsInfoRecorder implements Serializable {
         singleton.jpaConstraints.add(constraint);
     }
 
+    public ClassLoader getSutClassLoader(){
+        if(unitNames.isEmpty()){
+            return null;
+        }
+        return classLoaders.get(unitNames.stream().findFirst().get()).get(0);
+    }
+
     public List<JpaConstraint> getJpaConstraints(){
 
         /*
@@ -207,5 +235,17 @@ public class UnitsInfoRecorder implements Serializable {
 
     public  int getNumberOfInstrumentedNumberComparisons(){
         return numberOfInstrumentedNumberComparisons.get();
+    }
+
+    public List<ClassLoader> getClassLoaders(String className){
+        return classLoaders.get(className);
+    }
+
+    public ClassLoader getFirstClassLoader(String className){
+        List<ClassLoader> loaders = getClassLoaders(className);
+        if(loaders == null || loaders.isEmpty()){
+            return null;
+        }
+        return loaders.get(0);
     }
 }
