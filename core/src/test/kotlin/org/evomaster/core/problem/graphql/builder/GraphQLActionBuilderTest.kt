@@ -1565,30 +1565,48 @@ class GraphQLActionBuilderTest {
 
     }
 
+
     @Test
-    fun nullableArrayTest() {
+    fun nullableArray2Test() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/nullableArray.json").readText()
+        // The .graphqls schema is from: e2e-tests/spring-graphql/src/main/resources/nullable.array.graphqls
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/nullableArray.json").readText()
         val config = EMConfig()
-
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
-        assertEquals(1, actionCluster.size)
+        assertEquals(4, actionCluster.size)
 
-        val flowers = actionCluster["flowers"] as GraphQLAction
-        assertEquals(2, flowers.parameters.size)
-        assertTrue(flowers.parameters[0] is GQInputParam)
-        assertTrue(flowers.parameters[0].name == "id")
-        //before using nullable gene
-        //assertTrue((((flowers.parameters[0].gene as OptionalGene).gene as ArrayGene<*>).template as OptionalGene).gene is IntegerGene)
+        val flowersNullInNullOut = actionCluster["flowersNullInNullOut"] as GraphQLAction
+        assertEquals(2, flowersNullInNullOut.parameters.size)
+        assertTrue(flowersNullInNullOut.parameters[0] is GQInputParam)
+        assertTrue(((flowersNullInNullOut.parameters[0].gene as NullableGene).gene as OptionalGene).gene is ArrayGene<*>)
+        val arrayNullInNullOut =
+            ((flowersNullInNullOut.parameters[0].gene as NullableGene).gene as OptionalGene).gene as ArrayGene<*>
+        assertTrue(((arrayNullInNullOut.template as NullableGene).gene as OptionalGene).gene is IntegerGene)
 
-        assertTrue(((flowers.parameters[0].gene as NullableGene).gene as OptionalGene).gene is ArrayGene<*>)
-        val array=((flowers.parameters[0].gene as NullableGene).gene as OptionalGene).gene as ArrayGene<*>
-        assertTrue(((array.template as NullableGene).gene as OptionalGene).gene is IntegerGene)
-        assertTrue(flowers.parameters[1] is GQReturnParam)
-        assertTrue(flowers.parameters[1].gene is ObjectGene)
+        /**/
+        val flowersNullIn = actionCluster["flowersNullIn"] as GraphQLAction
+        assertEquals(2, flowersNullIn.parameters.size)
+        assertTrue(flowersNullIn.parameters[0] is GQInputParam)
+        assertTrue(flowersNullIn.parameters[0].gene is ArrayGene<*>)
+        assertTrue((((flowersNullIn.parameters[0].gene as ArrayGene<*>).template as NullableGene).gene as OptionalGene).gene is IntegerGene)
+
+        /**/
+        val flowersNullOut = actionCluster["flowersNullOut"] as GraphQLAction
+        assertEquals(2, flowersNullOut.parameters.size)
+        assertTrue(flowersNullOut.parameters[0] is GQInputParam)
+        assertTrue(((flowersNullOut.parameters[0].gene as NullableGene).gene as OptionalGene).gene is ArrayGene<*>)
+        val arrayNullOut =
+            ((flowersNullOut.parameters[0].gene as NullableGene).gene as OptionalGene).gene as ArrayGene<*>
+        assertTrue(arrayNullOut.template is IntegerGene)
+
+        /**/
+        val flowersNotNullInOut = actionCluster["flowersNotNullInOut"] as GraphQLAction
+        assertEquals(2, flowersNotNullInOut.parameters.size)
+        assertTrue((flowersNotNullInOut.parameters[0].gene as ArrayGene<*>).template is IntegerGene)
+
     }
-
 
 }
