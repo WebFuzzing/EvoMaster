@@ -59,7 +59,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             replacingConstructor = true,
             castTo = "com.squareup.okhttp.OkHttpClient"
     )
-    public static void OkHttpClient()  {
+    public static void OkHttpClient() throws Exception {
 
         Constructor original = getOriginalConstructor(singleton, "okhttpclient_constructor");
 
