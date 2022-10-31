@@ -59,7 +59,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
             replacingConstructor = true,
             castTo = "com.squareup.okhttp.OkHttpClient"
     )
-    public static void OkHttpClient()  {
+    public static void OkHttpClient() throws Exception {
 
         Constructor original = getOriginalConstructor(singleton, "okhttpclient_constructor");
 
@@ -169,7 +169,7 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
                 replacedUrl = replacedUrl + "?" + (String)encodedQuery;
 
             ClassLoader loader = ExecutionTracer.getLastCallerClassLoader();
-            Object builder = loader.loadClass("okhttp3.Request$Builder").newInstance();
+            Object builder = loader.loadClass("com.squareup.okhttp.Request$Builder").newInstance();
             builder = builder.getClass().getMethod("url", String.class).invoke(builder, replacedUrl);
             replaced = builder.getClass().getMethod("build").invoke(builder);
         }

@@ -44,7 +44,7 @@ class WmHttpsOkHttp3EMTest : SpringTestBase() {
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.12")
+                args.add("127.0.0.82")
 
                 val solution = initAndRun(args)
 

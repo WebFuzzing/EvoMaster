@@ -4,6 +4,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -82,6 +83,7 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
                 continue;
 
             Class[] inputs = m.getParameterTypes();
+            Annotation[][] annotations = m.getParameterAnnotations();
 
             int start = 0;
             if(!r.replacingStatic()){
@@ -95,6 +97,14 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
             }
 
             Class[] reducedInputs = Arrays.copyOfRange(inputs, start, end);
+
+            for (int i = start; i < end; i++){
+                if (annotations[i].length > 0) {
+                    Class<?> klazz = ReplacementUtils.getCastedToThirdParty(annotations[i]);
+                    if (klazz != null)
+                        reducedInputs[i-start] = klazz;
+                }
+            }
 
             Method targetMethod;
             try {
