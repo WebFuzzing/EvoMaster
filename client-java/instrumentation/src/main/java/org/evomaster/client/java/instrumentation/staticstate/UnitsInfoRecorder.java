@@ -175,6 +175,13 @@ public class UnitsInfoRecorder implements Serializable {
         singleton.jpaConstraints.add(constraint);
     }
 
+    public ClassLoader getSutClassLoader(){
+        if(unitNames.isEmpty()){
+            return null;
+        }
+        return classLoaders.get(unitNames.stream().findFirst().get()).get(0);
+    }
+
     public List<JpaConstraint> getJpaConstraints(){
 
         /*
@@ -232,5 +239,13 @@ public class UnitsInfoRecorder implements Serializable {
 
     public List<ClassLoader> getClassLoaders(String className){
         return classLoaders.get(className);
+    }
+
+    public ClassLoader getFirstClassLoader(String className){
+        List<ClassLoader> loaders = getClassLoaders(className);
+        if(loaders == null || loaders.isEmpty()){
+            return null;
+        }
+        return loaders.get(0);
     }
 }

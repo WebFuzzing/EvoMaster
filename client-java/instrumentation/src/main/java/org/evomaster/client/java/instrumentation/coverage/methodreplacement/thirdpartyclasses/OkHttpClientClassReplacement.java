@@ -64,9 +64,9 @@ public class OkHttpClientClassReplacement extends ThirdPartyMethodReplacementCla
 
         try {
             Object client =  original.newInstance();
-            client.getClass().getMethod("sslSocketFactory", SSLSocketFactory.class)
+            client.getClass().getMethod("setSslSocketFactory", SSLSocketFactory.class)
                     .invoke(client, PreDefinedSSLInfo.getTrustAllSSLSocketFactory());
-            client.getClass().getMethod("hostnameVerifier", HostnameVerifier.class)
+            client.getClass().getMethod("setHostnameVerifier", HostnameVerifier.class)
                     .invoke(client,PreDefinedSSLInfo.allowAllHostNames());
             addInstance(client);
         } catch (InstantiationException | IllegalAccessException e) {

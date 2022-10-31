@@ -10,7 +10,7 @@ public class CastImp implements Cast {
         return new OkHttpClient();
     }
 
-    private OkHttpClient inst(){
+    private OkHttpClient inst() throws Exception{
         OkHttpClientClassReplacement.OkHttpClient();
         return (OkHttpClient) OkHttpClientClassReplacement.consumeInstance();
     }

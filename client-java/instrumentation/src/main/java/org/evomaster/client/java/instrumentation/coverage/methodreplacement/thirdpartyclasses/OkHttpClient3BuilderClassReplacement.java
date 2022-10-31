@@ -63,9 +63,9 @@ public class OkHttpClient3BuilderClassReplacement extends ThirdPartyMethodReplac
 
         try {
             Object builder =  original.newInstance();
-            builder.getClass().getMethod("sslSocketFactory", SSLSocketFactory.class, X509TrustManager.class)
+            builder.getClass().getMethod("setSslSocketFactory", SSLSocketFactory.class, X509TrustManager.class)
                     .invoke(builder, PreDefinedSSLInfo.getTrustAllSSLSocketFactory(), PreDefinedSSLInfo.getTrustAllX509TrustManager());
-            builder.getClass().getMethod("hostnameVerifier", HostnameVerifier.class)
+            builder.getClass().getMethod("setHostnameVerifier", HostnameVerifier.class)
                     .invoke(builder,PreDefinedSSLInfo.allowAllHostNames());
 //            builder.sslSocketFactory(PreDefinedSSLInfo.getTrustAllSSLSocketFactory(), PreDefinedSSLInfo.getTrustAllX509TrustManager());
 //            builder.hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames());
