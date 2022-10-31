@@ -12,33 +12,29 @@ import java.util.*;
  * Third-party libraries might or might not be on the classpath.
  * Furthermore, they MUST NOT be part of EvoMaster.
  * So we have to use reflection to access them at runtime.
- * <br>
+ *
  * There is a problem though :(
  * The replaced methods might have inputs or outputs from the third-party library.
  * To write replacements, we need to create the right method signatures, and those must
  * be available at compilation time.
- * A solution here is to include those dependencies, but with "provided" scope (so
+ * A previous attempt to solve this issue was to include those dependencies, but with "provided" scope (so
  * they will not be included in the uber jar).
- * But we should think if there is any better approach to deal with this issue.
- * Still, we need to have mechanism in place to avoid crashing EM at runtime if
- * such libraries are missing. This should be automatically handled here
- * by checking {@link #isAvailable()}.
+ * Unfortunately, this does NOT work, as the classloader that loads the instrumentation might be different from
+ * the one used for the SUT. This is the case for example for Spring applications when using External Driver.
  *
- * UPDATE:
- * it seems that using library in provided mode works fine... this would mean that
- * maybe we do not need to deal with reflection here when creating these replacements.
+ * The current solution is to use reflection, and have such 3rd-party library NOT on the classpath.
+ * They can be in "test" scope when running tests (eg to check validity of string constants), though.
  *
- * UPDATE 2:
- * no, it does not work for External Driver when there are custom classloaders, like in Spring :(
- * TODO trying workaround to remove references in signatures, and force casting in instrumentation
+ * Still, this leaves issue with method signatures.
+ * For return types using 3rd-party objects, must put Object as return type, with actual type specified
+ * in "castTo". A forced casting is automatically then done at instrumentation time.
+ * For input parameters, will need to use the ThirdPartyCast annotation.
  *
- * UPDATE 3:
- * putting Object as return type, with actual type specified in "castTo" seems to work.
- * TODO still have to deal with input parameters. Just using Object might not be enough, as
- * can endup with method signature ambiguity. Might need new annotation for it.
+ * There is still the issue of which classloader to use for reflection.
+ * For MR of non-static methods, can use classloader of the original caller.
+ * For the other cases (eg, static methods and constructors), need to retrieve appropriate classloader from
+ * UnitInfoRecorder.
  *
- * TODO: when creating new method replacements for third-party, let's try with provided
- * and no reflection first, and see if any side-effects
  */
 public abstract class ThirdPartyMethodReplacementClass implements MethodReplacementClass{
 

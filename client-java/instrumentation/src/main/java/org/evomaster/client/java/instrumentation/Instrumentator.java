@@ -82,7 +82,7 @@ public class Instrumentator {
             return null;
         }
 
-        UnitsInfoRecorder.registerClassLoader(className.getBytecodeName(), classLoader);
+        UnitsInfoRecorder.registerClassLoader(className.getFullNameWithDots(), classLoader);
 
         return writer.toByteArray();
     }
