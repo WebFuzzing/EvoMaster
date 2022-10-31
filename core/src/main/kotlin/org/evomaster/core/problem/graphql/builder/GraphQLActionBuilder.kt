@@ -375,9 +375,6 @@ object GraphQLActionBuilder {
                     )
                     val template = getInputScalarListOrEnumListGene(state, copy)
                     ArrayGene(element.fieldName, template)
-                    //todo generalize
-                    //NullableGene(element.fieldName,ArrayGene(element.fieldName, template))
-
                 }
 
             "int" ->
@@ -388,25 +385,25 @@ object GraphQLActionBuilder {
 
             "string" ->
                 if (element.isKindOfFieldTypeOptional)
-                    OptionalGene(element.fieldName, StringGene(element.fieldName))
+                    NullableGene(element.fieldName,OptionalGene(element.fieldName, StringGene(element.fieldName)))
                 else
                     StringGene(element.fieldName)
 
             "float" ->
                 if (element.isKindOfFieldTypeOptional)
-                    OptionalGene(element.fieldName, FloatGene(element.fieldName))
+                    NullableGene(element.fieldName,OptionalGene(element.fieldName, FloatGene(element.fieldName)))
                 else
                     FloatGene(element.fieldName)
 
             "boolean" ->
                 if (element.isKindOfFieldTypeOptional)
-                    OptionalGene(element.fieldName, BooleanGene(element.fieldName))
+                    NullableGene(element.fieldName,OptionalGene(element.fieldName, BooleanGene(element.fieldName)))
                 else
                     BooleanGene(element.fieldName)
 
             "long" ->
                 if (element.isKindOfFieldTypeOptional)
-                    OptionalGene(element.fieldName, LongGene(element.fieldName))
+                    NullableGene(element.fieldName,OptionalGene(element.fieldName, LongGene(element.fieldName)))
                 else
                     LongGene(element.fieldName)
 
@@ -421,7 +418,7 @@ object GraphQLActionBuilder {
 
             "date" ->
                 if (element.isKindOfFieldTypeOptional)
-                    OptionalGene(element.fieldName, BooleanGene(element.fieldName))
+                    NullableGene(element.fieldName,OptionalGene(element.fieldName, BooleanGene(element.fieldName)))
                 else
                     DateGene(element.fieldName)
 
@@ -435,13 +432,13 @@ object GraphQLActionBuilder {
 
             "id" ->
                 if (element.isKindOfFieldTypeOptional)
-                    OptionalGene(element.fieldName, StringGene(element.fieldName))
+                    NullableGene(element.fieldName,OptionalGene(element.fieldName, StringGene(element.fieldName)))
                 else
                     StringGene(element.fieldName)
 
             GqlConst.ENUM ->
                 if (element.isKindOfFieldTypeOptional)
-                    OptionalGene(element.fieldName, EnumGene(element.fieldName, element.enumValues))
+                    NullableGene(element.fieldName,OptionalGene(element.fieldName, EnumGene(element.fieldName, element.enumValues)))
                 else
                     EnumGene(element.fieldName, element.enumValues)
 
@@ -457,7 +454,7 @@ object GraphQLActionBuilder {
 
             else ->
                 if (element.isKindOfFieldTypeOptional)
-                    OptionalGene(element.fieldName, StringGene(element.fieldName))
+                    NullableGene(element.fieldName, OptionalGene(element.fieldName, StringGene(element.fieldName)))
                 else
                     StringGene(element.fieldName)
         }
