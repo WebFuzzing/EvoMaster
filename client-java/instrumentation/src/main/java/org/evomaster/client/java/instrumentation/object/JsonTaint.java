@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.object;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.Collection;
 
@@ -19,13 +20,18 @@ public class JsonTaint {
 
         StringSpecializationInfo info;
 
-        if(Collection.class.isAssignableFrom(klass)){
-            // TODO are there cases in which the content structure would be available? to check
-            info = new StringSpecializationInfo(StringSpecialization.JSON_ARRAY,null);
-        } else {
-            info = new StringSpecializationInfo(StringSpecialization.JSON_OBJECT, ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
+        try{
+            if(Collection.class.isAssignableFrom(klass)){
+                // TODO are there cases in which the content structure would be available? to check
+                info = new StringSpecializationInfo(StringSpecialization.JSON_ARRAY,null);
+            } else {
+                info = new StringSpecializationInfo(StringSpecialization.JSON_OBJECT, ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
+            }
+
+            ExecutionTracer.addStringSpecialization(taint, info);
+        }catch (Exception e){
+            SimpleLogger.warn("Fail to handle tainted value for "+klass.getName());
         }
 
-        ExecutionTracer.addStringSpecialization(taint, info);
     }
 }
