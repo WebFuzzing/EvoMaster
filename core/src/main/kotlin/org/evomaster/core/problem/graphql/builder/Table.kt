@@ -70,6 +70,6 @@ data class Table(
 
 ){
 
-        val uniqueId = "$typeName.$fieldName"
+        val uniqueId = "$typeName.$fieldName.$fieldType"
 
 }
