@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.Collection;
+import java.util.Map;
 
 public class JsonTaint {
 
@@ -24,7 +25,9 @@ public class JsonTaint {
             if(Collection.class.isAssignableFrom(klass)){
                 // TODO are there cases in which the content structure would be available? to check
                 info = new StringSpecializationInfo(StringSpecialization.JSON_ARRAY,null);
-            } else {
+            } else if (Map.class.isAssignableFrom(klass)){
+                info = new StringSpecializationInfo(StringSpecialization.JSON_MAP, ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
+            }else {
                 info = new StringSpecializationInfo(StringSpecialization.JSON_OBJECT, ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
             }
 

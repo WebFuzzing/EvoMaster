@@ -14,9 +14,7 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.TaintedArrayGene
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
@@ -576,6 +574,26 @@ class StringGene(
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_ARRAY }){
             toAddGenes.add(TaintedArrayGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
             log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
+        }
+
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_MAP }){
+            toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_MAP }
+                .distinctBy { it.value }
+                .forEach {
+                    val obj = if (it.value != null){
+                        val schema = it.value
+                        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+                        val ref = t.subSequence(1,t.length-1).toString()
+                        RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
+                    }else
+                        null
+
+                    val taintedMapGene = TaintedMapGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+                        .apply { if (obj != null && obj is MapGene<*, *>) resolveTaint(obj.apply { doInitialize(randomness) }) }
+                    toAddGenes.add(taintedMapGene)
+                }
+
+            log.trace("JSON_MAP, added specification size: {}", toAddGenes.size)
         }
 
         //all regex are combined with disjunction in a single gene

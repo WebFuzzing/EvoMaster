@@ -139,4 +139,6 @@ class TaintedMapGene (
         return taintedValue
     }
 
+    fun isStringMap() = isResolved() && MapGene.isStringMap(mapGene!!)
+
 }
