@@ -61,36 +61,35 @@ object GraphQLUtils {
                 val printableInputGenes = getPrintableInputGenes(printableInputGene)
 
 
-                if (printableInputGenes.isNotEmpty()){
+                if (printableInputGenes.isNotEmpty()) {
 
-                //primitive type in Return
-                bodyEntity = if (returnGene == null) {
-                    Entity.json(
-                        """
+                    //primitive type in Return
+                    bodyEntity = if (returnGene == null) {
+                        Entity.json(
+                            """
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)         } ","variables":null}
                 """.trimIndent()
-                    )
+                        )
 
-                } else if (returnGene.name.endsWith(GqlConst.UNION_TAG)) {//The first is a union type
+                    } else if (returnGene.name.endsWith(GqlConst.UNION_TAG)) {//The first is a union type
 
-                    var query = getQuery(returnGene, a)//todo remove the name for the first union
-                    Entity.json(
-                        """
+                        var query = getQuery(returnGene, a)//todo remove the name for the first union
+                        Entity.json(
+                            """
                    {"query" : " {  ${a.methodName} ($printableInputGenes)  { $query }  }   ","variables":null}
                 """.trimIndent()
-                    )
+                        )
 
-                } else {
-                    val query = getQuery(returnGene, a)
-                    Entity.json(
-                        """
+                    } else {
+                        val query = getQuery(returnGene, a)
+                        Entity.json(
+                            """
                     {"query" : "  { ${a.methodName}  ($printableInputGenes)  $query       } ","variables":null}
                 """.trimIndent()
-                    )
+                        )
 
-                }
-            }
-                else {// need to remove the ()
+                    }
+                } else {// need to remove the ()
 
                     //primitive type in Return
                     bodyEntity = if (returnGene == null) {
@@ -121,9 +120,7 @@ object GraphQLUtils {
 
 
                 }
-            }
-
-            else {//request without arguments
+            } else {//request without arguments
                 bodyEntity = if (returnGene == null) { //primitive type
                     Entity.json(
                         """
@@ -131,8 +128,7 @@ object GraphQLUtils {
                 """.trimIndent()
                     )
 
-                }
-                else {
+                } else {
                     var query = getQuery(returnGene, a)
                     Entity.json(
                         """
@@ -226,20 +222,11 @@ object GraphQLUtils {
 
                         val i = gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
 
+                        //if it is optional it should be active
                         if (gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)
                             printableInputGene.add("${gene.name} : $i")
-                        else if(gene.getWrappedGene(OptionalGene::class.java)==null)
+                        else if (gene.getWrappedGene(OptionalGene::class.java) == null)
                             printableInputGene.add("${gene.name} : $i")
-                        /*
-                        //if (gene !is OptionalGene)
-                        if(gene.getWrappedGene(OptionalGene::class.java)==null)
-                        printableInputGene.add("${gene.name} : $i")
-                        else
-                            //if (gene.isActive)
-                                if (gene.getWrappedGene(OptionalGene::class.java)?.isActive != false)
-                                printableInputGene.add("${gene.name} : $i")*/
-
-
                     }
                 }
             }
@@ -252,12 +239,16 @@ object GraphQLUtils {
         ind.seeAllActions()
             .filterIsInstance<GraphQLAction>()
             .forEach { a ->
-            a.parameters.filterIsInstance<GQReturnParam>().forEach { p ->
-                if (p.gene is ObjectGene ) {
-                    p.gene.fields.forEach { if ((it is TupleGene && it.lastElementTreatedSpecially)|| (it is BooleanGene ) || (it is OptionalGene) ) GeneUtils.repairBooleanSelection(p.gene) }
+                a.parameters.filterIsInstance<GQReturnParam>().forEach { p ->
+                    if (p.gene is ObjectGene) {
+                        p.gene.fields.forEach {
+                            if ((it is TupleGene && it.lastElementTreatedSpecially) || (it is BooleanGene) || (it is OptionalGene)) GeneUtils.repairBooleanSelection(
+                                p.gene
+                            )
+                        }
+                    }
                 }
             }
-        }
     }
 
     /**
@@ -272,12 +263,12 @@ object GraphQLUtils {
      * TODO Remove isRoot(), and extract the names directly from the schema
      */
     fun constructGraph(
-            state: TempState,
-            typeName: String,
-            fieldName: String,
-            graph: MutableMap<String, GraphInfo>,
-            history: MutableList<String>,
-            objectFieldsHistory: MutableSet<String>
+        state: TempState,
+        typeName: String,
+        fieldName: String,
+        graph: MutableMap<String, GraphInfo>,
+        history: MutableList<String>,
+        objectFieldsHistory: MutableSet<String>
     ): MutableMap<String, GraphInfo> {
 
         for (element in state.tables) {
@@ -355,11 +346,11 @@ object GraphQLUtils {
             .toLowerCase() == GqlConst.SCALAR || element.kindOfFieldType.toString().toLowerCase() == GqlConst.ENUM
 
     private fun getInterfaceNodes(
-            history: MutableList<String>,
-            element: Table,
-            state: TempState,
-            graph: MutableMap<String, GraphInfo>,
-            objectFieldsHistory: MutableSet<String>
+        history: MutableList<String>,
+        element: Table,
+        state: TempState,
+        graph: MutableMap<String, GraphInfo>,
+        objectFieldsHistory: MutableSet<String>
     ) {
         if (history.count { it == element.fieldType } <= 1) {// the interface type object already treated
             constructGraph(
@@ -392,11 +383,11 @@ object GraphQLUtils {
     }
 
     private fun getUnionNodes(
-            history: MutableList<String>,
-            element: Table,
-            graph: MutableMap<String, GraphInfo>,
-            state: TempState,
-            objectFieldsHistory: MutableSet<String>
+        history: MutableList<String>,
+        element: Table,
+        graph: MutableMap<String, GraphInfo>,
+        state: TempState,
+        objectFieldsHistory: MutableSet<String>
     ) {
         if (history.count { it == element.fieldType } <= 1) {// the union type object is already treated
             element.unionTypes.forEach { ob ->
@@ -421,11 +412,11 @@ object GraphQLUtils {
     }
 
     private fun getObjectNode(
-            history: MutableList<String>,
-            element: Table,
-            objectFieldsHistory: MutableSet<String>,
-            state: TempState,
-            graph: MutableMap<String, GraphInfo>
+        history: MutableList<String>,
+        element: Table,
+        objectFieldsHistory: MutableSet<String>,
+        state: TempState,
+        graph: MutableMap<String, GraphInfo>
     ) {
         if (history.count { it == element.fieldType } <= 1) {
             if (!objectFieldsHistory.contains(element.fieldType)) {

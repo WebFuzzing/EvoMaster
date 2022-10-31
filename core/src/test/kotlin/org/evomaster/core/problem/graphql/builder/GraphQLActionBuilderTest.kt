@@ -73,11 +73,6 @@ class GraphQLActionBuilderTest {
         assertTrue((owners.parameters[0].gene.getWrappedGene(OptionalGene::class.java)?.gene is ObjectGene))
         //val objOwnerFilter = (owners.parameters[0].gene as OptionalGene).gene as ObjectGene
         val objOwnerFilter = owners.parameters[0].gene.getWrappedGene(OptionalGene::class.java)?.gene  as ObjectGene
-        //assertTrue(objOwnerFilter.fields.any { it is OptionalGene && it.name == "firstName" })
-        //assertTrue(objOwnerFilter.fields.any { it is OptionalGene && it.name == "lastName" })
-        //assertTrue(objOwnerFilter.fields.any { it is OptionalGene && it.name == "address" })
-        //assertTrue(objOwnerFilter.fields.any { it is OptionalGene && it.name == "city" })
-        //assertTrue(objOwnerFilter.fields.any { it is OptionalGene && it.name == "telephone" })
         assertTrue(objOwnerFilter.fields.any { it.getWrappedGene(OptionalGene::class.java)?.gene?.name == "firstName" })
         assertTrue(objOwnerFilter.fields.any { it.getWrappedGene(OptionalGene::class.java)?.gene?.name == "lastName" })
         assertTrue(objOwnerFilter.fields.any { it.getWrappedGene(OptionalGene::class.java)?.gene?.name == "address" })
@@ -231,7 +226,6 @@ class GraphQLActionBuilderTest {
         assertTrue(tupleEntryCollection.elements.any { it.getWrappedGene(OptionalGene::class.java)?.gene?.name == "limit" })
         //assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "preview" })
         assertTrue(tupleEntryCollection.elements.any { it.getWrappedGene(OptionalGene::class.java)?.gene?.name == "preview" })
-
         //assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "locale" })
         assertTrue(tupleEntryCollection.elements.any { it.getWrappedGene(OptionalGene::class.java)?.gene?.name == "locale" })
         assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "entryCollection" })
@@ -913,8 +907,8 @@ class GraphQLActionBuilderTest {
 
         val tuplePrice = objTotal3.fields.first { it.name == "price" } as TupleGene
         assertEquals(1, tuplePrice.elements.size)
-        //This name is correct since it belongs to the input
         //assertTrue(tuplePrice.elements.any { it is OptionalGene && it.gene is StringGene && it.name == "Name" })
+        //This name is correct since it belongs to the input
         assertTrue(tuplePrice.elements.any { it.getWrappedGene(OptionalGene::class.java)?.gene  is StringGene && it.name == "Name" })
         /**/
         val tupleUsers2 = objPage.fields.first { it.name == "users2" } as TupleGene
@@ -1111,7 +1105,6 @@ class GraphQLActionBuilderTest {
         assertTrue(notification.parameters[0] is GQInputParam)
         assertTrue(notification.parameters[3] is GQReturnParam)
 
-
         assertTrue(notification.parameters[3].gene is ObjectGene)
         val unionObjectsNotificationUnion = notification.parameters[3].gene as ObjectGene
         assertEquals(14, unionObjectsNotificationUnion.fields.size)
@@ -1122,7 +1115,6 @@ class GraphQLActionBuilderTest {
         assertEquals(7, objAiringNotification.fields.size)
         assertTrue(objAiringNotification.fields.any { it is BooleanGene && it.name == "id" })
         assertTrue(objAiringNotification.fields.any { it is OptionalGene && it.name == "media" })
-
 
         val objMediaa = (objAiringNotification.fields.first { it.name == "media" } as OptionalGene).gene as ObjectGene
         assertEquals(53, objMediaa.fields.size)
@@ -1219,7 +1211,6 @@ class GraphQLActionBuilderTest {
         assertEquals(2, tupleTotal.elements.size)
         //assertTrue(tupleTotal.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "id" })
         assertTrue(tupleTotal.elements.any { it.getWrappedGene(OptionalGene::class.java)?.gene is IntegerGene && it.name == "id" })
-
         assertTrue((tupleTotal.elements.last() as OptionalGene).gene is ObjectGene)
 
         /**/
@@ -1572,7 +1563,6 @@ class GraphQLActionBuilderTest {
         assertTrue(objEntryCollection.fields.any { it is BooleanGene && it.name == "total" })
 
         /**/
-
         val lessonCodeSnippets = actionCluster["lessonCodeSnippets"] as GraphQLAction
         assertEquals(1, lessonCodeSnippets.parameters.size)
         assertTrue(lessonCodeSnippets.parameters[0] is GQReturnParam)
