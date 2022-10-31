@@ -8,6 +8,10 @@ type Query {
 
     flowersNotNullInOut(id: [Int!]!): Flower
 
+    flowersScalarNullable(id: Boolean):Flower
+
+    flowersScalarNotNullable(id: Boolean!):Flower
+
 }
 
 type Flower {

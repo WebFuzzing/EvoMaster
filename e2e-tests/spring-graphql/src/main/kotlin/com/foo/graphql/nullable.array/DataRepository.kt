@@ -27,9 +27,19 @@ open class DataRepository {
 
     // flowersNotNullInOut(id: [Int!]!): Flower
     fun findFlowersNotNullInOut(id: Array<Int>): Flower? {
-        return  Flower(0, "flowerNameX")
+        return Flower(0, "flowerNameX")
     }
 
+    fun findFlowersScalarNullable(id: Boolean?): Flower? {
+        return if (id == null) null else
+            if (id) Flower(1, "flowerNameIdTrue")
+        else Flower(0, "flowerNameIdFalse")
+    }
+
+    fun findFlowersScalarNotNullable(id: Boolean): Flower? {
+        return if (id) Flower(1, "flowerNameIdTrue")
+        else Flower(0, "flowerNameIdFalse")
+    }
 }
 
 

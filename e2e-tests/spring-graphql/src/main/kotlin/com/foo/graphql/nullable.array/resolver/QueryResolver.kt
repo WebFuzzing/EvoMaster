@@ -30,6 +30,16 @@ open class QueryResolver(
     fun flowersNotNullInOut(id: Array<Int>): Flower?{
         return dataRepo.findFlowersNotNullInOut(id)
     }
+
+    //flowersScalarNullable(id: Boolean):Flower
+    fun flowersScalarNullable(id: Boolean?): Flower?{
+        return dataRepo.findFlowersScalarNullable(id)
+    }
+
+    //flowersScalarNotNullable(id: Boolean!):Flower
+    fun flowersScalarNotNullable(id: Boolean): Flower?{
+        return dataRepo.findFlowersScalarNotNullable(id)
+    }
 }
 
 
