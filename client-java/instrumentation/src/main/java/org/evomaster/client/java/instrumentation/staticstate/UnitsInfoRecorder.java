@@ -86,10 +86,19 @@ public class UnitsInfoRecorder implements Serializable {
     }
 
     /**
-     * Only need for tests
+     * Only need for tests. DO NOT CALL DIRECTLY IN THE SEARCH!!!
+     * otherwise, it would make impossible to run experiments twice on same running SUT,
+     * as classes are loaded only once
      */
     public static void reset(){
-        singleton = new UnitsInfoRecorder();
+        UnitsInfoRecorder copy = new UnitsInfoRecorder();
+        /*
+            A class can be loaded only once for same classloader.
+            Cleaning this transient data structure would imply that the same info cannot be inferred again,
+            which would make not possible to use the same SUT in 2 different E2E
+         */
+        copy.classLoaders.putAll(singleton.classLoaders);
+        singleton = copy;
     }
 
     public static UnitsInfoRecorder getInstance(){
