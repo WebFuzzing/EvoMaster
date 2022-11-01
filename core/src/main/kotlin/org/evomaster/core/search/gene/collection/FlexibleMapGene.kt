@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.collection
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.optional.FlexibleGene
+import org.evomaster.core.search.gene.optional.FlexibleGene.Companion.wrapWithFlexibleGene
 
 class FlexibleMapGene<T>(
     name: String,
@@ -11,6 +12,9 @@ class FlexibleMapGene<T>(
     elements: MutableList<PairGene<T, FlexibleGene>> = mutableListOf()
 ) : MapGene<T, FlexibleGene>(name, template, maxSize, minSize, elements)
 where T : Gene {
+
+    constructor(name : String, key: T, value: Gene, maxSize: Int? = null, minSize: Int? = null): this(name,
+        PairGene("template", key, wrapWithFlexibleGene(value)), maxSize, minSize)
 
     override fun copyContent(): Gene {
         return FlexibleMapGene(

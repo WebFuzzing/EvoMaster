@@ -127,11 +127,32 @@ abstract class MapGene<K, V>(
         return "{" +
                 elements.filter { f ->
                     isPrintable(f)
-                }.map {f->
+                }.joinToString(",") { f ->
                     """
-                    ${getKeyValueAsPrintableString(f.first, targetFormat)}:${f.second.getValueAsPrintableString(targetFormat = targetFormat)}
+                    ${getKeyValueAsPrintableString(f.first, targetFormat)}:${
+                        f.second.getValueAsPrintableString(
+                            targetFormat = targetFormat
+                        )
+                    }
                     """
-                }.joinToString(",") +
+                } +
+                "}"
+    }
+
+    override fun getValueAsRawString(): String  {
+
+        if(!isPrintable()){
+            throw IllegalStateException("Trying to print a Map with unprintable template")
+        }
+
+        return "{" +
+                elements.filter { f ->
+                    isPrintable(f)
+                }.joinToString(",") { f ->
+                    """
+                    ${getKeyValueAsPrintableString(f.first, null)}:${f.second.getValueAsRawString()}
+                    """
+                } +
                 "}"
     }
 
