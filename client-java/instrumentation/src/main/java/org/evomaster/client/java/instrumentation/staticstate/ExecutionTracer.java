@@ -122,6 +122,7 @@ public class ExecutionTracer {
             executingAction = false;
             sleepingThreads.clear();
             lastCallerClass = null;
+            skippedHostName.clear();
         }
     }
 
