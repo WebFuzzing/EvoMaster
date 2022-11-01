@@ -124,7 +124,7 @@ object TaintAnalysis {
         randomness: Randomness,
         inputVariables: Set<String>) {
 
-        val taintedMaps = allTaintableGenes.filterIsInstance<TaintedMapGene>().filter { !it.isResolved() || it.isStringMap()}
+        val taintedMaps = allTaintableGenes.filterIsInstance<TaintedMapGene>()
 
         if (taintedMaps.isEmpty()) {
             return

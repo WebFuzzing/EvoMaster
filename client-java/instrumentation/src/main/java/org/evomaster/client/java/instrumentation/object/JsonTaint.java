@@ -26,6 +26,10 @@ public class JsonTaint {
                 // TODO are there cases in which the content structure would be available? to check
                 info = new StringSpecializationInfo(StringSpecialization.JSON_ARRAY,null);
             } else if (Map.class.isAssignableFrom(klass)){
+                /*
+                    might set schema value null, check later
+                    it relates to add tainted map or map into string specification
+                 */
                 info = new StringSpecializationInfo(StringSpecialization.JSON_MAP, ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
             }else {
                 info = new StringSpecializationInfo(StringSpecialization.JSON_OBJECT, ClassToSchema.getOrDeriveSchemaWithItsRef(klass));

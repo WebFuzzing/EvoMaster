@@ -588,9 +588,11 @@ class StringGene(
                     }else
                         null
 
-                    val taintedMapGene = TaintedMapGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
-                        .apply { if (obj != null && obj is MapGene<*, *>) resolveTaint(obj.apply { doInitialize(randomness) }) }
-                    toAddGenes.add(taintedMapGene)
+                    if (obj != null && obj is MapGene<*, *>){
+                        toAddGenes.add(obj)
+                    }else{
+                        toAddGenes.add(TaintedMapGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
+                    }
                 }
 
             log.trace("JSON_MAP, added specification size: {}", toAddGenes.size)
