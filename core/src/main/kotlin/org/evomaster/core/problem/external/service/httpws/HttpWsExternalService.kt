@@ -113,7 +113,8 @@ class HttpWsExternalService(
                 externalServiceInfo.getDescriptiveURLPath()+it.request.url,
                 // separated by a comma, https://www.rfc-editor.org/rfc/rfc9110.html#name-field-order
                 it.request.headers?.all()?.filter { h-> h.key() != null }
-                    ?.associate {h-> h.key() to h.values().filterNotNull().joinToString(",") } ?: emptyMap()
+                    ?.associate {h-> h.key() to h.values().filterNotNull().joinToString(",") } ?: emptyMap(),
+                it.request.bodyAsString
             )
         }.toList()
     }

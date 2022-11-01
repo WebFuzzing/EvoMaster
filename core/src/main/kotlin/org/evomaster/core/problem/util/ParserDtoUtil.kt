@@ -29,6 +29,14 @@ object ParserDtoUtil {
     private val objectMapper = ObjectMapper()
     private val log: Logger = LoggerFactory.getLogger(ParserDtoUtil::class.java)
 
+    fun getJsonNodeFromText(text: String) : JsonNode?{
+        return try {
+            objectMapper.readTree(text)
+        }catch (e: Exception){
+            null
+        }
+    }
+
     /**
      * get or parse schema of dto classes from [infoDto] as gene
      * @return a map of dto class name to corresponding gene

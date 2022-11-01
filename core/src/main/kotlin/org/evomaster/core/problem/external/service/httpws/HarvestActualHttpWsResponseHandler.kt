@@ -11,6 +11,7 @@ import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.problem.util.ParserDtoUtil
+import org.evomaster.core.problem.util.ParserDtoUtil.getJsonNodeFromText
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
 import org.evomaster.core.problem.util.ParserDtoUtil.setGeneBasedOnString
 import org.evomaster.core.problem.util.ParserDtoUtil.wrapWithOptionalGene
@@ -31,6 +32,9 @@ import javax.annotation.PreDestroy
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
+import javax.ws.rs.client.Entity
+import javax.ws.rs.client.Invocation
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 class HarvestActualHttpWsResponseHandler {
@@ -197,12 +201,12 @@ class HarvestActualHttpWsResponseHandler {
             return
 
         // only harvest responses with GET method
-        val filter = requests.filter { it.method.equals("GET", ignoreCase = true) }
+        //val filter = requests.filter { it.method.equals("GET", ignoreCase = true) }
         synchronized(cachedRequests){
-            filter.forEach { cachedRequests.putIfAbsent(it.getDescription(), it) }
+            requests.forEach { cachedRequests.putIfAbsent(it.getDescription(), it) }
         }
 
-        addRequests(filter.map { it.getDescription() })
+        addRequests(requests.map { it.getDescription() })
     }
 
     private fun addRequests(requests : List<String>) {
@@ -221,13 +225,41 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
+    private fun buildInvocation(httpRequest : HttpExternalServiceRequest) : Invocation{
+        val build = httpWsClient.target(httpRequest.actualAbsoluteURL).request("*/*").apply {
+            val handledHeaders = httpRequest.headers.filterNot { skipHeaders.contains(it.key.lowercase()) }
+            if (handledHeaders.isNotEmpty())
+                handledHeaders.forEach { (t, u) -> this.header(t, u) }
+        }
+
+        val bodyEntity = if (httpRequest.body != null) {
+            val contentType = httpRequest.getContentType()
+            if (contentType !=null )
+                Entity.entity(httpRequest.body, contentType)
+            else
+                Entity.entity(httpRequest.body, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+        } else {
+            null
+        }
+
+        return when{
+            httpRequest.method.equals("GET", ignoreCase = true) -> build.buildGet()
+            httpRequest.method.equals("POST", ignoreCase = true) -> build.buildPost(bodyEntity)
+            httpRequest.method.equals("PUT", ignoreCase = true) -> build.buildPut(bodyEntity)
+            httpRequest.method.equals("DELETE", ignoreCase = true) -> build.buildDelete()
+            httpRequest.method.equals("PATCH", ignoreCase = true) -> build.build("PATCH", bodyEntity)
+            httpRequest.method.equals("OPTIONS", ignoreCase = true) -> build.build("OPTIONS")
+            httpRequest.method.equals("HEAD", ignoreCase = true) -> build.build("HEAD")
+            httpRequest.method.equals("TRACE", ignoreCase = true) -> build.build("TRACE")
+            else -> {
+                throw IllegalStateException("NOT SUPPORT to create invocation for method ${httpRequest.method}")
+            }
+        }
+    }
+
     private fun createInvocationToRealExternalService(httpRequest : HttpExternalServiceRequest) : Response?{
         return try {
-            httpWsClient.target(httpRequest.actualAbsoluteURL).request("*/*").apply {
-                val handledHeaders = httpRequest.headers.filterNot { skipHeaders.contains(it.key.lowercase()) }
-                if (handledHeaders.isNotEmpty())
-                    handledHeaders.forEach { (t, u) -> this.header(t, u) }
-            }.buildGet().invoke()
+            buildInvocation(httpRequest).invoke()
         } catch (e: ProcessingException) {
 
             log.debug("There has been an issue in accessing external service with url (${httpRequest.getDescription()}): {}", e)
@@ -269,7 +301,7 @@ class HarvestActualHttpWsResponseHandler {
     private fun handleActualResponse(response: Response?) : ActualResponseInfo? {
         response?:return null
         val body = response.readEntity(String::class.java)
-        val node = handleJsonResponse(body)
+        val node = getJsonNodeFromText(body)
         val responseParam = if(node != null){
             getHttpResponse(node).apply {
                 setGeneBasedOnString(responseBody, body)
@@ -279,14 +311,6 @@ class HarvestActualHttpWsResponseHandler {
         }
 
         return ActualResponseInfo(body, responseParam)
-    }
-
-    private fun handleJsonResponse(textualResponse: String) : JsonNode?{
-        return try {
-            jacksonMapper.readTree(textualResponse)
-        }catch (e: Exception){
-            null
-        }
     }
 
     private fun getHttpResponse(node: JsonNode) : ResponseParam{

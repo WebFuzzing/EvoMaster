@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.external.service.httpws
 
+import org.evomaster.core.problem.util.ParserDtoUtil.getJsonNodeFromText
 import java.util.UUID
 
 /**
@@ -25,7 +26,12 @@ class HttpExternalServiceRequest(
 
     val actualAbsoluteURL : String,
 
-    val headers : Map<String, String>
+    val headers : Map<String, String>,
+
+    /**
+     * body payload
+     */
+    val body : String?
 ) {
 
     fun getId() : String {
@@ -35,5 +41,22 @@ class HttpExternalServiceRequest(
     /**
      * get description of this an HTTP request to external service
      */
-    fun getDescription() = "$method:$absoluteURL[${headers.keys.joinToString(";") { "$it:${headers[it]}" }}]"
+    fun getDescription() = "$method:$absoluteURL[${headers.keys.joinToString(";") { "$it:${headers[it]}" }}]{${body?:"none"}}"
+
+    fun getContentType() : String?{
+        if (body == null) return null
+
+        val hct = headers.filterKeys { it.equals("contentType", ignoreCase = true) }
+        if (hct.isNotEmpty()){
+            return hct.values.first()
+        }
+
+        val json = getJsonNodeFromText(body) != null
+        if (json)
+            return "application/json"
+
+        // TODO might add other derived types
+
+        return null
+    }
 }
