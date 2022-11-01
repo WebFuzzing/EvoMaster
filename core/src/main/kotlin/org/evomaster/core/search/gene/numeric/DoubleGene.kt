@@ -58,7 +58,11 @@ class DoubleGene(name: String,
     override fun copyContent() = DoubleGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
     override fun setValueWithRawString(value: String) {
-        this.value = value.toDouble()
+        try {
+            this.value = value.toDouble()
+        }catch (e: Exception){
+            log.warn("cannot set double with $value")
+        }
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

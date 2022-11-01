@@ -12,6 +12,14 @@ class EmptyStructureMutator : StructureMutator() {
         //DO nothing
     }
 
+    override fun addExternalServiceActions(
+        individual: EvaluatedIndividual<*>,
+        mutatedGenes: MutatedGeneSpecification?
+    ): Boolean {
+        //DO nothing
+        return false
+    }
+
     override fun mutateStructure(individual: Individual, evaluatedIndividual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?, targets: Set<Int>) {
         //DO nothing
     }
