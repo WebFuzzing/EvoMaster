@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 
 class FlexibleGene(name: String,
                    gene: Gene,
-                   val replaceable: Boolean = false
+                   val replaceable: Boolean = true
 ) : CompositeGene(name, mutableListOf(gene)) {
 
     init {
@@ -24,16 +24,31 @@ class FlexibleGene(name: String,
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(FlexibleGene::class.java)
+
+        fun wrapWithFlexibleGene(gene: Gene, replaceable: Boolean = true) : FlexibleGene{
+            if (gene is FlexibleGene) {
+                if (gene.replaceable != replaceable)
+                    return FlexibleGene(gene.name, gene.gene, replaceable)
+                return gene
+            }
+            return FlexibleGene(gene.name, gene, replaceable)
+        }
     }
 
-    val gene : Gene = children[0]
+    val gene: Gene
+        get() {return children.first()}
 
-    fun replaceGeneTo(gene: Gene){
+//    fun getGene() : Gene{
+//        return children.first()
+//    }
+
+    fun replaceGeneTo(geneToUpdate: Gene){
         if (!replaceable)
             throw IllegalStateException("attempt to replace the gene which is not replaceable")
         Lazy.assert { children.size == 1 }
-        killChildByIndex(0)
-        addChild(gene)
+        killAllChildren()
+        geneToUpdate.resetLocalIdRecursively()
+        addChild(geneToUpdate)
     }
 
     override fun copyContent(): FlexibleGene {
@@ -107,6 +122,10 @@ class FlexibleGene(name: String,
 
     override fun isPrintable(): Boolean {
         return gene.isPrintable()
+    }
+
+    override fun getValueAsRawString(): String {
+        return gene.getValueAsRawString()
     }
 
 }

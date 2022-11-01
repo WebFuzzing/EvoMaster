@@ -3,8 +3,10 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.collection.FlexibleMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.FlexibleGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -102,5 +104,20 @@ internal class MapGeneTest{
         //replace the existing pair with s2New
         assertTrue(map.getValueAsPrintableString(targetFormat = targetFormat).contains("\"TWO\":\"bar\"", ignoreCase = true))
         assertEquals(2, map.getAllElements().size)
+    }
+
+    @Test
+    fun testFlexibleGeneReplace(){
+        val integerGene = IntegerGene("int", 1)
+        val fMap = FlexibleMapGene("intMap", StringGene("key"), integerGene)
+
+        val stringGene = StringGene("string", "bar")
+        val element = fMap.template.copy() as PairGene<*, FlexibleGene>
+        element.second.replaceGeneTo(stringGene)
+        assertEquals(element.second.gene, stringGene)
+        fMap.addChild(element)
+
+        assertEquals(1, fMap.getAllElements().size)
+        assertEquals(element, fMap.getViewOfChildren().first() as PairGene<*,*>)
     }
 }
