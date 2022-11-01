@@ -12,7 +12,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.SeededGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
@@ -109,7 +109,7 @@ object ParserDtoUtil {
 
     private fun inferGeneBasedOnJsonNode(name: String, jsonNode : JsonNode, objectGeneCluster: Map<String, Gene>?) : Gene?{
         if (jsonNode.size() == 0)
-            return MapGene(name, StringGene("key"), StringGene("value"))
+            return FixedMapGene(name, StringGene("key"), StringGene("value"))
 
         val values = jsonNode.fields().asSequence().map { parseJsonNodeAsGene(it.key, it.value, objectGeneCluster) }.toMutableList()
         if (values.any { it == null })
@@ -119,7 +119,7 @@ object ParserDtoUtil {
             if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
         }
         return if (groupedValues.size == 1){
-            MapGene(name, StringGene("key"), values.first()!!.copy())
+            FixedMapGene(name, StringGene("key"), values.first()!!.copy())
         }else
             ObjectGene(name, values.map { wrapWithOptionalGene(it!!, true) })
     }
@@ -196,7 +196,7 @@ object ParserDtoUtil {
                         throw IllegalStateException("stringValue ($stringValue) is not Array")
                     }
                 }
-                is MapGene<*, *> ->{
+                is FixedMapGene<*, *> ->{
                     val template = valueGene.template
                     val node = objectMapper.readTree(stringValue)
                     if (node.isObject){

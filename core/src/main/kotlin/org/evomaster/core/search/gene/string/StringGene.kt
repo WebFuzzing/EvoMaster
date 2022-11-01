@@ -577,7 +577,7 @@ class StringGene(
         }
 
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_MAP }){
-            val mapGene = MapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"))
+            val mapGene = FixedMapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"))
             /*
                 for Map, we currently only handle them as string key with string value
                 TODO handle generic type if they have
