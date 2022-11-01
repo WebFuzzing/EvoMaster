@@ -125,7 +125,8 @@ public class ExecutionTracer {
             executingAction = false;
             sleepingThreads.clear();
             lastCallerClass = null;
-            skippedHostName.clear();
+            // since skipedhost name is hard coded, then tmp skip clear in this branch
+            //skippedHostName.clear();
         }
     }
 
