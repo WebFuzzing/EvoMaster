@@ -1,4 +1,4 @@
-package com.foo.graphql.nullable.type
+package com.foo.graphql.nullableInput.type
 
 data class Flower (
      var id: Int? = null,

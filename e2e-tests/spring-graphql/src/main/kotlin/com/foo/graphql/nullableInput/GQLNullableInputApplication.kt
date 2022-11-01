@@ -1,4 +1,4 @@
-package com.foo.graphql.nullable
+package com.foo.graphql.nullableInput
 
 
 import org.springframework.boot.SpringApplication

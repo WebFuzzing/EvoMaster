@@ -1,7 +1,6 @@
-package com.foo.graphql.nullable.array
+package com.foo.graphql.nullableInput
 
 import com.foo.graphql.SpringController
-import com.foo.graphql.nullable.GQLNullableInputApplication
 
 
 class NullableInputController : SpringController(GQLNullableInputApplication::class.java) {

@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.graphql.nullable
+package org.evomaster.e2etests.spring.graphql.nullableInput
 
-import com.foo.graphql.nullable.array.NullableInputController
+import com.foo.graphql.nullableInput.NullableInputController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions

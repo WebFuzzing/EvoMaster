@@ -1,8 +1,8 @@
-package com.foo.graphql.nullable.resolver
+package com.foo.graphql.nullableInput.resolver
 
 
-import com.foo.graphql.nullable.DataRepository
-import com.foo.graphql.nullable.type.Flower
+import com.foo.graphql.nullableInput.DataRepository
+import com.foo.graphql.nullableInput.type.Flower
 import graphql.kickstart.tools.GraphQLQueryResolver
 import org.springframework.stereotype.Component
 
