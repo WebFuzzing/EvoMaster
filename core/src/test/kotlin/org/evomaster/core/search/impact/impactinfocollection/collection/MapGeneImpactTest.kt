@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.collection
 
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -25,7 +25,7 @@ class MapGeneImpactTest : GeneImpactTest(){
         return counter
     }
     override fun getGene(): Gene {
-        return MapGene("map", template = map.first() , elements = map)
+        return FixedMapGene("map", template = map.first() , elements = map)
     }
 
     override fun checkImpactType(impact: GeneImpact) {
@@ -33,7 +33,7 @@ class MapGeneImpactTest : GeneImpactTest(){
     }
 
     override fun simulateMutation(original: Gene, geneToMutate: Gene, mutationTag: Int): MutatedGeneWithContext {
-        geneToMutate as MapGene<StringGene, IntegerGene>
+        geneToMutate as FixedMapGene<StringGene, IntegerGene>
 
         val p = Random.nextBoolean()
 
