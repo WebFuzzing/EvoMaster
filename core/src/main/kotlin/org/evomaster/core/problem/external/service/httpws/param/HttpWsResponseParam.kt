@@ -21,7 +21,10 @@ class HttpWsResponseParam (
      */
     responseType: EnumGene<String> = EnumGene("responseType", listOf("JSON")),
     /**
-     * The body payload of the response, if any
+     * The body payload of the response, if any.
+     * Notice that the gene is a String, although the body might NOT be a string, but rather an Object or Array.
+     * This still works because we handle it in the phenotype representation, ie using raw values of specializations,
+     * which will not be quoted ""
      *
      * TODO: might want to extend StringGene to avoid cases in which taint is lost due to mutation
      */
