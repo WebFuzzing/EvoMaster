@@ -138,7 +138,8 @@ abstract class TestCaseWriter {
                     response,
                     action.request.method.lowercase(),
                     "urlEqualTo(\"${action.request.url}\")",
-                    index+1
+                    index+1,
+                    format
                 )
                 lines.appendSemicolon(format)
                 lines.addEmpty(1)
