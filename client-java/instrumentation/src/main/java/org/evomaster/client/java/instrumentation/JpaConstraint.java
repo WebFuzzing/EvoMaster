@@ -1,9 +1,10 @@
 package org.evomaster.client.java.instrumentation;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-public class JpaConstraint {
+public class JpaConstraint implements Serializable {
 
     private final String tableName;
 
