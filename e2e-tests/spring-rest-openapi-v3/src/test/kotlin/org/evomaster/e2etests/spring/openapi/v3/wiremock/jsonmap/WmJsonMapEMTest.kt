@@ -33,8 +33,8 @@ class WmJsonMapEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmJsonMapEM",
             "org.foo.WmJsonMapEM",
-            500,
-            false, //!CIUtils.isRunningGA(), there exist bug in generated tests for map
+            10000,
+            !CIUtils.isRunningGA(), //there exist bug in generated tests for map
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -48,6 +48,8 @@ class WmJsonMapEMTest : SpringTestBase() {
 
                 if (!CIUtils.isRunningGA()) {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "not empty map and include")
+                    //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "foo42") // not solved yet
+                    //assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/jsonmap/gson", "bar54") // not solved yet
                     assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/wm/jsonmap/gson", "empty map")
                     assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/wm/jsonmap/gson", "")
                 }
