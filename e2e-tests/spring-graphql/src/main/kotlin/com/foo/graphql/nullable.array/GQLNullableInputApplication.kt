@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 @SpringBootApplication
 open class GQLNullableArrayApplication{
     companion object{
-        const val SCHEMA_NAME = "nullable.array.graphqls"
+        const val SCHEMA_NAME = "nullable.input.graphqls"
     }
 }
 

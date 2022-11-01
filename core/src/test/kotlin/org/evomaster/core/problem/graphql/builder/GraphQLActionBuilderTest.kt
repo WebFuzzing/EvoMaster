@@ -1587,7 +1587,7 @@ class GraphQLActionBuilderTest {
         val actionCluster = mutableMapOf<String, Action>()
         // The .graphqls schema is from: e2e-tests/spring-graphql/src/main/resources/nullable.array.graphqls
         val json =
-            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/nullableArray.json").readText()
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/nullableInput.json").readText()
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
