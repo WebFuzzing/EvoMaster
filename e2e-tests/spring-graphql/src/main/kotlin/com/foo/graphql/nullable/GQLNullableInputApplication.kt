@@ -1,4 +1,4 @@
-package com.foo.graphql.nullable.array
+package com.foo.graphql.nullable
 
 
 import org.springframework.boot.SpringApplication
@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 
 
 @SpringBootApplication
-open class GQLNullableArrayApplication{
+open class GQLNullableInputApplication{
     companion object{
         const val SCHEMA_NAME = "nullable.input.graphqls"
     }
@@ -26,6 +26,6 @@ open class GQLNullableArrayApplication{
  */
 fun main(args: Array<String>) {
     SpringApplication.run(
-        GQLNullableArrayApplication::class.java,
-            "--graphql.tools.schema-location-pattern=**/${GQLNullableArrayApplication.SCHEMA_NAME}")
+        GQLNullableInputApplication::class.java,
+            "--graphql.tools.schema-location-pattern=**/${GQLNullableInputApplication.SCHEMA_NAME}")
 }

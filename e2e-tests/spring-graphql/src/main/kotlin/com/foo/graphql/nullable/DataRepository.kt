@@ -1,6 +1,6 @@
-package com.foo.graphql.nullable.array
+package com.foo.graphql.nullable
 
-import com.foo.graphql.nullable.array.type.Flower
+import com.foo.graphql.nullable.type.Flower
 import org.springframework.stereotype.Component
 
 

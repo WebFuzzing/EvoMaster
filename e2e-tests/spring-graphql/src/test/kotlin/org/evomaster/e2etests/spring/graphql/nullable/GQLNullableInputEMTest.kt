@@ -1,19 +1,19 @@
-package org.evomaster.e2etests.spring.graphql.nullable.array
+package org.evomaster.e2etests.spring.graphql.nullable
 
-import com.foo.graphql.nullable.array.NullableArrayController
+import com.foo.graphql.nullable.array.NullableInputController
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class GQLNullableArrayEMTest : SpringTestBase() {
+class GQLNullableInputEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(NullableArrayController())
+            initClass(NullableInputController())
         }
     }
 
@@ -21,8 +21,8 @@ class GQLNullableArrayEMTest : SpringTestBase() {
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-                "GQL_NullableArrayEM",
-                "org.foo.graphql.NullableArrayEM",
+                "GQL_NullableInputEM",
+                "org.foo.graphql.NullableInputEM",
                 20
         ) { args: MutableList<String> ->
 
