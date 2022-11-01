@@ -14,7 +14,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 class TestWriterUtils {
     companion object {
 
-        fun formatJsonWithEscapes(json: String, outputFormat: OutputFormat) : List<String>{
+        fun formatJsonWithEscapes(json: String, outputFormat: OutputFormat, extraSpace: String= " ") : List<String>{
             val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
                 OutputFormatter.JSON_FORMATTER.getFormatted(json)
             } else {
@@ -23,7 +23,7 @@ class TestWriterUtils {
 
             //needed as JSON uses ""
             return body.split("\n").map { s ->
-                "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = outputFormat) + " \""
+                "\"$extraSpace" + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = outputFormat) + "$extraSpace\""
             }
         }
 
@@ -47,14 +47,14 @@ class TestWriterUtils {
                 wm.getWMDefaultUrlSetting(),
                 wm.getWMDefaultConnectionHeader(),
                 wm.getWMDefaultCode(),
-                formatJsonWithEscapes(wm.getWMDefaultMessage(), outputFormat),
+                formatJsonWithEscapes(wm.getWMDefaultMessage(), outputFormat, extraSpace = ""),
                 wm.getWMDefaultPriority()
             )
         }
 
         fun handleStubForAsJavaOrKotlin(lines: Lines, wm : HttpWsExternalService, response: HttpWsResponseParam, method: String, urlSetting: String, priority: Int, outputFormat: OutputFormat){
             val name = getWireMockVariableName(wm)
-            val bodyLines = formatJsonWithEscapes(response.responseBody.getValueAsRawString(), outputFormat)
+            val bodyLines = formatJsonWithEscapes(response.responseBody.getValueAsRawString(), outputFormat, extraSpace = "")
             handleStubForAsJavaOrKotlin(lines, name, method, urlSetting, response.connectionHeader, response.status.getValueAsRawString().toInt(), bodyLines, priority)
         }
 
