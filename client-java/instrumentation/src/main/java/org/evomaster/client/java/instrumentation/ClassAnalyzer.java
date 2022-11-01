@@ -3,8 +3,8 @@ package org.evomaster.client.java.instrumentation;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -31,14 +31,24 @@ public class ClassAnalyzer {
 
             Class<?> klass;
             try {
-                klass = ClassAnalyzer.class.getClassLoader().loadClass(name);
+                ClassLoader loader = UnitsInfoRecorder.getInstance().getFirstClassLoader(name);
+                if(loader == null){
+                    //could happen in tests
+                    loader = ClassAnalyzer.class.getClassLoader();
+                    SimpleLogger.warn("No class loader registered for " + name);
+                }
+                klass = loader.loadClass(name);
             } catch (ClassNotFoundException e) {
                 SimpleLogger.error("Failed to load class " + name, e);
                 continue;
             }
 
-            if(jpa) {
-                analyzeJpaConstraints(klass);
+            try {
+                if (jpa) {
+                    analyzeJpaConstraints(klass);
+                }
+            }catch (Exception e){
+                SimpleLogger.error("Failed to analyze " + name, e);
             }
         }
     }
@@ -46,13 +56,34 @@ public class ClassAnalyzer {
     private static boolean canUseJavaxJPA(){
 
         try {
-            ClassAnalyzer.class.getClassLoader().loadClass("javax.persistence.Entity");
-            ClassAnalyzer.class.getClassLoader().loadClass("javax.validation.constraints.NotNull");
+            ClassLoader loader = UnitsInfoRecorder.getInstance().getSutClassLoader();
+            if(loader == null){
+                //could happen in tests
+                SimpleLogger.warn("No identified ClassLoader for SUT");
+                loader = ClassAnalyzer.class.getClassLoader();
+            }
+            loader.loadClass("javax.persistence.Entity");
+            loader.loadClass("javax.validation.constraints.NotNull");
             return true;
         } catch (ClassNotFoundException e) {
             SimpleLogger.info("Not analyzing JPA using javax package");
             return false;
         }
+    }
+
+    private static Annotation getAnnotationByName(Class<?> klass, String name){
+        return getAnnotationByName(klass.getAnnotations(), name);
+    }
+
+    private static Annotation getAnnotationByName(Field field, String name){
+        return getAnnotationByName(field.getAnnotations(), name);
+    }
+
+
+    private static Annotation getAnnotationByName(Annotation[] annotations, String name){
+        return Arrays.stream(annotations)
+                .filter(a -> a.annotationType().getName().equals(name))
+                .findFirst().orElse(null);
     }
 
 
@@ -62,7 +93,7 @@ public class ClassAnalyzer {
         return s.replaceAll(regex, replacement).toLowerCase();
     }
 
-    private static void analyzeJpaConstraints(Class<?> klass){
+    private static void analyzeJpaConstraints(Class<?> klass) throws Exception{
 
         //TODO recall to handle new Jakarta namespace as well
 
@@ -71,11 +102,13 @@ public class ClassAnalyzer {
             Rare, but could handle it
         */
 
-        Entity entity = klass.getAnnotation(Entity.class);
+//        Entity entity = klass.getAnnotation(Entity.class);
+        Object entity = getAnnotationByName(klass, "javax.persistence.Entity");
         if(entity == null){
             return; //nothing to do
         }
 
+        String entityName = (String) entity.getClass().getMethod("name").invoke(entity);
         String tableName;
 
         /*
@@ -83,11 +116,13 @@ public class ClassAnalyzer {
             https://www.jpa-buddy.com/blog/hibernate-naming-strategies-jpa-specification-vs-springboot-opinionation/
          */
 
-        Table table = klass.getAnnotation(Table.class);
+        //Table table = klass.getAnnotation(Table.class);
+        Object table = getAnnotationByName(klass, "javax.persistence.Table");
+
         if(table != null){
-            tableName = table.name();
-        } else if(entity.name() != null && !entity.name().isEmpty()){
-            tableName = entity.name();
+            tableName = (String) table.getClass().getMethod("name").invoke(table);
+        } else if(entityName != null && !entityName.isEmpty()){
+            tableName = entityName;
         } else {
             tableName = klass.getSimpleName();
         }
@@ -107,7 +142,8 @@ public class ClassAnalyzer {
         //TODO: this does NOT include fields in super-classes
         for(Field f : klass.getDeclaredFields()){
 
-            if(Modifier.isStatic(f.getModifiers()) || f.getAnnotation(Transient.class) != null){
+            if(Modifier.isStatic(f.getModifiers())
+                    || getAnnotationByName(f, "javax.persistence.Transient") != null){
                 /*
                     Likely other cases to skip
                  */
@@ -124,9 +160,11 @@ public class ClassAnalyzer {
              */
 
             String columnName = null;
-            Column column = f.getAnnotation(Column.class);
+            //Column column = f.getAnnotation(Column.class);
+            Object column = getAnnotationByName(f, "javax.persistence.Column");
+
             if(column != null){
-                columnName = column.name();
+                columnName = (String) column.getClass().getMethod("name").invoke(column);
             }
 
             if(columnName == null || columnName.isEmpty()){
@@ -136,7 +174,8 @@ public class ClassAnalyzer {
             columnName = convertToSnakeCase(columnName);
 
             Boolean isNullable = null;
-            if(f.getType().isPrimitive() || f.getAnnotation(NotNull.class)!=null){
+            if(f.getType().isPrimitive()
+                    || getAnnotationByName(f, "javax.validation.constraints.NotNull")!=null){
                 isNullable = false;
             }
 
@@ -145,8 +184,12 @@ public class ClassAnalyzer {
 
                 //TODO probably for enum of ints could just use a min-max range
 
-                Enumerated enumerated = f.getAnnotation(Enumerated.class);
-                if(enumerated != null && enumerated.value().equals(EnumType.STRING)){
+                //Enumerated enumerated = f.getAnnotation(Enumerated.class);
+                Object enumerated = getAnnotationByName(f, "javax.persistence.Enumerated");
+                Object enumeratedValue = enumerated.getClass().getMethod("value").invoke(enumerated);
+                String enumTypeString = "STRING".toLowerCase(); // EnumType.STRING
+
+                if(enumerated != null && enumeratedValue.toString().toLowerCase().equals(enumTypeString)){
                     enumValuesAsStrings = Arrays.stream(f.getType().getEnumConstants())
                             .map(e -> e.toString())
                             .collect(Collectors.toList());

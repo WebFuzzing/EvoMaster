@@ -1,6 +1,5 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
-import com.squareup.okhttp.Request;
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
