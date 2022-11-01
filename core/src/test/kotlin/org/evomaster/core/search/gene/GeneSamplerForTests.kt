@@ -98,7 +98,6 @@ object GeneSamplerForTests {
                 when genes need input genes, we sample those at random as well
              */
             TaintedArrayGene::class -> sampleTaintedArrayGene(rand) as T
-            TaintedMapGene::class -> sampleTaintedMapGene(rand) as T
             ArrayGene::class -> sampleArrayGene(rand) as T
             Base64StringGene::class -> sampleBase64StringGene(rand) as T
             BigDecimalGene::class -> sampleBigDecimalGene(rand) as T
@@ -794,19 +793,6 @@ object GeneSamplerForTests {
             TaintInputName.getTaintName(rand.nextInt(0,1000)),
             isActive,
             array
-        )
-    }
-
-    private fun sampleTaintedMapGene(rand: Randomness): TaintedMapGene {
-
-        val map = if(rand.nextBoolean()) sampleMapGene(rand) else null
-        val isActive = if(map == null) false else rand.nextBoolean()
-
-        return TaintedMapGene(
-            "tainted map ${rand.nextInt()}",
-            TaintInputName.getTaintName(rand.nextInt(0,1000)),
-            isActive,
-            map
         )
     }
 
