@@ -18,6 +18,7 @@ import org.evomaster.core.problem.util.ParserDtoUtil.wrapWithOptionalGene
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
@@ -300,27 +301,33 @@ class HarvestActualHttpWsResponseHandler {
 
     private fun handleActualResponse(response: Response?) : ActualResponseInfo? {
         response?:return null
+        val status = response.status
+        var statusGene = HttpWsResponseParam.getDefaultStatusEnumGene()
+        if (!statusGene.values.contains(status))
+            statusGene = EnumGene(name = statusGene.name, statusGene.values.plus(status))
+
         val body = response.readEntity(String::class.java)
         val node = getJsonNodeFromText(body)
         val responseParam = if(node != null){
-            getHttpResponse(node).apply {
+            getHttpResponse(node, statusGene).apply {
                 setGeneBasedOnString(responseBody, body)
             }
         }else{
-            HttpWsResponseParam(responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, StringGene(ACTUAL_RESPONSE_GENE_NAME, value = body)))
+            HttpWsResponseParam(status = statusGene, responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, StringGene(ACTUAL_RESPONSE_GENE_NAME, value = body)))
         }
 
+        (responseParam as HttpWsResponseParam).setStatus(status)
         return ActualResponseInfo(body, responseParam)
     }
 
-    private fun getHttpResponse(node: JsonNode) : ResponseParam{
+    private fun getHttpResponse(node: JsonNode, statusGene: EnumGene<Int>) : ResponseParam{
         synchronized(extractedObjectDto){
             val found = if (extractedObjectDto.isEmpty()) null else parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node, extractedObjectDto)
             return if (found != null)
-                HttpWsResponseParam(responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, found))
+                HttpWsResponseParam(status= statusGene, responseBody = OptionalGene(ACTUAL_RESPONSE_GENE_NAME, found))
             else {
                 val parsed = parseJsonNodeAsGene(ACTUAL_RESPONSE_GENE_NAME, node)
-                HttpWsResponseParam(responseBody = wrapWithOptionalGene(parsed, true) as OptionalGene)
+                HttpWsResponseParam(status= statusGene, responseBody = wrapWithOptionalGene(parsed, true) as OptionalGene)
             }
         }
 

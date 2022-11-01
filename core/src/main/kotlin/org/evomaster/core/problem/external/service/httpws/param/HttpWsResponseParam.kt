@@ -13,7 +13,7 @@ class HttpWsResponseParam (
      * Avoid having 404 as status, since WireMock will return 404 if there is
      * no stub for the specific request.
      */
-    val status: EnumGene<Int> = EnumGene("status", listOf(200, 201, 204, 400, 401, 403, 500)),
+    val status: EnumGene<Int> = getDefaultStatusEnumGene(),
     /**
      * Response content type, for now supports only JSON
      *
@@ -35,9 +35,18 @@ class HttpWsResponseParam (
     companion object{
         const val RESPONSE_GENE_NAME = "WireMockResponseGene"
         const val DEFAULT_HEADER_CONNECTION : String = "close"
+
+        fun getDefaultStatusEnumGene() = EnumGene("status", listOf(200, 201, 204, 400, 401, 403, 500))
     }
 
     override fun copyContent(): Param {
         return HttpWsResponseParam(status.copy() as EnumGene<Int>, responseType.copy() as EnumGene<String>, responseBody.copy() as OptionalGene, connectionHeader)
+    }
+
+    fun setStatus(statusCode : Int) : Boolean{
+        val index = status.values.indexOf(statusCode)
+        if (index == -1) return false
+        status.index = index
+        return true
     }
 }
