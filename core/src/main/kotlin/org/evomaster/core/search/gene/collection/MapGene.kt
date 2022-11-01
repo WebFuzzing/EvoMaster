@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.collection
 
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
@@ -300,6 +301,13 @@ class MapGene<K, V>(
 
         val gene = template.copy() as PairGene<K, V>
         gene.randomize(randomness, forceNewValue)
+
+        /*
+            the key of template is tainted value, we force the key of newly created element is tainted as well
+         */
+        if (template.first is StringGene && TaintInputName.isTaintInput(template.first.getPossiblyTaintedValue())){
+            (gene.first as StringGene).forceTaintedValue()
+        }
 
         gene.name = keyName
         gene.first.name = keyName

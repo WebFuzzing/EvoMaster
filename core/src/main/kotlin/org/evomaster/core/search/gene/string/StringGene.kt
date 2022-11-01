@@ -577,23 +577,16 @@ class StringGene(
         }
 
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_MAP }){
-            toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_MAP }
-                .distinctBy { it.value }
-                .forEach {
-                    val obj = if (it.value != null){
-                        val schema = it.value
-                        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
-                        val ref = t.subSequence(1,t.length-1).toString()
-                        RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
-                    }else
-                        null
+            val mapGene = MapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"))
+            /*
+                for Map, we currently only handle them as string key with string value
+                TODO handle generic type if they have
 
-                    if (obj != null && obj is MapGene<*, *>){
-                        toAddGenes.add(obj)
-                    }else{
-                        toAddGenes.add(TaintedMapGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
-                    }
-                }
+                set tainted input for key of template if the key is string type
+             */
+            mapGene.template.first.forceTaintedValue()
+
+            toAddGenes.add(mapGene)
 
             log.trace("JSON_MAP, added specification size: {}", toAddGenes.size)
         }
