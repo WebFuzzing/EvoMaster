@@ -28,9 +28,13 @@ class WmJsonMapRest {
             if (tree.isNotEmpty()){
                 var msg = "not empty map and include"
                 // not solved yet
-                if (tree.containsKey("foo") && tree["foo"] == "foo42")
+                if (tree.containsKey("foo")
+                //    && tree["foo"] == "foo42"
+                )
                     msg += " foo42"
-                if (tree.containsKey("bar") && tree["bar"] == "foo54")
+                if (tree.containsKey("bar")
+                    //&& tree["bar"] == "bar54"
+                )
                     msg += " bar54"
                 return ResponseEntity.ok(msg)
             }

@@ -234,6 +234,13 @@ class ArrayGene<T>(
                 closingTag
     }
 
+    override fun getValueAsRawString(): String {
+        return openingTag +
+                elements.joinToString(separatorTag) { g ->
+                    g.getValueAsRawString()
+                } +
+                closingTag
+    }
 
 
 

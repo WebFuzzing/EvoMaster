@@ -733,7 +733,7 @@ class TestSuiteWriter {
                         .forEach { es ->
                             addStatement("${getWireMockVariableName(es)}.resetAll()", lines)
                             // set the default responses for all wm
-                            handleDefaultStubForAsJavaOrKotlin(lines, es)
+                            handleDefaultStubForAsJavaOrKotlin(lines, es, format)
                             lines.appendSemicolon(format)
                         }
                 }

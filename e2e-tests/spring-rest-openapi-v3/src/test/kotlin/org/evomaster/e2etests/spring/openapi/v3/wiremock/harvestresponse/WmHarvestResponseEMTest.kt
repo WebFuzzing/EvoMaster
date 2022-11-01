@@ -33,8 +33,8 @@ class WmHarvestResponseEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "WmHarvestResponseEM",
             "org.foo.WmHarvestResponseEM",
-            500,
-            false,
+            1000,
+            !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -42,7 +42,7 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 args.add("--externalServiceIP")
                 args.add("127.0.0.22")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
-                args.add("0.5")
+                args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
                 args.add("0.1")
 
@@ -52,6 +52,9 @@ class WmHarvestResponseEMTest : SpringTestBase() {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "ANY FROM ONE TO NINE")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "MORE THAN 10")
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/images", "NONE")
+
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", "Found harvested response")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/grch37Example", "Cannot find harvested response")
 
 
 //                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvestresponse/users", ">10")

@@ -6,7 +6,7 @@ import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
@@ -157,7 +157,7 @@ class ParamUtil {
                             it is CustomMutationRateGene<*> ||
                             it is OptionalGene ||
                             it is ArrayGene<*> ||
-                            it is MapGene<*, *>)
+                            it is FixedMapGene<*, *>)
                 }
                     .forEach { g ->
                         val names = getGeneNamesInPath(parameters, g)
@@ -208,7 +208,7 @@ class ParamUtil {
                 is CustomMutationRateGene<*> -> return extractPathFromRoot(comGene, gene, names)
                 is OptionalGene -> return extractPathFromRoot(comGene, gene, names)
                 is ArrayGene<*> -> return extractPathFromRoot(comGene, gene, names)
-                is MapGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
+                is FixedMapGene<*, *> -> return extractPathFromRoot(comGene, gene, names)
                 else -> if (comGene == gene) {
                     names.add(comGene.name)
                     return true
@@ -261,7 +261,7 @@ class ParamUtil {
             return false
         }
 
-        private fun extractPathFromRoot(comGene: MapGene<*, *>, gene: Gene, names: MutableList<String>): Boolean {
+        private fun extractPathFromRoot(comGene: FixedMapGene<*, *>, gene: Gene, names: MutableList<String>): Boolean {
             comGene.getAllElements().forEach {
                 if (extractPathFromRoot(it, gene, names)) {
                     names.add(it.name)

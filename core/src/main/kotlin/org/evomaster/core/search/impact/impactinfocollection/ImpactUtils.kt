@@ -303,7 +303,12 @@ class ImpactUtils {
             val template = ParamUtil.getValueGene(gene)
             return genes.filter {o->
                 val g = ParamUtil.getValueGene(o)
-                g.name == template.name && g::class.java.simpleName == template::class.java.simpleName && (includeSameValue || !g.containsSameValueAs(template))
+                g.name == template.name && g::class.java.simpleName == template::class.java.simpleName
+                        && (includeSameValue
+                            || !try { g.containsSameValueAs(template) }catch (e: Exception){
+                                if (g !is ArrayGene<*> && g !is FixedMapGene<*,*>) throw e else false
+                            }
+                        )
             }.also {
                 if (it.size > 1)
                     log.warn("{} genes have been mutated with the name {}",it.size, gene.name)

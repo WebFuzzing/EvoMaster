@@ -35,7 +35,7 @@ import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
@@ -647,7 +647,7 @@ class RPCEndpointsHandler {
                 transformGeneToParamDto(valueGene.first, second)
                 dto.innerContent = listOf(first, second)
             }
-            is MapGene<*, *> ->{
+            is FixedMapGene<*, *> ->{
                 val template = dto.type.example?.copy()
                     ?:throw IllegalStateException("a template for a map dto (with dto name: ${dto.name} and gene name: ${gene.name}) is null")
                 val innerContent = valueGene.getAllElements().map {
@@ -735,7 +735,7 @@ class RPCEndpointsHandler {
                         }
                     }
                 }
-                is MapGene<*, *> ->{
+                is FixedMapGene<*, *> ->{
                     val template = valueGene.template
                     dto.innerContent.run {
                         if (valueGene.maxSize!=null && valueGene.maxSize!! < size){
@@ -811,10 +811,10 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.P_DOUBLE, RPCSupportedDataType.DOUBLE -> valueGene is DoubleGene
             RPCSupportedDataType.P_FLOAT, RPCSupportedDataType.FLOAT -> valueGene is FloatGene
             RPCSupportedDataType.P_LONG, RPCSupportedDataType.LONG -> valueGene is LongGene
-            RPCSupportedDataType.ENUM -> valueGene is MapGene<*, *> || valueGene is EnumGene<*>
+            RPCSupportedDataType.ENUM -> valueGene is FixedMapGene<*, *> || valueGene is EnumGene<*>
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> valueGene is ArrayGene<*>
-            RPCSupportedDataType.MAP -> valueGene is MapGene<*, *>
-            RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is MapGene<*, *>
+            RPCSupportedDataType.MAP -> valueGene is FixedMapGene<*, *>
+            RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is FixedMapGene<*, *>
             RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene
             RPCSupportedDataType.UTIL_DATE -> valueGene is DateTimeGene
             RPCSupportedDataType.PAIR -> valueGene is PairGene<*, *>
@@ -1039,7 +1039,7 @@ class RPCEndpointsHandler {
         val keyTemplate = handleDtoParam(pair.innerContent[0], building)
         val valueTemplate = handleDtoParam(pair.innerContent[1], building)
 
-        return MapGene(param.name, keyTemplate, valueTemplate, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt())
+        return FixedMapGene(param.name, keyTemplate, valueTemplate, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt())
     }
 
     private fun handleCollectionParam(param: ParamDto, building: Boolean) : Gene{

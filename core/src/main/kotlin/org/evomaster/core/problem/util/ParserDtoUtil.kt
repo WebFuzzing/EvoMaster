@@ -10,12 +10,10 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.SeededGene
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
-import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.optional.FlexibleGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -28,6 +26,14 @@ object ParserDtoUtil {
 
     private val objectMapper = ObjectMapper()
     private val log: Logger = LoggerFactory.getLogger(ParserDtoUtil::class.java)
+
+    fun getJsonNodeFromText(text: String) : JsonNode?{
+        return try {
+            objectMapper.readTree(text)
+        }catch (e: Exception){
+            null
+        }
+    }
 
     /**
      * get or parse schema of dto classes from [infoDto] as gene
@@ -78,7 +84,7 @@ object ParserDtoUtil {
                     val template = if (elements.any { ParamUtil.getValueGene(it!!) is ObjectGene })
                         elements.maxByOrNull { (ParamUtil.getValueGene(it!!) as? ObjectGene)?.fields?.size ?: -1 }!!
                     else elements.first()
-                    ArrayGene(name, template = template!!.copy(), elements = elements.filterNotNull().toMutableList())
+                    ArrayGene(name, template = template!!.copy())
                 } else
                     ArrayGene(name, template = StringGene(name + "_item"))
             }
@@ -101,7 +107,7 @@ object ParserDtoUtil {
 
     private fun inferGeneBasedOnJsonNode(name: String, jsonNode : JsonNode, objectGeneCluster: Map<String, Gene>?) : Gene?{
         if (jsonNode.size() == 0)
-            return MapGene(name, StringGene("key"), StringGene("value"))
+            return FixedMapGene(name, StringGene("key"), StringGene("value"))
 
         val values = jsonNode.fields().asSequence().map { parseJsonNodeAsGene(it.key, it.value, objectGeneCluster) }.toMutableList()
         if (values.any { it == null })
@@ -111,9 +117,12 @@ object ParserDtoUtil {
             if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
         }
         return if (groupedValues.size == 1){
-            MapGene(name, StringGene("key"), values.first()!!.copy())
-        }else
-            ObjectGene(name, values.map { wrapWithOptionalGene(it!!, true) })
+            FixedMapGene(name, StringGene("key"), values.first()!!.copy())
+        }else{
+            //ObjectGene(name, values.map { wrapWithOptionalGene(it!!, true) })
+            FlexibleMapGene(name, StringGene("key"), values.first()!!.copy())
+        }
+
     }
 
     private fun findAndCopyExtractedObjectDto(node: JsonNode, objectGeneMap: Map<String, Gene>) : ObjectGene? {
@@ -188,7 +197,7 @@ object ParserDtoUtil {
                         throw IllegalStateException("stringValue ($stringValue) is not Array")
                     }
                 }
-                is MapGene<*, *> ->{
+                is FixedMapGene<*, *> ->{
                     val template = valueGene.template
                     val node = objectMapper.readTree(stringValue)
                     if (node.isObject){
@@ -208,6 +217,28 @@ object ParserDtoUtil {
                         throw IllegalStateException("stringValue ($stringValue) is not Object or Map")
                     }
 
+                }
+                is FlexibleMapGene<*> -> {
+                    val template = valueGene.template
+                    val node = objectMapper.readTree(stringValue)
+                    if (node.isObject){
+                        node.fields().asSequence().forEachIndexed {index, p->
+
+                            if (valueGene.maxSize!=null && index >= valueGene.maxSize ){
+                                log.warn("MapGene: responses have more elements than it allows, i.e., max is ${valueGene.maxSize} but the actual is ${node.size()}")
+                            }else{
+                                val copy = template.copy() as PairGene<*, FlexibleGene>
+                                setGeneBasedOnString(copy.first, p.key)
+
+                                val fvalueGene = parseJsonNodeAsGene("flexibleValue", p.value)
+                                copy.second.replaceGeneTo(fvalueGene)
+                                setGeneBasedOnString(fvalueGene, p.value.toPrettyString())
+                                valueGene.addElement(copy)
+                            }
+                        }
+                    }else{
+                        throw IllegalStateException("stringValue ($stringValue) is not Object")
+                    }
                 }
                 is ObjectGene -> {
                     val node = objectMapper.readTree(stringValue)

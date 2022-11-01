@@ -128,6 +128,9 @@ public enum StringSpecialization implements Serializable {
 
     /**
      * The string is representing a valid JSON Map, ie {}
+     *
+     * JSON has no concept of Map. It has Object, where fields can be dynamically changed.
+     * Its "keys" are always strings (you cannot have a Map of integers in JSON for example)
      */
     JSON_MAP
 

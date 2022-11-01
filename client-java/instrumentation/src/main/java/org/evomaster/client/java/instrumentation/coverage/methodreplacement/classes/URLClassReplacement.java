@@ -112,6 +112,36 @@ public class URLClassReplacement implements MethodReplacementClass {
     public static URLConnection openConnection(URL caller) throws java.io.IOException {
         Objects.requireNonNull(caller);
 
+        URL newURL = getReplacedURL(caller);
+        if (newURL!=null)
+            return newURL.openConnection();
+
+        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
+            SimpleLogger.uniqueWarn("not handle the protocol with:"+caller.getProtocol());
+        return caller.openConnection();
+    }
+
+
+    @Replacement(
+            type = ReplacementType.TRACKER,
+            category = ReplacementCategory.NET,
+            id = "URL_openConnection_proxy_Replacement",
+            replacingStatic = false,
+            usageFilter = UsageFilter.ANY
+    )
+    public static URLConnection openConnection(URL caller, Proxy proxy) throws java.io.IOException {
+        Objects.requireNonNull(caller);
+
+        URL newURL = getReplacedURL(caller);
+        if (newURL!=null)
+            return newURL.openConnection(proxy);
+
+        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
+            SimpleLogger.uniqueWarn("not handle the protocol with:"+caller.getProtocol());
+        return caller.openConnection(proxy);
+    }
+
+    private static URL getReplacedURL(URL caller) throws java.io.IOException {
         /*
           Add the external service hostname to the ExecutionTracer
           */
@@ -133,11 +163,8 @@ public class URLClassReplacement implements MethodReplacementClass {
             // Usage of ports below 1024 require root privileges to run
             String url = caller.getProtocol()+"://" + ipAndPort[0]+":"+ipAndPort[1] + caller.getPath();
 
-            URL newURL = new URL(url);
-            return newURL.openConnection();
+            return new URL(url);
         }
-        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
-            SimpleLogger.uniqueWarn("not handle the protocol with:"+caller.getProtocol());
-        return caller.openConnection();
+        return null;
     }
 }

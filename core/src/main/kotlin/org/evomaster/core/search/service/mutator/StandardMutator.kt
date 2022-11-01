@@ -24,7 +24,6 @@ import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
-import org.evomaster.core.search.gene.collection.TaintedMapGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -181,10 +180,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 .forEach { it.isActive = true; it.requestSelection = false }
 
             allGenes.filterIsInstance<TaintedArrayGene>()
-                .filter{!it.isActive && it.isResolved()}
-                .forEach { it.activate() }
-
-            allGenes.filterIsInstance<TaintedMapGene>()
                 .filter{!it.isActive && it.isResolved()}
                 .forEach { it.activate() }
 

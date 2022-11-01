@@ -126,6 +126,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     // update creation of resources regarding response status
                     val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
                     call.getResourceNode().confirmFailureCreationByPost(call, restCallAction, restActionResult)
+
                     restActionResult.stopping = !ok
                 } else {
                     throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")

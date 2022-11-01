@@ -40,16 +40,16 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
-    private fun addExternalServiceActions(
+    override fun addExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         /**
          * TODO add why
          */
         mutatedGenes: MutatedGeneSpecification?,
-    ) {
+    ) : Boolean{
 
         if (config.externalServiceIPSelectionStrategy == EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            return
+            return false
         }
 
         val ind = individual.individual as? ApiWsIndividual
@@ -58,8 +58,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val esr = individual.fitness.getViewAccessedExternalServiceRequests()
         if (esr.isEmpty()) {
             //nothing to do
-            return
+            return false
         }
+
+        var anyHarvest = false
 
         val newActions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
@@ -91,6 +93,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                             if (startingIndex < grequests.size){
                                 (startingIndex until  grequests.size).forEach {i->
                                     val actualResponse = if (config.probOfHarvestingResponsesFromActualExternalServices == 0.0) null else harvestResponseHandler.getACopyOfActualResponse(grequests[i], config.probOfHarvestingResponsesFromActualExternalServices)
+                                    anyHarvest = anyHarvest || (actualResponse != null)
                                     val a = externalServiceHandler.createExternalServiceAction(grequests[i], actualResponse as? HttpWsResponseParam)
                                     a.confirmUsed()
                                     actions.add(a)
@@ -122,6 +125,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         if (mutatedGenes != null && newActions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
             individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, newActions)
         }
+
+        return anyHarvest
     }
 
     fun <T : ApiWsIndividual> addInitializingActions(
@@ -130,7 +135,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         sampler: ApiWsSampler<T>
     ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
-        addExternalServiceActions(individual, mutatedGenes)
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(
@@ -388,8 +392,14 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
 
+        val chosenColumns = if(config.forceSqlAllColumnInsertion){
+            setOf("*")
+        } else {
+            setOf()
+        }
+
         val list = (0 until num)
-                .map { getSqlInsertBuilder()!!.createSqlInsertionAction(name, setOf(), mutableListOf(),true, extraConstraints) }
+                .map { getSqlInsertBuilder()!!.createSqlInsertionAction(name,chosenColumns, mutableListOf(),true, extraConstraints) }
                 .toMutableList()
 
         if (log.isTraceEnabled) {

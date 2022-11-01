@@ -16,7 +16,7 @@ import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -431,7 +431,7 @@ object BindingBuilder {
         (4 to setOf(LongGene::class.java.simpleName)),
         (5 to setOf(FloatGene::class.java.simpleName)),
         (6 to setOf(DoubleGene::class.java.simpleName)),
-        (7 to setOf(ArrayGene::class.java.simpleName, ObjectGene::class.java.simpleName, EnumGene::class.java.simpleName, CycleObjectGene::class.java.simpleName, MapGene::class.java.simpleName)),
+        (7 to setOf(ArrayGene::class.java.simpleName, ObjectGene::class.java.simpleName, EnumGene::class.java.simpleName, CycleObjectGene::class.java.simpleName, FixedMapGene::class.java.simpleName)),
         (8 to setOf(StringGene::class.java.simpleName, Base64StringGene::class.java.simpleName))
     )
 

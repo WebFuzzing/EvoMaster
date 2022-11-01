@@ -4,14 +4,10 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
@@ -143,13 +139,20 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             // impact info is updated due to newly added initialization actions
             structureMutator.addInitializingActions(current, mutatedGenes)
 
+            val anyHarvestedExternalServiceActions = structureMutator.addExternalServiceActions(current, mutatedGenes)
+
             if (log.isTraceEnabled){
                 log.trace("now it is {}th, do addInitializingActions ends", i)
             }
 
             Lazy.assert{current.individual.verifyValidity(); true}
 
-            val mutatedInd = mutate(current, targets, mutatedGenes)
+            // skip to mutate the individual if any new harvested external actions are added
+            val mutatedInd = if (!anyHarvestedExternalServiceActions)
+                mutate(current, targets, mutatedGenes)
+            else
+                current.individual.copy() as T
+
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
             Lazy.assert{mutatedInd.verifyValidity(); true}
