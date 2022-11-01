@@ -27,8 +27,8 @@ public class JsonTaint {
                 info = new StringSpecializationInfo(StringSpecialization.JSON_ARRAY,null);
             } else if (Map.class.isAssignableFrom(klass)){
                 /*
-                    might set schema value null, check later
-                    it relates to add tainted map or map into string specification
+                    might set schema value null for 2-phases taint if needed later
+                    the value relates to add 1) tainted map (null) or 2) map (with schema) into string specification
                  */
                 info = new StringSpecializationInfo(StringSpecialization.JSON_MAP, ClassToSchema.getOrDeriveSchemaWithItsRef(klass));
             }else {
