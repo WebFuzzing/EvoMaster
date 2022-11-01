@@ -9,7 +9,6 @@ import org.evomaster.core.search.gene.collection.ArrayGene;
 import org.evomaster.core.search.gene.collection.MapGene;
 import org.evomaster.core.search.gene.interfaces.CollectionGene;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.collection.FixedMapGene;
 
 import java.util.ArrayList;
 import java.util.List;
