@@ -14,6 +14,7 @@ import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.FlexibleGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -99,7 +100,7 @@ object ParserDtoUtil {
             jsonNode.isNull -> {
                 Lazy.assert {  objectGeneCluster == null }
                 // TODO change it to NullGene later
-                return OptionalGene(name, StringGene(name)).also { it.isActive = false }
+                return NullableGene(name, StringGene(name)).also { it.isPresent = false }
             }
             else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
         }
