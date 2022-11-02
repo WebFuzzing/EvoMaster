@@ -99,13 +99,16 @@ abstract class TestCaseWriter {
         actions: List<HttpExternalServiceAction>,
         exToWM: Map<String, HttpWsExternalService>?) : Boolean{
         var any = false
+
         exToWM?.forEach {
             lines.add("DnsCacheManipulator.setDnsCache(\"${it.key}\", \"${it.value.getWireMockAddress()}\")")
             lines.appendSemicolon(format)
             any = true
         }
 
-        actions.forEach {action->
+        actions
+            .filterNot { exToWM?.containsKey(it.externalService.getRemoteHostName()) == true }
+            .forEach {action->
             lines.add("DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${action.externalService.getWireMockAddress()}\")")
             lines.appendSemicolon(format)
             any = true
