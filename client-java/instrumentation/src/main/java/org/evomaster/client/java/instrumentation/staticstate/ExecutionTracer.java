@@ -8,6 +8,7 @@ import org.evomaster.client.java.instrumentation.shared.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 /**
@@ -91,7 +92,7 @@ public class ExecutionTracer {
 
     private static final Object lock = new Object();
 
-    private static final List<String> skippedHostName = new CopyOnWriteArrayList<>();
+    private static final Set<String> skippedHostName = new CopyOnWriteArraySet<>();
     /**
      * One problem is that, once a test case is evaluated, some background tests might still be running.
      * We want to kill them to avoid issue (eg, when evaluating new tests while previous threads
