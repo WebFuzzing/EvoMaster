@@ -253,11 +253,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             )
 
             // plugin seeding response here
-            val employSeeded = harvestResponseHandler.getACopyOfItsActualResponseIfExist(gene, config.probOfMutatingResponsesBasedOnActualResponse)?.responseBody
-
-            val mutated = if (employSeeded!=null){
-                mutateGeneBasedOn(gene, employSeeded)
-            } else false
+            val mutated = harvestResponseHandler.harvestExistingGeneBasedOn(gene, config.probOfMutatingResponsesBasedOnActualResponse)
 
             if (!mutated)
                 gene.standardMutation(
@@ -491,27 +487,5 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         return additionInfo
-    }
-
-
-    private fun mutateGeneBasedOn(geneToMutate: Gene, template: Gene) : Boolean{
-        try {
-            val v = ParamUtil.getValueGene(geneToMutate)
-            val t = ParamUtil.getValueGene(template)
-            if (v::class.java == t::class.java){
-                v.copyValueFrom(t)
-                return true
-            }else if (v is StringGene){
-                // add template as part of specialization
-                v.addChild(t)
-                v.selectedSpecialization = v.specializationGenes.indexOf(t)
-                return true
-            }
-            LoggingUtil.uniqueWarn(log, "Fail to mutate gene (${geneToMutate::class.java.name}) based on a given gene (${template::class.java.name})")
-            return false
-        }catch (e: Exception){
-            LoggingUtil.uniqueWarn(log, "Fail to mutate gene based on a given gene and an exception (${e.message}) is thrown")
-            return false
-        }
     }
 }

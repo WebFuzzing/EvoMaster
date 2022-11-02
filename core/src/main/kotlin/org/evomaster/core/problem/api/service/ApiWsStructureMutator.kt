@@ -40,7 +40,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
-    override fun addExternalServiceActions(
+    override fun addAndHarvestExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         /**
          * TODO add why
@@ -72,6 +72,13 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 val msg = "Action is not inside an EnterpriseActionGroup"
                 log.error(msg)
                 throw RuntimeException(msg)
+            }
+
+            /*
+                harvest the existing external service actions
+             */
+            parent.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>().forEach { e->
+                anyHarvest = harvestResponseHandler.harvestExistingExternalActionIfNeverSeeded(e, config.probOfHarvestingResponsesFromActualExternalServices) || anyHarvest
             }
 
             // Adding the new [HttpExternalServiceAction] will be handled here. Handling

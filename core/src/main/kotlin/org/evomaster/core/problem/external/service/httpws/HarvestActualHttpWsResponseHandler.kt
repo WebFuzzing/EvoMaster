@@ -10,6 +10,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.external.service.param.ResponseParam
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.getJsonNodeFromText
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
@@ -37,6 +38,7 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import kotlin.math.max
 
 class HarvestActualHttpWsResponseHandler {
 
@@ -52,6 +54,12 @@ class HarvestActualHttpWsResponseHandler {
 
     private lateinit var httpWsClient : Client
 
+
+    /**
+     * TODO
+     * to further improve the efficiency of collecting actual responses,
+     * might have a pool of threads to send requests
+     */
     private lateinit var threadToHandleRequest: Thread
 
 
@@ -75,6 +83,8 @@ class HarvestActualHttpWsResponseHandler {
      * value is an example of HttpExternalServiceRequest
      */
     private val cachedRequests = mutableMapOf<String, HttpExternalServiceRequest>()
+
+    private val seededResponses = mutableSetOf<String>()
 
     /**
      * need it for wait and notify in kotlin
@@ -173,8 +183,13 @@ class HarvestActualHttpWsResponseHandler {
         // only support HttpExternalServiceAction, TODO for others
         if (exAction is HttpExternalServiceAction ){
             Lazy.assert { gene.parent == exAction.response}
-            if (exAction.response.responseBody == gene && randomness.nextBoolean(probability)){
-                return getACopyOfActualResponse(exAction.request)
+            if (exAction.response.responseBody == gene){
+                val p = if (!seededResponses.contains(exAction.request.getDescription()) && actualResponses.containsKey(exAction.request.getDescription())){
+                    // if the actual response is never seeded, give a higher probably to employ it
+                    max(config.probOfHarvestingResponsesFromActualExternalServices, probability)
+                } else probability
+                if (randomness.nextBoolean(p))
+                    return getACopyOfActualResponse(exAction.request)
             }
 
         }
@@ -188,7 +203,9 @@ class HarvestActualHttpWsResponseHandler {
         val harvest = probability == null || (probability > 0.0 && randomness.nextBoolean(probability))
         if (!harvest) return null
         synchronized(actualResponses){
-            return (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
+            val found= (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
+            if (found!=null) seededResponses.add(httpRequest.getDescription())
+            return found
         }
     }
 
@@ -343,6 +360,37 @@ class HarvestActualHttpWsResponseHandler {
                     extractedObjectDto.putIfAbsent(t, u)
                 }
             }
+        }
+    }
+
+    fun harvestExistingExternalActionIfNeverSeeded(externalServiceAction: HttpExternalServiceAction, probability: Double) : Boolean{
+        if (!seededResponses.contains(externalServiceAction.request.getDescription())
+            && actualResponses.containsKey(externalServiceAction.request.getDescription())){
+            return harvestExistingGeneBasedOn(externalServiceAction.response.responseBody, probability)
+        }
+        return false
+    }
+
+    fun harvestExistingGeneBasedOn(geneToMutate: Gene, probability: Double) : Boolean{
+        try {
+            val template = getACopyOfItsActualResponseIfExist(geneToMutate, probability)?.responseBody?:return false
+
+            val v = ParamUtil.getValueGene(geneToMutate)
+            val t = ParamUtil.getValueGene(template)
+            if (v::class.java == t::class.java){
+                v.copyValueFrom(t)
+                return true
+            }else if (v is StringGene){
+                // add template as part of specialization
+                v.addChild(t)
+                v.selectedSpecialization = v.specializationGenes.indexOf(t)
+                return true
+            }
+            LoggingUtil.uniqueWarn(log, "Fail to mutate gene (${geneToMutate::class.java.name}) based on a given gene (${template::class.java.name})")
+            return false
+        }catch (e: Exception){
+            LoggingUtil.uniqueWarn(log, "Fail to mutate gene based on a given gene and an exception (${e.message}) is thrown")
+            return false
         }
     }
 }

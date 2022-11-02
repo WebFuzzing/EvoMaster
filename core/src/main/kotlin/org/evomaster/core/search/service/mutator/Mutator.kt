@@ -139,7 +139,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             // impact info is updated due to newly added initialization actions
             structureMutator.addInitializingActions(current, mutatedGenes)
 
-            val anyHarvestedExternalServiceActions = structureMutator.addExternalServiceActions(current, mutatedGenes)
+            val anyHarvestedExternalServiceActions = structureMutator.addAndHarvestExternalServiceActions(current, mutatedGenes)
 
             if (log.isTraceEnabled){
                 log.trace("now it is {}th, do addInitializingActions ends", i)
