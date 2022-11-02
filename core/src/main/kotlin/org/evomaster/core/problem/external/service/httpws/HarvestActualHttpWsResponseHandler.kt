@@ -10,6 +10,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.external.service.param.ResponseParam
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.getJsonNodeFromText
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
@@ -359,6 +360,37 @@ class HarvestActualHttpWsResponseHandler {
                     extractedObjectDto.putIfAbsent(t, u)
                 }
             }
+        }
+    }
+
+    fun harvestExistingExternalActionIfNeverSeeded(externalServiceAction: HttpExternalServiceAction, probability: Double) : Boolean{
+        if (!seededResponses.contains(externalServiceAction.request.getDescription())
+            && actualResponses.containsKey(externalServiceAction.request.getDescription())){
+            return harvestExistingGeneBasedOn(externalServiceAction.response.responseBody, probability)
+        }
+        return false
+    }
+
+    fun harvestExistingGeneBasedOn(geneToMutate: Gene, probability: Double) : Boolean{
+        try {
+            val template = getACopyOfItsActualResponseIfExist(geneToMutate, probability)?.responseBody?:return false
+
+            val v = ParamUtil.getValueGene(geneToMutate)
+            val t = ParamUtil.getValueGene(template)
+            if (v::class.java == t::class.java){
+                v.copyValueFrom(t)
+                return true
+            }else if (v is StringGene){
+                // add template as part of specialization
+                v.addChild(t)
+                v.selectedSpecialization = v.specializationGenes.indexOf(t)
+                return true
+            }
+            LoggingUtil.uniqueWarn(log, "Fail to mutate gene (${geneToMutate::class.java.name}) based on a given gene (${template::class.java.name})")
+            return false
+        }catch (e: Exception){
+            LoggingUtil.uniqueWarn(log, "Fail to mutate gene based on a given gene and an exception (${e.message}) is thrown")
+            return false
         }
     }
 }

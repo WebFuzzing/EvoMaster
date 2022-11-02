@@ -73,7 +73,7 @@ abstract class StructureMutator : TrackOperator {
      *
      * @return whether any harvest response is added
      */
-    abstract fun addExternalServiceActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) : Boolean
+    abstract fun addAndHarvestExternalServiceActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) : Boolean
 
     fun canApplyStructureMutator(individual: Individual) : Boolean = canApplyInitStructureMutator() || canApplyActionStructureMutator(individual)
 

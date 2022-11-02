@@ -12,7 +12,7 @@ class EmptyStructureMutator : StructureMutator() {
         //DO nothing
     }
 
-    override fun addExternalServiceActions(
+    override fun addAndHarvestExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         mutatedGenes: MutatedGeneSpecification?
     ): Boolean {
