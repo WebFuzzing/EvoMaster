@@ -113,17 +113,11 @@ object ParserDtoUtil {
         val values = jsonNode.fields().asSequence().map { parseJsonNodeAsGene(it.key, it.value, objectGeneCluster) }.toMutableList()
         if (values.any { it == null })
             return null
-        val groupedValues  = values.filterNotNull().groupBy { g->
-            val v = ParamUtil.getValueGene(g)
-            if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
-        }
-        return if (groupedValues.size == 1){
-            FixedMapGene(name, StringGene("key"), values.first()!!.copy())
-        }else{
-            //ObjectGene(name, values.map { wrapWithOptionalGene(it!!, true) })
-            FlexibleMapGene(name, StringGene("key"), values.first()!!.copy())
-        }
-
+//        val groupedValues  = values.filterNotNull().groupBy { g->
+//            val v = ParamUtil.getValueGene(g)
+//            if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
+//        }
+        return FlexibleMapGene(name, StringGene("key"), values.first()!!.copy())
     }
 
     private fun findAndCopyExtractedObjectDto(node: JsonNode, objectGeneMap: Map<String, Gene>) : ObjectGene? {
@@ -190,7 +184,7 @@ object ParserDtoUtil {
                             val copy = template.copy()
                             // TODO need to handle cycle object gene in responses
                             if (copy !is CycleObjectGene){
-                                setGeneBasedOnString(copy, p.toPrettyString())
+                                setGeneBasedOnString(copy, getTextForStringGene(copy, p))
                                 valueGene.addElement(copy)
                             }
                         }
@@ -210,7 +204,7 @@ object ParserDtoUtil {
                                 val copy = template.copy() as PairGene<*, *>
 //                                setGeneBasedOnString(copy, p.toPrettyString())
                                 setGeneBasedOnString(copy.first, p.key)
-                                setGeneBasedOnString(copy.second, p.value.toPrettyString())
+                                setGeneBasedOnString(copy.second, getTextForStringGene(copy.second, p.value))
                                 valueGene.addElement(copy)
                             }
                         }
@@ -233,7 +227,7 @@ object ParserDtoUtil {
 
                                 val fvalueGene = parseJsonNodeAsGene("flexibleValue", p.value)
                                 copy.second.replaceGeneTo(fvalueGene)
-                                setGeneBasedOnString(fvalueGene, p.value.toPrettyString())
+                                setGeneBasedOnString(fvalueGene, getTextForStringGene(fvalueGene, p.value))
                                 valueGene.addElement(copy)
                             }
                         }
@@ -250,7 +244,7 @@ object ParserDtoUtil {
                             if (pdto == null && f is OptionalGene)
                                 f.isActive = false
                             else if (pdto != null)
-                                setGeneBasedOnString(f, pdto.value.toPrettyString())
+                                setGeneBasedOnString(f, getTextForStringGene(f, pdto.value))
                             else
                                 throw IllegalStateException("could not set value for the field (${f.name})")
                         }
@@ -270,6 +264,12 @@ object ParserDtoUtil {
             else
                 log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
         }
+    }
+
+    private fun getTextForStringGene(gene: Gene, node: JsonNode) : String{
+        if (ParamUtil.getValueGene(gene) is StringGene && node.isTextual)
+            return node.asText()
+        return node.toPrettyString()
     }
 
 }

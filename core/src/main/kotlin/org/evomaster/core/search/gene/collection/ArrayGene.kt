@@ -234,18 +234,6 @@ class ArrayGene<T>(
                 closingTag
     }
 
-    override fun getValueAsRawString(): String {
-        return openingTag +
-                elements.filter {e->
-                    e.isPrintable() && (e !is OptionalGene || e.isActive)
-                }
-                    .joinToString(separatorTag) { g ->
-                    g.getValueAsRawString()
-                } +
-                closingTag
-    }
-
-
 
     /**
      * 1 is for 'remove' or 'add' element
