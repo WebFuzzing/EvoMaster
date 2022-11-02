@@ -2,6 +2,7 @@ package org.evomaster.core.search.impact.impactinfocollection.value.collection
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.collection.MapGene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
 
@@ -9,6 +10,9 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Integ
  * created by manzh on 2019-09-09
  *
  * TODO need to further extend for elements
+ *
+ * MapGeneImpact now is shared by FixedMapGene and FlexibleMapGene
+ * now only consider impacts of different size
  */
 class MapGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
                     val sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size")
@@ -50,7 +54,7 @@ class MapGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spec
         //TODO for elements
     }
 
-    override fun validate(gene: Gene): Boolean = gene is FixedMapGene<*, *>
+    override fun validate(gene: Gene): Boolean = gene is MapGene<*, *>
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
         return mutableMapOf("${getId()}-${sizeImpact.getId()}" to sizeImpact)
