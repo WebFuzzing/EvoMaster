@@ -363,6 +363,9 @@ class HarvestActualHttpWsResponseHandler {
         }
     }
 
+    /**
+     * harvest the existing action [externalServiceAction] with collected actual responses only if the actual response for the action exists, and it is never seeded
+     */
     fun harvestExistingExternalActionIfNeverSeeded(externalServiceAction: HttpExternalServiceAction, probability: Double) : Boolean{
         if (!seededResponses.contains(externalServiceAction.request.getDescription())
             && actualResponses.containsKey(externalServiceAction.request.getDescription())){
@@ -371,6 +374,9 @@ class HarvestActualHttpWsResponseHandler {
         return false
     }
 
+    /**
+     * harvest the existing mocked response with collected actual responses
+     */
     fun harvestExistingGeneBasedOn(geneToMutate: Gene, probability: Double) : Boolean{
         try {
             val template = getACopyOfItsActualResponseIfExist(geneToMutate, probability)?.responseBody?:return false

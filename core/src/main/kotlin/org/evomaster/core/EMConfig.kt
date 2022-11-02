@@ -1783,12 +1783,12 @@ class EMConfig {
 
     @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Experimental
-    @Probability
+    @Probability(activating = true)
     var probOfHarvestingResponsesFromActualExternalServices = 0.0
 
     @Cfg("a probability of mutating mocked responses based on actual responses")
     @Experimental
-    @Probability
+    @Probability(activating = true)
     var probOfMutatingResponsesBasedOnActualResponse = 0.0
 
     fun timeLimitInSeconds(): Int {
