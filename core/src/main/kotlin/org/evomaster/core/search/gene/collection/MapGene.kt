@@ -126,7 +126,7 @@ abstract class MapGene<K, V>(
 
         return "{" +
                 elements.filter { f ->
-                    isPrintable(f)
+                    isPrintable(f) && (f.first !is OptionalGene || f.first.isActive) && (f.second !is OptionalGene || f.second.isActive)
                 }.joinToString(",") { f ->
                     """
                     ${getKeyValueAsPrintableString(f.first, targetFormat)}:${
@@ -147,7 +147,7 @@ abstract class MapGene<K, V>(
 
         return "{" +
                 elements.filter { f ->
-                    isPrintable(f)
+                    isPrintable(f) && (f.first !is OptionalGene || f.first.isActive) && (f.second !is OptionalGene || f.second.isActive)
                 }.joinToString(",") { f ->
                     """
                     ${getKeyValueAsPrintableString(f.first, null)}:${f.second.getValueAsRawString()}
