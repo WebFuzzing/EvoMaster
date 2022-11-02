@@ -139,23 +139,6 @@ abstract class MapGene<K, V>(
                 "}"
     }
 
-    override fun getValueAsRawString(): String  {
-
-        if(!isPrintable()){
-            throw IllegalStateException("Trying to print a Map with unprintable template")
-        }
-
-        return "{" +
-                elements.filter { f ->
-                    isPrintable(f) && (f.first !is OptionalGene || f.first.isActive) && (f.second !is OptionalGene || f.second.isActive)
-                }.joinToString(",") { f ->
-                    """
-                    ${getKeyValueAsPrintableString(f.first, null)}:${f.second.getValueAsRawString()}
-                    """
-                } +
-                "}"
-    }
-
     private fun getKeyValueAsPrintableString(key: Gene, targetFormat: OutputFormat?): String {
         val keyString = key.getValueAsPrintableString(targetFormat = targetFormat)
         if (!keyString.startsWith("\""))
