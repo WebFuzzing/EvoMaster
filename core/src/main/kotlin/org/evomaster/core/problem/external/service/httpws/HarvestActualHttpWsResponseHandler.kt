@@ -37,6 +37,7 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import kotlin.math.max
 
 class HarvestActualHttpWsResponseHandler {
 
@@ -75,6 +76,8 @@ class HarvestActualHttpWsResponseHandler {
      * value is an example of HttpExternalServiceRequest
      */
     private val cachedRequests = mutableMapOf<String, HttpExternalServiceRequest>()
+
+    private val seededResponses = mutableSetOf<String>()
 
     /**
      * need it for wait and notify in kotlin
@@ -173,8 +176,13 @@ class HarvestActualHttpWsResponseHandler {
         // only support HttpExternalServiceAction, TODO for others
         if (exAction is HttpExternalServiceAction ){
             Lazy.assert { gene.parent == exAction.response}
-            if (exAction.response.responseBody == gene && randomness.nextBoolean(probability)){
-                return getACopyOfActualResponse(exAction.request)
+            if (exAction.response.responseBody == gene){
+                val p = if (!seededResponses.contains(exAction.request.getDescription()) && actualResponses.containsKey(exAction.request.getDescription())){
+                    // if the actual response is never seeded, give a higher probably to employ it
+                    max(config.probOfHarvestingResponsesFromActualExternalServices, probability)
+                } else probability
+                if (randomness.nextBoolean(p))
+                    return getACopyOfActualResponse(exAction.request)
             }
 
         }
@@ -188,7 +196,9 @@ class HarvestActualHttpWsResponseHandler {
         val harvest = probability == null || (probability > 0.0 && randomness.nextBoolean(probability))
         if (!harvest) return null
         synchronized(actualResponses){
-            return (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
+            val found= (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)
+            if (found!=null) seededResponses.add(httpRequest.getDescription())
+            return found
         }
     }
 
