@@ -53,6 +53,12 @@ class HarvestActualHttpWsResponseHandler {
 
     private lateinit var httpWsClient : Client
 
+
+    /**
+     * TODO
+     * to further improve the efficiency of collecting actual responses,
+     * might have a pool of threads to send requests
+     */
     private lateinit var threadToHandleRequest: Thread
 
 
