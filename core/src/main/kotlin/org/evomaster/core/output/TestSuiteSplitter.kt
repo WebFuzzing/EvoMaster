@@ -6,12 +6,14 @@ import org.evomaster.core.output.clustering.metrics.DistanceMetric
 import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
 import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
 import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.*
-
+import com.google.gson.*
 
 /**
  * Created by arcuri82 on 11-Nov-19.
@@ -36,7 +38,7 @@ object TestSuiteSplitter {
 
     fun split(solution: Solution<*>,
               config: EMConfig) : SplitResult { //List<Solution<*>>{
-        return split(solution as Solution<RestIndividual>, config, PartialOracles())
+        return split(solution as Solution<*>, config, PartialOracles())
     }
     /**
      * Given a [Solution], split it into several smaller solutions, based on the given [type] strategy.
@@ -48,10 +50,14 @@ object TestSuiteSplitter {
               oracles: PartialOracles) : SplitResult { //List<Solution<*>>{
 
         val type = config.testSuiteSplitType
-        val sol = solution as Solution<RestIndividual>
+        val sol = if(config.problemType == EMConfig.ProblemType.GRAPHQL){
+            solution as Solution<GraphQLIndividual>
+        } else {
+            solution as Solution<RestIndividual>
+        }
         val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
         val errs = sol.individuals.filter {ind ->
-            if (ind.individual is RestIndividual) {
+            if (ind.individual is RestIndividual || ind.individual is GraphQLIndividual) {
                 ind.evaluatedMainActions().any { ac ->
                     assessFailed(ac, oracles, config)
                 }
@@ -66,7 +72,7 @@ object TestSuiteSplitter {
         when(type){
             EMConfig.TestSuiteSplitType.NONE  -> splitResult.splitOutcome = listOf(sol)
             EMConfig.TestSuiteSplitType.CLUSTER -> {
-                val clusters = conductClustering(sol, oracles, config, metrics, splitResult)
+                val clusters = conductClustering(sol as Solution<RestIndividual>, oracles, config, metrics, splitResult)
                 splitByCluster(clusters, sol, oracles, splitResult, config)
             }
             EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol, config)
@@ -267,13 +273,25 @@ object TestSuiteSplitter {
      *  (i.e. is selected for clustering by one of the partial oracles).
      */
     fun assessFailed(action: EvaluatedAction, oracles: PartialOracles?, config: EMConfig): Boolean{
-        val codeSelect = if(action.result is HttpWsCallResult){
-            val code = (action.result as HttpWsCallResult).getStatusCode()
-            (code != null && code == 500)
-            // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
-            // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
-            // "remainder" subset - as they are neither errors, nor successful runs.
-        } else false
+        val codeSelect = when (action.result) {
+            is GraphQlCallResult -> {
+                // if GraphQlResult
+                val resultBody = Gson().fromJson((action.result as GraphQlCallResult).getBody(), HashMap::class.java)
+                val errMsg = resultBody?.get("errors")
+                        //(action.result as GraphQlCallResult).getErrorMessage()
+                (resultBody!=null && errMsg != null)
+            }
+
+            is HttpWsCallResult -> {
+                val code = (action.result as HttpWsCallResult).getStatusCode()
+                (code != null && code == 500)
+                // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
+                // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
+                // "remainder" subset - as they are neither errors, nor successful runs.
+            }
+
+            else -> false
+        }
 
 
         val oracleSelect = when{
