@@ -29,6 +29,10 @@ class BooleanGene(
         return BooleanGene(name, value)
     }
 
+    override fun setValueWithRawString(value: String) {
+        this.value = value.toBoolean()
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         val k: Boolean = if (tryToForceNewValue) {

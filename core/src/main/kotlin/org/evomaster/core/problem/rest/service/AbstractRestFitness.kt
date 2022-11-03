@@ -287,10 +287,15 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 throw RuntimeException("BUG: info for DTO $name is not available in the SUT driver")
             }
         }
-
-        val schema: String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
+        /*
+            need to get all for handling `ref`
+         */
+        val names = infoDto.unitsInfoDto.parsedDtos.keys.toList()
+        val schemas = names.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
+//        val schema: String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
         //TODO need to check: referType is same with the name?
-        return RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
+        val genes = RestActionBuilderV3.createObjectGeneForDTOs(names, schemas, names)
+        return genes[names.indexOf(name)]
     }
 
     /**

@@ -28,8 +28,6 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
     @Inject
     protected lateinit var configuration: EMConfig
 
-    @Inject(optional = true)
-    protected lateinit var rc: RemoteController
 
     @Inject
     protected lateinit var rpcHandler: RPCEndpointsHandler
@@ -75,12 +73,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         return sampleAtRandom()
     }
 
-    override fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
-            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
-            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
-        }
-    }
+
 
     /**
      * sample an action from [actionCluster] at random

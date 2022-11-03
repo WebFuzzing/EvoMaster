@@ -160,7 +160,8 @@ class ResourceCluster {
                         doNotCreateDuplicatedAction: Boolean,
                         isInsertion: Boolean = true,
                         randomness: Randomness,
-                        forceSynDataInDb: Boolean = false
+                        forceSynDataInDb: Boolean = false,
+                        useExtraSqlDbConstraints: Boolean = false
     ) : MutableList<DbAction>{
         val sorted = DbActionUtils.sortTable(tables.mapNotNull { getTableByName(it) }.run { if (doNotCreateDuplicatedAction) this.distinct() else this })
         val added = mutableListOf<DbAction>()
@@ -182,14 +183,11 @@ class ResourceCluster {
                     else{
                         val candidates = getDataInDb(t.name)!!
                         val row = randomness.choose(candidates)
-                        listOf(sqlInsertBuilder.extractExistingByCols(t.name, row))
+                        listOf(sqlInsertBuilder.extractExistingByCols(t.name, row, useExtraSqlDbConstraints))
                     }
                 } else{
-                    sqlInsertBuilder.createSqlInsertionAction(t.name).also {
-                        //FIXME need refactoring after getting rid of allGenes
-                       // it.forEach { a-> a.randomize(randomness,false, it.flatMap { a -> a.seeGenes()}) }
-                        it.forEach { a -> a.doInitialize(randomness) }
-                    }
+                    sqlInsertBuilder.createSqlInsertionAction(t.name, useExtraSqlDbConstraints = useExtraSqlDbConstraints)
+                            .onEach { a -> a.doInitialize(randomness) }
                 }
                 if (actions != null){
                     //actions.forEach {it.doInitialize()}

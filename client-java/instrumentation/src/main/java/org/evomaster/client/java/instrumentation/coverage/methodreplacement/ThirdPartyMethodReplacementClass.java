@@ -1,7 +1,10 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -10,24 +13,29 @@ import java.util.*;
  * Third-party libraries might or might not be on the classpath.
  * Furthermore, they MUST NOT be part of EvoMaster.
  * So we have to use reflection to access them at runtime.
- * <br>
+ *
  * There is a problem though :(
  * The replaced methods might have inputs or outputs from the third-party library.
  * To write replacements, we need to create the right method signatures, and those must
  * be available at compilation time.
- * A solution here is to include those dependencies, but with "provided" scope (so
+ * A previous attempt to solve this issue was to include those dependencies, but with "provided" scope (so
  * they will not be included in the uber jar).
- * But we should think if there is any better approach to deal with this issue.
- * Still, we need to have mechanism in place to avoid crashing EM at runtime if
- * such libraries are missing. This should be automatically handled here
- * by checking {@link #isAvailable()}.
+ * Unfortunately, this does NOT work, as the classloader that loads the instrumentation might be different from
+ * the one used for the SUT. This is the case for example for Spring applications when using External Driver.
  *
- * UPDATE:
- * it seems that using library in provided mode works fine... this would mean that
- * maybe we do not need to deal with reflection here when creating these replacements.
+ * The current solution is to use reflection, and have such 3rd-party library NOT on the classpath.
+ * They can be in "test" scope when running tests (eg to check validity of string constants), though.
  *
- * TODO: when creating new method replacements for third-party, let's try with provided
- * and no reflection first, and see if any side-effects
+ * Still, this leaves issue with method signatures.
+ * For return types using 3rd-party objects, must put Object as return type, with actual type specified
+ * in "castTo". A forced casting is automatically then done at instrumentation time.
+ * For input parameters, will need to use the ThirdPartyCast annotation.
+ *
+ * There is still the issue of which classloader to use for reflection.
+ * For MR of non-static methods, can use classloader of the original caller.
+ * For the other cases (eg, static methods and constructors), need to retrieve appropriate classloader from
+ * UnitInfoRecorder.
+ *
  */
 public abstract class ThirdPartyMethodReplacementClass implements MethodReplacementClass{
 
@@ -75,6 +83,7 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
                 continue;
 
             Class[] inputs = m.getParameterTypes();
+            Annotation[][] annotations = m.getParameterAnnotations();
 
             int start = 0;
             if(!r.replacingStatic()){
@@ -88,6 +97,14 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
             }
 
             Class[] reducedInputs = Arrays.copyOfRange(inputs, start, end);
+
+            for (int i = start; i < end; i++){
+                if (annotations[i].length > 0) {
+                    Class<?> klazz = ReplacementUtils.getCastedToThirdParty(annotations[i]);
+                    if (klazz != null)
+                        reducedInputs[i-start] = klazz;
+                }
+            }
 
             Method targetMethod;
             try {
@@ -206,7 +223,21 @@ public abstract class ThirdPartyMethodReplacementClass implements MethodReplacem
         }
 
         if(singleton.getTargetClass()==null){
-            singleton.retryLoadingClass(singleton.getTargetClass().getClassLoader());
+
+            /*
+                we do not have access to the caller directly here, so we need to use what registered
+                in ExecutionTracer
+             */
+
+            String callerName = ExecutionTracer.getLastCallerClass();
+            if(callerName == null){
+                //this would be clearly a bug...
+                throw new IllegalStateException("No access to last caller class");
+            }
+            //TODO what if more than 1 available ???
+            ClassLoader loader = UnitsInfoRecorder.getInstance().getClassLoaders(callerName).get(0);
+
+            singleton.retryLoadingClass(loader);
         }
 
         if(singleton.constructors.isEmpty()){

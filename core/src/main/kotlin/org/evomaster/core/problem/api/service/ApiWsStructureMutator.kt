@@ -383,7 +383,17 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         if (num <= 0)
             throw IllegalArgumentException("invalid num (i.e.,$num) for creating resource")
 
-        val list = (0 until num).map { getSqlInsertBuilder()!!.createSqlInsertionAction(name, setOf()) }.toMutableList()
+        val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
+
+        val chosenColumns = if(config.forceSqlAllColumnInsertion){
+            setOf("*")
+        } else {
+            setOf()
+        }
+
+        val list = (0 until num)
+                .map { getSqlInsertBuilder()!!.createSqlInsertionAction(name,chosenColumns, mutableListOf(),true, extraConstraints) }
+                .toMutableList()
 
         if (log.isTraceEnabled) {
             log.trace("at createDbActions, {} insertions are added, and they are {}", list.size,

@@ -50,6 +50,11 @@ public class RPCActionDto {
     public String actionName;
 
     /**
+     * a list of actions for performing mocking external services
+     */
+    public List<MockRPCExternalServiceDto> mockRPCExternalServiceDtos;
+
+    /**
      * request params
      */
     public List<ParamDto> requestParams;
