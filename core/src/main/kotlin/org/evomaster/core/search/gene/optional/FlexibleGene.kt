@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
  */
 class FlexibleGene(name: String,
                    gene: Gene,
-                   val replaceable: Boolean = true
+                   private var replaceable: Boolean = true
 ) : CompositeGene(name, mutableListOf(gene)) {
 
     init {
@@ -46,6 +46,9 @@ class FlexibleGene(name: String,
     val gene: Gene
         get() {return children.first()}
 
+    fun forbidReplace(){
+        replaceable = false
+    }
 
     fun replaceGeneTo(geneToUpdate: Gene){
         if (!replaceable)
