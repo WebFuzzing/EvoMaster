@@ -33,6 +33,12 @@ class GQLNullableInputEMTest : SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOneResponseWithData(solution)
+            assertValueInDataAtLeastOnce(solution, "flowersNullInNullOut")
+            assertValueInDataAtLeastOnce(solution, "flowersNullIn")
+            assertValueInDataAtLeastOnce(solution, "flowersNullOut")
+            assertValueInDataAtLeastOnce(solution, "flowersNotNullInOut")
+            assertValueInDataAtLeastOnce(solution, "flowersScalarNullable")
+            assertValueInDataAtLeastOnce(solution, "flowersScalarNotNullable")
             assertNoneWithErrors(solution)
         }
     }
