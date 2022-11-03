@@ -126,7 +126,7 @@ abstract class MapGene<K, V>(
 
         return "{" +
                 elements.filter { f ->
-                    isPrintable(f) && (f.first !is OptionalGene || f.first.isActive) && (f.second !is OptionalGene || f.second.isActive)
+                    isPrintable(f) && !isInactiveOptionalGene(f.first) && !isInactiveOptionalGene(f.second)
                 }.joinToString(",") { f ->
                     """
                     ${getKeyValueAsPrintableString(f.first, targetFormat)}:${
@@ -137,6 +137,12 @@ abstract class MapGene<K, V>(
                     """
                 } +
                 "}"
+    }
+
+    private fun isInactiveOptionalGene(gene: Gene): Boolean{
+        val optional = gene.getWrappedGene(OptionalGene::class.java)?:return false
+
+        return !optional.isActive
     }
 
     private fun getKeyValueAsPrintableString(key: Gene, targetFormat: OutputFormat?): String {
