@@ -18,7 +18,8 @@ import org.slf4j.LoggerFactory
  * ie, [gene] can be replaced with [replaceGeneTo] method
  *
  * this gene is now mainly used to support array and map whose template
- * might not follow a fixed typed
+ * might not follow a fixed typed. FlexibleMap is added, might need it for
+ * array gene
  */
 class FlexibleGene(name: String,
                    gene: Gene,
@@ -46,6 +47,9 @@ class FlexibleGene(name: String,
     val gene: Gene
         get() {return children.first()}
 
+    /**
+     * forbid replacing gene to other
+     */
     fun forbidReplace(){
         replaceable = false
     }
