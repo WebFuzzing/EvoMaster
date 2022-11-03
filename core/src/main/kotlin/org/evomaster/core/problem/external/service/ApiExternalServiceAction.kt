@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.external.service
 
+import org.evomaster.core.problem.api.service.param.Param
 import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.Action
 
@@ -13,11 +14,24 @@ abstract class ApiExternalServiceAction(
      * Do we need to make the response as a generic type T where T extends ResponseParam
      * and bind the ApiExternalServiceAction with the T?
      */
-    val response: ResponseParam,
+    response: ResponseParam,
     active : Boolean = false,
     used : Boolean = false
 ) : Action(listOf(response)){
 
+
+    val responses : List<ResponseParam>
+        get() { return children.filterIsInstance<ResponseParam>()}
+
+    val response : ResponseParam
+        get() {
+            val responses = children.filterIsInstance<ResponseParam>()
+            if (responses.isEmpty())
+                throw IllegalStateException("there does not exist any responses")
+            if (responses.size > 1)
+                throw  IllegalStateException("it should only have one response, but there exist $responses responses")
+            return responses.first()
+        }
 
     /**
      * it represents whether the external service is instanced before executing the corresponding API call

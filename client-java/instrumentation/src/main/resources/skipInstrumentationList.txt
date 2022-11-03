@@ -33,3 +33,6 @@ sun.
 // issue with TT
 org.glassfish.jersey.uri.PatternWithGroups
 org.springframework.web.util.UriTemplate
+// TODO might try to remove them, as no longer in provided scope
+okhttp3.
+com.squareup.okhttp.

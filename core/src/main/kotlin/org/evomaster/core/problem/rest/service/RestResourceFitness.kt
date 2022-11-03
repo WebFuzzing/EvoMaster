@@ -41,6 +41,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         rc.resetSUT()
 
+
         /*
             there might some dbaction between rest actions.
             This map is used to record the key mapping in SQL, e.g., PK, FK
@@ -130,11 +131,17 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 // get visited wiremock instances
                 val requestedExternalServiceRequests = externalServiceHandler.getAllServedExternalServiceRequests()
                 if (requestedExternalServiceRequests.isNotEmpty()) {
-                    fv.registerExternalServiceRequest(
-                        indexOfAction,
-                        requestedExternalServiceRequests
-                    )
+                    fv.registerExternalServiceRequest(indexOfAction, requestedExternalServiceRequests)
                 }
+
+                val employedDefault = requestedExternalServiceRequests.map { it.wireMockSignature }.distinct().filter {
+                    externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
+                        .none { a -> a.request.wireMockSignature == it }
+                }.associate {
+                    val es = externalServiceHandler.getExternalService(it)
+                    es.getRemoteHostName() to es
+                }
+                fv.registerExternalRequestToDefaultWM(indexOfAction, employedDefault)
 
                 externalServiceActions.filterIsInstance<HttpExternalServiceAction>()
                     .groupBy { it.request.absoluteURL }
@@ -150,6 +157,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                             }
                         }
                     }
+
+
 
                 if (!ok) {
                     terminated = true

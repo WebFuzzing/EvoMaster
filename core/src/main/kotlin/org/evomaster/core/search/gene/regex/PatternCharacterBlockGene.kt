@@ -30,6 +30,10 @@ class PatternCharacterBlockGene(
         return PatternCharacterBlockGene(name, stringBlock)
     }
 
+    override fun setValueWithRawString(value: String) {
+        throw IllegalStateException("cannot set value with string ($value) for ${this.javaClass.simpleName}")
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
     }

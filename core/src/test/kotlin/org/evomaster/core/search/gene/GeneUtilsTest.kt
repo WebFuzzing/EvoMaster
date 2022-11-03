@@ -282,7 +282,6 @@ internal class GeneUtilsTest {
 
     }
 
-
     @Test
     fun testInterfaceSelectionName(){
 

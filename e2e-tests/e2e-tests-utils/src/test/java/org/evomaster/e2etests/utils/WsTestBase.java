@@ -11,6 +11,7 @@ import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
@@ -69,6 +70,8 @@ public abstract class WsTestBase {
             avoid boot-time info across e2e tests
          */
         ObjectiveRecorder.reset(true);
+
+        UnitsInfoRecorder.reset();
     }
 
     @AfterAll

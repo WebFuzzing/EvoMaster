@@ -91,10 +91,14 @@ class EnumGene<T : Comparable<T>>(
         return EnumGene<T>(name, values, index)
     }
 
+    override fun setValueWithRawString(value: String) {
+        this.index = value.toInt()
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         if(values.isEmpty()) return
 
-        val k = if (tryToForceNewValue) {
+        val k = if (tryToForceNewValue && values.size > 1) {
             randomness.nextInt(0, values.size - 1, index)
         } else {
             randomness.nextInt(0, values.size - 1)

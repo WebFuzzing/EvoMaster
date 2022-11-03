@@ -1031,6 +1031,16 @@ class EMConfig {
     var maxSqlInitActionsPerMissingData = 5
 
 
+    /*
+        Likely this should always be on by default... it would increase search space, but that would be handled by
+        adaptive hypermutation
+        TODO need experiments
+     */
+    @Experimental
+    @Cfg("Force filling data of all columns when inserting new row, instead of only minimal required set.")
+    var forceSqlAllColumnInsertion = false
+
+
     @Cfg("Maximum size (in bytes) that EM handles response payloads in the HTTP responses. " +
             "If larger than that, a response will not be stored internally in EM during the test generation. " +
             "This is needed to avoid running out of memory.")
@@ -1620,7 +1630,7 @@ class EMConfig {
      *  but there are issues of performance (time and memory) in analysis of large graphs, that
      *  would need to be optimized
      */
-    val defaultTreeDepth = 3
+    val defaultTreeDepth = 4
 
     @Experimental
     @Cfg("Maximum tree depth in mutations/queries to be evaluated." +
@@ -1762,6 +1772,14 @@ class EMConfig {
     @Experimental
     @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
     var externalServiceIP : String = "127.0.0.2"
+
+
+    @Experimental
+    @Cfg("Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic." +
+            " An example is javax/jakarta annotation constraints defined on JPA entities.")
+    @Probability(true)
+    var useExtraSqlDbConstraintsProbability = 0.0
+
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {

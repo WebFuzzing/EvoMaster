@@ -1,21 +1,17 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.PreDefinedSSLInfo;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
-import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.net.*;
 import java.util.Objects;
 
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils.parseLongHeuristic;
 
 public class URLClassReplacement implements MethodReplacementClass {
@@ -120,38 +116,25 @@ public class URLClassReplacement implements MethodReplacementClass {
           Add the external service hostname to the ExecutionTracer
           */
         if (caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) {
-            int port = caller.getPort();
+
+            if (caller.getProtocol().equalsIgnoreCase("https"))
+                PreDefinedSSLInfo.setTrustAllForHttpsURLConnection();
+
             String protocol = caller.getProtocol();
+            int port = caller.getPort();
+            port = ExternalServiceInfoUtils.inferPort(port, protocol);
 
-            // Unless the port number is specified, the default will be -1.
-            // Which indicates that the port should be assigned according to the
-            // protocol. Since the URLConnection openConnection is an abstract, this
-            // assignment will be handled under the respective implementation.
-            // Here it's manually handled assuming these default will never change. :)
-            if (port == -1) {
-                switch (protocol) {
-                    case "https":
-                        port = 443;
-                        break;
-                    case "http":
-                        port = 80;
-                        break;
-                }
-            }
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(protocol, caller.getHost(), port);
-            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+            String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, port);
 
-            if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-                String ip  = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
+            // Usage of ports below 1024 require root privileges to run
+            String url = caller.getProtocol()+"://" + ipAndPort[0]+":"+ipAndPort[1] + caller.getPath();
 
-                // Usage of ports below 1024 require root privileges to run
-                String url = "http://" + ip + ":" + caller.getPort() + caller.getPath();
-
-                URL newURL = new URL(url);
-                return newURL.openConnection();
-            }
+            URL newURL = new URL(url);
+            return newURL.openConnection();
         }
-
+        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
+            SimpleLogger.uniqueWarn("not handle the protocol with:"+caller.getProtocol());
         return caller.openConnection();
     }
 }

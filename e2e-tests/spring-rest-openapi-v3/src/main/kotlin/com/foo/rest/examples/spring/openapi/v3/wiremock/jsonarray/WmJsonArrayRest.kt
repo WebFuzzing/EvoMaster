@@ -14,7 +14,7 @@ class WmJsonArrayRest {
 
 
     @GetMapping
-    open fun getObject() : ResponseEntity<String> {
+    fun getObject() : ResponseEntity<String> {
 
         val url = URL("http://json.array:10877/api/foo")
         val connection = url.openConnection()
@@ -25,8 +25,11 @@ class WmJsonArrayRest {
 
         val dto = mapper.convertValue(list[0], WmJsonArrayDto::class.java)
 
-        return if (dto.x!! > 0){
-            ResponseEntity.ok("OK")
+        return if (dto.x!! > 0 && dto.cycle != null){
+            if ((dto.cycle!!.y ?: 0) > 0)
+                ResponseEntity.ok("OK X and Y")
+            else
+                ResponseEntity.ok("OK X")
         } else{
             ResponseEntity.status(500).build()
         }

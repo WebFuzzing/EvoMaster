@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 
 /**
  * Represents a collection of points without lines between them.
- * Column types MULTIPOINT of databases H2 and PostgreSQL are supported by
+ * Column types MULTIPOINT of databases H2 and MYSQL are supported by
  * this gene.
  */
 class SqlMultiPointGene(
@@ -26,7 +26,7 @@ class SqlMultiPointGene(
     val databaseType: DatabaseType = DatabaseType.H2,
     val points: ArrayGene<SqlPointGene> = ArrayGene(
         name = "points",
-        minSize = 0,
+        minSize = 1, //looks like insertion fails if 0, due to "bad" syntax
         template = SqlPointGene("p", databaseType = databaseType)
     )
 ) : CompositeFixedGene(name, mutableListOf(points)) {

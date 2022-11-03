@@ -74,10 +74,12 @@ public interface CustomizationHandler {
 
     /**
      * <p>
-     *     implement how to enable mocking of RPC based external services
+     *     implement how to enable/disable mocking of RPC based external services
      * </p>
      * @param externalServiceDtos contains info about how to setup responses
+     * @param enabled reflect to enable (set it true) or disable (set it false) the specified external service dtos.
+     *                Note that null [externalServiceDtos] with false [enabled] means that all existing external service setup should be disabled.
      * @return whether the mocked instance starts successfully,
      */
-    boolean customizeMockingRPCExternalService(List<MockRPCExternalServiceDto> externalServiceDtos);
+    boolean customizeMockingRPCExternalService(List<MockRPCExternalServiceDto> externalServiceDtos, boolean enabled);
 }

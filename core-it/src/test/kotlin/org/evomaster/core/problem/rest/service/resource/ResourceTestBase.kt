@@ -316,6 +316,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
         if(! individual.isInitialized())
             individual.doInitialize(randomness)
+        individual.doInitializeLocalId()
 
         val addSpec = MutatedGeneSpecification()
         val evaluatedIndividual = EvaluatedIndividual(FitnessValue(0.0), individual, generateIndividualResults(individual))
@@ -418,6 +419,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val ind1With2Resources = RestIndividual(mutableListOf(callB.copy(), callA.copy()), SampleType.SMART_RESOURCE)
         if(!ind1With2Resources.isInitialized())
             ind1With2Resources.doInitialize()
+        ind1With2Resources.doInitializeLocalId()
 
         val fake1fitnessValue = FitnessValue(ind1With2Resources!!.seeAllActions().size.toDouble())
         targetsOfB.plus(targetsOfA).forEachIndexed { index, i ->
@@ -428,6 +430,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val ind2With2Resources = RestIndividual(mutableListOf(callC.copy(), callA.copy()), SampleType.SMART_RESOURCE)
         if(!ind2With2Resources.isInitialized())
             ind2With2Resources.doInitialize()
+        ind2With2Resources.doInitializeLocalId()
 
         val fake2fitnessValue = FitnessValue(ind2With2Resources!!.seeAllActions().size.toDouble())
         targetsOfC.plus(targetsOfA).forEachIndexed { index, i ->

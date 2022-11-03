@@ -6,6 +6,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import io.restassured.http.ContentType;
+import org.evomaster.ci.utils.CIUtils;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,6 +23,12 @@ public class WireMockManualTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
+        WireMockController wireMockController = new WireMockController();
+        SpringTestBase.initClass(wireMockController);
+
+        //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
+        CIUtils.skipIfOnGA();
+
         // DNS cache manipulator sets the IP for foo.bar to a different loopback address
         DnsCacheManipulator.setDnsCache("foo.bar", "127.0.0.2");
 
@@ -50,18 +57,21 @@ public class WireMockManualTest extends SpringTestBase {
                         .withStatus(200)
                         .withBody("Not found!!")));
 
-        WireMockController wireMockController = new WireMockController();
-        SpringTestBase.initClass(wireMockController);
     }
 
     @AfterAll
     public static void shutdownServer() {
+        //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
+        CIUtils.skipIfOnGA();
+
         wireMockServer.stop();
         DnsCacheManipulator.clearDnsCache();
     }
 
     @Test
     public void testEqualsFoo() {
+        //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
+        CIUtils.skipIfOnGA();
 
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/wiremock/equalsFoo/bar")
@@ -79,6 +89,8 @@ public class WireMockManualTest extends SpringTestBase {
 
     @Test
     public void testExternalCall() {
+        //TODO skip this due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
+        CIUtils.skipIfOnGA();
         /*
          * The test will check whether the external call is a success or
          * not. If the target host replaced with the Wiremock, it'll respond

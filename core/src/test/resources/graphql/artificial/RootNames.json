@@ -82,6 +82,52 @@
           "enumValues": null,
           "possibleTypes": null
         },
+
+        {
+          "kind": "OBJECT",
+          "name": "Store",
+          "fields": [
+            {
+              "name": "id",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+
+        {
+          "kind": "OBJECT",
+          "name": "AddOwnerPayload",
+          "fields": [
+            {
+              "name": "streetName",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+
+
         {
           "kind": "OBJECT",
           "name": "__Directive",

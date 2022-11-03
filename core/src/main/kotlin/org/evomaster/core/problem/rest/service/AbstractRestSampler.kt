@@ -33,9 +33,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestSampler::class.java)
     }
 
-    @Inject(optional = true)
-    protected lateinit var rc: RemoteController
-
     @Inject
     protected lateinit var configuration: EMConfig
 
@@ -313,6 +310,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
         val ind =  RestIndividual(restCalls, SampleType.SMART, mutableListOf()//, usedObjects.copy()
                 ,trackOperator = if (config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else Traceable.DEFAULT_INDEX)
+        ind.doInitializeLocalId()
         org.evomaster.core.Lazy.assert { ind.isInitialized() }
         return ind
     }

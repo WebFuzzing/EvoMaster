@@ -3,9 +3,13 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.InputProperties;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.Type;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -13,29 +17,83 @@ import java.util.stream.Stream;
 public class ReplacementUtils {
 
     public static String getDescriptor(Method m, int skipFirsts, int skipLast) {
-        return getDescriptor(m,skipFirsts,skipLast,Type.getDescriptor(m.getReturnType()));
+        return getDescriptor(m,skipFirsts,skipLast,Type.getDescriptor(m.getReturnType()),false);
     }
 
-    public static String getDescriptor(Method m, int skipFirsts, int skipLast, String returnType) {
-        Class<?>[] parameters = m.getParameterTypes();
+    public static String getDescriptor(Method m, int skipFirsts, int skipLast, boolean applyThirdPartyCast) {
+
+        String returnType = Type.getDescriptor(m.getReturnType());
+        if(applyThirdPartyCast){
+            Replacement r = m.getAnnotation(Replacement.class);
+            if(!r.castTo().isEmpty() && !r.replacingConstructor()){
+                Class<?> casted = loadClass(r.castTo());
+                if(casted != null){
+                    returnType = Type.getDescriptor(casted);
+                }
+            }
+        }
+
+        return getDescriptor(m,skipFirsts,skipLast,returnType,applyThirdPartyCast);
+    }
+
+
+    private static String getDescriptor(Method m, int skipFirsts, int skipLast, String returnType, boolean applyThirdPartyCast) {
+        List<Class<?>> types = getParameterTypes(m,skipFirsts,skipLast,applyThirdPartyCast);
         StringBuilder buf = new StringBuilder();
+
         buf.append('(');
+        types.stream().forEach( t ->
+                buf.append(Type.getDescriptor(t))
+        );
+        buf.append(')');
+        buf.append(returnType);
+
+        return buf.toString();
+    }
+
+    public static List<Class<?>> getParameterTypes(Method m, int skipFirsts, int skipLast, boolean applyThirdPartyCast){
+        Class<?>[] parameters = m.getParameterTypes();
+        Annotation[][] annotations = m.getParameterAnnotations();
 
         //skipping first parameter(s)
         int start = skipFirsts;
         int end = parameters.length - skipLast;
 
-        /*
-            we might skip the first (if replacing non-static), and
-            skipping the last (id template)
-         */
-        for (int i = start; i < end; ++i) {
-            buf.append(Type.getDescriptor(parameters[i]));
-        }
-        buf.append(')');
-        buf.append(returnType);
+        List<Class<?>> types = new ArrayList<>((end-start)+1);
 
-        return buf.toString();
+        for (int i = start; i < end; i++) {
+            Class<?> t = parameters[i];
+            if(applyThirdPartyCast){
+                Class<?> casted = getCastedToThirdParty(annotations[i]);
+                if(casted != null){
+                    t = casted;
+                }
+            }
+            types.add(t);
+        }
+
+        return types;
+    }
+
+    public static Class<?> getCastedToThirdParty(Annotation[] annotations) {
+        ThirdPartyCast thirdPartyCast = (ThirdPartyCast) Arrays.stream(annotations).filter(a -> a instanceof ThirdPartyCast)
+                .findFirst().orElse(null);
+        if(thirdPartyCast != null){
+            return loadClass(thirdPartyCast.actualType());
+        }
+        return null;
+    }
+
+    private static Class<?> loadClass(String className){
+        try {
+            /*
+                TODO use correct classloader
+             */
+            return ReplacementUtils.class.getClassLoader().loadClass(className);
+        } catch (ClassNotFoundException e) {
+            SimpleLogger.error("Cannot load third-party cast class: " + className,e);
+            return null;
+        }
     }
 
     public static Optional<Method> chooseMethodFromCandidateReplacement(
@@ -75,7 +133,11 @@ public class ReplacementUtils {
                         TODO: should try to understand exactly what happens there...
                      */
                     try{i.getClass().getDeclaredMethods(); return true;}
-                    catch (Throwable t){return false;}
+                    catch (Throwable t){
+                        String msg = "FAILED TO LOAD METHOD DECLARATIONS FOR: " + i.getClass().getName();
+                        SimpleLogger.error(msg);
+                        return false;
+                    }
                 })
                 .flatMap(i -> Stream.of(i.getClass().getDeclaredMethods()))
                 .filter(m -> m.getDeclaredAnnotation(Replacement.class) != null)
@@ -92,19 +154,17 @@ public class ReplacementUtils {
                     }
                     String ctg = br.category().toString();
                     String categories = System.getProperty(InputProperties.REPLACEMENT_CATEGORIES);
-                    if(categories == null || ! categories.contains(ctg)){
+
+                    if(categories == null || !Arrays.stream(categories.split(",")).anyMatch(c -> c.equals(ctg))){
                         return false;
                     }
 
                     boolean isConstructor = name.equals(Constants.INIT_METHOD);
 
                     if(isConstructor){
-
-                        //int skipFirst = 2;
                         int skipFirst = 0;
                         int skipLast = br.type() == ReplacementType.TRACKER ? 0 : 1;
-                        //return desc.equals(getDescriptor(m, skipFirst, skipLast, "V"));
-                        return desc.equals(getDescriptor(m, skipFirst, skipLast));
+                        return desc.equals(getDescriptor(m, skipFirst, skipLast, true));
 
                     } else {
 
@@ -114,7 +174,7 @@ public class ReplacementUtils {
 
                         int skipFirst = br.replacingStatic() ? 0 : 1;
                         int skipLast = br.type() == ReplacementType.TRACKER ? 0 : 1;
-                        return desc.equals(getDescriptor(m, skipFirst, skipLast));
+                        return desc.equals(getDescriptor(m, skipFirst, skipLast, true));
                     }
                 })
                 .findAny();

@@ -5,6 +5,7 @@ import com.google.inject.Module
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
@@ -107,7 +108,8 @@ class MutationWeightControlTest {
         time.newActionEvaluation(5)
 
         val individual = GeneWeightTestSchema.newRestIndividual("POST:/gw/efoo")
-        individual.doInitialize(randomness)
+        TestUtils.doInitializeIndividualForTesting(individual, randomness)
+
         val obj = individual.seeGenes(Individual.GeneFilter.NO_SQL).find { it is ObjectGene }
 
 

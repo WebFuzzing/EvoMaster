@@ -17,6 +17,10 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
         return SqlAutoIncrementGene(name)
     }
 
+    override fun setValueWithRawString(value: String) {
+        throw IllegalStateException("cannot set value with string ($value) for ${this.javaClass.simpleName}")
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }

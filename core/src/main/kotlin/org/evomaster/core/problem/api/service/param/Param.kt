@@ -10,6 +10,7 @@ abstract class Param(
 ) : StructuralElement(genes){
 
     //TODO need refactoring
+    @Deprecated("Assumes there is only 1 gene")
      val gene : Gene = genes[0]
 
     constructor(name: String, gene : Gene) : this(name, mutableListOf(gene))

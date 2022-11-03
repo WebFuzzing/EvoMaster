@@ -64,6 +64,10 @@ class IntegerGene(
         )
     }
 
+    override fun setValueWithRawString(value: String) {
+        this.value = value.toInt()
+    }
+
     override fun copyValueFrom(other: Gene) {
         if (other !is IntegerGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")

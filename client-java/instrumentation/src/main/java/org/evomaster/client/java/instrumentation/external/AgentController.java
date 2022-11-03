@@ -10,6 +10,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Code running in the Java Agent to receive and respond to the
@@ -96,6 +97,9 @@ public class AgentController {
                     case BOOT_TIME_INFO:
                         handleBootTimeObjectiveInfo();
                         break;
+                    case EXTRACT_JVM_DTO:
+                        handleExtractingSpecifiedDto();
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -120,6 +124,7 @@ public class AgentController {
 
     private static void handleUnitsInfo() {
         try {
+            UnitsInfoRecorder.forceLoadingLazyDataStructures();
             sendObject(UnitsInfoRecorder.getInstance());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling units info: "+e.getMessage());
@@ -181,6 +186,16 @@ public class AgentController {
             sendObject(InstrumentationController.getBootTimeObjectiveInfo());
         }catch (Exception e) {
             SimpleLogger.error("Failure in handling Boot-time Objective Info: "+e.getMessage());
+        }
+    }
+
+    private static void handleExtractingSpecifiedDto(){
+        try {
+            Object msg = in.readObject();
+            List<String> dtoNames = (List<String>) msg;
+            InstrumentationController.extractSpecifiedDto(dtoNames);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling extracting specified dto: "+e.getMessage());
         }
     }
 

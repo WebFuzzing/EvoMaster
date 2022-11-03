@@ -99,6 +99,12 @@ public class ExecutionTracer {
      */
     private static volatile boolean killSwitch = false;
 
+    /**
+     * When executing method replacements, keep track here of the caller class, ie the class name in which
+     * the method replacement took place.
+     */
+    private static volatile String lastCallerClass = null;
+
     static {
         reset();
     }
@@ -115,7 +121,24 @@ public class ExecutionTracer {
             expensiveOperation = 0;
             executingAction = false;
             sleepingThreads.clear();
+            lastCallerClass = null;
         }
+    }
+
+    public static final String SET_LAST_CALLER_CLASS_METHOD_NAME = "setLastCallerClass";
+
+    public static final String SET_LAST_CALLER_CLASS_DESC = "(Ljava/lang/String;)V";
+
+    public static void setLastCallerClass(String className){
+        lastCallerClass = ClassName.get(className).getFullNameWithDots();
+    }
+
+    public static ClassLoader getLastCallerClassLoader(){
+        return UnitsInfoRecorder.getInstance().getClassLoaders(getLastCallerClass()).get(0);
+    }
+
+    public static String getLastCallerClass(){
+        return lastCallerClass;
     }
 
     public static void reportSleeping(){
@@ -151,6 +174,7 @@ public class ExecutionTracer {
     public static boolean isExecutingAction() {
         return executingAction;
     }
+
 
     public static void setExecutingAction(boolean executingAction) {
         ExecutionTracer.executingAction = executingAction;
@@ -611,6 +635,13 @@ public class ExecutionTracer {
         // here, we only register external info into ObjectiveRecorder if it occurs during the startup
         if (!executingAction)
             ObjectiveRecorder.registerExternalServiceInfoAtSutStartupTime(hostInfo);
+    }
+
+    /**
+     * track what host uses the default WM
+     */
+    public static void addEmployedDefaultWMHost(ExternalServiceInfo hostInfo) {
+        getCurrentAdditionalInfo().addEmployedDefaultWM(hostInfo);
     }
 
     /**

@@ -295,4 +295,8 @@ public class ServerController {
 
         return (UnitsInfoRecorder) response;
     }
+
+    public boolean extractSpecifiedDto(List<String> dtoNames){
+        return sendWithDataAndExpectACK(Command.EXTRACT_JVM_DTO, dtoNames);
+    }
 }
