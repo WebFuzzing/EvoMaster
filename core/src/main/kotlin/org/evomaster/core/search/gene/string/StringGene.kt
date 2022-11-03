@@ -482,12 +482,14 @@ class StringGene(
                         like '/' and '.' in a PathParam.
                         If we have a constant that uses any of such chars, then we must
                         skip it.
-                        We allow constant larger than Max (as that should not be a problem),
-                        but not smaller than Min (eg to avoid empty strings in PathParam)
+                        Also must guarantee min/max constraints.
+
+                        TODO will need to guarantee min/max constraints on Regex as well
                  */
                 .filter { s ->
                     s.stringSpecialization != StringSpecialization.CONSTANT ||
-                            (invalidChars.none { c -> s.value.contains(c) } && s.value.length >= minLength)
+                            (invalidChars.none { c -> s.value.contains(c) }
+                                    && s.value.length >= minLength && s.value.length <= maxLength)
                 }
 
         val toAddGenes = mutableListOf<Gene>()
