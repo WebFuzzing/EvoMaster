@@ -40,6 +40,14 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.math.max
 
+
+/**
+ * based on collected requests to external services from WireMock
+ * harvest actual responses by making the requests to real external services
+ *
+ * harvested actual responses could be applied as seeded in optimizing
+ * test generation with search
+ */
 class HarvestActualHttpWsResponseHandler {
 
     // note rc should never be used in the thread of sending requests to external services
@@ -68,22 +76,37 @@ class HarvestActualHttpWsResponseHandler {
         private const val ACTUAL_RESPONSE_GENE_NAME = "ActualResponse"
 
         init{
-            System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+            /**
+             * this default setting in jersey-client is false
+             * to allow collected requests which might have restricted headers, then
+             * set the property
+             */
+            System.setProperty("sun.net.http.allowRestrictedHeaders", "true")
         }
     }
 
     /**
+     * save the harvested actual responses
+     *
      * key is actual request based on [HttpExternalServiceRequest.getDescription]
+     *      ie, "method:absoluteURL[headers]{body payload}",
      * value is an actual response info
      */
     private val actualResponses = mutableMapOf<String, ActualResponseInfo>()
 
     /**
+     * cache collected requests
+     *
      * key is description of request with [HttpExternalServiceRequest.getDescription]
+     *      ie, "method:absoluteURL[headers]{body payload}",
      * value is an example of HttpExternalServiceRequest
      */
     private val cachedRequests = mutableMapOf<String, HttpExternalServiceRequest>()
 
+    /**
+     * track a list of actual responses which have been seeded in the search based on
+     * its corresponding request using its description, ie, ie, "method:absoluteURL[headers]{body payload}",
+     */
     private val seededResponses = mutableSetOf<String>()
 
     /**
@@ -101,8 +124,6 @@ class HarvestActualHttpWsResponseHandler {
      * value is parsed gene based on schema
      */
     private val extractedObjectDto = mutableMapOf<String, Gene>()
-
-    private val jacksonMapper = ObjectMapper()
 
     /*
         skip headers if they depend on the client
@@ -128,7 +149,7 @@ class HarvestActualHttpWsResponseHandler {
 
             threadToHandleRequest = object :Thread() {
                 override fun run() {
-                    while (true) {
+                    while (!this.isInterrupted) {
                         sendRequestToRealExternalService()
                     }
                 }
@@ -200,7 +221,7 @@ class HarvestActualHttpWsResponseHandler {
      * @return a copy of actual responses based on the given [httpRequest] and probability
      */
     fun getACopyOfActualResponse(httpRequest: HttpExternalServiceRequest, probability: Double?=null) : ResponseParam?{
-        val harvest = probability == null || (probability > 0.0 && randomness.nextBoolean(probability))
+        val harvest = probability == null || (randomness.nextBoolean(probability))
         if (!harvest) return null
         synchronized(actualResponses){
             val found= (actualResponses[httpRequest.getDescription()]?.param?.copy() as? ResponseParam)

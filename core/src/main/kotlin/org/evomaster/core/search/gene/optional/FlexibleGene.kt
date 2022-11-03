@@ -6,12 +6,20 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+
+/**
+ * This represents a flexible gene which does not stick to a specific type
+ * the type can be dynamically updated,
+ * ie, [gene] can be replaced with [replaceGeneTo] method
+ *
+ * this gene is now mainly used to support array and map whose template
+ * might not follow a fixed typed
+ */
 class FlexibleGene(name: String,
                    gene: Gene,
                    val replaceable: Boolean = true
@@ -38,9 +46,6 @@ class FlexibleGene(name: String,
     val gene: Gene
         get() {return children.first()}
 
-//    fun getGene() : Gene{
-//        return children.first()
-//    }
 
     fun replaceGeneTo(geneToUpdate: Gene){
         if (!replaceable)
@@ -49,6 +54,13 @@ class FlexibleGene(name: String,
         killAllChildren()
         geneToUpdate.resetLocalIdRecursively()
         addChild(geneToUpdate)
+    }
+
+    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+        if(this.javaClass == klass){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
     }
 
     override fun copyContent(): FlexibleGene {

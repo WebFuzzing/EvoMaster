@@ -2,17 +2,15 @@ package org.evomaster.core.search.gene.collection
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.gene.optional.FlexibleGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
- * FIXME: this needs to be refactored, as at the moment the
- * keys are strings that are fixed.
- * Keys should be of any basic type, and should be modifiable.
- *
+ * This represents a MapGene whose key and value have fixed type, ie, not [FlexibleGene]
+ * all elements must follow its [template],
+ * for instance, if the value template is [ObjectGene], all added elements must be [ObjectGene]
+ * and have same fields as the value template
  */
 class FixedMapGene<K, V>(
     name: String,
