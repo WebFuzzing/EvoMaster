@@ -27,8 +27,7 @@ class FlexibleGene(name: String,
 ) : CompositeGene(name, mutableListOf(gene)) {
 
     init {
-        // gene cannot be flexible gene
-        Lazy.assert { gene !is FlexibleGene }
+        geneCheck(gene)
     }
 
     companion object{
@@ -57,7 +56,9 @@ class FlexibleGene(name: String,
     fun replaceGeneTo(geneToUpdate: Gene){
         if (!replaceable)
             throw IllegalStateException("attempt to replace the gene which is not replaceable")
+        geneCheck(geneToUpdate)
         Lazy.assert { children.size == 1 }
+
         killAllChildren()
         geneToUpdate.resetLocalIdRecursively()
         addChild(geneToUpdate)
@@ -147,4 +148,9 @@ class FlexibleGene(name: String,
         return gene.getValueAsRawString()
     }
 
+    private fun geneCheck(geneToBeUpdated : Gene){
+        if (geneToBeUpdated is FlexibleGene){
+            throw IllegalArgumentException("For a FlexibleGene, its gene to be employed or updated cannot be FlexibleGene")
+        }
+    }
 }
