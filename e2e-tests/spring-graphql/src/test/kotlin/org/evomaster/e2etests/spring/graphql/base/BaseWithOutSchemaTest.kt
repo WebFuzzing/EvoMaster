@@ -3,10 +3,12 @@ package org.evomaster.e2etests.spring.graphql.base
 
 import com.foo.graphql.base.BaseWithOutschemaController
 import org.evomaster.core.EMConfig
+import org.evomaster.core.remote.SutProblemException
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 
 class BaseWithOutSchemaTest: SpringTestBase() {
 
@@ -25,17 +27,20 @@ class BaseWithOutSchemaTest: SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "GQL_BaseWithOutSchemaEM",
             "org.foo.graphql.BaseWithOutSchemaEM",
-            20
-        ) { args: MutableList<String> ->
+            20,
+            false,
+         { args: MutableList<String> ->
 
             args.add("--problemType")
             args.add(EMConfig.ProblemType.GRAPHQL.toString())
 
-            val solution = initAndRun(args)
-
-            Assertions.assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOneResponseWithData(solution)
-            assertNoneWithErrors(solution)
-        }
+            try {
+                initAndRun(args)
+                fail("Should had crashed")
+            } catch (e: Exception){
+                //expected, as introspective query is disabled
+            }
+        },
+                1)
     }
 }

@@ -10,7 +10,7 @@ class BaseWithOutschemaController: SpringController(GQLBaseApplication::class.ja
         ctx = SpringApplication.run(applicationClass,
             "--server.port=0",
             "--graphql.tools.schema-location-pattern=**/${schemaName()}",
-            "--introspection-enabled = false"
+            "--graphql.tools.introspection-enabled=false"
 
         )
         return "http://localhost:$sutPort"
