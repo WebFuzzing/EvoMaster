@@ -1,0 +1,21 @@
+type Query {
+  books: [Book]
+}
+
+type Book {
+  author: Author
+}
+
+type Author {
+  address : Address
+}
+
+type Address {
+id:String
+streetName:String
+
+}
+
+type Mutation {
+  addBook( name: String): String
+}

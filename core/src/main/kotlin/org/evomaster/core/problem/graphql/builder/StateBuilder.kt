@@ -1,9 +1,11 @@
 package org.evomaster.core.problem.graphql.builder
 
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.graphql.schema.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.concurrent.atomic.AtomicInteger
 
 object StateBuilder {
 
@@ -33,11 +35,20 @@ object StateBuilder {
                  */
                 if (elementInfields.args.isNotEmpty()) {
                     val isFieldNameWithArgs = true
+                    var fieldName = elementInfields.name
+
+                    if (state.tables.isNotEmpty())
+                        for (entry in state.tables) {
+                            if (entry.fieldName == elementInfields.name) {
+                                fieldName = "${elementInfields.name}${StaticCounter.getAndIncrease()}"
+                                state.inputTypeName[fieldName]= elementInfields.name
+                            }
+                        }
                     if (elementInfields.type.kind == __TypeKind.NON_NULL) // non optional list or object or scalar
                         handleNonOptionalInTables(
                             elementInfields,
                             isFieldNameWithArgs,
-                            elementInfields.name,
+                            fieldName,
                             elementIntypes,
                             state,
                             schemaObj
@@ -46,7 +57,7 @@ object StateBuilder {
                         handleOptionalInTables(
                             elementInfields,
                             isFieldNameWithArgs,
-                            elementInfields.name,
+                            fieldName,
                             elementIntypes,
                             state,
                             schemaObj
@@ -55,18 +66,11 @@ object StateBuilder {
                     /*
                     * extracting argsTables: 1/2
                     */
+
                     for (elementInArgs in elementInfields.args) {
-                        val typeName = elementInfields.name
-                        if (elementInArgs.type.kind == __TypeKind.NON_NULL) //non optional list or object or scalar or enum
-                            handleNonOptionalInArgsTables(
-                                typeName,
-                                isFieldNameWithArgs,
-                                elementInArgs,
-                                state,
-                                schemaObj
-                            )
-                        else  //optional list or input object or scalar or enum
-                            handleOptionalInArgsTables(typeName, isFieldNameWithArgs, elementInArgs, state, schemaObj)
+
+                        handleArguments(elementInArgs, fieldName, isFieldNameWithArgs, state, schemaObj)
+
                     }
                 } else {
                     val isFieldNameWithArgs = false
@@ -109,6 +113,32 @@ object StateBuilder {
         initTablesAndArgsTablesIndexedByName(state)
 
         return state
+    }
+
+    private fun handleArguments(
+        elementInArgs: InputValue,
+        typeName: String,
+        isFieldNameWithArgs: Boolean,
+        state: TempState,
+        schemaObj: SchemaObj
+    ) {
+        if (elementInArgs.type.kind == __TypeKind.NON_NULL) //non optional list or object or scalar or enum
+            handleNonOptionalInArgsTables(
+                typeName,
+                isFieldNameWithArgs,
+                elementInArgs,
+                state,
+                schemaObj
+            )
+        else  //optional list or input object or scalar or enum
+
+            handleOptionalInArgsTables(
+                typeName,
+                isFieldNameWithArgs,
+                elementInArgs,
+                state,
+                schemaObj
+            )
     }
 
     private fun initTablesAndArgsTablesIndexedByName(state: TempState) {

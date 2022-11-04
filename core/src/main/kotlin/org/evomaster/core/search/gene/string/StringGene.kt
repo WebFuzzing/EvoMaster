@@ -12,10 +12,14 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -60,7 +64,7 @@ class StringGene(
          */
         specializationGenes: List<Gene> = listOf()
 
-) : ComparableGene, CompositeGene(name, specializationGenes.toMutableList()) {
+) : TaintableGene, ComparableGene, CompositeGene(name, specializationGenes.toMutableList()) {
 
     init {
         if (minLength>maxLength) {
@@ -212,7 +216,7 @@ class StringGene(
                 assert(specializationGenes.size == 1)
                 selectedSpecialization = specializationGenes.lastIndex
             } else {
-                redoTaint(state.apc, state.randomness, listOf())
+                redoTaint(state.apc, state.randomness)
             }
         }
 
@@ -245,7 +249,7 @@ class StringGene(
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
             additionalGeneMutationInfo.archiveGeneMutator.mutateStringGene(
-                    this, allGenes = allGenes, selectionStrategy = selectionStrategy, targets = additionalGeneMutationInfo.targets, additionalGeneMutationInfo = additionalGeneMutationInfo
+                    this, allGenes = allGenes, selectionStrategy = selectionStrategy, targets = additionalGeneMutationInfo.targets, additionalGeneMutationInfo = additionalGeneMutationInfo, changeSpecSetting = PROB_CHANGE_SPEC
             )
             return true
         }
@@ -310,7 +314,7 @@ class StringGene(
             return true
         }
 
-        if (redoTaint(apc, randomness, allGenes)) return true
+        if (redoTaint(apc, randomness)) return true
 
         return false
     }
@@ -320,6 +324,11 @@ class StringGene(
         allGenes: List<Gene>,
         apc: AdaptiveParameterControl
     ){
+        if(TaintInputName.isTaintInput(value)){
+            //standard mutation on a tainted value makes little sense, so randomize instead
+            randomize(randomness, true)
+        }
+
         val p = randomness.nextDouble()
         val s = value
 
@@ -339,7 +348,7 @@ class StringGene(
 
         value = when {
             //seeding: replace
-            p < 0.02 && !others.isEmpty() -> {
+            p < 0.02 && others.isNotEmpty() -> {
                 randomness.choose(others)
             }
             //change
@@ -380,7 +389,7 @@ class StringGene(
         handleBinding(allGenes)
     }
 
-    fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness, allGenes: List<Gene>) : Boolean{
+    fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness) : Boolean{
 
         if(TaintInputName.getTaintNameMaxLength() > actualMaxLength()){
             return false
@@ -405,8 +414,7 @@ class StringGene(
                                 (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
                         )
         ) {
-            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-            tainted = true
+            forceTaintedValue()
             return true
         }
 
@@ -416,6 +424,11 @@ class StringGene(
         }
 
         return false
+    }
+
+    fun forceTaintedValue() {
+        value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+        tainted = true
     }
 
     /**
@@ -469,12 +482,14 @@ class StringGene(
                         like '/' and '.' in a PathParam.
                         If we have a constant that uses any of such chars, then we must
                         skip it.
-                        We allow constant larger than Max (as that should not be a problem),
-                        but not smaller than Min (eg to avoid empty strings in PathParam)
+                        Also must guarantee min/max constraints.
+
+                        TODO will need to guarantee min/max constraints on Regex as well
                  */
                 .filter { s ->
                     s.stringSpecialization != StringSpecialization.CONSTANT ||
-                            (invalidChars.none { c -> s.value.contains(c) } && s.value.length >= minLength)
+                            (invalidChars.none { c -> s.value.contains(c) }
+                                    && s.value.length >= minLength && s.value.length <= maxLength)
                 }
 
         val toAddGenes = mutableListOf<Gene>()
@@ -546,6 +561,23 @@ class StringGene(
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.URI }){
             toAddGenes.add(UriGene(name))
             log.trace("URI, added specification size: {}", toAddGenes.size)
+        }
+
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_OBJECT }){
+            toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
+                    .forEach {
+                        val schema = it.value
+                        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+                        val ref = t.subSequence(1,t.length-1).toString()
+                        val obj = RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
+                        toAddGenes.add(obj)
+                    }
+            log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)
+        }
+
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_ARRAY }){
+            toAddGenes.add(TaintedArrayGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
+            log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
         }
 
         //all regex are combined with disjunction in a single gene
@@ -674,12 +706,16 @@ class StringGene(
 
         val specializationGene = getSpecializationGene()
 
+        val rawValue = getValueAsRawString()
+
         if (specializationGene != null) {
+            //FIXME: really escaping is a total mess... need major refactoring
             // TODO: Don't we need to escape the raw string?
-            return "\"" + specializationGene.getValueAsRawString() + "\""
+            return "\"" + rawValue + "\""
+//            return specializationGene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
+//                    .replace("\"", "\\\"")
         }
 
-        val rawValue = getValueAsRawString()
         return if (mode != null && mode == GeneUtils.EscapeMode.XML) {
             StringEscapeUtils.escapeXml10(rawValue)
         } else {
@@ -832,6 +868,21 @@ class StringGene(
             throw ClassCastException("Expected StringGene instance but ${other::javaClass} was found")
         }
         return getValueAsRawString().compareTo(other.getValueAsRawString())
+    }
+
+    override fun getPossiblyTaintedValue(): String {
+        return getValueAsRawString()
+    }
+
+    /**
+     * if its parent is ArrayGene, it cannot have the same taint input value with any other elements in this ArrayGene
+     */
+    override fun mutationCheck(): Boolean {
+        val arrayGeneParent = getFirstParent { it is ArrayGene<*> } ?: return true
+        if (arrayGeneParent.getViewOfChildren().size == 1) return true
+
+        val otherelements  = arrayGeneParent.getViewOfChildren().filter { it is Gene && !it.flatView().contains(this) }
+        return otherelements.none { it is Gene && it.flatView().any { g-> g is StringGene && g.getPossiblyTaintedValue().equals(getPossiblyTaintedValue(), ignoreCase = true) } }
     }
 
 }

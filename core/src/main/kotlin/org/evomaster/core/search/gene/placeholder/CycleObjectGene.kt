@@ -26,6 +26,10 @@ class CycleObjectGene(name: String) : SimpleGene(name) {
     }
     override fun copyContent(): Gene = CycleObjectGene(name)
 
+    override fun setValueWithRawString(value: String) {
+        throw IllegalStateException("cannot set value with string ($value) for CycleObjectGene")
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         //nothing to do
         //TODO should rather throw exception?

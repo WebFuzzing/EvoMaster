@@ -2,8 +2,10 @@ package org.evomaster.client.java.instrumentation.coverage;
 
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.objectweb.asm.Label;
@@ -151,10 +153,12 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             return;
         }
 
+        handleLastCallerClass();
+
         Method m = r.get();
         replaceMethod(m);
         if(isConstructor){
-            handleConstruct(candidateClasses.get(0).getClass());
+            handleConstruct(m, candidateClasses.get(0).getClass());
         }
 
         Replacement a = m.getAnnotation(Replacement.class);
@@ -169,8 +173,19 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
         }
     }
 
+    private void handleLastCallerClass(){
 
-    private void handleConstruct(Class<? extends MethodReplacementClass> mrc){
+        this.visitLdcInsn(className);
+
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                ClassName.get(ExecutionTracer.class).getBytecodeName(),
+                ExecutionTracer.SET_LAST_CALLER_CLASS_METHOD_NAME,
+                ExecutionTracer.SET_LAST_CALLER_CLASS_DESC,
+                ExecutionTracer.class.isInterface()); //false
+    }
+
+    private void handleConstruct(Method m, Class<? extends MethodReplacementClass> mrc){
 
         /*
             This seems working, but need to watch out for possible side-effects
@@ -188,6 +203,13 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
                 consumeInstance.getName(),
                 Type.getMethodDescriptor(consumeInstance),
                 false);
+
+        Replacement br = m.getAnnotation(Replacement.class);
+
+        assert br.replacingConstructor();
+        if(!br.castTo().isEmpty()){
+            mv.visitTypeInsn(Opcodes.CHECKCAST, ClassName.get(br.castTo()).getBytecodeName());
+        }
     }
 
     private void replaceMethod(Method m) {
@@ -232,7 +254,6 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
                 this.visitLdcInsn(idTemplate);
 
             } else {
-                //this.visitLdcInsn(null);
                 this.visitInsn(Opcodes.ACONST_NULL);
             }
         }
@@ -243,8 +264,11 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
                 m.getName(),
                 Type.getMethodDescriptor(m),
                 false);
-    }
 
+        if(!br.castTo().isEmpty() && !br.replacingConstructor()){
+            mv.visitTypeInsn(Opcodes.CHECKCAST, ClassName.get(br.castTo()).getBytecodeName());
+        }
+    }
 
     @Override
     public void visitMaxs(int maxStack, int maxLocals) {

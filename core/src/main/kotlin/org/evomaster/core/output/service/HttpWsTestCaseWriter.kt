@@ -6,12 +6,15 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.output.formatter.OutputFormatter
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.service.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
@@ -207,9 +210,35 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     protected fun handleSingleCall(
         evaluatedAction: EvaluatedAction,
+        index: Int,
+        fv : FitnessValue,
         lines: Lines,
         baseUrlOfSut: String
     ) {
+
+        val exActions = mutableListOf<HttpExternalServiceAction>()
+        var anyDnsCache = false
+        // add all used external service actions for the action
+        if (config.isEnabledExternalServiceMocking()) {
+            if (evaluatedAction.action.parent !is EnterpriseActionGroup)
+                throw IllegalStateException("invalid parent of the RestAction, it is expected to be EnterpriseActionGroup, but it is ${evaluatedAction.action.parent!!::class.java.simpleName}")
+            val group = evaluatedAction.action.parent as EnterpriseActionGroup
+            exActions.addAll(
+                group.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>()
+                    .filter { it.active })
+            if (format.isJavaOrKotlin())
+                anyDnsCache = handleDnsForExternalServiceActions(
+                    lines, exActions, fv.getViewExternalRequestToDefaultWMByAction(index))
+
+            if (exActions.isNotEmpty()) {
+                if (format.isJavaOrKotlin()) {
+                    handleExternalServiceActions(lines, exActions)
+                } else {
+                    log.warn("In mocking of external services, we do NOT support for other format ($format) except JavaOrKotlin")
+                }
+            }
+        }
+
         lines.addEmpty()
 
         val call = evaluatedAction.action as HttpWsAction
@@ -219,6 +248,25 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             addActionInTryCatch(call, lines, res, baseUrlOfSut)
         } else {
             addActionLines(call, lines, res, baseUrlOfSut)
+        }
+
+        // reset all used external service action
+        if (exActions.isNotEmpty()) {
+            if (!format.isJavaOrKotlin()) {
+                log.warn("NOT support for other format ($format) except JavaOrKotlin")
+            } else {
+                lines.addEmpty(1)
+                exActions
+                    .distinctBy { it.externalService.getSignature() }
+                    .forEach { action ->
+                        lines.add("${TestWriterUtils.getWireMockVariableName(action.externalService)}.resetAll()")
+                        lines.appendSemicolon(format)
+                    }
+            }
+        }
+        if (anyDnsCache){
+            lines.add("DnsCacheManipulator.clearDnsCache()")
+            lines.appendSemicolon(format)
         }
     }
 
@@ -461,7 +509,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
         val type = res.getBodyType()
-            // if there is payload, but no type identified, treat it as plain text
+        // if there is payload, but no type identified, treat it as plain text
             ?: MediaType.TEXT_PLAIN_TYPE
 
         var bodyVarName = responseVariableName
@@ -507,16 +555,20 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(".ok(res => res.status)")
         }
 
-        //Why this check? seems wrong...
-        //if (config.enableBasicAssertions) {
-        //lines.appendSemicolon(format)
-        //}
 
         if (lines.shouldUseSemicolon(format)) {
-            if (lines.currentContains("//")) {
+            /*
+                FIXME this is wrong when // is in a string of response, like a URL.
+                Need to check last //, and that is not inside  ""
+                Need tests for it... albeit tricky as Kotlin does not use ;, so need Java or unit test
+
+                However, currently we have comments _only_ on status codes, which does not use ".
+                so a dirty quick fix is to check if no " is used
+             */
+            if (lines.currentContains("//") && !lines.currentContains("\"")) {
                 //a ; after a comment // would be ignored otherwise
                 if (lines.isCurrentACommentLine()) {
-                    //let's not lose identation
+                    //let's not lose indentation
                     lines.replaceInCurrent(Regex("//"), "; //")
                 } else {
                     //there can be any number of spaces between the statement and the //

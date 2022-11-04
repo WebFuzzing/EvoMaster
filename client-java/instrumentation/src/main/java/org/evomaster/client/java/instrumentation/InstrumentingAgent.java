@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation;
 import org.evomaster.client.java.instrumentation.external.AgentController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.ClassReader;
 

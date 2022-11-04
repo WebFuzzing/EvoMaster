@@ -5,6 +5,8 @@ import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
@@ -276,7 +278,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 parsedDto info is update throughout the search.
                 so, if info is missing, we re-fetch the whole data.
                 Would be more efficient to just fetch new data, but,
-                as this will happens seldom (at most N times for N dtos),
+                as this will happen seldom (at most N times for N dtos),
                 no much point in optimizing it
              */
             infoDto = rc.getSutInfo()!!
@@ -285,10 +287,15 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 throw RuntimeException("BUG: info for DTO $name is not available in the SUT driver")
             }
         }
-
-        val schema: String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
-        //TODO neeed to check: referType is same with the name?
-        return RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
+        /*
+            need to get all for handling `ref`
+         */
+        val names = infoDto.unitsInfoDto.parsedDtos.keys.toList()
+        val schemas = names.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
+//        val schema: String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
+        //TODO need to check: referType is same with the name?
+        val genes = RestActionBuilderV3.createObjectGeneForDTOs(names, schemas, names)
+        return genes[names.indexOf(name)]
     }
 
     /**
@@ -760,7 +767,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         }
 
         if (config.baseTaintAnalysisProbability > 0) {
-            assert(actionResults.size == dto.additionalInfoList.size)
+            Lazy.assert { actionResults.size == dto.additionalInfoList.size }
             //TODO add taint analysis for resource-based solution
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
@@ -781,7 +788,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             done on WM directly, and it must be done at SUT call (as WM get reset there)
          */
 
-        infoDto.forEachIndexed { _, info ->
+        infoDto.forEachIndexed { index, info ->
             info.externalServices.forEach { es ->
 
                 /*
@@ -803,6 +810,16 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                     )
                 )
             }
+
+
+            // register the external service info which re-direct to the default WM
+            fv.registerExternalRequestToDefaultWM(
+                index,
+                info.employedDefaultWM.associate { it ->
+                    val signature = getWMDefaultSignature(it.protocol, it.remotePort)
+                    it.remoteHostname to externalServiceHandler.getExternalService(signature)
+                }
+            )
         }
     }
 

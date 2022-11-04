@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -72,16 +73,16 @@ class ResourceNodeTest {
 
         // rfoo
         val rfoo = cluster.getResourceNode("/v3/api/rfoo", nullCheck = true)
-        assertEquals(1, rfoo!!.paramsInfo.size)
+        assertEquals(2, rfoo!!.paramsInfo.size)
         assertEquals(0, rfoo.paramsInfo.count { it.value.doesReferToOther })
 
         // rfooid
         val rfooId = cluster.getResourceNode("/v3/api/rfoo/{rfooId}", true)
         // pathparam, queryparam from get, bodyparam from put and patch
-        assertEquals(3, rfooId!!.paramsInfo.size)
+        assertEquals(4, rfooId!!.paramsInfo.size)
         assertEquals(1, rfooId.paramsInfo.count { it.value.doesReferToOther })
         assertEquals("rfooId", rfooId.paramsInfo.values.find { it.doesReferToOther }!!.name)
-        assertEquals(2, rfooId.getPossiblyBoundParams("GET", false).size)
+        assertEquals(3, rfooId.getPossiblyBoundParams("GET", false).size)
         // rfooId is required to be bound with POST if it exists
         rfooId.getPossiblyBoundParams("POST-GET", false).apply {
             assertEquals(1, size)
@@ -166,8 +167,35 @@ class ResourceNodeTest {
             val postXyzIdGene = ((postXyzId as BodyParam).gene as? ObjectGene)?.fields?.find { it.name == "id" }
             assertNotNull(postXyzIdGene)
             //binding
-            assertTrue(postXyzIdGene!!.isBoundWith(getXyzIdGene!!))
-            assertTrue(getXyzIdGene.isBoundWith(postXyzIdGene))
+            assertTrue(postXyzIdGene!!.isDirectBoundWith(getXyzIdGene!!))
+            assertTrue(getXyzIdGene.isDirectBoundWith(postXyzIdGene))
+        }
+    }
+
+    @Test
+    fun testGeneBindingWithQuery(){
+        val node = cluster.getResourceNode("/v3/api/rfoo/{rfooId}")
+        assertNotNull(node)
+        val call = node!!.createRestResourceCallBasedOnTemplate("POST-GET", randomness, 10)
+        call.seeActions(ActionFilter.NO_SQL).apply {
+            assertEquals(2, size)
+            val get = get(1) as RestCallAction
+            assertEquals(HttpVerb.GET, get.verb)
+            val getFooId = get.parameters.find { it.name == "rfooId" }
+            assertNotNull(getFooId)
+            val getFooName = get.parameters.find { it.name == "fooName" }
+            assertNotNull(getFooName)
+
+            val post = get(0) as RestCallAction
+            val postFoo = post.parameters.find { it is BodyParam }
+            assertNotNull(postFoo)
+            val postFooIdGene = ((postFoo as BodyParam).gene as? ObjectGene)?.fields?.find { it.name == "id" }
+            assertNotNull(postFooIdGene)
+            val postFooName = post.parameters.find { it is QueryParam && it.name == "fooName" }
+            assertNotNull(postFooName)
+            //binding
+            assertTrue(postFooName!!.gene.isDirectBoundWith(getFooName!!.gene))
+            assertTrue(postFooIdGene!!.isDirectBoundWith((getFooId!!.gene as CustomMutationRateGene<*>).gene))
         }
     }
 

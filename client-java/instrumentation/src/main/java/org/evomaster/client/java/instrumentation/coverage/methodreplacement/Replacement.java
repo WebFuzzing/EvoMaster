@@ -73,4 +73,10 @@ public @interface Replacement {
     boolean isPure() default true;
 
     ReplacementCategory category();
+
+    /**
+     * Name of the class for which the return value of this method should be cast to.
+     * This is necessary for 3rd-party replacements only.
+     */
+    String castTo() default "";
 }

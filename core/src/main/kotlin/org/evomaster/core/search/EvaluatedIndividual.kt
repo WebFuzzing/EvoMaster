@@ -183,7 +183,9 @@ class EvaluatedIndividual<T>(
             val dbActions = c.seeActions(ONLY_SQL)
             val dbResults = seeResults(dbActions)
 
-            val restActions = c.seeActions(NO_SQL)
+            // TODO: with the current ActionFilter seeActions returns everything except DbActions
+            //  so filtering only the RestCallAction/s for now. It's a temporary fix.
+            val restActions = c.seeActions(NO_SQL).filterIsInstance<RestCallAction>()
             val restResult = seeResults(restActions)
 
             // get evaluated action based on the list of action results
@@ -408,8 +410,15 @@ class EvaluatedIndividual<T>(
 
             //handle removed
             if (mutatedGenes.getRemoved(true).isNotEmpty()) { //delete an action
-                impactInfo!!.deleteFixedActionGeneImpacts(
-                    actionIndex = mutatedGenes.getRemoved(true).mapNotNull { it.actionPosition }.toSet()
+                val fixedIndexed = mutatedGenes.getRemoved(true).filter { it.actionPosition != null && it.actionPosition > 0 }.map { it.actionPosition!! }.toSet()
+                impactInfo!!.deleteFixedActionGeneImpacts(fixedIndexed)
+
+                val dynamicLocalIds = mutatedGenes.getRemoved(true)
+                    .filter { it.actionPosition == null || it.actionPosition < 0 }
+                    .map { it.localId ?:throw IllegalStateException("the mutated info is lack of position and local id") }.toSet()
+
+                impactInfo.deleteDynamicActionGeneImpacts(
+                    dynamicLocalIds
                 )
             }
 

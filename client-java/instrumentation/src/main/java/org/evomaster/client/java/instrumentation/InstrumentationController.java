@@ -1,7 +1,9 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -89,6 +91,10 @@ public class InstrumentationController {
 
     public static BootTimeObjectiveInfo getBootTimeObjectiveInfo(){
         return ObjectiveRecorder.exposeBootTimeObjectiveInfo();
+    }
+
+    public static void extractSpecifiedDto(List<String> dtoNames){
+        UnitsInfoRecorder.registerSpecifiedDtoSchema(ExtractJvmClass.extractAsSchema(dtoNames));
     }
 
 }

@@ -47,6 +47,10 @@ class LongGene(
         return copy
     }
 
+    override fun setValueWithRawString(value: String) {
+        this.value = value.toLong()
+    }
+
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         value = NumberMutatorUtils.randomizeLong(value, min, max, randomness, tryToForceNewValue)

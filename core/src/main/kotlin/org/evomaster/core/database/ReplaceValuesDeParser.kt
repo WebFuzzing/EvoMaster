@@ -3,7 +3,17 @@ package org.evomaster.core.database
 import net.sf.jsqlparser.expression.*
 import net.sf.jsqlparser.util.deparser.ExpressionDeParser
 
-
+/**
+ * Replaces all constant values in a SQL query with a '?' symbol.
+ * For example,
+ * SELECT * FROM FooTable WHERE barColumn='Hello World'
+ * is translated into
+ * SELECT * FROM FooTable WHERE barColumn=?
+ *
+ * This transformation is used to "abstract" queries with the
+ * same structure (Tables, joins, columns) but different
+ * queried constant values.
+ */
 class ReplaceValuesDeParser() :
     ExpressionDeParser() {
 

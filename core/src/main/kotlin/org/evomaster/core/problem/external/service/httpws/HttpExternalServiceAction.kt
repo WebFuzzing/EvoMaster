@@ -1,12 +1,16 @@
 package org.evomaster.core.problem.external.service.httpws
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
+import com.github.tomakehurst.wiremock.matching.UrlPattern
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import org.evomaster.core.problem.external.service.ApiExternalServiceAction
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.service.Randomness
 
 /**
  * Action to execute the external service related need
@@ -15,7 +19,6 @@ import org.evomaster.core.search.gene.Gene
  * Typically, handle WireMock responses
  */
 class HttpExternalServiceAction(
-
     /**
      * Received request to the respective WireMock instance
      *
@@ -35,8 +38,8 @@ class HttpExternalServiceAction(
      * WireMock server which received the request
      */
     val externalService: ExternalService,
-    active : Boolean = false,
-    used : Boolean = false,
+    active: Boolean = false,
+    used: Boolean = false,
     private val id: Long
 ) : ApiExternalServiceAction(response, active, used) {
 
@@ -58,6 +61,14 @@ class HttpExternalServiceAction(
      */
     override fun getName(): String {
         return request.id.toString()
+    }
+
+    override fun doInitialize(randomness: Randomness?) {
+        super.doInitialize(randomness)
+        //randomization might modify those values
+        (response as HttpWsResponseParam).status.index = 0 // start with 200, otherwise can lose taint
+        response.responseBody.isActive = true
+        (response.responseBody.gene as StringGene).forceTaintedValue()
     }
 
     override fun seeTopGenes(): List<out Gene> {
@@ -110,7 +121,7 @@ class HttpExternalServiceAction(
         }
 
         externalService.getWireMockServer().stubFor(
-            get(urlMatching(request.url))
+            getRequestMethod(request)
                 .atPriority(1)
                 .willReturn(
                     aResponse()
@@ -122,6 +133,40 @@ class HttpExternalServiceAction(
                         .attr("url", request.absoluteURL)
                 )
         )
+
+    }
+
+    /**
+     * Will return a [MappingBuilder] based on the HTTP method
+     * TODO: Moved it to a ResponseBuilder, later
+     */
+    private fun getRequestMethod(request: HttpExternalServiceRequest): MappingBuilder {
+        val response = when (request.method.uppercase()) {
+            "GET" -> get(getUrlPattern(request.url))
+            "POST" -> post(getUrlPattern(request.url))
+            "PUT" -> put(getUrlPattern(request.url))
+            "PATCH" -> patch(getUrlPattern(request.url))
+            "DELETE" -> delete(getUrlPattern(request.url))
+            "HEAD" -> head(getUrlPattern(request.url))
+            "TRACE" -> trace(getUrlPattern(request.url))
+            "OPTIONS" -> options(getUrlPattern(request.url))
+            "ANY" -> any(getUrlPattern(request.url))
+            else -> throw IllegalArgumentException("Invalid HTTP request method")
+        }
+        return response
+    }
+
+    /**
+     * Path can be mapped to a specific URL (urlEqualTo) and Regex (urlMatching)
+     * in WireMock.
+     *
+     * Note: urlMatching gives some issues when try to use getURL in
+     * TestCaseWriter.
+     *
+     * TODO: Moved it to a ResponseBuilder, later
+     */
+    private fun getUrlPattern(url: String) : UrlPattern {
+        return urlEqualTo(url)
     }
 
     /**
@@ -141,7 +186,7 @@ class HttpExternalServiceAction(
     private fun viewResponse(): String {
         // TODO: Need to extend further to handle the response body based on the
         //  unmarshalled object inside SUT using the ParsedDto information.
-        return (response as HttpWsResponseParam).response.getValueAsRawString()
+        return (response as HttpWsResponseParam).responseBody.getValueAsRawString()
     }
 
 }

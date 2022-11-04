@@ -434,6 +434,14 @@ public abstract class ExternalSutController extends SutController {
         return Paths.get(path).toAbsolutePath().toString();
     }
 
+    @Override
+    public final void getJvmDtoSchema(List<String> dtoNames) {
+        if(!isInstrumentationActivated()){
+            return;
+        }
+        serverController.extractSpecifiedDto(dtoNames);
+    }
+
     //-----------------------------------------
 
     private boolean isUsingJaCoCo(){

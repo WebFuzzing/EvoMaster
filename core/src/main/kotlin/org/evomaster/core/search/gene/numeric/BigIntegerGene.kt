@@ -173,7 +173,11 @@ class BigIntegerGene(
         value = decimal.toBigInteger()
     }
 
-    fun setValueWithString(str: String, radix: Int = 10){
+    override fun setValueWithRawString(value: String) {
+        setValueWithStringAndRadix(value, 10)
+    }
+
+    fun setValueWithStringAndRadix(str: String, radix: Int){
         value = BigInteger(str, radix)
     }
 

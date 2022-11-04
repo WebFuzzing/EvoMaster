@@ -74,4 +74,9 @@ abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
     ): Boolean {
         return isMutable()
     }
+
+    /**
+     * set value of simple gene based on [value]
+     */
+    abstract fun setValueWithRawString(value: String)
 }

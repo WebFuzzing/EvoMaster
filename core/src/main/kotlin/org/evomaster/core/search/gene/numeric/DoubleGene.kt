@@ -57,6 +57,10 @@ class DoubleGene(name: String,
 
     override fun copyContent() = DoubleGene(name, value, min, max, minInclusive, maxInclusive, precision, scale)
 
+    override fun setValueWithRawString(value: String) {
+        this.value = value.toDouble()
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         value = NumberMutatorUtils.randomizeDouble(getMinimum(), getMaximum(), scale, randomness)
     }

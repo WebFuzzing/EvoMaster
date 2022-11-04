@@ -15,7 +15,6 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.search.RootElement
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.SearchGlobalState
-import kotlin.reflect.KClass
 
 
 /**
@@ -549,6 +548,7 @@ abstract class Gene(
                     mutateCounter +=1
                 }while (!mutationCheck() && mutateCounter <=3)
                 if (!mutationCheck()){
+                    LoggingUtil.uniqueWarn(log, "the mutated value for Gene ($name with type ${this::class.java.simpleName}) cannot satisfy its `mutationCheck` after 3 attempts")
                     if (log.isTraceEnabled)
                         log.trace("invoke GeneUtils.repairGenes")
                     GeneUtils.repairGenes(listOf(this))
@@ -889,9 +889,21 @@ abstract class Gene(
     }
 
     /**
-     * @return whether [this] is bound with [gene]
+     * @return whether [this] is directly bound with [gene]
      */
-    fun isBoundWith(gene: Gene) = bindingGenes.contains(gene)
+    fun isDirectBoundWith(gene: Gene) = bindingGenes.contains(gene)
+
+    /**
+     * @return whether [this] parent is bound with [gene]'s parent
+     */
+    fun isAnyParentBoundWith(gene: Gene) : Boolean{
+        if ((this.parent as? Gene) != null && (gene.parent as? Gene) != null){
+            val direct = (this.parent as Gene).isDirectBoundWith(gene.parent as Gene)
+            if (direct) return true
+            return (this.parent as Gene).isDirectBoundWith((gene.parent as Gene))
+        }
+        return false
+    }
 
 
     /**
@@ -901,6 +913,9 @@ abstract class Gene(
      *
      * TODO what if this lead to isLocallyValid to be false? can we prevent it?
      * or just return false here?
+     *
+     * FIXME: change name, because it is not modifying binding, and just copy over
+     * the values
      *
      */
     abstract fun bindValueBasedOn(gene: Gene) : Boolean

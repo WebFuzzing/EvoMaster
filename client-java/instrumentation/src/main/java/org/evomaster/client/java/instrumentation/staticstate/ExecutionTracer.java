@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -76,6 +77,13 @@ public class ExecutionTracer {
     private static final List<AdditionalInfo> additionalInfoList = new ArrayList<>();
 
     /**
+     * Keep track of threads left sleeping, as we will need to interrupt them
+     * to avoid issues (eg, out of resources and instrumentation collection when threads wake up
+     * during a different action)
+     */
+    private static final List<Thread> sleepingThreads = new CopyOnWriteArrayList<>();
+
+    /**
      * Keep track of expensive operations. Might want to skip doing them if too many.
      * This should be re-set for each action
      */
@@ -90,6 +98,12 @@ public class ExecutionTracer {
      * are still running).
      */
     private static volatile boolean killSwitch = false;
+
+    /**
+     * When executing method replacements, keep track here of the caller class, ie the class name in which
+     * the method replacement took place.
+     */
+    private static volatile String lastCallerClass = null;
 
     static {
         reset();
@@ -106,7 +120,29 @@ public class ExecutionTracer {
             killSwitch = false;
             expensiveOperation = 0;
             executingAction = false;
+            sleepingThreads.clear();
+            lastCallerClass = null;
         }
+    }
+
+    public static final String SET_LAST_CALLER_CLASS_METHOD_NAME = "setLastCallerClass";
+
+    public static final String SET_LAST_CALLER_CLASS_DESC = "(Ljava/lang/String;)V";
+
+    public static void setLastCallerClass(String className){
+        lastCallerClass = ClassName.get(className).getFullNameWithDots();
+    }
+
+    public static ClassLoader getLastCallerClassLoader(){
+        return UnitsInfoRecorder.getInstance().getClassLoaders(getLastCallerClass()).get(0);
+    }
+
+    public static String getLastCallerClass(){
+        return lastCallerClass;
+    }
+
+    public static void reportSleeping(){
+        sleepingThreads.add(Thread.currentThread());
     }
 
     public static boolean isKillSwitch() {
@@ -115,6 +151,16 @@ public class ExecutionTracer {
 
     public static void setKillSwitch(boolean killSwitch) {
         ExecutionTracer.killSwitch = killSwitch;
+        if(killSwitch){
+            synchronized (lock){
+                for(Thread t : sleepingThreads){
+                    if(t.isAlive()){
+                        t.interrupt();
+                    }
+                }
+                sleepingThreads.clear();
+            }
+        }
     }
 
     public static boolean isExecutingInitSql() {
@@ -128,6 +174,7 @@ public class ExecutionTracer {
     public static boolean isExecutingAction() {
         return executingAction;
     }
+
 
     public static void setExecutingAction(boolean executingAction) {
         ExecutionTracer.executingAction = executingAction;
@@ -243,6 +290,10 @@ public class ExecutionTracer {
                 return;
             }
 
+            if(shouldSkipTaint()){
+                return;
+            }
+
             //TODO could have EQUAL_IGNORE_CASE
             String id = left + "___" + right;
             addStringSpecialization(left, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
@@ -254,12 +305,28 @@ public class ExecutionTracer {
                 : StringSpecialization.CONSTANT;
 
         if (taintedLeft || taintedRight) {
+
+            if(shouldSkipTaint()){
+                return;
+            }
+
             if (taintedLeft) {
                 addStringSpecialization(left, new StringSpecializationInfo(type, right));
             } else {
                 addStringSpecialization(right, new StringSpecializationInfo(type, left));
             }
         }
+    }
+
+    private static boolean shouldSkipTaint(){
+        /*
+            Very tricky... H2 can cache some results. When executing queries, it can check inputs in previous
+            queries to see if differences in results. but those could be tainted values... which mess up
+            the taint analysis :( so, as a special case, we need to skip it
+         */
+        return Arrays.stream(Thread.currentThread().getStackTrace())
+                .anyMatch(it -> it.getMethodName().equals("sameResultAsLast")
+                        && it.getClassName().equals("org.h2.command.query.Query"));
     }
 
     public static TaintType getTaintType(String input) {
@@ -568,6 +635,13 @@ public class ExecutionTracer {
         // here, we only register external info into ObjectiveRecorder if it occurs during the startup
         if (!executingAction)
             ObjectiveRecorder.registerExternalServiceInfoAtSutStartupTime(hostInfo);
+    }
+
+    /**
+     * track what host uses the default WM
+     */
+    public static void addEmployedDefaultWMHost(ExternalServiceInfo hostInfo) {
+        getCurrentAdditionalInfo().addEmployedDefaultWM(hostInfo);
     }
 
     /**

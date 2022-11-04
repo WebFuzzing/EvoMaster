@@ -281,7 +281,7 @@ class BigDecimalGene(
         setValueWithDecimal(BigDecimal(longValue.toString()), precision, scale)
     }
 
-    fun setValueWithString(value: String){
+    override fun setValueWithRawString(value: String) {
         setValueWithDecimal(BigDecimal(value), precision, scale)
     }
 

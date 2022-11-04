@@ -2,7 +2,9 @@ package org.evomaster.e2etests.spring.openapi.v3.timeout
 
 import com.foo.rest.examples.spring.openapi.v3.assertions.AssertionController
 import com.foo.rest.examples.spring.openapi.v3.timeout.TimeoutController
+import com.foo.rest.examples.spring.openapi.v3.wiremock.jsonarray.WmJsonArrayController
 import org.evomaster.client.java.instrumentation.shared.ClassName
+import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -27,7 +29,9 @@ class TimeoutEMTest : SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(TimeoutController())
+            val config = EMConfig()
+            config.instrumentMR_EXT_0 = false
+            initClass(TimeoutController(), config)
         }
     }
 
@@ -46,6 +50,8 @@ class TimeoutEMTest : SpringTestBase() {
             args.add("1000")
             args.add("--addPreDefinedTests")
             args.add("false")
+            args.add("--instrumentMR_EXT_0")
+            args.add("false") //avoid replace Thread.sleep
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)

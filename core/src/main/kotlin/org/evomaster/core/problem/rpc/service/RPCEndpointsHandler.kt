@@ -1,22 +1,22 @@
 package org.evomaster.core.problem.rpc.service
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.PostSearchActionDto
-import org.evomaster.client.java.controller.api.dto.RPCTestDto
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.EvaluatedRPCActionDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType
+import org.evomaster.client.java.controller.api.dto.problem.rpc.*
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.ApiExternalServiceAction
+import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
+import org.evomaster.core.problem.external.service.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -26,7 +26,9 @@ import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -40,6 +42,7 @@ import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.NumericStringGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -62,6 +65,9 @@ class RPCEndpointsHandler {
 
     @Inject(optional = true)
     private lateinit var remoteController: RemoteController
+
+
+    lateinit var infoDto: SutInfoDto
 
 
     /**
@@ -99,12 +105,26 @@ class RPCEndpointsHandler {
      */
     private val authEndpointCluster = mutableMapOf<Int, RPCActionDto>()
 
+    /**
+     * a map of RPC action to external services for RPC-based SUT
+     * - key is the id of action (which is consistent with key of [actionSchemaCluster])
+     * - value is a list of seeded api external services for the RPC action which can be found with [externalServiceCluster]
+     */
+    private val actionToExternalServiceMap = mutableMapOf<String, MutableSet<String>>()
+
+    /**
+     * a map of external service actions cluster
+     * - key is action id
+     * - value is the example of ApiExternalServiceAction that might be expanded
+     */
+    private val externalServiceCluster = mutableMapOf<String, ApiExternalServiceAction>()
 
     /**
      * key is type in the schema
      * value is object gene for it
      */
     private val typeCache = mutableMapOf<String, Gene>()
+
 
     // used to handle dto and its string json
     private val objectMapper = ObjectMapper()
@@ -145,10 +165,241 @@ class RPCEndpointsHandler {
      */
     fun handledSeededTests(tests: List<List<RPCActionDto>>): List<RPCIndividual>{
         return tests.map {td->
-            RPCIndividual(actions = td.map { d->
+            val exActions = mutableListOf<List<ApiExternalServiceAction>>()
+            val rpcActions = td.map { d->
                 val name = actionName(d.interfaceId, d.actionName)
+                val ex = if (d.mockRPCExternalServiceDtos != null && d.mockRPCExternalServiceDtos.isNotEmpty())
+                    d.mockRPCExternalServiceDtos.map { e->
+                        e.responses.mapIndexed { index, r->
+                            val exAction = externalServiceCluster[
+                                    RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
+                            ]!!.copy() as ApiExternalServiceAction
+                            try {
+                                setGeneBasedOnString(exAction.response.responseBody, r)
+                            }catch (e: Exception){
+                                throw RuntimeException("Fail to handle mocked responses", e)
+                            }
+                            exAction
+                        }
+                    }.flatten()
+                else mutableListOf()
+
+                exActions.add(ex)
                 processEndpoint(name, d, true)
-            }.toMutableList())
+            }.toMutableList()
+
+            RPCIndividual(actions = rpcActions, externalServicesActions = exActions)
+        }
+    }
+
+    private fun setGeneBasedOnString(gene: Gene, stringValue: String?, format : String = "json"){
+        val valueGene = ParamUtil.getValueGene(gene)
+
+        if (stringValue != null){
+            when(valueGene){
+                is IntegerGene -> valueGene.setValueWithRawString(stringValue)
+                is DoubleGene -> valueGene.setValueWithRawString(stringValue)
+                is FloatGene -> valueGene.setValueWithRawString(stringValue)
+                is BooleanGene -> valueGene.setValueWithRawString(stringValue)
+                is StringGene -> valueGene.value = stringValue
+                is BigDecimalGene -> valueGene.setValueWithRawString(stringValue)
+                is BigIntegerGene -> valueGene.setValueWithRawString(stringValue)
+                is NumericStringGene -> valueGene.number.setValueWithRawString(stringValue)
+                is RegexGene -> {
+                    // TODO set value based on RegexGene
+                    LoggingUtil.uniqueWarn(log, "do not handle setGeneBasedOnString with stringValue($stringValue) for Regex")
+                }
+                is LongGene -> valueGene.setValueWithRawString(stringValue)
+                is EnumGene<*> -> valueGene.setValueWithRawString(stringValue)
+                is SeededGene<*> -> {
+                    valueGene.employSeeded = false
+                    setGeneBasedOnString(valueGene.gene as Gene, stringValue)
+                }
+                is PairGene<*, *> -> {
+                    throw IllegalStateException("should not really happen since this gene is only")
+                }
+                is DateTimeGene ->{
+                    // TODO
+                    LoggingUtil.uniqueWarn(log, "do not handle setGeneBasedOnString with stringValue($stringValue) for DateTimeGene")
+                }
+                is ArrayGene<*> -> {
+                    val template = valueGene.template
+                    val node = objectMapper.readTree(stringValue)
+                    if (node.isArray){
+                        node.run {
+                            if (valueGene.maxSize!=null && valueGene.maxSize!! < size()){
+                                log.warn("ArrayGene: responses have more elements than it allows, i.e., max is ${valueGene.maxSize} but the actual is ${size()}")
+                                this.filterIndexed { index, _ ->  index < valueGene.maxSize!!}
+                            }else
+                                this
+                        }.forEach { p->
+                            val copy = template.copy()
+                            // TODO need to handle cycle object gene in responses
+                            if (copy !is CycleObjectGene){
+                                setGeneBasedOnString(copy, p.toPrettyString())
+                                valueGene.addElement(copy)
+                            }
+                        }
+                    }else{
+                        throw IllegalStateException("stringValue ($stringValue) is not Array")
+                    }
+                }
+                is MapGene<*, *> ->{
+                    val template = valueGene.template
+                    val node = objectMapper.readTree(stringValue)
+                    if (node.isObject){
+                        node.fields().asSequence().forEachIndexed {index, p->
+
+                            if (valueGene.maxSize!=null && index >= valueGene.maxSize ){
+                                log.warn("MapGene: responses have more elements than it allows, i.e., max is ${valueGene.maxSize} but the actual is ${node.size()}")
+                            }else{
+                                val copy = template.copy() as PairGene<*, *>
+//                                setGeneBasedOnString(copy, p.toPrettyString())
+                                setGeneBasedOnString(copy.first, p.key)
+                                setGeneBasedOnString(copy.second, p.value.toPrettyString())
+                                valueGene.addElement(copy)
+                            }
+                        }
+                    }else{
+                        throw IllegalStateException("stringValue ($stringValue) is not Object or Map")
+                    }
+
+                }
+                is ObjectGene -> {
+                    val node = objectMapper.readTree(stringValue)
+                    if (node.isObject){
+                        valueGene.fields.forEach { f->
+                            val pdto = node.fields().asSequence().find { it.key == f.name }
+                                //?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
+                            if (pdto == null && f is OptionalGene)
+                                f.isActive = false
+                            else if (pdto != null)
+                                setGeneBasedOnString(f, pdto.value.toPrettyString())
+                            else
+                                throw IllegalStateException("could not set value for the field (${f.name})")
+                        }
+                    }else{
+                        throw IllegalStateException("stringValue ($stringValue) is not Object")
+                    }
+                }
+                is CycleObjectGene ->{
+                    LoggingUtil.uniqueWarn(log, "NOT support to handle cycle object with more than 2 depth")
+
+                }
+                else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and stringValue ($stringValue)")
+            }
+        }else{
+            if (gene is OptionalGene)
+                gene.isActive = false
+            else
+                log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
+        }
+    }
+
+
+    private fun readJson(response: String) : JsonNode?{
+        return try {
+            objectMapper.readTree(response)
+        }catch (e: Exception){
+            null
+        }
+    }
+
+    private fun jsonNodeAsObjectGene(name: String, jsonNode: JsonNode): Gene{
+        return when{
+            jsonNode.isBoolean -> BooleanGene(name, jsonNode.booleanValue())
+            jsonNode.isBigDecimal -> BigDecimalGene(name, jsonNode.decimalValue())
+            jsonNode.isDouble -> DoubleGene(name, jsonNode.doubleValue())
+            jsonNode.isFloat -> FloatGene(name, jsonNode.floatValue())
+            jsonNode.isInt -> IntegerGene(name, jsonNode.intValue())
+            jsonNode.isLong -> LongGene(name, jsonNode.longValue())
+            jsonNode.isShort -> IntegerGene(name, jsonNode.shortValue().toInt(), min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
+            jsonNode.isObject ->{
+                val fields = jsonNode.fields().asSequence().map { wrapWithOptionalGene(jsonNodeAsObjectGene(it.key, it.value), true) }.toMutableList()
+                ObjectGene(name, fields)
+            }
+            jsonNode.isArray -> {
+                val elements = jsonNode.map { jsonNodeAsObjectGene(name + "_item", it) }
+                if (elements.isNotEmpty()){
+                    val template = if (elements.any { ParamUtil.getValueGene(it) is ObjectGene })
+                        elements.maxByOrNull { (ParamUtil.getValueGene(it) as? ObjectGene)?.fields?.size ?: -1 }!!
+                    else elements.first()
+                    ArrayGene(name, template = template.copy(), elements = elements.toMutableList())
+                } else
+                    ArrayGene(name, template = StringGene(name + "_item"))
+            }
+            jsonNode.isTextual -> {
+                StringGene(name, jsonNode.textValue())
+            }
+            else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
+        }
+    }
+
+    private fun extractRPCExternalServiceAction(sutInfoDto: SutInfoDto, rpcActionDto: RPCActionDto){
+
+        val interfaceDto = sutInfoDto.rpcProblem?.schemas?.find { it.interfaceId == rpcActionDto.interfaceId}
+            ?:throw IllegalStateException("cannot find the interface with id (${rpcActionDto.interfaceId})")
+
+        val actionKey = actionName(rpcActionDto.interfaceId, rpcActionDto.actionName)
+
+        rpcActionDto.mockRPCExternalServiceDtos?.forEach { dto->
+
+            if (dto.requestRules.isNotEmpty() && dto.requestRules.size != dto.responses.size && dto.responses.size != dto.responseTypes.size)
+                throw IllegalArgumentException("the size of request identifications and responses should same but ${dto.requestRules.size} vs. ${dto.responses.size} vs. ${dto.responseTypes.size}")
+
+            dto.responseTypes.forEachIndexed { index, s ->
+                val exkey = RPCExternalServiceAction.getRPCExternalServiceActionName(
+                    dto.interfaceFullName, dto.functionName, dto.requestRules[index], s
+                )
+                if (!externalServiceCluster.containsKey(exkey)){
+                    val responseTypeClass = interfaceDto.identifiedResponseTypes?.find { it.type.fullTypeName == s }
+                    var fromClass = false
+                    val responseGene = (
+                            if (responseTypeClass != null){
+                                handleDtoParam(responseTypeClass).also { fromClass = true }
+                            }else if(sutInfoDto.unitsInfoDto.extractedSpecifiedDtos?.containsKey(s) == true){
+                                val schema = sutInfoDto.unitsInfoDto.extractedSpecifiedDtos[s]!!
+                                fromClass = true
+                                RestActionBuilderV3.createObjectGeneForDTO("return", schema, s)
+                            }else{
+                                val node = readJson(dto.responses[index])
+                                if (node != null){
+                                    jsonNodeAsObjectGene("return", node)
+                                }else{
+                                    StringGene("return")
+                                }
+                            }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
+
+                    val response = RPCResponseParam(className = s, responseType = EnumGene("responseType", listOf("JSON")), response = responseGene)
+                    if (fromClass) response.responseParsedWithClass()
+
+                    val externalAction = RPCExternalServiceAction(
+                        interfaceName = dto.interfaceFullName,
+                        functionName = dto.functionName,
+                        descriptiveInfo = dto.appKey,
+                        requestRuleIdentifier = dto.requestRules[index],
+                        responseParam = response)
+                    Lazy.assert { exkey == externalAction.getName() }
+                    externalServiceCluster[exkey] = externalAction
+                }
+
+                actionToExternalServiceMap.getOrPut(actionKey){ mutableSetOf() }.add(exkey)
+            }
+        }
+    }
+
+    private fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
+        if (action !is RPCExternalServiceAction)
+            throw IllegalStateException("only support RPC external service action for the moment")
+
+        val mode = if (action.response.isJson()) GeneUtils.EscapeMode.JSON else throw IllegalStateException("only support response with json type for the monument")
+
+        return MockRPCExternalServiceDto().apply {
+            interfaceFullName = action.interfaceName
+            functionName = action.functionName
+            appKey = action.descriptiveInfo
+            requestRules = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
+            responses = listOf(action.response.gene.getValueAsPrintableString(mode = mode))
         }
     }
 
@@ -261,12 +512,14 @@ class RPCEndpointsHandler {
      * reset [actionCluster] based on interface schemas specified in [problem]
      */
     fun initActionCluster(problem: RPCProblemDto, actionCluster: MutableMap<String, Action>, infoDto: SutInfoDto){
+        this.infoDto = infoDto
+
         val clientVariableMap = problem.schemas.mapIndexed {i, e->
             e.interfaceId!! to nameClientVariable(i, e.interfaceId.split(".").last())
         }.toMap()
 
         problem.schemas.forEach { i->
-            i.types.sortedBy { it.type.depth }
+            i.types.plus(i.identifiedResponseTypes?: listOf()).sortedBy { it.type.depth }
                 .filter { it.type.type == RPCSupportedDataType.CUSTOM_OBJECT }.forEach { t ->
                 buildTypeCache(t)
             }
@@ -299,7 +552,6 @@ class RPCEndpointsHandler {
                     authEndpointCluster[key] = e //processEndpoint(name, e, true)
                 }
             }
-
         }
 
         if (problem.localAuthEndpoints!= null && problem.localAuthEndpointReferences != null){
@@ -314,8 +566,15 @@ class RPCEndpointsHandler {
 
         setAuthInfo(infoDto)
 
+        // handle seeded test dto
+        infoDto.rpcProblem.seededTestDtos?.forEach { t->
+            t.forEach { a->
+                extractRPCExternalServiceAction(infoDto, a)
+            }
+        }
+
         // report statistic of endpoints
-        reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 })
+        reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 }, infoDto.rpcProblem?.seededTestDtos?.size?:0)
     }
 
     private fun buildTypeCache(type: ParamDto){
@@ -326,9 +585,11 @@ class RPCEndpointsHandler {
 
     private fun nameClientVariable(index: Int, interfaceSimpleName: String) : String = "var_client${index}_${interfaceSimpleName.replace("\$","_").replace("\\.","_")}"
 
-    private fun reportEndpointsStatistics(numSchema: Int, skipped: Int){
+    private fun reportEndpointsStatistics(numSchema: Int, skipped: Int, numSeededTest: Int){
         LoggingUtil.getInfoLogger().apply {
             info("There are $numSchema defined RPC interfaces with ${actionSchemaCluster.size} accessible endpoints and $skipped skipped endpoints.")
+            if (numSeededTest > 0)
+                info("$numSeededTest test${if (numSeededTest > 1) "s are" else " is"} seeded.")
         }
     }
 
@@ -355,7 +616,39 @@ class RPCEndpointsHandler {
 
         setGenerationConfiguration(rpcAction, index, generateResponseVariable(index))
 
+        // get external action
+        if (action.parent is EnterpriseActionGroup){
+            val exActions = (action.parent as EnterpriseActionGroup)
+                .groupsView()!!.getAllInGroup(GroupsOfChildren.EXTERNAL_SERVICES)
+                .flatMap { (it as ActionComponent).flatten() }
+                .map { e-> transformMockRPCExternalServiceDto((e as ApiExternalServiceAction)) }
+            if (exActions.isNotEmpty())
+                rpcAction.mockRPCExternalServiceDtos = exActions
+        }
+
         return rpcAction
+    }
+
+    fun getJVMSchemaForDto(names: Set<String>): Map<String, Gene> {
+
+        if (names.any { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it) == false} ) {
+            infoDto = remoteController.getSutInfo()!!
+
+        names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == false}.run {
+            if (isNotEmpty())
+                LoggingUtil.uniqueWarn(log, "cannot extract schema for dtos (ie, ${this.joinToString(",")}) in the SUT driver and instrumentation agent")
+            }
+        }
+
+
+        val allDtoNames = infoDto.unitsInfoDto.parsedDtos.keys.toList()
+        val allDtoSchemas = allDtoNames.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
+        RestActionBuilderV3.createObjectGeneForDTOs(allDtoNames, allDtoSchemas, allDtoNames)
+
+        return names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == true}.associateWith { name ->
+            val schema = infoDto.unitsInfoDto.extractedSpecifiedDtos[name]!!
+            RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
+        }
     }
 
     private fun transformResponseDto(action: RPCCallAction) : EvaluatedRPCActionDto{
@@ -500,6 +793,9 @@ class RPCEndpointsHandler {
                     transformGeneToParamDto(f, pdto)
                 }
             }
+            is CycleObjectGene ->{
+                dto.setNullValue()
+            }
             else -> throw IllegalStateException("Not support transformGeneToParamDto with gene ${gene::class.java.simpleName} and dto (${dto.type.type})")
         }
     }
@@ -517,19 +813,19 @@ class RPCEndpointsHandler {
 
         if (!isNullDto(dto)){
             when(valueGene){
-                is IntegerGene -> valueGene.value = dto.stringValue.toInt()
-                is DoubleGene -> valueGene.value = dto.stringValue.toDouble()
-                is FloatGene -> valueGene.value = dto.stringValue.toFloat()
-                is BooleanGene -> valueGene.value = dto.stringValue.toBoolean()
+                is IntegerGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is DoubleGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is FloatGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is BooleanGene -> valueGene.setValueWithRawString(dto.stringValue)
                 is StringGene -> valueGene.value = dto.stringValue
-                is BigDecimalGene -> valueGene.setValueWithString(dto.stringValue)
-                is BigIntegerGene -> valueGene.setValueWithString(dto.stringValue)
-                is NumericStringGene -> valueGene.number.setValueWithString(dto.stringValue)
+                is BigDecimalGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is BigIntegerGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is NumericStringGene -> valueGene.number.setValueWithRawString(dto.stringValue)
                 is RegexGene -> {
                     // TODO set value based on RegexGene
                 }
-                is LongGene -> valueGene.value = dto.stringValue.toLong()
-                is EnumGene<*> -> valueGene.index = dto.stringValue.toInt()
+                is LongGene -> valueGene.setValueWithRawString(dto.stringValue)
+                is EnumGene<*> -> valueGene.setValueWithRawString(dto.stringValue)
                 is SeededGene<*> -> {
                     /*
                         response might refer to input dto, then it might exist seeded gene
@@ -587,6 +883,11 @@ class RPCEndpointsHandler {
                         val pdto = dto.innerContent.find { it.name == f.name }
                             ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
                         setGeneBasedOnParamDto(f, pdto)
+                    }
+                }
+                is CycleObjectGene ->{
+                    if (dto.innerContent != null){
+                        LoggingUtil.uniqueWarn(log, "NOT support to handle cycle object with more than 2 depth")
                     }
                 }
                 else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and dto (${dto.type.type})")
@@ -714,7 +1015,7 @@ class RPCEndpointsHandler {
                     if (param.hasNumberConstraints() && param.pattern != null)
                         log.warn("Not support numeric constraints and pattern together yet, and check the param ${param.name}")
 
-                    var strGene : Gene = StringGene(param.name, minLength = param.minSize?.toInt()?:0, maxLength = param.maxSize?.toInt()?:16).apply {
+                    var strGene : Gene = StringGene(param.name, minLength = param.minSize?.toInt()?:0, maxLength = param.maxSize?.toInt()?:EMConfig.stringLengthHardLimit).apply {
 
                         // String could have bigDecimal or bigInteger as part of specification if any number related constraint property is specified
                         if (param.precision != null || param.scale != null){
@@ -848,7 +1149,7 @@ class RPCEndpointsHandler {
         return DateTimeGene(param.name)
     }
 
-    private fun wrapWithOptionalGene(gene: Gene, isOptional: Boolean): Gene{
+    fun wrapWithOptionalGene(gene: Gene, isOptional: Boolean): Gene{
         return if (isOptional && gene !is OptionalGene) OptionalGene(gene.name, gene) else gene
     }
 

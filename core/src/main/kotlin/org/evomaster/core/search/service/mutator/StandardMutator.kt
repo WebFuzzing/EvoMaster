@@ -6,11 +6,14 @@ import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsAction
+import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.service.param.UpdateForParam
+import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
@@ -19,6 +22,7 @@ import org.evomaster.core.search.ActionFilter
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -154,13 +158,16 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     private fun mutationPreProcessing(individual: T) {
 
         for(a in individual.seeAllActions()){
-            if(a is ApiWsAction) {
-                val update = a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
-                if (update != null) {
-                    a.killChildren { it is BodyParam }
-                    a.killChildren { it is UpdateForBodyParam }
-                    a.addChild(update.body)
-                }
+            val update =if(a is ApiWsAction ) {
+                a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
+            }else if (a is RPCExternalServiceAction){
+                a.responses.find { it is UpdateForParam } as? UpdateForParam
+            } else null
+            if (update != null) {
+                a.killChildren { it is UpdateForParam || (it is Param && update.isSameTypeWithUpdatedParam(it))  }
+                val copy = update.getUpdatedParam()
+                copy.resetLocalIdRecursively()
+                a.addChild(copy)
             }
 
             val allGenes = a.seeTopGenes().flatMap { it.flatView() }
@@ -169,6 +176,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             allGenes.filterIsInstance<OptionalGene>()
                 .filter { it.selectable && it.requestSelection }
                 .forEach { it.isActive = true; it.requestSelection = false }
+
+            allGenes.filterIsInstance<TaintedArrayGene>()
+                .filter{!it.isActive && it.isResolved()}
+                .forEach { it.activate() }
 
             //disable genes that should no longer be mutated
             val state = individual.searchGlobalState
@@ -306,6 +317,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         if (mutatedIndividual is RestIndividual)
             mutatedIndividual.repairDbActionsInCalls()
+
+        // update MutatedGeneSpecification after the post-handling
+        if(mutated?.repairInitAndDbSpecification(mutatedIndividual) == true){
+            LoggingUtil.uniqueWarn(log, "DbActions which contain mutated gene are removed that might need a further check")
+        }
+
     }
 
     /**

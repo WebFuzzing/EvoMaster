@@ -63,6 +63,13 @@ class CharacterRangeRxGene(
         return copy
     }
 
+    override fun setValueWithRawString(value: String) {
+        // need to check
+        val c = value.toCharArray().firstOrNull()
+        if (c!= null)
+            this.value = c
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         /*

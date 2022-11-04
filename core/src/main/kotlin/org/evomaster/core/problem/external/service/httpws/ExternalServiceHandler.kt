@@ -5,12 +5,17 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isReservedIP
 import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.nextIPAddress
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
 
 /**
  * To manage the external service related activities
@@ -18,8 +23,8 @@ import org.evomaster.core.search.service.Randomness
 class ExternalServiceHandler {
 
     companion object {
-        const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
-        const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
+        private val log: Logger = LoggerFactory.getLogger(ExternalServiceHandler::class.java)
+
     }
 
     /**
@@ -45,6 +50,7 @@ class ExternalServiceHandler {
      */
     private val externalServices: MutableMap<String, ExternalService> = mutableMapOf()
 
+
     /**
      * Contains last used loopback address for reference when creating
      * a new address
@@ -54,6 +60,31 @@ class ExternalServiceHandler {
     private var counter: Long = 0
 
     /**
+     * whether the fake WM is initialized that the SUT will connect for the first time
+     */
+    private var isDefaultInitialized = false
+
+
+    @PostConstruct
+    fun initialize() {
+        log.debug("Initializing {}", ExternalServiceHandler::class.simpleName)
+        initDefaultWM()
+    }
+
+    /**
+     * init default WM
+     */
+    private fun initDefaultWM(){
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE){
+            if (!isDefaultInitialized){
+                registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
+                registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
+                isDefaultInitialized = true
+            }
+        }
+    }
+
+    /**
      * This will allow adding ExternalServiceInfo to the Collection.
      *
      * If there is a WireMock instance is available for the [ExternalService] signature,
@@ -61,13 +92,15 @@ class ExternalServiceHandler {
      */
     fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) {
         if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            if (!externalServices.containsKey(externalServiceInfo.signature())) {
-                val ip = getIP(externalServiceInfo.remotePort)
-                lastIPAddress = ip
-                val wm: WireMockServer = initWireMockServer(ip, externalServiceInfo.remotePort)
+            registerHttpExternalServiceInfo(externalServiceInfo)
+        }
+    }
 
-                externalServices[externalServiceInfo.signature()] = ExternalService(externalServiceInfo, wm)
-            }
+    private fun registerHttpExternalServiceInfo(externalServiceInfo : HttpExternalServiceInfo){
+        if (!externalServices.containsKey(externalServiceInfo.signature())) {
+            val ip = getIP(externalServiceInfo.remotePort)
+            lastIPAddress = ip
+            externalServices[externalServiceInfo.signature()] = initWireMockServer(ip, externalServiceInfo)
         }
     }
 
@@ -148,13 +181,14 @@ class ExternalServiceHandler {
      * as [HttpExternalServiceRequest]
      */
     fun getAllServedExternalServiceRequests(): List<HttpExternalServiceRequest> {
-        val output: MutableList<HttpExternalServiceRequest> = mutableListOf()
-        externalServices.forEach { (_, u) ->
-            u.getAllServedRequests().forEach {
-                output.add(it)
-            }
-        }
-        return output
+        return externalServices.values.filter { !isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
+    }
+
+    /**
+     * @return a list of the served requests to the default WM
+     */
+    fun getAllServedRequestsToDefaultWM(): List<HttpExternalServiceRequest> {
+        return externalServices.values.filter { isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
     }
 
     /**
@@ -204,37 +238,49 @@ class ExternalServiceHandler {
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
      */
-    private fun initWireMockServer(address: String, port: Int): WireMockServer {
+    private fun initWireMockServer(address: String, info: HttpExternalServiceInfo): ExternalService {
+        val port = info.remotePort
+
         // TODO: Port need to be changed to the remote service port
         //  In CI also using remote ports as 80 and 443 fails
-        val wm = WireMockServer(
-            WireMockConfiguration()
-                .bindAddress(address)
-                .port(port)
-                .extensions(ResponseTemplateTransformer(false))
-        )
-        wm.start()
+        val config =  WireMockConfiguration()
+            .bindAddress(address)
+            .extensions(ResponseTemplateTransformer(false))
 
-        wireMockSetDefaults(wm)
+        if (!info.isHttp() && !info.isHttps())
+            LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($address)")
+        val applyHttps = info.isHttps() || (!info.isHttp() && info.isDerivedHttps())
 
-        return wm
+        if (applyHttps){
+            config.httpsPort(port)
+        }else {
+            config.port(port)
+        }
+
+        val wm = WireMockServer(config)
+        val es = ExternalService(info, wm)
+
+        /*
+            for SUT, its first connection is re-directed to a given ip address,
+            to keep same behavior in generated tests, we do not start the WM accordingly
+         */
+        if (info !is DefaultHttpExternalServiceInfo){
+            wm.start()
+            wireMockSetDefaults(es)
+        }
+
+        return es
     }
+
+
 
     /**
      * To prevent from the 404 when no matching stub below stub is added
      * WireMock throws an exception when there is no stub for the request
      * to avoid the exception it handled manually
      */
-    fun wireMockSetDefaults(wireMockServer: WireMockServer) {
-        wireMockServer.stubFor(
-            any(anyUrl())
-                .atPriority(100)
-                .willReturn(
-                    aResponse()
-                        .withStatus(WIREMOCK_DEFAULT_RESPONSE_CODE)
-                        .withBody(WIREMOCK_DEFAULT_RESPONSE_MESSAGE)
-                )
-        )
-    }
+    private fun wireMockSetDefaults(es: ExternalService) {
 
+        es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
+    }
 }

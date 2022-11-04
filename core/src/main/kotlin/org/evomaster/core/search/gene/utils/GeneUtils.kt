@@ -5,8 +5,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.TupleGene
-import org.evomaster.core.search.gene.datetime.DateGene
-import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
@@ -474,19 +472,19 @@ object GeneUtils {
         val selected = obj.fields.filter {
             ((it is OptionalGene && it.isActive) ||
                     (it is BooleanGene && it.value) ||
-                    (it is OptionalGene && it.gene is TupleGene && isLastSelected(it.gene)) ||
-                    (it is TupleGene && isLastSelected(it))
+                    (it is OptionalGene && it.gene is TupleGene && it.gene.lastElementTreatedSpecially && isLastSelected(it.gene)) ||
+                    (it is TupleGene && it.lastElementTreatedSpecially && isLastSelected(it))
                     )
         }
 
         if (selected.isNotEmpty()) {
             //it is fine, but we still need to make sure selected objects are fine
             selected.forEach {
-                if ((it is OptionalGene && it.gene is ObjectGene && it.gene !is CycleObjectGene)
+                if ((it is OptionalGene && it.gene is ObjectGene && (it.gene !is CycleObjectGene || it.gene !is LimitObjectGene))
                 ) {
                     repairBooleanSelection(it.gene)
                 } else if ( //looking into objects inside a tuple
-                    isTupleOptionalObjetNotCycle(it)) {
+                    isTupleOptionalObjetNotCycleNotLimit(it)) {
                     repairBooleanSelection(((it as TupleGene).elements.last() as OptionalGene).gene as ObjectGene)
                 }
             }
@@ -494,7 +492,7 @@ object GeneUtils {
             //must select at least one
             val candidates = obj.fields.filter {
                 (it is OptionalGene && it.selectable) || it is BooleanGene ||
-                        (it is TupleGene && isLastCandidate(it))
+                        (it is TupleGene && it.lastElementTreatedSpecially && isLastCandidate(it))
             }
             assert(candidates.isNotEmpty())
 
@@ -607,10 +605,10 @@ object GeneUtils {
 
     }
 
-    private fun isTupleOptionalObjetNotCycle(gene: Gene):Boolean {
+    private fun isTupleOptionalObjetNotCycleNotLimit(gene: Gene):Boolean {
         return (gene is TupleGene && gene.elements.last() is OptionalGene
-                && (gene.elements.last() as OptionalGene).gene is ObjectGene &&
-                (gene.elements.last() as OptionalGene).gene !is CycleObjectGene)
+                && (gene.elements.last() as OptionalGene).gene is ObjectGene && (
+                ((gene.elements.last() as OptionalGene).gene !is CycleObjectGene)  || ((gene.elements.last() as OptionalGene).gene !is LimitObjectGene)))
     }
 
     /**
