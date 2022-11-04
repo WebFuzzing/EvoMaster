@@ -1015,7 +1015,7 @@ class RPCEndpointsHandler {
                     if (param.hasNumberConstraints() && param.pattern != null)
                         log.warn("Not support numeric constraints and pattern together yet, and check the param ${param.name}")
 
-                    var strGene : Gene = StringGene(param.name, minLength = param.minSize?.toInt()?:0, maxLength = param.maxSize?.toInt()?:16).apply {
+                    var strGene : Gene = StringGene(param.name, minLength = param.minSize?.toInt()?:0, maxLength = param.maxSize?.toInt()?:EMConfig.stringLengthHardLimit).apply {
 
                         // String could have bigDecimal or bigInteger as part of specification if any number related constraint property is specified
                         if (param.precision != null || param.scale != null){
