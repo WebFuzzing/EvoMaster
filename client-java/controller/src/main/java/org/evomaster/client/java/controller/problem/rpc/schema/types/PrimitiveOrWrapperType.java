@@ -42,7 +42,7 @@ public class PrimitiveOrWrapperType extends TypeSchema {
 
 
     @Override
-    public PrimitiveOrWrapperType copy() {
+    public PrimitiveOrWrapperType copyContent() {
         return new PrimitiveOrWrapperType(getType(), getFullTypeName(), isWrapper, getClazz());
     }
 

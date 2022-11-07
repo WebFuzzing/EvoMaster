@@ -23,7 +23,7 @@ public class BigIntegerType extends TypeSchema {
     }
 
     @Override
-    public BigDecimalType copy() {
+    public BigDecimalType copyContent() {
         return new BigDecimalType();
     }
 }

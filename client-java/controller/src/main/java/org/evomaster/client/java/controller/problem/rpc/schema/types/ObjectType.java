@@ -41,7 +41,7 @@ public class ObjectType extends TypeSchema {
         return dto;
     }
 
-    public ObjectType copy(){
+    public ObjectType copyContent(){
         List<NamedTypedValue> cfields = new ArrayList<>();
         if (fields != null){
             for (NamedTypedValue f: fields){

@@ -32,7 +32,7 @@ public class EnumType extends TypeSchema {
     }
 
     @Override
-    public EnumType copy() {
+    public EnumType copyContent() {
         return new EnumType(getType(), getFullTypeName(), items, getClazz());
     }
 }
