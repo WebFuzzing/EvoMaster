@@ -38,6 +38,11 @@ class FitnessValue(
         fun isMaxValue(value: Double) = value == MAX_VALUE
 
         private val log: Logger = LoggerFactory.getLogger(FitnessValue::class.java)
+
+        /**
+         * represent that boot-time info is unavailable to collect
+         */
+        const val BOOT_TIME_INFO_UNAVAILABLE = -1
     }
 
     /**
@@ -174,9 +179,10 @@ class FitnessValue(
      * @return a number of targets covered during various phases ie,
      *          at boot-time (negative means that the boot-time info is unavailable), during search, and at the end
      */
-    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int): TargetStatistic{
+    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?): TargetStatistic{
         if (bootTimeInfoDto?.targets == null){
-            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { TargetStatistic(unavailableBootTime,this, max(unavailableBootTime,0)+this) }
+            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { TargetStatistic(
+                BOOT_TIME_INFO_UNAVAILABLE,this, max(BOOT_TIME_INFO_UNAVAILABLE,0)+this) }
         }
         val bootTime = bootTimeInfoDto.targets.filter { it.value == MAX_VALUE && (prefix == null || it.descriptiveId.startsWith(prefix)) }
         // counter for duplicated targets
