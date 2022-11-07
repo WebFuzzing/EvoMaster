@@ -14,6 +14,7 @@ import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.FlexibleGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.optional.NullableGene
@@ -288,6 +289,8 @@ class ParamUtil {
                 else return getValueGene(gene.gene)
             } else if (gene is NullableGene) {
                 return getValueGene(gene.gene)
+            } else if (gene is FlexibleGene){
+                return  getValueGene(gene.gene)
             }
             return gene
         }
