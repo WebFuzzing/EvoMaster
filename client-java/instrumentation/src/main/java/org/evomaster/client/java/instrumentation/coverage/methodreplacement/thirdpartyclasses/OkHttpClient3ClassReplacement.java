@@ -15,6 +15,7 @@ import java.lang.reflect.Method;
 
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.skipHostnameOrIp;
 
 public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementClass {
 
@@ -95,11 +96,17 @@ public class OkHttpClient3ClassReplacement extends ThirdPartyMethodReplacementCl
         int urlPort = (int) url.getClass().getMethod("port").invoke(url);
         String urlEncodedPath = (String) url.getClass().getMethod("encodedPath").invoke(url);
 
-        if (urlScheme.equalsIgnoreCase("https") || urlScheme.equalsIgnoreCase("http")){
+        if ((urlScheme.equalsIgnoreCase("https") || urlScheme.equalsIgnoreCase("http"))
+                && !skipHostnameOrIp(urlHost)
+                && !ExecutionTracer.skipHostname(urlHost)
+        ){
             ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(urlScheme, urlHost, urlPort);
             String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, urlPort);
 
             String replacedUrl = urlScheme+"://"+ipAndPort[0]+":"+ipAndPort[1]+urlEncodedPath;
+            Object encodedQuery = url.getClass().getMethod("encodedQuery").invoke(url);
+            if (encodedQuery != null && !((String)encodedQuery).isEmpty())
+                replacedUrl = replacedUrl + "?" + (String)encodedQuery;
             ClassLoader loader = ExecutionTracer.getLastCallerClassLoader();
             Object builder = loader.loadClass("okhttp3.Request$Builder").newInstance();
             builder = builder.getClass().getMethod("url", String.class).invoke(builder, replacedUrl);

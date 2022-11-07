@@ -1,17 +1,18 @@
 package org.evomaster.core.problem.external.service.httpws
 
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.generateRandomIPAddress
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isAddressAvailable
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isReservedIP
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.nextIPAddress
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isAddressAvailable
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isReservedIP
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.nextIPAddress
+import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
+import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -19,12 +20,13 @@ import javax.annotation.PostConstruct
 
 /**
  * To manage the external service related activities
+ *
+ * might create a superclass for external service handler
  */
-class ExternalServiceHandler {
+class HttpWsExternalServiceHandler {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(ExternalServiceHandler::class.java)
-
+        private val log: Logger = LoggerFactory.getLogger(HttpWsExternalServiceHandler::class.java)
     }
 
     /**
@@ -43,12 +45,13 @@ class ExternalServiceHandler {
     @Inject
     private lateinit var config: EMConfig
 
+
     /**
-     * Contains the information about [ExternalService] as map.
+     * Contains the information about [HttpWsExternalService] as map.
      *
-     * Mapped against to signature of the [ExternalService].
+     * Mapped against to signature of the [HttpWsExternalService].
      */
-    private val externalServices: MutableMap<String, ExternalService> = mutableMapOf()
+    private val externalServices: MutableMap<String, HttpWsExternalService> = mutableMapOf()
 
 
     /**
@@ -67,9 +70,11 @@ class ExternalServiceHandler {
 
     @PostConstruct
     fun initialize() {
-        log.debug("Initializing {}", ExternalServiceHandler::class.simpleName)
+        log.debug("Initializing {}", HttpWsExternalServiceHandler::class.simpleName)
         initDefaultWM()
     }
+
+
 
     /**
      * init default WM
@@ -87,7 +92,7 @@ class ExternalServiceHandler {
     /**
      * This will allow adding ExternalServiceInfo to the Collection.
      *
-     * If there is a WireMock instance is available for the [ExternalService] signature,
+     * If there is a WireMock instance is available for the [HttpWsExternalService] signature,
      * it will be skipped from creating a new one.
      */
     fun addExternalService(externalServiceInfo: HttpExternalServiceInfo) {
@@ -135,7 +140,7 @@ class ExternalServiceHandler {
         return generateRandomAvailableAddress(port)
     }
 
-    fun getExternalServices(): Map<String, ExternalService> {
+    fun getExternalServices(): Map<String, HttpWsExternalService> {
         return externalServices
     }
 
@@ -156,23 +161,25 @@ class ExternalServiceHandler {
     /**
      * Creates an [HttpExternalServiceAction] based on the given [HttpExternalServiceRequest]
      */
-    fun createExternalServiceAction(request: HttpExternalServiceRequest): HttpExternalServiceAction {
+    fun createExternalServiceAction(request: HttpExternalServiceRequest, responseParam: HttpWsResponseParam?): HttpExternalServiceAction {
         val externalService = getExternalService(request.wireMockSignature)
 
-        val action = HttpExternalServiceAction(
-            request,
-            "",
-            externalService,
-            counter++
-        )
-        action.doInitialize(randomness)
+        val action = if (responseParam == null)
+            HttpExternalServiceAction(request, "", externalService, counter++).apply {
+                doInitialize(randomness)
+            }
+        else
+            HttpExternalServiceAction(request = request, response= responseParam, externalService =  externalService, id = counter++).apply {
+                seeTopGenes().forEach { g-> g.markAllAsInitialized() }
+            }
+
         return action
     }
 
     /**
-     * Returns the [ExternalService] if the signature exists
+     * Returns the [HttpWsExternalService] if the signature exists
      */
-    fun getExternalService(signature: String): ExternalService {
+    fun getExternalService(signature: String): HttpWsExternalService {
         return externalServices.getValue(signature)
     }
 
@@ -238,7 +245,7 @@ class ExternalServiceHandler {
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
      */
-    private fun initWireMockServer(address: String, info: HttpExternalServiceInfo): ExternalService {
+    private fun initWireMockServer(address: String, info: HttpExternalServiceInfo): HttpWsExternalService {
         val port = info.remotePort
 
         // TODO: Port need to be changed to the remote service port
@@ -258,7 +265,7 @@ class ExternalServiceHandler {
         }
 
         val wm = WireMockServer(config)
-        val es = ExternalService(info, wm)
+        val es = HttpWsExternalService(info, wm)
 
         /*
             for SUT, its first connection is re-directed to a given ip address,
@@ -279,8 +286,10 @@ class ExternalServiceHandler {
      * WireMock throws an exception when there is no stub for the request
      * to avoid the exception it handled manually
      */
-    private fun wireMockSetDefaults(es: ExternalService) {
+    private fun wireMockSetDefaults(es: HttpWsExternalService) {
 
         es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
     }
+
+
 }

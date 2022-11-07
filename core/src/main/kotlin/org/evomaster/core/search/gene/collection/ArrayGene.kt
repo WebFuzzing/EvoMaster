@@ -235,8 +235,6 @@ class ArrayGene<T>(
     }
 
 
-
-
     /**
      * 1 is for 'remove' or 'add' element
      */

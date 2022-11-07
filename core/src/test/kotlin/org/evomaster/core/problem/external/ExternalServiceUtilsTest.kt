@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.external
 
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.isAddressAvailable
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceUtils.nextIPAddress
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isAddressAvailable
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.nextIPAddress
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress

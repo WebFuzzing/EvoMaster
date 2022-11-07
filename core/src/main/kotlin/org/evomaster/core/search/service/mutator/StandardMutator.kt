@@ -16,6 +16,7 @@ import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter
@@ -25,6 +26,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -250,14 +252,19 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 mutatedGene = mutatedGene
             )
 
-            gene.standardMutation(
-                randomness,
-                apc,
-                mwc,
-                selectionStrategy,
-                enableAGM,
-                additionalGeneMutationInfo = additionInfo
-            )
+            // plugin seeding response here
+            val mutated = harvestResponseHandler.harvestExistingGeneBasedOn(gene, config.probOfMutatingResponsesBasedOnActualResponse)
+
+            if (!mutated)
+                gene.standardMutation(
+                    randomness,
+                    apc,
+                    mwc,
+                    selectionStrategy,
+                    enableAGM,
+                    additionalGeneMutationInfo = additionInfo
+                )
+
         }
 
         if (config.trackingEnabled()) tag(copy, time.evaluatedIndividuals)
@@ -481,5 +488,4 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         return additionInfo
     }
-
 }

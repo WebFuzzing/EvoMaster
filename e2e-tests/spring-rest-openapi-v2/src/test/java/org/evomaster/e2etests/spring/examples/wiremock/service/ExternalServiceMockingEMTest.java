@@ -3,7 +3,7 @@ package org.evomaster.e2etests.spring.examples.wiremock.service;
 import com.foo.rest.examples.spring.wiremock.service.ServiceController;
 import com.google.inject.Injector;
 import org.evomaster.core.EMConfig;
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler;
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
 import org.evomaster.core.problem.rest.service.RestResourceFitness;
@@ -52,7 +52,7 @@ public class ExternalServiceMockingEMTest extends SpringTestBase {
 
         Injector injector = init(Arrays.asList(args));
 
-        ExternalServiceHandler externalServiceHandler = injector.getInstance(ExternalServiceHandler.class);
+        HttpWsExternalServiceHandler externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler.class);
 
         RestResourceFitness restResourceFitness = injector.getInstance(RestResourceFitness.class);
         ResourceSampler resourceSampler = injector.getInstance(ResourceSampler.class);

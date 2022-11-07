@@ -5,7 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.external.service.httpws.ExternalService
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceRequest
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
@@ -85,7 +85,7 @@ class FitnessValue(
     /**
      * a list of external services which are re-direct to the default WM
      */
-    private val accessedDefaultWM : MutableMap<Int,Map<String, ExternalService>> = mutableMapOf()
+    private val accessedDefaultWM : MutableMap<Int,Map<String, HttpWsExternalService>> = mutableMapOf()
 
     /**
     * How long it took to evaluate this fitness value.
@@ -686,7 +686,7 @@ class FitnessValue(
         accessedExternalServiceRequests[actionIndex] = requests
     }
 
-    fun registerExternalRequestToDefaultWM(actionIndex: Int, info: Map<String, ExternalService>){
+    fun registerExternalRequestToDefaultWM(actionIndex: Int, info: Map<String, HttpWsExternalService>){
         if(info.isEmpty()) return
 
         if(accessedDefaultWM.containsKey(actionIndex)){
