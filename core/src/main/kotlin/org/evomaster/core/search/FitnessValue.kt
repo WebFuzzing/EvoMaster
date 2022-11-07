@@ -174,10 +174,12 @@ class FitnessValue(
 
     /**
      * this method is to report the union results with targets at boot-time
-     * @param unavailableBootTime is a value to represent the number of boot-time targets when the boot-time info is unavailable, ie, negative
+     * @param prefix specifies the target with specific prefix  to return (eg Line), null means return all types of targets
+     * @param idMapper contains info of all targets
+     * @param bootTimeInfoDto represents info of boot-time targets
      *
      * @return a number of targets covered during various phases ie,
-     *          at boot-time (negative means that the boot-time info is unavailable), during search, and at the end
+     * boot-time (negative means that the boot-time info is unavailable [BOOT_TIME_INFO_UNAVAILABLE]) and search time
      */
     fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?): TargetStatistic{
         if (bootTimeInfoDto?.targets == null){
