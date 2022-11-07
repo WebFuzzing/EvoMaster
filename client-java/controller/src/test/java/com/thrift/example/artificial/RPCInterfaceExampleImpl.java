@@ -85,8 +85,8 @@ public class RPCInterfaceExampleImpl implements RPCInterfaceExample{
     }
 
     @Override
-    public CycleAObj objCycleA() {
-        return null;
+    public CycleAObj objCycleA(CycleAObj objA) {
+        return objA;
     }
 
     @Override

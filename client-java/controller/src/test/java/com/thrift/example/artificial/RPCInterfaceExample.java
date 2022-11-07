@@ -28,7 +28,7 @@ public interface RPCInterfaceExample {
 
     ObjectResponse objResponse();
 
-    CycleAObj objCycleA();
+    CycleAObj objCycleA(CycleAObj objA);
 
     CycleBObj objCycleB();
 
