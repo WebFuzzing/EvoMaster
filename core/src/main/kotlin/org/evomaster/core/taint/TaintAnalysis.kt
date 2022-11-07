@@ -308,7 +308,7 @@ object TaintAnalysis {
         } else {
             if (genes.size > 1
                     && TaintInputName.isTaintInput(taintedInput)
-                    && genes.none { x -> genes.any { y -> x.isDirectBoundWith(y) || x.isAnyParentBoundWith(y) } }
+                    && genes.none { x -> genes.any { y -> x.isDirectBoundWith(y) || x.is2DepthDirectBoundWith(y) || x.isAnyParentBoundWith(y) } }
             ) {
                 //shouldn't really be a problem... but let keep track for it, for now at least.
                 // note, cannot really guarantee that a taint from regex is unique, as regex could generate
