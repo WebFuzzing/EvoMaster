@@ -8,23 +8,23 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Binar
 /**
  * created by manzh on 2019-09-29
  */
-class SqlNullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
-                        val presentImpact : BinaryGeneImpact = BinaryGeneImpact("isPresent"),
-                        val geneImpact: GeneImpact) : GeneImpact(sharedImpactInfo, specificImpactInfo){
+class NullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
+                     val presentImpact : BinaryGeneImpact = BinaryGeneImpact("isPresent"),
+                     val geneImpact: GeneImpact) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
 
     constructor(id : String, sqlnullGene: NullableGene) : this(SharedImpactInfo(id), SpecificImpactInfo(), geneImpact = ImpactUtils.createGeneImpact(sqlnullGene.gene, id))
 
-    override fun copy(): SqlNullableImpact {
-        return SqlNullableImpact(
+    override fun copy(): NullableImpact {
+        return NullableImpact(
                 shared.copy(),
                 specific.copy(),
                 presentImpact = presentImpact.copy(),
                 geneImpact = geneImpact.copy())
     }
 
-    override fun clone(): SqlNullableImpact {
-        return SqlNullableImpact(
+    override fun clone(): NullableImpact {
+        return NullableImpact(
                 shared.clone(),specific.clone(), presentImpact.clone(), geneImpact.clone()
         )
     }
