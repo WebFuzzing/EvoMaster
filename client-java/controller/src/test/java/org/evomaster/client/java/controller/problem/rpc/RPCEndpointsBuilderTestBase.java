@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thrift.example.artificial.Necessity;
 import com.thrift.example.artificial.RPCInterfaceExampleImpl;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
@@ -18,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * created by manzhang on 2021/11/12
  */
 public abstract class RPCEndpointsBuilderTestBase {
+
+    public ObjectMapper mapper = new ObjectMapper();
 
     public InterfaceSchema schema = RPCEndpointsBuilder.build(getInterfaceName(), getRPCType(), new RPCInterfaceExampleImpl(), null, null, null, null, getAuthInfo(), getCustomizedValueInRequests(), specifyCustomizedNotNullAnnotation());
 

@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.problem.rpc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.thrift.example.artificial.*;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
@@ -9,12 +10,10 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedData
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
-import org.glassfish.jersey.server.model.Suspendable;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1264,7 +1263,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     public void testObjCycleA() {
 
         EndpointSchema endpoint = getOneEndpoint("objCycleA");
-        assertEquals(0, endpoint.getRequestParams().size());
+        assertEquals(1, endpoint.getRequestParams().size());
 
         assertNotNull(endpoint.getResponse());
         NamedTypedValue param = endpoint.getResponse();
@@ -1272,10 +1271,10 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(param.getType() instanceof ObjectType);
 
         List<NamedTypedValue> fs = ((ObjectType) param.getType()).getFields();
-        assertEquals(1, fs.size());
-        assertTrue(fs.get(0) instanceof ObjectParam);
-        assertEquals(1, ((ObjectParam) fs.get(0)).getType().getFields().size());
-        assertTrue(((ObjectParam) fs.get(0)).getType().getFields().get(0).getType() instanceof CycleObjectType);
+        assertEquals(2, fs.size());
+        assertTrue(fs.get(1) instanceof ObjectParam);
+        assertEquals(2, ((ObjectParam) fs.get(1)).getType().getFields().size());
+        assertTrue(((ObjectParam) fs.get(1)).getType().getFields().get(1).getType() instanceof CycleObjectType);
 
     }
 
@@ -1291,10 +1290,44 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertTrue(param.getType() instanceof ObjectType);
 
         List<NamedTypedValue> fs = ((ObjectType) param.getType()).getFields();
-        assertEquals(1, fs.size());
-        assertTrue(fs.get(0) instanceof ObjectParam);
-        assertEquals(1, ((ObjectParam) fs.get(0)).getType().getFields().size());
-        assertTrue(((ObjectParam) fs.get(0)).getType().getFields().get(0).getType() instanceof CycleObjectType);
+        assertEquals(2, fs.size());
+        assertTrue(fs.get(1) instanceof ObjectParam);
+        assertEquals(2, ((ObjectParam) fs.get(1)).getType().getFields().size());
+        assertTrue(((ObjectParam) fs.get(1)).getType().getFields().get(1).getType() instanceof CycleObjectType);
+
+    }
+
+    @Test
+    public void test2DepthCycleAObj() throws JsonProcessingException, ClassNotFoundException {
+        EndpointSchema endpoint = getOneEndpoint("objCycleA");
+        assertEquals(1, endpoint.getRequestParams().size());
+
+        CycleAObj objA = new CycleAObj(){{
+            aID = "a";
+        }};
+        CycleBObj objAB = new CycleBObj(){{
+            bID = "ab";
+        }};
+        objA.obj = objAB;
+        CycleAObj objABA = new CycleAObj(){{
+            aID = "aba";
+        }};
+        objAB.obj = objABA;
+        CycleBObj objABAB = new CycleBObj(){{
+            bID = "abab";
+        }};
+        objABA.obj = objABAB;
+
+        String expectedJson = mapper.writeValueAsString(objA);
+
+        NamedTypedValue param = endpoint.getRequestParams().get(0);
+        assertTrue(param instanceof ObjectParam);
+        param.setValueBasedOnInstance(objA);
+        Object instance = param.newInstance();
+        assertTrue(instance instanceof CycleAObj);
+        String actualJson = mapper.writeValueAsString(instance);
+        assertEquals(expectedJson, actualJson);
+        assertEquals("{\"name\":\"arg0\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleAObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleAObj\",\"type\":\"CUSTOM_OBJECT\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"{}\",\"innerContent\":[{\"name\":\"aID\",\"type\":{\"fullTypeName\":\"java.lang.String\",\"fullTypeNameWithGenericType\":\"java.lang.String\",\"type\":\"STRING\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"a\",\"innerContent\":null,\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":true,\"maxInclusive\":true,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null},{\"name\":\"obj\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleBObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleBObj\",\"type\":\"CUSTOM_OBJECT\",\"example\":null,\"depth\":1,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"{}\",\"innerContent\":[{\"name\":\"bID\",\"type\":{\"fullTypeName\":\"java.lang.String\",\"fullTypeNameWithGenericType\":\"java.lang.String\",\"type\":\"STRING\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"ab\",\"innerContent\":null,\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":true,\"maxInclusive\":true,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null},{\"name\":\"obj\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleAObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleAObj\",\"type\":\"CUSTOM_CYCLE_OBJECT\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"{}\",\"innerContent\":[{\"name\":\"aID\",\"type\":{\"fullTypeName\":\"java.lang.String\",\"fullTypeNameWithGenericType\":\"java.lang.String\",\"type\":\"STRING\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"aba\",\"innerContent\":null,\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":true,\"maxInclusive\":true,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null},{\"name\":\"obj\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleBObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleBObj\",\"type\":\"CUSTOM_CYCLE_OBJECT\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"{}\",\"innerContent\":[{\"name\":\"bID\",\"type\":{\"fullTypeName\":\"java.lang.String\",\"fullTypeNameWithGenericType\":\"java.lang.String\",\"type\":\"STRING\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":\"abab\",\"innerContent\":null,\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":true,\"maxInclusive\":true,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null},{\"name\":\"obj\",\"type\":{\"fullTypeName\":\"com.thrift.example.artificial.CycleAObj\",\"fullTypeNameWithGenericType\":\"com.thrift.example.artificial.CycleAObj\",\"type\":\"CUSTOM_CYCLE_OBJECT\",\"example\":null,\"depth\":0,\"fixedItems\":null,\"precision\":-1},\"stringValue\":null,\"innerContent\":[],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}],\"isNullable\":true,\"minSize\":null,\"maxSize\":null,\"minValue\":null,\"maxValue\":null,\"precision\":null,\"scale\":null,\"minInclusive\":false,\"maxInclusive\":false,\"pattern\":null,\"candidates\":null,\"candidateReferences\":null,\"isMutable\":true,\"defaultValue\":null}",mapper.writeValueAsString(param.getDto()));
 
     }
 
