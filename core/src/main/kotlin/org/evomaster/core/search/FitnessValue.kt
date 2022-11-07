@@ -11,6 +11,7 @@ import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.math.max
 import kotlin.math.min
 
 /**
@@ -168,13 +169,14 @@ class FitnessValue(
 
     /**
      * this method is to report the union results with targets at boot-time
+     * @param unavailableBootTime is a value to represent the number of boot-time targets when the boot-time info is unavailable, ie, negative
      *
      * @return a number of targets covered during various phases ie,
      *          at boot-time (negative means that the boot-time info is unavailable), during search, and at the end
      */
-    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int = -1): TargetStatistic{
+    fun unionWithBootTimeCoveredTargets(prefix: String?, idMapper: IdMapper, bootTimeInfoDto: BootTimeInfoDto?, unavailableBootTime: Int): TargetStatistic{
         if (bootTimeInfoDto?.targets == null){
-            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { TargetStatistic(unavailableBootTime,this) }
+            return (if (prefix == null) coveredTargets() else coveredTargets(prefix, idMapper)).run { TargetStatistic(unavailableBootTime,this, max(unavailableBootTime,0)+this) }
         }
         val bootTime = bootTimeInfoDto.targets.filter { it.value == MAX_VALUE && (prefix == null || it.descriptiveId.startsWith(prefix)) }
         // counter for duplicated targets
@@ -203,7 +205,7 @@ class FitnessValue(
         }
 
         */
-        return TargetStatistic(bootTime.size, searchTime)
+        return TargetStatistic(bootTime.size, searchTime, bootTime.size + searchTime - duplicatedcounter)
     }
 
     fun coverTarget(id: Int) {
