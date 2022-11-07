@@ -301,7 +301,7 @@ class ImpactUtils {
 
         fun findMutatedGene(genes: List<Gene>, gene : Gene, includeSameValue : Boolean = false) : Gene?{
             val template = ParamUtil.getValueGene(gene)
-            return genes.filter {o->
+            return genes.filter { it.isMutable() }.filter {o->
                 val g = ParamUtil.getValueGene(o)
                 g.name == template.name && g::class.java.simpleName == template::class.java.simpleName
                         && (includeSameValue
