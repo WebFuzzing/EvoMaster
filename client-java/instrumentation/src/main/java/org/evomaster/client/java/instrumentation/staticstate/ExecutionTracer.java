@@ -59,6 +59,8 @@ public class ExecutionTracer {
      */
     private static int actionIndex = 0;
 
+    private static String actionName = null;
+
     /**
      * A set of possible values used in the tests, needed for some kinds
      * of taint analyses
@@ -115,6 +117,7 @@ public class ExecutionTracer {
         synchronized (lock) {
             objectiveCoverage.clear();
             actionIndex = 0;
+            actionName = null;
             additionalInfoList.clear();
             additionalInfoList.add(new AdditionalInfo());
             inputVariables = new HashSet<>();
@@ -191,6 +194,8 @@ public class ExecutionTracer {
                 actionIndex = action.getIndex();
                 additionalInfoList.add(new AdditionalInfo());
             }
+
+            actionName = action.getName();
 
             if (action.getInputVariables() != null && !action.getInputVariables().isEmpty()) {
                 inputVariables = action.getInputVariables();
