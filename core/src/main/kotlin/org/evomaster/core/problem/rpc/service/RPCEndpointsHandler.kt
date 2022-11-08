@@ -40,6 +40,7 @@ import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.FlexibleCycleObjectGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -758,7 +759,22 @@ class RPCEndpointsHandler {
                 }
                 is CycleObjectGene ->{
                     if (dto.innerContent != null){
-                        LoggingUtil.uniqueWarn(log, "NOT support to handle cycle object with more than 2 depth")
+                        if (valueGene.refType!=null && valueGene.parent != null && valueGene.parent is FlexibleCycleObjectGene){
+                            val template = typeCache[valueGene.refType]
+                            if (template == null || template !is ObjectGene){
+                                LoggingUtil.uniqueWarn(log, "Cannot find object gene with ${valueGene.refType} in cached types")
+                            }else{
+                                val replaced = template.copy() as ObjectGene
+                                (valueGene.parent as FlexibleCycleObjectGene).replaceGeneTo(replaced)
+                                replaced.fields.forEach { f->
+                                    val pdto = dto.innerContent.find { it.name == f.name }
+                                        ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
+                                    setGeneBasedOnParamDto(f, pdto)
+                                }
+                            }
+                        }else{
+                            LoggingUtil.uniqueWarn(log, "NOT support to handle cycle object with more than 2 depth (refType: ${valueGene.refType}, parent: ${valueGene.parent?.javaClass?.name?:"null-parent"})")
+                        }
                     }
                 }
                 else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and dto (${dto.type.type})")
@@ -927,7 +943,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.MAP -> handleMapParam(param, building)
             RPCSupportedDataType.UTIL_DATE -> handleUtilDate(param)
             RPCSupportedDataType.CUSTOM_OBJECT -> handleObjectParam(param)
-            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> CycleObjectGene(param.name)
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> FlexibleCycleObjectGene(param.name, CycleObjectGene(param.name, param.type.fullTypeNameWithGenericType))
             RPCSupportedDataType.PAIR -> throw IllegalStateException("ERROR: pair should be handled inside Map")
             RPCSupportedDataType.BIGINTEGER ->
                 BigIntegerGene(param.name, min = param.minValue?.toBigIntegerOrNull(), max = param.maxValue?.toBigIntegerOrNull(),
