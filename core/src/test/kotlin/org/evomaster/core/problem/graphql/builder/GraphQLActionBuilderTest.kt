@@ -198,12 +198,12 @@ class GraphQLActionBuilderTest {
         assertTrue(lessonCodeSnippets.parameters[3] is GQReturnParam)
         assertTrue(lessonCodeSnippets.parameters[3].gene is ObjectGene)
 
-        val objLessonCodeSnippets= lessonCodeSnippets.parameters[3].gene as ObjectGene
+        val objLessonCodeSnippets = lessonCodeSnippets.parameters[3].gene as ObjectGene
         assertTrue(objLessonCodeSnippets.fields.any { it is TupleGene && it.name == "linkedFrom" })
 
         val tupleLinkedFrom = objLessonCodeSnippets.fields.first { it.name == "linkedFrom" } as TupleGene
         assertEquals(2, tupleLinkedFrom.elements.size)
-        assertTrue(tupleLinkedFrom.elements.any { it is OptionalGene && it.gene is ObjectGene  && it.name == "linkedFrom" })
+        assertTrue(tupleLinkedFrom.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "linkedFrom" })
 
         val objLinkedFrom = (tupleLinkedFrom.elements[1] as OptionalGene).gene as ObjectGene
         assertEquals(2, objLinkedFrom.fields.size)
@@ -492,7 +492,8 @@ class GraphQLActionBuilderTest {
     fun interfaceEgFunctionTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfaceEgFunction.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfaceEgFunction.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -536,7 +537,8 @@ class GraphQLActionBuilderTest {
     fun interfaceInternalEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfaceInternalEg.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/interfaceInternalEg.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -575,7 +577,8 @@ class GraphQLActionBuilderTest {
     fun unionInternalEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalEg.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalEg.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -614,7 +617,8 @@ class GraphQLActionBuilderTest {
     fun unionInternalFunctionsEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalFunctionsEg.json").readText()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalFunctionsEg.json")
+            .readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -663,7 +667,8 @@ class GraphQLActionBuilderTest {
     fun unionInternalRecEgTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalRecEg.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalRecEg.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -700,7 +705,8 @@ class GraphQLActionBuilderTest {
     fun unionInternalRecEg2Test() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalRecEg2.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/unionInternalRecEg2.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -801,7 +807,7 @@ class GraphQLActionBuilderTest {
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/abstract2.json").readText()
 
         val config = EMConfig()
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, max(config.treeDepth,5))
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, max(config.treeDepth, 5))
         assertEquals(2, actionCluster.size)
 
         val a = actionCluster["a"] as GraphQLAction
@@ -836,8 +842,9 @@ class GraphQLActionBuilderTest {
     fun functionInReturnedObjectsTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/functionInReturnedObjectsBase.json")
-            .readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/functionInReturnedObjectsBase.json")
+                .readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -941,8 +948,9 @@ class GraphQLActionBuilderTest {
     fun functionInReturnedObjectsWithOutBooleanSelectionTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/functionInReturnedObjectsBase.json")
-            .readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/functionInReturnedObjectsBase.json")
+                .readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1093,6 +1101,16 @@ class GraphQLActionBuilderTest {
         assertTrue(objMediaa.fields.any { it is BooleanGene && it.name == "id" })
         assertTrue(objMediaa.fields.any { it is BooleanGene && it.name == "modNotes" })
 
+        /**/
+        val saveMessageActivity = actionCluster["SaveMessageActivity"] as GraphQLAction
+        assertTrue(saveMessageActivity.parameters[6].gene is ObjectGene)
+        val objMessageActivity = saveMessageActivity.parameters[6].gene as ObjectGene
+        assertTrue(objMessageActivity.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "recipient" })
+        val objUser2 = (objMessageActivity.fields[13] as OptionalGene).gene as ObjectGene
+        assertTrue(objUser2.fields.any { it is TupleGene && it.name == "favourites" })
+        val tupleFavourites2 = objUser2.fields.first { it is TupleGene && it.name == "favourites" } as TupleGene
+        assertEquals(2, tupleFavourites2.elements.size)
+        assertTrue(tupleFavourites2.elements.any { it.getWrappedGene(ObjectGene::class.java) != null })
     }
 
     @Test
@@ -1134,8 +1152,9 @@ class GraphQLActionBuilderTest {
     fun historyInFunctionInReturnedObject() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/HistoryInFunctionInReturnedObject.json")
-            .readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/HistoryInFunctionInReturnedObject.json")
+                .readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1165,7 +1184,7 @@ class GraphQLActionBuilderTest {
         val tupleAbout = objUser.fields.first { it.name == "about" } as TupleGene
         assertEquals(1, tupleAbout.elements.size)
         assertTrue(tupleAbout.elements.any { it is OptionalGene && it.gene is BooleanGene && it.name == "AsHtml" })
-        /**/
+/**/
         val pageInfo = actionCluster["pageInfo"] as GraphQLAction
         assertEquals(1, pageInfo.parameters.size)
         assertTrue(pageInfo.parameters[0] is GQReturnParam)
@@ -1181,7 +1200,7 @@ class GraphQLActionBuilderTest {
         assertTrue(tupleTotal.elements.any { it is OptionalGene && it.gene is IntegerGene && it.name == "id" })
         assertTrue((tupleTotal.elements.last() as OptionalGene).gene is ObjectGene)
 
-        /**/
+/**/
         assertTrue(objPageInfo.fields.any { it is TupleGene && it.name == "total2" })
     }
 
@@ -1285,7 +1304,8 @@ class GraphQLActionBuilderTest {
     fun barcelonaUrbanMobilityTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/barcelonaUrbanMobility.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/online/barcelonaUrbanMobility.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1321,7 +1341,8 @@ class GraphQLActionBuilderTest {
     fun demotivationQuotesTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/demotivationQuotes.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/online/demotivationQuotes.json").readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1465,7 +1486,8 @@ class GraphQLActionBuilderTest {
     fun allLimitReachedTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/allLimitReached.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/allLimitReached.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, 2)
 
@@ -1476,13 +1498,13 @@ class GraphQLActionBuilderTest {
     fun allLimitNotReachedTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/allLimitNotReached.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/allLimitNotReached.json").readText()
 
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, 2)
 
         assertEquals(2, actionCluster.size)
     }
-
 
 
     @Test
@@ -1501,7 +1523,9 @@ class GraphQLActionBuilderTest {
     fun fieldWithDifferentArgumentTest() {
 
         val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/fieldWithDifferentArgument.json").readText()
+        val json =
+            GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/fieldWithDifferentArgument.json")
+                .readText()
 
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
@@ -1512,7 +1536,7 @@ class GraphQLActionBuilderTest {
         val entryCollection = actionCluster["entryCollection"] as GraphQLAction
         assertEquals(3, entryCollection.parameters.size)
         assertTrue(entryCollection.parameters[0] is GQInputParam)
-        assertTrue((entryCollection.parameters[0].gene as OptionalGene).gene.name == "skip" )
+        assertTrue((entryCollection.parameters[0].gene as OptionalGene).gene.name == "skip")
         assertTrue((entryCollection.parameters[0].gene as OptionalGene).gene is IntegerGene)
 
         assertTrue(entryCollection.parameters[1] is GQInputParam)
@@ -1522,17 +1546,17 @@ class GraphQLActionBuilderTest {
         assertTrue(entryCollection.parameters[2] is GQReturnParam)
         assertTrue(entryCollection.parameters[2].gene is ObjectGene)
 
-        val objEntryCollection= entryCollection.parameters[2].gene as ObjectGene
+        val objEntryCollection = entryCollection.parameters[2].gene as ObjectGene
         assertTrue(objEntryCollection.fields.any { it is BooleanGene && it.name == "total" })
 
-        /**/
+/**/
 
         val lessonCodeSnippets = actionCluster["lessonCodeSnippets"] as GraphQLAction
         assertEquals(1, lessonCodeSnippets.parameters.size)
         assertTrue(lessonCodeSnippets.parameters[0] is GQReturnParam)
         assertTrue(lessonCodeSnippets.parameters[0].gene is ObjectGene)
 
-        val objLessonCodeSnippets= lessonCodeSnippets.parameters[0].gene as ObjectGene
+        val objLessonCodeSnippets = lessonCodeSnippets.parameters[0].gene as ObjectGene
         assertTrue(objLessonCodeSnippets.fields.any { it is TupleGene && it.name == "entryCollection" })
 
         val tupleEntryCollection = objLessonCodeSnippets.fields.first { it.name == "entryCollection" } as TupleGene
@@ -1540,7 +1564,6 @@ class GraphQLActionBuilderTest {
 
         assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.name == "skip" })
         assertTrue(tupleEntryCollection.elements.any { it is OptionalGene && it.gene is ObjectGene && it.name == "entryCollection" })
-
 
 
     }
