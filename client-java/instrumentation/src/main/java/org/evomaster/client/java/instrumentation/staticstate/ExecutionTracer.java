@@ -59,6 +59,7 @@ public class ExecutionTracer {
      */
     private static int actionIndex = 0;
 
+
     private static String actionName = null;
 
     /**
@@ -129,6 +130,12 @@ public class ExecutionTracer {
             skippedHostName.clear();
         }
     }
+
+
+    public static String getActionName() {
+        return actionName;
+    }
+
 
     public static final String SET_LAST_CALLER_CLASS_METHOD_NAME = "setLastCallerClass";
 
@@ -392,6 +399,10 @@ public class ExecutionTracer {
 
     public static void markLastExecutedStatement(String lastLine, String lastMethod) {
         getCurrentAdditionalInfo().pushLastExecutedStatement(lastLine, lastMethod);
+    }
+
+    public static String getLastExecutedStatement(){
+        return getCurrentAdditionalInfo().getLastExecutedStatement();
     }
 
     public static final String COMPLETED_LAST_EXECUTED_STATEMENT_NAME = "completedLastExecutedStatement";
