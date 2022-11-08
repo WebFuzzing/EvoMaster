@@ -20,7 +20,7 @@ public class ObjectType extends TypeSchema {
     /**
      * a list of generic types
      */
-    private final List<String> genericTypes;
+    protected final List<String> genericTypes;
 
 
     public ObjectType(String type, String fullTypeName, List<NamedTypedValue> fields, Class<?> clazz, List<String> genericTypes) {

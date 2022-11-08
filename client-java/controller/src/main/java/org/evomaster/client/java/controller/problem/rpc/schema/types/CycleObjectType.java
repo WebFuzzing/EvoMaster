@@ -16,6 +16,11 @@ public class CycleObjectType extends ObjectType{
         super(type, fullTypeName, new ArrayList<>(), clazz, genericTypes);
     }
 
+    public CycleObjectType copyContent(){
+        List<String> genericTypes = this.genericTypes != null? new ArrayList<>(this.genericTypes): null;
+        return new CycleObjectType(getType(), getFullTypeName(), getClazz(), genericTypes);
+    }
+
     @Override
     public TypeDto getDto() {
         TypeDto dto = super.getDto();

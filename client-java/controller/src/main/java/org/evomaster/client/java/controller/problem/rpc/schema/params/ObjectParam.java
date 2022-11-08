@@ -124,7 +124,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         List<NamedTypedValue> values = new ArrayList<>();
         List<NamedTypedValue> fields = getType().getFields();
 
-        if (instance != null){
+        if (instance != null && (fields == null || fields.isEmpty())){
             List<NamedTypedValue> fs = getFieldsForCycleObjectType();
             if (fs != null)
                 fields = fs;
