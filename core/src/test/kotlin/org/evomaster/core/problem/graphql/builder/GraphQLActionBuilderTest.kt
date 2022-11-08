@@ -1110,7 +1110,15 @@ class GraphQLActionBuilderTest {
         assertTrue(objUser2.fields.any { it is TupleGene && it.name == "favourites" })
         val tupleFavourites2 = objUser2.fields.first { it is TupleGene && it.name == "favourites" } as TupleGene
         assertEquals(2, tupleFavourites2.elements.size)
-        assertTrue(tupleFavourites2.elements.any { it.getWrappedGene(ObjectGene::class.java) != null })
+        assertTrue(tupleFavourites2.elements.any { it.getWrappedGene(ObjectGene::class.java)?.name=="favourites" })
+
+        val objFavorites = (tupleFavourites2.elements.last() as OptionalGene).gene as ObjectGene
+        assertEquals(5, objFavorites.fields.size)
+        assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "anime" && it.elements.size==3 && it.lastElementTreatedSpecially })
+        assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "manga" && it.elements.size==3 && it.lastElementTreatedSpecially })
+        assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "characters" && it.elements.size==3 && it.lastElementTreatedSpecially })
+        assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "staff" && it.elements.size==3 && it.lastElementTreatedSpecially })
+        assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "studios" && it.elements.size==3 && it.lastElementTreatedSpecially})
     }
 
     @Test
