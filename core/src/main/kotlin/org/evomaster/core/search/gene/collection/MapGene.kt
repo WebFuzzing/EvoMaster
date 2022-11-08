@@ -61,10 +61,20 @@ abstract class MapGene<K, V>(
         killAllChildren()
         log.trace("Randomizing MapGene")
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
-        (0 until n).forEach {
-            val gene = addRandomElement(randomness, false)
+
+        addNElements(n, randomness)
+
+        if (getSizeOfElements(false) < n && getSizeOfElements(false) < getMinSizeOrDefault()){
+            addNElements(n-getSizeOfElements(false), randomness)
+            if (getSizeOfElements(false)  < getMinSizeOrDefault())
+                log.warn("cannot create ${getMinSizeOrDefault()} elements in order to satisfy its ${getMinSizeOrDefault()} min size")
+        }
+    }
+
+    private fun addNElements(n : Int, randomness: Randomness){
+        (0 until n).forEach { _ ->
             // if the key of gene exists, the value would be replaced with the latest one
-            addElement(gene)
+            addElement(sampleRandomElementToAdd(randomness, false))
         }
     }
 
@@ -108,7 +118,7 @@ abstract class MapGene<K, V>(
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
-            val gene = addRandomElement(randomness, false)
+            val gene = sampleRandomElementToAdd(randomness, false)
             addElement(gene)
         } else {
             log.trace("Removing gene in mutation")
@@ -186,10 +196,10 @@ abstract class MapGene<K, V>(
      * add [element] (key to value) to [elements],
      * if the key of [element] exists in [elements],
      * we replace the existing one with [element]
+     * @return whether a new element is added
      */
-    fun addElement(element: PairGene<K, V>){
+    fun addElement(element: PairGene<K, V>) {
         checkConstraintsForAdd()
-
         getElementsBy(element).forEach { e->
             removeExistingElement(e)
         }
@@ -238,7 +248,7 @@ abstract class MapGene<K, V>(
         return listOf()
     }
 
-    private fun addRandomElement(randomness: Randomness, forceNewValue: Boolean) : PairGene<K, V> {
+    private fun sampleRandomElementToAdd(randomness: Randomness, forceNewValue: Boolean) : PairGene<K, V> {
         val keyName = "key_${keyCounter++}"
 
         val gene = template.copy() as PairGene<K, V>
