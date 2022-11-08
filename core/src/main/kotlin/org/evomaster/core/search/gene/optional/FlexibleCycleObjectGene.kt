@@ -19,6 +19,10 @@ class FlexibleCycleObjectGene(
             throw IllegalArgumentException("For a FlexibleCycleObjectGene, its gene is either ObjectGene or CycleObjectGene")
     }
 
+    override fun copyContent(): FlexibleCycleObjectGene {
+        return FlexibleCycleObjectGene(name, gene, replaceable)
+    }
+
     override fun replaceGeneTo(geneToUpdate: Gene) {
         if (geneToUpdate !is ObjectGene && geneToUpdate !is CycleObjectGene)
             throw IllegalArgumentException("For a FlexibleCycleObjectGene, its gene is either ObjectGene or CycleObjectGene")

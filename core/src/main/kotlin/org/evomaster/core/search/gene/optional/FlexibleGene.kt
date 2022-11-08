@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory
  */
 open class FlexibleGene(name: String,
                    gene: Gene,
-                   private var replaceable: Boolean = true
+                   protected var replaceable: Boolean = true
 ) : CompositeGene(name, mutableListOf(gene)) {
 
     init {

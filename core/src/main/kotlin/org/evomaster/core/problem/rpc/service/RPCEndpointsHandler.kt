@@ -438,7 +438,7 @@ class RPCEndpointsHandler {
 
         setAuthInfo(infoDto)
 
-        // handle seeded test dto
+        // handle seeded external service info dto
         infoDto.rpcProblem.seededTestDtos?.forEach { t->
             t.forEach { a->
                 extractRPCExternalServiceAction(infoDto, a)
@@ -831,7 +831,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> valueGene is ArrayGene<*>
             RPCSupportedDataType.MAP -> valueGene is FixedMapGene<*, *>
             RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is FixedMapGene<*, *>
-            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene || valueGene is FlexibleCycleObjectGene
             RPCSupportedDataType.UTIL_DATE -> valueGene is DateTimeGene
             RPCSupportedDataType.PAIR -> valueGene is PairGene<*, *>
             RPCSupportedDataType.BIGDECIMAL -> valueGene is BigDecimalGene
