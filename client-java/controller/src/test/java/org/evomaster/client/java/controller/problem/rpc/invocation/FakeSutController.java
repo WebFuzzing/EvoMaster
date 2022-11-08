@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.problem.rpc.invocation;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thrift.example.artificial.BigNumberObj;
 import com.thrift.example.artificial.RPCInterfaceExample;

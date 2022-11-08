@@ -4,6 +4,10 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 
+/**
+ * there might be a case where the 2 depth cycle is not enough to handle seeded value or responses
+ * this class allows to replace a CycleObject with its ObjectGene based on the refType
+ */
 class FlexibleCycleObjectGene(
     name: String,
     gene: Gene,
