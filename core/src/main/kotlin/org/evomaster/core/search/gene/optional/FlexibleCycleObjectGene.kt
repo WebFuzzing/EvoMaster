@@ -20,7 +20,7 @@ class FlexibleCycleObjectGene(
     }
 
     override fun copyContent(): FlexibleCycleObjectGene {
-        return FlexibleCycleObjectGene(name, gene, replaceable)
+        return FlexibleCycleObjectGene(name, gene.copy(), replaceable)
     }
 
     override fun replaceGeneTo(geneToUpdate: Gene) {

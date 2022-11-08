@@ -660,6 +660,19 @@ class RPCEndpointsHandler {
             }
             is ObjectGene -> {
                 valueGene.fields.forEach { f->
+                    val cpdto = dto.innerContent.find { it.name == f.name }
+                    if (cpdto == null){
+                        if (valueGene.parent is FlexibleCycleObjectGene){
+                            Lazy.assert { dto.innerContent == null || dto.innerContent.isEmpty() }
+                            val found = actionSchemaCluster.values
+                                .flatMap { it.requestParams }
+                                .find { p-> p.type.fullTypeNameWithGenericType == valueGene.refType  || p.findObjectByTypeName(valueGene.refType) != null}
+                                ?:throw IllegalStateException("could not find template object (${valueGene.refType}) in actionSchemaCluster")
+                            val objTemplate = if (found.type.fullTypeNameWithGenericType == valueGene.refType) found else found.findObjectByTypeName(valueGene.refType)
+                            dto.innerContent = (objTemplate!!.copy()).innerContent
+                        }else
+                            throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
+                    }
                     val pdto = dto.innerContent.find { it.name == f.name }
                         ?:throw IllegalStateException("could not find the field (${f.name}) in ParamDto")
                     transformGeneToParamDto(f, pdto)
@@ -758,7 +771,7 @@ class RPCEndpointsHandler {
                     }
                 }
                 is CycleObjectGene ->{
-                    if (dto.innerContent != null){
+                    if (!isNullDto(dto) && dto.innerContent != null && dto.innerContent.isNotEmpty()){
                         if (valueGene.refType!=null && valueGene.parent != null && valueGene.parent is FlexibleCycleObjectGene){
                             val template = typeCache[valueGene.refType]
                             if (template == null || template !is ObjectGene){
@@ -831,7 +844,7 @@ class RPCEndpointsHandler {
             RPCSupportedDataType.ARRAY, RPCSupportedDataType.SET, RPCSupportedDataType.LIST-> valueGene is ArrayGene<*>
             RPCSupportedDataType.MAP -> valueGene is FixedMapGene<*, *>
             RPCSupportedDataType.CUSTOM_OBJECT -> valueGene is ObjectGene || valueGene is FixedMapGene<*, *>
-            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene || valueGene is FlexibleCycleObjectGene
+            RPCSupportedDataType.CUSTOM_CYCLE_OBJECT -> valueGene is CycleObjectGene || valueGene is FlexibleCycleObjectGene || valueGene is ObjectGene
             RPCSupportedDataType.UTIL_DATE -> valueGene is DateTimeGene
             RPCSupportedDataType.PAIR -> valueGene is PairGene<*, *>
             RPCSupportedDataType.BIGDECIMAL -> valueGene is BigDecimalGene
