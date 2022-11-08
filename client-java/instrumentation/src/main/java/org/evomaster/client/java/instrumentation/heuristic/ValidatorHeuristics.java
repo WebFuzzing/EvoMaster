@@ -4,7 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
 /**
- * Heuristics calculation for Java Beans, when dealin with javax.validation constraints
+ * Heuristics calculation for Java Beans, when dealing with javax.validation constraints
  */
 public class ValidatorHeuristics {
 
@@ -34,11 +34,41 @@ public class ValidatorHeuristics {
             }
 
 
+
+
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e){
             throw new RuntimeException(e);
         }
 
         return null; //TODO
     }
+
+    /*
+        TODO handle all annotations
+        TODO future ll need to handle Jakarta as well
+
+AssertFalse
+AssertTrue
+DecimalMax
+DecimalMin
+Digits
+Email
+Future
+FutureOrPresent
+Max
+Min
+Negative
+NegativeOrZero
+NotBlank
+NotEmpty
+NotNull
+Null
+Past
+PastOrPresent
+Pattern
+Positive
+PositiveOrZero
+Size
+             */
 
 }
