@@ -1058,18 +1058,54 @@ class GraphQLActionBuilderTest {
         assertTrue(page.parameters[1] is GQInputParam)
         assertTrue(page.parameters[2] is GQReturnParam)
 
+        /**/
         //primitive type that is not part of the search
         //query will look like: {GenreCollection}
         val genreCollection = actionCluster["GenreCollection"] as GraphQLAction
 
         val mediaTagCollection = actionCluster["MediaTagCollection"] as GraphQLAction
         assertTrue(mediaTagCollection.parameters[1].gene is ObjectGene)
-
+        /**/
         val objPage = page.parameters[2].gene as ObjectGene
         assertTrue(objPage.fields[0] is OptionalGene)
         val objPageInfo = (objPage.fields[0] as OptionalGene).gene as ObjectGene
         objPageInfo.fields.any { it is BooleanGene && it.name == "Total" }
         assertTrue(objPageInfo.fields[0] is BooleanGene)
+//
+        assertTrue(objPage.fields.any { it is TupleGene && it.name == "activities" && it.lastElementTreatedSpecially} )
+
+        val tupleActivities = objPage.fields.first { it is TupleGene && it.name == "activities" } as TupleGene
+        assertTrue(tupleActivities.elements.any { it.getWrappedGene(ObjectGene::class.java)?.name=="activities#UNION#" })
+
+        val unionObjectActivities = (tupleActivities.elements.last() as OptionalGene).gene as ObjectGene
+
+        assertEquals(3, unionObjectActivities.fields.size)
+
+        assertTrue(unionObjectActivities.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name=="MessageActivity" })
+        val objMessageActivity2 = (unionObjectActivities.fields[2] as OptionalGene).gene as ObjectGene
+
+       assertTrue(objMessageActivity2.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "messenger" })
+        val objUser3 = (objMessageActivity2.fields[14] as OptionalGene).gene as ObjectGene
+        assertTrue(objUser3.fields.any { it is TupleGene && it.name == "favourites" })
+        val tupleFavourites3 = objUser3.fields.first { it is TupleGene && it.name == "favourites" } as TupleGene
+        assertEquals(2, tupleFavourites3.elements.size)
+        assertTrue(tupleFavourites3.elements.any { it.getWrappedGene(ObjectGene::class.java)?.name=="favourites" })
+
+
+        val objFavorites3 = (tupleFavourites3.elements.last() as OptionalGene).gene as ObjectGene
+        assertEquals(5, objFavorites3.fields.size)
+        assertTrue(objFavorites3.fields.any { it is TupleGene && it.name == "anime"  })
+        assertTrue(objFavorites3.fields.any { it is TupleGene && it.name == "anime" && it.elements.size==3  })
+        assertTrue(objFavorites3.fields.any { it is TupleGene && it.name == "anime" && it.lastElementTreatedSpecially })
+
+
+        assertTrue(objFavorites3.fields.any { it is TupleGene && it.name == "manga" && it.elements.size==3 && it.lastElementTreatedSpecially })
+        assertTrue(objFavorites3.fields.any { it is TupleGene && it.name == "characters" && it.elements.size==3 && it.lastElementTreatedSpecially })
+        assertTrue(objFavorites3.fields.any { it is TupleGene && it.name == "staff" && it.elements.size==3 && it.lastElementTreatedSpecially })
+        assertTrue(objFavorites3.fields.any { it is TupleGene && it.name == "studios" && it.elements.size==3 && it.lastElementTreatedSpecially})
+
+
+ //
         /**/
         val media = actionCluster["Media"] as GraphQLAction
         assertEquals(67, media.parameters.size)
