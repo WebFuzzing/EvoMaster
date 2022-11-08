@@ -167,4 +167,17 @@ public class ParamDto {
         stringValue = NOT_NULL_MARK_OBJ_DATE;
     }
 
+    public ParamDto findObjectByTypeName(String typeName){
+        if (typeName == null || innerContent == null || innerContent.isEmpty()) return null;
+        for (ParamDto p : innerContent){
+            if (p.type.fullTypeNameWithGenericType.equals(typeName) && p.innerContent != null && !p.innerContent.isEmpty()){
+                return p;
+            }
+            ParamDto ip = p.findObjectByTypeName(typeName);
+            if (ip != null)
+                return ip;
+        }
+        return null;
+    }
+
 }
