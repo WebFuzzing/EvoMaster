@@ -15,16 +15,17 @@ import org.evomaster.core.search.service.Randomness
  * TODO need to handle cases when some of those are
  * marked with "required"
  *
- * Note that for [CycleObjectGene], its [refType] is null
+ * link CycleObjectGene with ObjectGene using [refType] if it has
+ * eg, for RPC, refType is the full name of jvm class
  */
-class CycleObjectGene(name: String) : SimpleGene(name) {
+class CycleObjectGene(name: String, val refType : String? = null) : SimpleGene(name) {
 
     override fun isMutable() = false
 
     override fun isLocallyValid() : Boolean{
         return true
     }
-    override fun copyContent(): Gene = CycleObjectGene(name)
+    override fun copyContent(): Gene = CycleObjectGene(name, refType)
 
     override fun setValueWithRawString(value: String) {
         throw IllegalStateException("cannot set value with string ($value) for CycleObjectGene")
