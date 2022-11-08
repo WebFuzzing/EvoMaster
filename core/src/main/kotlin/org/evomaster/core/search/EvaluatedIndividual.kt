@@ -588,6 +588,25 @@ class EvaluatedIndividual<T>(
      * sync impact info based on [mutated]
      */
     private fun syncImpact(previous: Individual, mutated: Individual) {
+        // db action
+        mutated.seeInitializingActions().forEachIndexed { index, action ->
+            action.seeTopGenes().filter { it.isMutable() }.forEach { sg ->
+                val rootGeneId = ImpactUtils.generateGeneId(mutated, sg)
+                val p = previous.seeInitializingActions().getOrNull(index)?.seeTopGenes()?.find {
+                    rootGeneId == ImpactUtils.generateGeneId(previous, it)
+                }
+                if (p != null){
+                    impactInfo!!.getGene(
+                        localId = action.getLocalId(),
+                        fixedIndexedAction = false,
+                        actionName = action.getName(),
+                        actionIndex = index,
+                        fromInitialization = true,
+                        geneId = rootGeneId
+                    )?.syncImpact(p, sg)
+                }
+            }
+        }
 
         // fixed action
         mutated.seeFixedMainActions().forEachIndexed { index, action ->

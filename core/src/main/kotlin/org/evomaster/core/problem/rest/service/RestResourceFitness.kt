@@ -5,6 +5,7 @@ import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -71,6 +72,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         //run the test, one action at a time
         var indexOfAction = 0
 
+        val allServedHttpRequests = mutableListOf<HttpExternalServiceRequest>()
+
         RCallsLoop@
         for (call in individual.getResourceCalls()) {
 
@@ -123,6 +126,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                     // update creation of resources regarding response status
                     val restActionResult = actionResults.filterIsInstance<RestCallResult>()[indexOfAction]
                     call.getResourceNode().confirmFailureCreationByPost(call, restCallAction, restActionResult)
+
                     restActionResult.stopping = !ok
                 } else {
                     throw IllegalStateException("Cannot handle: ${restCallAction.javaClass}")
@@ -130,6 +134,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
                 // get visited wiremock instances
                 val requestedExternalServiceRequests = externalServiceHandler.getAllServedExternalServiceRequests()
+
+                allServedHttpRequests.addAll(requestedExternalServiceRequests)
+
                 if (requestedExternalServiceRequests.isNotEmpty()) {
                     fv.registerExternalServiceRequest(indexOfAction, requestedExternalServiceRequests)
                 }
@@ -175,6 +182,11 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         val allRestResults = actionResults.filterIsInstance<RestCallResult>()
         val dto = restActionResultHandling(individual, targets, allRestResults, fv) ?: return null
+
+        /*
+            harvest actual requests once all actions are executed
+         */
+        harvestResponseHandler.addHttpRequests(allServedHttpRequests)
 
         /*
             TODO: Man shall we update the action cluster based on expanded action?

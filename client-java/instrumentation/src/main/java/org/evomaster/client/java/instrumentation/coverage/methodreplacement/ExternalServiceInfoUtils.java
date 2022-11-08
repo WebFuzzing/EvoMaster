@@ -30,7 +30,9 @@ public class ExternalServiceInfoUtils {
      * skip method replacement for some hostname, eg,
      */
     public static boolean skipHostnameOrIp(String hostname){
-        return hostname.isEmpty() || hostname.startsWith("localhost") || hostname.startsWith("0.0.0") || hostname.startsWith("127.0.0.1");
+        return hostname.isEmpty() || hostname.startsWith("localhost") || hostname.startsWith("0.0.0")
+                || hostname.equals("127.0.0.1")
+                || hostname.startsWith("docker.socket");
     }
 
 

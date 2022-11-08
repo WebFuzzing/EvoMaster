@@ -1,0 +1,20 @@
+type Query {
+
+    flowersNullInNullOut(id: [Int]): Flower
+
+    flowersNullIn(id: [Int]!): Flower
+
+    flowersNullOut(id: [Int!]): Flower
+
+    flowersNotNullInOut(id: [Int!]!): Flower
+
+    flowersScalarNullable(id: Boolean):Flower
+
+    flowersScalarNotNullable(id: Boolean!):Flower
+
+}
+
+type Flower {
+    id: Int!
+    name: String!
+}

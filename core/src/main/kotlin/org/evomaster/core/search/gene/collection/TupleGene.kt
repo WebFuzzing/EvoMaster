@@ -170,7 +170,7 @@ class TupleGene(
         val i = it.getValueAsRawString()
         "${it.name} : $i"
     } else {
-        if (it is ObjectGene || (it is OptionalGene && it.gene is ObjectGene)) {
+        if (it is ObjectGene || (it.getWrappedGene(OptionalGene::class.java)?.gene  is ObjectGene)) {
             val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
             " $i"
         } else {

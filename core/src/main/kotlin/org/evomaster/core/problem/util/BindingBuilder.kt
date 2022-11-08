@@ -16,7 +16,7 @@ import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -114,10 +114,13 @@ object BindingBuilder {
             p.first.addBindingGene(p.second)
             p.second.addBindingGene(p.first)
         }
-        if(ok && !doBuildBindingGene && p.first is StringGene && TaintInputName.isTaintInput((p.first as StringGene).value)){
+
+        val first = ParamUtil.getValueGene(p.first)
+        val second = ParamUtil.getValueGene(p.second)
+        if(ok && !doBuildBindingGene && first is StringGene && TaintInputName.isTaintInput(first.value)){
             //do not use same tainted value in non-bound genes
-            if(p.second is StringGene){
-                (p.second as StringGene).value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+            if(second is StringGene){
+                second.value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
             } else {
                 //can this happen?
                 log.warn("Possible issue in dealing with uniqueness of tainted values. Gene type: ${p.second.javaClass}")
@@ -171,13 +174,13 @@ object BindingBuilder {
 
     private fun buildBindHeaderParam(p : HeaderParam, params: List<Param>): Pair<Gene, Gene>?{
         return params.find { it is HeaderParam && p.name == it.name}?.run {
-            Pair(p.gene, this.gene)
+            Pair(ParamUtil.getValueGene(p.gene), ParamUtil.getValueGene(this.gene))
         }
     }
 
     private fun buildBindFormParam(p : FormParam, params: List<Param>): Pair<Gene, Gene>?{
         return params.find { it is FormParam && p.name == it.name}?.run {
-            Pair(p.gene, this.gene)
+            Pair(ParamUtil.getValueGene(p.gene), ParamUtil.getValueGene(this.gene))
         }
     }
 
@@ -192,7 +195,7 @@ object BindingBuilder {
         }else{
             val sg = params.filter { pa -> !(pa is BodyParam) }.find { pa -> pa.name == p.name }
             if(sg != null){
-                return listOf(Pair(p.gene, sg.gene))
+                return listOf(Pair(ParamUtil.getValueGene(p.gene), ParamUtil.getValueGene(sg.gene)))
             }
         }
         return emptyList()
@@ -431,7 +434,7 @@ object BindingBuilder {
         (4 to setOf(LongGene::class.java.simpleName)),
         (5 to setOf(FloatGene::class.java.simpleName)),
         (6 to setOf(DoubleGene::class.java.simpleName)),
-        (7 to setOf(ArrayGene::class.java.simpleName, ObjectGene::class.java.simpleName, EnumGene::class.java.simpleName, CycleObjectGene::class.java.simpleName, MapGene::class.java.simpleName)),
+        (7 to setOf(ArrayGene::class.java.simpleName, ObjectGene::class.java.simpleName, EnumGene::class.java.simpleName, CycleObjectGene::class.java.simpleName, FixedMapGene::class.java.simpleName)),
         (8 to setOf(StringGene::class.java.simpleName, Base64StringGene::class.java.simpleName))
     )
 

@@ -37,7 +37,7 @@ class HttpExternalServiceAction(
     /**
      * WireMock server which received the request
      */
-    val externalService: ExternalService,
+    val externalService: HttpWsExternalService,
     active: Boolean = false,
     used: Boolean = false,
     private val id: Long
@@ -50,7 +50,7 @@ class HttpExternalServiceAction(
         }
     }
 
-    constructor(request: HttpExternalServiceRequest, template: String, externalService: ExternalService, id: Long) :
+    constructor(request: HttpExternalServiceRequest, template: String, externalService: HttpWsExternalService, id: Long) :
             this(request, buildResponse(template), externalService, id = id)
 
     /**
@@ -68,7 +68,8 @@ class HttpExternalServiceAction(
         //randomization might modify those values
         (response as HttpWsResponseParam).status.index = 0 // start with 200, otherwise can lose taint
         response.responseBody.isActive = true
-        (response.responseBody.gene as StringGene).forceTaintedValue()
+        if (response.responseBody.gene is StringGene)
+            (response.responseBody.gene as StringGene).forceTaintedValue()
     }
 
     override fun seeTopGenes(): List<out Gene> {

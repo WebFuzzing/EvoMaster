@@ -1,9 +1,9 @@
 package org.evomaster.core.search.gene.collection
 
-import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
@@ -20,13 +20,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-/**
- * FIXME: this needs to be refactored, as at the moment the
- * keys are strings that are fixed.
- * Keys should be of any basic type, and should be modifiable.
- *
- */
-class MapGene<K, V>(
+abstract class MapGene<K, V>(
     name: String,
     val template: PairGene<K, V>,
     val maxSize: Int? = null,
@@ -35,12 +29,9 @@ class MapGene<K, V>(
 ) : CollectionGene, CompositeGene(name, elements)
         where K : Gene, V: Gene {
 
-    constructor(name : String, key: K, value: V, maxSize: Int? = null, minSize: Int? = null): this(name,
-        PairGene("template", key, value), maxSize, minSize)
-
     private var keyCounter = 0
 
-    private val elements : List<PairGene<K, V>>
+    protected val elements : List<PairGene<K, V>>
         get() {
             return getViewOfChildren() as List<PairGene<K, V>>
         }
@@ -55,46 +46,13 @@ class MapGene<K, V>(
     companion object{
         private val log: Logger = LoggerFactory.getLogger(MapGene::class.java)
         const val MAX_SIZE = 5
+
+        fun isStringMap(gene: MapGene<*, *>) = gene.template.first is StringGene && gene.template.second is StringGene
     }
 
     override fun isLocallyValid(): Boolean {
         return (minSize == null || elements.size >= minSize) && (maxSize == null || elements.size <= maxSize)
     }
-
-    override fun copyContent(): Gene {
-        return MapGene(
-            name,
-            template.copy() as PairGene<K, V>,
-            maxSize,
-            minSize,
-            elements.map { e -> e.copy() as PairGene<K, V> }.toMutableList()
-        )
-    }
-
-    override fun copyValueFrom(other: Gene) {
-        if (other !is MapGene<*, *>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        killAllChildren()
-        // maxSize
-        val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
-            other.elements.subList(0, maxSize!!)
-        else other.elements)
-                .map { e -> e.copy() as PairGene<K, V> }
-                .toMutableList()
-        addChildren(copy)
-    }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is MapGene<*, *>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return this.elements.size == other.elements.size
-                && this.elements.zip(other.elements) { thisElem, otherElem ->
-            thisElem.containsSameValueAs(otherElem)
-        }.all { it }
-    }
-
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
@@ -108,6 +66,15 @@ class MapGene<K, V>(
             // if the key of gene exists, the value would be replaced with the latest one
             addElement(gene)
         }
+    }
+
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        /*
+            element is dynamically modified, then we do not collect impacts for it now.
+            thus for the internal genes, adaptive gene selection for mutation is not applicable
+        */
+        val s = randomness.choose(internalGenes)
+        return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(null, s))
     }
 
     override fun isMutable(): Boolean {
@@ -135,15 +102,6 @@ class MapGene<K, V>(
         return randomness.nextBoolean(p)
     }
 
-    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-        /*
-            element is dynamically modified, then we do not collect impacts for it now.
-            thus for the internal genes, adaptive gene selection for mutation is not applicable
-        */
-        val s = randomness.choose(internalGenes)
-        return listOf(s to additionalGeneMutationInfo.copyFoInnerGene(null, s))
-    }
-
     /**
      * leaf mutation for arrayGene is size mutation, i.e., 'remove' or 'add'
      */
@@ -168,13 +126,23 @@ class MapGene<K, V>(
 
         return "{" +
                 elements.filter { f ->
-                    isPrintable(f)
-                }.map {f->
+                    isPrintable(f) && !isInactiveOptionalGene(f.first) && !isInactiveOptionalGene(f.second)
+                }.joinToString(",") { f ->
                     """
-                    ${getKeyValueAsPrintableString(f.first, targetFormat)}:${f.second.getValueAsPrintableString(targetFormat = targetFormat)}
+                    ${getKeyValueAsPrintableString(f.first, targetFormat)}:${
+                        f.second.getValueAsPrintableString(
+                            targetFormat = targetFormat
+                        )
+                    }
                     """
-                }.joinToString(",") +
+                } +
                 "}"
+    }
+
+    private fun isInactiveOptionalGene(gene: Gene): Boolean{
+        val optional = gene.getWrappedGene(OptionalGene::class.java)?:return false
+
+        return !optional.isActive
     }
 
     private fun getKeyValueAsPrintableString(key: Gene, targetFormat: OutputFormat?): String {
@@ -184,15 +152,11 @@ class MapGene<K, V>(
         return keyString
     }
 
-    private fun isPrintable(pairGene: PairGene<K, V>): Boolean {
+    protected fun isPrintable(pairGene: PairGene<K, V>): Boolean {
         val keyT = ParamUtil.getValueGene(pairGene.first)
         val valueT = pairGene.second
         return (keyT is LongGene || keyT is StringGene || keyT is IntegerGene || keyT is EnumGene<*>) &&
                 (valueT !is CycleObjectGene && (valueT !is OptionalGene || valueT.isActive))
-    }
-
-    override fun isPrintable(): Boolean {
-        return isPrintable(template) && getViewOfChildren().all { it.isPrintable() }
     }
 
 
@@ -202,25 +166,6 @@ class MapGene<K, V>(
      */
     override fun mutationWeight(): Double {
         return 1.0 + elements.map { it.mutationWeight() }.sum()
-    }
-
-
-
-    /*
-        Note that value binding cannot be performed on the [elements]
-     */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if(gene is MapGene<*, *> && gene.template::class.java.simpleName == template::class.java.simpleName){
-            killAllChildren()
-            val elements = gene.elements.mapNotNull { it.copy() as? PairGene<K, V> }.toMutableList()
-            addChildren(elements)
-            return true
-        }
-        LoggingUtil.uniqueWarn(
-            log,
-            "cannot bind the MapGene with the template (${template::class.java.simpleName}) with the gene ${gene::class.java.simpleName}"
-        )
-        return false
     }
 
 
@@ -298,6 +243,13 @@ class MapGene<K, V>(
 
         val gene = template.copy() as PairGene<K, V>
         gene.randomize(randomness, forceNewValue)
+
+        /*
+            the key of template is tainted value, we force the key of newly created element is tainted as well
+         */
+        if (template.first is StringGene && TaintInputName.isTaintInput(template.first.getPossiblyTaintedValue())){
+            (gene.first as StringGene).forceTaintedValue()
+        }
 
         gene.name = keyName
         gene.first.name = keyName

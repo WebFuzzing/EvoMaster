@@ -6,6 +6,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.output.formatter.OutputFormatter
+import org.evomaster.core.output.service.TestWriterUtils.Companion.formatJsonWithEscapes
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.service.HttpWsAction
@@ -390,16 +391,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         val send = sendBodyCommand()
 
-        val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
-            OutputFormatter.JSON_FORMATTER.getFormatted(json)
-        } else {
-            json
-        }
-
-        //needed as JSON uses ""
-        val bodyLines = body.split("\n").map { s ->
-            "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
-        }
+        val bodyLines = formatJsonWithEscapes(json, format)
 
         if (bodyLines.size == 1) {
             if (!format.isCsharp()) {

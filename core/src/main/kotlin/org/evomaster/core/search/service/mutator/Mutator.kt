@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.external.service.httpws.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -48,6 +48,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
     @Inject
     protected lateinit var mwc : MutationWeightControl
+
+    @Inject
+    protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
     /**
      * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.
@@ -136,13 +139,20 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             // impact info is updated due to newly added initialization actions
             structureMutator.addInitializingActions(current, mutatedGenes)
 
+            val anyHarvestedExternalServiceActions = structureMutator.addAndHarvestExternalServiceActions(current, mutatedGenes)
+
             if (log.isTraceEnabled){
                 log.trace("now it is {}th, do addInitializingActions ends", i)
             }
 
             Lazy.assert{current.individual.verifyValidity(); true}
 
-            val mutatedInd = mutate(current, targets, mutatedGenes)
+            // skip to mutate the individual if any new harvested external actions are added
+            val mutatedInd = if (!anyHarvestedExternalServiceActions)
+                mutate(current, targets, mutatedGenes)
+            else
+                current.individual.copy() as T
+
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
             Lazy.assert{mutatedInd.verifyValidity(); true}
@@ -306,4 +316,6 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         }
         return current
     }
+
+
 }

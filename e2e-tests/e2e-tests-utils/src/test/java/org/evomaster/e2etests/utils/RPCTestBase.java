@@ -6,9 +6,9 @@ import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.collection.ArrayGene;
+import org.evomaster.core.search.gene.collection.MapGene;
 import org.evomaster.core.search.gene.interfaces.CollectionGene;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.gene.collection.MapGene;
 
 import java.util.ArrayList;
 import java.util.List;
