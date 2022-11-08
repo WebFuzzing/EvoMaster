@@ -889,6 +889,24 @@ abstract class Gene(
     }
 
     /**
+     *  A is bound with C
+     *  B is bound with C
+     *
+     *  then A and B should be considered as Bounded
+     *
+     *  might Deprecated this later, once the [bindingGenes]
+     *  contains all this 2 depth binding genes
+     */
+    fun is2DepthDirectBoundWith(gene: Gene) : Boolean{
+        if (isDirectBoundWith(gene)) return true
+
+        // 2 depth binding check
+        return bindingGenes.any { b->
+            b.isDirectBoundWith(gene)
+        }
+    }
+
+    /**
      * @return whether [this] is directly bound with [gene]
      */
     fun isDirectBoundWith(gene: Gene) = bindingGenes.contains(gene)
