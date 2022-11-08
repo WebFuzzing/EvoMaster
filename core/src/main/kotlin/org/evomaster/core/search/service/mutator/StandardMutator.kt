@@ -427,29 +427,21 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
             additionInfo!!.effectiveHistory.addAll(effective.mapNotNull {
                 val action = it.individual.findAction(isFromInit, if (position >= 0) position else null, localId)
-                // clean-up if the tests pass
-//                if (it.individual.seeActions(filter).isEmpty())
-//                    /*
-//                        if there exist actions structure and the group (e.g., dbInitialization) of actions is empty,
-//                        we do not find further possible impacts for it
-//                     */
-//                    if(it.individual.hasAnyAction()) null
-//                    else ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
-//                else
-//                    ImpactUtils.findMutatedGene(
-//                        it.individual.seeActions(filter)[position], gene, includeSameValue)
                 if (action != null)
                     ImpactUtils.findMutatedGene(action, gene, includeSameValue)
-                else
+                else if (!individual.hasAnyAction())
                     ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
+                else
+                    null
             })
 
             additionInfo.history.addAll(history.mapNotNull { e ->
                 val action = e.individual.findAction(isFromInit, if (position >= 0) position else null, localId)
                 (if (action != null)
                     ImpactUtils.findMutatedGene(action, gene, includeSameValue)
-                else
-                    ImpactUtils.findMutatedGene(e.individual.seeGenes(), gene, includeSameValue))?.run {
+                else if (!e.individual.hasAnyAction())
+                    ImpactUtils.findMutatedGene(e.individual.seeGenes(), gene, includeSameValue)
+                else null)?.run {
                     this to EvaluatedInfo(
                         index = e.index,
                         result = e.evaluatedResult,
@@ -457,32 +449,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                         specificTargets = if (!isFromInit) e.fitness.getTargetsByAction(position) else setOf()
                     )
                 }
-                // clean-up if the tests pass
-//                if (e.individual.seeActions(filter).isEmpty())
-//                    /*
-//                        if there exist actions structure and the group (e.g., dbInitialization) of actions is empty,
-//                        we do not find further possible impacts for it
-//                     */
-//                    if(e.individual.hasAnyAction()) null
-//                    else  ImpactUtils.findMutatedGene(
-//                           e.individual.seeGenes(), gene, includeSameValue)?.run {
-//                        this to EvaluatedInfo(
-//                                index =  e.index,
-//                                result = e.evaluatedResult,
-//                                targets = e.fitness.getViewOfData().keys,
-//                                specificTargets = if (!isFromInit) e.fitness.getTargetsByAction(position) else setOf()
-//                        )
-//                    }
-//                else
-//                    ImpactUtils.findMutatedGene(
-//                            e.individual.seeActions(filter)[position], gene, includeSameValue)?.run {
-//                        this to EvaluatedInfo(
-//                                index =  e.index,
-//                                result = e.evaluatedResult,
-//                                targets = e.fitness.getViewOfData().keys,
-//                                specificTargets = if (!isFromInit) e.fitness.getTargetsByAction(position) else setOf()
-//                        )
-//                    }
             })
         }
 

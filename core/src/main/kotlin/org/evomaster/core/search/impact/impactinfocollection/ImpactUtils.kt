@@ -75,7 +75,7 @@ class ImpactUtils {
                 is BigIntegerGene -> BigIntegerGeneImpact(id)
                 is NumericStringGene -> NumericStringGeneImpact(id, gene)
                 //sql
-                is NullableGene -> SqlNullableImpact(id, gene)
+                is NullableGene -> NullableImpact(id, gene)
                 is SqlJSONGene -> SqlJsonGeneImpact(id, gene)
                 is SqlXMLGene -> SqlXmlGeneImpact(id, gene)
                 is UUIDGene -> SqlUUIDGeneImpact(id, gene)
@@ -301,7 +301,7 @@ class ImpactUtils {
 
         fun findMutatedGene(genes: List<Gene>, gene : Gene, includeSameValue : Boolean = false) : Gene?{
             val template = ParamUtil.getValueGene(gene)
-            return genes.filter {o->
+            val found = genes.filter { it.isMutable() }.filter {o->
                 val g = ParamUtil.getValueGene(o)
                 g.name == template.name && g::class.java.simpleName == template::class.java.simpleName
                         && (includeSameValue
@@ -309,9 +309,10 @@ class ImpactUtils {
                                 if (g !is ArrayGene<*> && g !is FixedMapGene<*,*>) throw e else false
                             }
                         )
-            }.also {
-                if (it.size > 1)
-                    log.warn("{} genes have been mutated with the name {}",it.size, gene.name)
+            }
+            if (found.size == 1) return found.first()
+            return found.firstOrNull { it.getLocalId() == gene.getLocalId() }?: found.also {
+                if (it.size > 1) log.warn("{} genes have been mutated with the name {} and localId {}",it.size, gene.name, gene.getLocalId())
             }.firstOrNull()
         }
     }
