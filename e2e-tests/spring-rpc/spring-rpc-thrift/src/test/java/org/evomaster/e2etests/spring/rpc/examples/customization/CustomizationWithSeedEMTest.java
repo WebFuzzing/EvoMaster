@@ -30,6 +30,8 @@ public class CustomizationWithSeedEMTest extends SpringRPCTestBase {
                 "org.bar.CustomizationWithSeedEM",
                 300,
                 (args) -> {
+                    args.add("--seedTestCases");
+                    args.add("true");
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 
