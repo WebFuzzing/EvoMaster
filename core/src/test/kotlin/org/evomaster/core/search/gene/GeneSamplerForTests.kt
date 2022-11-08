@@ -112,6 +112,7 @@ object GeneSamplerForTests {
             FixedMapGene::class -> sampleFixedMapGene(rand) as T
             FlexibleMapGene::class -> sampleFlexibleMapGene(rand) as T
             FlexibleGene::class -> samplePrintableFlexibleGene(rand) as T
+            FlexibleCycleObjectGene::class -> sampleFlexibleCycleObjectGene(rand) as T
             NumericStringGene::class -> sampleNumericStringGene(rand) as T
             ObjectGene::class -> sampleObjectGene(rand) as T
             OptionalGene::class -> sampleOptionalGene(rand) as T
@@ -527,7 +528,12 @@ object GeneSamplerForTests {
         val valueTemplate = samplePrintableTemplate(selection, rand)
         return FlexibleGene(valueTemplate.name, valueTemplate)
     }
-    
+
+    fun sampleFlexibleCycleObjectGene(rand: Randomness) : FlexibleCycleObjectGene{
+        val gene = sampleCycleObjectGene(rand)
+        return FlexibleCycleObjectGene(gene.name, gene)
+    }
+
     fun sampleOptionalGene(rand: Randomness): OptionalGene {
 
         val selection = geneClasses.filter { !it.isAbstract }
@@ -805,7 +811,7 @@ object GeneSamplerForTests {
     }
 
     private fun samplePrintableTemplate(selection: List<KClass<out Gene>>,rand: Randomness) : Gene{
-        val filter = selection.filter { it != FlexibleGene::class }
+        val filter = selection.filter { !isFlexible(it) }
         var chosen = sample(rand.choose(filter), rand)
         while(!chosen.isPrintable()){
             chosen = sample(rand.choose(filter), rand)
@@ -813,6 +819,7 @@ object GeneSamplerForTests {
         return chosen
     }
 
+    private fun isFlexible(kclass : KClass<out Gene>) : Boolean = kclass == FlexibleGene::class || kclass == FlexibleCycleObjectGene::class || kclass == FlexibleMapGene::class
 
     private fun sampleTaintedArrayGene(rand: Randomness): TaintedArrayGene {
 
