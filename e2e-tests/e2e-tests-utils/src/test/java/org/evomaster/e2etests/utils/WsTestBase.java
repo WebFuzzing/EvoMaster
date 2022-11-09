@@ -28,6 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
+import org.opentest4j.AssertionFailedError;
 
 import java.io.File;
 import java.io.IOException;
@@ -411,11 +412,16 @@ public abstract class WsTestBase {
             }catch (OutOfMemoryError e){
                 throw e;
             }
-            //FIXME this is problematic, as assert and JUnit throw the same kind of error :( ll need refactoring of Lazy
-            //catch (AssertionError e){
-                //this happens if there is an internal bug in EM which leads to a broken invariant
-              //  throw e;
-            //}
+            catch (AssertionError e){
+                //this happens if there is an internal bug in EM which leads to a broken invariant.
+                //however, we do not want to rethrow JUnit asserts, as those are related to the
+                //flakiness we want to deal with here
+                if(e instanceof AssertionFailedError){
+                    error = e;
+                } else {
+                    throw e;
+                }
+            }
             catch (Throwable t){
                 error = t;
             }

@@ -10,7 +10,7 @@ import java.util.*
  * Represent the external service related information including
  * WireMock server and ExternalServiceInfo collected from SUT.
  */
-class ExternalService(
+class HttpWsExternalService(
     /**
      * External service information collected from SUT
      */
@@ -102,14 +102,19 @@ class ExternalService(
      *  reasons. Need to check why.
      */
     fun getAllServedRequests(): List<HttpExternalServiceRequest> {
-        return wireMockServer.allServeEvents.map {
+        return wireMockServer.allServeEvents.map { it ->
             HttpExternalServiceRequest(
                 it.id,
                 it.request.method.value(),
                 it.request.url,
                 it.request.absoluteUrl,
                 it.wasMatched,
-                getSignature()
+                getSignature(),
+                externalServiceInfo.getDescriptiveURLPath()+it.request.url,
+                // separated by a comma, https://www.rfc-editor.org/rfc/rfc9110.html#name-field-order
+                it.request.headers?.all()?.filter { h-> h.key() != null }
+                    ?.associate {h-> h.key() to h.values().filterNotNull().joinToString(",") } ?: emptyMap(),
+                it.request.bodyAsString
             )
         }.toList()
     }

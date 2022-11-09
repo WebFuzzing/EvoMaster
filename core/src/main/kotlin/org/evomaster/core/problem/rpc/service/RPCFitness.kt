@@ -9,19 +9,16 @@ import org.evomaster.core.problem.api.service.ApiWsFitness
 import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.external.service.rpc.parm.RPCResponseParam
 import org.evomaster.core.problem.external.service.rpc.parm.UpdateForRPCResponseParam
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.problem.util.ParserDtoUtil.wrapWithOptionalGene
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.taint.TaintAnalysis
@@ -98,7 +95,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val missingDtoClass = exMissingDto.map { (it.response as RPCResponseParam).className }
         rpcHandler.getJVMSchemaForDto(missingDtoClass.toSet()).forEach { expandResponse->
             exMissingDto.filter { (it.response as RPCResponseParam).run { !this.fromClass && expandResponse.key == this.className} }.forEach { a->
-                val gene = rpcHandler.wrapWithOptionalGene(expandResponse.value, true) as OptionalGene
+                val gene = wrapWithOptionalGene(expandResponse.value, true) as OptionalGene
                 val updatedParam = (a.response as RPCResponseParam).copyWithSpecifiedResponseBody(gene)
                 updatedParam.responseParsedWithClass()
                 val update = UpdateForRPCResponseParam(updatedParam)

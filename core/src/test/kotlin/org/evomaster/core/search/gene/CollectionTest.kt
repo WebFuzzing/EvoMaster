@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.MapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -22,7 +23,7 @@ internal class CollectionTest {
     )
     fun testMapWithHugeMaxSizeInRandomize(min: Int, max: Int, expected: Int, defaultMax: Int){
         val pairGene = PairGene("template", IntegerGene("key", 1), LongGene("value", 1))
-        val mapGene = MapGene("test", pairGene, maxSize = max, minSize = min)
+        val mapGene = FixedMapGene("test", pairGene, maxSize = max, minSize = min)
         mapGene.randomize(Randomness(), false)
         assertEquals(expected, mapGene.getMaxSizeUsedInRandomize())
         assertEquals(defaultMax, mapGene.getDefaultMaxSize())

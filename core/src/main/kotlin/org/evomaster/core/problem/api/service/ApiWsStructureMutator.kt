@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.httpws.service
+package org.evomaster.core.problem.api.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
@@ -6,11 +6,11 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
@@ -35,18 +35,21 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     @Inject
-    protected lateinit var externalServiceHandler: ExternalServiceHandler
+    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
-    private fun addExternalServiceActions(
+    @Inject
+    protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
+    override fun addAndHarvestExternalServiceActions(
         individual: EvaluatedIndividual<*>,
         /**
          * TODO add why
          */
         mutatedGenes: MutatedGeneSpecification?,
-    ) {
+    ) : Boolean{
 
         if (config.externalServiceIPSelectionStrategy == EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
-            return
+            return false
         }
 
         val ind = individual.individual as? ApiWsIndividual
@@ -55,8 +58,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         val esr = individual.fitness.getViewAccessedExternalServiceRequests()
         if (esr.isEmpty()) {
             //nothing to do
-            return
+            return false
         }
+
+        var anyHarvest = false
 
         val newActions: MutableList<HttpExternalServiceAction> = mutableListOf()
 
@@ -67,6 +72,13 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                 val msg = "Action is not inside an EnterpriseActionGroup"
                 log.error(msg)
                 throw RuntimeException(msg)
+            }
+
+            /*
+                harvest the existing external service actions
+             */
+            parent.getExternalServiceActions().filterIsInstance<HttpExternalServiceAction>().forEach { e->
+                anyHarvest = harvestResponseHandler.harvestExistingExternalActionIfNeverSeeded(e, config.probOfHarvestingResponsesFromActualExternalServices) || anyHarvest
             }
 
             // Adding the new [HttpExternalServiceAction] will be handled here. Handling
@@ -87,8 +99,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
                             val startingIndex = existingActions.filterIsInstance<HttpExternalServiceAction>().count { it.request.absoluteURL == url}
                             if (startingIndex < grequests.size){
                                 (startingIndex until  grequests.size).forEach {i->
-                                    val a = externalServiceHandler
-                                        .createExternalServiceAction(grequests[i])
+                                    val actualResponse = if (config.probOfHarvestingResponsesFromActualExternalServices == 0.0) null else harvestResponseHandler.getACopyOfActualResponse(grequests[i], config.probOfHarvestingResponsesFromActualExternalServices)
+                                    anyHarvest = anyHarvest || (actualResponse != null)
+                                    val a = externalServiceHandler.createExternalServiceAction(grequests[i], actualResponse as? HttpWsResponseParam)
                                     a.confirmUsed()
                                     actions.add(a)
                                 }
@@ -119,6 +132,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         if (mutatedGenes != null && newActions.isNotEmpty() && config.isEnabledArchiveGeneSelection()) {
             individual.updateImpactGeneDueToAddedExternalService(mutatedGenes, newActions)
         }
+
+        return anyHarvest
     }
 
     fun <T : ApiWsIndividual> addInitializingActions(
@@ -127,7 +142,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         sampler: ApiWsSampler<T>
     ) {
         addInitializingDbActions(individual, mutatedGenes, sampler)
-        addExternalServiceActions(individual, mutatedGenes)
     }
 
     private fun <T : ApiWsIndividual> addInitializingDbActions(

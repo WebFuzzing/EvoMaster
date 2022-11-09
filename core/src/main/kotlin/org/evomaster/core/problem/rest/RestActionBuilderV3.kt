@@ -1,8 +1,6 @@
 package org.evomaster.core.problem.rest
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.gson.JsonParser
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
@@ -23,7 +21,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
@@ -44,7 +42,6 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.collections.HashMap
 
 /**
  * https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md
@@ -650,15 +647,6 @@ object RestActionBuilderV3 {
         if (additional is Schema<*>) {
 
             /*
-                support additionalProperties with ref
-             */
-            if (!additional.`$ref`.isNullOrBlank()) {
-                val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history)
-                val pairTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
-                return MapGene(name, pairTemplate)
-            }
-
-            /*
                TODO could add extra fields for robustness testing,
                with and without following the given schema for their type
              */
@@ -668,9 +656,18 @@ object RestActionBuilderV3 {
                 Using a map is just a temp solution
              */
 
-            else if (fields.isEmpty()) {
+            if (fields.isEmpty()) {
+                /*
+                   support additionalProperties with ref
+                */
+                if (!additional.`$ref`.isNullOrBlank()) {
+                    val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history)
+                    val pairTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
+                    return FixedMapGene(name, pairTemplate)
+                }
+
                 // here, the first of pairgene should not be mutable
-                return MapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null), isFixedFirst = true))
+                return FixedMapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null), isFixedFirst = true))
             }
         }
 
@@ -679,7 +676,7 @@ object RestActionBuilderV3 {
         if (fields.isEmpty()) {
             LoggingUtil.uniqueWarn(log,"No fields for object definition: $name")
             // here, the first of pairgene should not be mutable
-            return MapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
+            return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
         }
 
         /*
@@ -880,7 +877,7 @@ object RestActionBuilderV3 {
                             //is MapGene<*, *> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
                             //Andrea: this was wrong, as generating invalid genes where writing expectations.
                             // this is a tmp fix
-                            is MapGene<*, *> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf()))
+                            is FixedMapGene<*, *> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf()))
                         }
 
                     }

@@ -4,10 +4,8 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.root.CompositeGene
-import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
-import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.impact.impactinfocollection.sql.SqlNullableImpact
+import org.evomaster.core.search.impact.impactinfocollection.sql.NullableImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -15,7 +13,6 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.IllegalStateException
 
 class NullableGene(name: String,
                    val gene: Gene,
@@ -105,7 +102,7 @@ class NullableGene(name: String,
     }
 
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlNullableImpact){
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is NullableImpact){
             return listOf(gene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact, gene))
         }
         throw IllegalArgumentException("impact is null or not SqlNullableImpact")

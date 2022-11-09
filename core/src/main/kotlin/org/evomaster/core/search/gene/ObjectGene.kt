@@ -185,11 +185,15 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     private fun handleInputSelection(buffer: StringBuffer, includedFields: List<Gene>, previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?) {
         //GQL arguments need a special object printing mode form that differ from Json and Boolean selection:
         //ObjName:{FieldNName: instance }
-        buffer.append("$name")
+        buffer.append(name)
         buffer.append(":{")
 
         includedFields.map {
-            "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
+            //not opt or if opt, it should be active
+            if ((it.getWrappedGene(OptionalGene::class.java) == null) || (it.getWrappedGene(OptionalGene::class.java)?.isActive == true))
+                "${it.name}:${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
+            //opt not active
+            else ""
         }.joinTo(buffer, ", ")
 
         buffer.append("}")

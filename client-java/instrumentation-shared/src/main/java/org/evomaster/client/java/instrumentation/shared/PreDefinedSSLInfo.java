@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation;
+package org.evomaster.client.java.instrumentation.shared;
 
 import javax.net.ssl.*;
 import java.security.KeyManagementException;

@@ -28,11 +28,6 @@ class Statistics : SearchListener {
         const val DISTINCT_ACTIONS = "distinctActions"
         const val COVERED_2XX = "covered2xx"
         const val GQL_NO_ERRORS = "gqlNoErrors"
-
-        /**
-         * represent that boot-time info is unavailable to collect
-         */
-        const val BOOT_TIME_INFO_UNAVAILABLE = -1
     }
 
     @Inject
@@ -183,9 +178,9 @@ class Statistics : SearchListener {
         val unitsInfo = sutInfo?.unitsInfoDto
         val bootTimeInfo = sutInfo?.bootTimeInfoDto
 
-        val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
-        val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
-        val branchesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.BRANCH, idMapper, bootTimeInfo, BOOT_TIME_INFO_UNAVAILABLE)
+        val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo)
+        val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo)
+        val branchesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.BRANCH, idMapper, bootTimeInfo)
 
         val list: MutableList<Pair> = mutableListOf()
 

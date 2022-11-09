@@ -14,9 +14,7 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.TaintedArrayGene
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
@@ -482,12 +480,14 @@ class StringGene(
                         like '/' and '.' in a PathParam.
                         If we have a constant that uses any of such chars, then we must
                         skip it.
-                        We allow constant larger than Max (as that should not be a problem),
-                        but not smaller than Min (eg to avoid empty strings in PathParam)
+                        Also must guarantee min/max constraints.
+
+                        TODO will need to guarantee min/max constraints on Regex as well
                  */
                 .filter { s ->
                     s.stringSpecialization != StringSpecialization.CONSTANT ||
-                            (invalidChars.none { c -> s.value.contains(c) } && s.value.length >= minLength)
+                            (invalidChars.none { c -> s.value.contains(c) }
+                                    && s.value.length >= minLength && s.value.length <= maxLength)
                 }
 
         val toAddGenes = mutableListOf<Gene>()
@@ -576,6 +576,21 @@ class StringGene(
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_ARRAY }){
             toAddGenes.add(TaintedArrayGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
             log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
+        }
+
+        if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_MAP }){
+            val mapGene = FixedMapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"))
+            /*
+                for Map, we currently only handle them as string key with string value
+                TODO handle generic type if they have
+
+                set tainted input for key of template if the key is string type
+             */
+            mapGene.template.first.forceTaintedValue()
+
+            toAddGenes.add(mapGene)
+
+            log.trace("JSON_MAP, added specification size: {}", toAddGenes.size)
         }
 
         //all regex are combined with disjunction in a single gene
