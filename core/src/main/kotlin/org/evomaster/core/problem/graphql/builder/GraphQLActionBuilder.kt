@@ -941,7 +941,8 @@ object GraphQLActionBuilder {
             ((lastElements is ArrayGene<*>) && (lastElements.template is ObjectGene)) ||
             ((lastElements is ArrayGene<*>) && (lastElements.template is OptionalGene) && (lastElements.template.gene is ObjectGene)) ||
             ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is ObjectGene)) ||
-            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is ObjectGene))
+            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is ObjectGene))||
+            ((lastElements is OptionalGene) && (lastElements.gene is LimitObjectGene))
             )
 
     private fun constructReturn(
