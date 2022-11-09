@@ -50,6 +50,8 @@ object TestSuiteSplitter {
               oracles: PartialOracles) : SplitResult { //List<Solution<*>>{
 
         val type = config.testSuiteSplitType
+
+        // BMR: Splitting support for new problems
         val sol = if(config.problemType == EMConfig.ProblemType.GRAPHQL){
             solution as Solution<GraphQLIndividual>
         } else {
@@ -67,15 +69,19 @@ object TestSuiteSplitter {
 
         val splitResult = SplitResult()
 
-        if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) splitResult.splitOutcome = splitByCode(sol, config)
-
         when(type){
             EMConfig.TestSuiteSplitType.NONE  -> splitResult.splitOutcome = listOf(sol)
-            EMConfig.TestSuiteSplitType.CLUSTER -> {
-                val clusters = conductClustering(sol as Solution<RestIndividual>, oracles, config, metrics, splitResult)
-                splitByCluster(clusters, sol, oracles, splitResult, config)
-            }
             EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol, config)
+            EMConfig.TestSuiteSplitType.CLUSTER -> {
+                if(errs.size <= 1){
+                    splitResult.splitOutcome = splitByCode(sol, config)
+                } else {
+                    val clusters = conductClustering(sol as Solution<RestIndividual>, oracles, config, metrics, splitResult)
+                    splitByCluster(clusters, sol, oracles, splitResult, config)
+                }
+
+            }
+
         }
 
         return splitResult
@@ -265,34 +271,46 @@ object TestSuiteSplitter {
     }
 
     /***
+     * A [GraphQlCallResult] is considered to be "failed" (and thus a potential fault)
+     * if it contains the field "errors" in its body.
+     */
+    fun assessFailed(result: GraphQlCallResult): Boolean{
+        val resultBody = Gson().fromJson(result.getBody(), HashMap::class.java)
+        val errMsg = resultBody?.get("errors")
+        return (resultBody!=null && errMsg != null)
+    }
+
+    /***
+     * A [HttpWsCallResult] is considered failed if it has a 500 code (i.e.
+     * if it contains a server error) OR if it contains no code at all.
+     */
+    fun assessFailed(result: HttpWsCallResult): Boolean {
+        val code = result.getStatusCode()
+        return (code != null && code == 500)
+        // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
+        // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
+        // "remainder" subset - as they are neither errors, nor successful runs.
+    }
+
+    /***
      * When the test suite is split into Successful and Failed tests, this function determines what a failed test
      * is defined as.
      * A test is a failure:
      *  - if it has a call with a status code 500
+     *  - if it contains a GraphQL call with a response containing an "errors" field
      *  - IF [PartialOracles] are selected, if the test contains a call that fails an expectation
      *  (i.e. is selected for clustering by one of the partial oracles).
      */
     fun assessFailed(action: EvaluatedAction, oracles: PartialOracles?, config: EMConfig): Boolean{
         val codeSelect = when (action.result) {
             is GraphQlCallResult -> {
-                // if GraphQlResult
-                val resultBody = Gson().fromJson((action.result as GraphQlCallResult).getBody(), HashMap::class.java)
-                val errMsg = resultBody?.get("errors")
-                        //(action.result as GraphQlCallResult).getErrorMessage()
-                (resultBody!=null && errMsg != null)
+                assessFailed(action.result as GraphQlCallResult)
             }
-
             is HttpWsCallResult -> {
-                val code = (action.result as HttpWsCallResult).getStatusCode()
-                (code != null && code == 500)
-                // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
-                // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
-                // "remainder" subset - as they are neither errors, nor successful runs.
+                return assessFailed(action.result as HttpWsCallResult)
             }
-
             else -> false
         }
-
 
         val oracleSelect = when{
             !config.expectationsActive -> false
