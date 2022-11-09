@@ -606,7 +606,7 @@ object GeneUtils {
     }
 
     private fun isTupleOptionalObjetNotCycleNotLimit(gene: Gene):Boolean {
-        return (gene is TupleGene && gene.elements.last() is OptionalGene
+        return (gene is TupleGene && gene.lastElementTreatedSpecially && gene.elements.last() is OptionalGene
                 && (gene.elements.last() as OptionalGene).gene is ObjectGene && (
                 ((gene.elements.last() as OptionalGene).gene !is CycleObjectGene)  || ((gene.elements.last() as OptionalGene).gene !is LimitObjectGene)))
     }
