@@ -102,7 +102,7 @@ class HttpWsExternalServiceHandler {
     }
 
     private fun registerHttpExternalServiceInfo(externalServiceInfo : HttpExternalServiceInfo){
-        if (!externalServices.containsKey(externalServiceInfo.signature())) {
+        if (!externalServiceInfo.isPartial() && !externalServices.containsKey(externalServiceInfo.signature())) {
             val ip = getIP(externalServiceInfo.remotePort)
             lastIPAddress = ip
             externalServices[externalServiceInfo.signature()] = initWireMockServer(ip, externalServiceInfo)
