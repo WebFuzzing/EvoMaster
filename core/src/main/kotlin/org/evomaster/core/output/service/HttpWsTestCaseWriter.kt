@@ -134,7 +134,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
         call.auth.headers.forEach {
-            lines.add(".$set(\"${it.name}\", \"${it.value}\") // ${call.auth.name}")
+            lines.add(".$set(\"${it.name}\", \"Bearer \" + getAuthToken()) // ${call.auth.name}")
         }
 
         call.parameters.filterIsInstance<HeaderParam>()

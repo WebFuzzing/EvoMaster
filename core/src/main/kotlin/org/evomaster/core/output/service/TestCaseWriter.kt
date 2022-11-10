@@ -67,6 +67,10 @@ abstract class TestCaseWriter {
             }
         }
 
+        if (format.isTestNG()) {
+            lines.add("@Test(groups = {\"generated\", \"manual\"})")
+        }
+
         //TODO: check xUnit instead
         if (format.isCsharp()) {
             lines.add("[Fact]")

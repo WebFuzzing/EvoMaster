@@ -222,9 +222,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
 
         if (format.isJavaOrKotlin()) {
+            if (fieldPath.contains("startTime") || fieldPath.contains("endTime") || fieldPath.endsWith("'duration'")) {
+                return;
+            }
             val left = when (value) {
                 is Boolean -> "equalTo($value)"
-                is Number -> "numberMatches($value)"
+                is Number -> "equalTo($value)"
                 is String -> "containsString(" +
                         "\"${GeneUtils.applyEscapes(value as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}" +
                         "\")"

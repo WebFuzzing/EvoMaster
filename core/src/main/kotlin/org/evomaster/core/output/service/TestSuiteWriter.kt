@@ -317,6 +317,14 @@ class TestSuiteWriter {
             addImport("org.junit.Assert.*", lines, true)
         }
 
+        if (format.isTestNG()) {
+            addImport("org.testng.annotations.AfterClass", lines)
+            addImport("org.testng.annotations.BeforeClass", lines)
+            addImport("org.testng.annotations.BeforeMethod", lines)
+            addImport("org.testng.annotations.Test", lines)
+            addImport("org.testng.Assert", lines)
+        }
+
         if (format.isJava()) {
             //in Kotlin this should not be imported
             addImport("java.util.Map", lines)
@@ -325,8 +333,8 @@ class TestSuiteWriter {
         if (format.isJavaOrKotlin()) {
 
             addImport("java.util.List", lines)
-            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
-            addImport("org.evomaster.client.java.controller.SutHandler", lines)
+//            addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
+//            addImport("org.evomaster.client.java.controller.SutHandler", lines)
 
             if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)
@@ -367,18 +375,18 @@ class TestSuiteWriter {
                     addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
                 }
 
-                addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
-                addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
-                addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
+//                addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
+//                addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
+//                addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
             }
 
             if (config.expectationsActive) {
-                addImport(
-                    "org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler",
-                    lines,
-                    true
-                )
-                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
+//                addImport(
+//                    "org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler",
+//                    lines,
+//                    true
+//                )
+//                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
 
                 if (useRestAssured())
                     addImport("io.restassured.path.json.JsonPath", lines)
@@ -545,6 +553,7 @@ class TestSuiteWriter {
         when {
             format.isJUnit4() -> lines.add("@BeforeClass")
             format.isJUnit5() -> lines.add("@BeforeAll")
+            format.isTestNG() -> lines.add("@BeforeClass")
         }
         when {
             format.isJava() -> lines.add("public static void initClass()")
@@ -656,6 +665,7 @@ class TestSuiteWriter {
         when {
             format.isJUnit4() -> lines.add("@AfterClass")
             format.isJUnit5() -> lines.add("@AfterAll")
+            format.isTestNG() -> lines.add("@AfterClass")
         }
         when {
             format.isJava() -> lines.add("public static void tearDown()")

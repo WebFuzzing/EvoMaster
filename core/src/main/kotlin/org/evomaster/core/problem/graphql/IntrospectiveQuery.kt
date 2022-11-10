@@ -69,10 +69,7 @@ class IntrospectiveQuery {
             try {
                 var request = client.target(graphQlEndpoint)
                     .request("application/json")
-
-                for (h in list) {
-                    request = request.header(h.first, h.second)
-                }
+                
                 request.buildPost(query)
                     .invoke()
             } catch (e: Exception) {
