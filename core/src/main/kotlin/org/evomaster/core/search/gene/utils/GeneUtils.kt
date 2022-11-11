@@ -461,7 +461,7 @@ object GeneUtils {
     /**
      * force at least one boolean to be selected
      */
-    fun repairBooleanSelection(obj: ObjectGene) {
+    fun repairBooleanSelection(obj: ObjectGene): Boolean {
 
         if (obj.fields.isEmpty()
             || obj.fields.count { it !is OptionalGene && it !is BooleanGene && it !is TupleGene } > 0
@@ -469,32 +469,55 @@ object GeneUtils {
             throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean or tuple")
         }
 
+        /*
+        * Filtering functional genes among all genes.
+        * */
         val selected = obj.fields.filter {
             ((it is OptionalGene && it.isActive) ||
                     (it is BooleanGene && it.value) ||
-                    (it is OptionalGene && it.gene is TupleGene && it.gene.lastElementTreatedSpecially && isLastSelected(it.gene)) ||
+                    (it is OptionalGene && it.gene is TupleGene && it.gene.lastElementTreatedSpecially && isLastSelected(
+                        it.gene
+                    )) ||
                     (it is TupleGene && it.lastElementTreatedSpecially && isLastSelected(it))
                     )
         }
 
+        /*
+        * we have found some functional genes.
+        * we need to look into them to find functional genes as well
+        * */
         if (selected.isNotEmpty()) {
             //it is fine, but we still need to make sure selected objects are fine
             selected.forEach {
                 if ((it is OptionalGene && it.gene is ObjectGene && (it.gene !is CycleObjectGene || it.gene !is LimitObjectGene))
                 ) {
-                    repairBooleanSelection(it.gene)
-                } else if ( //looking into objects inside a tuple
-                    isTupleOptionalObjetNotCycleNotLimit(it)) {
-                    repairBooleanSelection(((it as TupleGene).elements.last() as OptionalGene).gene as ObjectGene)
-                }
+                    if (!repairBooleanSelection(it.gene)) {
+                        it.isActive = false
+                    }
+                } else  //looking into objects inside a tuple
+                    if (isTupleOptionalObjetNotCycleNotLimit(it)) {
+                        if (!repairBooleanSelection(((it as TupleGene).elements.last() as OptionalGene).gene as ObjectGene)) {
+                            (it.elements.last() as OptionalGene).isActive = false
+                        }
+                    } else return false
             }
         } else {
+            /*
+            * we did not found some functional genes
+            * we can choose from some candidates (ex: Boolean with true as value) the ones that we can recycle
+             */
             //must select at least one
             val candidates = obj.fields.filter {
                 (it is OptionalGene && it.selectable) || it is BooleanGene ||
                         (it is TupleGene && it.lastElementTreatedSpecially && isLastCandidate(it))
             }
-            assert(candidates.isNotEmpty())
+
+
+            /*
+            * What if we do not have candidates? we could not recycle any gene !.
+            * In this case we already, deactivate the ancestor of the gene (somehow, ex: put the optional as non-active) and return false
+            * */
+            //assert(candidates.isNotEmpty())
 
             // maybe do at random?
             val selectedGene = candidates[0]
@@ -502,7 +525,9 @@ object GeneUtils {
                 selectedGene.isActive = true
                 if (selectedGene.gene is ObjectGene) {
                     assert(selectedGene.gene !is CycleObjectGene)
-                    repairBooleanSelection(selectedGene.gene)
+                    if (!repairBooleanSelection(selectedGene.gene)) {
+                        selectedGene.isActive = false
+                    }
                 }
             } else
                 if (selectedGene is TupleGene) {
@@ -511,6 +536,8 @@ object GeneUtils {
                 } else
                     (selectedGene as BooleanGene).value = true
         }
+        //reached if we can repair the gene.
+        return true
     }
 
     private fun repairTupleLastElement(lastElement: Gene) {
@@ -605,10 +632,11 @@ object GeneUtils {
 
     }
 
-    private fun isTupleOptionalObjetNotCycleNotLimit(gene: Gene):Boolean {
+    private fun isTupleOptionalObjetNotCycleNotLimit(gene: Gene): Boolean {
+        //note: the last element is optional not the whole tuple
         return (gene is TupleGene && gene.lastElementTreatedSpecially && gene.elements.last() is OptionalGene
                 && (gene.elements.last() as OptionalGene).gene is ObjectGene && (
-                ((gene.elements.last() as OptionalGene).gene !is CycleObjectGene)  || ((gene.elements.last() as OptionalGene).gene !is LimitObjectGene)))
+                ((gene.elements.last() as OptionalGene).gene !is CycleObjectGene) || ((gene.elements.last() as OptionalGene).gene !is LimitObjectGene)))
     }
 
     /**
