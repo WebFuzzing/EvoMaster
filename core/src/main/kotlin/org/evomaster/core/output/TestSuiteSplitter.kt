@@ -75,6 +75,8 @@ object TestSuiteSplitter {
             EMConfig.TestSuiteSplitType.CLUSTER -> {
                 if(errs.size <= 1){
                     splitResult.splitOutcome = splitByCode(sol, config)
+                    // TODO: BMR - what is the executive summary behaviour for 1 or fewer errors?
+                    splitResult.executiveSummary = sol
                 } else {
                     val clusters = conductClustering(sol as Solution<RestIndividual>, oracles, config, metrics, splitResult)
                     splitByCluster(clusters, sol, oracles, splitResult, config)
