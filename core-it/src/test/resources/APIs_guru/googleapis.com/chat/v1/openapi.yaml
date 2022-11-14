@@ -55,6 +55,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Media"
           description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/chat.messages
+          Oauth2c:
+            - https://www.googleapis.com/auth/chat.messages
+        - Oauth2:
+            - https://www.googleapis.com/auth/chat.messages.readonly
+          Oauth2c:
+            - https://www.googleapis.com/auth/chat.messages.readonly
       tags:
         - media
     parameters:
@@ -71,15 +80,15 @@ paths:
       - $ref: "#/components/parameters/uploadType"
   /v1/spaces:
     get:
-      description: Lists spaces the caller is a member of. Requires [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts).
+      description: "Lists spaces the caller is a member of. Requires [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts). "
       operationId: chat.spaces.list
       parameters:
-        - description: Requested page size. The value is capped at 1000. Server may return fewer results than requested. If unspecified, server will default to 100.
+        - description: Optional. The maximum number of spaces to return. The service may return fewer than this value. If unspecified, at most 100 spaces are returned. The maximum value is 1000; values above 1000 are coerced to 1000. Negative values return an INVALID_ARGUMENT error.
           in: query
           name: pageSize
           schema:
             type: integer
-        - description: A token identifying a page of results the server should return.
+        - description: Optional. A page token, received from a previous list spaces call. Provide this to retrieve the subsequent page. When paginating, all other parameters provided must match the call that provided the page token.
           in: query
           name: pageToken
           schema:
@@ -107,7 +116,7 @@ paths:
       - $ref: "#/components/parameters/uploadType"
   "/v1/{name}":
     delete:
-      description: Deletes a message. Requires [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts).
+      description: Deletes a message. For example usage, see [Delete a message](https://developers.google.com/chat/api/guides/crudl/messages#delete_a_message). Requires [authentication](https://developers.google.com/chat/api/guides/auth). Fully supports [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts). Supports [user authentication](https://developers.google.com/chat/api/guides/auth/users) as part of the [Google Workspace Developer Preview Program](https://developers.google.com/workspace/preview), which grants early access to certain features. [User authentication](https://developers.google.com/chat/api/guides/auth/users) requires the `chat.messages` authorization scope.
       operationId: chat.spaces.messages.delete
       parameters:
         - description: 'Required. Resource name of the message to be deleted, in the form "spaces/*/messages/*" Example: spaces/AAAAAAAAAAA/messages/BBBBBBBBBBB.BBBBBBBBBBB'
@@ -123,6 +132,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/Empty"
           description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/chat.messages
+          Oauth2c:
+            - https://www.googleapis.com/auth/chat.messages
       tags:
         - spaces
     get:
@@ -142,6 +156,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Attachment"
           description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/chat.messages
+          Oauth2c:
+            - https://www.googleapis.com/auth/chat.messages
+        - Oauth2:
+            - https://www.googleapis.com/auth/chat.messages.readonly
+          Oauth2c:
+            - https://www.googleapis.com/auth/chat.messages.readonly
       tags:
         - spaces
     parameters:
@@ -157,7 +180,7 @@ paths:
       - $ref: "#/components/parameters/upload_protocol"
       - $ref: "#/components/parameters/uploadType"
     put:
-      description: Updates a message. Requires [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts).
+      description: Updates a message. For example usage, see [Update a message](https://developers.google.com/chat/api/guides/crudl/messages#update_a_message). Requires [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts).
       operationId: chat.spaces.messages.update
       parameters:
         - description: "Resource name in the form `spaces/*/messages/*`. Example: `spaces/AAAAAAAAAAA/messages/BBBBBBBBBBB.BBBBBBBBBBB`"
@@ -166,7 +189,12 @@ paths:
           required: true
           schema:
             type: string
-        - description: "Required. The field paths to be updated, comma separated if there are multiple. Currently supported field paths: * text * cards * attachment"
+        - description: Optional. If `true` and the message is not found, a new message is created and `updateMask` is ignored. The specified message ID must be [client-assigned](https://developers.google.com/chat/api/guides/crudl/messages#name_a_created_message) or the request fails.
+          in: query
+          name: allowMissing
+          schema:
+            type: boolean
+        - description: "Required. The field paths to update. Separate multiple values with commas. Currently supported field paths: - text - cards (Requires [service account authentication](/chat/api/guides/auth/service-accounts).) - cards_v2 "
           in: query
           name: updateMask
           schema:
@@ -183,11 +211,16 @@ paths:
               schema:
                 $ref: "#/components/schemas/Message"
           description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/chat.messages
+          Oauth2c:
+            - https://www.googleapis.com/auth/chat.messages
       tags:
         - spaces
   "/v1/{parent}/members":
     get:
-      description: Lists human memberships in a space. Requires [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts).
+      description: Lists memberships in a space. Requires [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts).
       operationId: chat.spaces.members.list
       parameters:
         - description: "Required. The resource name of the space for which to fetch a membership list. Format: spaces/{space}"
@@ -196,12 +229,12 @@ paths:
           required: true
           schema:
             type: string
-        - description: Requested page size. The value is capped at 1000. Server may return fewer results than requested. If unspecified, server will default to 100.
+        - description: The maximum number of memberships to return. The service may return fewer than this value. If unspecified, at most 100 memberships are returned. The maximum value is 1000; values above 1000 are coerced to 1000. Negative values return an INVALID_ARGUMENT error.
           in: query
           name: pageSize
           schema:
             type: integer
-        - description: A token identifying a page of results the server should return.
+        - description: A page token, received from a previous list memberships call. Provide this to retrieve the subsequent page. When paginating, all other parameters provided must match the call that provided the page token.
           in: query
           name: pageToken
           schema:
@@ -213,6 +246,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ListMembershipsResponse"
           description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/chat.memberships
+          Oauth2c:
+            - https://www.googleapis.com/auth/chat.memberships
       tags:
         - spaces
     parameters:
@@ -241,21 +279,35 @@ paths:
       - $ref: "#/components/parameters/upload_protocol"
       - $ref: "#/components/parameters/uploadType"
     post:
-      description: Creates a message. Requires [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts).
+      description: Creates a message. For example usage, see [Create a message](https://developers.google.com/chat/api/guides/crudl/messages#create_a_message). Requires [authentication](https://developers.google.com/chat/api/guides/auth). Fully supports [service account authentication](https://developers.google.com/chat/api/guides/auth/service-accounts). Supports [user authentication](https://developers.google.com/chat/api/guides/auth/users) as part of the [Google Workspace Developer Preview Program](https://developers.google.com/workspace/preview), which grants early access to certain features. [User authentication](https://developers.google.com/chat/api/guides/auth/users) requires the `chat.messages` or `chat.messages.create` authorization scope.
       operationId: chat.spaces.messages.create
       parameters:
-        - description: 'Required. Space resource name, in the form "spaces/*". Example: spaces/AAAAAAAAAAA'
+        - description: "Required. The resource name of the space in which to create a message. Format: spaces/{space}"
           in: path
           name: parent
           required: true
           schema:
+            type: string
+        - description: Optional. A custom name for a Chat message assigned at creation. Must start with `client-` and contain only lowercase letters, numbers, and hyphens up to 63 characters in length. Specify this field to get, update, or delete the message with the specified value. For example usage, see [Name a created message](https://developers.google.com/chat/api/guides/crudl/messages#name_a_created_message).
+          in: query
+          name: messageId
+          schema:
+            type: string
+        - description: Optional. Specifies whether a message starts a thread or replies to one. Only supported in named spaces.
+          in: query
+          name: messageReplyOption
+          schema:
+            enum:
+              - MESSAGE_REPLY_OPTION_UNSPECIFIED
+              - REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD
+              - REPLY_MESSAGE_OR_FAIL
             type: string
         - description: Optional. A unique request ID for this message. Specifying an existing request ID returns the message created with that ID instead of creating a new message.
           in: query
           name: requestId
           schema:
             type: string
-        - description: Optional. Opaque thread identifier. To start or add to a thread, create a message and specify a `threadKey` instead of thread.name. (Setting thread.name has no effect.) The first message with a given `threadKey` starts a new thread. Subsequent messages with the same `threadKey` post into the same thread.
+        - description: "Optional. Deprecated: Use thread.thread_key instead. Opaque thread identifier. To start or add to a thread, create a message and specify a `threadKey` or the thread.name. For example usage, see [Start or reply to a message thread](/chat/api/guides/crudl/messages#start_or_reply_to_a_message_thread)."
           in: query
           name: threadKey
           schema:
@@ -272,6 +324,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/Message"
           description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/chat.messages
+          Oauth2c:
+            - https://www.googleapis.com/auth/chat.messages
+        - Oauth2:
+            - https://www.googleapis.com/auth/chat.messages.create
+          Oauth2c:
+            - https://www.googleapis.com/auth/chat.messages.create
       tags:
         - spaces
   "/v1/{parent}/webhooks":
@@ -291,18 +352,32 @@ paths:
       description: Legacy path for creating message. Calling these will result in a BadRequest response.
       operationId: chat.spaces.webhooks
       parameters:
-        - description: 'Required. Space resource name, in the form "spaces/*". Example: spaces/AAAAAAAAAAA'
+        - description: "Required. The resource name of the space in which to create a message. Format: spaces/{space}"
           in: path
           name: parent
           required: true
           schema:
+            type: string
+        - description: Optional. A custom name for a Chat message assigned at creation. Must start with `client-` and contain only lowercase letters, numbers, and hyphens up to 63 characters in length. Specify this field to get, update, or delete the message with the specified value. For example usage, see [Name a created message](https://developers.google.com/chat/api/guides/crudl/messages#name_a_created_message).
+          in: query
+          name: messageId
+          schema:
+            type: string
+        - description: Optional. Specifies whether a message starts a thread or replies to one. Only supported in named spaces.
+          in: query
+          name: messageReplyOption
+          schema:
+            enum:
+              - MESSAGE_REPLY_OPTION_UNSPECIFIED
+              - REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD
+              - REPLY_MESSAGE_OR_FAIL
             type: string
         - description: Optional. A unique request ID for this message. Specifying an existing request ID returns the message created with that ID instead of creating a new message.
           in: query
           name: requestId
           schema:
             type: string
-        - description: Optional. Opaque thread identifier. To start or add to a thread, create a message and specify a `threadKey` instead of thread.name. (Setting thread.name has no effect.) The first message with a given `threadKey` starts a new thread. Subsequent messages with the same `threadKey` post into the same thread.
+        - description: "Optional. Deprecated: Use thread.thread_key instead. Opaque thread identifier. To start or add to a thread, create a message and specify a `threadKey` or the thread.name. For example usage, see [Start or reply to a message thread](/chat/api/guides/crudl/messages#start_or_reply_to_a_message_thread)."
           in: query
           name: threadKey
           schema:
@@ -552,7 +627,7 @@ components:
           type: array
       type: object
     CardAction:
-      description: "A card action is the action associated with the card. For an invoice card, a typical action would be: delete invoice, email invoice or open the invoice in browser."
+      description: "A card action is the action associated with the card. For an invoice card, a typical action would be: delete invoice, email invoice or open the invoice in browser. Not supported by Google Chat apps."
       properties:
         actionLabel:
           description: The label used to be displayed in the action menu item.
@@ -578,6 +653,16 @@ components:
           type: string
         title:
           description: "The title must be specified. The header has a fixed height: if both a title and subtitle is specified, each will take up 1 line. If only the title is specified, it will take up both lines."
+          type: string
+      type: object
+    CardWithId:
+      description: Widgets for Chat apps to specify.
+      properties:
+        card:
+          $ref: "#/components/schemas/GoogleAppsCardV1Card"
+          description: Card proto that allows Chat apps to specify UI elements and editable widgets.
+        cardId:
+          description: Required for `cardsV2` messages. Chat app-specified identifier for this widget. Scoped within a message.
           type: string
       type: object
     ChatAppLogEntry:
@@ -630,6 +715,7 @@ components:
             - DRIVE
             - DEMO
             - DOCS
+            - MEET
             - SHEETS
             - SLIDES
             - DRAWINGS
@@ -778,6 +864,12 @@ components:
         function:
           description: Apps Script function to invoke when the containing element is clicked/activated.
           type: string
+        interaction:
+          description: Optional. Required when opening a [dialog](https://developers.google.com/chat/how-tos/dialogs). What to do in response to an interaction with a user, such as a user clicking button on a card message. If unspecified, the app responds by executing an `action` - like opening a link or running a function - as normal. By specifying an `interaction`, the app can respond in special interactive ways. For example, by setting `interaction` to `OPEN_DIALOG`, the app can open a [dialog](https://developers.google.com/chat/how-tos/dialogs). When specified, a loading indicator is not shown. Supported by Chat apps, but not Google Workspace Add-ons. If specified for an add-on, the entire card is stripped and nothing is shown in the client.
+          enum:
+            - INTERACTION_UNSPECIFIED
+            - OPEN_DIALOG
+          type: string
         loadIndicator:
           description: Specifies the loading indicator that the action displays while making the call to the action.
           enum:
@@ -790,7 +882,7 @@ components:
             $ref: "#/components/schemas/GoogleAppsCardV1ActionParameter"
           type: array
         persistValues:
-          description: Indicates whether form values persist after the action. The default value is `false`. If `true`, form values remain after the action is triggered. When using [LoadIndicator.NONE](workspace/add-ons/reference/rpc/google.apps.card.v1#loadindicator) for actions, `persist_values` = `true`is recommended, as it ensures that any changes made by the user after form or on change actions are sent to the server are not overwritten by the response. If `false`, the form values are cleared when the action is triggered. When `persist_values` is set to `false`, it is strongly recommended that the card use [LoadIndicator.SPINNER](workspace/add-ons/reference/rpc/google.apps.card.v1#loadindicator) for all actions, as this locks the UI to ensure no changes are made by the user while the action is being processed.
+          description: Indicates whether form values persist after the action. The default value is `false`. If `true`, form values remain after the action is triggered. When using [LoadIndicator.NONE](https://developers.google.com/workspace/add-ons/reference/rpc/google.apps.card.v1#loadindicator) for actions, `persist_values` = `true`is recommended, as it ensures that any changes made by the user after form or on change actions are sent to the server are not overwritten by the response. If `false`, the form values are cleared when the action is triggered. When `persist_values` is set to `false`, it is strongly recommended that the card use [LoadIndicator.SPINNER](https://developers.google.com/workspace/add-ons/reference/rpc/google.apps.card.v1#loadindicator) for all actions, as this locks the UI to ensure no changes are made by the user while the action is being processed. Not supported by Google Chat apps.
           type: boolean
       type: object
     GoogleAppsCardV1ActionParameter:
@@ -853,15 +945,15 @@ components:
           type: array
       type: object
     GoogleAppsCardV1Card:
-      description: 'A card is a UI element that can contain UI widgets such as text and images. For more information, see Cards . For example, the following JSON creates a card that has a header with the name, position, icons, and link for a contact, followed by a section with contact information like email and phone number. ``` { "header": { "title": "Sasha", "subtitle": "Software Engineer", "imageStyle": "ImageStyle.AVATAR", "imageUrl": "https://example.com/sasha.png", "imageAltText": "Avatar for Sasha" }, "sections" : [ { "header": "Contact Info", "widgets": [ { "decorated_text": { "icon": { "knownIcon": "EMAIL" }, "content": "sasha@example.com" } }, { "decoratedText": { "icon": { "knownIcon": "PERSON" }, "content": "Online" } }, { "decoratedText": { "icon": { "knownIcon": "PHONE" }, "content": "+1 (555) 555-1234" } }, { "buttons": [ { "textButton": { "text": "Share", }, "onClick": { "openLink": { "url": "https://example.com/share" } } }, { "textButton": { "text": "Edit", }, "onClick": { "action": { "function": "goToView", "parameters": [ { "key": "viewType", "value": "EDIT" } ], "loadIndicator": "LoadIndicator.SPINNER" } } } ] } ], "collapsible": true, "uncollapsibleWidgetsCount": 3 } ], "cardActions": [ { "actionLabel": "Send Feedback", "onClick": { "openLink": { "url": "https://example.com/feedback" } } } ], "name": "contact-card-K3wB6arF2H9L" } ```'
+      description: "Cards support a defined layout, interactive UI elements like buttons, and rich media like images. Use cards to present detailed information, gather information from users, and guide users to take a next step. In Google Chat, cards appear in several places: - As stand-alone messages. - Accompanying a text message, just beneath the text message. - As a [dialog](https://developers.google.com/chat/how-tos/dialogs). The following example JSON creates a \"contact card\" that features: - A header with the contact's name, job title, avatar picture. - A section with the contact information, including formatted text. - Buttons that users can click to share the contact or see more or less info. ![Example contact card](/chat/images/card_api_reference.png) ``` { \"cardsV2\": [ { \"cardId\": \"unique-card-id\", \"card\": { \"header\": { \"title\": \"Sasha\", \"subtitle\": \"Software Engineer\", \"imageUrl\": \"https://developers.google.com/chat/images/quickstart-app-avatar.png\", \"imageType\": \"CIRCLE\", \"imageAltText\": \"Avatar for Sasha\", }, \"sections\": [ { \"header\": \"Contact Info\", \"collapsible\": true, \"uncollapsibleWidgetsCount\": 1, \"widgets\": [ { \"decoratedText\": { \"startIcon\": { \"knownIcon\": \"EMAIL\", }, \"text\": \"sasha@example.com\", } }, { \"decoratedText\": { \"startIcon\": { \"knownIcon\": \"PERSON\", }, \"text\": \"Online\", }, }, { \"decoratedText\": { \"startIcon\": { \"knownIcon\": \"PHONE\", }, \"text\": \"+1 (555) 555-1234\", } }, { \"buttonList\": { \"buttons\": [ { \"text\": \"Share\", \"onClick\": { \"openLink\": { \"url\": \"https://example.com/share\", } } }, { \"text\": \"Edit\", \"onClick\": { \"action\": { \"function\": \"goToView\", \"parameters\": [ { \"key\": \"viewType\", \"value\": \"EDIT\", } ], } } }, ], } }, ], }, ], }, } ], } ```"
       properties:
         cardActions:
-          description: "The card's actions. Actions are added to the card's generated toolbar menu. For example, the following JSON constructs a card action menu with Settings and Send Feedback options: ``` \"card_actions\": [ { \"actionLabel\": \"Settings\", \"onClick\": { \"action\": { \"functionName\": \"goToView\", \"parameters\": [ { \"key\": \"viewType\", \"value\": \"SETTING\" } ], \"loadIndicator\": \"LoadIndicator.SPINNER\" } } }, { \"actionLabel\": \"Send Feedback\", \"onClick\": { \"openLink\": { \"url\": \"https://example.com/feedback\" } } } ] ```"
+          description: "The card's actions. Actions are added to the card's generated toolbar menu. Not supported by Google Chat apps. For example, the following JSON constructs a card action menu with Settings and Send Feedback options: ``` \"card_actions\": [ { \"actionLabel\": \"Settings\", \"onClick\": { \"action\": { \"functionName\": \"goToView\", \"parameters\": [ { \"key\": \"viewType\", \"value\": \"SETTING\" } ], \"loadIndicator\": \"LoadIndicator.SPINNER\" } } }, { \"actionLabel\": \"Send Feedback\", \"onClick\": { \"openLink\": { \"url\": \"https://example.com/feedback\" } } } ] ```"
           items:
             $ref: "#/components/schemas/GoogleAppsCardV1CardAction"
           type: array
         displayStyle:
-          description: The display style for `peekCardHeader`.
+          description: The `peekCardHeader` display style for. Not supported by Google Chat apps.
           enum:
             - DISPLAY_STYLE_UNSPECIFIED
             - PEEK
@@ -878,7 +970,7 @@ components:
           type: string
         peekCardHeader:
           $ref: "#/components/schemas/GoogleAppsCardV1CardHeader"
-          description: When displaying contextual content, the peek card header acts as a placeholder so that the user can navigate forward between the homepage cards and the contextual cards.
+          description: When displaying contextual content, the peek card header acts as a placeholder so that the user can navigate forward between the homepage cards and the contextual cards. Not supported by Google Chat apps.
         sections:
           description: Sections are separated by a line divider.
           items:
@@ -886,7 +978,7 @@ components:
           type: array
       type: object
     GoogleAppsCardV1CardAction:
-      description: A card action is the action associated with the card. For example, an invoice card might include actions such as delete invoice, email invoice, or open the invoice in a browser.
+      description: A card action is the action associated with the card. For example, an invoice card might include actions such as delete invoice, email invoice, or open the invoice in a browser. Not supported by Google Chat apps.
       properties:
         actionLabel:
           description: The label that displays as the action menu item.
@@ -1274,7 +1366,7 @@ components:
           type: string
       type: object
     GoogleAppsCardV1TextParagraph:
-      description: A paragraph of text that supports formatting. See [Text formatting](workspace/add-ons/concepts/widgets#text_formatting") for details.
+      description: A paragraph of text that supports formatting. See [Text formatting](https://developers.google.com/workspace/add-ons/concepts/widgets#text_formatting) for details.
       properties:
         text:
           description: The text that's shown in the widget.
@@ -1465,13 +1557,13 @@ components:
             $ref: "#/components/schemas/Membership"
           type: array
         nextPageToken:
-          description: Continuation token to retrieve the next page of results. It will be empty for the last page of results.
+          description: A token that can be sent as `pageToken` to retrieve the next page of results. If empty, there are no subsequent pages.
           type: string
       type: object
     ListSpacesResponse:
       properties:
         nextPageToken:
-          description: Continuation token to retrieve the next page of results. It will be empty for the last page of results. Tokens expire in an hour. An error is thrown if an expired token is passed.
+          description: A token that can be sent as `pageToken` to retrieve the next page of results. If empty, there are no subsequent pages.
           type: string
         spaces:
           description: List of spaces in the requested (or first) page.
@@ -1508,6 +1600,14 @@ components:
         name:
           description: "Resource name of the membership. Format: spaces/{space}/members/{member}"
           type: string
+        role:
+          description: Output only. User's role within a Chat space, which determines their permitted actions in the space.
+          enum:
+            - MEMBERSHIP_ROLE_UNSPECIFIED
+            - ROLE_MEMBER
+            - ROLE_MANAGER
+          readOnly: true
+          type: string
         state:
           description: Output only. State of the membership.
           enum:
@@ -1539,10 +1639,18 @@ components:
             $ref: "#/components/schemas/Attachment"
           type: array
         cards:
-          description: "Rich, formatted and interactive cards that can be used to display UI elements such as: formatted texts, buttons, clickable images. Cards are normally displayed below the plain-text body of the message."
+          description: "Deprecated: Use `cards_v2` instead. Rich, formatted and interactive cards that can be used to display UI elements such as: formatted texts, buttons, clickable images. Cards are normally displayed below the plain-text body of the message."
           items:
             $ref: "#/components/schemas/Card"
           type: array
+        cardsV2:
+          description: "Richly formatted and interactive cards that display UI elements and editable widgets, such as: - Formatted text - Buttons - Clickable images - Checkboxes - Radio buttons - Input widgets. Cards are usually displayed below the text-body of a Chat message, but can situationally appear other places, such as [dialogs](https://developers.google.com/chat/how-tos/dialogs). The `cardId` is a unique identifier among cards in the same message and for identifying user input values. Currently supported widgets include: - `TextParagraph` - `DecoratedText` - `Image` - `ButtonList` - `Divider`"
+          items:
+            $ref: "#/components/schemas/CardWithId"
+          type: array
+        clientAssignedMessageId:
+          description: A custom name for a Chat message assigned at creation. Must start with `client-` and contain only lowercase letters, numbers, and hyphens up to 63 characters in length. Specify this field to get, update, or delete the message with the specified value. For example usage, see [Name a created message](https://developers.google.com/chat/api/guides/crudl/messages#name_a_created_message).
+          type: string
         createTime:
           description: Output only. The time at which the message was created in Google Chat server.
           format: google-datetime
@@ -1552,7 +1660,7 @@ components:
           description: A plain-text description of the message's cards, used when the actual cards cannot be displayed (e.g. mobile notifications).
           type: string
         lastUpdateTime:
-          description: Output only. The time at which the message was last updated. If the message was never updated, this field matches `create_time`.
+          description: Output only. The time at which the message was last edited by a user. If the message has never been edited, this field is empty.
           format: google-datetime
           readOnly: true
           type: string
@@ -1573,13 +1681,17 @@ components:
           readOnly: true
         space:
           $ref: "#/components/schemas/Space"
-          description: The space the message belongs to.
+          description: The space the message belongs to. When accessed with [user authentication](https://developers.google.com/chat/api/guides/auth/users), only the name of the Space is populated.
         text:
           description: Plain-text body of the message. The first link to an image, video, web page, or other preview-able item generates a preview chip.
           type: string
         thread:
           $ref: "#/components/schemas/Thread"
-          description: The thread the message belongs to.
+          description: The thread the message belongs to. For example usage, see [Start or reply to a message thread](/chat/api/guides/crudl/messages#start_or_reply_to_a_message_thread).
+        threadReply:
+          description: Output only. When `true`, the message is a response in a reply thread. When `false`, the message is visible in the space's top-level conversation as either the first message of a thread or a message with no threaded replies. If the space doesn't support reply in threads, this field is always `false`.
+          readOnly: true
+          type: boolean
       type: object
     OnClick:
       description: An onclick action (e.g. open a link).
@@ -1652,20 +1764,41 @@ components:
           description: "Resource name of the space. Format: spaces/{space}"
           type: string
         singleUserBotDm:
-          description: Output only. Whether the space is a DM between a Chat app and a single human.
-          readOnly: true
+          description: Optional. Whether the space is a DM between a Chat app and a single human.
           type: boolean
+        spaceDetails:
+          $ref: "#/components/schemas/SpaceDetails"
+          description: Details about the space including description and rules.
+        spaceThreadingState:
+          description: Output only. The threading state in the Chat space.
+          enum:
+            - SPACE_THREADING_STATE_UNSPECIFIED
+            - THREADED_MESSAGES
+            - GROUPED_MESSAGES
+            - UNTHREADED_MESSAGES
+          readOnly: true
+          type: string
         threaded:
-          description: Output only. Whether messages are threaded in this space.
+          description: "Output only. Deprecated: Use `spaceThreadingState` instead. Whether messages are threaded in this space."
           readOnly: true
           type: boolean
         type:
-          description: "Output only. Deprecated: Use `single_user_bot_dm` or `space_type` (developer preview) instead. The type of a space."
+          description: "Output only. Deprecated: Use `singleUserBotDm` or `spaceType` (developer preview) instead. The type of a space."
           enum:
             - TYPE_UNSPECIFIED
             - ROOM
             - DM
           readOnly: true
+          type: string
+      type: object
+    SpaceDetails:
+      description: Details about the space including description and rules.
+      properties:
+        description:
+          description: Optional. A description of the space. It could describe the space's discussion topic, functional purpose, or participants.
+          type: string
+        guidelines:
+          description: Optional. The space's rules, expectations, and etiquette.
           type: string
       type: object
     Status:
@@ -1715,7 +1848,10 @@ components:
       description: A thread in Google Chat.
       properties:
         name:
-          description: 'Resource name, in the form "spaces/*/threads/*". Example: spaces/AAAAAAAAAAA/threads/TTTTTTTTTTT'
+          description: "Resource name of the thread. Example: spaces/{space}/threads/{thread}"
+          type: string
+        threadKey:
+          description: Optional. Opaque thread identifier. To start or add to a thread, create a message and specify a `threadKey` or the thread.name. For example usage, see [Start or reply to a message thread](/chat/api/guides/crudl/messages#start_or_reply_to_a_message_thread). For other requests, this is an output only field.
           type: string
       type: object
     TimeInput:
@@ -1756,7 +1892,7 @@ components:
           readOnly: true
           type: boolean
         name:
-          description: "Resource name for a Google Chat user. Represents a [person](https://developers.google.com/people/api/rest/v1/people#Person) in the People API or a [user](https://developers.google.com/admin-sdk/directory/reference/rest/v1/users) in the Admin SDK Directory API. Formatted as: `users/{user}`"
+          description: "Resource name for a Google Chat user. For human users, represents a person in the People API or a user in the Admin SDK Directory API. Format: `users/{user}`"
           type: string
         type:
           description: User type.
@@ -1798,3 +1934,27 @@ components:
           $ref: "#/components/schemas/TextParagraph"
           description: Display a text paragraph in this widget.
       type: object
+  securitySchemes:
+    Oauth2:
+      description: Oauth 2.0 implicit authentication
+      flows:
+        implicit:
+          authorizationUrl: https://accounts.google.com/o/oauth2/auth
+          scopes:
+            https://www.googleapis.com/auth/chat.memberships: View, add, and remove members from conversations in Google Chat
+            https://www.googleapis.com/auth/chat.messages: View, compose, send, update, and delete messages, and add, view, and delete reactions to messages.
+            https://www.googleapis.com/auth/chat.messages.create: Compose and send messages in Google Chat
+            https://www.googleapis.com/auth/chat.messages.readonly: view messages and reactions in Google Chat
+      type: oauth2
+    Oauth2c:
+      description: Oauth 2.0 authorizationCode authentication
+      flows:
+        authorizationCode:
+          authorizationUrl: https://accounts.google.com/o/oauth2/auth
+          scopes:
+            https://www.googleapis.com/auth/chat.memberships: View, add, and remove members from conversations in Google Chat
+            https://www.googleapis.com/auth/chat.messages: View, compose, send, update, and delete messages, and add, view, and delete reactions to messages.
+            https://www.googleapis.com/auth/chat.messages.create: Compose and send messages in Google Chat
+            https://www.googleapis.com/auth/chat.messages.readonly: view messages and reactions in Google Chat
+          tokenUrl: https://accounts.google.com/o/oauth2/token
+      type: oauth2
