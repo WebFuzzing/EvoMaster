@@ -95,7 +95,7 @@ class SamplerVerifierTest {
 
     private fun skipSchema(path: String) : Boolean{
         return skipDueToMissingPath(path) || skipDueToHashTag(path) || skipDueToQuestionMarkInPath(path) || skipDueToMissingReference(path) || skipDueToUnhandledFormat(path)
-                || skipDueToTimeout(path) || skipDueToFail(path)
+                || skipDueToTimeout(path) || skipDueToException(path)
     }
 
     // skip MarketPayNotificationService since there does not exist paths, need to check if we update the schema
@@ -137,7 +137,12 @@ class SamplerVerifierTest {
         return path.contains("bungie.net") //uint8
     }
 
-    private fun skipDueToFail(path: String): Boolean{
+    /*
+        test fails due to exception,
+
+        need to check how to handle  "The incoming YAML document exceeds the limit: 3145728 code points."
+     */
+    private fun skipDueToException(path: String): Boolean{
         return path.run{
             (contains("googleapis.com") && contains("compute") && (contains("alpha") || contains("beta") || contains("v1")))
                     || (contains("googleapis.com") && contains("contentwarehouse") && contains("v1"))
