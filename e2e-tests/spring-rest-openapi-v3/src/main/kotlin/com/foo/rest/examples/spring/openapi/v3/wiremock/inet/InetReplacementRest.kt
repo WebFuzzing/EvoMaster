@@ -31,10 +31,10 @@ class InetReplacementRest {
         return ResponseEntity.ok("OK")
     }
 
-    @GetMapping(path = ["/exp/okhttp"])
+    @GetMapping(path = ["/okhttp"])
     fun OkHttpExperiment(): ResponseEntity<String> {
         // TODO: Expecting this test to work in CI without any problem
-        val url = URL("https://google.com")
+        val url = URL("https://google.com:10000/")
         val client = OkHttpClient()
         val request = Request.Builder().url(url).build()
 
@@ -44,8 +44,8 @@ class InetReplacementRest {
             val code = data.code
             data.close()
             return if (code in 200..299){
-                if (body == "\"HELLO THERE!!!\""){
-                    ResponseEntity.ok("Hello There")
+                if (body == "\"HELLO\""){
+                    ResponseEntity.ok("Hello")
                 }else{
                     ResponseEntity.ok("OK")
                 }
