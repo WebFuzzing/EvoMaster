@@ -64,5 +64,8 @@ open class HttpExternalServiceInfo(
 
     fun getDescriptiveURLPath() : String = "${if (isHttps() || (!isHttp() && isDerivedHttps())) "https" else "http"}://${remoteHostname}:${remotePort}"
 
+    /**
+     * To check whether the ExternalServiceInfo has all the information available or not
+     */
     fun isPartial() : Boolean = remotePort == -1 || protocol == "none"
 }
