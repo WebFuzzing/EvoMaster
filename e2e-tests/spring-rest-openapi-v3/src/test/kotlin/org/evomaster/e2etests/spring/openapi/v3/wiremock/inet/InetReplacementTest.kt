@@ -28,7 +28,7 @@ class InetReplacementTest : SpringTestBase()  {
         runTestHandlingFlakyAndCompilation(
             "InetReplacementEM",
             "org.foo.InetReplacementEM",
-            1000,
+            2000,
             !CIUtils.isRunningGA(), //TODO skip test generation due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
             { args: MutableList<String> ->
 
@@ -42,7 +42,8 @@ class InetReplacementTest : SpringTestBase()  {
                 Assertions.assertTrue(solution.individuals.size >= 1)
 
                 if (!CIUtils.isRunningGA()) {
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/inet/exp/okhttp", "OK")
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/inet/okhttp", "OK")
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/inet/okhttp", "Hello")
                 }
             },
             3
