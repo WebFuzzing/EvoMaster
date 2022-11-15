@@ -6,9 +6,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.PrintWriter
 import java.net.InetAddress
 import java.net.Socket
 import java.net.URL
@@ -18,7 +15,7 @@ import java.net.URL
 class InetReplacementRest {
 
     @GetMapping(path = ["/exp"])
-    fun InetExperiment(): ResponseEntity<String> {
+    fun exp(): ResponseEntity<String> {
         val address = InetAddress.getByName("imaginary-host.local")
 
         return try {
