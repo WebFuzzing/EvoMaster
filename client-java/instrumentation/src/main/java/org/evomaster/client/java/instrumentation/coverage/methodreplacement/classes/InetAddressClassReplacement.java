@@ -38,8 +38,8 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             return InetAddress.getByName(host);
         // FIXME -1 leads a crash, but do we really need the real port info here. might use specified one
         // If the given hostname is available, this method works properly otherwise throws UnknownHostException
-        // This will never create a WM since the port won't be updated, if Inet only useds
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("none", host, -1);
+        // This will never create a WM since the port won't be updated, if Inet only used
+        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("https", host, 10000);
          try{
              if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())){
                  String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
@@ -62,7 +62,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
         if (ExternalServiceInfoUtils.skipHostnameOrIp(host))
             return InetAddress.getAllByName(host);
         // FIXME -1 leads a crash, but do we really need the real port info here. might use specified one
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("none", host, -1);
+        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("https", host, 10000);
         try{
             if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())){
                 String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
