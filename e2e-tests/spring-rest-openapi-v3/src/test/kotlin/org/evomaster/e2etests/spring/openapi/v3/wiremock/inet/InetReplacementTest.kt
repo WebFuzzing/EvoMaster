@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class InetReplacementTest : SpringTestBase()  {
+class InetReplacementTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -24,7 +24,6 @@ class InetReplacementTest : SpringTestBase()  {
 
     @Test
     fun testRunEM() {
-
         runTestHandlingFlakyAndCompilation(
             "InetReplacementEM",
             "org.foo.InetReplacementEM",
@@ -43,6 +42,7 @@ class InetReplacementTest : SpringTestBase()  {
                 Assertions.assertTrue(solution.individuals.size >= 1)
 
                 if (!CIUtils.isRunningGA()) {
+                    // Note: Direct use of Inet during test, gives problem
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/inet/exp", "OK")
                 }
             },
