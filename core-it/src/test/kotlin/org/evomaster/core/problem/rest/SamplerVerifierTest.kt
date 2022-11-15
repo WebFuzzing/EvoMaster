@@ -214,7 +214,7 @@ class SamplerVerifierTest {
                     || (contains("googleapis.com") && contains("dataproc") && contains("v1"))
                     || (contains("googleapis.com") && contains("datastore") && contains("v1beta3"))
                     || (contains("googleapis.com") && contains("accesscontextmanager") && contains("v1"))
-                    || (contains("googleapis.com") && contains("dfareporting") && (contains("v3.4") || contains("v3.5") || contains("v4")))
+                    || (contains("googleapis.com") && contains("dfareporting") && (contains("v3.3") || contains("v3.4") || contains("v3.5") || contains("v4")))
                     || (contains("googleapis.com") && contains("displayvideo") && (contains("v1") || contains("v2")))
                     || (contains("googleapis.com") && contains("dlp") && contains("v2"))
                     || (contains("googleapis.com") && contains("docs") && contains("v1"))
