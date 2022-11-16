@@ -1,14 +1,11 @@
 package com.foo.rest.examples.spring.openapi.v3.wiremock.inet
 
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.net.InetAddress
 import java.net.Socket
-import java.net.URL
 
 @RestController
 @RequestMapping(path = ["/api/inet"])
