@@ -29,19 +29,26 @@ public class ExternalServiceInfoUtils {
     /**
      * skip method replacement for some hostname, eg,
      */
-    public static boolean skipHostnameOrIp(String hostname){
-        return hostname.isEmpty() || hostname.startsWith("localhost") || hostname.startsWith("0.0.0")
-                || hostname.equals("127.0.0.1")
+    public static boolean skipHostnameOrIp(String hostname) {
+        // https://en.wikipedia.org/wiki/Reserved_IP_addresses
+        // There could be other possible ranges to ignore since it is not
+        // necessary for the moment, following IP address ranges are skipped
+        return hostname.isEmpty()
+                || hostname.startsWith("localhost")
+                || hostname.startsWith("0.0.0")
+                || hostname.startsWith("127.")
+                || hostname.startsWith("10.")
                 || hostname.startsWith("docker.socket");
     }
 
 
     /**
-     *  Unless the port number is specified in a URL, the default will be -1.
-     *  This indicates that the port should be assigned according to the
-     *  protocol. Since the URLConnection openConnection is an abstract, this
-     *  assignment will be handled under the respective implementation.
-     *  Here it's manually handled assuming these default will never change.
+     * Unless the port number is specified in a URL, the default will be -1.
+     * This indicates that the port should be assigned according to the
+     * protocol. Since the URLConnection openConnection is an abstract, this
+     * assignment will be handled under the respective implementation.
+     * Here it's manually handled assuming these default will never change.
+     *
      * @param port
      * @param protocol
      * @return
@@ -54,9 +61,9 @@ public class ExternalServiceInfoUtils {
 
         switch (protocol) {
             case "https":
-               return 443;
+                return 443;
             case "http":
-               return 80;
+                return 80;
         }
 
         return port;
