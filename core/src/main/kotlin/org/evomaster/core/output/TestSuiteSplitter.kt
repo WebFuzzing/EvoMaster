@@ -6,12 +6,14 @@ import org.evomaster.core.output.clustering.metrics.DistanceMetric
 import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
 import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
 import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.graphql.GraphQLIndividual
+import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.*
-
+import com.google.gson.*
 
 /**
  * Created by arcuri82 on 11-Nov-19.
@@ -36,7 +38,7 @@ object TestSuiteSplitter {
 
     fun split(solution: Solution<*>,
               config: EMConfig) : SplitResult { //List<Solution<*>>{
-        return split(solution as Solution<RestIndividual>, config, PartialOracles())
+        return split(solution as Solution<*>, config, PartialOracles())
     }
     /**
      * Given a [Solution], split it into several smaller solutions, based on the given [type] strategy.
@@ -48,10 +50,16 @@ object TestSuiteSplitter {
               oracles: PartialOracles) : SplitResult { //List<Solution<*>>{
 
         val type = config.testSuiteSplitType
-        val sol = solution as Solution<RestIndividual>
+
+        // BMR: Splitting support for new problems
+        val sol = if(config.problemType == EMConfig.ProblemType.GRAPHQL){
+            solution as Solution<GraphQLIndividual>
+        } else {
+            solution as Solution<RestIndividual>
+        }
         val metrics = mutableListOf(DistanceMetricErrorText(config.errorTextEpsilon), DistanceMetricLastLine(config.lastLineEpsilon))
         val errs = sol.individuals.filter {ind ->
-            if (ind.individual is RestIndividual) {
+            if (ind.individual is RestIndividual || ind.individual is GraphQLIndividual) {
                 ind.evaluatedMainActions().any { ac ->
                     assessFailed(ac, oracles, config)
                 }
@@ -61,15 +69,21 @@ object TestSuiteSplitter {
 
         val splitResult = SplitResult()
 
-        if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) splitResult.splitOutcome = splitByCode(sol, config)
-
         when(type){
             EMConfig.TestSuiteSplitType.NONE  -> splitResult.splitOutcome = listOf(sol)
-            EMConfig.TestSuiteSplitType.CLUSTER -> {
-                val clusters = conductClustering(sol, oracles, config, metrics, splitResult)
-                splitByCluster(clusters, sol, oracles, splitResult, config)
-            }
             EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol, config)
+            EMConfig.TestSuiteSplitType.CLUSTER -> {
+                if(errs.size <= 1){
+                    splitResult.splitOutcome = splitByCode(sol, config)
+                    // TODO: BMR - what is the executive summary behaviour for 1 or fewer errors?
+                    splitResult.executiveSummary = sol
+                } else {
+                    val clusters = conductClustering(sol as Solution<RestIndividual>, oracles, config, metrics, splitResult)
+                    splitByCluster(clusters, sol, oracles, splitResult, config)
+                }
+
+            }
+
         }
 
         return splitResult
@@ -259,22 +273,46 @@ object TestSuiteSplitter {
     }
 
     /***
+     * A [GraphQlCallResult] is considered to be "failed" (and thus a potential fault)
+     * if it contains the field "errors" in its body.
+     */
+    fun assessFailed(result: GraphQlCallResult): Boolean{
+        val resultBody = Gson().fromJson(result.getBody(), HashMap::class.java)
+        val errMsg = resultBody?.get("errors")
+        return (resultBody!=null && errMsg != null)
+    }
+
+    /***
+     * A [HttpWsCallResult] is considered failed if it has a 500 code (i.e.
+     * if it contains a server error) OR if it contains no code at all.
+     */
+    fun assessFailed(result: HttpWsCallResult): Boolean {
+        val code = result.getStatusCode()
+        return (code != null && code == 500)
+        // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
+        // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
+        // "remainder" subset - as they are neither errors, nor successful runs.
+    }
+
+    /***
      * When the test suite is split into Successful and Failed tests, this function determines what a failed test
      * is defined as.
      * A test is a failure:
      *  - if it has a call with a status code 500
+     *  - if it contains a GraphQL call with a response containing an "errors" field
      *  - IF [PartialOracles] are selected, if the test contains a call that fails an expectation
      *  (i.e. is selected for clustering by one of the partial oracles).
      */
     fun assessFailed(action: EvaluatedAction, oracles: PartialOracles?, config: EMConfig): Boolean{
-        val codeSelect = if(action.result is HttpWsCallResult){
-            val code = (action.result as HttpWsCallResult).getStatusCode()
-            (code != null && code == 500)
-            // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
-            // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
-            // "remainder" subset - as they are neither errors, nor successful runs.
-        } else false
-
+        val codeSelect = when (action.result) {
+            is GraphQlCallResult -> {
+                assessFailed(action.result as GraphQlCallResult)
+            }
+            is HttpWsCallResult -> {
+                return assessFailed(action.result as HttpWsCallResult)
+            }
+            else -> false
+        }
 
         val oracleSelect = when{
             !config.expectationsActive -> false
