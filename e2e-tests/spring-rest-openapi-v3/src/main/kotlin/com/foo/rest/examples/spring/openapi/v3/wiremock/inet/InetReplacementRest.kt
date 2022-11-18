@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.Socket
 
 @RestController
@@ -16,7 +17,9 @@ class InetReplacementRest {
         val address = InetAddress.getByName("imaginary-host.local")
 
         return try {
-            val socket = Socket(address, 10000)
+            val socket = Socket()
+
+            socket.connect(InetSocketAddress(address, 10000), 1000)
             socket.close()
 
             ResponseEntity.ok("OK")

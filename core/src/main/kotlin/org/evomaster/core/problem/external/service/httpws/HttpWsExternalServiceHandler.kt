@@ -102,15 +102,20 @@ class HttpWsExternalServiceHandler {
     }
 
     private fun registerHttpExternalServiceInfo(externalServiceInfo : HttpExternalServiceInfo){
-        if (!externalServiceInfo.isPartial() && !externalServices.containsKey(externalServiceInfo.signature())) {
-            val ip = getIP(externalServiceInfo.remotePort)
-            lastIPAddress = ip
-            externalServices[externalServiceInfo.signature()] = initWireMockServer(ip, externalServiceInfo)
+        if (!externalServices.containsKey(externalServiceInfo.signature())) {
+            val es = HttpWsExternalService(externalServiceInfo)
+            if (!externalServiceInfo.isPartial()) {
+                val ip = getIP(externalServiceInfo.remotePort)
+                lastIPAddress = ip
+
+                es.start(ip)
+            }
+            externalServices[externalServiceInfo.signature()] = es
         }
     }
 
     fun getExternalServiceMappings(): Map<String, String> {
-        return externalServices.mapValues { it.value.getWireMockAddress() }
+        return externalServices.filter { it.value.isActive() }.mapValues { it.value.getWireMockAddress() }
     }
 
     /**
@@ -141,11 +146,11 @@ class HttpWsExternalServiceHandler {
     }
 
     fun getExternalServices(): Map<String, HttpWsExternalService> {
-        return externalServices
+        return externalServices.filter { it.value.isActive() }
     }
 
     fun reset() {
-        externalServices.forEach {
+        externalServices.filter { it.value.isActive() }.forEach {
             it.value.stopWireMockServer()
         }
     }
@@ -155,7 +160,7 @@ class HttpWsExternalServiceHandler {
      * The WireMock instances will still be up and running
      */
     fun resetServedRequests() {
-        externalServices.forEach { it.value.resetServedRequests() }
+        externalServices.filter { it.value.isActive() }.forEach { it.value.resetServedRequests() }
     }
 
     /**
@@ -188,7 +193,7 @@ class HttpWsExternalServiceHandler {
      * as [HttpExternalServiceRequest]
      */
     fun getAllServedExternalServiceRequests(): List<HttpExternalServiceRequest> {
-        return externalServices.values.filter { !isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
+        return externalServices.values.filter { it.isActive() }.filter { !isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
     }
 
     /**
@@ -245,39 +250,39 @@ class HttpWsExternalServiceHandler {
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
      */
-    private fun initWireMockServer(address: String, info: HttpExternalServiceInfo): HttpWsExternalService {
-        val port = info.remotePort
-
-        // TODO: Port need to be changed to the remote service port
-        //  In CI also using remote ports as 80 and 443 fails
-        val config =  WireMockConfiguration()
-            .bindAddress(address)
-            .extensions(ResponseTemplateTransformer(false))
-
-        if (!info.isHttp() && !info.isHttps())
-            LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($address)")
-        val applyHttps = info.isHttps() || (!info.isHttp() && info.isDerivedHttps())
-
-        if (applyHttps){
-            config.httpsPort(port)
-        }else {
-            config.port(port)
-        }
-
-        val wm = WireMockServer(config)
-        val es = HttpWsExternalService(info, wm)
-
-        /*
-            for SUT, its first connection is re-directed to a given ip address,
-            to keep same behavior in generated tests, we do not start the WM accordingly
-         */
-        if (info !is DefaultHttpExternalServiceInfo){
-            wm.start()
-            wireMockSetDefaults(es)
-        }
-
-        return es
-    }
+//    private fun initWireMockServer(address: String, info: HttpExternalServiceInfo): HttpWsExternalService {
+//        val port = info.remotePort
+//
+//        // TODO: Port need to be changed to the remote service port
+//        //  In CI also using remote ports as 80 and 443 fails
+//        val config =  WireMockConfiguration()
+//            .bindAddress(address)
+//            .extensions(ResponseTemplateTransformer(false))
+//
+//        if (!info.isHttp() && !info.isHttps())
+//            LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($address)")
+//        val applyHttps = info.isHttps() || (!info.isHttp() && info.isDerivedHttps())
+//
+//        if (applyHttps){
+//            config.httpsPort(port)
+//        }else {
+//            config.port(port)
+//        }
+//
+//        val wm = WireMockServer(config)
+//        val es = HttpWsExternalService(info, wm)
+//
+//        /*
+//            for SUT, its first connection is re-directed to a given ip address,
+//            to keep same behavior in generated tests, we do not start the WM accordingly
+//         */
+//        if (info !is DefaultHttpExternalServiceInfo && !info.isPartial()){
+//            wm.start()
+//            wireMockSetDefaults(es)
+//        }
+//
+//        return es
+//    }
 
 
 
