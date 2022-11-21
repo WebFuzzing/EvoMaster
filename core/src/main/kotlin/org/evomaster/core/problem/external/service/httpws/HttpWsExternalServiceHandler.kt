@@ -130,17 +130,7 @@ class HttpWsExternalServiceHandler {
     }
 
     fun getExternalServiceMappings(): Map<String, String> {
-//        return externalServices.mapValues { it.value.getIP() }
-        val mappings: MutableMap<String, String> = mutableMapOf()
-        externalServices.forEach { (t, u) ->
-            if (u.isActive()) {
-                mappings[t] = "A:" + u.getIP()
-            } else {
-                mappings[t] = "I:" + u.getIP()
-            }
-        }
-
-        return mappings.toMap()
+        return externalServices.mapValues { it.value.getIP() }
     }
 
     /**

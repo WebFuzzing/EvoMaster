@@ -15,7 +15,7 @@ public class ExternalServiceInfoUtils {
 
 //        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
-        if (!ExecutionTracer.hasActiveMapping(remoteHostInfo.signature())) {
+        if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
         }
 
