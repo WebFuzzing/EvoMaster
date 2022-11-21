@@ -40,7 +40,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
 
         // When using an imaginary host, this method will keep throwing UnknownHostException forever
         // which won't allow the code to move further
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("none", host, -1);
+        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, -1);
         try {
             if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
                 String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
@@ -65,7 +65,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
         if (ExternalServiceInfoUtils.skipHostnameOrIp(host))
             return InetAddress.getAllByName(host);
         // FIXME -1 leads a crash, but do we really need the real port info here. might use specified one
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("none", host, -1);
+        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, -1);
         try {
             if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
                 String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());

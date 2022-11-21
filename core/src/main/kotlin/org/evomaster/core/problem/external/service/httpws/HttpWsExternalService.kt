@@ -35,7 +35,7 @@ class HttpWsExternalService(
     /**
      * Initiated WireMock server for the external service
      */
-    private val wireMockServer: WireMockServer? = null
+    private var wireMockServer: WireMockServer? = null
 
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
@@ -70,6 +70,8 @@ class HttpWsExternalService(
                 wm.start()
                 wm.stubFor(getDefaultWMMappingBuilder())
             }
+
+            wireMockServer = wm
         }
     }
 
@@ -197,7 +199,7 @@ class HttpWsExternalService(
     fun removeStub(stubId: UUID): Boolean {
         val stubMapping = wireMockServer!!.getStubMapping(stubId)
         if (stubMapping.isPresent) {
-            wireMockServer.removeStubMapping(stubMapping.item)
+            wireMockServer!!.removeStubMapping(stubMapping.item)
             return true
         }
         return false
