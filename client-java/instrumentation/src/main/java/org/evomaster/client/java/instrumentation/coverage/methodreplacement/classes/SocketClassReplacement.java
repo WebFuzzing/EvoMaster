@@ -32,10 +32,11 @@ public class SocketClassReplacement implements MethodReplacementClass {
         if (endpoint instanceof InetSocketAddress){
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
-            if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName()) || ExecutionTracer.skipHostname(socketAddress.getHostName())){
-                caller.connect(endpoint, timeout);
-                return;
-            }
+//            if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName()) || ExecutionTracer.skipHostname(socketAddress.getHostName())){
+//                caller.connect(endpoint, timeout);
+//                return;
+//            }
+            // Inet replacement, changes t
             if (socketAddress.getAddress() instanceof Inet4Address){
 
                 ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, socketAddress.getHostName(), socketAddress.getPort());
