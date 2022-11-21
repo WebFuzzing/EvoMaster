@@ -75,13 +75,12 @@ class HttpWsExternalServiceHandler {
     }
 
 
-
     /**
      * init default WM
      */
-    private fun initDefaultWM(){
-        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE){
-            if (!isDefaultInitialized){
+    private fun initDefaultWM() {
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+            if (!isDefaultInitialized) {
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
                 isDefaultInitialized = true
@@ -101,7 +100,7 @@ class HttpWsExternalServiceHandler {
         }
     }
 
-    private fun registerHttpExternalServiceInfo(externalServiceInfo : HttpExternalServiceInfo){
+    private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) {
         if (!externalServices.containsKey(externalServiceInfo.signature())) {
             val ip = getIP(externalServiceInfo.remotePort)
             lastIPAddress = ip
@@ -125,21 +124,23 @@ class HttpWsExternalServiceHandler {
             val ex = externalServices.getValue(externalServiceInfo.signature())
             if (!ex.isActive() && !externalServiceInfo.isPartial()) {
                 ex.updateRemotePort(externalServiceInfo.remotePort)
-                if (isAddressAvailable(ex.getIP(), externalServiceInfo.remotePort)) {
-                    ex.startWireMock()
-                } else {
-                    val newIP = getIP(externalServiceInfo.remotePort)
-                    lastIPAddress = newIP
-
-                    ex.updateIP(newIP)
-                    ex.startWireMock()
-                }
+                ex.startWireMock()
             }
         }
     }
 
     fun getExternalServiceMappings(): Map<String, String> {
-        return externalServices.mapValues { it.value.getIP() }
+//        return externalServices.mapValues { it.value.getIP() }
+        val mappings: MutableMap<String, String> = mutableMapOf()
+        externalServices.forEach { (t, u) ->
+            if (u.isActive()) {
+                mappings[t] = "A:" + u.getIP()
+            } else {
+                mappings[t] = "I:" + u.getIP()
+            }
+        }
+
+        return mappings.toMap()
     }
 
     /**
@@ -150,7 +151,7 @@ class HttpWsExternalServiceHandler {
         val nextAddress: String = nextIPAddress(lastIPAddress)
 
 //        if (isAddressAvailable(nextAddress, port)) {
-            return nextAddress
+        return nextAddress
 //        } else {
 //            throw IllegalStateException(nextAddress.plus(" is not available for use"))
 //        }
@@ -164,7 +165,7 @@ class HttpWsExternalServiceHandler {
     private fun generateRandomAvailableAddress(port: Int): String {
         val ip = generateRandomIPAddress(randomness)
 //        if (isAddressAvailable(ip, port)) {
-            return ip
+        return ip
 //        }
 //        return generateRandomAvailableAddress(port)
     }
@@ -190,7 +191,10 @@ class HttpWsExternalServiceHandler {
     /**
      * Creates an [HttpExternalServiceAction] based on the given [HttpExternalServiceRequest]
      */
-    fun createExternalServiceAction(request: HttpExternalServiceRequest, responseParam: HttpWsResponseParam?): HttpExternalServiceAction {
+    fun createExternalServiceAction(
+        request: HttpExternalServiceRequest,
+        responseParam: HttpWsResponseParam?
+    ): HttpExternalServiceAction {
         val externalService = getExternalService(request.wireMockSignature)
 
         val action = if (responseParam == null)
@@ -198,8 +202,13 @@ class HttpWsExternalServiceHandler {
                 doInitialize(randomness)
             }
         else
-            HttpExternalServiceAction(request = request, response= responseParam, externalService =  externalService, id = counter++).apply {
-                seeTopGenes().forEach { g-> g.markAllAsInitialized() }
+            HttpExternalServiceAction(
+                request = request,
+                response = responseParam,
+                externalService = externalService,
+                id = counter++
+            ).apply {
+                seeTopGenes().forEach { g -> g.markAllAsInitialized() }
             }
 
         return action
@@ -217,14 +226,16 @@ class HttpWsExternalServiceHandler {
      * as [HttpExternalServiceRequest]
      */
     fun getAllServedExternalServiceRequests(): List<HttpExternalServiceRequest> {
-        return externalServices.values.filter { it.isActive() }.filter { !isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
+        return externalServices.values.filter { it.isActive() }.filter { !isDefaultSignature(it.getSignature()) }
+            .flatMap { it.getAllServedRequests() }
     }
 
     /**
      * @return a list of the served requests to the default WM
      */
     fun getAllServedRequestsToDefaultWM(): List<HttpExternalServiceRequest> {
-        return externalServices.values.filter { isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
+        return externalServices.values.filter { isDefaultSignature(it.getSignature()) }
+            .flatMap { it.getAllServedRequests() }
     }
 
     /**
@@ -245,13 +256,14 @@ class HttpWsExternalServiceHandler {
                     generateRandomAvailableAddress(port)
                 }
             }
+
             EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
                 ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
                 } else {
                     if (!isReservedIP(config.externalServiceIP)) {
 //                        if (isAddressAvailable(config.externalServiceIP, port)) {
-                            config.externalServiceIP
+                        config.externalServiceIP
 //                        } else {
 //                            throw IllegalStateException("User provided IP address is not available: ${config.externalServiceIP}:$port")
 //                        }
@@ -260,6 +272,7 @@ class HttpWsExternalServiceHandler {
                     }
                 }
             }
+
             else -> {
                 ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
@@ -307,7 +320,6 @@ class HttpWsExternalServiceHandler {
 //
 //        return es
 //    }
-
 
 
     /**
