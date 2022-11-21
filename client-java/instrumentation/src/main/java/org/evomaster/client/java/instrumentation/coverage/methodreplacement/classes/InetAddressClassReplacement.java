@@ -45,6 +45,8 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
                 String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
                 return InetAddress.getByName(ip);
+            } else {
+                ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             }
             return InetAddress.getByName(host);
         } catch (UnknownHostException e) {
@@ -68,6 +70,8 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
                 String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
                 return new InetAddress[]{InetAddress.getByName(ip)};
+            } else {
+                ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             }
             return InetAddress.getAllByName(host);
         } catch (UnknownHostException e) {

@@ -103,19 +103,52 @@ class HttpWsExternalServiceHandler {
 
     private fun registerHttpExternalServiceInfo(externalServiceInfo : HttpExternalServiceInfo){
         if (!externalServices.containsKey(externalServiceInfo.signature())) {
-            val es = HttpWsExternalService(externalServiceInfo)
-            if (!externalServiceInfo.isPartial()) {
-                val ip = getIP(externalServiceInfo.remotePort)
-                lastIPAddress = ip
+            val ip = getIP(externalServiceInfo.remotePort)
+            lastIPAddress = ip
 
-                es.start(ip)
+            val es = HttpWsExternalService(externalServiceInfo, ip)
+
+            if (!externalServiceInfo.isPartial()) {
+                if (isAddressAvailable(es.getIP(), externalServiceInfo.remotePort)) {
+                    es.startWireMock()
+                } else {
+                    val newIP = getIP(externalServiceInfo.remotePort)
+                    lastIPAddress = ip
+
+                    es.updateIP(newIP)
+                    es.startWireMock()
+                }
             }
+
             externalServices[externalServiceInfo.signature()] = es
+        } else if (externalServices.containsKey(externalServiceInfo.signature())) {
+            val ex = externalServices.getValue(externalServiceInfo.signature())
+            if (!ex.isActive() && !externalServiceInfo.isPartial()) {
+                ex.updateRemotePort(externalServiceInfo.remotePort)
+                if (isAddressAvailable(ex.getIP(), externalServiceInfo.remotePort)) {
+                    ex.startWireMock()
+                } else {
+                    val newIP = getIP(externalServiceInfo.remotePort)
+                    lastIPAddress = newIP
+
+                    ex.updateIP(newIP)
+                    ex.startWireMock()
+                }
+            }
         }
     }
 
     fun getExternalServiceMappings(): Map<String, String> {
-        return externalServices.filter { it.value.isActive() }.mapValues { it.value.getWireMockAddress() }
+        val mappings: MutableMap<String, String> = mutableMapOf()
+        externalServices.forEach { (t, u) ->
+           if (u.isActive()) {
+               mappings[t] = "A:" + u.getIP()
+           } else {
+               mappings[t] = "I:" + u.getIP()
+           }
+        }
+
+        return mappings.toMap()
     }
 
     /**
@@ -125,11 +158,11 @@ class HttpWsExternalServiceHandler {
     private fun getNextAvailableAddress(port: Int): String {
         val nextAddress: String = nextIPAddress(lastIPAddress)
 
-        if (isAddressAvailable(nextAddress, port)) {
+//        if (isAddressAvailable(nextAddress, port)) {
             return nextAddress
-        } else {
-            throw IllegalStateException(nextAddress.plus(" is not available for use"))
-        }
+//        } else {
+//            throw IllegalStateException(nextAddress.plus(" is not available for use"))
+//        }
     }
 
     /**
@@ -139,10 +172,10 @@ class HttpWsExternalServiceHandler {
      */
     private fun generateRandomAvailableAddress(port: Int): String {
         val ip = generateRandomIPAddress(randomness)
-        if (isAddressAvailable(ip, port)) {
+//        if (isAddressAvailable(ip, port)) {
             return ip
-        }
-        return generateRandomAvailableAddress(port)
+//        }
+//        return generateRandomAvailableAddress(port)
     }
 
     fun getExternalServices(): Map<String, HttpWsExternalService> {
@@ -226,11 +259,11 @@ class HttpWsExternalServiceHandler {
                     getNextAvailableAddress(port)
                 } else {
                     if (!isReservedIP(config.externalServiceIP)) {
-                        if (isAddressAvailable(config.externalServiceIP, port)) {
+//                        if (isAddressAvailable(config.externalServiceIP, port)) {
                             config.externalServiceIP
-                        } else {
-                            throw IllegalStateException("User provided IP address is not available: ${config.externalServiceIP}:$port")
-                        }
+//                        } else {
+//                            throw IllegalStateException("User provided IP address is not available: ${config.externalServiceIP}:$port")
+//                        }
                     } else {
                         throw IllegalStateException("Can not use a reserved IP address: ${config.externalServiceIP}")
                     }

@@ -20,6 +20,8 @@ class HttpWsExternalService(
      * External service information collected from SUT
      */
     private val externalServiceInfo: HttpExternalServiceInfo,
+
+    private var ip: String,
 ) {
 
     companion object{
@@ -38,18 +40,18 @@ class HttpWsExternalService(
     /**
      * Will initialise WireMock instance on a given IP address for a given port.
      */
-    fun start(address: String) {
+    fun startWireMock() {
         if (!externalServiceInfo.isPartial()) {
             val port = externalServiceInfo.remotePort
 
             // TODO: Port need to be changed to the remote service port
             //  In CI also using remote ports as 80 and 443 fails
             val config =  WireMockConfiguration()
-                .bindAddress(address)
+                .bindAddress(ip)
                 .extensions(ResponseTemplateTransformer(false))
 
             if (!externalServiceInfo.isHttp() && !externalServiceInfo.isHttps())
-                LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($address)")
+                LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($ip)")
             val applyHttps = externalServiceInfo.isHttps() || (!externalServiceInfo.isHttp() && externalServiceInfo.isDerivedHttps())
 
             if (applyHttps){
@@ -195,7 +197,7 @@ class HttpWsExternalService(
     fun removeStub(stubId: UUID): Boolean {
         val stubMapping = wireMockServer!!.getStubMapping(stubId)
         if (stubMapping.isPresent) {
-            wireMockServer!!.removeStubMapping(stubMapping.item)
+            wireMockServer.removeStubMapping(stubMapping.item)
             return true
         }
         return false
@@ -203,5 +205,17 @@ class HttpWsExternalService(
 
     fun isActive(): Boolean {
         return wireMockServer != null
+    }
+
+    fun updateRemotePort(port: Int) {
+        externalServiceInfo.updateRemotePort(port)
+    }
+
+    fun updateIP(newIP: String) {
+        ip = newIP
+    }
+
+    fun getIP(): String {
+        return ip
     }
 }
