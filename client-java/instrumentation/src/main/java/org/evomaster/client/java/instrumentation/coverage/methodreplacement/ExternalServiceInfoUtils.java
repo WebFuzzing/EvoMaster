@@ -13,7 +13,11 @@ public class ExternalServiceInfoUtils {
      */
     public static String[] collectExternalServiceInfo(ExternalServiceInfo remoteHostInfo, int remotePort) {
 
-        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+//        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+
+        if (!ExecutionTracer.hasActiveMapping(remoteHostInfo.signature())) {
+            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+        }
 
         String signature = remoteHostInfo.signature();
         int connectPort = remotePort;
