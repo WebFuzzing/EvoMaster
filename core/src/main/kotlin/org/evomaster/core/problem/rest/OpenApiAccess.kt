@@ -51,11 +51,14 @@ object OpenApiAccess {
     private fun readFromRemoteServer(openApiUrl: String) : String{
         val response = connectToServer(openApiUrl, 10)
 
+        val body = response.readEntity(String::class.java)
+
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
-            throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiUrl , status=${response.status}")
+            throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiUrl ," +
+                    " status=${response.status} , body: $body")
         }
 
-        return response.readEntity(String::class.java)
+        return body
     }
 
     private fun readFromDisk(openApiUrl: String) : String {
