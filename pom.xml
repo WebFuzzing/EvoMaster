@@ -111,7 +111,7 @@
         <swagger.version>1.6.1</swagger.version>
         <swagger.parser-v2.version>1.0.61</swagger.parser-v2.version>
         <swagger.parser-v3.version>2.1.8</swagger.parser-v3.version>
-        <swagger.annotations.version>2.2.1</swagger.annotations.version>
+        <swagger.annotations.version>2.2.7</swagger.annotations.version>
         <springboot.version>2.5.4</springboot.version>
         <springfox.version>3.0.0</springfox.version>
         <springdoc.version>1.6.9</springdoc.version>
