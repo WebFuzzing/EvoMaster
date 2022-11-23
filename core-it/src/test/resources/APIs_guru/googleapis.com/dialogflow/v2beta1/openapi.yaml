@@ -122,6 +122,52 @@ paths:
             - https://www.googleapis.com/auth/dialogflow
       tags:
         - projects
+  "/v2beta1/{conversation}/suggestions:suggestConversationSummary":
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+    post:
+      description: Suggest summary for a conversation based on specific historical messages. The range of the messages to be used for summary can be specified in the request.
+      operationId: dialogflow.projects.locations.conversations.suggestions.suggestConversationSummary
+      parameters:
+        - description: "Required. The conversation to fetch suggestion for. Format: `projects//locations//conversations/`."
+          in: path
+          name: conversation
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleCloudDialogflowV2beta1SuggestConversationSummaryRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleCloudDialogflowV2beta1SuggestConversationSummaryResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+        - Oauth2:
+            - https://www.googleapis.com/auth/dialogflow
+          Oauth2c:
+            - https://www.googleapis.com/auth/dialogflow
+      tags:
+        - projects
   "/v2beta1/{name}":
     delete:
       description: "Deletes the specified document. This method is a [long-running operation](https://cloud.google.com/dialogflow/cx/docs/how/long-running-operation). The returned `Operation` type has the following method-specific fields: - `metadata`: KnowledgeOperationMetadata - `response`: An [Empty message](https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#empty) Note: The `projects.agent.knowledgeBases.documents` resource is deprecated; only use `projects.knowledgeBases.documents`."
@@ -897,6 +943,11 @@ paths:
           in: path
           name: parent
           required: true
+          schema:
+            type: string
+        - description: Optional. Filters to restrict results to specific answer records. For more information about filtering, see [API Filtering](https://aip.dev/160).
+          in: query
+          name: filter
           schema:
             type: string
         - description: Optional. The maximum number of records to return in a single page. The server may return fewer records than this. If unspecified, we use 10. The maximum is 100.
@@ -3847,7 +3898,7 @@ components:
           type: string
       type: object
     GoogleCloudDialogflowCxV3WebhookRequest:
-      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases.
+      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases. You may see undocumented fields in an actual request. These fields are used internally by Dialogflow and should be ignored.
       properties:
         detectIntentResponseId:
           description: Always present. The unique identifier of the DetectIntentResponse that will be returned to the API caller.
@@ -5040,7 +5091,7 @@ components:
           type: string
       type: object
     GoogleCloudDialogflowCxV3beta1WebhookRequest:
-      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases.
+      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases. You may see undocumented fields in an actual request. These fields are used internally by Dialogflow and should be ignored.
       properties:
         detectIntentResponseId:
           description: Always present. The unique identifier of the DetectIntentResponse that will be returned to the API caller.
@@ -5362,7 +5413,10 @@ components:
       type: object
     GoogleCloudDialogflowV2CreateConversationDatasetOperationMetadata:
       description: Metadata for ConversationDatasets.
-      properties: {}
+      properties:
+        conversationDataset:
+          description: "The resource name of the conversation dataset that will be created. Format: `projects//locations//conversationDatasets/`"
+          type: string
       type: object
     GoogleCloudDialogflowV2CreateConversationModelEvaluationOperationMetadata:
       description: Metadata for a ConversationModels.CreateConversationModelEvaluation operation.
@@ -6301,7 +6355,7 @@ components:
           description: "This field is set to: - `false` if the matched intent has required parameters and not all of the required parameter values have been collected. - `true` if all required parameter values have been collected, or if the matched intent doesn't contain any required parameters."
           type: boolean
         cancelsSlotFilling:
-          description: Indicates whether the conversational query triggers a cancellation for slot filling.
+          description: Indicates whether the conversational query triggers a cancellation for slot filling. For more information, see the [cancel slot filling documentation](https://cloud.google.com/dialogflow/es/docs/intents-actions-parameters#cancel).
           type: boolean
         diagnosticInfo:
           additionalProperties:
@@ -6838,7 +6892,7 @@ components:
       description: Represents the natural language speech audio to be processed.
       properties:
         audio:
-          description: Required. The natural language speech audio to be processed. A single request can contain up to 1 minute of speech audio data. The transcribed text cannot contain more than 256 bytes.
+          description: Required. The natural language speech audio to be processed. A single request can contain up to 1 minute of speech audio data. The transcribed text cannot contain more than 256 bytes for virtual agent interactions.
           format: byte
           type: string
         config:
@@ -7053,6 +7107,7 @@ components:
             - ARTICLE_SUGGESTION
             - FAQ
             - SMART_REPLY
+            - CONVERSATION_SUMMARIZATION
           type: string
       type: object
     GoogleCloudDialogflowV2beta1ClearSuggestionFeatureConfigRequest:
@@ -7073,6 +7128,7 @@ components:
             - ARTICLE_SUGGESTION
             - FAQ
             - SMART_REPLY
+            - CONVERSATION_SUMMARIZATION
           type: string
       type: object
     GoogleCloudDialogflowV2beta1CompileSuggestionRequest:
@@ -9186,7 +9242,7 @@ components:
           description: "This field is set to: - `false` if the matched intent has required parameters and not all of the required parameter values have been collected. - `true` if all required parameter values have been collected, or if the matched intent doesn't contain any required parameters."
           type: boolean
         cancelsSlotFilling:
-          description: Indicates whether the conversational query triggers a cancellation for slot filling.
+          description: Indicates whether the conversational query triggers a cancellation for slot filling. For more information, see the [cancel slot filling documentation](https://cloud.google.com/dialogflow/es/docs/intents-actions-parameters#cancel).
           type: boolean
         diagnosticInfo:
           additionalProperties:
@@ -9425,6 +9481,7 @@ components:
             - ARTICLE_SUGGESTION
             - FAQ
             - SMART_REPLY
+            - CONVERSATION_SUMMARIZATION
           type: string
       type: object
     GoogleCloudDialogflowV2beta1SetSuggestionFeatureConfigRequest:
@@ -9472,6 +9529,9 @@ components:
     GoogleCloudDialogflowV2beta1SpeechToTextConfig:
       description: Configures speech transcription for ConversationProfile.
       properties:
+        model:
+          description: Which Speech model to select. Select the model best suited to your domain to get best results. If a model is not explicitly specified, then a default model is used. Refer to [Cloud Speech API documentation](https://cloud.google.com/speech-to-text/docs/basics#select-model) for more details.
+          type: string
         speechModelVariant:
           description: The speech model used in speech to text. `SPEECH_MODEL_VARIANT_UNSPECIFIED`, `USE_BEST_AVAILABLE` will be treated as `USE_ENHANCED`. It can be overridden in AnalyzeContentRequest and StreamingAnalyzeContentRequest request. If enhanced model variant is specified and an enhanced version of the specified model for the language does not exist, then it would emit an error.
           enum:
@@ -9520,6 +9580,46 @@ components:
         latestMessage:
           description: "The name of the latest conversation message used to compile suggestion for. Format: `projects//locations//conversations//messages/`."
           type: string
+      type: object
+    GoogleCloudDialogflowV2beta1SuggestConversationSummaryRequest:
+      description: The request message for Conversations.SuggestConversationSummary.
+      properties:
+        contextSize:
+          description: Max number of messages prior to and including [latest_message] to use as context when compiling the suggestion. By default 500 and at most 1000.
+          format: int32
+          type: integer
+        latestMessage:
+          description: "The name of the latest conversation message used as context for compiling suggestion. If empty, the latest message of the conversation will be used. Format: `projects//locations//conversations//messages/`."
+          type: string
+      type: object
+    GoogleCloudDialogflowV2beta1SuggestConversationSummaryResponse:
+      description: The response message for Conversations.SuggestConversationSummary.
+      properties:
+        contextSize:
+          description: Number of messages prior to and including last_conversation_message used to compile the suggestion. It may be smaller than the SuggestSummaryRequest.context_size field in the request if there weren't that many messages in the conversation.
+          format: int32
+          type: integer
+        latestMessage:
+          description: "The name of the latest conversation message used as context for compiling suggestion. Format: `projects//locations//conversations//messages/`."
+          type: string
+        summary:
+          $ref: "#/components/schemas/GoogleCloudDialogflowV2beta1SuggestConversationSummaryResponseSummary"
+          description: Generated summary.
+      type: object
+    GoogleCloudDialogflowV2beta1SuggestConversationSummaryResponseSummary:
+      description: Generated summary for a conversation.
+      properties:
+        answerRecord:
+          description: 'The name of the answer record. Format: "projects//answerRecords/"'
+          type: string
+        text:
+          description: The summary content that is concatenated into one string.
+          type: string
+        textSections:
+          additionalProperties:
+            type: string
+          description: The summary content that is divided into sections. The key is the section's name and the value is the section's content. There is no specific format for the key or value.
+          type: object
       type: object
     GoogleCloudDialogflowV2beta1SuggestFaqAnswersRequest:
       description: The request message for Participants.SuggestFaqAnswers.
@@ -9663,6 +9763,7 @@ components:
             - ARTICLE_SUGGESTION
             - FAQ
             - SMART_REPLY
+            - CONVERSATION_SUMMARIZATION
           type: string
       type: object
     GoogleCloudDialogflowV2beta1SuggestionResult:
@@ -9739,7 +9840,7 @@ components:
           description: Required. The language of this conversational query. See [Language Support](https://cloud.google.com/dialogflow/docs/reference/language) for a list of the currently supported language codes. Note that queries in the same session do not necessarily need to specify the same language.
           type: string
         text:
-          description: Required. The UTF-8 encoded natural language text to be processed. Text length must not exceed 256 characters.
+          description: Required. The UTF-8 encoded natural language text to be processed. Text length must not exceed 256 characters for virtual agent interactions.
           type: string
       type: object
     GoogleCloudDialogflowV2beta1TextToSpeechSettings:

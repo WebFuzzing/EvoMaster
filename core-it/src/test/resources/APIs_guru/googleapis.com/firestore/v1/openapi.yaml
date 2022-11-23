@@ -804,6 +804,44 @@ paths:
       - $ref: "#/components/parameters/quotaUser"
       - $ref: "#/components/parameters/upload_protocol"
       - $ref: "#/components/parameters/uploadType"
+    post:
+      description: Create a database.
+      operationId: firestore.projects.databases.create
+      parameters:
+        - description: Required. A parent name of the form `projects/{project_id}`
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+        - description: Required. The ID to use for the database, which will become the final component of the database's resource name. This value should be 4-63 characters. Valid characters are /a-z-/ with first character a letter and the last a letter or a number. Must not be UUID-like /[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}/. "(default)" database id is also valid.
+          in: query
+          name: databaseId
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleFirestoreAdminV1Database"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleLongrunningOperation"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+        - Oauth2:
+            - https://www.googleapis.com/auth/datastore
+          Oauth2c:
+            - https://www.googleapis.com/auth/datastore
+      tags:
+        - projects
   "/v1/{parent}/fields":
     get:
       description: Lists the field configuration and metadata for this database. Currently, FirestoreAdmin.ListFields only supports listing fields that have been explicitly overridden. To issue this query, call FirestoreAdmin.ListFields with the filter set to `indexConfig.usesAncestorConfig:false` .
@@ -1180,6 +1218,52 @@ paths:
             - https://www.googleapis.com/auth/datastore
       tags:
         - projects
+  "/v1/{parent}:runAggregationQuery":
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+    post:
+      description: "Runs an aggregation query. Rather than producing Document results like Firestore.RunQuery, this API allows running an aggregation to produce a series of AggregationResult server-side. High-Level Example: ``` -- Return the number of documents in table given a filter. SELECT COUNT(*) FROM ( SELECT * FROM k where a = true ); ```"
+      operationId: firestore.projects.databases.documents.runAggregationQuery
+      parameters:
+        - description: "Required. The parent resource name. In the format: `projects/{project_id}/databases/{database_id}/documents` or `projects/{project_id}/databases/{database_id}/documents/{document_path}`. For example: `projects/my-project/databases/my-database/documents` or `projects/my-project/databases/my-database/documents/chatrooms/my-chatroom`"
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunAggregationQueryRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunAggregationQueryResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+        - Oauth2:
+            - https://www.googleapis.com/auth/datastore
+          Oauth2c:
+            - https://www.googleapis.com/auth/datastore
+      tags:
+        - projects
   "/v1/{parent}:runQuery":
     parameters:
       - $ref: "#/components/parameters/_.xgafv"
@@ -1302,6 +1386,25 @@ components:
       schema:
         type: string
   schemas:
+    Aggregation:
+      description: Defines a aggregation that produces a single result.
+      properties:
+        alias:
+          description: "Optional. Optional name of the field to store the result of the aggregation into. If not provided, Firestore will pick a default name following the format `field_`. For example: ``` AGGREGATE COUNT_UP_TO(1) AS count_up_to_1, COUNT_UP_TO(2), COUNT_UP_TO(3) AS count_up_to_3, COUNT_UP_TO(4) OVER ( ... ); ``` becomes: ``` AGGREGATE COUNT_UP_TO(1) AS count_up_to_1, COUNT_UP_TO(2) AS field_1, COUNT_UP_TO(3) AS count_up_to_3, COUNT_UP_TO(4) AS field_2 OVER ( ... ); ``` Requires: * Must be unique across all aggregation aliases. * Conform to document field name limitations."
+          type: string
+        count:
+          $ref: "#/components/schemas/Count"
+          description: Count aggregator.
+      type: object
+    AggregationResult:
+      description: The result of a single bucket from a Firestore aggregation query. The keys of `aggregate_fields` are the same for all results in an aggregation query, unlike document queries which can have different fields present for each result.
+      properties:
+        aggregateFields:
+          additionalProperties:
+            $ref: "#/components/schemas/Value"
+          description: "The result of the aggregation functions, ex: `COUNT(*) AS total_docs`. The key is the alias assigned to the aggregation function on input and the size of this map equals the number of aggregation functions in the query."
+          type: object
+      type: object
     ArrayValue:
       description: An array value.
       properties:
@@ -1444,6 +1547,14 @@ components:
           enum:
             - OPERATOR_UNSPECIFIED
             - AND
+          type: string
+      type: object
+    Count:
+      description: Count of documents that match the query. The `COUNT(*)` aggregation function operates on the entire document so it does not require a field reference.
+      properties:
+        upTo:
+          description: "Optional. Optional constraint on the maximum number of documents to count. This provides a way to set an upper bound on the number of documents to scan, limiting latency and cost. Unspecified is interpreted as no bound. High-Level Example: ``` AGGREGATE COUNT_UP_TO(1000) OVER ( SELECT * FROM k ); ``` Requires: * Must be greater than zero when present."
+          format: int64
           type: string
       type: object
     Cursor:
@@ -1603,9 +1714,10 @@ components:
           description: The value to compare to.
       type: object
     FieldReference:
-      description: A reference to a field, such as `max(messages.time) as max_time`.
+      description: "A reference to a field in a document, ex: `stats.operations`."
       properties:
         fieldPath:
+          description: "The relative path of the document being referenced. Requires: * Conform to document field name limitations."
           type: string
       type: object
     FieldTransform:
@@ -1734,6 +1846,11 @@ components:
           items:
             type: string
           type: array
+        namespaceIds:
+          description: An empty list represents all namespaces. This is the preferred usage for databases that don't use namespaces. An empty string element represents the default namespace. This should be used if the database has data in non-default namespaces, but doesn't want to include them. Each namespace in this list must be unique.
+          items:
+            type: string
+          type: array
         outputUriPrefix:
           description: "The output URI. Currently only supports Google Cloud Storage URIs of the form: `gs://BUCKET_NAME[/NAMESPACE_PATH]`, where `BUCKET_NAME` is the name of the Google Cloud Storage bucket and `NAMESPACE_PATH` is an optional Google Cloud Storage namespace path. When choosing a name, be sure to consider Google Cloud Storage naming guidelines: https://cloud.google.com/storage/docs/naming. If the URI is a bucket (without a namespace path), a prefix will be generated based on the start time."
           type: string
@@ -1754,6 +1871,9 @@ components:
         name:
           description: "Required. A field name of the form `projects/{project_id}/databases/{database_id}/collectionGroups/{collection_id}/fields/{field_path}` A field path may be a simple field name, e.g. `address` or a path to fields within map_value , e.g. `address.city`, or a special field path. The only valid special field is `*`, which represents any field. Field paths may be quoted using ` (backtick). The only character that needs to be escaped within a quoted field path is the backtick character itself, escaped using a backslash. Special characters in field paths that must be quoted include: `*`, `.`, ``` (backtick), `[`, `]`, as well as any ascii symbolic characters. Examples: (Note: Comments here are written in markdown syntax, so there is an additional layer of backticks to represent a code block) `\\`address.city\\`` represents a field named `address.city`, not the map key `city` in the field `address`. `\\`*\\`` represents a field named `*`, not any field. A special `Field` contains the default indexing settings for all fields. This field's resource name is: `projects/{project_id}/databases/{database_id}/collectionGroups/__default__/fields/*` Indexes defined on this `Field` will be applied to all fields which do not have their own `Field` index configuration."
           type: string
+        ttlConfig:
+          $ref: "#/components/schemas/GoogleFirestoreAdminV1TtlConfig"
+          description: The TTL configuration for this `Field`. Setting or unsetting this will enable or disable the TTL for documents that have this `Field`.
       type: object
     GoogleFirestoreAdminV1FieldOperationMetadata:
       description: Metadata for google.longrunning.Operation results from FirestoreAdmin.UpdateField.
@@ -1792,6 +1912,9 @@ components:
             - FAILED
             - CANCELLED
           type: string
+        ttlConfigDelta:
+          $ref: "#/components/schemas/GoogleFirestoreAdminV1TtlConfigDelta"
+          description: Describes the deltas of TTL configuration.
       type: object
     GoogleFirestoreAdminV1ImportDocumentsMetadata:
       description: Metadata for google.longrunning.Operation results from FirestoreAdmin.ImportDocuments.
@@ -1842,12 +1965,23 @@ components:
         inputUriPrefix:
           description: "Location of the exported files. This must match the output_uri_prefix of an ExportDocumentsResponse from an export that has completed successfully. See: google.firestore.admin.v1.ExportDocumentsResponse.output_uri_prefix."
           type: string
+        namespaceIds:
+          description: An empty list represents all namespaces. This is the preferred usage for databases that don't use namespaces. An empty string element represents the default namespace. This should be used if the database has data in non-default namespaces, but doesn't want to include them. Each namespace in this list must be unique.
+          items:
+            type: string
+          type: array
       type: object
     GoogleFirestoreAdminV1Index:
       description: Cloud Firestore indexes enable simple and complex queries against documents in a database.
       properties:
+        apiScope:
+          description: The API scope supported by this index.
+          enum:
+            - ANY_API
+            - DATASTORE_MODE_API
+          type: string
         fields:
-          description: The fields supported by this index. For composite indexes, this is always 2 or more fields. The last field entry is always for the field path `__name__`. If, on creation, `__name__` was not specified as the last field, it will be added automatically with the same direction as that of the last field defined. If the final field in a composite index is not directional, the `__name__` will be ordered ASCENDING (unless explicitly specified). For single field indexes, this will always be exactly one entry with a field path equal to the field path of the associated field.
+          description: The fields supported by this index. For composite indexes, this requires a minimum of 2 and a maximum of 100 fields. The last field entry is always for the field path `__name__`. If, on creation, `__name__` was not specified as the last field, it will be added automatically with the same direction as that of the last field defined. If the final field in a composite index is not directional, the `__name__` will be ordered ASCENDING (unless explicitly specified). For single field indexes, this will always be exactly one entry with a field path equal to the field path of the associated field.
           items:
             $ref: "#/components/schemas/GoogleFirestoreAdminV1IndexField"
           type: array
@@ -1860,6 +1994,7 @@ components:
             - QUERY_SCOPE_UNSPECIFIED
             - COLLECTION
             - COLLECTION_GROUP
+            - COLLECTION_RECURSIVE
           type: string
         state:
           description: Output only. The serving state of the index.
@@ -2004,6 +2139,30 @@ components:
           format: int64
           type: string
       type: object
+    GoogleFirestoreAdminV1TtlConfig:
+      description: The TTL (time-to-live) configuration for documents that have this `Field` set. Storing a timestamp value into a TTL-enabled field will be treated as the document's absolute expiration time. Timestamp values in the past indicate that the document is eligible for immediate expiration. Using any other data type or leaving the field absent will disable expiration for the individual document.
+      properties:
+        state:
+          description: Output only. The state of the TTL configuration.
+          enum:
+            - STATE_UNSPECIFIED
+            - CREATING
+            - ACTIVE
+            - NEEDS_REPAIR
+          readOnly: true
+          type: string
+      type: object
+    GoogleFirestoreAdminV1TtlConfigDelta:
+      description: Information about an TTL configuration change.
+      properties:
+        changeType:
+          description: Specifies how the TTL configuration is changing.
+          enum:
+            - CHANGE_TYPE_UNSPECIFIED
+            - ADD
+            - REMOVE
+          type: string
+      type: object
     GoogleFirestoreAdminV1UpdateDatabaseMetadata:
       description: Metadata related to the update database operation.
       properties: {}
@@ -2068,6 +2227,10 @@ components:
           type: integer
         pageToken:
           description: A page token. Must be a value from ListCollectionIdsResponse.
+          type: string
+        readTime:
+          description: Reads documents as they were at the given time. This may not be older than 270 seconds.
+          format: google-datetime
           type: string
       type: object
     ListCollectionIdsResponse:
@@ -2201,6 +2364,10 @@ components:
           description: The desired maximum number of partition points. The partitions may be returned across multiple pages of results. The number must be positive. The actual number of partitions returned may be fewer. For example, this may be set to one fewer than the number of parallel queries to be run, or in running a data pipeline job, one fewer than the number of workers or compute instances available.
           format: int64
           type: string
+        readTime:
+          description: Reads documents as they were at the given time. This may not be older than 270 seconds.
+          format: google-datetime
+          type: string
         structuredQuery:
           $ref: "#/components/schemas/StructuredQuery"
           description: A structured query. Query must specify collection with all descendants and be ordered by name ascending. Other filters, order bys, limits, offsets, and start/end cursors are not supported.
@@ -2271,6 +2438,39 @@ components:
           format: byte
           type: string
       type: object
+    RunAggregationQueryRequest:
+      description: The request for Firestore.RunAggregationQuery.
+      properties:
+        newTransaction:
+          $ref: "#/components/schemas/TransactionOptions"
+          description: Starts a new transaction as part of the query, defaulting to read-only. The new transaction ID will be returned as the first response in the stream.
+        readTime:
+          description: "Executes the query at the given timestamp. Requires: * Cannot be more than 270 seconds in the past."
+          format: google-datetime
+          type: string
+        structuredAggregationQuery:
+          $ref: "#/components/schemas/StructuredAggregationQuery"
+          description: An aggregation query.
+        transaction:
+          description: Run the aggregation within an already active transaction. The value here is the opaque transaction ID to execute the query in.
+          format: byte
+          type: string
+      type: object
+    RunAggregationQueryResponse:
+      description: The response for Firestore.RunAggregationQuery.
+      properties:
+        readTime:
+          description: The time at which the aggregate value is valid for.
+          format: google-datetime
+          type: string
+        result:
+          $ref: "#/components/schemas/AggregationResult"
+          description: A single aggregation result. Not present when reporting partial progress.
+        transaction:
+          description: The transaction that was started as part of this request. Only present on the first response when the request requested to start a new transaction.
+          format: byte
+          type: string
+      type: object
     RunQueryRequest:
       description: The request for Firestore.RunQuery.
       properties:
@@ -2329,27 +2529,39 @@ components:
           description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the google.rpc.Status.details field, or localized by the client.
           type: string
       type: object
+    StructuredAggregationQuery:
+      description: Firestore query for running an aggregation over a StructuredQuery.
+      properties:
+        aggregations:
+          description: "Optional. Series of aggregations to apply over the results of the `structured_query`. Requires: * A minimum of one and maximum of five aggregations per query."
+          items:
+            $ref: "#/components/schemas/Aggregation"
+          type: array
+        structuredQuery:
+          $ref: "#/components/schemas/StructuredQuery"
+          description: Nested structured query.
+      type: object
     StructuredQuery:
       description: A Firestore query.
       properties:
         endAt:
           $ref: "#/components/schemas/Cursor"
-          description: A end point for the query results.
+          description: "A potential prefix of a position in the result set to end the query at. This is similar to `START_AT` but with it controlling the end position rather than the start position. Requires: * The number of values cannot be greater than the number of fields specified in the `ORDER BY` clause."
         from:
           description: The collections to query.
           items:
             $ref: "#/components/schemas/CollectionSelector"
           type: array
         limit:
-          description: The maximum number of results to return. Applies after all other constraints. Must be >= 0 if specified.
+          description: "The maximum number of results to return. Applies after all other constraints. Requires: * The value must be greater than or equal to zero if specified."
           format: int32
           type: integer
         offset:
-          description: The number of results to skip. Applies before limit, but after all other constraints. Must be >= 0 if specified.
+          description: "The number of documents to skip before returning the first result. This applies after the constraints specified by the `WHERE`, `START AT`, & `END AT` but before the `LIMIT` clause. Requires: * The value must be greater than or equal to zero if specified."
           format: int32
           type: integer
         orderBy:
-          description: "The order to apply to the query results. Firestore guarantees a stable ordering through the following rules: * Any field required to appear in `order_by`, that is not already specified in `order_by`, is appended to the order in field name order by default. * If an order on `__name__` is not specified, it is appended by default. Fields are appended with the same sort direction as the last order specified, or 'ASCENDING' if no order was specified. For example: * `SELECT * FROM Foo ORDER BY A` becomes `SELECT * FROM Foo ORDER BY A, __name__` * `SELECT * FROM Foo ORDER BY A DESC` becomes `SELECT * FROM Foo ORDER BY A DESC, __name__ DESC` * `SELECT * FROM Foo WHERE A > 1` becomes `SELECT * FROM Foo WHERE A > 1 ORDER BY A, __name__`"
+          description: "The order to apply to the query results. Firestore allows callers to provide a full ordering, a partial ordering, or no ordering at all. In all cases, Firestore guarantees a stable ordering through the following rules: * The `order_by` is required to reference all fields used with an inequality filter. * All fields that are required to be in the `order_by` but are not already present are appended in lexicographical ordering of the field name. * If an order on `__name__` is not specified, it is appended by default. Fields are appended with the same sort direction as the last order specified, or 'ASCENDING' if no order was specified. For example: * `ORDER BY a` becomes `ORDER BY a ASC, __name__ ASC` * `ORDER BY a DESC` becomes `ORDER BY a DESC, __name__ DESC` * `WHERE a > 1` becomes `WHERE a > 1 ORDER BY a ASC, __name__ ASC` * `WHERE __name__ > ... AND a > 1` becomes `WHERE __name__ > ... AND a > 1 ORDER BY a ASC, __name__ ASC`"
           items:
             $ref: "#/components/schemas/Order"
           type: array
@@ -2358,7 +2570,7 @@ components:
           description: The projection to return.
         startAt:
           $ref: "#/components/schemas/Cursor"
-          description: A starting point for the query results.
+          description: "A potential prefix of a position in the result set to start the query at. The ordering of the result set is based on the `ORDER BY` clause of the original query. ``` SELECT * FROM k WHERE a = 1 AND b > 2 ORDER BY b ASC, __name__ ASC; ``` This query's results are ordered by `(b ASC, __name__ ASC)`. Cursors can reference either the full ordering or a prefix of the location, though it cannot reference more fields than what are in the provided `ORDER BY`. Continuing off the example above, attaching the following start cursors will have varying impact: - `START BEFORE (2, /k/123)`: start the query right before `a = 1 AND b > 2 AND __name__ > /k/123`. - `START AFTER (10)`: start the query right after `a = 1 AND b > 10`. Unlike `OFFSET` which requires scanning over the first N results to skip, a start cursor allows the query to begin at a logical position. This position is not required to match an actual result, it will scan forward from this position to find the next document. Requires: * The number of values cannot be greater than the number of fields specified in the `ORDER BY` clause."
         where:
           $ref: "#/components/schemas/Filter"
           description: The filter to apply.

@@ -1748,7 +1748,7 @@ paths:
       - $ref: "#/components/parameters/uploadType"
     post:
       description: Insert cuepoints in a broadcast
-      operationId: youtube.youtube.v3.liveBroadcasts.cuepoint.create
+      operationId: youtube.liveBroadcasts.insertCuepoint
       parameters:
         - description: Broadcast to insert ads to, or equivalently `external_video_id` for internal use.
           in: query
@@ -1774,33 +1774,11 @@ paths:
               type: string
             type: array
           style: form
-        - in: query
-          name: resource.cueType
-          schema:
-            enum:
-              - cueTypeUnspecified
-              - cueTypeAd
-            type: string
-        - description: The duration of this cuepoint.
-          in: query
-          name: resource.durationSecs
-          schema:
-            type: integer
-        - description: The identifier for cuepoint resource.
-          in: query
-          name: resource.id
-          schema:
-            type: string
-        - description: The time when the cuepoint should be inserted by offset to the broadcast actual start time.
-          in: query
-          name: resource.insertionOffsetTimeMs
-          schema:
-            type: string
-        - description: The wall clock time at which the cuepoint should be inserted. Only one of insertion_offset_time_ms and walltime_ms may be set at a time.
-          in: query
-          name: resource.walltimeMs
-          schema:
-            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Cuepoint"
       responses:
         "200":
           content:
@@ -1808,8 +1786,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/Cuepoint"
           description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/youtube
+          Oauth2c:
+            - https://www.googleapis.com/auth/youtube
+        - Oauth2:
+            - https://www.googleapis.com/auth/youtube.force-ssl
+          Oauth2c:
+            - https://www.googleapis.com/auth/youtube.force-ssl
+        - Oauth2:
+            - https://www.googleapis.com/auth/youtubepartner
+          Oauth2c:
+            - https://www.googleapis.com/auth/youtubepartner
       tags:
-        - youtube
+        - liveBroadcasts
   /youtube/v3/liveBroadcasts/transition:
     parameters:
       - $ref: "#/components/parameters/_.xgafv"
@@ -3629,7 +3620,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ThirdPartyLink"
+                $ref: "#/components/schemas/ThirdPartyLinkListResponse"
           description: Successful response
       tags:
         - thirdPartyLinks
@@ -6819,6 +6810,8 @@ components:
           description: The duration of this cuepoint.
           format: uint32
           type: integer
+        etag:
+          type: string
         id:
           description: The identifier for cuepoint resource.
           type: string
@@ -7285,6 +7278,10 @@ components:
     LiveBroadcastStatistics:
       description: Statistics about the live broadcast. These represent a snapshot of the values at the time of the request. Statistics are only returned for live broadcasts.
       properties:
+        concurrentViewers:
+          description: The number of viewers currently watching the broadcast. The property and its value will be present if the broadcast has current viewers and the broadcast owner has not hidden the viewcount for the video. Note that YouTube stops tracking the number of concurrent viewers for a broadcast when the broadcast ends. So, this property would not identify the number of viewers watching an archived video of a live broadcast that already ended.
+          format: uint64
+          type: string
         totalChatCount:
           description: The total number of live chat messages currently on the broadcast. The property and its value will be present if the broadcast is public, has the live chat feature enabled, and has at least one message. Note that this field will not be filled after the broadcast ends. So this property would not identify the number of chat messages for an archived video of a completed live broadcast.
           format: uint64
@@ -8689,6 +8686,20 @@ components:
           $ref: "#/components/schemas/ThirdPartyLinkStatus"
           description: The status object contains information about the status of the link.
       type: object
+    ThirdPartyLinkListResponse:
+      properties:
+        etag:
+          description: Etag of this resource.
+          type: string
+        items:
+          items:
+            $ref: "#/components/schemas/ThirdPartyLink"
+          type: array
+        kind:
+          default: youtube#thirdPartyLinkListResponse
+          description: 'Identifies what kind of resource this is. Value: the fixed string "youtube#thirdPartyLinkListResponse".'
+          type: string
+      type: object
     ThirdPartyLinkSnippet:
       description: Basic information about a third party account link, including its type and type-specific information.
       properties:
@@ -9415,7 +9426,7 @@ components:
           type: string
       type: object
     VideoStatus:
-      description: "Basic details about a video category, such as its localized title. Next Id: 17"
+      description: "Basic details about a video category, such as its localized title. Next Id: 18"
       properties:
         embeddable:
           description: This value indicates if the video can be embedded on another website. @mutable youtube.videos.insert youtube.videos.update

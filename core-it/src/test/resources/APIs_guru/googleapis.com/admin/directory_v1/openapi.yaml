@@ -62,7 +62,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: Return devices from all child orgunits, as well as the specified org unit. If this is set to true 'orgUnitPath' must be provided.
+        - description: Return devices from all child orgunits, as well as the specified org unit. If this is set to true, 'orgUnitPath' must be provided.
           in: query
           name: includeChildOrgunits
           schema:
@@ -84,7 +84,6 @@ paths:
               - notes
               - serialNumber
               - status
-              - supportEndDate
             type: string
         - description: The full path of the organizational unit (minus the leading `/`) or its unique ID.
           in: query
@@ -164,7 +163,7 @@ paths:
       description: Moves or inserts multiple Chrome OS devices to an organizational unit. You can move up to 50 devices at once.
       operationId: directory.chromeosdevices.moveDevicesToOu
       parameters:
-        - description: Immutable ID of the Google Workspace account
+        - description: Immutable. ID of the Google Workspace account
           in: path
           name: customerId
           required: true
@@ -337,19 +336,19 @@ paths:
       description: Gets command data a specific command issued to the device.
       operationId: admin.customer.devices.chromeos.commands.get
       parameters:
-        - description: Immutable. Immutable ID of the Google Workspace account.
+        - description: Immutable. ID of the Google Workspace account.
           in: path
           name: customerId
           required: true
           schema:
             type: string
-        - description: Immutable. Immutable ID of Chrome OS Device.
+        - description: Immutable. ID of Chrome OS Device.
           in: path
           name: deviceId
           required: true
           schema:
             type: string
-        - description: Immutable. Immutable ID of Chrome OS Device Command.
+        - description: Immutable. ID of Chrome OS Device Command.
           in: path
           name: commandId
           required: true
@@ -402,13 +401,13 @@ paths:
       description: Issues a command for the device to execute.
       operationId: admin.customer.devices.chromeos.issueCommand
       parameters:
-        - description: Immutable. Immutable ID of the Google Workspace account.
+        - description: Immutable. ID of the Google Workspace account.
           in: path
           name: customerId
           required: true
           schema:
             type: string
-        - description: Immutable. Immutable ID of Chrome OS Device.
+        - description: Immutable. ID of Chrome OS Device.
           in: path
           name: deviceId
           required: true
@@ -3051,7 +3050,7 @@ paths:
       - $ref: "#/components/parameters/uploadType"
   "/admin/directory/v1/groups/{groupKey}/hasMember/{memberKey}":
     get:
-      description: Checks whether the given user is a member of the group. Membership can be direct or nested.
+      description: Checks whether the given user is a member of the group. Membership can be direct or nested, but if nested, the `memberKey` and `groupKey` must be entities in the same domain or an `Invalid input` error is returned. To check for nested memberships that include entities outside of the group's domain, use the [`checkTransitiveMembership()`](https://cloud.google.com/identity/docs/reference/rest/v1/groups.memberships/checkTransitiveMembership) method in the Cloud Identity Groups API.
       operationId: directory.members.hasMember
       parameters:
         - description: Identifies the group in the API request. The value can be the group's email address, group alias, or the unique group ID.
@@ -4553,10 +4552,10 @@ paths:
         - verificationCodes
   "/admin/directory/v1/{name}":
     delete:
-      description: Deletes a `Printer`.
-      operationId: admin.customers.chrome.printers.delete
+      description: Deletes a print server.
+      operationId: admin.customers.chrome.printServers.delete
       parameters:
-        - description: "Required. The name of the printer to be updated. Format: customers/{customer_id}/chrome/printers/{printer_id}"
+        - description: "Required. The name of the print server to be deleted. Format: `customers/{customer.id}/chrome/printServers/{print_server.id}`"
           in: path
           name: name
           required: true
@@ -4577,10 +4576,10 @@ paths:
       tags:
         - customers
     get:
-      description: Returns a `Printer` resource (printer's config).
-      operationId: admin.customers.chrome.printers.get
+      description: Returns a print server's configuration.
+      operationId: admin.customers.chrome.printServers.get
       parameters:
-        - description: "Required. The name of the printer to retrieve. Format: customers/{customer_id}/chrome/printers/{printer_id}"
+        - description: "Required. The [unique ID](https://developers.google.com/admin-sdk/directory/reference/rest/v1/customers) of the customer's Google Workspace account. Format: `customers/{id}`"
           in: path
           name: name
           required: true
@@ -4591,7 +4590,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Printer"
+                $ref: "#/components/schemas/PrintServer"
           description: Successful response
       security:
         - Oauth2:
@@ -4617,21 +4616,16 @@ paths:
       - $ref: "#/components/parameters/upload_protocol"
       - $ref: "#/components/parameters/uploadType"
     patch:
-      description: Updates a `Printer` resource.
-      operationId: admin.customers.chrome.printers.patch
+      description: Updates a print server's configuration.
+      operationId: admin.customers.chrome.printServers.patch
       parameters:
-        - description: The resource name of the Printer object, in the format customers/{customer-id}/printers/{printer-id} (During printer creation leave empty)
+        - description: "Immutable. Resource name of the print server. Leave empty when creating. Format: `customers/{customer.id}/printServers/{print_server.id}`"
           in: path
           name: name
           required: true
           schema:
             type: string
-        - description: The list of fields to be cleared. Note, some of the fields are read only and cannot be updated. Values for not specified fields will be patched.
-          in: query
-          name: clearMask
-          schema:
-            type: string
-        - description: The list of fields to be updated. Note, some of the fields are read only and cannot be updated. Values for not specified fields will be patched.
+        - description: The list of fields to update. Some fields are read-only and cannot be updated. Values for unspecified fields are patched.
           in: query
           name: updateMask
           schema:
@@ -4640,13 +4634,192 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Printer"
+              $ref: "#/components/schemas/PrintServer"
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Printer"
+                $ref: "#/components/schemas/PrintServer"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/admin.chrome.printers
+          Oauth2c:
+            - https://www.googleapis.com/auth/admin.chrome.printers
+      tags:
+        - customers
+  "/admin/directory/v1/{parent}/chrome/printServers":
+    get:
+      description: Lists print server configurations.
+      operationId: admin.customers.chrome.printServers.list
+      parameters:
+        - description: "Required. The [unique ID](https://developers.google.com/admin-sdk/directory/reference/rest/v1/customers) of the customer's Google Workspace account. Format: `customers/{id}`"
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+        - description: "Search query in [Common Expression Language syntax](https://github.com/google/cel-spec). Supported filters are `display_name`, `description`, and `uri`. Example: `printServer.displayName=='marketing-queue'`."
+          in: query
+          name: filter
+          schema:
+            type: string
+        - description: Sort order for results. Supported values are `display_name`, `description`, or `create_time`. Default order is ascending, but descending order can be returned by appending "desc" to the `order_by` field. For instance, `orderBy=='description desc'` returns the print servers sorted by description in descending order.
+          in: query
+          name: orderBy
+          schema:
+            type: string
+        - description: If `org_unit_id` is present in the request, only print servers owned or inherited by the organizational unit (OU) are returned. If the `PrintServer` resource's `org_unit_id` matches the one in the request, the OU owns the server. If `org_unit_id` is not specified in the request, all print servers are returned or filtered against.
+          in: query
+          name: orgUnitId
+          schema:
+            type: string
+        - description: The maximum number of objects to return (default `100`, max `100`). The service might return fewer than this value.
+          in: query
+          name: pageSize
+          schema:
+            type: integer
+        - description: A generated token to paginate results (the `next_page_token` from a previous call).
+          in: query
+          name: pageToken
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListPrintServersResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/admin.chrome.printers
+          Oauth2c:
+            - https://www.googleapis.com/auth/admin.chrome.printers
+        - Oauth2:
+            - https://www.googleapis.com/auth/admin.chrome.printers.readonly
+          Oauth2c:
+            - https://www.googleapis.com/auth/admin.chrome.printers.readonly
+      tags:
+        - customers
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+    post:
+      description: Creates a print server.
+      operationId: admin.customers.chrome.printServers.create
+      parameters:
+        - description: "Required. The [unique ID](https://developers.google.com/admin-sdk/directory/reference/rest/v1/customers) of the customer's Google Workspace account. Format: `customers/{id}`"
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrintServer"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrintServer"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/admin.chrome.printers
+          Oauth2c:
+            - https://www.googleapis.com/auth/admin.chrome.printers
+      tags:
+        - customers
+  "/admin/directory/v1/{parent}/chrome/printServers:batchCreatePrintServers":
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+    post:
+      description: Creates multiple print servers.
+      operationId: admin.customers.chrome.printServers.batchCreatePrintServers
+      parameters:
+        - description: "Required. The [unique ID](https://developers.google.com/admin-sdk/directory/reference/rest/v1/customers) of the customer's Google Workspace account. Format: `customers/{id}`"
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchCreatePrintServersRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchCreatePrintServersResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/admin.chrome.printers
+          Oauth2c:
+            - https://www.googleapis.com/auth/admin.chrome.printers
+      tags:
+        - customers
+  "/admin/directory/v1/{parent}/chrome/printServers:batchDeletePrintServers":
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+    post:
+      description: Deletes multiple print servers.
+      operationId: admin.customers.chrome.printServers.batchDeletePrintServers
+      parameters:
+        - description: "Required. The [unique ID](https://developers.google.com/admin-sdk/directory/reference/rest/v1/customers) of the customer's Google Workspace account. Format: `customers/{customer.id}`"
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchDeletePrintServersRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchDeletePrintServersResponse"
           description: Successful response
       security:
         - Oauth2:
@@ -5103,6 +5276,28 @@ components:
             - SEVERITY_ERROR
           type: string
       type: object
+    BatchCreatePrintServersRequest:
+      description: Request to add multiple new print servers in a batch.
+      properties:
+        requests:
+          description: Required. A list of `PrintServer` resources to be created (max `50` per batch).
+          items:
+            $ref: "#/components/schemas/CreatePrintServerRequest"
+          type: array
+      type: object
+    BatchCreatePrintServersResponse:
+      properties:
+        failures:
+          description: A list of create failures. `PrintServer` IDs are not populated, as print servers were not created.
+          items:
+            $ref: "#/components/schemas/PrintServerFailureInfo"
+          type: array
+        printServers:
+          description: A list of successfully created print servers with their IDs populated.
+          items:
+            $ref: "#/components/schemas/PrintServer"
+          type: array
+      type: object
     BatchCreatePrintersRequest:
       description: Request for adding new printers in batch.
       properties:
@@ -5124,6 +5319,28 @@ components:
           description: A list of successfully created printers with their IDs populated.
           items:
             $ref: "#/components/schemas/Printer"
+          type: array
+      type: object
+    BatchDeletePrintServersRequest:
+      description: Request to delete multiple existing print servers in a batch.
+      properties:
+        printServerIds:
+          description: A list of print server IDs that should be deleted (max `100` per batch).
+          items:
+            type: string
+          type: array
+      type: object
+    BatchDeletePrintServersResponse:
+      properties:
+        failedPrintServers:
+          description: A list of update failures.
+          items:
+            $ref: "#/components/schemas/PrintServerFailureInfo"
+          type: array
+        printServerIds:
+          description: A list of print server IDs that were successfully deleted.
+          items:
+            type: string
           type: array
       type: object
     BatchDeletePrintersRequest:
@@ -5327,7 +5544,7 @@ components:
         params:
           additionalProperties:
             type: string
-          description: Additional parameters controlling delivery channel behavior. Optional.
+          description: Additional parameters controlling delivery channel behavior. Optional. For example, `params.ttl` specifies the time-to-live in seconds for the notification channel, where the default is 2 hours and the maximum TTL is 2 days.
           type: object
         payload:
           description: A Boolean value to indicate whether payload is wanted. Optional.
@@ -5349,7 +5566,7 @@ components:
       description: Google Chrome devices run on the [Chrome OS](https://support.google.com/chromeos). For more information about common API tasks, see the [Developer's Guide](/admin-sdk/directory/v1/guides/manage-chrome-devices).
       properties:
         activeTimeRanges:
-          description: List of active time ranges (Read-only).
+          description: A list of active time ranges (Read-only).
           items:
             properties:
               activeTime:
@@ -5433,7 +5650,7 @@ components:
           items:
             properties:
               cpuTemperatureInfo:
-                description: List of CPU temperature samples.
+                description: A list of CPU temperature samples.
                 items:
                   properties:
                     label:
@@ -5457,7 +5674,7 @@ components:
             type: object
           type: array
         deviceFiles:
-          description: List of device files to download (Read-only)
+          description: A list of device files to download (Read-only)
           items:
             properties:
               createTime:
@@ -5516,6 +5733,9 @@ components:
         firmwareVersion:
           description: The Chrome device's firmware version.
           type: string
+        firstEnrollmentTime:
+          description: Date and time for the first time the device was enrolled.
+          type: string
         kind:
           default: admin#directory#chromeosdevice
           description: The type of resource. For the Chromeosdevices resource, the value is `admin#directory#chromeosdevice`.
@@ -5565,6 +5785,9 @@ components:
         orgUnitPath:
           description: The full parent path with the organizational unit's name associated with the device. Path names are case insensitive. If the parent organizational unit is the top-level organization, it is represented as a forward slash, `/`. This property can be [updated](/admin-sdk/directory/v1/guides/manage-chrome-devices#move_chrome_devices_to_ou) using the API. For more information about how to create an organizational structure for your device, see the [administration help center](https://support.google.com/a/answer/182433).
           type: string
+        osUpdateStatus:
+          $ref: "#/components/schemas/OsUpdateStatus"
+          description: The status of the OS updates for the device.
         osVersion:
           description: The Chrome device's operating system version.
           type: string
@@ -5572,9 +5795,9 @@ components:
           description: The Chrome device's platform version.
           type: string
         recentUsers:
-          description: List of recent device users, in descending order, by last login time.
+          description: A list of recent device users, in descending order, by last login time.
           items:
-            description: List of recent device users, in descending order, by last login time.
+            description: A list of recent device users, in descending order, by last login time.
             properties:
               email:
                 description: The user's email address. This is only present if the user type is `USER_TYPE_MANAGED`.
@@ -5585,7 +5808,7 @@ components:
             type: object
           type: array
         screenshotFiles:
-          description: List of screenshot files to download. Type is always "SCREENSHOT_FILE". (Read-only)
+          description: A list of screenshot files to download. Type is always "SCREENSHOT_FILE". (Read-only)
           items:
             properties:
               createTime:
@@ -5659,6 +5882,7 @@ components:
           type: boolean
       type: object
     ChromeOsDeviceAction:
+      description: Data about an update to the status of a Chrome OS device.
       properties:
         action:
           description: Action to be taken on the Chrome OS device.
@@ -5670,7 +5894,7 @@ components:
     ChromeOsDevices:
       properties:
         chromeosdevices:
-          description: List of Chrome OS Device objects.
+          description: A list of Chrome OS Device objects.
           items:
             $ref: "#/components/schemas/ChromeOsDevice"
           type: array
@@ -5692,6 +5916,16 @@ components:
           items:
             type: string
           type: array
+      type: object
+    CreatePrintServerRequest:
+      description: Request for adding a new print server.
+      properties:
+        parent:
+          description: "Required. The [unique ID](https://developers.google.com/admin-sdk/directory/reference/rest/v1/customers) of the customer's Google Workspace account. Format: `customers/{id}`"
+          type: string
+        printServer:
+          $ref: "#/components/schemas/PrintServer"
+          description: Required. A print server to create. If you want to place the print server under a specific organizational unit (OU), then populate the `org_unit_id`. Otherwise the print server is created under the root OU. The `org_unit_id` can be retrieved using the [Directory API](https://developers.google.com/admin-sdk/directory/v1/guides/manage-org-units).
       type: object
     CreatePrinterRequest:
       description: Request for adding a new printer.
@@ -5878,7 +6112,7 @@ components:
     DomainAliases:
       properties:
         domainAliases:
-          description: List of domain alias objects.
+          description: A list of domain alias objects.
           items:
             $ref: "#/components/schemas/DomainAlias"
           type: array
@@ -5897,7 +6131,7 @@ components:
           format: int64
           type: string
         domainAliases:
-          description: List of domain alias objects. (Read-only)
+          description: A list of domain alias objects. (Read-only)
           items:
             $ref: "#/components/schemas/DomainAlias"
           type: array
@@ -5921,7 +6155,7 @@ components:
     Domains2:
       properties:
         domains:
-          description: List of domain objects.
+          description: A list of domain objects.
           items:
             $ref: "#/components/schemas/Domains"
           type: array
@@ -6024,7 +6258,7 @@ components:
           description: Read-only. Value is `true` if this group was created by an administrator rather than a user.
           type: boolean
         aliases:
-          description: Read-only. A list of a group's alias email addresses.
+          description: Read-only. The list of a group's alias email addresses. To add, update, or remove a group's aliases, use the `groups.aliases` methods. If edited in a group's POST or PUT request, the edit is ignored.
           items:
             type: string
           type: array
@@ -6052,10 +6286,29 @@ components:
           description: The group's display name.
           type: string
         nonEditableAliases:
-          description: Read-only. A list of the group's non-editable alias email addresses that are outside of the account's primary domain or subdomains. These are functioning email addresses used by the group. This is a read-only property returned in the API's response for a group. If edited in a group's POST or PUT request, the edit is ignored by the API service.
+          description: Read-only. The list of the group's non-editable alias email addresses that are outside of the account's primary domain or subdomains. These are functioning email addresses used by the group. This is a read-only property returned in the API's response for a group. If edited in a group's POST or PUT request, the edit is ignored.
           items:
             type: string
           type: array
+      type: object
+    GroupAlias:
+      description: The Directory API manages aliases, which are alternative email addresses.
+      properties:
+        alias:
+          description: The alias email address.
+          type: string
+        etag:
+          description: ETag of the resource.
+          type: string
+        id:
+          description: The unique ID of the group.
+          type: string
+        kind:
+          description: The type of the API resource. For Alias resources, the value is `admin#directory#alias`.
+          type: string
+        primaryEmail:
+          description: The primary email address of the group.
+          type: string
       type: object
     Groups:
       properties:
@@ -6063,7 +6316,7 @@ components:
           description: ETag of the resource.
           type: string
         groups:
-          description: List of group objects.
+          description: A list of group objects.
           items:
             $ref: "#/components/schemas/Group"
           type: array
@@ -6074,6 +6327,17 @@ components:
         nextPageToken:
           description: Token used to access next page of this result.
           type: string
+      type: object
+    ListPrintServersResponse:
+      properties:
+        nextPageToken:
+          description: A token that can be sent as `page_token` in a request to retrieve the next page. If this field is omitted, there are no subsequent pages.
+          type: string
+        printServers:
+          description: List of print servers.
+          items:
+            $ref: "#/components/schemas/PrintServer"
+          type: array
       type: object
     ListPrinterModelsResponse:
       description: Response for listing allowed printer models.
@@ -6138,7 +6402,7 @@ components:
           description: Kind of resource this is.
           type: string
         members:
-          description: List of member objects.
+          description: A list of member objects.
           items:
             $ref: "#/components/schemas/Member"
           type: array
@@ -6212,7 +6476,7 @@ components:
           description: DevicePasswordStatus (Read-only)
           type: string
         email:
-          description: List of owner's email addresses. If your application needs the current list of user emails, use the [get](/admin-sdk/directory/v1/reference/mobiledevices/get.html) method. For additional information, see the [retrieve a user](/admin-sdk/directory/v1/guides/manage-users#get_user) method.
+          description: The list of the owner's email addresses. If your application needs the current list of user emails, use the [get](/admin-sdk/directory/v1/reference/mobiledevices/get.html) method. For additional information, see the [retrieve a user](/admin-sdk/directory/v1/guides/manage-users#get_user) method.
           items:
             type: string
           type: array
@@ -6259,7 +6523,7 @@ components:
           description: The mobile device's model name, for example Nexus S. This property can be [updated](/admin-sdk/directory/v1/reference/mobiledevices/update.html). For more information, see the [Developer's Guide](/admin-sdk/directory/v1/guides/manage-mobile=devices#update_mobile_device).
           type: string
         name:
-          description: List of the owner's user names. If your application needs the current list of device owner names, use the [get](/admin-sdk/directory/v1/reference/mobiledevices/get.html) method. For more information about retrieving mobile device user information, see the [Developer's Guide](/admin-sdk/directory/v1/guides/manage-users#get_user).
+          description: The list of the owner's user names. If your application needs the current list of device owner names, use the [get](/admin-sdk/directory/v1/reference/mobiledevices/get.html) method. For more information about retrieving mobile device user information, see the [Developer's Guide](/admin-sdk/directory/v1/guides/manage-users#get_user).
           items:
             type: string
           type: array
@@ -6270,7 +6534,7 @@ components:
           description: The mobile device's operating system, for example IOS 4.3 or Android 2.3.5. This property can be [updated](/admin-sdk/directory/v1/reference/mobiledevices/update.html). For more information, see the [Developer's Guide](/admin-sdk/directory/v1/guides/manage-mobile-devices#update_mobile_device).
           type: string
         otherAccountsInfo:
-          description: List of accounts added on device (Read-only)
+          description: The list of accounts added on device (Read-only)
           items:
             type: string
           type: array
@@ -6325,7 +6589,7 @@ components:
           description: Kind of resource this is.
           type: string
         mobiledevices:
-          description: List of Mobile Device objects.
+          description: A list of Mobile Device objects.
           items:
             $ref: "#/components/schemas/MobileDevice"
           type: array
@@ -6375,10 +6639,98 @@ components:
           description: The type of the API resource. For Org Unit resources, the type is `admin#directory#orgUnits`.
           type: string
         organizationUnits:
-          description: List of organizational unit objects.
+          description: A list of organizational unit objects.
           items:
             $ref: "#/components/schemas/OrgUnit"
           type: array
+      type: object
+    OsUpdateStatus:
+      description: Contains information regarding the current OS update status.
+      properties:
+        rebootTime:
+          description: Date and time of the last reboot.
+          type: string
+        state:
+          description: The update state of an OS update.
+          enum:
+            - updateStateUnspecified
+            - updateStateNotStarted
+            - updateStateDownloadInProgress
+            - updateStateNeedReboot
+          type: string
+        targetKioskAppVersion:
+          description: New required platform version from the pending updated kiosk app.
+          type: string
+        targetOsVersion:
+          description: New platform version of the OS image being downloaded and applied. It is only set when update status is UPDATE_STATUS_DOWNLOAD_IN_PROGRESS or UPDATE_STATUS_NEED_REBOOT. Note this could be a dummy "0.0.0.0" for UPDATE_STATUS_NEED_REBOOT for some edge cases, e.g. update engine is restarted without a reboot.
+          type: string
+        updateCheckTime:
+          description: Date and time of the last update check.
+          type: string
+        updateTime:
+          description: Date and time of the last successful OS update.
+          type: string
+      type: object
+    PrintServer:
+      description: Configuration for a print server.
+      properties:
+        createTime:
+          description: Output only. Time when the print server was created.
+          format: google-datetime
+          readOnly: true
+          type: string
+        description:
+          description: Editable. Description of the print server (as shown in the Admin console).
+          type: string
+        displayName:
+          description: Editable. Display name of the print server (as shown in the Admin console).
+          type: string
+        id:
+          description: Immutable. ID of the print server. Leave empty when creating.
+          type: string
+        name:
+          description: "Immutable. Resource name of the print server. Leave empty when creating. Format: `customers/{customer.id}/printServers/{print_server.id}`"
+          type: string
+        orgUnitId:
+          description: ID of the organization unit (OU) that owns this print server. This value can only be set when the print server is initially created. If it's not populated, the print server is placed under the root OU. The `org_unit_id` can be retrieved using the [Directory API](/admin-sdk/directory/reference/rest/v1/orgunits).
+          type: string
+        uri:
+          description: Editable. Print server URI.
+          type: string
+      type: object
+    PrintServerFailureInfo:
+      description: Info about failures
+      properties:
+        errorCode:
+          description: Canonical code for why the update failed to apply.
+          enum:
+            - OK
+            - CANCELLED
+            - UNKNOWN
+            - INVALID_ARGUMENT
+            - DEADLINE_EXCEEDED
+            - NOT_FOUND
+            - ALREADY_EXISTS
+            - PERMISSION_DENIED
+            - UNAUTHENTICATED
+            - RESOURCE_EXHAUSTED
+            - FAILED_PRECONDITION
+            - ABORTED
+            - OUT_OF_RANGE
+            - UNIMPLEMENTED
+            - INTERNAL
+            - UNAVAILABLE
+            - DATA_LOSS
+          type: string
+        errorMessage:
+          description: Failure reason message.
+          type: string
+        printServer:
+          $ref: "#/components/schemas/PrintServer"
+          description: Failed print server.
+        printServerId:
+          description: ID of a failed print server.
+          type: string
       type: object
     Printer:
       description: Printer configuration.
@@ -6516,7 +6868,7 @@ components:
       description: Defines an assignment of a role.
       properties:
         assignedTo:
-          description: The unique ID of the user this role is assigned to.
+          description: The unique ID of the entity this role is assigned to—either the `user_id` of a user or the `uniqueId` of a service account, as defined in [Identity and Access Management (IAM)](https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts).
           type: string
         etag:
           description: ETag of the resource.
@@ -6656,7 +7008,7 @@ components:
           description: Kind of resource this is.
           type: string
         schemas:
-          description: List of UserSchema objects.
+          description: A list of UserSchema objects.
           items:
             $ref: "#/components/schemas/Schema"
           type: array
@@ -6712,13 +7064,13 @@ components:
       description: The Directory API allows you to create and manage your account's users, user aliases, and user Gmail chat profile photos. For more information about common tasks, see the [User Accounts Developer's Guide](/admin-sdk/directory/v1/guides/manage-users.html) and the [User Aliases Developer's Guide](/admin-sdk/directory/v1/guides/manage-user-aliases.html).
       properties:
         addresses:
-          description: A list of the user's addresses. The maximum allowed data size for this field is 10Kb.
+          description: The list of the user's addresses. The maximum allowed data size for this field is 10KB.
         agreedToTerms:
           description: Output only. This property is `true` if the user has completed an initial login and accepted the Terms of Service agreement.
           readOnly: true
           type: boolean
         aliases:
-          description: Output only. A list of the user's alias email addresses.
+          description: Output only. The list of the user's alias email addresses.
           items:
             type: string
           readOnly: true
@@ -6748,23 +7100,23 @@ components:
           readOnly: true
           type: string
         emails:
-          description: A list of the user's email addresses. The maximum allowed data size for this field is 10Kb.
+          description: The list of the user's email addresses. The maximum allowed data size for this field is 10KB.
         etag:
           description: Output only. ETag of the resource.
           readOnly: true
           type: string
         externalIds:
-          description: A list of external IDs for the user, such as an employee or network ID. The maximum allowed data size for this field is 2Kb.
+          description: The list of external IDs for the user, such as an employee or network ID. The maximum allowed data size for this field is 2KB.
         gender:
-          description: The user's gender. The maximum allowed data size for this field is 1Kb.
+          description: The user's gender. The maximum allowed data size for this field is 1KB.
         hashFunction:
-          description: "Stores the hash format of the password property. We recommend sending the `password` property value as a base 16 bit hexadecimal-encoded hash value. The following `hashFunction` values are allowed: * `DES` * `MD5` - hash prefix is `$1$` * `SHA2-256` - hash prefix is `$5$` * `SHA2-512` - hash prefix is `$6$` If rounds are specified as part of the prefix, they must be 10,000 or fewer."
+          description: "Stores the hash format of the `password` property. The following `hashFunction` values are allowed: * `MD5` - Accepts simple hex-encoded values. * `SHA-1` - Accepts simple hex-encoded values. * `crypt` - Compliant with the [C crypt library](https://en.wikipedia.org/wiki/Crypt_%28C%29). Supports the DES, MD5 (hash prefix `$1$`), SHA-256 (hash prefix `$5$`), and SHA-512 (hash prefix `$6$`) hash algorithms. If rounds are specified as part of the prefix, they must be 10,000 or fewer."
           type: string
         id:
           description: The unique ID for the user. A user `id` can be used as a user request URI's `userKey`.
           type: string
         ims:
-          description: The user's Instant Messenger (IM) accounts. A user account can have multiple ims properties. But, only one of these ims properties can be the primary IM contact. The maximum allowed data size for this field is 2Kb.
+          description: The list of the user's Instant Messenger (IM) accounts. A user account can have multiple ims properties. But, only one of these ims properties can be the primary IM contact. The maximum allowed data size for this field is 2KB.
         includeInGlobalAddressList:
           description: Indicates if the user's profile is visible in the Google Workspace global address list when the contact sharing feature is enabled for the domain. For more information about excluding user profiles, see the [administration help center](https://support.google.com/a/answer/1285988).
           type: boolean
@@ -6792,26 +7144,26 @@ components:
           readOnly: true
           type: boolean
         keywords:
-          description: The user's keywords. The maximum allowed data size for this field is 1Kb.
+          description: The list of the user's keywords. The maximum allowed data size for this field is 1KB.
         kind:
           default: admin#directory#user
           description: Output only. The type of the API resource. For Users resources, the value is `admin#directory#user`.
           readOnly: true
           type: string
         languages:
-          description: The user's languages. The maximum allowed data size for this field is 1Kb.
+          description: The user's languages. The maximum allowed data size for this field is 1KB.
         lastLoginTime:
           description: User's last login time. (Read-only)
           format: date-time
           readOnly: true
           type: string
         locations:
-          description: The user's locations. The maximum allowed data size for this field is 10Kb.
+          description: The user's locations. The maximum allowed data size for this field is 10KB.
         name:
           $ref: "#/components/schemas/UserName"
-          description: Holds the given and family names of the user, and the read-only `fullName` value. The maximum number of characters in the `givenName` and in the `familyName` values is 60. In addition, name values support unicode/UTF-8 characters, and can contain spaces, letters (a-z), numbers (0-9), dashes (-), forward slashes (/), and periods (.). For more information about character usage rules, see the [administration help center](https://support.google.com/a/answer/9193374). Maximum allowed data size for this field is 1Kb.
+          description: Holds the given and family names of the user, and the read-only `fullName` value. The maximum number of characters in the `givenName` and in the `familyName` values is 60. In addition, name values support unicode/UTF-8 characters, and can contain spaces, letters (a-z), numbers (0-9), dashes (-), forward slashes (/), and periods (.). For more information about character usage rules, see the [administration help center](https://support.google.com/a/answer/9193374). Maximum allowed data size for this field is 1KB.
         nonEditableAliases:
-          description: Output only. List of the user's non-editable alias email addresses. These are typically outside the account's primary domain or sub-domain.
+          description: Output only. The list of the user's non-editable alias email addresses. These are typically outside the account's primary domain or sub-domain.
           items:
             type: string
           readOnly: true
@@ -6822,14 +7174,14 @@ components:
           description: The full path of the parent organization associated with the user. If the parent organization is the top-level, it is represented as a forward slash (`/`).
           type: string
         organizations:
-          description: A list of organizations the user belongs to. The maximum allowed data size for this field is 10Kb.
+          description: The list of organizations the user belongs to. The maximum allowed data size for this field is 10KB.
         password:
           description: User's password
           type: string
         phones:
-          description: A list of the user's phone numbers. The maximum allowed data size for this field is 1Kb.
+          description: The list of the user's phone numbers. The maximum allowed data size for this field is 1KB.
         posixAccounts:
-          description: A list of [POSIX](https://www.opengroup.org/austin/papers/posix_faq.html) account information for the user.
+          description: The list of [POSIX](https://www.opengroup.org/austin/papers/posix_faq.html) account information for the user.
         primaryEmail:
           description: The user's primary email address. This property is required in a request to create a user account. The `primaryEmail` must be unique and cannot be an alias of another user.
           type: string
@@ -6840,7 +7192,7 @@ components:
           description: "Recovery phone of the user. The phone number must be in the E.164 format, starting with the plus sign (+). Example: *+16506661212*."
           type: string
         relations:
-          description: A list of the user's relationships to other users. The maximum allowed data size for this field is 2Kb.
+          description: The list of the user's relationships to other users. The maximum allowed data size for this field is 2KB.
         sshPublicKeys:
           description: A list of SSH public keys.
         suspended:
@@ -6859,7 +7211,7 @@ components:
           readOnly: true
           type: string
         websites:
-          description: The user's websites. The maximum allowed data size for this field is 2Kb.
+          description: The user's websites. The maximum allowed data size for this field is 2KB.
       type: object
     UserAbout:
       description: JSON template for About (notes) of a user in Directory API.
@@ -6912,6 +7264,25 @@ components:
           type: string
         type:
           description: Each entry can have a type which indicates standard values of that entry. For example address could be of home work etc. In addition to the standard type an entry can have a custom type and can take any value. Such type should have the CUSTOM value as type and also have a customType value.
+          type: string
+      type: object
+    UserAlias:
+      description: The Directory API manages aliases, which are alternative email addresses.
+      properties:
+        alias:
+          description: The alias email address.
+          type: string
+        etag:
+          description: ETag of the resource.
+          type: string
+        id:
+          description: The unique ID for the user.
+          type: string
+        kind:
+          description: The type of the API resource. For Alias resources, the value is `admin#directory#alias`.
+          type: string
+        primaryEmail:
+          description: The user's primary email address.
           type: string
       type: object
     UserCustomProperties:
@@ -7040,6 +7411,9 @@ components:
       type: object
     UserName:
       properties:
+        displayName:
+          description: "The user's display name. Limit: 256 characters."
+          type: string
         familyName:
           description: The user's last name. Required when creating a user account.
           type: string
@@ -7240,7 +7614,7 @@ components:
           description: Event that triggered this response (only used in case of Push Response)
           type: string
         users:
-          description: List of user objects.
+          description: A list of user objects.
           items:
             $ref: "#/components/schemas/User"
           type: array
@@ -7263,7 +7637,7 @@ components:
           type: string
       type: object
     VerificationCodes:
-      description: JSON response template for List verification codes operation in Directory API.
+      description: JSON response template for list verification codes operation in Directory API.
       properties:
         etag:
           description: ETag of the resource.
