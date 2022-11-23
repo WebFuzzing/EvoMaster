@@ -52,6 +52,132 @@ class RestActionBuilderV3Test{
     }
 
     @Test
+    fun testArrayWithAdditionalProperties(){
+        //example from APIs_guru/googleapis.com/apigateway/v1
+        val name = "ApigatewayStatus"
+        val dtoSchema = """
+          "$name": {
+            "description": "The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).",
+            "properties": {
+              "code": {
+                "description": "The status code, which should be an enum value of google.rpc.Code.",
+                "format": "int32",
+                "type": "integer"
+              },
+              "details": {
+                "description": "A list of messages that carry the error details. There is a common set of message types for APIs to use.",
+                "items": {
+                  "additionalProperties": {
+                    "description": "Properties of the object. Contains field @type with type URL."
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "message": {
+                "description": "A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the google.rpc.Status.details field, or localized by the client.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        """.trimIndent()
+
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null) as ObjectGene
+
+        assertEquals(name, gene.name)
+        assertEquals(3, gene.fields.size)
+
+        val details = gene.fields.find { it.name == "details" }
+        assertNotNull(details)
+        val detailsGene = ParamUtil.getValueGene(details!!)
+        assertTrue(detailsGene is ArrayGene<*>)
+        (detailsGene as ArrayGene<*>).apply {
+            assertTrue(template is FixedMapGene<*, *>)
+            (template as FixedMapGene<*, *>).apply {
+                assertTrue(template.first is StringGene)
+                assertTrue(template.second is StringGene)
+            }
+        }
+    }
+
+    @Test
+    fun testAdditionalPropertiesWithObjectType(){
+        // example from APIs_guru/azure.com/containerinstance-containerInstance/2018-10-01
+        val name = "ContainerGroupIdentity"
+        val dtoSchema = """
+            "$name": {
+              "description": "Identity for the container group.",
+              "properties": {
+                "principalId": {
+                  "description": "The principal id of the container group identity. This property will only be provided for a system assigned identity.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                "tenantId": {
+                  "description": "The tenant id associated with the container group. This property will only be provided for a system assigned identity.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                "type": {
+                  "description": "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group.",
+                  "enum": [
+                    "SystemAssigned",
+                    "UserAssigned",
+                    "SystemAssigned, UserAssigned",
+                    "None"
+                  ],
+                  "type": "string",
+                  "x-ms-enum": {
+                    "modelAsString": false,
+                    "name": "ResourceIdentityType"
+                  }
+                },
+                "userAssignedIdentities": {
+                  "additionalProperties": {
+                    "properties": {
+                      "clientId": {
+                        "description": "The client id of user assigned identity.",
+                        "readOnly": true,
+                        "type": "string"
+                      },
+                      "principalId": {
+                        "description": "The principal id of user assigned identity.",
+                        "readOnly": true,
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "description": "The list of user identities associated with the container group. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'.",
+                  "type": "object"
+                }
+              }
+            }
+        """.trimIndent()
+
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null) as ObjectGene
+
+        assertEquals(name, gene.name)
+        assertEquals(4, gene.fields.size)
+
+        val userAssignedIdentities = gene.fields.find { it.name == "userAssignedIdentities" }
+        assertNotNull(userAssignedIdentities)
+        val userAssignedIdentitiesGene = ParamUtil.getValueGene(userAssignedIdentities!!)
+        assertTrue(userAssignedIdentitiesGene is FixedMapGene<*, *>)
+        (userAssignedIdentitiesGene as FixedMapGene<*, *>).apply {
+            assertTrue(template.first is StringGene)
+            assertTrue(template.second is ObjectGene)
+            (template.second as ObjectGene).apply {
+                assertEquals(2, fields.size)
+                assertTrue(fields.any { f-> f.name == "principalId" })
+                assertTrue(fields.any { f-> f.name == "clientId" })
+            }
+        }
+    }
+
+
+    @Test
     fun testParseDto(){
 
         val name = "com.FooBar"
