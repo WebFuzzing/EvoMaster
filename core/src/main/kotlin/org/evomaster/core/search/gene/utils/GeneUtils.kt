@@ -489,9 +489,9 @@ object GeneUtils {
         if (selected.isNotEmpty()) {
             //it is fine, but we still need to make sure selected objects are fine
             selected.forEach {
-                if ((it is OptionalGene && it.gene is ObjectGene && (it.gene !is CycleObjectGene || it.gene !is LimitObjectGene))
+                if ((it is OptionalGene && (it.gene !is CycleObjectGene ||  it.gene !is LimitObjectGene))
                 ) {
-                    if (!repairBooleanSelection(it.gene)) {
+                    if (!repairBooleanSelection(it.gene as ObjectGene)) {
                         it.isActive = false
                     }
                 } else  //looking into objects inside a tuple
