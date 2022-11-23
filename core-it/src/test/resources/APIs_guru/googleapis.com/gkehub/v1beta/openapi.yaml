@@ -19,12 +19,11 @@ info:
   x-logo:
     url: https://upload.wikimedia.org/wikipedia/commons/e/e1/YouTube_play_buttom_icon_%282013-2017%29.svg
   x-origin:
-    - format: openapi
+    - format: google
       url: https://gkehub.googleapis.com/$discovery/rest?version=v1beta
-      version: "3.0"
+      version: v1
   x-providerName: googleapis.com
   x-serviceName: gkehub
-  x-preferred: true
 externalDocs:
   url: https://cloud.google.com/anthos/multicluster-management/connect/registering-a-cluster
 tags:
@@ -589,75 +588,20 @@ components:
       properties:
         defaultMembershipSpec:
           $ref: "#/components/schemas/AnthosObservabilityMembershipSpec"
-          description: default membership spec for unconfigured memberships
+          description: Default membership spec for unconfigured memberships
       type: object
     AnthosObservabilityMembershipSpec:
       description: "**Anthosobservability**: Per-Membership Feature spec."
       properties:
         doNotOptimizeMetrics:
-          description: use full of metrics rather than optimized metrics. See https://cloud.google.com/anthos/clusters/docs/on-prem/1.8/concepts/logging-and-monitoring#optimized_metrics_default_metrics
+          description: Use full of metrics rather than optimized metrics. See https://cloud.google.com/anthos/clusters/docs/on-prem/1.8/concepts/logging-and-monitoring#optimized_metrics_default_metrics
           type: boolean
         enableStackdriverOnApplications:
-          description: enable collecting and reporting metrics and logs from user apps See go/onyx-application-metrics-logs-user-guide
+          description: Enable collecting and reporting metrics and logs from user apps.
           type: boolean
         version:
           description: the version of stackdriver operator used by this feature
           type: string
-      type: object
-    AnthosVMMembershipSpec:
-      description: AnthosVMMembershipSpec contains the AnthosVM feature configuration for a membership/cluster.
-      properties:
-        subfeaturesSpec:
-          description: List of configurations of the Anthos For VM subfeatures that are to be enabled
-          items:
-            $ref: "#/components/schemas/AnthosVMSubFeatureSpec"
-          type: array
-      type: object
-    AnthosVMMembershipState:
-      description: AnthosVMFeatureState contains the state of the AnthosVM feature. It represents the actual state in the cluster, while the AnthosVMMembershipSpec represents the desired state.
-      properties:
-        localControllerState:
-          $ref: "#/components/schemas/LocalControllerState"
-          description: State of the local PE-controller inside the cluster
-        subfeatureState:
-          description: List of AnthosVM subfeature states
-          items:
-            $ref: "#/components/schemas/AnthosVMSubFeatureState"
-          type: array
-      type: object
-    AnthosVMSubFeatureSpec:
-      description: AnthosVMSubFeatureSpec contains the subfeature configuration for a membership/cluster.
-      properties:
-        enabled:
-          description: Indicates whether the subfeature should be enabled on the cluster or not. If set to true, the subfeature's control plane and resources will be installed in the cluster. If set to false, the oneof spec if present will be ignored and nothing will be installed in the cluster.
-          type: boolean
-        migrateSpec:
-          $ref: "#/components/schemas/MigrateSpec"
-          description: MigrateSpec repsents the configuration for Migrate subfeature.
-        serviceMeshSpec:
-          $ref: "#/components/schemas/ServiceMeshSpec"
-          description: ServiceMeshSpec repsents the configuration for Service Mesh subfeature.
-      type: object
-    AnthosVMSubFeatureState:
-      description: AnthosVMSubFeatureState contains the state of the AnthosVM subfeatures.
-      properties:
-        description:
-          description: Description represents human readable description of the subfeature state. If the deployment failed, this should also contain the reason for the failure.
-          type: string
-        installationState:
-          description: InstallationState represents the state of installation of the subfeature in the cluster.
-          enum:
-            - INSTALLATION_STATE_UNSPECIFIED
-            - INSTALLATION_STATE_NOT_INSTALLED
-            - INSTALLATION_STATE_INSTALLED
-            - INSTALLATION_STATE_FAILED
-          type: string
-        migrateState:
-          $ref: "#/components/schemas/MigrateState"
-          description: MigrateState represents the state of the Migrate subfeature.
-        serviceMeshState:
-          $ref: "#/components/schemas/ServiceMeshState"
-          description: ServiceMeshState represents the state of the Service Mesh subfeature.
       type: object
     AppDevExperienceFeatureSpec:
       description: Spec for App Dev Experience Feature.
@@ -706,7 +650,7 @@ components:
           $ref: "#/components/schemas/Expr"
           description: The condition that is associated with this binding. If the condition evaluates to `true`, then this binding applies to the current request. If the condition evaluates to `false`, then this binding does not apply to the current request. However, a different role binding might grant the same role to one or more of the principals in this binding. To learn which resources support conditions in their IAM policies, see the [IAM documentation](https://cloud.google.com/iam/help/conditions/resource-policies).
         members:
-          description: "Specifies the principals requesting access for a Google Cloud resource. `members` can have the following values: * `allUsers`: A special identifier that represents anyone who is on the internet; with or without a Google account. * `allAuthenticatedUsers`: A special identifier that represents anyone who is authenticated with a Google account or a service account. * `user:{emailid}`: An email address that represents a specific Google account. For example, `alice@example.com` . * `serviceAccount:{emailid}`: An email address that represents a service account. For example, `my-other-app@appspot.gserviceaccount.com`. * `group:{emailid}`: An email address that represents a Google group. For example, `admins@example.com`. * `deleted:user:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a user that has been recently deleted. For example, `alice@example.com?uid=123456789012345678901`. If the user is recovered, this value reverts to `user:{emailid}` and the recovered user retains the role in the binding. * `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a service account that has been recently deleted. For example, `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`. If the service account is undeleted, this value reverts to `serviceAccount:{emailid}` and the undeleted service account retains the role in the binding. * `deleted:group:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a Google group that has been recently deleted. For example, `admins@example.com?uid=123456789012345678901`. If the group is recovered, this value reverts to `group:{emailid}` and the recovered group retains the role in the binding. * `domain:{domain}`: The G Suite domain (primary) that represents all the users of that domain. For example, `google.com` or `example.com`. "
+          description: "Specifies the principals requesting access for a Google Cloud resource. `members` can have the following values: * `allUsers`: A special identifier that represents anyone who is on the internet; with or without a Google account. * `allAuthenticatedUsers`: A special identifier that represents anyone who is authenticated with a Google account or a service account. Does not include identities that come from external identity providers (IdPs) through identity federation. * `user:{emailid}`: An email address that represents a specific Google account. For example, `alice@example.com` . * `serviceAccount:{emailid}`: An email address that represents a Google service account. For example, `my-other-app@appspot.gserviceaccount.com`. * `serviceAccount:{projectid}.svc.id.goog[{namespace}/{kubernetes-sa}]`: An identifier for a [Kubernetes service account](https://cloud.google.com/kubernetes-engine/docs/how-to/kubernetes-service-accounts). For example, `my-project.svc.id.goog[my-namespace/my-kubernetes-sa]`. * `group:{emailid}`: An email address that represents a Google group. For example, `admins@example.com`. * `deleted:user:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a user that has been recently deleted. For example, `alice@example.com?uid=123456789012345678901`. If the user is recovered, this value reverts to `user:{emailid}` and the recovered user retains the role in the binding. * `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a service account that has been recently deleted. For example, `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`. If the service account is undeleted, this value reverts to `serviceAccount:{emailid}` and the undeleted service account retains the role in the binding. * `deleted:group:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a Google group that has been recently deleted. For example, `admins@example.com?uid=123456789012345678901`. If the group is recovered, this value reverts to `group:{emailid}` and the recovered group retains the role in the binding. * `domain:{domain}`: The G Suite domain (primary) that represents all the users of that domain. For example, `google.com` or `example.com`. "
           items:
             type: string
           type: array
@@ -727,6 +671,9 @@ components:
         appdevexperience:
           $ref: "#/components/schemas/AppDevExperienceFeatureSpec"
           description: Appdevexperience specific spec.
+        fleetobservability:
+          $ref: "#/components/schemas/FleetObservabilityFeatureSpec"
+          description: FleetObservability feature spec.
         multiclusteringress:
           $ref: "#/components/schemas/MultiClusterIngressFeatureSpec"
           description: Multicluster Ingress-specific spec.
@@ -737,6 +684,9 @@ components:
         appdevexperience:
           $ref: "#/components/schemas/AppDevExperienceFeatureState"
           description: Appdevexperience specific state.
+        fleetobservability:
+          $ref: "#/components/schemas/FleetObservabilityFeatureState"
+          description: FleetObservability feature state.
         state:
           $ref: "#/components/schemas/FeatureState"
           description: Output only. The "running state" of the Feature in this Hub.
@@ -774,6 +724,9 @@ components:
     ConfigManagementConfigSync:
       description: Configuration for Config Sync
       properties:
+        allowVerticalScale:
+          description: Set to true to allow the vertical scaling. Defaults to false which disallows vertical scaling.
+          type: boolean
         enabled:
           description: Enables the installation of ConfigSync. If set to true, ConfigSync resources will be created and the other ConfigSync fields will be applied if exist. If set to false, all other ConfigSync fields will be ignored, ConfigSync resources will be deleted. If omitted, ConfigSync resources will be managed depends on the presence of git field.
           type: boolean
@@ -787,7 +740,7 @@ components:
           description: Set to true to enable the Config Sync admission webhook to prevent drifts. If set to `false`, disables the Config Sync admission webhook and does not prevent drifts.
           type: boolean
         sourceFormat:
-          description: Specifies whether the Config Sync Repo is in “hierarchical” or “unstructured” mode.
+          description: Specifies whether the Config Sync Repo is in "hierarchical" or "unstructured" mode.
           type: string
       type: object
     ConfigManagementConfigSyncDeploymentState:
@@ -917,6 +870,14 @@ components:
           type: string
         gatekeeperControllerManagerState:
           description: Status of gatekeeper-controller-manager pod.
+          enum:
+            - DEPLOYMENT_STATE_UNSPECIFIED
+            - NOT_INSTALLED
+            - INSTALLED
+            - ERROR
+          type: string
+        gatekeeperMutation:
+          description: Status of the pod serving the mutation webhook.
           enum:
             - DEPLOYMENT_STATE_UNSPECIFIED
             - NOT_INSTALLED
@@ -1131,6 +1092,9 @@ components:
         monitoring:
           $ref: "#/components/schemas/ConfigManagementPolicyControllerMonitoring"
           description: Monitoring specifies the configuration of monitoring.
+        mutationEnabled:
+          description: Enable or disable mutation in policy controller. If true, mutation CRDs, webhook and controller deployment will be deployed to the cluster.
+          type: boolean
         referentialRulesEnabled:
           description: Enables the ability to use Constraint Templates that reference to objects other than the object currently being evaluated.
           type: boolean
@@ -1277,6 +1241,17 @@ components:
           $ref: "#/components/schemas/FeatureResourceState"
           description: Output only. State of the Feature resource itself.
           readOnly: true
+        scopeSpecs:
+          additionalProperties:
+            $ref: "#/components/schemas/ScopeFeatureSpec"
+          description: "Optional. Scope-specific configuration for this Feature. If this Feature does not support any per-Scope configuration, this field may be unused. The keys indicate which Scope the configuration is for, in the form: `projects/{p}/locations/global/scopes/{s}` Where {p} is the project, {s} is a valid Scope in this project. {p} WILL match the Feature's project. {p} will always be returned as the project number, but the project ID is also accepted during input. If the same Scope is specified in the map twice (using the project ID form, and the project number form), exactly ONE of the entries will be saved, with no guarantees as to which. For this reason, it is recommended the same format be used for all entries when mutating a Feature."
+          type: object
+        scopeStates:
+          additionalProperties:
+            $ref: "#/components/schemas/ScopeFeatureState"
+          description: "Output only. Scope-specific Feature status. If this Feature does report any per-Scope status, this field may be unused. The keys indicate which Scope the state is for, in the form: `projects/{p}/locations/global/scopes/{s}` Where {p} is the project, {s} is a valid Scope in this project. {p} WILL match the Feature's project."
+          readOnly: true
+          type: object
         spec:
           $ref: "#/components/schemas/CommonFeatureSpec"
           description: Optional. Hub-wide Feature configuration. If this Feature does not support any Hub-wide configuration, this field may be unused.
@@ -1323,6 +1298,22 @@ components:
           format: google-datetime
           type: string
       type: object
+    FleetObservabilityFeatureSpec:
+      description: "**Fleet Observability**: The Hub-wide input for the FleetObservability feature."
+      properties: {}
+      type: object
+    FleetObservabilityFeatureState:
+      description: "**FleetObservability**: An empty state left as an example Hub-wide Feature state."
+      properties: {}
+      type: object
+    FleetObservabilityMembershipSpec:
+      description: "**FleetObservability**: The membership-specific input for FleetObservability feature."
+      properties: {}
+      type: object
+    FleetObservabilityMembershipState:
+      description: "**FleetObservability**: An empty state left as an example membership-specific Feature state."
+      properties: {}
+      type: object
     GoogleRpcStatus:
       description: "The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors)."
       properties:
@@ -1344,6 +1335,12 @@ components:
     IdentityServiceAuthMethod:
       description: Configuration of an auth method for a member/cluster. Only one authentication method (e.g., OIDC and LDAP) can be set per AuthMethod.
       properties:
+        azureadConfig:
+          $ref: "#/components/schemas/IdentityServiceAzureADConfig"
+          description: AzureAD specific Configuration.
+        googleConfig:
+          $ref: "#/components/schemas/IdentityServiceGoogleConfig"
+          description: GoogleConfig specific configuration
         name:
           description: Identifier for auth config.
           type: string
@@ -1353,6 +1350,34 @@ components:
         proxy:
           description: Proxy server address to use for auth method.
           type: string
+      type: object
+    IdentityServiceAzureADConfig:
+      description: Configuration for the AzureAD Auth flow.
+      properties:
+        clientId:
+          description: ID for the registered client application that makes authentication requests to the Azure AD identity provider.
+          type: string
+        clientSecret:
+          description: Input only. Unencrypted AzureAD client secret will be passed to the GKE Hub CLH.
+          type: string
+        encryptedClientSecret:
+          description: Output only. Encrypted AzureAD client secret.
+          format: byte
+          readOnly: true
+          type: string
+        kubectlRedirectUri:
+          description: The redirect URL that kubectl uses for authorization.
+          type: string
+        tenant:
+          description: Kind of Azure AD account to be authenticated. Supported values are or for accounts belonging to a specific tenant.
+          type: string
+      type: object
+    IdentityServiceGoogleConfig:
+      description: Configuration for the Google Plugin Auth flow.
+      properties:
+        disable:
+          description: Disable automatic configuration of Google Plugin on supported platforms.
+          type: boolean
       type: object
     IdentityServiceMembershipSpec:
       description: "**Anthos Identity Service**: Configuration for a single Membership."
@@ -1397,6 +1422,9 @@ components:
           type: string
         deployCloudConsoleProxy:
           description: Flag to denote if reverse proxy is used to connect to auth provider. This flag should be set to true when provider is not reachable by Google Cloud Console.
+          type: boolean
+        enableAccessToken:
+          description: Enable access token.
           type: boolean
         encryptedClientSecret:
           description: Output only. Encrypted OIDC Client secret
@@ -1464,21 +1492,6 @@ components:
             $ref: "#/components/schemas/Operation"
           type: array
       type: object
-    LocalControllerState:
-      description: LocalControllerState contains the state of the local controller deployed in the cluster.
-      properties:
-        description:
-          description: Description represents the human readable description of the current state of the local PE controller
-          type: string
-        installationState:
-          description: InstallationState represents the state of deployment of the local PE controller in the cluster.
-          enum:
-            - INSTALLATION_STATE_UNSPECIFIED
-            - INSTALLATION_STATE_NOT_INSTALLED
-            - INSTALLATION_STATE_INSTALLED
-            - INSTALLATION_STATE_FAILED
-          type: string
-      type: object
     Location:
       description: A resource that represents Google Cloud Platform location.
       properties:
@@ -1508,15 +1521,15 @@ components:
         anthosobservability:
           $ref: "#/components/schemas/AnthosObservabilityMembershipSpec"
           description: Anthos Observability-specific spec
-        anthosvm:
-          $ref: "#/components/schemas/AnthosVMMembershipSpec"
-          description: AnthosVM spec.
         cloudbuild:
           $ref: "#/components/schemas/MembershipSpec"
           description: Cloud Build-specific spec
         configmanagement:
           $ref: "#/components/schemas/ConfigManagementMembershipSpec"
           description: Config Management-specific spec.
+        fleetobservability:
+          $ref: "#/components/schemas/FleetObservabilityMembershipSpec"
+          description: Fleet observability membership spec
         identityservice:
           $ref: "#/components/schemas/IdentityServiceMembershipSpec"
           description: Identity Service-specific spec.
@@ -1530,21 +1543,21 @@ components:
     MembershipFeatureState:
       description: MembershipFeatureState contains Feature status information for a single Membership.
       properties:
-        anthosvm:
-          $ref: "#/components/schemas/AnthosVMMembershipState"
-          description: AnthosVM state.
         appdevexperience:
           $ref: "#/components/schemas/AppDevExperienceFeatureState"
           description: Appdevexperience specific state.
         configmanagement:
           $ref: "#/components/schemas/ConfigManagementMembershipState"
           description: Config Management-specific state.
+        fleetobservability:
+          $ref: "#/components/schemas/FleetObservabilityMembershipState"
+          description: Fleet observability membership state.
         identityservice:
           $ref: "#/components/schemas/IdentityServiceMembershipState"
           description: Identity Service-specific state.
         metering:
           $ref: "#/components/schemas/MeteringMembershipState"
-          description: Metering-specific spec.
+          description: Metering-specific state.
         policycontroller:
           $ref: "#/components/schemas/PolicyControllerMembershipState"
           description: Policycontroller-specific state.
@@ -1580,14 +1593,6 @@ components:
           description: The vCPUs capacity in the cluster according to the most recent measurement (1/1000 precision).
           format: float
           type: number
-      type: object
-    MigrateSpec:
-      description: MigrateSpec contains the migrate subfeature configuration.
-      properties: {}
-      type: object
-    MigrateState:
-      description: MigrateState contains the state of Migrate subfeature
-      properties: {}
       type: object
     MultiClusterIngressFeatureSpec:
       description: "**Multi-cluster Ingress**: The configuration for the MultiClusterIngress feature."
@@ -1700,10 +1705,16 @@ components:
             - INSTALL_SPEC_UNSPECIFIED
             - INSTALL_SPEC_NOT_INSTALLED
             - INSTALL_SPEC_ENABLED
-            - INSTALL_SPEC_DISABLED
+            - INSTALL_SPEC_SUSPENDED
           type: string
         logDeniesEnabled:
           description: Logs all denies and dry run failures.
+          type: boolean
+        monitoring:
+          $ref: "#/components/schemas/PolicyControllerMonitoringConfig"
+          description: Monitoring specifies the configuration of monitoring.
+        mutationEnabled:
+          description: Enables the ability to mutate resources using Policy Controller.
           type: boolean
         referentialRulesEnabled:
           description: Enables the ability to use Constraint Templates that reference to objects other than the object currently being evaluated.
@@ -1711,30 +1722,6 @@ components:
         templateLibraryConfig:
           $ref: "#/components/schemas/PolicyControllerTemplateLibraryConfig"
           description: Configures the library templates to install along with Policy Controller.
-      type: object
-    PolicyControllerHubState:
-      description: State of the Policy Controller.
-      properties:
-        deploymentStates:
-          additionalProperties:
-            enum:
-              - DEPLOYMENT_STATE_UNSPECIFIED
-              - DEPLOYMENT_STATE_NOT_INSTALLED
-              - DEPLOYMENT_STATE_INSTALLED
-              - DEPLOYMENT_STATE_ERROR
-            type: string
-          description: Map from deployment name to deployment state. Example deployments are gatekeeper-controller-manager, gatekeeper-audit deployment, and gatekeeper-mutation.
-          type: object
-        version:
-          $ref: "#/components/schemas/PolicyControllerHubVersion"
-          description: The version of Gatekeeper Policy Controller deployed.
-      type: object
-    PolicyControllerHubVersion:
-      description: The build version of Gatekeeper that Policy Controller is using.
-      properties:
-        version:
-          description: The gatekeeper image tag that is composed of ACM version, git tag, build number.
-          type: string
       type: object
     PolicyControllerMembershipSpec:
       description: "**Policy Controller**: Configuration for a single cluster. Intended to parallel the PolicyController CR."
@@ -1749,17 +1736,13 @@ components:
     PolicyControllerMembershipState:
       description: "**Policy Controller**: State for a single cluster."
       properties:
-        clusterName:
-          description: The user-defined name for the cluster used by ClusterSelectors to group clusters together. This should match Membership's membership_name, unless the user installed PC on the cluster manually prior to enabling the PC hub feature. Unique within a Policy Controller installation.
-          type: string
-        membershipSpec:
-          $ref: "#/components/schemas/PolicyControllerMembershipSpec"
-          description: Membership configuration in the cluster. This represents the actual state in the cluster, while the MembershipSpec in the FeatureSpec represents the intended state
-        policyControllerHubState:
-          $ref: "#/components/schemas/PolicyControllerHubState"
-          description: Policy Controller state observed by the Policy Controller Hub
+        componentStates:
+          additionalProperties:
+            $ref: "#/components/schemas/PolicyControllerOnClusterState"
+          description: 'Currently these include (also serving as map keys): 1. "admission" 2. "audit" 3. "mutation" 4. "constraint template library"'
+          type: object
         state:
-          description: The lifecycle state Policy Controller is in.
+          description: The overall Policy Controller lifecycle state observed by the Hub Feature controller.
           enum:
             - LIFECYCLE_STATE_UNSPECIFIED
             - NOT_INSTALLED
@@ -1769,6 +1752,40 @@ components:
             - DECOMISSIONING
             - CLUSTER_ERROR
             - HUB_ERROR
+            - SUSPENDED
+          type: string
+      type: object
+    PolicyControllerMonitoringConfig:
+      description: 'MonitoringConfig specifies the backends Policy Controller should export metrics to. For example, to specify metrics should be exported to Cloud Monitoring and Prometheus, specify backends: ["cloudmonitoring", "prometheus"]'
+      properties:
+        backends:
+          description: Specifies the list of backends Policy Controller will export to. An empty list would effectively disable metrics export.
+          items:
+            enum:
+              - MONITORING_BACKEND_UNSPECIFIED
+              - PROMETHEUS
+              - CLOUD_MONITORING
+            type: string
+          type: array
+      type: object
+    PolicyControllerOnClusterState:
+      description: OnClusterState represents the state of a sub-component of Policy Controller.
+      properties:
+        details:
+          description: Surface potential errors or information logs.
+          type: string
+        state:
+          description: The lifecycle state of this component.
+          enum:
+            - LIFECYCLE_STATE_UNSPECIFIED
+            - NOT_INSTALLED
+            - INSTALLING
+            - ACTIVE
+            - UPDATING
+            - DECOMISSIONING
+            - CLUSTER_ERROR
+            - HUB_ERROR
+            - SUSPENDED
           type: string
       type: object
     PolicyControllerTemplateLibraryConfig:
@@ -1777,6 +1794,18 @@ components:
         included:
           description: Whether the standard template library should be installed or not.
           type: boolean
+      type: object
+    ScopeFeatureSpec:
+      description: ScopeFeatureSpec contains feature specs for a fleet scope.
+      properties: {}
+      type: object
+    ScopeFeatureState:
+      description: ScopeFeatureState contains Scope-wide Feature status information.
+      properties:
+        state:
+          $ref: "#/components/schemas/FeatureState"
+          description: Output only. The "running state" of the Feature in this Scope.
+          readOnly: true
       type: object
     ServiceMeshControlPlaneManagement:
       description: Status of control plane management.
@@ -1799,6 +1828,27 @@ components:
             - DEGRADED
           type: string
       type: object
+    ServiceMeshDataPlaneManagement:
+      description: Status of data plane management. Only reported per-member.
+      properties:
+        details:
+          description: Explanation of the status.
+          items:
+            $ref: "#/components/schemas/ServiceMeshStatusDetails"
+          type: array
+        state:
+          description: Lifecycle status of data plane management.
+          enum:
+            - LIFECYCLE_STATE_UNSPECIFIED
+            - DISABLED
+            - FAILED_PRECONDITION
+            - PROVISIONING
+            - ACTIVE
+            - STALLED
+            - NEEDS_ATTENTION
+            - DEGRADED
+          type: string
+      type: object
     ServiceMeshMembershipSpec:
       description: "**Service Mesh**: Spec for a single Membership for the servicemesh feature"
       properties:
@@ -1809,6 +1859,13 @@ components:
             - AUTOMATIC
             - MANUAL
           type: string
+        management:
+          description: Enables automatic Service Mesh management.
+          enum:
+            - MANAGEMENT_UNSPECIFIED
+            - MANAGEMENT_AUTOMATIC
+            - MANAGEMENT_MANUAL
+          type: string
       type: object
     ServiceMeshMembershipState:
       description: "**Service Mesh**: State for a single Membership, as analyzed by the Service Mesh Hub Controller."
@@ -1817,14 +1874,10 @@ components:
           $ref: "#/components/schemas/ServiceMeshControlPlaneManagement"
           description: Output only. Status of control plane management
           readOnly: true
-      type: object
-    ServiceMeshSpec:
-      description: ServiceMeshSpec contains the serviceMesh subfeature configuration.
-      properties: {}
-      type: object
-    ServiceMeshState:
-      description: ServiceMeshState contains the state of Service Mesh subfeature
-      properties: {}
+        dataPlaneManagement:
+          $ref: "#/components/schemas/ServiceMeshDataPlaneManagement"
+          description: Output only. Status of data plane management.
+          readOnly: true
       type: object
     ServiceMeshStatusDetails:
       description: Structured and human-readable details for a status.

@@ -53,6 +53,7 @@ paths:
                 - MALWARE
                 - SOCIAL_ENGINEERING
                 - UNWANTED_SOFTWARE
+                - SOCIAL_ENGINEERING_EXTENDED_COVERAGE
               type: string
             type: array
           style: form
@@ -119,6 +120,7 @@ paths:
               - MALWARE
               - SOCIAL_ENGINEERING
               - UNWANTED_SOFTWARE
+              - SOCIAL_ENGINEERING_EXTENDED_COVERAGE
             type: string
         - description: The current version token of the client for the requested list (the client version that was received from the last successful diff). If the client does not have a version token (this is the first time calling ComputeThreatListDiff), this may be left empty and a full database snapshot will be returned.
           in: query
@@ -167,6 +169,7 @@ paths:
                 - MALWARE
                 - SOCIAL_ENGINEERING
                 - UNWANTED_SOFTWARE
+                - SOCIAL_ENGINEERING_EXTENDED_COVERAGE
               type: string
             type: array
           style: form
@@ -609,6 +612,7 @@ components:
               - MALWARE
               - SOCIAL_ENGINEERING
               - UNWANTED_SOFTWARE
+              - SOCIAL_ENGINEERING_EXTENDED_COVERAGE
             type: string
           type: array
       type: object
@@ -616,7 +620,7 @@ components:
       properties:
         threat:
           $ref: "#/components/schemas/GoogleCloudWebriskV1SearchUrisResponseThreatUri"
-          description: The threat list matches. This may be empty if the URI is on no list.
+          description: The threat list matches. This might be empty if the URI is on no list.
       type: object
     GoogleCloudWebriskV1SearchUrisResponseThreatUri:
       description: Contains threat information on a matching uri.
@@ -633,6 +637,7 @@ components:
               - MALWARE
               - SOCIAL_ENGINEERING
               - UNWANTED_SOFTWARE
+              - SOCIAL_ENGINEERING_EXTENDED_COVERAGE
             type: string
           type: array
       type: object
@@ -640,13 +645,14 @@ components:
       description: Wraps a URI that might be displaying malicious content.
       properties:
         threatTypes:
-          description: ThreatTypes found to be associated with the submitted URI after reviewing it. This may be empty if the URI was not added to any list.
+          description: ThreatTypes found to be associated with the submitted URI after reviewing it. This might be empty if the URI was not added to any list.
           items:
             enum:
               - THREAT_TYPE_UNSPECIFIED
               - MALWARE
               - SOCIAL_ENGINEERING
               - UNWANTED_SOFTWARE
+              - SOCIAL_ENGINEERING_EXTENDED_COVERAGE
             type: string
           type: array
         uri:
@@ -668,6 +674,7 @@ components:
             - SUCCEEDED
             - CANCELLED
             - FAILED
+            - CLOSED
           type: string
         updateTime:
           description: Latest update time of the operation.
@@ -731,10 +738,10 @@ components:
         metadata:
           additionalProperties:
             description: Properties of the object. Contains field @type with type URL.
-          description: Service-specific metadata associated with the operation. It typically contains progress information and common metadata such as create time. Some services might not provide such metadata. Any method that returns a long-running operation should document the metadata type, if any.
+          description: Contains a `SubmitUriMetadata` object.
           type: object
         name:
-          description: The server-assigned name, which is only unique within the same service that originally returns it. If you use the default HTTP mapping, the `name` should be a resource name ending with `operations/{unique_id}`.
+          description: Matches the `/v1/{project-name}/operations/{operation-id}` pattern.
           type: string
         response:
           additionalProperties:

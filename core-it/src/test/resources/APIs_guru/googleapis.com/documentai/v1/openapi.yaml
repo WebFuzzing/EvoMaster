@@ -632,6 +632,53 @@ paths:
             - https://www.googleapis.com/auth/cloud-platform
       tags:
         - projects
+  "/v1/{parent}/processorTypes":
+    get:
+      description: Lists the processor types that exist.
+      operationId: documentai.projects.locations.processorTypes.list
+      parameters:
+        - description: "Required. The location of processor type to list. The available processor types may depend on the allow-listing on projects. Format: `projects/{project}/locations/{location}`"
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+        - description: The maximum number of processor types to return. If unspecified, at most 100 processor types will be returned. The maximum value is 500; values above 500 will be coerced to 500.
+          in: query
+          name: pageSize
+          schema:
+            type: integer
+        - description: Used to retrieve the next page of results, empty if at the end of the list.
+          in: query
+          name: pageToken
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleCloudDocumentaiV1ListProcessorTypesResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+      tags:
+        - projects
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
   "/v1/{parent}/processorVersions":
     get:
       description: Lists all versions of a processor.
@@ -915,11 +962,19 @@ components:
         commonMetadata:
           $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3CommonOperationMetadata"
           description: The basic metadata of the long running operation.
+        errorDocumentCount:
+          description: Total number of documents that failed to be deleted in storage.
+          format: int32
+          type: integer
         individualBatchDeleteStatuses:
           description: The list of response details of each document.
           items:
             $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3BatchDeleteDocumentsMetadataIndividualBatchDeleteStatus"
           type: array
+        totalDocumentCount:
+          description: Total number of documents deleting from dataset.
+          format: int32
+          type: integer
       type: object
     GoogleCloudDocumentaiUiv1beta3BatchDeleteDocumentsMetadataIndividualBatchDeleteStatus:
       description: The status of each individual document in the batch delete process.
@@ -929,7 +984,7 @@ components:
           description: The document id of the document.
         status:
           $ref: "#/components/schemas/GoogleRpcStatus"
-          description: The status of deleting the document.
+          description: The status of deleting the document in storage.
       type: object
     GoogleCloudDocumentaiUiv1beta3BatchDeleteDocumentsResponse:
       description: Response of the delete documents operation.
@@ -1105,6 +1160,56 @@ components:
           description: The resource name of the created evaluation.
           type: string
       type: object
+    GoogleCloudDocumentaiUiv1beta3ExportDocumentsMetadata:
+      description: Metadata of the batch export documents operation.
+      properties:
+        commonMetadata:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3CommonOperationMetadata"
+          description: The basic metadata of the long running operation.
+        individualExportStatuses:
+          description: The list of response details of each document.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3ExportDocumentsMetadataIndividualExportStatus"
+          type: array
+        splitExportStats:
+          description: The list of statistics for each dataset split type.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3ExportDocumentsMetadataSplitExportStat"
+          type: array
+      type: object
+    GoogleCloudDocumentaiUiv1beta3ExportDocumentsMetadataIndividualExportStatus:
+      description: The status of each individual document in the export process.
+      properties:
+        documentId:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3DocumentId"
+          description: The path to source docproto of the document.
+        outputGcsDestination:
+          description: The output_gcs_destination of the exported document if it was successful, otherwise empty.
+          type: string
+        status:
+          $ref: "#/components/schemas/GoogleRpcStatus"
+          description: The status of the exporting of the document.
+      type: object
+    GoogleCloudDocumentaiUiv1beta3ExportDocumentsMetadataSplitExportStat:
+      description: The statistic representing a dataset split type for this export.
+      properties:
+        splitType:
+          description: The dataset split type.
+          enum:
+            - DATASET_SPLIT_TYPE_UNSPECIFIED
+            - DATASET_SPLIT_TRAIN
+            - DATASET_SPLIT_TEST
+            - DATASET_SPLIT_UNASSIGNED
+          type: string
+        totalDocumentCount:
+          description: Total number of documents with the given dataset split type to be exported.
+          format: int32
+          type: integer
+      type: object
+    GoogleCloudDocumentaiUiv1beta3ExportDocumentsResponse:
+      description: The response proto of ExportDocuments method.
+      properties: {}
+      type: object
     GoogleCloudDocumentaiUiv1beta3ExportProcessorVersionMetadata:
       description: Metadata message associated with the ExportProcessorVersion operation.
       properties:
@@ -1125,11 +1230,30 @@ components:
         commonMetadata:
           $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3CommonOperationMetadata"
           description: The basic metadata of the long running operation.
+        importConfigValidationResults:
+          description: Validation statuses of the batch documents import config.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3ImportDocumentsMetadataImportConfigValidationResult"
+          type: array
         individualImportStatuses:
           description: The list of response details of each document.
           items:
             $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3ImportDocumentsMetadataIndividualImportStatus"
           type: array
+        totalDocumentCount:
+          description: Total number of the documents that are qualified for importing.
+          format: int32
+          type: integer
+      type: object
+    GoogleCloudDocumentaiUiv1beta3ImportDocumentsMetadataImportConfigValidationResult:
+      description: The validation status of each import config. Status is set to errors if there is no documents to import in the import_config, or OK if the operation will try to proceed at least one document.
+      properties:
+        inputGcsSource:
+          description: The source Cloud Storage URI specified in the import config.
+          type: string
+        status:
+          $ref: "#/components/schemas/GoogleRpcStatus"
+          description: The validation status of import config.
       type: object
     GoogleCloudDocumentaiUiv1beta3ImportDocumentsMetadataIndividualImportStatus:
       description: The status of each individual document in the import process.
@@ -1154,24 +1278,47 @@ components:
         commonMetadata:
           $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3CommonOperationMetadata"
           description: The basic metadata of the long running operation.
-        newlyAddedDocuments:
-          description: Returns the newly added document Cloud Storage prefix if the documents are founded in Cloud Storage while not in Document Service storage.
+        datasetResyncStatuses:
+          description: The list of dataset resync statuses. Not checked when `dataset_documents` is specified in ResyncRequest.
           items:
-            $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3ResyncDatasetMetadataUpdatedDocument"
+            $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3ResyncDatasetMetadataDatasetResyncStatus"
+          type: array
+        individualDocumentResyncStatuses:
+          description: The list of document resync statuses. The same document could have multiple `individual_document_resync_statuses` if it has multiple inconsistencies.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3ResyncDatasetMetadataIndividualDocumentResyncStatus"
           type: array
       type: object
-    GoogleCloudDocumentaiUiv1beta3ResyncDatasetMetadataUpdatedDocument:
-      description: The proto for updated document in resync pipeline.
+    GoogleCloudDocumentaiUiv1beta3ResyncDatasetMetadataDatasetResyncStatus:
+      description: Resync status against inconsistency types on the dataset level.
       properties:
-        destinationPrefix:
-          description: The prefix of cloud storage, identifies the destination document which should be updated by resync pipeline.
-          type: string
-        sourcePrefix:
-          description: The prefix of cloud storage, identifies the original document which should be updated by resync pipeline.
+        datasetInconsistencyType:
+          description: The type of the inconsistency of the dataset.
+          enum:
+            - DATASET_INCONSISTENCY_TYPE_UNSPECIFIED
+            - DATASET_INCONSISTENCY_TYPE_NO_STORAGE_MARKER
           type: string
         status:
           $ref: "#/components/schemas/GoogleRpcStatus"
-          description: The final status of the documents which should be updated by resync pipeline.
+          description: The status of resyncing the dataset with regards to the detected inconsistency. Empty if `validate_only` is true in the request.
+      type: object
+    GoogleCloudDocumentaiUiv1beta3ResyncDatasetMetadataIndividualDocumentResyncStatus:
+      description: Resync status for each document per inconsistency type.
+      properties:
+        documentId:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3DocumentId"
+          description: The document identifier.
+        documentInconsistencyType:
+          description: The type of document inconsistency.
+          enum:
+            - DOCUMENT_INCONSISTENCY_TYPE_UNSPECIFIED
+            - DOCUMENT_INCONSISTENCY_TYPE_INVALID_DOCPROTO
+            - DOCUMENT_INCONSISTENCY_TYPE_MISMATCHED_METADATA
+            - DOCUMENT_INCONSISTENCY_TYPE_NO_PAGE_IMAGE
+          type: string
+        status:
+          $ref: "#/components/schemas/GoogleRpcStatus"
+          description: The status of resyncing the document with regards to the detected inconsistency. Empty if `validate_only` is true in the request.
       type: object
     GoogleCloudDocumentaiUiv1beta3ResyncDatasetResponse:
       description: The response proto of ResyncDataset method.
@@ -1278,6 +1425,19 @@ components:
           $ref: "#/components/schemas/GoogleCloudDocumentaiUiv1beta3CommonOperationMetadata"
           description: The basic metadata of the long running operation.
       type: object
+    GoogleCloudDocumentaiV1Barcode:
+      description: Encodes the detailed information of a barcode.
+      properties:
+        format:
+          description: "Format of a barcode. The supported formats are: CODE_128: Code 128 type. CODE_39: Code 39 type. CODE_93: Code 93 type. CODABAR: Codabar type. DATA_MATRIX: 2D Data Matrix type. ITF: ITF type. EAN_13: EAN-13 type. EAN_8: EAN-8 type. QR_CODE: 2D QR code type. UPC_A: UPC-A type. UPC_E: UPC-E type. PDF417: PDF417 type. AZTEC: 2D Aztec code type. DATABAR: GS1 DataBar code type."
+          type: string
+        rawValue:
+          description: Raw value encoded in the barcode. For example, 'MEBKM:TITLE:Google;URL:https://www.google.com;;'.
+          type: string
+        valueFormat:
+          description: "Value format describes the format of the value that a barcode encodes. The supported formats are: CONTACT_INFO: Contact information. EMAIL: Email address. ISBN: ISBN identifier. PHONE: Phone number. PRODUCT: Product. SMS: SMS message. TEXT: Text string. URL: URL address. WIFI: Wifi information. GEO: Geo-localization. CALENDAR_EVENT: Calendar event. DRIVER_LICENSE: Driver's license."
+          type: string
+      type: object
     GoogleCloudDocumentaiV1BatchDocumentsInputConfig:
       description: The common config to specify a set of documents used as input.
       properties:
@@ -1333,7 +1493,7 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/GoogleRpcStatus"
-          description: The status of the processing of the document.
+          description: The status processing the document.
       type: object
     GoogleCloudDocumentaiV1BatchProcessRequest:
       description: Request message for batch process document method.
@@ -1505,11 +1665,8 @@ components:
           description: Optional. Deprecated. Use `id` field instead.
           type: string
         mentionText:
-          description: Optional. Text value in the document e.g. `1600 Amphitheatre Pkwy`. If the entity is not present in the document, this field will be empty.
+          description: Optional. Text value of the entity e.g. `1600 Amphitheatre Pkwy`.
           type: string
-        nonPresent:
-          description: Optional. This attribute indicates that the processing didn't actually identify this entity, but a confidence score was assigned that represent the potential that this could be a false negative. A non-present entity should have an empty mention_text and text_anchor.
-          type: boolean
         normalizedValue:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentEntityNormalizedValue"
           description: Optional. Normalized entity value. Absent if the extracted value could not be converted or the type (e.g. address) is not supported for certain parsers. This field is also only populated for certain supported document types.
@@ -1587,6 +1744,10 @@ components:
     GoogleCloudDocumentaiV1DocumentOutputConfigGcsOutputConfig:
       description: The configuration used when outputting documents.
       properties:
+        fieldMask:
+          description: Specifies which fields to include in the output documents. Only supports top level document and pages field so it must be in the form of `{document_field_name}` or `pages.{page_field_name}`.
+          format: google-fieldmask
+          type: string
         gcsUri:
           description: The Cloud Storage uri (a directory) of the output.
           type: string
@@ -1598,6 +1759,11 @@ components:
           description: A list of visually detected text blocks on the page. A block has a set of lines (collected into paragraphs) that have a common line-spacing and orientation.
           items:
             $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentPageBlock"
+          type: array
+        detectedBarcodes:
+          description: A list of detected barcodes.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentPageDetectedBarcode"
           type: array
         detectedLanguages:
           description: A list of detected languages together with confidence.
@@ -1615,6 +1781,9 @@ components:
         image:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentPageImage"
           description: Rendered image for this page. This image is preprocessed to remove any skew, rotation, and distortions such that the annotation bounding boxes can be upright and axis-aligned.
+        imageQualityScores:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentPageImageQualityScores"
+          description: Image Quality Scores.
         layout:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentPageLayout"
           description: Layout for the page.
@@ -1715,6 +1884,16 @@ components:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentProvenance"
           description: The history of this annotation.
       type: object
+    GoogleCloudDocumentaiV1DocumentPageDetectedBarcode:
+      description: A detected barcode.
+      properties:
+        barcode:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1Barcode"
+          description: Detailed barcode information of the DetectedBarcode.
+        layout:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentPageLayout"
+          description: Layout for DetectedBarcode.
+      type: object
     GoogleCloudDocumentaiV1DocumentPageDetectedLanguage:
       description: Detected language for a structural component.
       properties:
@@ -1791,6 +1970,30 @@ components:
           description: Width of the image in pixels.
           format: int32
           type: integer
+      type: object
+    GoogleCloudDocumentaiV1DocumentPageImageQualityScores:
+      description: Image Quality Scores for the page image
+      properties:
+        detectedDefects:
+          description: A list of detected defects.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentPageImageQualityScoresDetectedDefect"
+          type: array
+        qualityScore:
+          description: The overall quality score. Range [0, 1] where 1 is perfect quality.
+          format: float
+          type: number
+      type: object
+    GoogleCloudDocumentaiV1DocumentPageImageQualityScoresDetectedDefect:
+      description: Image Quality Defects
+      properties:
+        confidence:
+          description: Confidence of detected defect. Range [0, 1] where 1 indicates strong confidence of that the defect exists.
+          format: float
+          type: number
+        type:
+          description: Name of the defect type. Supported values are "quality/defect_blurry", "quality/defect_noisy", "quality/defect_dark", "quality/defect_faint", "quality/defect_text_too_small", "quality/defect_document_cutoff", "quality/defect_text_cutoff", "quality/defect_glare"
+          type: string
       type: object
     GoogleCloudDocumentaiV1DocumentPageLayout:
       description: Visual element describing a layout unit on a page.
@@ -1898,6 +2101,9 @@ components:
         layout:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentPageLayout"
           description: Layout for Table.
+        provenance:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentProvenance"
+          description: The history of this table.
       type: object
     GoogleCloudDocumentaiV1DocumentPageTableTableCell:
       description: A cell representation inside the table.
@@ -2058,6 +2264,91 @@ components:
           description: A message providing more details about the current state of processing. For example, the rejection reason when the state is `rejected`.
           type: string
       type: object
+    GoogleCloudDocumentaiV1DocumentSchema:
+      description: The schema defines the output of the processed document by a processor.
+      properties:
+        description:
+          description: Description of the schema.
+          type: string
+        displayName:
+          description: Display name to show to users.
+          type: string
+        entityTypes:
+          description: Entity types of the schema.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentSchemaEntityType"
+          type: array
+        metadata:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentSchemaMetadata"
+          description: Metadata of the schema.
+      type: object
+    GoogleCloudDocumentaiV1DocumentSchemaEntityType:
+      description: EntityType is the wrapper of a label of the corresponding model with detailed attributes and limitations for entity-based processors. Multiple types can also compose a dependency tree to represent nested types.
+      properties:
+        baseTypes:
+          description: The entity type that this type is derived from. For now, one and only one should be set.
+          items:
+            type: string
+          type: array
+        displayName:
+          description: User defined name for the type.
+          type: string
+        enumValues:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentSchemaEntityTypeEnumValues"
+          description: If specified, lists all the possible values for this entity. This should not be more than a handful of values. If the number of values is >10 or could change frequently use the `EntityType.value_ontology` field and specify a list of all possible values in a value ontology file.
+        name:
+          description: "Name of the type. It must be unique within the schema file and cannot be a 'Common Type'. Besides that we use the following naming conventions: - *use snake_casing* - name matching is case-insensitive - Maximum 64 characters. - Must start with a letter. - Allowed characters: ASCII letters `[a-z0-9_-]`. (For backward compatibility internal infrastructure and tooling can handle any ascii character) - The '/' is sometimes used to denote a property of a type. For example line_item/amount. This convention is deprecated, but will still be honored for backward compatibility."
+          type: string
+        properties:
+          description: Describing the nested structure, or composition of an entity.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentSchemaEntityTypeProperty"
+          type: array
+      type: object
+    GoogleCloudDocumentaiV1DocumentSchemaEntityTypeEnumValues:
+      description: Defines the a list of enum values.
+      properties:
+        values:
+          description: The individual values that this enum values type can include.
+          items:
+            type: string
+          type: array
+      type: object
+    GoogleCloudDocumentaiV1DocumentSchemaEntityTypeProperty:
+      description: Defines properties that can be part of the entity type.
+      properties:
+        name:
+          description: The name of the property. Follows the same guidelines as the EntityType name.
+          type: string
+        occurrenceType:
+          description: Occurrence type limits the number of instances an entity type appears in the document.
+          enum:
+            - OCCURRENCE_TYPE_UNSPECIFIED
+            - OPTIONAL_ONCE
+            - OPTIONAL_MULTIPLE
+            - REQUIRED_ONCE
+            - REQUIRED_MULTIPLE
+          type: string
+        valueType:
+          description: A reference to the value type of the property. This type is subject to the same conventions as the `Entity.base_types` field.
+          type: string
+      type: object
+    GoogleCloudDocumentaiV1DocumentSchemaMetadata:
+      description: Metadata for global schema behavior.
+      properties:
+        documentAllowMultipleLabels:
+          description: If true, on a given page, there can be multiple `document` annotations covering it.
+          type: boolean
+        documentSplitter:
+          description: If true, a `document` entity type can be applied to subdocument ( splitting). Otherwise, it can only be applied to the entire document (classification).
+          type: boolean
+        prefixedNamingOnProperties:
+          description: If set, all the nested entities must be prefixed with the parents.
+          type: boolean
+        skipNamingValidation:
+          description: If set, we will skip the naming format validation in the schema. So the string values in `DocumentSchema.EntityType.name` and `DocumentSchema.EntityType.Property.name` will not be checked.
+          type: boolean
+      type: object
     GoogleCloudDocumentaiV1DocumentShardInfo:
       description: For a large document, sharding may be performed to produce several document shards. Each document shard contains this field to detail which shard it is.
       properties:
@@ -2083,6 +2374,9 @@ components:
         color:
           $ref: "#/components/schemas/GoogleTypeColor"
           description: Text color.
+        fontFamily:
+          description: Font family such as "Arial", "Times New Roman". https://www.w3schools.com/cssref/pr_font_font-family.asp
+          type: string
         fontSize:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentStyleFontSize"
           description: Font size.
@@ -2218,6 +2512,18 @@ components:
           description: A message providing more details about the human review state.
           type: string
       type: object
+    GoogleCloudDocumentaiV1ListProcessorTypesResponse:
+      description: Response message for list processor types.
+      properties:
+        nextPageToken:
+          description: Points to the next page, otherwise empty.
+          type: string
+        processorTypes:
+          description: The processor types.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiV1ProcessorType"
+          type: array
+      type: object
     GoogleCloudDocumentaiV1ListProcessorVersionsResponse:
       description: Response message for list processors.
       properties:
@@ -2258,7 +2564,7 @@ components:
       description: Request message for the process document method.
       properties:
         fieldMask:
-          description: Specifies which fields to include in ProcessResponse's document.
+          description: Specifies which fields to include in ProcessResponse's document. Only supports top level document and pages field so it must be in the form of `{document_field_name}` or `pages.{page_field_name}`.
           format: google-fieldmask
           type: string
         inlineDocument:
@@ -2375,6 +2681,9 @@ components:
         displayName:
           description: The display name of the processor version.
           type: string
+        documentSchema:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentSchema"
+          description: The schema of the processor version. Describes the output.
         googleManaged:
           description: Denotes that this ProcessorVersion is managed by google.
           type: boolean
@@ -2435,6 +2744,9 @@ components:
     GoogleCloudDocumentaiV1ReviewDocumentRequest:
       description: Request message for review document method.
       properties:
+        documentSchema:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1DocumentSchema"
+          description: The document schema of the human review task.
         enableSchemaValidation:
           description: Whether the validation should be performed on the ad-hoc review request.
           type: boolean
@@ -2452,7 +2764,17 @@ components:
       description: Response message for review document method.
       properties:
         gcsDestination:
-          description: The Cloud Storage uri for the human reviewed document.
+          description: The Cloud Storage uri for the human reviewed document if the review is succeeded.
+          type: string
+        rejectionReason:
+          description: The reason why the review is rejected by reviewer.
+          type: string
+        state:
+          description: The state of the review operation.
+          enum:
+            - STATE_UNSPECIFIED
+            - REJECTED
+            - SUCCEEDED
           type: string
       type: object
     GoogleCloudDocumentaiV1SetDefaultProcessorVersionMetadata:
@@ -2533,6 +2855,19 @@ components:
         updateTime:
           description: The last update time of the operation.
           format: google-datetime
+          type: string
+      type: object
+    GoogleCloudDocumentaiV1beta1Barcode:
+      description: Encodes the detailed information of a barcode.
+      properties:
+        format:
+          description: "Format of a barcode. The supported formats are: CODE_128: Code 128 type. CODE_39: Code 39 type. CODE_93: Code 93 type. CODABAR: Codabar type. DATA_MATRIX: 2D Data Matrix type. ITF: ITF type. EAN_13: EAN-13 type. EAN_8: EAN-8 type. QR_CODE: 2D QR code type. UPC_A: UPC-A type. UPC_E: UPC-E type. PDF417: PDF417 type. AZTEC: 2D Aztec code type. DATABAR: GS1 DataBar code type."
+          type: string
+        rawValue:
+          description: Raw value encoded in the barcode. For example, 'MEBKM:TITLE:Google;URL:https://www.google.com;;'.
+          type: string
+        valueFormat:
+          description: "Value format describes the format of the value that a barcode encodes. The supported formats are: CONTACT_INFO: Contact information. EMAIL: Email address. ISBN: ISBN identifier. PHONE: Phone number. PRODUCT: Product. SMS: SMS message. TEXT: Text string. URL: URL address. WIFI: Wifi information. GEO: Geo-localization. CALENDAR_EVENT: Calendar event. DRIVER_LICENSE: Driver's license."
           type: string
       type: object
     GoogleCloudDocumentaiV1beta1BatchProcessDocumentsResponse:
@@ -2625,11 +2960,8 @@ components:
           description: Optional. Deprecated. Use `id` field instead.
           type: string
         mentionText:
-          description: Optional. Text value in the document e.g. `1600 Amphitheatre Pkwy`. If the entity is not present in the document, this field will be empty.
+          description: Optional. Text value of the entity e.g. `1600 Amphitheatre Pkwy`.
           type: string
-        nonPresent:
-          description: Optional. This attribute indicates that the processing didn't actually identify this entity, but a confidence score was assigned that represent the potential that this could be a false negative. A non-present entity should have an empty mention_text and text_anchor.
-          type: boolean
         normalizedValue:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentEntityNormalizedValue"
           description: Optional. Normalized entity value. Absent if the extracted value could not be converted or the type (e.g. address) is not supported for certain parsers. This field is also only populated for certain supported document types.
@@ -2705,6 +3037,11 @@ components:
           items:
             $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentPageBlock"
           type: array
+        detectedBarcodes:
+          description: A list of detected barcodes.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentPageDetectedBarcode"
+          type: array
         detectedLanguages:
           description: A list of detected languages together with confidence.
           items:
@@ -2721,6 +3058,9 @@ components:
         image:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentPageImage"
           description: Rendered image for this page. This image is preprocessed to remove any skew, rotation, and distortions such that the annotation bounding boxes can be upright and axis-aligned.
+        imageQualityScores:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentPageImageQualityScores"
+          description: Image Quality Scores.
         layout:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentPageLayout"
           description: Layout for the page.
@@ -2821,6 +3161,16 @@ components:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentProvenance"
           description: The history of this annotation.
       type: object
+    GoogleCloudDocumentaiV1beta1DocumentPageDetectedBarcode:
+      description: A detected barcode.
+      properties:
+        barcode:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1Barcode"
+          description: Detailed barcode information of the DetectedBarcode.
+        layout:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentPageLayout"
+          description: Layout for DetectedBarcode.
+      type: object
     GoogleCloudDocumentaiV1beta1DocumentPageDetectedLanguage:
       description: Detected language for a structural component.
       properties:
@@ -2897,6 +3247,30 @@ components:
           description: Width of the image in pixels.
           format: int32
           type: integer
+      type: object
+    GoogleCloudDocumentaiV1beta1DocumentPageImageQualityScores:
+      description: Image Quality Scores for the page image
+      properties:
+        detectedDefects:
+          description: A list of detected defects.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentPageImageQualityScoresDetectedDefect"
+          type: array
+        qualityScore:
+          description: The overall quality score. Range [0, 1] where 1 is perfect quality.
+          format: float
+          type: number
+      type: object
+    GoogleCloudDocumentaiV1beta1DocumentPageImageQualityScoresDetectedDefect:
+      description: Image Quality Defects
+      properties:
+        confidence:
+          description: Confidence of detected defect. Range [0, 1] where 1 indicates strong confidence of that the defect exists.
+          format: float
+          type: number
+        type:
+          description: Name of the defect type. Supported values are "quality/defect_blurry", "quality/defect_noisy", "quality/defect_dark", "quality/defect_faint", "quality/defect_text_too_small", "quality/defect_document_cutoff", "quality/defect_text_cutoff", "quality/defect_glare"
+          type: string
       type: object
     GoogleCloudDocumentaiV1beta1DocumentPageLayout:
       description: Visual element describing a layout unit on a page.
@@ -3004,6 +3378,9 @@ components:
         layout:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentPageLayout"
           description: Layout for Table.
+        provenance:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentProvenance"
+          description: The history of this table.
       type: object
     GoogleCloudDocumentaiV1beta1DocumentPageTableTableCell:
       description: A cell representation inside the table.
@@ -3189,6 +3566,9 @@ components:
         color:
           $ref: "#/components/schemas/GoogleTypeColor"
           description: Text color.
+        fontFamily:
+          description: Font family such as "Arial", "Times New Roman". https://www.w3schools.com/cssref/pr_font_font-family.asp
+          type: string
         fontSize:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta1DocumentStyleFontSize"
           description: Font size.
@@ -3348,6 +3728,19 @@ components:
           format: int32
           type: integer
       type: object
+    GoogleCloudDocumentaiV1beta2Barcode:
+      description: Encodes the detailed information of a barcode.
+      properties:
+        format:
+          description: "Format of a barcode. The supported formats are: CODE_128: Code 128 type. CODE_39: Code 39 type. CODE_93: Code 93 type. CODABAR: Codabar type. DATA_MATRIX: 2D Data Matrix type. ITF: ITF type. EAN_13: EAN-13 type. EAN_8: EAN-8 type. QR_CODE: 2D QR code type. UPC_A: UPC-A type. UPC_E: UPC-E type. PDF417: PDF417 type. AZTEC: 2D Aztec code type. DATABAR: GS1 DataBar code type."
+          type: string
+        rawValue:
+          description: Raw value encoded in the barcode. For example, 'MEBKM:TITLE:Google;URL:https://www.google.com;;'.
+          type: string
+        valueFormat:
+          description: "Value format describes the format of the value that a barcode encodes. The supported formats are: CONTACT_INFO: Contact information. EMAIL: Email address. ISBN: ISBN identifier. PHONE: Phone number. PRODUCT: Product. SMS: SMS message. TEXT: Text string. URL: URL address. WIFI: Wifi information. GEO: Geo-localization. CALENDAR_EVENT: Calendar event. DRIVER_LICENSE: Driver's license."
+          type: string
+      type: object
     GoogleCloudDocumentaiV1beta2BatchProcessDocumentsResponse:
       description: Response to an batch document processing request. This is returned in the LRO Operation after the operation is complete.
       properties:
@@ -3443,11 +3836,8 @@ components:
           description: Optional. Deprecated. Use `id` field instead.
           type: string
         mentionText:
-          description: Optional. Text value in the document e.g. `1600 Amphitheatre Pkwy`. If the entity is not present in the document, this field will be empty.
+          description: Optional. Text value of the entity e.g. `1600 Amphitheatre Pkwy`.
           type: string
-        nonPresent:
-          description: Optional. This attribute indicates that the processing didn't actually identify this entity, but a confidence score was assigned that represent the potential that this could be a false negative. A non-present entity should have an empty mention_text and text_anchor.
-          type: boolean
         normalizedValue:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentEntityNormalizedValue"
           description: Optional. Normalized entity value. Absent if the extracted value could not be converted or the type (e.g. address) is not supported for certain parsers. This field is also only populated for certain supported document types.
@@ -3537,6 +3927,11 @@ components:
           items:
             $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentPageBlock"
           type: array
+        detectedBarcodes:
+          description: A list of detected barcodes.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentPageDetectedBarcode"
+          type: array
         detectedLanguages:
           description: A list of detected languages together with confidence.
           items:
@@ -3553,6 +3948,9 @@ components:
         image:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentPageImage"
           description: Rendered image for this page. This image is preprocessed to remove any skew, rotation, and distortions such that the annotation bounding boxes can be upright and axis-aligned.
+        imageQualityScores:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentPageImageQualityScores"
+          description: Image Quality Scores.
         layout:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentPageLayout"
           description: Layout for the page.
@@ -3653,6 +4051,16 @@ components:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentProvenance"
           description: The history of this annotation.
       type: object
+    GoogleCloudDocumentaiV1beta2DocumentPageDetectedBarcode:
+      description: A detected barcode.
+      properties:
+        barcode:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2Barcode"
+          description: Detailed barcode information of the DetectedBarcode.
+        layout:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentPageLayout"
+          description: Layout for DetectedBarcode.
+      type: object
     GoogleCloudDocumentaiV1beta2DocumentPageDetectedLanguage:
       description: Detected language for a structural component.
       properties:
@@ -3729,6 +4137,30 @@ components:
           description: Width of the image in pixels.
           format: int32
           type: integer
+      type: object
+    GoogleCloudDocumentaiV1beta2DocumentPageImageQualityScores:
+      description: Image Quality Scores for the page image
+      properties:
+        detectedDefects:
+          description: A list of detected defects.
+          items:
+            $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentPageImageQualityScoresDetectedDefect"
+          type: array
+        qualityScore:
+          description: The overall quality score. Range [0, 1] where 1 is perfect quality.
+          format: float
+          type: number
+      type: object
+    GoogleCloudDocumentaiV1beta2DocumentPageImageQualityScoresDetectedDefect:
+      description: Image Quality Defects
+      properties:
+        confidence:
+          description: Confidence of detected defect. Range [0, 1] where 1 indicates strong confidence of that the defect exists.
+          format: float
+          type: number
+        type:
+          description: Name of the defect type. Supported values are "quality/defect_blurry", "quality/defect_noisy", "quality/defect_dark", "quality/defect_faint", "quality/defect_text_too_small", "quality/defect_document_cutoff", "quality/defect_text_cutoff", "quality/defect_glare"
+          type: string
       type: object
     GoogleCloudDocumentaiV1beta2DocumentPageLayout:
       description: Visual element describing a layout unit on a page.
@@ -3836,6 +4268,9 @@ components:
         layout:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentPageLayout"
           description: Layout for Table.
+        provenance:
+          $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentProvenance"
+          description: The history of this table.
       type: object
     GoogleCloudDocumentaiV1beta2DocumentPageTableTableCell:
       description: A cell representation inside the table.
@@ -4021,6 +4456,9 @@ components:
         color:
           $ref: "#/components/schemas/GoogleTypeColor"
           description: Text color.
+        fontFamily:
+          description: Font family such as "Arial", "Times New Roman". https://www.w3schools.com/cssref/pr_font_font-family.asp
+          type: string
         fontSize:
           $ref: "#/components/schemas/GoogleCloudDocumentaiV1beta2DocumentStyleFontSize"
           description: Font size.
@@ -4232,7 +4670,7 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/GoogleRpcStatus"
-          description: The status of the processing of the document.
+          description: The status processing the document.
       type: object
     GoogleCloudDocumentaiV1beta3BatchProcessResponse:
       description: Response message for batch process document method.
@@ -4367,7 +4805,17 @@ components:
       description: Response message for review document method.
       properties:
         gcsDestination:
-          description: The Cloud Storage uri for the human reviewed document.
+          description: The Cloud Storage uri for the human reviewed document if the review is succeeded.
+          type: string
+        rejectionReason:
+          description: The reason why the review is rejected by reviewer.
+          type: string
+        state:
+          description: The state of the review operation.
+          enum:
+            - STATE_UNSPECIFIED
+            - REJECTED
+            - SUCCEEDED
           type: string
       type: object
     GoogleCloudDocumentaiV1beta3SetDefaultProcessorVersionMetadata:
@@ -4521,30 +4969,30 @@ components:
           type: integer
       type: object
     GoogleTypeDateTime:
-      description: "Represents civil time (or occasionally physical time). This type can represent a civil time in one of a few possible ways: * When utc_offset is set and time_zone is unset: a civil time on a calendar day with a particular offset from UTC. * When time_zone is set and utc_offset is unset: a civil time on a calendar day in a particular time zone. * When neither time_zone nor utc_offset is set: a civil time on a calendar day in local time. The date is relative to the Proleptic Gregorian Calendar. If year is 0, the DateTime is considered not to have a specific year. month and day must have valid, non-zero values. This type may also be used to represent a physical time if all the date and time fields are set and either case of the `time_offset` oneof is set. Consider using `Timestamp` message for physical time instead. If your use case also would like to store the user's timezone, that can be done in another field. This type is more flexible than some applications may want. Make sure to document and validate your application's limitations."
+      description: "Represents civil time (or occasionally physical time). This type can represent a civil time in one of a few possible ways: * When utc_offset is set and time_zone is unset: a civil time on a calendar day with a particular offset from UTC. * When time_zone is set and utc_offset is unset: a civil time on a calendar day in a particular time zone. * When neither time_zone nor utc_offset is set: a civil time on a calendar day in local time. The date is relative to the Proleptic Gregorian Calendar. If year, month, or day are 0, the DateTime is considered not to have a specific year, month, or day respectively. This type may also be used to represent a physical time if all the date and time fields are set and either case of the `time_offset` oneof is set. Consider using `Timestamp` message for physical time instead. If your use case also would like to store the user's timezone, that can be done in another field. This type is more flexible than some applications may want. Make sure to document and validate your application's limitations."
       properties:
         day:
-          description: Required. Day of month. Must be from 1 to 31 and valid for the year and month.
+          description: Optional. Day of month. Must be from 1 to 31 and valid for the year and month, or 0 if specifying a datetime without a day.
           format: int32
           type: integer
         hours:
-          description: Required. Hours of day in 24 hour format. Should be from 0 to 23. An API may choose to allow the value "24:00:00" for scenarios like business closing time.
+          description: Optional. Hours of day in 24 hour format. Should be from 0 to 23, defaults to 0 (midnight). An API may choose to allow the value "24:00:00" for scenarios like business closing time.
           format: int32
           type: integer
         minutes:
-          description: Required. Minutes of hour of day. Must be from 0 to 59.
+          description: Optional. Minutes of hour of day. Must be from 0 to 59, defaults to 0.
           format: int32
           type: integer
         month:
-          description: Required. Month of year. Must be from 1 to 12.
+          description: Optional. Month of year. Must be from 1 to 12, or 0 if specifying a datetime without a month.
           format: int32
           type: integer
         nanos:
-          description: Required. Fractions of seconds in nanoseconds. Must be from 0 to 999,999,999.
+          description: Optional. Fractions of seconds in nanoseconds. Must be from 0 to 999,999,999, defaults to 0.
           format: int32
           type: integer
         seconds:
-          description: Required. Seconds of minutes of the time. Must normally be from 0 to 59. An API may allow the value 60 if it allows leap-seconds.
+          description: Optional. Seconds of minutes of the time. Must normally be from 0 to 59, defaults to 0. An API may allow the value 60 if it allows leap-seconds.
           format: int32
           type: integer
         timeZone:
@@ -4575,7 +5023,7 @@ components:
           type: string
       type: object
     GoogleTypePostalAddress:
-      description: "Represents a postal address, e.g. for postal delivery or payments addresses. Given a postal address, a postal service can deliver items to a premise, P.O. Box or similar. It is not intended to model geographical locations (roads, towns, mountains). In typical usage an address would be created via user input or from importing existing data, depending on the type of process. Advice on address input / editing: - Use an i18n-ready address widget such as https://github.com/google/libaddressinput) - Users should not be presented with UI elements for input or editing of fields outside countries where that field is used. For more guidance on how to use this schema, please see: https://support.google.com/business/answer/6397478"
+      description: "Represents a postal address, e.g. for postal delivery or payments addresses. Given a postal address, a postal service can deliver items to a premise, P.O. Box or similar. It is not intended to model geographical locations (roads, towns, mountains). In typical usage an address would be created via user input or from importing existing data, depending on the type of process. Advice on address input / editing: - Use an internationalization-ready address widget such as https://github.com/google/libaddressinput) - Users should not be presented with UI elements for input or editing of fields outside countries where that field is used. For more guidance on how to use this schema, please see: https://support.google.com/business/answer/6397478"
       properties:
         addressLines:
           description: Unstructured address lines describing the lower levels of an address. Because values in address_lines do not have type information and may sometimes contain multiple values in a single field (e.g. "Austin, TX"), it is important that the line order is clear. The order of address lines should be "envelope order" for the country/region of the address. In places where this can vary (e.g. Japan), address_language is used to make it explicit (e.g. "ja" for large-to-small ordering and "ja-Latn" or "en" for small-to-large). This way, the most specific line of an address can be selected based on the language. The minimum permitted structural representation of an address consists of a region_code with all remaining information placed in the address_lines. It would be possible to format such an address very approximately without geocoding, but no semantic reasoning could be made about any of the address components until it was at least partially resolved. Creating an address only containing a region_code and address_lines, and then geocoding is the recommended way to handle completely unstructured addresses (as opposed to guessing which parts of the address should be localities or administrative areas).

@@ -86,6 +86,152 @@ paths:
       - $ref: "#/components/parameters/quotaUser"
       - $ref: "#/components/parameters/upload_protocol"
       - $ref: "#/components/parameters/uploadType"
+  "/v1/{customer}/reports:countChromeDevicesReachingAutoExpirationDate":
+    get:
+      description: Generate report of the number of devices expiring in each month of the selected time frame. Devices are grouped by auto update expiration date and model. Further information can be found [here](https://support.google.com/chrome/a/answer/10564947).
+      operationId: chromemanagement.customers.reports.countChromeDevicesReachingAutoExpirationDate
+      parameters:
+        - description: Required. The customer ID or "my_customer" prefixed with "customers/".
+          in: path
+          name: customer
+          required: true
+          schema:
+            type: string
+        - description: Optional. Maximum expiration date in format yyyy-mm-dd in UTC timezone. If included returns all devices that have already expired and devices with auto expiration date equal to or earlier than the maximum date.
+          in: query
+          name: maxAueDate
+          schema:
+            type: string
+        - description: Optional. Maximum expiration date in format yyyy-mm-dd in UTC timezone. If included returns all devices that have already expired and devices with auto expiration date equal to or later than the minimum date.
+          in: query
+          name: minAueDate
+          schema:
+            type: string
+        - description: Optional. The organizational unit ID, if omitted, will return data for all organizational units.
+          in: query
+          name: orgUnitId
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleChromeManagementV1CountChromeDevicesReachingAutoExpirationDateResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/chrome.management.reports.readonly
+          Oauth2c:
+            - https://www.googleapis.com/auth/chrome.management.reports.readonly
+      tags:
+        - customers
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+  "/v1/{customer}/reports:countChromeDevicesThatNeedAttention":
+    get:
+      description: Counts of ChromeOS devices that have not synced policies or have lacked user activity in the past 28 days, are out of date, or are not complaint. Further information can be found here https://support.google.com/chrome/a/answer/10564947
+      operationId: chromemanagement.customers.reports.countChromeDevicesThatNeedAttention
+      parameters:
+        - description: Required. The customer ID or "my_customer" prefixed with "customers/".
+          in: path
+          name: customer
+          required: true
+          schema:
+            type: string
+        - description: Optional. The ID of the organizational unit. If omitted, all data will be returned.
+          in: query
+          name: orgUnitId
+          schema:
+            type: string
+        - description: Required. Mask of the fields that should be populated in the returned report.
+          in: query
+          name: readMask
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleChromeManagementV1CountChromeDevicesThatNeedAttentionResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/chrome.management.reports.readonly
+          Oauth2c:
+            - https://www.googleapis.com/auth/chrome.management.reports.readonly
+      tags:
+        - customers
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+  "/v1/{customer}/reports:countChromeHardwareFleetDevices":
+    get:
+      description: Counts of devices with a specific hardware specification from the requested hardware type (for example model name, processor type). Further information can be found here https://support.google.com/chrome/a/answer/10564947
+      operationId: chromemanagement.customers.reports.countChromeHardwareFleetDevices
+      parameters:
+        - description: Required. The customer ID or "my_customer".
+          in: path
+          name: customer
+          required: true
+          schema:
+            type: string
+        - description: Optional. The ID of the organizational unit. If omitted, all data will be returned.
+          in: query
+          name: orgUnitId
+          schema:
+            type: string
+        - description: Required. Mask of the fields that should be populated in the returned report.
+          in: query
+          name: readMask
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleChromeManagementV1CountChromeHardwareFleetDevicesResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/chrome.management.reports.readonly
+          Oauth2c:
+            - https://www.googleapis.com/auth/chrome.management.reports.readonly
+      tags:
+        - customers
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
   "/v1/{customer}/reports:countChromeVersions":
     get:
       description: Generate report of installed Chrome versions.
@@ -567,7 +713,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1AudioStatusReport:
-      description: Audio report.
+      description: "Status data for storage. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDeviceAudioStatus](https://chromeenterprise.google/policies/#ReportDeviceAudioStatus) * Data Collection Frequency: 10 minutes * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         inputDevice:
           description: Output only. Active input device's name.
@@ -602,7 +748,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1BatteryInfo:
-      description: Battery info
+      description: "Information about the battery. * This field provides device information, which is static and will not change over time. * Data for this field is controlled via policy: [ReportDevicePowerStatus](https://chromeenterprise.google/policies/#ReportDevicePowerStatus) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         designCapacity:
           description: Output only. Design capacity (mAmpere-hours).
@@ -632,7 +778,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1BatterySampleReport:
-      description: Sampling data for battery.
+      description: "Sampling data for battery. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDevicePowerStatus](https://chromeenterprise.google/policies/#ReportDevicePowerStatus) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         chargeRate:
           description: Output only. Battery charge percentage.
@@ -675,7 +821,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1BatteryStatusReport:
-      description: Status data for battery.
+      description: "Status data for battery. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDevicePowerStatus](https://chromeenterprise.google/policies/#ReportDevicePowerStatus) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         batteryHealth:
           description: Output only. Battery health.
@@ -710,6 +856,39 @@ components:
         serialNumber:
           description: Output only. Battery serial number.
           readOnly: true
+          type: string
+      type: object
+    GoogleChromeManagementV1BootPerformanceReport:
+      description: "Boot performance report of a device. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDeviceBootMode](https://chromeenterprise.google/policies/#ReportDeviceBootMode) * Data Collection Frequency: On every boot up event * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: Yes * Reported for affiliated users only: N/A"
+      properties:
+        bootUpDuration:
+          description: Total time to boot up.
+          format: google-duration
+          type: string
+        bootUpTime:
+          description: The timestamp when power came on.
+          format: google-datetime
+          type: string
+        reportTime:
+          description: Timestamp when the report was collected.
+          format: google-datetime
+          type: string
+        shutdownDuration:
+          description: Total time since shutdown start to power off.
+          format: google-duration
+          type: string
+        shutdownReason:
+          description: The shutdown reason.
+          enum:
+            - SHUTDOWN_REASON_UNSPECIFIED
+            - USER_REQUEST
+            - SYSTEM_UPDATE
+            - LOW_BATTERY
+            - OTHER
+          type: string
+        shutdownTime:
+          description: The timestamp when shutdown.
+          format: google-datetime
           type: string
       type: object
     GoogleChromeManagementV1BrowserVersion:
@@ -761,6 +940,10 @@ components:
           type: boolean
         isCwsHosted:
           description: Output only. Whether the app or extension is in a published state in the Chrome Web Store.
+          readOnly: true
+          type: boolean
+        isExtensionPolicySupported:
+          description: Output only. Whether an app supports policy for extensions.
           readOnly: true
           type: boolean
         isKioskOnly:
@@ -871,6 +1054,63 @@ components:
           format: int32
           type: integer
       type: object
+    GoogleChromeManagementV1CountChromeDevicesReachingAutoExpirationDateResponse:
+      description: Response containing a list of devices expiring in each month of a selected time frame. Counts are grouped by model and Auto Update Expiration date.
+      properties:
+        deviceAueCountReports:
+          description: The list of reports sorted by auto update expiration date in ascending order.
+          items:
+            $ref: "#/components/schemas/GoogleChromeManagementV1DeviceAueCountReport"
+          type: array
+      type: object
+    GoogleChromeManagementV1CountChromeDevicesThatNeedAttentionResponse:
+      description: Response containing counts for devices that need attention.
+      properties:
+        noRecentPolicySyncCount:
+          description: Number of ChromeOS devices have not synced policies in the past 28 days.
+          format: int64
+          type: string
+        noRecentUserActivityCount:
+          description: Number of ChromeOS devices that have not seen any user activity in the past 28 days.
+          format: int64
+          type: string
+        osVersionNotCompliantCount:
+          description: Number of devices whose OS version is not compliant.
+          format: int64
+          type: string
+        pendingUpdate:
+          description: Number of devices that are pending an OS update.
+          format: int64
+          type: string
+        unsupportedPolicyCount:
+          description: Number of devices that are unable to apply a policy due to an OS version mismatch.
+          format: int64
+          type: string
+      type: object
+    GoogleChromeManagementV1CountChromeHardwareFleetDevicesResponse:
+      description: Response containing a list of devices with a specific type of hardware specification from the requested hardware type.
+      properties:
+        cpuReports:
+          description: The DeviceHardwareCountReport for device cpu type (for example Intel(R) Core(TM) i7-10610U CPU @ 1.80GHz).
+          items:
+            $ref: "#/components/schemas/GoogleChromeManagementV1DeviceHardwareCountReport"
+          type: array
+        memoryReports:
+          description: The DeviceHardwareCountReport for device memory amount in gigabytes (for example 16).
+          items:
+            $ref: "#/components/schemas/GoogleChromeManagementV1DeviceHardwareCountReport"
+          type: array
+        modelReports:
+          description: The DeviceHardwareCountReport for device model type (for example Acer C7 Chromebook).
+          items:
+            $ref: "#/components/schemas/GoogleChromeManagementV1DeviceHardwareCountReport"
+          type: array
+        storageReports:
+          description: The DeviceHardwareCountReport for device storage amount in gigabytes (for example 128).
+          items:
+            $ref: "#/components/schemas/GoogleChromeManagementV1DeviceHardwareCountReport"
+          type: array
+      type: object
     GoogleChromeManagementV1CountChromeVersionsResponse:
       description: Response containing requested browser versions details and counts.
       properties:
@@ -904,15 +1144,23 @@ components:
           type: integer
       type: object
     GoogleChromeManagementV1CpuInfo:
-      description: CPU specs for a CPU.
+      description: "CPU specifications for the device * This field provides device information, which is static and will not change over time. * Data for this field is controlled via policy: [ReportDeviceCpuInfo](https://chromeenterprise.google/policies/#ReportDeviceCpuInfo) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         architecture:
-          description: Output only. The CPU architecture.
+          description: "Output only. Architecture type for the CPU. * This field provides device information, which is static and will not change over time. * Data for this field is controlled via policy: [ReportDeviceCpuInfo](https://chromeenterprise.google/policies/#ReportDeviceCpuInfo) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
           enum:
             - ARCHITECTURE_UNSPECIFIED
             - X64
           readOnly: true
           type: string
+        keylockerConfigured:
+          description: Output only. Whether keylocker is configured.`TRUE` = Enabled; `FALSE` = disabled. Only reported if keylockerSupported = `TRUE`.
+          readOnly: true
+          type: boolean
+        keylockerSupported:
+          description: Output only. Whether keylocker is supported.
+          readOnly: true
+          type: boolean
         maxClockSpeed:
           description: Output only. The max CPU clock speed in kHz.
           format: int32
@@ -924,7 +1172,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1CpuStatusReport:
-      description: Contains samples of the cpu status reports.
+      description: "Provides information about the status of the CPU. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDeviceCpuInfo](https://chromeenterprise.google/policies/#ReportDeviceCpuInfo) * Data Collection Frequency: Every 10 minutes * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         cpuTemperatureInfo:
           description: Output only. CPU temperature sample info per CPU core in Celsius
@@ -949,7 +1197,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1CpuTemperatureInfo:
-      description: CPU temperature of a device. Sampled per CPU core in Celsius
+      description: "CPU temperature of a device. Sampled per CPU core in Celsius. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDeviceCpuInfo](https://chromeenterprise.google/policies/#ReportDeviceCpuInfo) * Data Collection Frequency: Every 10 minutes * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         label:
           description: "Output only. CPU label. Example: Core 0"
@@ -971,6 +1219,52 @@ components:
         machine:
           description: Output only. The name of the machine within its local network.
           readOnly: true
+          type: string
+      type: object
+    GoogleChromeManagementV1DeviceAueCountReport:
+      description: Report for CountChromeDevicesPerAueDateResponse, contains the count of devices of a specific model and auto update expiration range.
+      properties:
+        aueMonth:
+          description: Enum value of month corresponding to the auto update expiration date in UTC time zone. If the device is already expired, this field is empty.
+          enum:
+            - MONTH_UNSPECIFIED
+            - JANUARY
+            - FEBRUARY
+            - MARCH
+            - APRIL
+            - MAY
+            - JUNE
+            - JULY
+            - AUGUST
+            - SEPTEMBER
+            - OCTOBER
+            - NOVEMBER
+            - DECEMBER
+          type: string
+        aueYear:
+          description: Int value of year corresponding to the Auto Update Expiration date in UTC time zone. If the device is already expired, this field is empty.
+          format: int64
+          type: string
+        count:
+          description: Count of devices of this model.
+          format: int64
+          type: string
+        expired:
+          description: Boolean value for whether or not the device has already expired.
+          type: boolean
+        model:
+          description: Public model name of the devices.
+          type: string
+      type: object
+    GoogleChromeManagementV1DeviceHardwareCountReport:
+      description: Report for CountChromeDevicesPerHardwareSpecResponse, contains the count of devices with a unique hardware specification.
+      properties:
+        bucket:
+          description: Public name of the hardware specification.
+          type: string
+        count:
+          description: Count of devices with a unique hardware specification.
+          format: int64
           type: string
       type: object
     GoogleChromeManagementV1DiskInfo:
@@ -1100,7 +1394,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1GraphicsInfo:
-      description: Information of the graphics subsystem.
+      description: "Information of the graphics subsystem. * This field provides device information, which is static and will not change over time. * Data for this field is controlled via policy: [ReportDeviceGraphicsStatus](https://chromeenterprise.google/policies/#ReportDeviceGraphicsStatus) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         adapterInfo:
           $ref: "#/components/schemas/GoogleChromeManagementV1GraphicsAdapterInfo"
@@ -1108,7 +1402,7 @@ components:
           readOnly: true
       type: object
     GoogleChromeManagementV1GraphicsStatusReport:
-      description: Information of the graphics subsystem.
+      description: "Information of the graphics subsystem. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDeviceGraphicsInfo](https://chromeenterprise.google/policies/#ReportDeviceGraphicsInfo) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         displays:
           description: Output only. Information about the displays for the device.
@@ -1119,6 +1413,25 @@ components:
         reportTime:
           description: Output only. Time at which the graphics data was reported.
           format: google-datetime
+          readOnly: true
+          type: string
+      type: object
+    GoogleChromeManagementV1HttpsLatencyRoutineData:
+      description: Data that describes the result of the HTTPS latency diagnostics routine, with the HTTPS requests issued to Google websites.
+      properties:
+        latency:
+          description: Output only. HTTPS latency if routine succeeded or failed because of HIGH_LATENCY or VERY_HIGH_LATENCY.
+          format: google-duration
+          readOnly: true
+          type: string
+        problem:
+          description: Output only. HTTPS latency routine problem if a problem occurred.
+          enum:
+            - HTTPS_LATENCY_PROBLEM_UNSPECIFIED
+            - FAILED_DNS_RESOLUTIONS
+            - FAILED_HTTPS_REQUESTS
+            - HIGH_LATENCY
+            - VERY_HIGH_LATENCY
           readOnly: true
           type: string
       type: object
@@ -1205,13 +1518,17 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1MemoryInfo:
-      description: Memory information of a device.
+      description: "Memory information of a device. * This field has both telemetry and device information: - `totalRamBytes` - Device information - `availableRamBytes` - Telemetry information - `totalMemoryEncryption` - Device information * Data for this field is controlled via policy: [ReportDeviceMemoryInfo](https://chromeenterprise.google/policies/#ReportDeviceMemoryInfo) * Data Collection Frequency: - `totalRamBytes` - Only at upload - `availableRamBytes` - Every 10 minutes - `totalMemoryEncryption` - at device startup * Default Data Reporting Frequency: - `totalRamBytes` - 3 hours - `availableRamBytes` - 3 hours - `totalMemoryEncryption` - at device startup - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: only for `totalMemoryEncryption` * Reported for affiliated users only: N/A"
       properties:
         availableRamBytes:
           description: Output only. Amount of available RAM in bytes.
           format: int64
           readOnly: true
           type: string
+        totalMemoryEncryption:
+          $ref: "#/components/schemas/GoogleChromeManagementV1TotalMemoryEncryptionInfo"
+          description: Output only. Total memory encryption info for the device.
+          readOnly: true
         totalRamBytes:
           description: Output only. Total RAM in bytes.
           format: int64
@@ -1219,7 +1536,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1MemoryStatusReport:
-      description: Contains samples of memory status reports.
+      description: "Contains samples of memory status reports. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDeviceMemoryInfo](https://chromeenterprise.google/policies/#ReportDeviceMemoryInfo) * Data Collection Frequency: Only at upload, SystemRamFreeByes is collected every 10 minutes * Default Data Reporting Frequency: Every 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         pageFaults:
           description: Output only. Number of page faults during this collection
@@ -1242,15 +1559,106 @@ components:
           readOnly: true
           type: string
       type: object
-    GoogleChromeManagementV1NetworkStatusReport:
-      description: State of visible/configured networks.
+    GoogleChromeManagementV1NetworkDevice:
+      description: "Details about the network device. * This field provides device information, which is static and will not change over time. * Data for this field is controlled via policy: [ReportNetworkDeviceConfiguration](https://chromeenterprise.google/policies/#ReportNetworkDeviceConfiguration) * Data Collection Frequency: At device startup * Default Data Reporting Frequency: At device startup - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: Yes * Reported for affiliated users only: N/A"
       properties:
+        iccid:
+          description: Output only. The integrated circuit card ID associated with the device's sim card.
+          readOnly: true
+          type: string
+        imei:
+          description: Output only. IMEI (if applicable) of the corresponding network device.
+          readOnly: true
+          type: string
+        macAddress:
+          description: Output only. MAC address (if applicable) of the corresponding network device.
+          readOnly: true
+          type: string
+        mdn:
+          description: Output only. The mobile directory number associated with the device's sim card.
+          readOnly: true
+          type: string
+        meid:
+          description: Output only. MEID (if applicable) of the corresponding network device.
+          readOnly: true
+          type: string
+        type:
+          description: Output only. Network device type.
+          enum:
+            - NETWORK_DEVICE_TYPE_UNSPECIFIED
+            - CELLULAR_DEVICE
+            - ETHERNET_DEVICE
+            - WIFI_DEVICE
+          readOnly: true
+          type: string
+      type: object
+    GoogleChromeManagementV1NetworkDiagnosticsReport:
+      description: Network testing results to determine the health of the device's network connection, for example whether the HTTPS latency is high or normal.
+      properties:
+        httpsLatencyData:
+          $ref: "#/components/schemas/GoogleChromeManagementV1HttpsLatencyRoutineData"
+          description: Output only. HTTPS latency test data.
+          readOnly: true
+        reportTime:
+          description: Output only. Timestamp of when the diagnostics were collected.
+          format: google-datetime
+          readOnly: true
+          type: string
+      type: object
+    GoogleChromeManagementV1NetworkInfo:
+      description: "Network device information. * This field provides device information, which is static and will not change over time. * Data for this field is controlled via policy: [ReportNetworkDeviceConfiguration](https://chromeenterprise.google/policies/#ReportNetworkDeviceConfiguration) * Data Collection Frequency: At device startup * Default Data Reporting Frequency: At device startup - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: Yes * Reported for affiliated users only: N/A"
+      properties:
+        networkDevices:
+          description: Output only. List of network devices.
+          items:
+            $ref: "#/components/schemas/GoogleChromeManagementV1NetworkDevice"
+          readOnly: true
+          type: array
+      type: object
+    GoogleChromeManagementV1NetworkStatusReport:
+      description: "State of visible/configured networks. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportNetworkStatus](https://chromeenterprise.google/policies/#ReportNetworkStatus) * Data Collection Frequency: 60 minutes * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: Yes * Reported for affiliated users only: Yes"
+      properties:
+        connectionState:
+          description: Output only. Current connection state of the network.
+          enum:
+            - NETWORK_CONNECTION_STATE_UNSPECIFIED
+            - ONLINE
+            - CONNECTED
+            - PORTAL
+            - CONNECTING
+            - NOT_CONNECTED
+          readOnly: true
+          type: string
+        connectionType:
+          description: Output only. Network connection type.
+          enum:
+            - NETWORK_TYPE_UNSPECIFIED
+            - CELLULAR
+            - ETHERNET
+            - TETHER
+            - VPN
+            - WIFI
+          readOnly: true
+          type: string
+        encryptionOn:
+          description: Output only. Whether the wifi encryption key is turned off.
+          readOnly: true
+          type: boolean
         gatewayIpAddress:
           description: Output only. Gateway IP address.
           readOnly: true
           type: string
+        guid:
+          description: Output only. Network connection guid.
+          readOnly: true
+          type: string
         lanIpAddress:
           description: Output only. LAN IP address.
+          readOnly: true
+          type: string
+        receivingBitRateMbps:
+          description: Output only. Receiving bit rate measured in Megabits per second.
+          format: int64
           readOnly: true
           type: string
         reportTime:
@@ -1268,9 +1676,28 @@ components:
           format: int32
           readOnly: true
           type: integer
+        transmissionBitRateMbps:
+          description: Output only. Transmission bit rate measured in Megabits per second.
+          format: int64
+          readOnly: true
+          type: string
+        transmissionPowerDbm:
+          description: Output only. Transmission power measured in decibels.
+          format: int32
+          readOnly: true
+          type: integer
+        wifiLinkQuality:
+          description: Output only. Wifi link quality. Value ranges from [0, 70]. 0 indicates no signal and 70 indicates a strong signal.
+          format: int64
+          readOnly: true
+          type: string
+        wifiPowerManagementEnabled:
+          description: Output only. Wifi power management enabled
+          readOnly: true
+          type: boolean
       type: object
     GoogleChromeManagementV1OsUpdateStatus:
-      description: Contains information regarding the current OS update status.
+      description: "Contains information regarding the current OS update status. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDeviceOsUpdateStatus](https://chromeenterprise.google/policies/#ReportDeviceOsUpdateStatus) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         lastRebootTime:
           description: Output only. Timestamp of the last reboot.
@@ -1306,7 +1733,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1StorageInfo:
-      description: Status data for storage.
+      description: "Status data for storage. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDeviceStorageStatus](https://chromeenterprise.google/policies/#ReportDeviceStorageStatus) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         availableDiskBytes:
           description: The available space for user data storage in the device in bytes.
@@ -1338,7 +1765,7 @@ components:
           type: string
       type: object
     GoogleChromeManagementV1StorageStatusReport:
-      description: Status data for storage.
+      description: "Status data for storage. * This field is telemetry information and this will change over time as the device is utilized. * Data for this field is controlled via policy: [ReportDeviceStorageStatus](https://chromeenterprise.google/policies/#ReportDeviceStorageStatus) * Data Collection Frequency: Only at Upload * Default Data Reporting Frequency: 3 hours - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: No * Reported for affiliated users only: N/A"
       properties:
         disk:
           description: Output only. Reports on disk.
@@ -1371,6 +1798,12 @@ components:
           description: Output only. Battery reports collected periodically.
           items:
             $ref: "#/components/schemas/GoogleChromeManagementV1BatteryStatusReport"
+          readOnly: true
+          type: array
+        bootPerformanceReport:
+          description: Output only. Boot performance reports of the device.
+          items:
+            $ref: "#/components/schemas/GoogleChromeManagementV1BootPerformanceReport"
           readOnly: true
           type: array
         cpuInfo:
@@ -1417,6 +1850,16 @@ components:
           description: Output only. Resource name of the device.
           readOnly: true
           type: string
+        networkDiagnosticsReport:
+          description: Output only. Network diagnostics collected periodically.
+          items:
+            $ref: "#/components/schemas/GoogleChromeManagementV1NetworkDiagnosticsReport"
+          readOnly: true
+          type: array
+        networkInfo:
+          $ref: "#/components/schemas/GoogleChromeManagementV1NetworkInfo"
+          description: Output only. Network devices information.
+          readOnly: true
         networkStatusReport:
           description: Output only. Network specs collected periodically.
           items:
@@ -1447,6 +1890,56 @@ components:
             $ref: "#/components/schemas/GoogleChromeManagementV1StorageStatusReport"
           readOnly: true
           type: array
+        thunderboltInfo:
+          description: Output only. Information on Thunderbolt bus.
+          items:
+            $ref: "#/components/schemas/GoogleChromeManagementV1ThunderboltInfo"
+          readOnly: true
+          type: array
+      type: object
+    GoogleChromeManagementV1ThunderboltInfo:
+      description: "Thunderbolt bus info. * This field provides device information, which is static and will not change over time. * Data for this field is controlled via policy: [ReportDeviceSecurityStatus](https://chromeenterprise.google/policies/#ReportDeviceSecurityStatus) * Data Collection Frequency: At device startup * Default Data Reporting Frequency: At device startup - Policy Controlled: No * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: Yes * Reported for affiliated users only: N/A"
+      properties:
+        securityLevel:
+          description: Security level of the Thunderbolt bus.
+          enum:
+            - THUNDERBOLT_SECURITY_LEVEL_UNSPECIFIED
+            - THUNDERBOLT_SECURITY_NONE_LEVEL
+            - THUNDERBOLT_SECURITY_USER_LEVEL
+            - THUNDERBOLT_SECURITY_SECURE_LEVEL
+            - THUNDERBOLT_SECURITY_DP_ONLY_LEVEL
+            - THUNDERBOLT_SECURITY_USB_ONLY_LEVEL
+            - THUNDERBOLT_SECURITY_NO_PCIE_LEVEL
+          type: string
+      type: object
+    GoogleChromeManagementV1TotalMemoryEncryptionInfo:
+      description: "Memory encryption information of a device. * This field provides device information, which is static and will not change over time. * Data for this field is controlled via policy: [ReportDeviceMemoryInfo](https://chromeenterprise.google/policies/#ReportDeviceMemoryInfo) * Data Collection Frequency: At device startup * Default Data Reporting Frequency: At device startup - Policy Controlled: Yes * Cache: If the device is offline, the collected data is stored locally, and will be reported when the device is next online: Yes * Reported for affiliated users only: N/A"
+      properties:
+        encryptionAlgorithm:
+          description: Memory encryption algorithm.
+          enum:
+            - MEMORY_ENCRYPTION_ALGORITHM_UNSPECIFIED
+            - MEMORY_ENCRYPTION_ALGORITHM_UNKNOWN
+            - MEMORY_ENCRYPTION_ALGORITHM_AES_XTS_128
+            - MEMORY_ENCRYPTION_ALGORITHM_AES_XTS_256
+          type: string
+        encryptionState:
+          description: The state of memory encryption on the device.
+          enum:
+            - MEMORY_ENCRYPTION_STATE_UNSPECIFIED
+            - MEMORY_ENCRYPTION_STATE_UNKNOWN
+            - MEMORY_ENCRYPTION_STATE_DISABLED
+            - MEMORY_ENCRYPTION_STATE_TME
+            - MEMORY_ENCRYPTION_STATE_MKTME
+          type: string
+        keyLength:
+          description: The length of the encryption keys.
+          format: int64
+          type: string
+        maxKeys:
+          description: The maximum number of keys that can be used for encryption.
+          format: int64
+          type: string
       type: object
     GoogleRpcStatus:
       description: "The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors)."
