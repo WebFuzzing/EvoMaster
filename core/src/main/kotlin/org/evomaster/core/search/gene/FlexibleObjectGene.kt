@@ -16,12 +16,12 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class FlexibleObjectGene(
+class FlexibleObjectGene<T>(
         name: String,
         val fields: List<out Gene>,
-        val template : FlexibleGene,
-        additionalFields:  List<PairGene<StringGene, FlexibleGene>> = listOf()
-): CompositeGene(name, mutableListOf<Gene>().apply { addAll(fields); addAll(additionalFields) }){
+        val template : PairGene<StringGene, T>,
+        additionalFields:  List<PairGene<StringGene, T>> = listOf()
+): CompositeGene(name, mutableListOf<Gene>().apply { addAll(fields); addAll(additionalFields) }) where T: Gene{
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(FlexibleObjectGene::class.java)
@@ -29,11 +29,11 @@ class FlexibleObjectGene(
         private const val MAX_SIZE_ADDITIONAL_FIELDS = 5
     }
 
-    val additionalFields: List<PairGene<StringGene, FlexibleGene>>
-        get() {return children.filterNot { fields.contains(it) }.filterIsInstance<PairGene<StringGene, FlexibleGene>>()}
+    val additionalFields: List<PairGene<StringGene, T>>
+        get() {return children.filterNot { fields.contains(it) }.filterIsInstance<PairGene<StringGene, T>>()}
 
     override fun copyContent(): Gene {
-        return FlexibleObjectGene(name, fields.map(Gene::copy), template, additionalFields.map {it.copy() as PairGene<StringGene, FlexibleGene> })
+        return FlexibleObjectGene(name, fields.map(Gene::copy), template, additionalFields.map {it.copy() as PairGene<StringGene, T> })
     }
 
     override fun isLocallyValid(): Boolean {
@@ -118,9 +118,12 @@ class FlexibleObjectGene(
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is FlexibleObjectGene) {
+        if (other !is FlexibleObjectGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        if (!template.possiblySame(other.template))
+            throw IllegalArgumentException("different template ${other.template.javaClass}")
+
         for (i in fields.indices) {
             this.fields[i].copyValueFrom(other.fields[i])
         }
@@ -129,9 +132,12 @@ class FlexibleObjectGene(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is FlexibleObjectGene) {
+        if (other !is FlexibleObjectGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+        if (!template.possiblySame(other.template))
+            throw IllegalArgumentException("different template ${other.template.javaClass}")
+
         return this.fields.size == other.fields.size
                 && additionalFields.size == other.additionalFields.size
                 && this.fields.zip(other.fields) { thisField, otherField -> thisField.containsSameValueAs(otherField) }.all { it }
@@ -139,7 +145,7 @@ class FlexibleObjectGene(
     }
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is FlexibleObjectGene && (fields.indices).all { fields[it].possiblySame(gene.fields[it]) } && template.possiblySame(gene.template)) {
+        if (gene is FlexibleObjectGene<*> && (fields.indices).all { fields[it].possiblySame(gene.fields[it]) } && template.possiblySame(gene.template)) {
             var result = true
             (fields.indices).forEach {
                 val r = fields[it].bindValueBasedOn(gene.fields[it])
