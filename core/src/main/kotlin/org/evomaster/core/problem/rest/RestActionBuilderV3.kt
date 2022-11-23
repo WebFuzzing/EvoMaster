@@ -679,7 +679,7 @@ object RestActionBuilderV3 {
              see more with https://docs.readme.com/docs/openapi-compatibility-chart
          */
 
-        val additionalFields = mutableListOf<Gene>()
+        var additionalFieldTemplate : PairGene<StringGene, *>? = null
         /*
             Can be either a boolean or a Schema
          */
@@ -699,13 +699,13 @@ object RestActionBuilderV3 {
             */
             if (!additional.`$ref`.isNullOrBlank()) {
                 val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history)
-                val pairTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
-                additionalFields.add(FixedMapGene(name, pairTemplate))
+                additionalFieldTemplate= PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }else if(!additional.type.isNullOrBlank()){
                 val valueTemplate = getGene("valueTemplate", additional, swagger, history, null)
-                val pairTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
-                additionalFields.add(FixedMapGene(name, pairTemplate))
+                additionalFieldTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }
+            // TODO additional schema is defined with allOf, anyOf, oneOf, then template requires to be specified with FlexibleGene
+
 
             /*
                TODO could add extra fields for robustness testing,
@@ -718,8 +718,8 @@ object RestActionBuilderV3 {
              */
 
             if (fields.isEmpty()) {
-                if (additionalFields.isNotEmpty())
-                    return additionalFields.first()
+                if (additionalFieldTemplate != null)
+                    return FixedMapGene(name, additionalFieldTemplate)
 
                 // here, the first of pairgene should not be mutable
                 return FixedMapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null), isFixedFirst = true))
@@ -734,11 +734,15 @@ object RestActionBuilderV3 {
             return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
         }
 
+        if (additionalFieldTemplate!=null){
+            return FlexibleObjectGene(name, fields, additionalFieldTemplate)
+        }
+
         /*
             add refClass with title of SchemaObject
             Man: shall we pop history here?
          */
-        return ObjectGene(name, fields.plus(additionalFields), if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
+        return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
     }
 
 
