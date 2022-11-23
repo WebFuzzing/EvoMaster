@@ -499,7 +499,8 @@ object GeneUtils {
                         if (!repairBooleanSelection(((it as TupleGene).elements.last() as OptionalGene).gene as ObjectGene)) {
                             (it.elements.last() as OptionalGene).isActive = false
                         }
-                    } else return false
+                    }
+
             }
         } else {
             /*
