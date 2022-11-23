@@ -12,6 +12,7 @@ import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.isInactiveOptionalGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -137,12 +138,6 @@ abstract class MapGene<K, V>(
                     """
                 } +
                 "}"
-    }
-
-    private fun isInactiveOptionalGene(gene: Gene): Boolean{
-        val optional = gene.getWrappedGene(OptionalGene::class.java)?:return false
-
-        return !optional.isActive
     }
 
     private fun getKeyValueAsPrintableString(key: Gene, targetFormat: OutputFormat?): String {

@@ -525,7 +525,7 @@ object GeneSamplerForTests {
         val selection = geneClasses.filter { !it.isAbstract}
 
         val valueTemplate = samplePrintableTemplate(selection, rand)
-        return FlexibleGene(valueTemplate.name, valueTemplate)
+        return FlexibleGene(valueTemplate.name, valueTemplate, null)
     }
     
     fun sampleOptionalGene(rand: Randomness): OptionalGene {

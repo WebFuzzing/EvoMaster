@@ -117,7 +117,7 @@ object ParserDtoUtil {
 //            val v = ParamUtil.getValueGene(g)
 //            if (v is ObjectGene) v.refType?:(v.fields.joinToString("-") { f->f.name }) else v::class.java.name
 //        }
-        return FlexibleMapGene(name, StringGene("key"), values.first()!!.copy())
+        return FlexibleMapGene(name, StringGene("key"), values.first()!!.copy(), null)
     }
 
     private fun findAndCopyExtractedObjectDto(node: JsonNode, objectGeneMap: Map<String, Gene>) : ObjectGene? {
