@@ -52,6 +52,55 @@ class RestActionBuilderV3Test{
     }
 
     @Test
+    fun testPropertiesWithAdditionalProperties(){
+        //example from APIs_guru/azure.com/cognitiveservices-LUIS-Runtime/2.0
+        val name = "EntityModel"
+        val dtoSchema = """
+            "$name": {
+              "additionalProperties": {
+                "description": "List of additional properties. For example, score and resolution values for pre-built LUIS entities.",
+                "type": "object"
+              },
+              "description": "An entity extracted from the utterance.",
+              "properties": {
+                "endIndex": {
+                  "description": "The position of the last character of the matched entity within the utterance.",
+                  "type": "integer"
+                },
+                "entity": {
+                  "description": "Name of the entity, as defined in LUIS.",
+                  "type": "string"
+                },
+                "startIndex": {
+                  "description": "The position of the first character of the matched entity within the utterance.",
+                  "type": "integer"
+                },
+                "type": {
+                  "description": "Type of the entity, as defined in LUIS.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "entity",
+                "type",
+                "startIndex",
+                "endIndex"
+              ],
+              "type": "object"
+            }
+        """.trimIndent()
+
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null)
+        assertEquals(name, gene.name)
+
+        assertTrue(gene is FlexibleObjectGene<*>)
+        (gene as FlexibleObjectGene<*>).apply {
+            assertEquals(4, fields.size)
+            assertTrue(template.second is FixedMapGene<*, *>)
+        }
+    }
+
+    @Test
     fun testArrayWithAdditionalProperties(){
         //example from APIs_guru/googleapis.com/apigateway/v1
         val name = "ApigatewayStatus"
