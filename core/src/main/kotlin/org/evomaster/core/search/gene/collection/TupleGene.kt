@@ -4,6 +4,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -170,9 +171,12 @@ class TupleGene(
         val i = it.getValueAsRawString()
         "${it.name} : $i"
     } else {
-        if (it is ObjectGene || (it.getWrappedGene(OptionalGene::class.java)?.gene  is ObjectGene)) {
+        if (it is ObjectGene || (it.getWrappedGene(ObjectGene::class.java)!=null)) {
+
+            if ((it.getWrappedGene(NullableGene::class.java)?.isPresent==false)){val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+                " ${it.name} : $i"} else {
             val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-            " $i"
+            " $i"}
         } else {
             if (it is ArrayGene<*> || (it is OptionalGene && it.gene is ArrayGene<*>)) {
                 val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE)
