@@ -40,7 +40,8 @@ object TaintAnalysis {
      */
     fun doTaintAnalysis(individual: Individual,
                         additionalInfoList: List<AdditionalInfoDto>,
-                        randomness: Randomness) {
+                        randomness: Randomness,
+                        enableConstraintHandling: Boolean) {
 
 
         if (individual.seeMainExecutableActions().size < additionalInfoList.size) {
@@ -107,11 +108,11 @@ object TaintAnalysis {
                     }.toMap()
 
 
-            handleSingleGenes(specsMap, allTaintableGenes, randomness, inputVariables)
+            handleSingleGenes(specsMap, allTaintableGenes, randomness, inputVariables, enableConstraintHandling)
 
-            handleMultiGenes(specsMap, allTaintableGenes, randomness, inputVariables)
+            handleMultiGenes(specsMap, allTaintableGenes, randomness, inputVariables, enableConstraintHandling)
 
-            handleTaintedArrays(specsMap, allTaintableGenes, randomness, inputVariables)
+            handleTaintedArrays(specsMap, allTaintableGenes, randomness, inputVariables, enableConstraintHandling)
         }
     }
 
@@ -120,7 +121,8 @@ object TaintAnalysis {
             specsMap: Map<String, List<StringSpecializationInfo>>,
             allTaintableGenes: List<TaintableGene>,
             randomness: Randomness,
-            inputVariables: Set<String>) {
+            inputVariables: Set<String>,
+            enableConstraintHandling: Boolean) {
 
         val taintedArrays = allTaintableGenes.filterIsInstance<TaintedArrayGene>()
 
@@ -153,7 +155,7 @@ object TaintAnalysis {
                 val schema = s.value
                 val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
                 val ref = t.subSequence(1, t.length - 1).toString()
-                RestActionBuilderV3.createObjectGenesForDTOs(ref, schema)
+                RestActionBuilderV3.createObjectGenesForDTOs(ref, schema, enableConstraintHandling = enableConstraintHandling )
             } else {
                 /*
                     TODO this could be more sophisticated, like considering numeric and boolean arrays as well,
@@ -176,7 +178,8 @@ object TaintAnalysis {
             specsMap: Map<String, List<StringSpecializationInfo>>,
             allTaintableGenes: List<TaintableGene>,
             randomness: Randomness,
-            inputVariables: Set<String>) {
+            inputVariables: Set<String>,
+            enableConstraintHandling: Boolean) {
 
         val specs = specsMap.entries
                 .flatMap { it.value }
@@ -229,11 +232,11 @@ object TaintAnalysis {
                 genes[0].addSpecializations(
                         genes[0].getValueAsRawString(),
                         listOf(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, choices[0])),
-                        randomness)
+                        randomness, enableConstraintHandling = enableConstraintHandling)
                 genes[1].addSpecializations(
                         genes[1].getValueAsRawString(),
                         listOf(StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, choices[1])),
-                        randomness)
+                        randomness, enableConstraintHandling = enableConstraintHandling)
             } catch (e: Exception) {
                 LoggingUtil.uniqueWarn(log, "Cannot handle partial match on regex: ${s.value}")
             }
@@ -244,7 +247,8 @@ object TaintAnalysis {
             specsMap: Map<String, List<StringSpecializationInfo>>,
             allTaintableGenes: List<TaintableGene>,
             randomness: Randomness,
-            inputVariables: Set<String>) {
+            inputVariables: Set<String>,
+            enableConstraintHandling: Boolean) {
         for (entry in specsMap.entries) {
 
             val taintedInput = entry.key
@@ -267,7 +271,7 @@ object TaintAnalysis {
                         }
                         .filterIsInstance<StringGene>()
 
-                addSpecializationToGene(genes, taintedInput, fullMatch, randomness)
+                addSpecializationToGene(genes, taintedInput, fullMatch, randomness, enableConstraintHandling)
             }
 
             //partial match on single genes
@@ -281,7 +285,7 @@ object TaintAnalysis {
                         }
                         .filterIsInstance<StringGene>()
 
-                addSpecializationToGene(genes, taintedInput, partialMatch, randomness)
+                addSpecializationToGene(genes, taintedInput, partialMatch, randomness, enableConstraintHandling)
             }
         }
     }
@@ -290,7 +294,8 @@ object TaintAnalysis {
             genes: List<StringGene>,
             taintedInput: String,
             specializations: List<StringSpecializationInfo>,
-            randomness: Randomness
+            randomness: Randomness,
+            enableConstraintHandling: Boolean
     ) {
         if (genes.isEmpty()) {
             /*
@@ -318,7 +323,7 @@ object TaintAnalysis {
                 //FIXME possible bug in binding handling.
 //                assert(false)
             }
-            genes.forEach { it.addSpecializations(taintedInput, specializations, randomness) }
+            genes.forEach { it.addSpecializations(taintedInput, specializations, randomness, enableConstraintHandling = enableConstraintHandling) }
         }
     }
 }

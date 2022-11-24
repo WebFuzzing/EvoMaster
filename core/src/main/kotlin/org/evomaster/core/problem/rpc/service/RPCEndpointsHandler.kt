@@ -231,7 +231,7 @@ class RPCEndpointsHandler {
                             }else if(sutInfoDto.unitsInfoDto.extractedSpecifiedDtos?.containsKey(s) == true){
                                 val schema = sutInfoDto.unitsInfoDto.extractedSpecifiedDtos[s]!!
                                 fromClass = true
-                                RestActionBuilderV3.createObjectGeneForDTO("return", schema, s)
+                                RestActionBuilderV3.createObjectGeneForDTO("return", schema, s, config.enableSchemaConstraintHandling)
                             }else{
                                 val node = readJson(dto.responses[index])
                                 if (node != null){
@@ -514,11 +514,11 @@ class RPCEndpointsHandler {
 
         val allDtoNames = infoDto.unitsInfoDto.parsedDtos.keys.toList()
         val allDtoSchemas = allDtoNames.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
-        RestActionBuilderV3.createObjectGeneForDTOs(allDtoNames, allDtoSchemas, allDtoNames)
+        RestActionBuilderV3.createObjectGeneForDTOs(allDtoNames, allDtoSchemas, allDtoNames, enableConstraintHandling = config.enableSchemaConstraintHandling)
 
         return names.filter { infoDto.unitsInfoDto?.extractedSpecifiedDtos?.containsKey(it)  == true}.associateWith { name ->
             val schema = infoDto.unitsInfoDto.extractedSpecifiedDtos[name]!!
-            RestActionBuilderV3.createObjectGeneForDTO(name, schema, name)
+            RestActionBuilderV3.createObjectGeneForDTO(name, schema, name, config.enableSchemaConstraintHandling)
         }
     }
 

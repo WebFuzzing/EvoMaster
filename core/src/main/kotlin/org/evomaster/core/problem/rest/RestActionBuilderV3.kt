@@ -72,7 +72,9 @@ object RestActionBuilderV3 {
     fun addActionsFromSwagger(swagger: OpenAPI,
                               actionCluster: MutableMap<String, Action>,
                               endpointsToSkip: List<String> = listOf(),
-                              doParseDescription: Boolean = false) {
+                              doParseDescription: Boolean = false,
+                              enableConstraintHandling: Boolean
+    ) {
 
         actionCluster.clear()
         refCache.clear()
@@ -117,14 +119,14 @@ object RestActionBuilderV3 {
                         //TODO should we do something with it for doParseDescription?
                     }
 
-                    if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get, swagger, doParseDescription, errorEndpoints)
-                    if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post, swagger, doParseDescription, errorEndpoints)
-                    if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put, swagger, doParseDescription, errorEndpoints)
-                    if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch, swagger, doParseDescription, errorEndpoints)
-                    if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options, swagger, doParseDescription, errorEndpoints)
-                    if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete, swagger, doParseDescription, errorEndpoints)
-                    if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace, swagger, doParseDescription, errorEndpoints)
-                    if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, doParseDescription, errorEndpoints)
+                    if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get, swagger, doParseDescription, enableConstraintHandling,errorEndpoints)
+                    if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post, swagger, doParseDescription, enableConstraintHandling, errorEndpoints)
+                    if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put, swagger, doParseDescription, enableConstraintHandling, errorEndpoints)
+                    if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch, swagger, doParseDescription, enableConstraintHandling, errorEndpoints)
+                    if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options, swagger, doParseDescription, enableConstraintHandling, errorEndpoints)
+                    if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete, swagger, doParseDescription, enableConstraintHandling, errorEndpoints)
+                    if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace, swagger, doParseDescription, enableConstraintHandling, errorEndpoints)
+                    if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, doParseDescription, enableConstraintHandling, errorEndpoints)
                 }
 
         checkSkipped(skipped, endpointsToSkip, actionCluster, errorEndpoints)
@@ -136,7 +138,9 @@ object RestActionBuilderV3 {
      *      "name: { "type name": "schema", "ref name": "schema", .... }"
      * @return a gene of the dto
      */
-    fun createObjectGenesForDTOs(name: String, allSchemas: String) : Gene{
+    fun createObjectGenesForDTOs(name: String,
+                                 allSchemas: String,
+                                 enableConstraintHandling: Boolean) : Gene{
         if(!allSchemas.startsWith("\"$name\"")){
             throw IllegalArgumentException("Invalid name $name for schema $allSchemas")
         }
@@ -163,7 +167,7 @@ object RestActionBuilderV3 {
 
 
         schemas.forEach { (t, u) ->
-            val gene = createObjectGene(t, swagger.components.schemas[t]!!,swagger, ArrayDeque(), t)
+            val gene = createObjectGene(t, swagger.components.schemas[t]!!,swagger, ArrayDeque(), t, enableConstraintHandling = enableConstraintHandling)
             dtoCache[u] = gene
         }
 
@@ -173,7 +177,10 @@ object RestActionBuilderV3 {
     /**
      *
      */
-    fun createObjectGeneForDTO(name: String, dtoSchema: String, referenceTypeName: String?) : Gene{
+    fun createObjectGeneForDTO(name: String,
+                               dtoSchema: String,
+                               referenceTypeName: String?,
+                               enableConstraintHandling: Boolean) : Gene{
 
         if(! dtoSchema.startsWith("\"$name\"")){
             throw IllegalArgumentException("Invalid name $name for schema $dtoSchema")
@@ -196,12 +203,15 @@ object RestActionBuilderV3 {
         """.trimIndent()
 
         val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
-        val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque(), referenceTypeName)
+        val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque(), referenceTypeName, enableConstraintHandling)
         dtoCache[dtoSchema] = gene
         return gene.copy()
     }
 
-    fun createObjectGeneForDTOs(names: List<String>, dtoSchemas: List<String>, referenceTypeNames: List<String?>) : List<Gene>{
+    fun createObjectGeneForDTOs(names: List<String>,
+                                dtoSchemas: List<String>,
+                                referenceTypeNames: List<String?>,
+                                enableConstraintHandling: Boolean) : List<Gene>{
         Lazy.assert { names.size == dtoSchemas.size }
 
         dtoSchemas.forEachIndexed { index, s ->
@@ -227,7 +237,7 @@ object RestActionBuilderV3 {
 
         val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
         unidentified.forEach {s->
-            val gene = getGene(names[s.first], swagger.components.schemas[names[s.first]]!!,swagger, ArrayDeque(), referenceTypeNames[s.first])
+            val gene = getGeneWithConstraints(names[s.first], swagger.components.schemas[names[s.first]]!!,swagger, ArrayDeque(), referenceTypeNames[s.first], enableConstraintHandling)
             if (!dtoCache.containsKey(s.second))
                 dtoCache[s.second] = gene
         }
@@ -243,11 +253,12 @@ object RestActionBuilderV3 {
             operation: Operation,
             swagger: OpenAPI,
             doParseDescription: Boolean,
+            enableConstraintHandling: Boolean,
             errorEndpoints : MutableList<String> = mutableListOf()
     ) {
 
         try{
-            val params = extractParams(verb, restPath, operation, swagger)
+            val params = extractParams(verb, restPath, operation, swagger, enableConstraintHandling)
             repairParams(params, restPath)
 
             val produces = operation.responses?.values //different response objects based on HTTP code
@@ -295,7 +306,8 @@ object RestActionBuilderV3 {
             verb: HttpVerb,
             restPath: RestPath,
             operation: Operation,
-            swagger: OpenAPI
+            swagger: OpenAPI,
+            enableConstraintHandling: Boolean
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
@@ -304,23 +316,26 @@ object RestActionBuilderV3 {
                 .forEach { p ->
 
                     if(p.`$ref` != null){
-                        val param = getLocalParameter(swagger, p.`$ref`)
+                        val param = getLocalParameter(swagger, p.`$ref`, enableConstraintHandling)
                         if(param == null){
                             log.warn("Failed to handle: ${p.`$ref`}")
                         } else {
-                            handleParam(param, swagger, params)
+                            handleParam(param, swagger, params, enableConstraintHandling)
                         }
                     } else {
-                        handleParam(p, swagger, params)
+                        handleParam(p, swagger, params, enableConstraintHandling)
                     }
                 }
 
-        handleBodyPayload(operation, verb, restPath, swagger, params)
+        handleBodyPayload(operation, verb, restPath, swagger, params, enableConstraintHandling)
 
         return params
     }
 
-    private fun handleParam(p: Parameter, swagger: OpenAPI, params: MutableList<Param>) {
+    private fun handleParam(p: Parameter,
+                            swagger: OpenAPI,
+                            params: MutableList<Param>,
+                            enableConstraintHandling: Boolean) {
         val name = p.name ?: "undefined"
 
         if(p.schema == null){
@@ -328,7 +343,7 @@ object RestActionBuilderV3 {
             return
         }
 
-        var gene = getGene(name, p.schema, swagger, referenceClassDef = null)
+        var gene = getGeneWithConstraints(name, p.schema, swagger, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling)
 
         if (p.`in` == "path" && gene is StringGene) {
             /*
@@ -395,7 +410,8 @@ object RestActionBuilderV3 {
             verb: HttpVerb,
             restPath: RestPath,
             swagger: OpenAPI,
-            params: MutableList<Param>) {
+            params: MutableList<Param>,
+            enableConstraintHandling: Boolean) {
 
         if (operation.requestBody == null) {
             return
@@ -439,7 +455,7 @@ object RestActionBuilderV3 {
             This should refactored to enable possibility of different BodyParams
         */
         val obj: MediaType = bodies.values.first()
-        var gene = getGene("body", obj.schema, swagger, referenceClassDef = null)
+        var gene = getGeneWithConstraints("body", obj.schema, swagger, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling)
 
 
         if (body.required != true && gene !is OptionalGene) {
@@ -460,16 +476,31 @@ object RestActionBuilderV3 {
         return gene
     }
 
+    private fun getGeneWithConstraints(
+            name: String,
+            schema: Schema<*>,
+            swagger: OpenAPI,
+            history: Deque<String> = ArrayDeque<String>(),
+            referenceClassDef: String?,
+            enableConstraintHandling: Boolean
+    ): Gene {
+        val gene = getGene(name, schema, swagger, history, referenceClassDef, enableConstraintHandling)
+        if (!enableConstraintHandling) return gene
+
+        return handleSchemaConstraints(schema, gene)
+    }
+
     private fun getGene(
             name: String,
             schema: Schema<*>,
             swagger: OpenAPI,
             history: Deque<String> = ArrayDeque<String>(),
-            referenceClassDef: String?
+            referenceClassDef: String?,
+            enableConstraintHandling: Boolean
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
-            return createObjectFromReference(name, schema.`$ref`, swagger, history)
+            return createObjectFromReference(name, schema.`$ref`, swagger, history, enableConstraintHandling)
         }
 
 
@@ -533,6 +564,7 @@ object RestActionBuilderV3 {
             TODO constraints like min/max
          */
 
+
         //first check for "optional" format
         when (format?.lowercase()) {
             "int32" -> return IntegerGene(name)
@@ -586,7 +618,7 @@ object RestActionBuilderV3 {
                     } else {
                         schema.items
                     }
-                    val template = getGene(name + "_item", arrayType, swagger, history, referenceClassDef = null)
+                    val template = getGeneWithConstraints(name + "_item", arrayType, swagger, history, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling)
 
                     //Could still have an empty []
 //                    if (template is CycleObjectGene) {
@@ -599,7 +631,7 @@ object RestActionBuilderV3 {
             }
 
             "object" -> {
-                return createObjectGene(name, schema, swagger, history, referenceClassDef)
+                return createObjectGene(name, schema, swagger, history, referenceClassDef, enableConstraintHandling)
             }
 
             "file" -> return StringGene(name) //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
@@ -609,7 +641,7 @@ object RestActionBuilderV3 {
             /*
                 This could happen when parsing a body-payload as formData
             */
-            return createObjectGene(name, schema, swagger, history, referenceClassDef)
+            return createObjectGene(name, schema, swagger, history, referenceClassDef, enableConstraintHandling)
         }
 
         if (type == null && format == null) {
@@ -623,11 +655,16 @@ object RestActionBuilderV3 {
     /**
      * @param referenceTypeName is the name of object type
      */
-    private fun createObjectGene(name: String, schema: Schema<*>, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?): Gene {
+    private fun createObjectGene(name: String,
+                                 schema: Schema<*>,
+                                 swagger: OpenAPI,
+                                 history: Deque<String>,
+                                 referenceTypeName: String?,
+                                 enableConstraintHandling: Boolean): Gene {
 
         val fields = schema.properties?.entries?.map {
             possiblyOptional(
-                    getGene(it.key, it.value, swagger, history, referenceClassDef = null),
+                    getGeneWithConstraints(it.key, it.value, swagger, history, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling),
                     schema.required?.contains(it.key)
             )
         } ?: listOf()
@@ -698,10 +735,10 @@ object RestActionBuilderV3 {
                support additionalProperties with schema
             */
             if (!additional.`$ref`.isNullOrBlank()) {
-                val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history)
+                val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history, enableConstraintHandling)
                 additionalFieldTemplate= PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }else if(!additional.type.isNullOrBlank()){
-                val valueTemplate = getGene("valueTemplate", additional, swagger, history, null)
+                val valueTemplate = getGeneWithConstraints("valueTemplate", additional, swagger, history, null, enableConstraintHandling)
                 additionalFieldTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }
             // TODO additional schema is defined with allOf, anyOf, oneOf, then template requires to be specified with FlexibleGene
@@ -722,7 +759,7 @@ object RestActionBuilderV3 {
                     return FixedMapGene(name, additionalFieldTemplate)
 
                 // here, the first of pairgene should not be mutable
-                return FixedMapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null), isFixedFirst = true))
+                return FixedMapGene(name, PairGene.createStringPairGene(getGeneWithConstraints(name + "_field", additional, swagger, history, null, enableConstraintHandling), isFixedFirst = true))
             }
         }
 
@@ -745,11 +782,23 @@ object RestActionBuilderV3 {
         return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
     }
 
+    /**
+     * handle constraints of schema object
+     *
+     * see more
+     * https://spec.openapis.org/oas/v3.0.3#properties
+     * https://spec.openapis.org/oas/latest.html#properties
+     */
+    private fun handleSchemaConstraints(schema: Schema<*>, gene: Gene) : Gene{
+        return gene
+    }
+
 
     private fun createObjectFromReference(name: String,
                                           reference: String,
                                           swagger: OpenAPI,
-                                          history: Deque<String> = ArrayDeque()
+                                          history: Deque<String> = ArrayDeque(),
+                                          enableConstraintHandling: Boolean
     ): Gene {
 
         /*
@@ -804,7 +853,7 @@ object RestActionBuilderV3 {
 
         history.push(reference)
 
-        val gene = getGene(name, schema, swagger, history, getClassDef(reference))
+        val gene = getGeneWithConstraints(name, schema, swagger, history, getClassDef(reference), enableConstraintHandling)
 
         if(isRoot) {
             GeneUtils.preventCycles(gene)
@@ -819,7 +868,9 @@ object RestActionBuilderV3 {
 
     private fun getClassDef(reference: String) = reference.substring(reference.lastIndexOf("/") + 1)
 
-    private fun getLocalParameter(swagger: OpenAPI, reference: String) : Parameter?{
+    private fun getLocalParameter(swagger: OpenAPI,
+                                  reference: String,
+                                  enableConstraintHandling: Boolean) : Parameter?{
         val name = extractReferenceName(reference)
 
         return swagger.components.parameters[name]
@@ -913,7 +964,8 @@ object RestActionBuilderV3 {
     }
 
     fun getModelsFromSwagger(swagger: OpenAPI,
-                             modelCluster: MutableMap<String, ObjectGene>) {
+                             modelCluster: MutableMap<String, ObjectGene>,
+                             enableConstraintHandling: Boolean) {
         modelCluster.clear()
 
         /*
@@ -928,7 +980,8 @@ object RestActionBuilderV3 {
                     .forEach {
                         val model = createObjectFromReference(it.key,
                                 it.component1(),
-                                swagger
+                                swagger,
+                                enableConstraintHandling = enableConstraintHandling
                         )
                         when (model) {
                             //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
