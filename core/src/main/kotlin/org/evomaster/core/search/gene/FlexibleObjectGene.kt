@@ -16,6 +16,17 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * this is a gene which could have fixed fields [fields] and more additional fields [additionalFields].
+ * The additional fields need to follow the [template] and could have flexible type (eg, T is FlexibleGene)
+ * eg, a schema example
+ *  Person:
+ *      type: object
+ *      additionalProperties:
+ *          oneOf:
+ *              - type: string
+ *              - type: integer
+ */
 class FlexibleObjectGene<T>(
         name: String,
         val fields: List<out Gene>,
@@ -25,10 +36,15 @@ class FlexibleObjectGene<T>(
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(FlexibleObjectGene::class.java)
+        // probability of mutating size of additional fields
         private const val PROB_MODIFY_SIZE_ADDITIONAL_FIELDS = 0.1
+        // the default maximum size for additional fields
         private const val MAX_SIZE_ADDITIONAL_FIELDS = 5
     }
 
+    /**
+     * @return a view of additional fields
+     */
     val additionalFields: List<PairGene<StringGene, T>>
         get() {return children.filterNot { fields.contains(it) }.filterIsInstance<PairGene<StringGene, T>>()}
 
