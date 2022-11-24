@@ -8,7 +8,8 @@ import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.FlexibleObjectGene
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
@@ -24,24 +25,27 @@ import org.junit.jupiter.params.provider.ValueSource
 
 class RestActionBuilderV3Test{
 
-    @Test
-    fun testTraceV2(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testTraceV2(enableConstraintHandling : Boolean){
         /*
             Swagger Parser for V2 seems buggy, as ignoring TRACE.
             See: io.swagger.parser.util.SwaggerDeserializer#path
          */
-        loadAndAssertActions("/swagger/artificial/trace_v2.json", 0)
+        loadAndAssertActions("/swagger/artificial/trace_v2.json", 0, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testTraceV3(){
-        loadAndAssertActions("/swagger/artificial/trace_v3.json", 1)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testTraceV3(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/artificial/trace_v3.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testEnumYml(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testEnumYml(enableConstraintHandling : Boolean){
 
-        val map = loadAndAssertActions("/swagger/artificial/openapi-enum.yml", 2)
+        val map = loadAndAssertActions("/swagger/artificial/openapi-enum.yml", 2, enableConstraintHandling = enableConstraintHandling)
         val get = map["GET:/api/enum"]!!
         val post = map["POST:/api/enum"]!!
 
@@ -51,8 +55,9 @@ class RestActionBuilderV3Test{
         assertEquals(1, postEnums.size)
     }
 
-    @Test
-    fun testPropertiesWithAdditionalProperties(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testPropertiesWithAdditionalProperties(enableConstraintHandling : Boolean){
         //example from APIs_guru/azure.com/cognitiveservices-LUIS-Runtime/2.0
         val name = "EntityModel"
         val dtoSchema = """
@@ -90,7 +95,7 @@ class RestActionBuilderV3Test{
             }
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null)
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null, enableConstraintHandling)
         assertEquals(name, gene.name)
 
         assertTrue(gene is FlexibleObjectGene<*>)
@@ -100,8 +105,9 @@ class RestActionBuilderV3Test{
         }
     }
 
-    @Test
-    fun testArrayWithAdditionalProperties(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testArrayWithAdditionalProperties(enableConstraintHandling : Boolean){
         //example from APIs_guru/googleapis.com/apigateway/v1
         val name = "ApigatewayStatus"
         val dtoSchema = """
@@ -132,7 +138,7 @@ class RestActionBuilderV3Test{
           }
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null) as ObjectGene
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null, enableConstraintHandling) as ObjectGene
 
         assertEquals(name, gene.name)
         assertEquals(3, gene.fields.size)
@@ -150,8 +156,9 @@ class RestActionBuilderV3Test{
         }
     }
 
-    @Test
-    fun testAdditionalPropertiesWithObjectType(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testAdditionalPropertiesWithObjectType(enableConstraintHandling : Boolean){
         // example from APIs_guru/azure.com/containerinstance-containerInstance/2018-10-01
         val name = "ContainerGroupIdentity"
         val dtoSchema = """
@@ -205,7 +212,7 @@ class RestActionBuilderV3Test{
             }
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null) as ObjectGene
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null, enableConstraintHandling) as ObjectGene
 
         assertEquals(name, gene.name)
         assertEquals(4, gene.fields.size)
@@ -226,8 +233,9 @@ class RestActionBuilderV3Test{
     }
 
 
-    @Test
-    fun testParseDto(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testParseDto(enableConstraintHandling : Boolean){
 
         val name = "com.FooBar"
         val foo = "foo"
@@ -250,7 +258,7 @@ class RestActionBuilderV3Test{
             }     
         """.trimIndent()
 
-        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name) as ObjectGene
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, name, enableConstraintHandling = enableConstraintHandling) as ObjectGene
         assertEquals(name, gene.name)
         assertEquals(2, gene.fields.size)
 
@@ -262,8 +270,9 @@ class RestActionBuilderV3Test{
     }
 
 
-    @Test
-    fun testParseDtos(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testParseDtos(enableConstraintHandling : Boolean){
 
         val nameFoo = "evo.Foo"
         val nameBar = "evo.Bar"
@@ -296,7 +305,7 @@ class RestActionBuilderV3Test{
             }     
         """.trimIndent()
 
-        val objGenes = RestActionBuilderV3.createObjectGeneForDTOs(listOf(nameFoo, nameBar), listOf(dtoSchemaFoo, dtoSchemaBar), listOf(nameFoo, nameBar))
+        val objGenes = RestActionBuilderV3.createObjectGeneForDTOs(listOf(nameFoo, nameBar), listOf(dtoSchemaFoo, dtoSchemaBar), listOf(nameFoo, nameBar), enableConstraintHandling = enableConstraintHandling)
         assertEquals(2, objGenes.size)
 
         assertEquals(nameFoo, objGenes[0].name)
@@ -320,8 +329,9 @@ class RestActionBuilderV3Test{
 
     }
 
-    @Test
-    fun testParseMapDto(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testParseMapDto(enableConstraintHandling : Boolean){
         val mapDto = "org.evomaster.client.java.instrumentation.object.dtos.MapDto"
 
         val allSchema = """
@@ -383,7 +393,7 @@ class RestActionBuilderV3Test{
             }
         """.trimIndent()
 
-        val mapGene = RestActionBuilderV3.createObjectGenesForDTOs(mapDto, allSchema)
+        val mapGene = RestActionBuilderV3.createObjectGenesForDTOs(mapDto, allSchema, enableConstraintHandling = enableConstraintHandling)
         assertTrue(mapGene is ObjectGene)
         (mapGene as ObjectGene).apply {
             assertEquals(2, fields.size)
@@ -408,8 +418,9 @@ class RestActionBuilderV3Test{
         }
     }
 
-    @Test
-    fun testGHOrgnization(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testGHOrgnization(enableConstraintHandling : Boolean){
         val classToExtract = "org.kohsuke.github.GHOrganization"
         val schema = """"$classToExtract":{
                "org.kohsuke.github.GHOrganization":{
@@ -595,12 +606,12 @@ class RestActionBuilderV3Test{
                }
             }
         """
-        val ghGene = RestActionBuilderV3.createObjectGenesForDTOs(classToExtract, schema)
+        val ghGene = RestActionBuilderV3.createObjectGenesForDTOs(classToExtract, schema, enableConstraintHandling = enableConstraintHandling)
     }
 
     //---------------------------------
 
-    private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int)
+    private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, enableConstraintHandling: Boolean)
             : MutableMap<String, Action> {
 
 
@@ -608,12 +619,12 @@ class RestActionBuilderV3Test{
 
         val actions: MutableMap<String, Action> = mutableMapOf()
 
-        RestActionBuilderV3.addActionsFromSwagger(schema, actions)
+        RestActionBuilderV3.addActionsFromSwagger(schema, actions, enableConstraintHandling = enableConstraintHandling)
 
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf())
+        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), enableConstraintHandling = enableConstraintHandling)
 
         return actions
     }
@@ -661,150 +672,172 @@ class RestActionBuilderV3Test{
 
     // ----------- V3 --------------
 
-    @Test
-    fun testNexmo(){
-        loadAndAssertActions("/swagger/apisguru-v3/nexmo.json", 5)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testNexmo(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/apisguru-v3/nexmo.json", 5, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testBcgnews() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/bcgnws.json", 14)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testBcgnews(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/bcgnws.json", 14, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testBclaws() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/bclaws.json", 7)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testBclaws(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/bclaws.json", 7, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testBng2latlong() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/bng2latlong.json", 1)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testBng2latlong(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/bng2latlong.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testChecker() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/checker.json", 1)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testChecker(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/checker.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testDisposable() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/disposable.json", 1)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testDisposable(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/disposable.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testFraudDetection() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/fraud-detection.json", 2)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testFraudDetection(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/fraud-detection.json", 2, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testGeolocation() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/geolocation.json", 1)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testGeolocation(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/geolocation.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testIp2proxy() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/ip2proxy.com.json", 1)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testIp2proxy(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/ip2proxy.com.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testApisGuruNews() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/news.json", 27)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testApisGuruNews(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/news.json", 27, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testOpen511() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/open511.json", 4)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testOpen511(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/open511.json", 4, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testSmsVerification() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/sms-verification.json", 2)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testSmsVerification(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/sms-verification.json", 2, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testValidation() {
-        val map = loadAndAssertActions("/swagger/apisguru-v3/validation.json", 1)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testValidation(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/apisguru-v3/validation.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
 
 
 
     // ----------- V2 --------------
 
-    @Test
-    fun testGitLab() {
-        loadAndAssertActions("/swagger/others/gitlab.json", 358)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testGitLab(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/others/gitlab.json", 358, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testCyclotron() {
-        val map = loadAndAssertActions("/swagger/sut/cyclotron.json", 50)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testCyclotron(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/cyclotron.json", 50, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),50, 87, 16, 71, 11)
         checkNumResource(map, listOf(), 40, 18)
     }
 
 
     @Test
-    fun testPetStore() {
-        loadAndAssertActions("/swagger/others/petstore.json", 20)
+    fun testPetStore(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/others/petstore.json", 20, enableConstraintHandling = enableConstraintHandling)
     }
 
 
     @Test
-    fun testMultiParamPath() {
-        loadAndAssertActions("/swagger/artificial/multi_param_path.json", 1)
+    fun testMultiParamPath(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/artificial/multi_param_path.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
 
 
-    @Test
-    fun testNcs() {
-        val map = loadAndAssertActions("/swagger/sut/ncs.json", 6)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testNcs(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/ncs.json", 6, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),6, 14, 0, 14, 0)
         checkNumResource(map, listOf(), 6, 6)
 
     }
 
-    @Test
-    fun testScs() {
-        val map = loadAndAssertActions("/swagger/sut/scs.json", 11)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testScs(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/scs.json", 11, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),11, 26, 0, 26, 0)
         checkNumResource(map, listOf(), 11, 11)
 
     }
 
-    @Test
-    fun testGestaoHospital() {
-        val map = loadAndAssertActions("/swagger/sut/gestaohospital.json", 20)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testGestaoHospital(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/gestaohospital.json", 20, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),20, 43, 14, 29, 6)
         checkNumResource(map, listOf(), 13, 0)
 
     }
 
-    @Test
-    fun testDisease() {
-        val map = loadAndAssertActions("/swagger/sut/disease_sh_api.json", 34)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testDisease(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/disease_sh_api.json", 34, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),34, 57, 0, 57, 0)
         checkNumResource(map, listOf(), 34, 34)
     }
 
-    @Test
-    fun testRealWorld() {
-        val map = loadAndAssertActions("/swagger/sut/realworld_app.json", 19)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testRealWorld(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/realworld_app.json", 19, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),19, 31, 6, 25, 6)
         checkNumResource(map, listOf(), 11, 2)
     }
 
-    @Test
-    fun testSpaceX() {
-        val map = loadAndAssertActions("/swagger/sut/spacex_api.json", 94)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testSpaceX(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/spacex_api.json", 94, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),94, 102, 29, 73, 29)
         checkNumResource(map, listOf(), 52, 5)
     }
 
 
 
-    @Test
-    fun testNews() {
-        val map = loadAndAssertActions("/swagger/sut/news.json", 7)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testNews(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/news.json", 7, enableConstraintHandling = enableConstraintHandling)
 
         val create = map["POST:/news"] as RestCallAction
         assertEquals(2, create.seeTopGenes().size)
@@ -821,9 +854,10 @@ class RestActionBuilderV3Test{
     }
 
 
-    @Test
-    fun testCatWatch() {
-        val map = loadAndAssertActions("/swagger/sut/catwatch.json", 23)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testCatWatch(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/catwatch.json", 23, enableConstraintHandling = enableConstraintHandling)
 
         val postScoring = map["POST:/config/scoring.project"] as RestCallAction
         assertEquals(3, postScoring.seeTopGenes().size)
@@ -837,12 +871,13 @@ class RestActionBuilderV3Test{
         checkNumResource(map, skipInEM, 13, 11)
     }
 
-    @Test
-    fun testProxyPrint() {
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testProxyPrint(enableConstraintHandling : Boolean){
 
         //TODO check  Map<String, String> in additionalProperties
 
-        val map = loadAndAssertActions("/swagger/sut/proxyprint.json", 115)
+        val map = loadAndAssertActions("/swagger/sut/proxyprint.json", 115, enableConstraintHandling = enableConstraintHandling)
 
         val balance = map["GET:/consumer/balance"] as RestCallAction
         //Principal should not appear, because anyway it is a GET
@@ -878,89 +913,102 @@ class RestActionBuilderV3Test{
 
     }
 
-    @Test
-    fun testCreateActions() {
-        loadAndAssertActions("/swagger/artificial/positive_integer_swagger.json", 2)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testCreateActions(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/artificial/positive_integer_swagger.json", 2, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testSchemaWithErrorEndpoint() {
-        loadAndAssertActions("/swagger/artificial/positive_integer_swagger_errors.json", 1)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testSchemaWithErrorEndpoint(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/artificial/positive_integer_swagger_errors.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
 
 
-    @Test
-    fun testOCVN() {
-        val map = loadAndAssertActions("/swagger/sut/ocvn_1oc.json", 192)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testOCVN(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/ocvn_1oc.json", 192, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),192, 2852, 0, 2852, 0)
         checkNumResource(map, listOf(), 96, 0)
 
     }
 
     @Disabled("This is a bug in Swagger Core, reported at https://github.com/swagger-api/swagger-core/issues/2100")
-    @Test
-    fun testFeaturesServicesNull() {
-        loadAndAssertActions("/swagger/sut/features_service_null.json", 18)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testFeaturesServicesNull(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/sut/features_service_null.json", 18, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testFeaturesServices() {
-        val map = loadAndAssertActions("/swagger/sut/features_service.json", 18)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testFeaturesServices(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/features_service.json", 18, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),18, 37, 4, 33, 4)
         checkNumResource(map, listOf(), 11, 1)
     }
 
-    @Test
-    fun testScoutApi() {
-        val map = loadAndAssertActions("/swagger/sut/scout-api.json", 49)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testScoutApi(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/scout-api.json", 49, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),49, 127, 19, 108, 19)
         checkNumResource(map, listOf(), 21, 2)
     }
 
-    @Test
-    fun testLanguageTool(){
-        val map = loadAndAssertActions("/swagger/sut/languagetool.json", 2)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testLanguageTool(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/languagetool.json", 2, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),2, 2, 1, 1, 1)
         checkNumResource(map, listOf(), 2, 1)
     }
 
-    @Test
-    fun testRestCountries(){
-        val map = loadAndAssertActions("/swagger/sut/restcountries.yaml", 22)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testRestCountries(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/restcountries.yaml", 22, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),22, 34, 2, 32, 0)
         checkNumResource(map, listOf(), 22, 22)
     }
 
-    @Test
-    fun testCwaVerification(){
-        val map = loadAndAssertActions("/swagger/sut/cwa_verification.json", 5)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testCwaVerification(enableConstraintHandling : Boolean){
+        val map = loadAndAssertActions("/swagger/sut/cwa_verification.json", 5, enableConstraintHandling = enableConstraintHandling)
         checkNumOfRootGene(map, listOf(),5, 12, 4, 8, 5)
         checkNumResource(map, listOf(), 5, 0)
     }
 
 
-    @Test
-    fun testK0() {
-        loadAndAssertActions("/swagger/others/k0.json", 20)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testK0(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/others/k0.json", 20, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testK1() {
-        loadAndAssertActions("/swagger/others/k1.json", 53)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testK1(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/others/k1.json", 53, enableConstraintHandling = enableConstraintHandling)
     }
 
-    @Test
-    fun testBranches() {
-        loadAndAssertActions("/swagger/artificial/branches.json", 3)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testBranches(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/artificial/branches.json", 3, enableConstraintHandling = enableConstraintHandling)
     }
 
 
 
     //TODO need to handle "multipart/form-data"
     @Disabled
-    @Test
-    fun testSimpleForm() {
-        val actions = loadAndAssertActions("/swagger/artificial/simpleform.json", 1)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testSimpleForm(enableConstraintHandling : Boolean){
+        val actions = loadAndAssertActions("/swagger/artificial/simpleform.json", 1, enableConstraintHandling = enableConstraintHandling)
 
         val a = actions.values.first() as RestCallAction
 
@@ -969,19 +1017,21 @@ class RestActionBuilderV3Test{
         assertEquals(2, a.parameters.filter { p -> p is FormParam }.size)
     }
 
-    @Test
-    fun testDuplicatedParamsInFeaturesServices() {
-        val actions = loadAndAssertActions("/swagger/sut/features_service.json", 18)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testDuplicatedParamsInFeaturesServices(enableConstraintHandling : Boolean){
+        val actions = loadAndAssertActions("/swagger/sut/features_service.json", 18, enableConstraintHandling = enableConstraintHandling)
         (actions["POST:/products/{productName}/configurations/{configurationName}/features/{featureName}"] as RestCallAction).apply {
             assertEquals(3, parameters.size)
         }
     }
 
 
-    @Test
-    fun testApisGuru() {
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testApisGuru(enableConstraintHandling : Boolean){
 
-        val actions = loadAndAssertActions("/swagger/apisguru-v2/apis.guru.json", 2)
+        val actions = loadAndAssertActions("/swagger/apisguru-v2/apis.guru.json", 2, enableConstraintHandling = enableConstraintHandling)
 
         actions.values
                 .filterIsInstance<RestCallAction>()
@@ -991,23 +1041,25 @@ class RestActionBuilderV3Test{
                 }
     }
 
-    @Test
-    fun testGreenPeace() {
-        loadAndAssertActions("/swagger/apisguru-v2/greenpeace.org.json", 6)
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testGreenPeace(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/apisguru-v2/greenpeace.org.json", 6, enableConstraintHandling = enableConstraintHandling)
     }
 
 
-    @Test
-    fun testRestApiExample(){
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testRestApiExample(enableConstraintHandling : Boolean){
         val resourcePath = "/swagger/others/rest-api-example.json"
-        val actions = loadAndAssertActions(resourcePath, 3)
+        val actions = loadAndAssertActions(resourcePath, 3, enableConstraintHandling = enableConstraintHandling)
 
         val get = actions["GET:/api/items"]
         assertNotNull(get)
 
         val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
         val map = mutableMapOf<String,ObjectGene>()
-        RestActionBuilderV3.getModelsFromSwagger(schema, map)
+        RestActionBuilderV3.getModelsFromSwagger(schema, map, enableConstraintHandling = enableConstraintHandling)
 
         assertEquals(3, map.size)
         val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
@@ -1018,7 +1070,7 @@ class RestActionBuilderV3Test{
     @ParameterizedTest
     @ValueSource(strings = ["/swagger/artificial/reference_type_v2.json","/swagger/artificial/reference_type_v3.json"])
     fun testReferenceType(path: String){
-        val actions = loadAndAssertActions(path, 1)
+        val actions = loadAndAssertActions(path, 1, enableConstraintHandling = false)
         val bodyParam = actions.values.filterIsInstance<RestCallAction>().flatMap { it.parameters }.filterIsInstance<BodyParam>()
         assertEquals(1, bodyParam.size)
         assertTrue(bodyParam.first().gene is ObjectGene)
