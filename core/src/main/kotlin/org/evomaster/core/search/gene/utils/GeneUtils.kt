@@ -475,7 +475,7 @@ object GeneUtils {
     fun repairBooleanSelection(obj: ObjectGene): Boolean {
 
         if (obj.fields.isEmpty()
-                || obj.fields.count { it !is OptionalGene && it !is BooleanGene && it !is TupleGene } > 0
+            || obj.fields.count { it !is OptionalGene && it !is BooleanGene && it !is TupleGene } > 0
         ) {
             throw IllegalArgumentException("There should be at least 1 field, and they must be all optional or boolean or tuple")
         }
@@ -487,7 +487,7 @@ object GeneUtils {
             ((it is OptionalGene && it.isActive) ||
                     (it is BooleanGene && it.value) ||
                     (it is OptionalGene && it.gene is TupleGene && it.gene.lastElementTreatedSpecially && isLastSelected(
-                            it.gene
+                        it.gene
                     )) ||
                     (it is TupleGene && it.lastElementTreatedSpecially && isLastSelected(it))
                     )
@@ -513,7 +513,7 @@ object GeneUtils {
                 } else if (isTupleOptionalObjetNotCycleNotLimit(it)) { //FIXME
                     //looking into objects inside a tuple
                     val tupleOutputOptional = (it as TupleGene).elements.last() as OptionalGene
-                    val tupleOutputObject =  tupleOutputOptional.gene as ObjectGene
+                    val tupleOutputObject = tupleOutputOptional.gene as ObjectGene
                     if (!repairBooleanSelection(tupleOutputObject)) {
                         tupleOutputOptional.isActive = false
                         failedRepairCount++
@@ -522,7 +522,7 @@ object GeneUtils {
             }
         }
 
-        if(selected.isEmpty() || selected.size == failedRepairCount){
+        if (selected.isEmpty() || selected.size == failedRepairCount) {
             /*
              * we did not find fields that are already selected, or we ended up deselecting all of them.
              * must select at least one among the others that were of
@@ -537,11 +537,11 @@ object GeneUtils {
             * What if we do not have candidates? we could not recycle any gene !.
             * In this case we must deactivate the ancestor of the gene (somehow, ex: put the optional as non-active) and return false
             * */
-            if(candidates.isEmpty()){
+            if (candidates.isEmpty()) {
                 return false
             }
 
-            for(selectedGene in candidates) {
+            for (selectedGene in candidates) {
                 if (selectedGene is OptionalGene && selectedGene.selectable) {
                     selectedGene.isActive = true
                     if (selectedGene.gene is ObjectGene) {
@@ -553,9 +553,8 @@ object GeneUtils {
                     //TODO tuple
 
                 } else if (selectedGene is TupleGene) {
-                        val lastElement = selectedGene.elements.last()
-                        repairTupleLastElement(lastElement)
-                        //TODO check if it worked, if so return true
+                    val lastElement = selectedGene.elements.last()
+                    repairTupleLastElement(lastElement)
                 } else {
                     (selectedGene as BooleanGene).value = true
                     return true
@@ -569,16 +568,22 @@ object GeneUtils {
         return true
     }
 
-    private fun repairTupleLastElement(lastElement: Gene) {
+    private fun repairTupleLastElement(lastElement: Gene): Boolean {
         if (lastElement is OptionalGene) {
             lastElement.isActive = true
             if (lastElement.gene is ObjectGene) {
-                assert(lastElement.gene !is CycleObjectGene)
-                repairBooleanSelection(lastElement.gene)
+                if (!repairBooleanSelection(lastElement.gene)) {
+                    lastElement.isActive = false
+                }
+                return true //we just need one
             }
         } else
-            if (lastElement is BooleanGene)
+            if (lastElement is BooleanGene) {
                 lastElement.value = true
+                return true
+            }
+
+        return false //should never be reached
     }
 
     private fun shouldApplyBooleanSelection(gene: Gene) =
