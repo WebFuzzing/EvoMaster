@@ -769,13 +769,15 @@ class RestActionBuilderV3Test{
     }
 
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
     fun testPetStore(enableConstraintHandling : Boolean){
         loadAndAssertActions("/swagger/others/petstore.json", 20, enableConstraintHandling = enableConstraintHandling)
     }
 
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
     fun testMultiParamPath(enableConstraintHandling : Boolean){
         loadAndAssertActions("/swagger/artificial/multi_param_path.json", 1, enableConstraintHandling = enableConstraintHandling)
     }
