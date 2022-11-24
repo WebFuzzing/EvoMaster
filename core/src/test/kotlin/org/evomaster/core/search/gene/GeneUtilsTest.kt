@@ -258,17 +258,6 @@ internal class GeneUtilsTest {
         assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
     }
 
-    @Test
-    fun testRepairBooleanSectionRemove() {
-
-        val objTuple = ObjectGene( "object",
-            listOf(OptionalGene("optional",TupleGene("tuple", listOf(LimitObjectGene("limit")) ,lastElementTreatedSpecially = true ))))
-
-        assertFalse(GeneUtils.repairBooleanSelection(objTuple))
-
-
-    }
-    
 
     @Test
     fun testRepairInPetclinic() {
