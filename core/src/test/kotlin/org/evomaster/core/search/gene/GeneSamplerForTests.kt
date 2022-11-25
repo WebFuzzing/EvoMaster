@@ -847,7 +847,7 @@ object GeneSamplerForTests {
         val selection = selectionForArrayTemplate()
         val chosen = samplePrintableTemplate(selection, rand)
 
-        return ArrayGene("rand array ${rand.nextInt()}", chosen)
+        return ArrayGene("rand array ${rand.nextInt()}", chosen, uniqueElements = rand.nextBoolean())
     }
 
     fun sampleBase64StringGene(rand: Randomness): Base64StringGene {

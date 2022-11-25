@@ -34,6 +34,12 @@ class ArrayGene<T>(
          * the template (eg ranges for numbers)
          */
         val template: T,
+
+        /**
+         * specify whether the elements should be unique
+         */
+        val uniqueElements : Boolean = false,
+
         /**
          *  How max elements to have in this array. Usually arrays are unbound, till the maximum int size (ie, 2 billion
          *  elements on the JVM). But, for search reasons, too large arrays are impractical
@@ -44,6 +50,7 @@ class ArrayGene<T>(
         var maxSize: Int? = null,
 
         var minSize: Int? = null,
+
         /**
          * The actual elements in the array, based on the template. Ie, usually those elements will be clones
          * of the templated, and then mutated/randomized
@@ -101,6 +108,7 @@ class ArrayGene<T>(
         val copy = ArrayGene(
             name,
             template.copy() as T,
+            uniqueElements,
             maxSize,
             minSize,
             elements.map { e -> e.copy() as T }.toMutableList(),

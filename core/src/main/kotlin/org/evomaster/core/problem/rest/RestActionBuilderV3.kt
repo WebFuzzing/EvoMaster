@@ -609,7 +609,7 @@ object RestActionBuilderV3 {
 //                    if (template is CycleObjectGene) {
 //                        return CycleObjectGene("<array> ${template.name}")
 //                    }
-                    return ArrayGene(name, template)
+                    return createGeneWithSchemaConstraints(schema, name, ArrayGene.javaClass, enableConstraintHandling, template)//ArrayGene(name, template)
                 } else {
                     LoggingUtil.uniqueWarn(log, "Invalid 'array' definition for '$name'")
                 }
@@ -860,6 +860,7 @@ object RestActionBuilderV3 {
                 return ArrayGene(
                         name,
                         template = collectionTemplate,
+                        uniqueElements = if (enableConstraintHandling) schema.uniqueItems?:false else false,
                         minSize = if (enableConstraintHandling) schema.minItems else null,
                         maxSize = if (enableConstraintHandling) schema.maxItems else null
                 )

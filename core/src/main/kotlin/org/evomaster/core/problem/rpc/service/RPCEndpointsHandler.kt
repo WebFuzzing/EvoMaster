@@ -1050,7 +1050,7 @@ class RPCEndpointsHandler {
         if (building)
             buildTypeCache(templateParam)
         val template = handleDtoParam(templateParam)
-        return ArrayGene(param.name, template, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt())
+        return ArrayGene(param.name, template, maxSize = param.maxSize?.toInt(), minSize = param.minSize?.toInt(), uniqueElements = param.type.type == RPCSupportedDataType.SET)
     }
 
     private fun handleObjectType(type: ParamDto, building: Boolean): Gene{
