@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene.interfaces
 
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
@@ -41,8 +42,14 @@ interface CollectionGene {
     private fun timesProbToModifySize() : Int = 3
 
 
+    /**
+     * a list of types of gene for collection uniqueness check, eg, ArrayGene, and key of MapGene
+     * currently, we only support the uniqueness check for Integer, String, LongGene, Enum and Boolean
+     *
+     * TODO for other types if needed
+     */
     fun isElementApplicableToUniqueCheck(gene : Gene) : Boolean{
-        return  gene is IntegerGene || gene is StringGene || gene is LongGene || gene is EnumGene<*>
+        return  gene is IntegerGene || gene is StringGene || gene is LongGene || gene is EnumGene<*> || gene is BooleanGene
     }
 
     /**

@@ -169,7 +169,8 @@ class ArrayGene<T>(
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         repeat(n) {
             val gene = createRandomElement(randomness)
-            addElement(gene)
+            if (gene != null)
+                addElement(gene)
         }
         assert(minSize==null || (minSize!! <= elements.size))
         assert(maxSize==null || (elements.size <= maxSize!!))
@@ -211,7 +212,7 @@ class ArrayGene<T>(
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
-            val gene = createRandomElement(randomness)
+            val gene = createRandomElement(randomness) ?: return false
             addElement(gene)
         }else{
             log.trace("Removing gene in mutation")
@@ -289,7 +290,7 @@ class ArrayGene<T>(
         }
     }
 
-    private fun createRandomElement(randomness: Randomness) : T {
+    private fun createRandomElement(randomness: Randomness) : T? {
         val gene = template.copy() as T
         if(this.initialized){
             gene.doInitialize(randomness)
@@ -303,12 +304,16 @@ class ArrayGene<T>(
 
         if (uniqueElements && doesExist(gene)){
             log.warn("tried twice, but still cannot create unique element for the gene")
+            return null
         }
 
         return gene
     }
 
-    private fun doesExist(gene: T): Boolean{
+    /**
+     * @return if the [gene] does exist in [elements]
+     */
+    fun doesExist(gene: T): Boolean{
         if (!isElementApplicableToUniqueCheck(ParamUtil.getValueGene(gene))) return false
         return elements.any { ParamUtil.getValueGene(it).containsSameValueAs(ParamUtil.getValueGene(gene)) }
     }
@@ -318,6 +323,9 @@ class ArrayGene<T>(
      */
     fun addElement(element: T){
         checkConstraintsForAdd()
+        if (uniqueElements && doesExist(element))
+            throw IllegalArgumentException("when uniqueElements is true, cannot add element which exists")
+
         addChild(element)
     }
 
@@ -331,6 +339,8 @@ class ArrayGene<T>(
     fun addElement(element: Gene) : Boolean{
         element as? T ?: return false
         checkConstraintsForAdd()
+        if (uniqueElements && doesExist(element))
+            throw IllegalArgumentException("when uniqueElements is true, cannot add element which exists")
         addChild(element)
         return true
     }
