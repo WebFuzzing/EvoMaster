@@ -774,10 +774,26 @@ object RestActionBuilderV3 {
      * https://spec.openapis.org/oas/v3.0.3#properties
      * https://spec.openapis.org/oas/latest.html#properties
      *
+     * handled constraints include
+     *      - minimum
+     *      - maximum
+     *      - exclusiveMaximum
+     *      - exclusiveMinimum
+     *      - maxLength
+     *      - minLength
+     *      - minItems
+     *      - maxItems
+     *      - uniqueItems (TODO need to have SetGene or extend ArrayGene)
+     *      - allOf (TODO)
+     *      - anyOf (TODO)
+     *      - oneOf (TODO)
+     *      - multipleOf (TODO)
+     *      - not (OpenAPI not support this yet)
      *
-     * TODO might handle example property as default later
+     *
+     * TODO might handle example/default property as default later
      */
-    private fun createGeneWithSchemaConstraints(schema: Schema<*>, name: String, geneClass: Class<*>, enableConstraintHandling: Boolean) : Gene{
+    private fun createGeneWithSchemaConstraints(schema: Schema<*>, name: String, geneClass: Class<*>, enableConstraintHandling: Boolean, collectionTemplate: Gene? = null) : Gene{
         return when(geneClass){
             // number gene
             IntegerGene.javaClass -> return IntegerGene(
@@ -822,7 +838,7 @@ object RestActionBuilderV3 {
                     maxInclusive = if (enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
                     minInclusive = if (enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
             )
-            // string and regex gene
+            // string, Base64StringGene and regex gene
             StringGene.javaClass -> return StringGene(
                     name,
                     maxLength = if (enableConstraintHandling) schema.maxLength?: EMConfig.stringLengthHardLimit else EMConfig.stringLengthHardLimit,
@@ -836,6 +852,19 @@ object RestActionBuilderV3 {
                             minLength = if (enableConstraintHandling) schema.minLength?: 0 else 0
                     )
             )
+            //TODO for regex gene
+
+            ArrayGene.javaClass -> {
+                if (collectionTemplate == null)
+                    throw IllegalArgumentException("cannot create ArrayGene when collectionTemplate is null")
+                return ArrayGene(
+                        name,
+                        template = collectionTemplate,
+                        minSize = if (enableConstraintHandling) schema.minItems else null,
+                        maxSize = if (enableConstraintHandling) schema.maxItems else null
+                )
+            }
+
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
     }
