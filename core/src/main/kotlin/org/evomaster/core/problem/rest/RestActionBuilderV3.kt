@@ -817,7 +817,7 @@ object RestActionBuilderV3 {
                     maxInclusive = if (enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
                     minInclusive = if (enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
             )
-            Double.javaClass -> return DoubleGene(
+            DoubleGene.javaClass -> return DoubleGene(
                     name,
                     min = if (enableConstraintHandling) schema.minimum?.toDouble() else null,
                     max = if (enableConstraintHandling) schema.maximum?.toDouble() else null,
