@@ -1,7 +1,9 @@
 package org.evomaster.core.search.gene.collection
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -166,13 +168,8 @@ class ArrayGene<T>(
         log.trace("Randomizing ArrayGene")
         val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         repeat(n) {
-            val gene = template.copy() as T
-            if(this.initialized){
-                gene.doInitialize(randomness)
-            } else if(gene.isMutable()) {
-                gene.randomize(randomness, false)
-            }
-            addChild(gene)
+            val gene = createRandomElement(randomness)
+            addElement(gene)
         }
         assert(minSize==null || (minSize!! <= elements.size))
         assert(maxSize==null || (elements.size <= maxSize!!))
@@ -214,8 +211,7 @@ class ArrayGene<T>(
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
 
         if(elements.size < getMaxSizeOrDefault() && (elements.size == getMinSizeOrDefault() || elements.isEmpty() || randomness.nextBoolean())){
-            val gene = template.copy() as T
-            gene.doInitialize(randomness)
+            val gene = createRandomElement(randomness)
             addElement(gene)
         }else{
             log.trace("Removing gene in mutation")
@@ -260,7 +256,17 @@ class ArrayGene<T>(
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
-            addChildren(elements)
+            if (!uniqueElements || gene.uniqueElements || !isElementApplicableToUniqueCheck(ParamUtil.getValueGene(template)))
+                addChildren(elements)
+            else{
+                val unique = elements.filterIndexed { index, t ->
+                    index == elements.indexOfLast { l-> ParamUtil.getValueGene(l).containsSameValueAs(ParamUtil.getValueGene(t)) }
+                }
+                Lazy.assert {
+                    unique.isNotEmpty()
+                }
+                addChildren(unique)
+            }
             return true
         }
         LoggingUtil.uniqueWarn(
@@ -281,6 +287,30 @@ class ArrayGene<T>(
         }else{
             log.warn("the specified element (${if (element.isPrintable()) element.getValueAsPrintableString() else "not printable"})) does not exist in this array")
         }
+    }
+
+    private fun createRandomElement(randomness: Randomness) : T {
+        val gene = template.copy() as T
+        if(this.initialized){
+            gene.doInitialize(randomness)
+        } else if(gene.isMutable()) {
+            gene.randomize(randomness, false)
+        }
+
+        if (uniqueElements && doesExist(gene)){
+            gene.randomize(randomness, true)
+        }
+
+        if (uniqueElements && doesExist(gene)){
+            log.warn("tried twice, but still cannot create unique element for the gene")
+        }
+
+        return gene
+    }
+
+    private fun doesExist(gene: T): Boolean{
+        if (!isElementApplicableToUniqueCheck(ParamUtil.getValueGene(gene))) return false
+        return elements.any { ParamUtil.getValueGene(it).containsSameValueAs(ParamUtil.getValueGene(gene)) }
     }
 
     /**
