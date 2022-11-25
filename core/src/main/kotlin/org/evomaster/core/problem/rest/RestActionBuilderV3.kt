@@ -11,6 +11,7 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
+import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
@@ -25,10 +26,7 @@ import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.numeric.DoubleGene
-import org.evomaster.core.search.gene.numeric.FloatGene
-import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
@@ -237,7 +235,7 @@ object RestActionBuilderV3 {
 
         val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
         unidentified.forEach {s->
-            val gene = getGeneWithConstraints(names[s.first], swagger.components.schemas[names[s.first]]!!,swagger, ArrayDeque(), referenceTypeNames[s.first], enableConstraintHandling)
+            val gene = getGene(names[s.first], swagger.components.schemas[names[s.first]]!!,swagger, ArrayDeque(), referenceTypeNames[s.first], enableConstraintHandling)
             if (!dtoCache.containsKey(s.second))
                 dtoCache[s.second] = gene
         }
@@ -343,7 +341,7 @@ object RestActionBuilderV3 {
             return
         }
 
-        var gene = getGeneWithConstraints(name, p.schema, swagger, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling)
+        var gene = getGene(name, p.schema, swagger, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling)
 
         if (p.`in` == "path" && gene is StringGene) {
             /*
@@ -455,7 +453,7 @@ object RestActionBuilderV3 {
             This should refactored to enable possibility of different BodyParams
         */
         val obj: MediaType = bodies.values.first()
-        var gene = getGeneWithConstraints("body", obj.schema, swagger, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling)
+        var gene = getGene("body", obj.schema, swagger, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling)
 
 
         if (body.required != true && gene !is OptionalGene) {
@@ -474,20 +472,6 @@ object RestActionBuilderV3 {
         }
 
         return gene
-    }
-
-    private fun getGeneWithConstraints(
-            name: String,
-            schema: Schema<*>,
-            swagger: OpenAPI,
-            history: Deque<String> = ArrayDeque<String>(),
-            referenceClassDef: String?,
-            enableConstraintHandling: Boolean
-    ): Gene {
-        val gene = getGene(name, schema, swagger, history, referenceClassDef, enableConstraintHandling)
-        if (!enableConstraintHandling) return gene
-
-        return handleSchemaConstraints(schema, gene)
     }
 
     private fun getGene(
@@ -567,13 +551,13 @@ object RestActionBuilderV3 {
 
         //first check for "optional" format
         when (format?.lowercase()) {
-            "int32" -> return IntegerGene(name)
-            "int64" -> return LongGene(name)
-            "double" -> return DoubleGene(name)
-            "float" -> return FloatGene(name)
-            "password" -> return StringGene(name) //nothing special to do, it is just a hint
-            "binary" -> return StringGene(name) //does it need to be treated specially?
-            "byte" -> return Base64StringGene(name)
+            "int32" -> return createGeneWithSchemaConstraints(schema, name, IntegerGene.javaClass, enableConstraintHandling)//IntegerGene(name)
+            "int64" -> return createGeneWithSchemaConstraints(schema, name, LongGene.javaClass, enableConstraintHandling) //LongGene(name)
+            "double" -> return createGeneWithSchemaConstraints(schema, name, DoubleGene.javaClass, enableConstraintHandling)//DoubleGene(name)
+            "float" -> return createGeneWithSchemaConstraints(schema, name, FloatGene.javaClass, enableConstraintHandling)//FloatGene(name)
+            "password" -> return createGeneWithSchemaConstraints(schema, name, StringGene.javaClass, enableConstraintHandling)//StringGene(name) //nothing special to do, it is just a hint
+            "binary" -> return createGeneWithSchemaConstraints(schema, name, StringGene.javaClass, enableConstraintHandling)//StringGene(name) //does it need to be treated specially?
+            "byte" -> return createGeneWithSchemaConstraints(schema, name, Base64StringGene.javaClass, enableConstraintHandling)//Base64StringGene(name)
             "date" -> return DateGene(name)
             "date-time" -> return DateTimeGene(name)
             else -> if (format != null) {
@@ -586,14 +570,15 @@ object RestActionBuilderV3 {
                 the JSON Schema definition
          */
         when (type?.lowercase()) {
-            "integer" -> return IntegerGene(name)
-            "number" -> return DoubleGene(name)
+            "integer" -> return createGeneWithSchemaConstraints(schema, name, IntegerGene.javaClass, enableConstraintHandling)//IntegerGene(name)
+            "number" -> return createGeneWithSchemaConstraints(schema, name, DoubleGene.javaClass, enableConstraintHandling)//DoubleGene(name)
             "boolean" -> return BooleanGene(name)
             "string" -> {
                 return if (schema.pattern == null) {
-                    StringGene(name)
+                    createGeneWithSchemaConstraints(schema, name, StringGene.javaClass, enableConstraintHandling) //StringGene(name)
                 } else {
                     try {
+                        // TODO need min and max for regex gene
                         RegexHandler.createGeneForEcma262(schema.pattern).apply { this.name = name }
                     } catch (e: Exception) {
                         /*
@@ -604,7 +589,7 @@ object RestActionBuilderV3 {
                             When 100% support, then tell user that it is his/her fault
                          */
                         LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${schema.pattern}")
-                        StringGene(name)
+                        createGeneWithSchemaConstraints(schema, name, StringGene.javaClass, enableConstraintHandling)//StringGene(name)
                     }
                 }
             }
@@ -618,7 +603,7 @@ object RestActionBuilderV3 {
                     } else {
                         schema.items
                     }
-                    val template = getGeneWithConstraints(name + "_item", arrayType, swagger, history, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling)
+                    val template = getGene(name + "_item", arrayType, swagger, history, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling)
 
                     //Could still have an empty []
 //                    if (template is CycleObjectGene) {
@@ -634,7 +619,7 @@ object RestActionBuilderV3 {
                 return createObjectGene(name, schema, swagger, history, referenceClassDef, enableConstraintHandling)
             }
 
-            "file" -> return StringGene(name) //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
+            "file" -> return createGeneWithSchemaConstraints(schema, name, StringGene.javaClass, enableConstraintHandling) //StringGene(name) //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
         }
 
         if (name == "body" && schema.properties?.isNotEmpty() == true) {
@@ -646,7 +631,7 @@ object RestActionBuilderV3 {
 
         if (type == null && format == null) {
             LoggingUtil.uniqueWarn(log, "No type/format information provided for '$name'. Defaulting to 'string'")
-            return StringGene(name)
+            return createGeneWithSchemaConstraints(schema, name, StringGene.javaClass, enableConstraintHandling) //StringGene(name)
         }
 
         throw IllegalArgumentException("Cannot handle combination $type/$format")
@@ -664,7 +649,7 @@ object RestActionBuilderV3 {
 
         val fields = schema.properties?.entries?.map {
             possiblyOptional(
-                    getGeneWithConstraints(it.key, it.value, swagger, history, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling),
+                    getGene(it.key, it.value, swagger, history, referenceClassDef = null, enableConstraintHandling = enableConstraintHandling),
                     schema.required?.contains(it.key)
             )
         } ?: listOf()
@@ -738,7 +723,7 @@ object RestActionBuilderV3 {
                 val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history, enableConstraintHandling)
                 additionalFieldTemplate= PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }else if(!additional.type.isNullOrBlank()){
-                val valueTemplate = getGeneWithConstraints("valueTemplate", additional, swagger, history, null, enableConstraintHandling)
+                val valueTemplate = getGene("valueTemplate", additional, swagger, history, null, enableConstraintHandling)
                 additionalFieldTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }
             // TODO additional schema is defined with allOf, anyOf, oneOf, then template requires to be specified with FlexibleGene
@@ -759,7 +744,7 @@ object RestActionBuilderV3 {
                     return FixedMapGene(name, additionalFieldTemplate)
 
                 // here, the first of pairgene should not be mutable
-                return FixedMapGene(name, PairGene.createStringPairGene(getGeneWithConstraints(name + "_field", additional, swagger, history, null, enableConstraintHandling), isFixedFirst = true))
+                return FixedMapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null, enableConstraintHandling), isFixedFirst = true))
             }
         }
 
@@ -788,9 +773,71 @@ object RestActionBuilderV3 {
      * see more
      * https://spec.openapis.org/oas/v3.0.3#properties
      * https://spec.openapis.org/oas/latest.html#properties
+     *
+     *
+     * TODO might handle example property as default later
      */
-    private fun handleSchemaConstraints(schema: Schema<*>, gene: Gene) : Gene{
-        return gene
+    private fun createGeneWithSchemaConstraints(schema: Schema<*>, name: String, geneClass: Class<*>, enableConstraintHandling: Boolean) : Gene{
+        return when(geneClass){
+            // number gene
+            IntegerGene.javaClass -> return IntegerGene(
+                    name,
+                    min = if (enableConstraintHandling) schema.minimum?.intValueExact() else null,
+                    max = if (enableConstraintHandling) schema.maximum?.intValueExact() else null,
+                    maxInclusive = if (enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
+                    minInclusive = if (enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+            )
+            LongGene.javaClass -> return LongGene(
+                    name,
+                    min = if (enableConstraintHandling) schema.minimum?.longValueExact() else null,
+                    max = if (enableConstraintHandling) schema.maximum?.longValueExact() else null,
+                    maxInclusive = if (enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
+                    minInclusive = if (enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+            )
+            FloatGene.javaClass -> return FloatGene(
+                    name,
+                    min = if (enableConstraintHandling) schema.minimum?.toFloat() else null,
+                    max = if (enableConstraintHandling) schema.maximum?.toFloat() else null,
+                    maxInclusive = if (enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
+                    minInclusive = if (enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+            )
+            Double.javaClass -> return DoubleGene(
+                    name,
+                    min = if (enableConstraintHandling) schema.minimum?.toDouble() else null,
+                    max = if (enableConstraintHandling) schema.maximum?.toDouble() else null,
+                    maxInclusive = if (enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
+                    minInclusive = if (enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+            )
+            BigDecimalGene.javaClass -> return BigDecimalGene(
+                    name,
+                    min = if (enableConstraintHandling) schema.minimum else null,
+                    max = if (enableConstraintHandling) schema.maximum else null,
+                    maxInclusive = if (enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
+                    minInclusive = if (enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+            )
+            BigIntegerGene.javaClass -> return BigIntegerGene(
+                    name,
+                    min = if (enableConstraintHandling) schema.minimum?.toBigIntegerExact() else null,
+                    max = if (enableConstraintHandling) schema.maximum?.toBigIntegerExact() else null,
+                    maxInclusive = if (enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true,
+                    minInclusive = if (enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
+            )
+            // string and regex gene
+            StringGene.javaClass -> return StringGene(
+                    name,
+                    maxLength = if (enableConstraintHandling) schema.maxLength?: EMConfig.stringLengthHardLimit else EMConfig.stringLengthHardLimit,
+                    minLength = if (enableConstraintHandling) schema.minLength?: 0 else 0
+            )
+            Base64StringGene.javaClass -> return Base64StringGene(
+                    name,
+                    StringGene(
+                            name,
+                            maxLength = if (enableConstraintHandling) schema.maxLength?: EMConfig.stringLengthHardLimit else EMConfig.stringLengthHardLimit,
+                            minLength = if (enableConstraintHandling) schema.minLength?: 0 else 0
+                    )
+            )
+            else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
+        }
     }
 
 
@@ -853,7 +900,7 @@ object RestActionBuilderV3 {
 
         history.push(reference)
 
-        val gene = getGeneWithConstraints(name, schema, swagger, history, getClassDef(reference), enableConstraintHandling)
+        val gene = getGene(name, schema, swagger, history, getClassDef(reference), enableConstraintHandling)
 
         if(isRoot) {
             GeneUtils.preventCycles(gene)
