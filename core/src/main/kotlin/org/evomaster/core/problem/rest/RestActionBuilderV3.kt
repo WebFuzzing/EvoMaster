@@ -783,7 +783,7 @@ object RestActionBuilderV3 {
      *      - minLength
      *      - minItems
      *      - maxItems
-     *      - uniqueItems (TODO need to have SetGene or extend ArrayGene)
+     *      - uniqueItems
      *      - allOf (TODO)
      *      - anyOf (TODO)
      *      - oneOf (TODO)
