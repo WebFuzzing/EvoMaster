@@ -27,6 +27,7 @@ import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
@@ -41,6 +42,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.pow
 
 /**
  * https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md
@@ -748,13 +750,86 @@ object RestActionBuilderV3 {
             }
         }
 
-        //TODO allOf, anyOf, oneOf and not
+        return assembleObjectGeneWithConstraints(name, schema, fields, additionalFieldTemplate, swagger, history, referenceTypeName, enableConstraintHandling)
 
+    }
+
+    private fun assembleObjectGeneWithConstraints(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, *>?, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?, enableConstraintHandling: Boolean) : Gene{
+        if (!enableConstraintHandling)
+            assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
+
+        val allOf = schema.allOf?.map { s->
+            createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
+        }
+
+        val anyOf = schema.anyOf?.map { s->
+            createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
+        }
+
+        if (!allOf.isNullOrEmpty() && !anyOf.isNullOrEmpty()){
+            log.warn("cannot handle allOf and oneOf at same time for a schema with name $name")
+            return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
+        }
+
+        val oneOf = schema.anyOf?.map { s->
+            createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
+        }
+
+        if (!oneOf.isNullOrEmpty() && (!allOf.isNullOrEmpty() || !anyOf.isNullOrEmpty())){
+            log.warn("cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
+            return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
+        }
+
+        if (!allOf.isNullOrEmpty()){
+            val allFields = allOf.mapNotNull {
+                when (it) {
+                    is ObjectGene -> it.fields
+                    is FlexibleObjectGene<*> -> it.fields
+                    else -> null
+                }
+            }.flatten()
+            return assembleObjectGene(name, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName)
+        }
+
+        if (!oneOf.isNullOrEmpty()){
+            return ChoiceGene(name, listOf(assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)).plus(oneOf))
+        }
+
+        if (!anyOf.isNullOrEmpty()){
+            val one =  listOf(assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)).plus(anyOf)
+            return ChoiceGene(name, (1 until 2.0.pow(one.size * 1.0).toInt()).map { i->
+                assembleObjectGene(
+                        name,
+                        schema,
+                        Integer.toBinaryString(i).toCharArray().mapIndexed { index, c ->
+                            if (c == '1'){
+                                one[index].run {
+                                    when (this) {
+                                        is ObjectGene -> this.fields
+                                        is FlexibleObjectGene<*> -> this.fields
+                                        else -> null
+                                    }
+                                }
+                            }else null
+                        }.filterNotNull().flatten(),
+                        additionalFieldTemplate,
+                        referenceTypeName
+                )
+            })
+        }
+
+        return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
+
+        //TODO not
+    }
+
+    private fun assembleObjectGene(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, *>?, referenceTypeName: String?) : Gene{
         if (fields.isEmpty()) {
             LoggingUtil.uniqueWarn(log,"No fields for object definition: $name")
             // here, the first of pairgene should not be mutable
             return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
         }
+
 
         if (additionalFieldTemplate!=null){
             return FlexibleObjectGene(name, fields, additionalFieldTemplate)
@@ -767,7 +842,7 @@ object RestActionBuilderV3 {
         return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
     }
 
-    /**
+        /**
      * handle constraints of schema object
      *
      * see more
