@@ -18,12 +18,18 @@ import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 class RestActionBuilderV3Test{
+
+    @BeforeEach
+    fun reset(){
+        RestActionBuilderV3.cleanCache()
+    }
 
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
@@ -53,6 +59,85 @@ class RestActionBuilderV3Test{
         assertEquals(2, getEnums.size)
         val postEnums = post.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<EnumGene<*>>()
         assertEquals(1, postEnums.size)
+    }
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testAllOfSchema(enableConstraintHandling : Boolean){
+        val name = "FileShare"
+        val dtoSchema = """
+            "$name": {
+                "$name": {
+                  "allOf": [
+                    {
+                      "description": "Base resource object.",
+                      "properties": {
+                        "id": {
+                          "description": "URI of the resource.",
+                          "readOnly": true,
+                          "type": "string"
+                        },
+                        "location": {
+                          "description": "The region where the resource is located.",
+                          "type": "string"
+                        },
+                        "name": {
+                          "description": "Name of the resource.",
+                          "readOnly": true,
+                          "type": "string"
+                        },
+                        "tags": {
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "description": "List of key-value pairs.",
+                          "type": "object"
+                        },
+                        "type": {
+                          "description": "Type of resource.",
+                          "readOnly": true,
+                          "type": "string"
+                        }
+                      },
+                      "type": "object",
+                      "x-ms-azure-resource": true
+                    }
+                  ],
+                  "description": "Object that contains properties of the file share resource.",
+                  "properties": {
+                    "properties": {
+                      "${'$'}ref": "#/definitions/FileShareModel",
+                      "description": "Properties of a file share resource.",
+                      "x-ms-client-flatten": true
+                    }
+                  },
+                  "type": "object"
+                },
+                "FileShareModel": {
+                  "description": "Properties of a file share resource.",
+                  "properties": {
+                    "associatedVolume": {
+                      "description": "Associated volume ID.",
+                      "type": "string"
+                    },
+                    "uncPath": {
+                      "description": "The UNCPath for the fileshare.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+            }
+        """.trimIndent()
+
+        val gene = RestActionBuilderV3.createObjectGenesForDTOs(name, dtoSchema, enableConstraintHandling)
+        assertEquals(name, gene.name)
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            if (enableConstraintHandling)
+                assertEquals(6, fields.size)
+            else
+                assertEquals(1, fields.size)
+        }
     }
 
     @ParameterizedTest

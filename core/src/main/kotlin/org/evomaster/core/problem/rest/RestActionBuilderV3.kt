@@ -66,6 +66,13 @@ object RestActionBuilderV3 {
 
     private val mapper = ObjectMapper()
 
+    /**
+     * clean cache in order to avoid different dto schema with different configurations, eg, enableConstraintHandling
+     */
+    fun cleanCache(){
+        refCache.clear()
+        dtoCache.clear()
+    }
 
     /**
      * @param doParseDescription presents whether apply name/text analysis on description and summary of rest action
@@ -756,7 +763,7 @@ object RestActionBuilderV3 {
 
     private fun assembleObjectGeneWithConstraints(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, *>?, swagger: OpenAPI, history: Deque<String>, referenceTypeName: String?, enableConstraintHandling: Boolean) : Gene{
         if (!enableConstraintHandling)
-            assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
+            return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
 
         val allOf = schema.allOf?.map { s->
             createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
