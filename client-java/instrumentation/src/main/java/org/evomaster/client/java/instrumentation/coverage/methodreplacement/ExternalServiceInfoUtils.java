@@ -12,14 +12,9 @@ public class ExternalServiceInfoUtils {
      * @return redirected an array with two elements
      */
     public static String[] collectExternalServiceInfo(ExternalServiceInfo remoteHostInfo, int remotePort) {
-
-//        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
         if (!ExecutionTracer.hasMockServer(remoteHostInfo.getHostname())) {
-            if (!ExecutionTracer.hasActiveMapping(remoteHostInfo.signature())) {
-                ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-            }
-
             String signature = remoteHostInfo.signature();
             int connectPort = remotePort;
 

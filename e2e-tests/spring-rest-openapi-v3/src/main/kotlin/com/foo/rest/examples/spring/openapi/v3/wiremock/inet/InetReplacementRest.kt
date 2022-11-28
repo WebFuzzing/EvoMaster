@@ -15,11 +15,7 @@ class InetReplacementRest {
     @GetMapping(path = ["/exp"])
     fun exp(): ResponseEntity<String> {
         val address = InetAddress.getByName("imaginary-host.local")
-        // This will refer to the same IP which got replaced at the Inet replacement level
-        // while there will be a WM running on a different IP
-        // So need to initialise the WM on the first replaced IP
-        // checking based on the signature has to be changed at the socket level
-        // The signature should be consistent through out the whole flow
+
         return try {
             val socket = Socket()
 

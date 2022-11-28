@@ -25,7 +25,7 @@ class InetReplacementTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "InetReplacementEM",
             "org.foo.InetReplacementEM",
-            1000,
+            500,
             false,
             { args: MutableList<String> ->
 

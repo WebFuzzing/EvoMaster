@@ -651,7 +651,7 @@ public class ExecutionTracer {
      * no mapping NULL will be returned
      */
     public static String getExternalMapping(String hostname) {
-        return externalServiceMapping.get(hostname).split(":")[1];
+        return externalServiceMapping.get(hostname);
     }
 
     public static boolean hasExternalMapping(String hostname) {
@@ -659,16 +659,7 @@ public class ExecutionTracer {
     }
 
     public static boolean hasMockServer(String hostname) {
-        return externalServiceMapping.containsValue("A:"+hostname);
-    }
-
-    public static boolean hasActiveMapping(String hostname) {
-        String mapping = externalServiceMapping.get(hostname);
-        if (mapping == null) {
-            return false;
-        }
-
-        return mapping.split(":")[0].equals("A");
+        return externalServiceMapping.containsValue(hostname);
     }
 
     public static void registerSkippedHostname(List<String> skipped){

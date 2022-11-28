@@ -36,7 +36,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
 //                caller.connect(endpoint, timeout);
 //                return;
 //            }
-            // Inet replacement, changes t
+
             if (socketAddress.getAddress() instanceof Inet4Address){
 
                 ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, socketAddress.getHostName(), socketAddress.getPort());
