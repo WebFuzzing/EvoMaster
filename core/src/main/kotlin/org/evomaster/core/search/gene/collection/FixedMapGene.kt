@@ -75,6 +75,7 @@ class FixedMapGene<K, V>(
         if(gene is FixedMapGene<*, *> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? PairGene<K, V> }.toMutableList()
+            elements.forEach { it.resetLocalIdRecursively() }
             addChildren(elements)
             return true
         }
