@@ -252,6 +252,7 @@ class ArrayGene<T>(
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
+            elements.forEach { it.resetLocalIdRecursively() }
             addChildren(elements)
             return true
         }
