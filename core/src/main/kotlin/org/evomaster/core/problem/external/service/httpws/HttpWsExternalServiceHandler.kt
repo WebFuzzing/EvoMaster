@@ -101,7 +101,25 @@ class HttpWsExternalServiceHandler {
     }
 
     private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) {
-        if (!externalServices.containsKey(externalServiceInfo.signature())) {
+//        val s = externalServiceInfo.defaultSignature()
+//        if (externalServices.containsKey(externalServiceInfo.defaultSignature())) {
+//            val ex = externalServices.getValue(externalServiceInfo.defaultSignature())
+//            if (!ex.isActive() && !externalServiceInfo.isPartial()) {
+//                ex.updateRemotePort(externalServiceInfo.remotePort)
+//                ex.startWireMock()
+//            }
+//        }
+
+        val existing = externalServices.filterValues { it.getIP() == externalServiceInfo.remoteHostname && !it.isActive() }
+
+        if (existing.isNotEmpty()) {
+            existing.forEach { (_, e) ->
+                e.updateRemotePort(externalServiceInfo.remotePort)
+                e.startWireMock()
+            }
+        }
+
+        else if (!externalServices.containsKey(externalServiceInfo.signature())) {
             val ip = getIP(externalServiceInfo.remotePort)
             lastIPAddress = ip
 
@@ -120,13 +138,14 @@ class HttpWsExternalServiceHandler {
             }
 
             externalServices[externalServiceInfo.signature()] = es
-        } else if (externalServices.containsKey(externalServiceInfo.signature())) {
-            val ex = externalServices.getValue(externalServiceInfo.signature())
-            if (!ex.isActive() && !externalServiceInfo.isPartial()) {
-                ex.updateRemotePort(externalServiceInfo.remotePort)
-                ex.startWireMock()
-            }
         }
+//        else if (externalServices.containsKey(externalServiceInfo.signature())) {
+//            val ex = externalServices.getValue(externalServiceInfo.signature())
+//            if (!ex.isActive() && !externalServiceInfo.isPartial()) {
+//                ex.updateRemotePort(externalServiceInfo.remotePort)
+//                ex.startWireMock()
+//            }
+//        }
     }
 
     fun getExternalServiceMappings(): Map<String, String> {

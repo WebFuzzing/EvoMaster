@@ -27,6 +27,10 @@ open class HttpExternalServiceInfo(
         return ExternalServiceSharedUtils.getSignature(protocol,remoteHostname,remotePort)
     }
 
+    open fun defaultSignature(): String {
+        return ExternalServiceSharedUtils.getSignature(protocol, remoteHostname, -1)
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

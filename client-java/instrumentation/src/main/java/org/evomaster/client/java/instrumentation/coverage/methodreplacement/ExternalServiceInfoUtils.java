@@ -15,19 +15,24 @@ public class ExternalServiceInfoUtils {
 
 //        ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
-        if (!ExecutionTracer.hasActiveMapping(remoteHostInfo.signature())) {
-            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-        }
+        if (!ExecutionTracer.hasMockServer(remoteHostInfo.getHostname())) {
+            if (!ExecutionTracer.hasActiveMapping(remoteHostInfo.signature())) {
+                ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+            }
 
-        String signature = remoteHostInfo.signature();
-        int connectPort = remotePort;
-        if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-            ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
-            signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), remotePort);
-            connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
-        }
+            String signature = remoteHostInfo.signature();
+            int connectPort = remotePort;
 
-        return new String[]{ExecutionTracer.getExternalMapping(signature), "" + connectPort};
+            if (!ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
+                ExecutionTracer.addEmployedDefaultWMHost(remoteHostInfo);
+                signature = ExternalServiceSharedUtils.getWMDefaultSignature(remoteHostInfo.getProtocol(), remotePort);
+                connectPort = ExternalServiceSharedUtils.getDefaultWMPort(signature);
+            }
+
+            return new String[]{ExecutionTracer.getExternalMapping(signature), "" + connectPort};
+        } else {
+            return new String[]{remoteHostInfo.getHostname(), "" + remotePort};
+        }
     }
 
     /**

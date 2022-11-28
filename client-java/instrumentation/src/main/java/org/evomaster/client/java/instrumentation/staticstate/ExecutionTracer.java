@@ -658,6 +658,10 @@ public class ExecutionTracer {
         return externalServiceMapping.containsKey(hostname);
     }
 
+    public static boolean hasMockServer(String hostname) {
+        return externalServiceMapping.containsValue("A:"+hostname);
+    }
+
     public static boolean hasActiveMapping(String hostname) {
         String mapping = externalServiceMapping.get(hostname);
         if (mapping == null) {
