@@ -8,9 +8,11 @@ import org.evomaster.core.problem.graphql.PetClinicCheckMain
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions.*
@@ -247,7 +249,7 @@ internal class GeneUtilsTest {
     }
 
     @Test
-    fun testRepaireBooleanSectionFF() {
+    fun testRepairBooleanSectionFF() {
 
         val objBoolean = ObjectGene("foo", listOf(BooleanGene("a", false), (BooleanGene("b", false))))
 
@@ -255,7 +257,7 @@ internal class GeneUtilsTest {
 
         assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
     }
-    
+
 
     @Test
     fun testRepairInPetclinic() {
