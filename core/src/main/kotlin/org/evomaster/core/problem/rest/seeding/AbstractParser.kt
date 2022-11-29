@@ -6,10 +6,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.codec.binary.Base64
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
-import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -84,7 +81,7 @@ abstract class AbstractParser(
             is CustomMutationRateGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ArrayGene<*> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             is ObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue)
-            is MapGene<*, *> -> updateGeneWithParameterValue(gene, paramName, paramValue)
+            is FixedMapGene<*, *> -> updateGeneWithParameterValue(gene, paramName, paramValue)
             //is CycleObjectGene -> updateGeneWithParameterValue(gene, paramName, paramValue) // Same as ObjectGene, should it differ?
 
             else -> {
@@ -307,7 +304,7 @@ abstract class AbstractParser(
         return res
     }
 
-    protected fun updateGeneWithParameterValue(gene: MapGene<*, *>, paramName: String, paramValue: String): Boolean {
+    protected fun updateGeneWithParameterValue(gene: FixedMapGene<*, *>, paramName: String, paramValue: String): Boolean {
         /*
             TODO: Same comment as in ObjectGene
          */
@@ -364,28 +361,28 @@ abstract class AbstractParser(
             is CustomMutationRateGene<*> -> (gene as ArrayGene<CustomMutationRateGene<*>>).addElement(elementGene)
             is ArrayGene<*> -> (gene as ArrayGene<ArrayGene<*>>).addElement(elementGene)
             is ObjectGene -> (gene as ArrayGene<ObjectGene>).addElement(elementGene)
-            is MapGene<*, *> -> (gene as ArrayGene<MapGene<*, *>>).addElement(elementGene)
+            is FixedMapGene<*, *> -> (gene as ArrayGene<FixedMapGene<*, *>>).addElement(elementGene)
         }
     }
 
-    private fun addGeneToMapGene(gene: MapGene<*, *>, elementGene: PairGene<StringGene, *>) {
+    private fun addGeneToMapGene(gene: FixedMapGene<*, *>, elementGene: PairGene<StringGene, *>) {
         when(elementGene.second) {
-            is StringGene -> (gene as MapGene<StringGene, StringGene>).addElement(elementGene as PairGene<StringGene, StringGene>)
-            is BooleanGene -> (gene as MapGene<StringGene, BooleanGene>).addElement(elementGene as PairGene<StringGene, BooleanGene>)
-            is DoubleGene -> (gene as MapGene<StringGene, DoubleGene>).addElement(elementGene as PairGene<StringGene, DoubleGene>)
-            is FloatGene -> (gene as MapGene<StringGene, FloatGene>).addElement(elementGene as PairGene<StringGene, FloatGene>)
-            is IntegerGene -> (gene as MapGene<StringGene, IntegerGene>).addElement(elementGene as PairGene<StringGene, IntegerGene>)
-            is LongGene -> (gene as MapGene<StringGene, LongGene>).addElement(elementGene as PairGene<StringGene, LongGene>)
-            is Base64StringGene -> (gene as MapGene<StringGene, Base64StringGene>).addElement(elementGene as PairGene<StringGene, Base64StringGene>)
-            is EnumGene<*> -> (gene as MapGene<StringGene, EnumGene<*>>).addElement(elementGene as PairGene<StringGene, EnumGene<*>>)
-            is DateGene -> (gene as MapGene<StringGene, DateGene>).addElement(elementGene as PairGene<StringGene, DateGene>)
-            is TimeGene -> (gene as MapGene<StringGene, TimeGene>).addElement(elementGene as PairGene<StringGene, TimeGene>)
-            is DateTimeGene -> (gene as MapGene<StringGene, DateTimeGene>).addElement(elementGene as PairGene<StringGene, DateTimeGene>)
-            is OptionalGene -> (gene as MapGene<StringGene, OptionalGene>).addElement(elementGene as PairGene<StringGene, OptionalGene>)
-            is CustomMutationRateGene<*> -> (gene as MapGene<StringGene, CustomMutationRateGene<*>>).addElement(elementGene as PairGene<StringGene, CustomMutationRateGene<*>>)
-            is ArrayGene<*> -> (gene as MapGene<StringGene, ArrayGene<*>>).addElement(elementGene as PairGene<StringGene, ArrayGene<*>>)
-            is ObjectGene -> (gene as MapGene<StringGene, ObjectGene>).addElement(elementGene as PairGene<StringGene, ObjectGene>)
-            is MapGene<*, *> -> (gene as MapGene<StringGene, MapGene<*, *>>).addElement(elementGene as PairGene<StringGene, MapGene<*, *>>)
+            is StringGene -> (gene as FixedMapGene<StringGene, StringGene>).addElement(elementGene as PairGene<StringGene, StringGene>)
+            is BooleanGene -> (gene as FixedMapGene<StringGene, BooleanGene>).addElement(elementGene as PairGene<StringGene, BooleanGene>)
+            is DoubleGene -> (gene as FixedMapGene<StringGene, DoubleGene>).addElement(elementGene as PairGene<StringGene, DoubleGene>)
+            is FloatGene -> (gene as FixedMapGene<StringGene, FloatGene>).addElement(elementGene as PairGene<StringGene, FloatGene>)
+            is IntegerGene -> (gene as FixedMapGene<StringGene, IntegerGene>).addElement(elementGene as PairGene<StringGene, IntegerGene>)
+            is LongGene -> (gene as FixedMapGene<StringGene, LongGene>).addElement(elementGene as PairGene<StringGene, LongGene>)
+            is Base64StringGene -> (gene as FixedMapGene<StringGene, Base64StringGene>).addElement(elementGene as PairGene<StringGene, Base64StringGene>)
+            is EnumGene<*> -> (gene as FixedMapGene<StringGene, EnumGene<*>>).addElement(elementGene as PairGene<StringGene, EnumGene<*>>)
+            is DateGene -> (gene as FixedMapGene<StringGene, DateGene>).addElement(elementGene as PairGene<StringGene, DateGene>)
+            is TimeGene -> (gene as FixedMapGene<StringGene, TimeGene>).addElement(elementGene as PairGene<StringGene, TimeGene>)
+            is DateTimeGene -> (gene as FixedMapGene<StringGene, DateTimeGene>).addElement(elementGene as PairGene<StringGene, DateTimeGene>)
+            is OptionalGene -> (gene as FixedMapGene<StringGene, OptionalGene>).addElement(elementGene as PairGene<StringGene, OptionalGene>)
+            is CustomMutationRateGene<*> -> (gene as FixedMapGene<StringGene, CustomMutationRateGene<*>>).addElement(elementGene as PairGene<StringGene, CustomMutationRateGene<*>>)
+            is ArrayGene<*> -> (gene as FixedMapGene<StringGene, ArrayGene<*>>).addElement(elementGene as PairGene<StringGene, ArrayGene<*>>)
+            is ObjectGene -> (gene as FixedMapGene<StringGene, ObjectGene>).addElement(elementGene as PairGene<StringGene, ObjectGene>)
+            is FixedMapGene<*, *> -> (gene as FixedMapGene<StringGene, FixedMapGene<*, *>>).addElement(elementGene as PairGene<StringGene, FixedMapGene<*, *>>)
         }
     }
 

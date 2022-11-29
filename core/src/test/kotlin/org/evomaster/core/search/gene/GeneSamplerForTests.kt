@@ -13,10 +13,7 @@ import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.network.MacAddrGene
 import org.evomaster.core.search.gene.numeric.*
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
-import org.evomaster.core.search.gene.optional.OptionalGene
-import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.optional.*
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
@@ -112,7 +109,9 @@ object GeneSamplerForTests {
             IntegerGene::class -> sampleIntegerGene(rand) as T
             LimitObjectGene::class -> sampleLimitObjectGene(rand) as T
             LongGene::class -> sampleLongGene(rand) as T
-            MapGene::class -> sampleMapGene(rand) as T
+            FixedMapGene::class -> sampleFixedMapGene(rand) as T
+            FlexibleMapGene::class -> sampleFlexibleMapGene(rand) as T
+            FlexibleGene::class -> samplePrintableFlexibleGene(rand) as T
             NumericStringGene::class -> sampleNumericStringGene(rand) as T
             ObjectGene::class -> sampleObjectGene(rand) as T
             OptionalGene::class -> sampleOptionalGene(rand) as T
@@ -510,6 +509,25 @@ object GeneSamplerForTests {
         )
     }
 
+    fun samplePrintableFlexiblePairGene(rand: Randomness): PairGene<*, FlexibleGene> {
+
+        val selection = geneClasses.filter { !it.isAbstract }
+
+        return PairGene(
+            name = "rand PairGene",
+            first = samplePrintableTemplate(selection, rand),
+            second = samplePrintableFlexibleGene(rand),
+            isFirstMutable = rand.nextBoolean()
+        )
+    }
+    fun samplePrintableFlexibleGene(rand: Randomness): FlexibleGene {
+
+        val selection = geneClasses.filter { !it.isAbstract}
+
+        val valueTemplate = samplePrintableTemplate(selection, rand)
+        return FlexibleGene(valueTemplate.name, valueTemplate)
+    }
+    
     fun sampleOptionalGene(rand: Randomness): OptionalGene {
 
         val selection = geneClasses.filter { !it.isAbstract }
@@ -553,15 +571,27 @@ object GeneSamplerForTests {
         )
     }
 
-    fun sampleMapGene(rand: Randomness): MapGene<*, *> {
+    fun sampleFixedMapGene(rand: Randomness): FixedMapGene<*, *> {
 
         val min = rand.nextInt(0, 2)
 
-        return MapGene(
+        return FixedMapGene(
                 name = "rand MapGene",
                 minSize = rand.choose(listOf(null, min)),
                 maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3))),
                 template = samplePrintablePairGene(rand)
+        )
+    }
+
+    fun sampleFlexibleMapGene(rand: Randomness): FlexibleMapGene<*> {
+
+        val min = rand.nextInt(0, 2)
+
+        return FlexibleMapGene(
+            name = "rand MapGene",
+            minSize = rand.choose(listOf(null, min)),
+            maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3))),
+            template = samplePrintableFlexiblePairGene(rand)
         )
     }
 
@@ -775,9 +805,10 @@ object GeneSamplerForTests {
     }
 
     private fun samplePrintableTemplate(selection: List<KClass<out Gene>>,rand: Randomness) : Gene{
-        var chosen = sample(rand.choose(selection), rand)
+        val filter = selection.filter { it != FlexibleGene::class }
+        var chosen = sample(rand.choose(filter), rand)
         while(!chosen.isPrintable()){
-            chosen = sample(rand.choose(selection), rand)
+            chosen = sample(rand.choose(filter), rand)
         }
         return chosen
     }

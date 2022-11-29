@@ -16,6 +16,7 @@ import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
+import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter
@@ -25,6 +26,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -250,14 +252,19 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 mutatedGene = mutatedGene
             )
 
-            gene.standardMutation(
-                randomness,
-                apc,
-                mwc,
-                selectionStrategy,
-                enableAGM,
-                additionalGeneMutationInfo = additionInfo
-            )
+            // plugin seeding response here
+            val mutated = harvestResponseHandler.harvestExistingGeneBasedOn(gene, config.probOfMutatingResponsesBasedOnActualResponse)
+
+            if (!mutated)
+                gene.standardMutation(
+                    randomness,
+                    apc,
+                    mwc,
+                    selectionStrategy,
+                    enableAGM,
+                    additionalGeneMutationInfo = additionInfo
+                )
+
         }
 
         if (config.trackingEnabled()) tag(copy, time.evaluatedIndividuals)
@@ -420,29 +427,21 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
             additionInfo!!.effectiveHistory.addAll(effective.mapNotNull {
                 val action = it.individual.findAction(isFromInit, if (position >= 0) position else null, localId)
-                // clean-up if the tests pass
-//                if (it.individual.seeActions(filter).isEmpty())
-//                    /*
-//                        if there exist actions structure and the group (e.g., dbInitialization) of actions is empty,
-//                        we do not find further possible impacts for it
-//                     */
-//                    if(it.individual.hasAnyAction()) null
-//                    else ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
-//                else
-//                    ImpactUtils.findMutatedGene(
-//                        it.individual.seeActions(filter)[position], gene, includeSameValue)
                 if (action != null)
                     ImpactUtils.findMutatedGene(action, gene, includeSameValue)
-                else
+                else if (!individual.hasAnyAction())
                     ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
+                else
+                    null
             })
 
             additionInfo.history.addAll(history.mapNotNull { e ->
                 val action = e.individual.findAction(isFromInit, if (position >= 0) position else null, localId)
                 (if (action != null)
                     ImpactUtils.findMutatedGene(action, gene, includeSameValue)
-                else
-                    ImpactUtils.findMutatedGene(e.individual.seeGenes(), gene, includeSameValue))?.run {
+                else if (!e.individual.hasAnyAction())
+                    ImpactUtils.findMutatedGene(e.individual.seeGenes(), gene, includeSameValue)
+                else null)?.run {
                     this to EvaluatedInfo(
                         index = e.index,
                         result = e.evaluatedResult,
@@ -450,36 +449,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                         specificTargets = if (!isFromInit) e.fitness.getTargetsByAction(position) else setOf()
                     )
                 }
-                // clean-up if the tests pass
-//                if (e.individual.seeActions(filter).isEmpty())
-//                    /*
-//                        if there exist actions structure and the group (e.g., dbInitialization) of actions is empty,
-//                        we do not find further possible impacts for it
-//                     */
-//                    if(e.individual.hasAnyAction()) null
-//                    else  ImpactUtils.findMutatedGene(
-//                           e.individual.seeGenes(), gene, includeSameValue)?.run {
-//                        this to EvaluatedInfo(
-//                                index =  e.index,
-//                                result = e.evaluatedResult,
-//                                targets = e.fitness.getViewOfData().keys,
-//                                specificTargets = if (!isFromInit) e.fitness.getTargetsByAction(position) else setOf()
-//                        )
-//                    }
-//                else
-//                    ImpactUtils.findMutatedGene(
-//                            e.individual.seeActions(filter)[position], gene, includeSameValue)?.run {
-//                        this to EvaluatedInfo(
-//                                index =  e.index,
-//                                result = e.evaluatedResult,
-//                                targets = e.fitness.getViewOfData().keys,
-//                                specificTargets = if (!isFromInit) e.fitness.getTargetsByAction(position) else setOf()
-//                        )
-//                    }
             })
         }
 
         return additionInfo
     }
-
 }

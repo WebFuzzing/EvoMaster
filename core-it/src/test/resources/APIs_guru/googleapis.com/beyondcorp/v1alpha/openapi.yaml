@@ -7,7 +7,7 @@ info:
     name: Google
     url: https://google.com
     x-twitter: youtube
-  description: Beyondcorp Enterprise provides identity and context aware access controls for enterprise resources and enables zero-trust access. Using the Beyondcorp Enterprise APIs, enterprises can set up multi-cloud and on-prem connectivity using the App Connector hybrid connectivity solution.
+  description: Beyondcorp Enterprise provides identity and context aware access controls for enterprise resources and enables zero-trust access. Using the Beyondcorp Enterprise APIs, enterprises can set up multi-cloud and on-prem connectivity solutions.
   license:
     name: Creative Commons Attribution 3.0
     url: http://creativecommons.org/licenses/by/3.0/
@@ -23,11 +23,13 @@ info:
     - format: google
       url: https://beyondcorp.googleapis.com/$discovery/rest?version=v1alpha
       version: v1
+  x-preferred: false
   x-providerName: googleapis.com
   x-serviceName: beyondcorp
 externalDocs:
   url: https://cloud.google.com/
 tags:
+  - name: organizations
   - name: projects
 paths:
   "/v1alpha/{appConnector}:reportStatus":
@@ -74,7 +76,7 @@ paths:
         - projects
   "/v1alpha/{appConnector}:resolveInstanceConfig":
     get:
-      description: Get instance config for a given AppConnector. An internal method called by a AppConnector to get its container config.
+      description: Gets instance configuration for a given AppConnector. An internal method called by a AppConnector to get its container config.
       operationId: beyondcorp.projects.locations.appConnectors.resolveInstanceConfig
       parameters:
         - description: "Required. BeyondCorp AppConnector name using the form: `projects/{project_id}/locations/{location_id}/appConnectors/{app_connector}`"
@@ -153,7 +155,7 @@ paths:
         - projects
   "/v1alpha/{connector}:resolveInstanceConfig":
     get:
-      description: Get instance config for a given connector. An internal method called by a connector to get its container config.
+      description: Gets instance configuration for a given connector. An internal method called by a connector to get its container config.
       operationId: beyondcorp.projects.locations.connectors.resolveInstanceConfig
       parameters:
         - description: "Required. BeyondCorp Connector name using the form: `projects/{project_id}/locations/{location_id}/connectors/{connector}`"
@@ -168,6 +170,99 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResolveInstanceConfigResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+      tags:
+        - projects
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+  "/v1alpha/{insight}:configuredInsight":
+    get:
+      description: Gets the value for a selected particular insight based on the provided filters. Use the organization level path for fetching at org level and project level path for fetching the insight value specific to a particular project.
+      operationId: beyondcorp.projects.locations.insights.configuredInsight
+      parameters:
+        - description: "Required. The resource name of the insight using the form: `organizations/{organization_id}/locations/{location_id}/insights/{insight_id}` `projects/{project_id}/locations/{location_id}/insights/{insight_id}`."
+          in: path
+          name: insight
+          required: true
+          schema:
+            type: string
+        - description: Required. Aggregation type. Available aggregation could be fetched by calling insight list and get APIs in `BASIC` view.
+          in: query
+          name: aggregation
+          schema:
+            enum:
+              - AGGREGATION_UNSPECIFIED
+              - HOURLY
+              - DAILY
+              - WEEKLY
+              - MONTHLY
+              - CUSTOM_DATE_RANGE
+            type: string
+        - description: 'Optional. Filterable parameters to be added to the grouping clause. Available fields could be fetched by calling insight list and get APIs in `BASIC` view. `=` is the only comparison operator supported. `AND` is the only logical operator supported. Usage: field_filter="fieldName1=fieldVal1 AND fieldName2=fieldVal2". NOTE: Only `AND` conditions are allowed. NOTE: Use the `filter_alias` from `Insight.Metadata.Field` message for the filtering the corresponding fields in this filter field. (These expressions are based on the filter language described at https://google.aip.dev/160).'
+          in: query
+          name: customGrouping.fieldFilter
+          schema:
+            type: string
+        - description: "Required. Fields to be used for grouping. NOTE: Use the `filter_alias` from `Insight.Metadata.Field` message for declaring the fields to be grouped-by here."
+          explode: true
+          in: query
+          name: customGrouping.groupFields
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - description: Required. Ending time for the duration for which insight is to be pulled.
+          in: query
+          name: endTime
+          schema:
+            type: string
+        - description: 'Optional. Other filterable/configurable parameters as applicable to the selected insight. Available fields could be fetched by calling insight list and get APIs in `BASIC` view. `=` is the only comparison operator supported. `AND` is the only logical operator supported. Usage: field_filter="fieldName1=fieldVal1 AND fieldName2=fieldVal2". NOTE: Only `AND` conditions are allowed. NOTE: Use the `filter_alias` from `Insight.Metadata.Field` message for the filtering the corresponding fields in this filter field. (These expressions are based on the filter language described at https://google.aip.dev/160).'
+          in: query
+          name: fieldFilter
+          schema:
+            type: string
+        - description: Optional. Group id of the available groupings for the insight. Available groupings could be fetched by calling insight list and get APIs in `BASIC` view.
+          in: query
+          name: group
+          schema:
+            type: string
+        - description: Optional. Requested page size. Server may return fewer items than requested. If unspecified, server will pick an appropriate default.
+          in: query
+          name: pageSize
+          schema:
+            type: integer
+        - description: Optional. Used to fetch the page represented by the token. Fetches the first page when not set.
+          in: query
+          name: pageToken
+          schema:
+            type: string
+        - description: Required. Starting time for the duration for which insight is to be pulled.
+          in: query
+          name: startTime
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaConfiguredInsightResponse"
           description: Successful response
       security:
         - Oauth2:
@@ -232,6 +327,15 @@ paths:
           name: name
           required: true
           schema:
+            type: string
+        - description: Required. Metadata only or full data view.
+          in: query
+          name: view
+          schema:
+            enum:
+              - INSIGHT_VIEW_UNSPECIFIED
+              - BASIC
+              - FULL
             type: string
       responses:
         "200":
@@ -516,7 +620,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: Optional. User-settable AppConnection resource ID. * Must start with a letter. * Must contain between 4-63 characters from (/a-z-/). * Must end with a number or a letter.
+        - description: Optional. User-settable AppConnection resource ID. * Must start with a letter. * Must contain between 4-63 characters from `/a-z-/`. * Must end with a number or a letter.
           in: query
           name: appConnectionId
           schema:
@@ -669,7 +773,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: Optional. User-settable AppConnector resource ID. * Must start with a letter. * Must contain between 4-63 characters from (/a-z-/). * Must end with a number or a letter.
+        - description: Optional. User-settable AppConnector resource ID. * Must start with a letter. * Must contain between 4-63 characters from `/a-z-/`. * Must end with a number or a letter.
           in: query
           name: appConnectorId
           schema:
@@ -770,7 +874,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: Optional. User-settable AppGateway resource ID. * Must start with a letter. * Must contain between 4-63 characters from (/a-z-/). * Must end with a number or a letter.
+        - description: Optional. User-settable AppGateway resource ID. * Must start with a letter. * Must contain between 4-63 characters from `/a-z-/`. * Must end with a number or a letter.
           in: query
           name: appGatewayId
           schema:
@@ -871,7 +975,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: Optional. User-settable client connector service resource ID. * Must start with a letter. * Must contain between 4-63 characters from (/a-z-/). * Must end with a number or a letter. A random system generated name will be assigned if not specified by the user.
+        - description: Optional. User-settable client connector service resource ID. * Must start with a letter. * Must contain between 4-63 characters from `/a-z-/`. * Must end with a number or a letter. A random system generated name will be assigned if not specified by the user.
           in: query
           name: clientConnectorServiceId
           schema:
@@ -972,7 +1076,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: Optional. User-settable client gateway resource ID. * Must start with a letter. * Must contain between 4-63 characters from (/a-z-/). * Must end with a number or a letter.
+        - description: Optional. User-settable client gateway resource ID. * Must start with a letter. * Must contain between 4-63 characters from `/a-z-/`. * Must end with a number or a letter.
           in: query
           name: clientGatewayId
           schema:
@@ -1073,7 +1177,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: Optional. User-settable connection resource ID. * Must start with a letter. * Must contain between 4-63 characters from (/a-z-/). * Must end with a number or a letter.
+        - description: Optional. User-settable connection resource ID. * Must start with a letter. * Must contain between 4-63 characters from `/a-z-/`. * Must end with a number or a letter.
           in: query
           name: connectionId
           schema:
@@ -1226,7 +1330,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: Optional. User-settable connector resource ID. * Must start with a letter. * Must contain between 4-63 characters from (/a-z-/). * Must end with a number or a letter.
+        - description: Optional. User-settable connector resource ID. * Must start with a letter. * Must contain between 4-63 characters from `/a-z-/`. * Must end with a number or a letter.
           in: query
           name: connectorId
           schema:
@@ -1260,10 +1364,152 @@ paths:
             - https://www.googleapis.com/auth/cloud-platform
       tags:
         - projects
+  "/v1alpha/{parent}/insights":
+    get:
+      description: Lists for all the available insights that could be fetched from the system. Allows to filter using category. Setting the `view` to `BASIC` will let you iterate over the list of insight metadatas.
+      operationId: beyondcorp.projects.locations.insights.list
+      parameters:
+        - description: "Required. The resource name of InsightMetadata using the form: `organizations/{organization_id}/locations/{location}` `projects/{project_id}/locations/{location_id}`"
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+        - description: "Optional. Filter expression to restrict the insights returned. Supported filter fields: * `type` * `category` * `subCategory` Examples: * \"category = application AND type = count\" * \"category = application AND subCategory = iap\" * \"type = status\" Allowed values: * type: [count, latency, status, list] * category: [application, device, request, security] * subCategory: [iap, webprotect] NOTE: Only equality based comparison is allowed. Only `AND` conjunction is allowed. NOTE: The 'AND' in the filter field needs to be in capital letters only. NOTE: Just filtering on `subCategory` is not allowed. It should be passed in with the parent `category` too. (These expressions are based on the filter language described at https://google.aip.dev/160)."
+          in: query
+          name: filter
+          schema:
+            type: string
+        - description: Optional. Hint for how to order the results. This is currently ignored.
+          in: query
+          name: orderBy
+          schema:
+            type: string
+        - description: "Optional. Requested page size. Server may return fewer items than requested. If unspecified, server will pick an appropriate default. NOTE: Default page size is 50."
+          in: query
+          name: pageSize
+          schema:
+            type: integer
+        - description: Optional. A token identifying a page of results the server should return.
+          in: query
+          name: pageToken
+          schema:
+            type: string
+        - description: Required. List only metadata or full data.
+          in: query
+          name: view
+          schema:
+            enum:
+              - INSIGHT_VIEW_UNSPECIFIED
+              - BASIC
+              - FULL
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaListInsightsResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+      tags:
+        - projects
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+  "/v1alpha/{parent}/subscriptions":
+    get:
+      description: Lists Subscriptions in a given organization and location.
+      operationId: beyondcorp.organizations.locations.subscriptions.list
+      parameters:
+        - description: "Required. The resource name of Subscription using the form: `organizations/{organization_id}/locations/{location}`"
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+        - description: Optional. The maximum number of items to return. If not specified, a default value of 50 will be used by the service. Regardless of the page_size value, the response may include a partial list and a caller should only rely on response's next_page_token to determine if there are more instances left to be queried.
+          in: query
+          name: pageSize
+          schema:
+            type: integer
+        - description: Optional. The next_page_token value returned from a previous ListSubscriptionsRequest, if any.
+          in: query
+          name: pageToken
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformSubscriptionsV1alphaListSubscriptionsResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+      tags:
+        - organizations
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+    post:
+      description: Creates a new BeyondCorp Enterprise Subscription in a given organization. Location will always be global as BeyondCorp subscriptions are per organization.
+      operationId: beyondcorp.organizations.locations.subscriptions.create
+      parameters:
+        - description: "Required. The resource name of the subscription location using the form: `organizations/{organization_id}/locations/{location}`"
+          in: path
+          name: parent
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformSubscriptionsV1alphaSubscription"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformSubscriptionsV1alphaSubscription"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+      tags:
+        - organizations
   "/v1alpha/{resource}:getIamPolicy":
     get:
       description: Gets the access control policy for a resource. Returns an empty policy if the resource exists and does not have a policy set.
-      operationId: beyondcorp.projects.locations.connectors.getIamPolicy
+      operationId: beyondcorp.projects.locations.netConnections.getIamPolicy
       parameters:
         - description: "REQUIRED: The resource for which the policy is being requested. See [Resource names](https://cloud.google.com/apis/design/resource_names) for the appropriate value for this field."
           in: path
@@ -1317,7 +1563,7 @@ paths:
       - $ref: "#/components/parameters/uploadType"
     post:
       description: Sets the access control policy on the specified resource. Replaces any existing policy. Can return `NOT_FOUND`, `INVALID_ARGUMENT`, and `PERMISSION_DENIED` errors.
-      operationId: beyondcorp.projects.locations.connectors.setIamPolicy
+      operationId: beyondcorp.projects.locations.netConnections.setIamPolicy
       parameters:
         - description: "REQUIRED: The resource for which the policy is being specified. See [Resource names](https://cloud.google.com/apis/design/resource_names) for the appropriate value for this field."
           in: path
@@ -1359,7 +1605,7 @@ paths:
       - $ref: "#/components/parameters/uploadType"
     post:
       description: 'Returns permissions that a caller has on the specified resource. If the resource does not exist, this will return an empty set of permissions, not a `NOT_FOUND` error. Note: This operation is designed to be used for building permission-aware UIs and command-line tools, not for authorization checking. This operation may "fail open" without warning.'
-      operationId: beyondcorp.projects.locations.connectors.testIamPermissions
+      operationId: beyondcorp.projects.locations.netConnections.testIamPermissions
       parameters:
         - description: "REQUIRED: The resource for which the policy detail is being requested. See [Resource names](https://cloud.google.com/apis/design/resource_names) for the appropriate value for this field."
           in: path
@@ -2065,6 +2311,40 @@ components:
           readOnly: true
           type: integer
       type: object
+    GoogleCloudBeyondcorpAppconnectionsV1AppConnectionOperationMetadata:
+      description: Represents the metadata of the long-running operation.
+      properties:
+        apiVersion:
+          description: Output only. API version used to start the operation.
+          readOnly: true
+          type: string
+        createTime:
+          description: Output only. The time the operation was created.
+          format: google-datetime
+          readOnly: true
+          type: string
+        endTime:
+          description: Output only. The time the operation finished running.
+          format: google-datetime
+          readOnly: true
+          type: string
+        requestedCancellation:
+          description: Output only. Identifies whether the user has requested cancellation of the operation. Operations that have successfully been cancelled have Operation.error value with a google.rpc.Status.code of 1, corresponding to `Code.CANCELLED`.
+          readOnly: true
+          type: boolean
+        statusMessage:
+          description: Output only. Human-readable status of the operation, if any.
+          readOnly: true
+          type: string
+        target:
+          description: Output only. Server-defined resource path for the target of the operation.
+          readOnly: true
+          type: string
+        verb:
+          description: Output only. Name of the verb executed by the operation.
+          readOnly: true
+          type: string
+      type: object
     GoogleCloudBeyondcorpAppconnectionsV1alphaAppConnection:
       description: A BeyondCorp AppConnection resource represents a BeyondCorp protected AppConnection to a remote application. It creates all the necessary GCP components needed for creating a BeyondCorp protected AppConnection. Multiple connectors can be authorised for a single AppConnection.
       properties:
@@ -2137,13 +2417,17 @@ components:
       description: Gateway represents a user facing component that serves as an entrance to enable connectivity.
       properties:
         appGateway:
-          description: "Required. AppGateway name in following format: projects/{project_id}/locations/{location_id}/appgateways/{gateway_id}"
+          description: "Required. AppGateway name in following format: `projects/{project_id}/locations/{location_id}/appgateways/{gateway_id}`"
           type: string
         ingressPort:
           description: Output only. Ingress port reserved on the gateways for this AppConnection, if not specified or zero, the default port is 19443.
           format: int32
           readOnly: true
           type: integer
+        l7psc:
+          description: Output only. L7 private service connection for this resource.
+          readOnly: true
+          type: string
         type:
           description: Required. The type of hosting used by the gateway.
           enum:
@@ -2230,10 +2514,66 @@ components:
           $ref: "#/components/schemas/GoogleCloudBeyondcorpAppconnectionsV1alphaAppConnection"
           description: A BeyondCorp AppConnection in the project.
         recentMigVms:
-          description: If type=GCP_REGIONAL_MIG, contains most recent VM instances, like "https://www.googleapis.com/compute/v1/projects/{project_id}/zones/{zone_id}/instances/{instance_id}".
+          description: If type=GCP_REGIONAL_MIG, contains most recent VM instances, like `https://www.googleapis.com/compute/v1/projects/{project_id}/zones/{zone_id}/instances/{instance_id}`.
           items:
             type: string
           type: array
+      type: object
+    GoogleCloudBeyondcorpAppconnectorsV1AppConnectorOperationMetadata:
+      description: Represents the metadata of the long-running operation.
+      properties:
+        apiVersion:
+          description: Output only. API version used to start the operation.
+          readOnly: true
+          type: string
+        createTime:
+          description: Output only. The time the operation was created.
+          format: google-datetime
+          readOnly: true
+          type: string
+        endTime:
+          description: Output only. The time the operation finished running.
+          format: google-datetime
+          readOnly: true
+          type: string
+        requestedCancellation:
+          description: Output only. Identifies whether the user has requested cancellation of the operation. Operations that have successfully been cancelled have Operation.error value with a google.rpc.Status.code of 1, corresponding to `Code.CANCELLED`.
+          readOnly: true
+          type: boolean
+        statusMessage:
+          description: Output only. Human-readable status of the operation, if any.
+          readOnly: true
+          type: string
+        target:
+          description: Output only. Server-defined resource path for the target of the operation.
+          readOnly: true
+          type: string
+        verb:
+          description: Output only. Name of the verb executed by the operation.
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudBeyondcorpAppconnectorsV1ContainerHealthDetails:
+      description: ContainerHealthDetails reflects the health details of a container.
+      properties:
+        currentConfigVersion:
+          description: The version of the current config.
+          type: string
+        errorMsg:
+          description: The latest error message.
+          type: string
+        expectedConfigVersion:
+          description: The version of the expected config.
+          type: string
+        extendedStatus:
+          additionalProperties:
+            type: string
+          description: The extended status. Such as ExitCode, StartedAt, FinishedAt, etc.
+          type: object
+      type: object
+    GoogleCloudBeyondcorpAppconnectorsV1RemoteAgentDetails:
+      description: RemoteAgentDetails reflects the details of a remote agent.
+      properties: {}
       type: object
     GoogleCloudBeyondcorpAppconnectorsV1alphaAppConnector:
       description: A BeyondCorp connector resource that represents an application facing component deployed proximal to and with direct access to the application instances. It is used to establish connectivity between the remote enterprise environment and GCP. It initiates connections to the applications and can proxy the data from users over the connection.
@@ -2348,14 +2688,32 @@ components:
           description: Email address of the service account.
           type: string
       type: object
+    GoogleCloudBeyondcorpAppconnectorsV1alphaContainerHealthDetails:
+      description: ContainerHealthDetails reflects the health details of a container.
+      properties:
+        currentConfigVersion:
+          description: The version of the current config.
+          type: string
+        errorMsg:
+          description: The latest error message.
+          type: string
+        expectedConfigVersion:
+          description: The version of the expected config.
+          type: string
+        extendedStatus:
+          additionalProperties:
+            type: string
+          description: The extended status. Such as ExitCode, StartedAt, FinishedAt, etc.
+          type: object
+      type: object
     GoogleCloudBeyondcorpAppconnectorsV1alphaImageConfig:
       description: ImageConfig defines the control plane images to run.
       properties:
         stableImage:
-          description: The stable image that the remote agent will fallback to if the target image fails.
+          description: "The stable image that the remote agent will fallback to if the target image fails. Format would be a gcr image path, e.g.: gcr.io/PROJECT-ID/my-image:tag1"
           type: string
         targetImage:
-          description: The initial image the remote agent will attempt to run for the control plane.
+          description: "The initial image the remote agent will attempt to run for the control plane. Format would be a gcr image path, e.g.: gcr.io/PROJECT-ID/my-image:tag1"
           type: string
       type: object
     GoogleCloudBeyondcorpAppconnectorsV1alphaListAppConnectorsResponse:
@@ -2380,7 +2738,7 @@ components:
       properties:
         pubsubNotification:
           $ref: "#/components/schemas/GoogleCloudBeyondcorpAppconnectorsV1alphaNotificationConfigCloudPubSubNotificationConfig"
-          description: Pub/Sub topic for AppConnector to subscribe and receive notifications from `projects/{project}/topics/{pubsub_topic}`
+          description: Cloud Pub/Sub Configuration to receive notifications.
       type: object
     GoogleCloudBeyondcorpAppconnectorsV1alphaNotificationConfigCloudPubSubNotificationConfig:
       description: The configuration for Pub/Sub messaging for the AppConnector.
@@ -2388,6 +2746,10 @@ components:
         pubsubSubscription:
           description: The Pub/Sub subscription the AppConnector uses to receive notifications.
           type: string
+      type: object
+    GoogleCloudBeyondcorpAppconnectorsV1alphaRemoteAgentDetails:
+      description: RemoteAgentDetails reflects the details of a remote agent.
+      properties: {}
       type: object
     GoogleCloudBeyondcorpAppconnectorsV1alphaReportStatusRequest:
       description: Request report the connector status.
@@ -2437,6 +2799,379 @@ components:
         time:
           description: The timestamp to collect the info. It is suggested to be set by the topmost level resource only.
           format: google-datetime
+          type: string
+      type: object
+    GoogleCloudBeyondcorpAppgatewaysV1AppGatewayOperationMetadata:
+      description: Represents the metadata of the long-running operation.
+      properties:
+        apiVersion:
+          description: Output only. API version used to start the operation.
+          readOnly: true
+          type: string
+        createTime:
+          description: Output only. The time the operation was created.
+          format: google-datetime
+          readOnly: true
+          type: string
+        endTime:
+          description: Output only. The time the operation finished running.
+          format: google-datetime
+          readOnly: true
+          type: string
+        requestedCancellation:
+          description: Output only. Identifies whether the user has requested cancellation of the operation. Operations that have successfully been cancelled have Operation.error value with a google.rpc.Status.code of 1, corresponding to `Code.CANCELLED`.
+          readOnly: true
+          type: boolean
+        statusMessage:
+          description: Output only. Human-readable status of the operation, if any.
+          readOnly: true
+          type: string
+        target:
+          description: Output only. Server-defined resource path for the target of the operation.
+          readOnly: true
+          type: string
+        verb:
+          description: Output only. Name of the verb executed by the operation.
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudBeyondcorpClientconnectorservicesV1ClientConnectorServiceOperationMetadata:
+      description: Represents the metadata of the long-running operation.
+      properties:
+        apiVersion:
+          description: Output only. API version used to start the operation.
+          readOnly: true
+          type: string
+        createTime:
+          description: Output only. The time the operation was created.
+          format: google-datetime
+          readOnly: true
+          type: string
+        endTime:
+          description: Output only. The time the operation finished running.
+          format: google-datetime
+          readOnly: true
+          type: string
+        requestedCancellation:
+          description: Output only. Identifies whether the user has requested cancellation of the operation. Operations that have successfully been cancelled have Operation.error value with a google.rpc.Status.code of 1, corresponding to `Code.CANCELLED`.
+          readOnly: true
+          type: boolean
+        statusMessage:
+          description: Output only. Human-readable status of the operation, if any.
+          readOnly: true
+          type: string
+        target:
+          description: Output only. Server-defined resource path for the target of the operation.
+          readOnly: true
+          type: string
+        verb:
+          description: Output only. Name of the verb executed by the operation.
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudBeyondcorpClientgatewaysV1ClientGatewayOperationMetadata:
+      description: Represents the metadata of the long-running operation.
+      properties:
+        apiVersion:
+          description: Output only. API version used to start the operation.
+          readOnly: true
+          type: string
+        createTime:
+          description: Output only. The time the operation was created.
+          format: google-datetime
+          readOnly: true
+          type: string
+        endTime:
+          description: Output only. The time the operation finished running.
+          format: google-datetime
+          readOnly: true
+          type: string
+        requestedCancellation:
+          description: Output only. Identifies whether the user has requested cancellation of the operation. Operations that have been cancelled successfully have Operation.error value with a google.rpc.Status.code of 1, corresponding to `Code.CANCELLED`.
+          readOnly: true
+          type: boolean
+        statusMessage:
+          description: Output only. Human-readable status of the operation, if any.
+          readOnly: true
+          type: string
+        target:
+          description: Output only. Server-defined resource path for the target of the operation.
+          readOnly: true
+          type: string
+        verb:
+          description: Output only. Name of the verb executed by the operation.
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudBeyondcorpSaasplatformInsightsV1alphaAppliedConfig:
+      description: The configuration that was applied to generate the result.
+      properties:
+        aggregation:
+          description: Output only. Aggregation type applied.
+          enum:
+            - AGGREGATION_UNSPECIFIED
+            - HOURLY
+            - DAILY
+            - WEEKLY
+            - MONTHLY
+            - CUSTOM_DATE_RANGE
+          readOnly: true
+          type: string
+        customGrouping:
+          $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaCustomGrouping"
+          description: Output only. Customised grouping applied.
+          readOnly: true
+        endTime:
+          description: Output only. Ending time for the duration for which insight was pulled.
+          format: google-datetime
+          readOnly: true
+          type: string
+        fieldFilter:
+          description: Output only. Filters applied.
+          readOnly: true
+          type: string
+        group:
+          description: Output only. Group id of the grouping applied.
+          readOnly: true
+          type: string
+        startTime:
+          description: Output only. Starting time for the duration for which insight was pulled.
+          format: google-datetime
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudBeyondcorpSaasplatformInsightsV1alphaConfiguredInsightResponse:
+      description: The response for the configured insight.
+      properties:
+        appliedConfig:
+          $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaAppliedConfig"
+          description: Output only. Applied insight config to generate the result data rows.
+          readOnly: true
+        nextPageToken:
+          description: Output only. Next page token to be fetched. Set to empty or NULL if there are no more pages available.
+          readOnly: true
+          type: string
+        rows:
+          description: Output only. Result rows returned containing the required value(s) for configured insight.
+          items:
+            $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaRow"
+          readOnly: true
+          type: array
+      type: object
+    GoogleCloudBeyondcorpSaasplatformInsightsV1alphaCustomGrouping:
+      description: Customised grouping option that allows setting the group_by fields and also the filters togather for a configured insight request.
+      properties:
+        fieldFilter:
+          description: 'Optional. Filterable parameters to be added to the grouping clause. Available fields could be fetched by calling insight list and get APIs in `BASIC` view. `=` is the only comparison operator supported. `AND` is the only logical operator supported. Usage: field_filter="fieldName1=fieldVal1 AND fieldName2=fieldVal2". NOTE: Only `AND` conditions are allowed. NOTE: Use the `filter_alias` from `Insight.Metadata.Field` message for the filtering the corresponding fields in this filter field. (These expressions are based on the filter language described at https://google.aip.dev/160).'
+          type: string
+        groupFields:
+          description: "Required. Fields to be used for grouping. NOTE: Use the `filter_alias` from `Insight.Metadata.Field` message for declaring the fields to be grouped-by here."
+          items:
+            type: string
+          type: array
+      type: object
+    GoogleCloudBeyondcorpSaasplatformInsightsV1alphaInsight:
+      description: The Insight object with configuration that was returned and actual list of records.
+      properties:
+        appliedConfig:
+          $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaAppliedConfig"
+          description: Output only. Applied insight config to generate the result data rows.
+          readOnly: true
+        metadata:
+          $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaInsightMetadata"
+          description: Output only. Metadata for the Insight.
+          readOnly: true
+        name:
+          description: Output only. The insight resource name. e.g. `organizations/{organization_id}/locations/{location_id}/insights/{insight_id}` OR `projects/{project_id}/locations/{location_id}/insights/{insight_id}`.
+          readOnly: true
+          type: string
+        rows:
+          description: Output only. Result rows returned containing the required value(s).
+          items:
+            $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaRow"
+          readOnly: true
+          type: array
+      type: object
+    GoogleCloudBeyondcorpSaasplatformInsightsV1alphaInsightMetadata:
+      description: "Insight filters, groupings and aggregations that can be applied for the insight. Examples: aggregations, groups, field filters."
+      properties:
+        aggregations:
+          description: Output only. List of aggregation types available for insight.
+          items:
+            enum:
+              - AGGREGATION_UNSPECIFIED
+              - HOURLY
+              - DAILY
+              - WEEKLY
+              - MONTHLY
+              - CUSTOM_DATE_RANGE
+            type: string
+          readOnly: true
+          type: array
+        category:
+          description: Output only. Category of the insight.
+          readOnly: true
+          type: string
+        displayName:
+          description: Output only. Common name of the insight.
+          readOnly: true
+          type: string
+        fields:
+          description: Output only. List of fields available for insight.
+          items:
+            $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaInsightMetadataField"
+          readOnly: true
+          type: array
+        groups:
+          description: Output only. List of groupings available for insight.
+          items:
+            type: string
+          readOnly: true
+          type: array
+        subCategory:
+          description: Output only. Sub-Category of the insight.
+          readOnly: true
+          type: string
+        type:
+          description: Output only. Type of the insight. It is metadata describing whether the insight is a metric (e.g. count) or a report (e.g. list, status).
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudBeyondcorpSaasplatformInsightsV1alphaInsightMetadataField:
+      description: Field metadata. Commonly understandable name and description for the field. Multiple such fields constitute the Insight.
+      properties:
+        description:
+          description: Output only. Description of the field.
+          readOnly: true
+          type: string
+        displayName:
+          description: Output only. Name of the field.
+          readOnly: true
+          type: string
+        filterAlias:
+          description: Output only. Field name to be used in filter while requesting configured insight filtered on this field.
+          readOnly: true
+          type: string
+        filterable:
+          description: Output only. Indicates whether the field can be used for filtering.
+          readOnly: true
+          type: boolean
+        groupable:
+          description: Output only. Indicates whether the field can be used for grouping in custom grouping request.
+          readOnly: true
+          type: boolean
+        id:
+          description: Output only. Field id for which this is the metadata.
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudBeyondcorpSaasplatformInsightsV1alphaListInsightsResponse:
+      description: The response for the list of insights.
+      properties:
+        insights:
+          description: Output only. List of all insights.
+          items:
+            $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaInsight"
+          readOnly: true
+          type: array
+        nextPageToken:
+          description: Output only. Next page token to be fetched. Set to empty or NULL if there are no more pages available.
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudBeyondcorpSaasplatformInsightsV1alphaRow:
+      description: Row of the fetch response consisting of a set of entries.
+      properties:
+        fieldValues:
+          description: Output only. Columns/entries/key-vals in the result.
+          items:
+            $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformInsightsV1alphaRowFieldVal"
+          readOnly: true
+          type: array
+      type: object
+    GoogleCloudBeyondcorpSaasplatformInsightsV1alphaRowFieldVal:
+      description: Column or key value pair from the request as part of key to use in query or a single pair of the fetch response.
+      properties:
+        displayName:
+          description: Output only. Name of the field.
+          readOnly: true
+          type: string
+        filterAlias:
+          description: Output only. Field name to be used in filter while requesting configured insight filtered on this field.
+          readOnly: true
+          type: string
+        id:
+          description: Output only. Field id.
+          readOnly: true
+          type: string
+        value:
+          description: Output only. Value of the field in string format. Acceptable values are strings or numbers.
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudBeyondcorpSaasplatformSubscriptionsV1alphaListSubscriptionsResponse:
+      description: Response message for BeyondCorp.ListSubscriptions.
+      properties:
+        nextPageToken:
+          description: A token to retrieve the next page of results, or empty if there are no more results in the list.
+          type: string
+        subscriptions:
+          description: A list of BeyondCorp Subscriptions in the organization.
+          items:
+            $ref: "#/components/schemas/GoogleCloudBeyondcorpSaasplatformSubscriptionsV1alphaSubscription"
+          type: array
+      type: object
+    GoogleCloudBeyondcorpSaasplatformSubscriptionsV1alphaSubscription:
+      description: A BeyondCorp Subscription resource represents BeyondCorp Enterprise Subscription. BeyondCorp Enterprise Subscription enables BeyondCorp Enterprise permium features for an organization.
+      properties:
+        autoRenewEnabled:
+          description: Output only. Represents that, if subscription will renew or end when the term ends.
+          readOnly: true
+          type: boolean
+        createTime:
+          description: Output only. Create time of the subscription.
+          format: google-datetime
+          readOnly: true
+          type: string
+        endTime:
+          description: Output only. End time of the subscription.
+          format: google-datetime
+          readOnly: true
+          type: string
+        name:
+          description: Required. Unique resource name of the Subscription. The name is ignored when creating a subscription.
+          type: string
+        seatCount:
+          description: Output only. Number of seats in the subscription.
+          format: int64
+          readOnly: true
+          type: string
+        sku:
+          description: Required. SKU of subscription.
+          enum:
+            - SKU_UNSPECIFIED
+            - BCE_STANDARD_SKU
+          type: string
+        startTime:
+          description: Output only. Start time of the subscription.
+          format: google-datetime
+          readOnly: true
+          type: string
+        state:
+          description: Output only. The current state of the subscription.
+          enum:
+            - STATE_UNSPECIFIED
+            - ACTIVE
+            - INACTIVE
+          readOnly: true
+          type: string
+        type:
+          description: Required. Type of subscription.
+          enum:
+            - TYPE_UNSPECIFIED
+            - TRIAL
+            - PAID
+            - ALLOWLIST
           type: string
       type: object
     GoogleCloudLocationListLocationsResponse:
@@ -2510,7 +3245,7 @@ components:
           $ref: "#/components/schemas/GoogleTypeExpr"
           description: The condition that is associated with this binding. If the condition evaluates to `true`, then this binding applies to the current request. If the condition evaluates to `false`, then this binding does not apply to the current request. However, a different role binding might grant the same role to one or more of the principals in this binding. To learn which resources support conditions in their IAM policies, see the [IAM documentation](https://cloud.google.com/iam/help/conditions/resource-policies).
         members:
-          description: "Specifies the principals requesting access for a Google Cloud resource. `members` can have the following values: * `allUsers`: A special identifier that represents anyone who is on the internet; with or without a Google account. * `allAuthenticatedUsers`: A special identifier that represents anyone who is authenticated with a Google account or a service account. * `user:{emailid}`: An email address that represents a specific Google account. For example, `alice@example.com` . * `serviceAccount:{emailid}`: An email address that represents a service account. For example, `my-other-app@appspot.gserviceaccount.com`. * `group:{emailid}`: An email address that represents a Google group. For example, `admins@example.com`. * `deleted:user:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a user that has been recently deleted. For example, `alice@example.com?uid=123456789012345678901`. If the user is recovered, this value reverts to `user:{emailid}` and the recovered user retains the role in the binding. * `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a service account that has been recently deleted. For example, `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`. If the service account is undeleted, this value reverts to `serviceAccount:{emailid}` and the undeleted service account retains the role in the binding. * `deleted:group:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a Google group that has been recently deleted. For example, `admins@example.com?uid=123456789012345678901`. If the group is recovered, this value reverts to `group:{emailid}` and the recovered group retains the role in the binding. * `domain:{domain}`: The G Suite domain (primary) that represents all the users of that domain. For example, `google.com` or `example.com`. "
+          description: "Specifies the principals requesting access for a Google Cloud resource. `members` can have the following values: * `allUsers`: A special identifier that represents anyone who is on the internet; with or without a Google account. * `allAuthenticatedUsers`: A special identifier that represents anyone who is authenticated with a Google account or a service account. Does not include identities that come from external identity providers (IdPs) through identity federation. * `user:{emailid}`: An email address that represents a specific Google account. For example, `alice@example.com` . * `serviceAccount:{emailid}`: An email address that represents a Google service account. For example, `my-other-app@appspot.gserviceaccount.com`. * `serviceAccount:{projectid}.svc.id.goog[{namespace}/{kubernetes-sa}]`: An identifier for a [Kubernetes service account](https://cloud.google.com/kubernetes-engine/docs/how-to/kubernetes-service-accounts). For example, `my-project.svc.id.goog[my-namespace/my-kubernetes-sa]`. * `group:{emailid}`: An email address that represents a Google group. For example, `admins@example.com`. * `deleted:user:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a user that has been recently deleted. For example, `alice@example.com?uid=123456789012345678901`. If the user is recovered, this value reverts to `user:{emailid}` and the recovered user retains the role in the binding. * `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a service account that has been recently deleted. For example, `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`. If the service account is undeleted, this value reverts to `serviceAccount:{emailid}` and the undeleted service account retains the role in the binding. * `deleted:group:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a Google group that has been recently deleted. For example, `admins@example.com?uid=123456789012345678901`. If the group is recovered, this value reverts to `group:{emailid}` and the recovered group retains the role in the binding. * `domain:{domain}`: The G Suite domain (primary) that represents all the users of that domain. For example, `google.com` or `example.com`. "
           items:
             type: string
           type: array

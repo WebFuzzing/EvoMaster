@@ -9,6 +9,9 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Integ
  * created by manzh on 2019-09-09
  *
  * TODO need to further extend for elements
+ *
+ * MapGeneImpact now is shared by FixedMapGene and FlexibleMapGene
+ * now only consider impacts of different size
  */
 class MapGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
                     val sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size")

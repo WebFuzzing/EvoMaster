@@ -1,7 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
-import org.evomaster.client.java.instrumentation.PreDefinedSSLInfo;
+import org.evomaster.client.java.instrumentation.shared.PreDefinedSSLInfo;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.*;
@@ -12,7 +12,7 @@ import java.net.*;
 import java.util.Objects;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.collectExternalServiceInfo;
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils.parseLongHeuristic;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils.skipHostnameOrIp;
 
 public class URLClassReplacement implements MethodReplacementClass {
 
@@ -112,10 +112,43 @@ public class URLClassReplacement implements MethodReplacementClass {
     public static URLConnection openConnection(URL caller) throws java.io.IOException {
         Objects.requireNonNull(caller);
 
+        URL newURL = getReplacedURL(caller);
+        if (newURL!=null)
+            return newURL.openConnection();
+
+        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
+            SimpleLogger.uniqueWarn("not handle the protocol with:"+caller.getProtocol());
+        return caller.openConnection();
+    }
+
+
+    @Replacement(
+            type = ReplacementType.TRACKER,
+            category = ReplacementCategory.NET,
+            id = "URL_openConnection_proxy_Replacement",
+            replacingStatic = false,
+            usageFilter = UsageFilter.ANY
+    )
+    public static URLConnection openConnection(URL caller, Proxy proxy) throws java.io.IOException {
+        Objects.requireNonNull(caller);
+
+        URL newURL = getReplacedURL(caller);
+        if (newURL!=null)
+            return newURL.openConnection(proxy);
+
+        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
+            SimpleLogger.uniqueWarn("not handle the protocol with:"+caller.getProtocol());
+        return caller.openConnection(proxy);
+    }
+
+    private static URL getReplacedURL(URL caller) throws java.io.IOException {
         /*
           Add the external service hostname to the ExecutionTracer
           */
-        if (caller.getProtocol().equals("http") || caller.getProtocol().equals("https")) {
+        if ((caller.getProtocol().equals("http") || caller.getProtocol().equals("https"))
+                && !skipHostnameOrIp(caller.getHost())
+                && !ExecutionTracer.skipHostname(caller.getHost()))
+        {
 
             if (caller.getProtocol().equalsIgnoreCase("https"))
                 PreDefinedSSLInfo.setTrustAllForHttpsURLConnection();
@@ -130,11 +163,8 @@ public class URLClassReplacement implements MethodReplacementClass {
             // Usage of ports below 1024 require root privileges to run
             String url = caller.getProtocol()+"://" + ipAndPort[0]+":"+ipAndPort[1] + caller.getPath();
 
-            URL newURL = new URL(url);
-            return newURL.openConnection();
+            return new URL(url);
         }
-        if (!caller.getProtocol().equals("jar") && !caller.getProtocol().equals("file"))
-            SimpleLogger.uniqueWarn("not handle the protocol with:"+caller.getProtocol());
-        return caller.openConnection();
+        return null;
     }
 }

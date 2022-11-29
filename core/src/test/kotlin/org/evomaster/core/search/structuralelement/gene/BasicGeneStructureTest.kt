@@ -3,7 +3,7 @@ package org.evomaster.core.search.structuralelement.gene
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
@@ -220,19 +220,19 @@ class MapGeneIntStructureTest : GeneStructuralElementBaseTest() {
 
     override fun expectedChildrenSizeAfterRandomness(): Int = -1
 
-    override fun getCopyFromTemplate(): Gene = MapGene(
+    override fun getCopyFromTemplate(): Gene = FixedMapGene(
         "foo",
         template = PairGene.createStringPairGene(DoubleGene("foo")),
         maxSize = 20,
         elements = (0 until copyTemplateSize).map { PairGene.createStringPairGene(DoubleGene("foo", it.toDouble())) }.toMutableList())
 
     override fun assertCopyFrom(base: Gene) {
-        assertTrue(base is MapGene<*, *>)
-        assertEquals(copyTemplateSize, (base as MapGene<*, *>).getAllElements().size)
+        assertTrue(base is FixedMapGene<*, *>)
+        assertEquals(copyTemplateSize, (base as FixedMapGene<*, *>).getAllElements().size)
         assertChildren(base, copyTemplateSize)
     }
 
-    override fun getStructuralElement(): MapGene<StringGene, DoubleGene> = MapGene(
+    override fun getStructuralElement(): FixedMapGene<StringGene, DoubleGene> = FixedMapGene(
         "foo",
         template = PairGene.createStringPairGene(DoubleGene("foo")),
         maxSize = 20,

@@ -977,6 +977,8 @@ components:
             - DOCKER_INVALID_VOLUME
             - DOCKER_CREATE_RUNTIME_CANNOT_MOUNT_TO_PROC
             - DOCKER_START_RUNTIME_FILE_NOT_FOUND
+            - DOCKER_CREATE_INVALID_LAYERCHAIN_JSON
+            - INCOMPATIBLE_CUDA_VERSION
           type: string
         message:
           description: The error message.
@@ -1106,6 +1108,9 @@ components:
         dockerPrivileged:
           $ref: "#/components/schemas/GoogleDevtoolsRemotebuildexecutionAdminV1alphaFeaturePolicyFeature"
           description: Whether dockerPrivileged can be used.
+        dockerRunAsContainerProvidedUser:
+          $ref: "#/components/schemas/GoogleDevtoolsRemotebuildexecutionAdminV1alphaFeaturePolicyFeature"
+          description: Whether dockerRunAsContainerProvidedUser can be used.
         dockerRunAsRoot:
           $ref: "#/components/schemas/GoogleDevtoolsRemotebuildexecutionAdminV1alphaFeaturePolicyFeature"
           description: Whether dockerRunAsRoot can be used.
@@ -1121,6 +1126,13 @@ components:
             - LINUX_ISOLATION_UNSPECIFIED
             - GVISOR
             - OFF
+          type: string
+        vmVerification:
+          description: Whether to verify CreateBotSession and UpdateBotSession from the bot.
+          enum:
+            - VM_VERIFICATION_UNSPECIFIED
+            - VM_VERIFICATION_GCP_TOKEN
+            - VM_VERIFICATION_OFF
           type: string
       type: object
     GoogleDevtoolsRemotebuildexecutionAdminV1alphaFeaturePolicyFeature:
@@ -1295,6 +1307,9 @@ components:
           description: The autoscale policy to apply on a pool.
         channel:
           description: Channel specifies the release channel of the pool.
+          type: string
+        hostOs:
+          description: HostOS specifies the OS version of the image for the worker VMs.
           type: string
         name:
           description: "WorkerPool resource name formatted as: `projects/[PROJECT_ID]/instances/[INSTANCE_ID]/workerpools/[POOL_ID]`. name should not be populated when creating a worker pool since it is provided in the `poolId` field."

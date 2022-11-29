@@ -24,7 +24,7 @@ info:
     - format: google
       url: https://tpu.googleapis.com/$discovery/rest?version=v2alpha1
       version: v1
-  x-preferred: true
+  x-preferred: false
   x-providerName: googleapis.com
   x-serviceName: tpu
 externalDocs:
@@ -307,6 +307,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetGuestAttributesResponse"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+      tags:
+        - projects
+  "/v2alpha1/{name}:simulateMaintenanceEvent":
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
+    post:
+      description: Simulates a maintenance event.
+      operationId: tpu.projects.locations.nodes.simulateMaintenanceEvent
+      parameters:
+        - description: Required. The resource name.
+          in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulateMaintenanceEventRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operation"
           description: Successful response
       security:
         - Oauth2:
@@ -724,7 +766,7 @@ components:
           description: The resource name.
           type: string
         type:
-          description: the accelerator type.
+          description: The accelerator type.
           type: string
       type: object
     AccessConfig:
@@ -1026,6 +1068,9 @@ components:
         serviceAccount:
           $ref: "#/components/schemas/ServiceAccount"
           description: The Google Cloud Platform Service Account to be used by the TPU node VMs. If None is specified, the default compute service account will be used.
+        shieldedInstanceConfig:
+          $ref: "#/components/schemas/ShieldedInstanceConfig"
+          description: Shielded Instance options.
         state:
           description: Output only. The current state for the TPU Node.
           enum:
@@ -1146,6 +1191,22 @@ components:
         email:
           description: The email address of the service identity.
           type: string
+      type: object
+    ShieldedInstanceConfig:
+      description: A set of Shielded Instance options.
+      properties:
+        enableSecureBoot:
+          description: Defines whether the instance has Secure Boot enabled.
+          type: boolean
+      type: object
+    SimulateMaintenanceEventRequest:
+      description: Request for SimulateMaintenanceEvent.
+      properties:
+        workerIds:
+          description: The 0-based worker ID. If it is empty, worker ID 0 will be selected for maintenance event simulation. A maintenance event will only be fired on the first specified worker ID. Future implementations may support firing on multiple workers.
+          items:
+            type: string
+          type: array
       type: object
     StartNodeRequest:
       description: Request for StartNode.

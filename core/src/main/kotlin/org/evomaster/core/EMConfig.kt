@@ -1781,6 +1781,16 @@ class EMConfig {
     var useExtraSqlDbConstraintsProbability = 0.0
 
 
+    @Cfg("a probability of harvesting actual responses from external services as seeds.")
+    @Experimental
+    @Probability(activating = true)
+    var probOfHarvestingResponsesFromActualExternalServices = 0.0
+
+    @Cfg("a probability of mutating mocked responses based on actual responses")
+    @Experimental
+    @Probability(activating = true)
+    var probOfMutatingResponsesBasedOnActualResponse = 0.0
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
@@ -1852,4 +1862,6 @@ class EMConfig {
     fun isEnabledExternalServiceMocking(): Boolean {
         return externalServiceIPSelectionStrategy != ExternalServiceIPSelectionStrategy.NONE
     }
+
+    fun doHarvestActualResponse() : Boolean = probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0
 }

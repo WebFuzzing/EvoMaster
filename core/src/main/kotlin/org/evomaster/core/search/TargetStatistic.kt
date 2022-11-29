@@ -13,11 +13,19 @@ data class TargetStatistic(
     /**
      * achieved by search
      */
-    val searchTime: Int
+    val searchTime: Int,
+
+    /**
+     * total unique targets covered at the end
+     * this includes targets covered during boot-time, search-time and authentication
+     * since there might exist duplicated targets in different phases, then set unique amount
+     * with this property
+     */
+    val total : Int
 ){
     /**
-     * derived based on [bootTime] and [searchTime]
-     */
-    val total: Int
-        get(){return bootTime + searchTime}
+//     * derived based on [bootTime] and [searchTime]
+//     */
+//    val total: Int
+//        get(){return bootTime + searchTime}
 }

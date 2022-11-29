@@ -11,7 +11,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
@@ -213,8 +213,8 @@ class RestActionBuilderV3Test{
         (mapGene as ObjectGene).apply {
             assertEquals(2, fields.size)
             val mapArrayField = ParamUtil.getValueGene(fields.find { it.name == "mapDtoArray" }!!)
-            assertTrue(mapArrayField is MapGene<*, *>)
-            (mapArrayField as MapGene<*,*>).apply {
+            assertTrue(mapArrayField is FixedMapGene<*, *>)
+            (mapArrayField as FixedMapGene<*,*>).apply {
                 assertTrue(template.first is StringGene)
                 assertTrue(template.second is ObjectGene)
 
@@ -225,8 +225,8 @@ class RestActionBuilderV3Test{
             }
 
             val mapIntField = ParamUtil.getValueGene(fields.find { it.name == "mapInteger" }!!)
-            assertTrue(mapIntField is MapGene<*,*>)
-            (mapIntField as MapGene<*,*>).apply {
+            assertTrue(mapIntField is FixedMapGene<*,*>)
+            (mapIntField as FixedMapGene<*,*>).apply {
                 assertTrue(template.first is StringGene)
                 assertTrue(template.second is IntegerGene)
             }

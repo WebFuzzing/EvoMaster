@@ -5,11 +5,11 @@ import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.external.service.httpws.ExternalServiceHandler
+import org.evomaster.core.problem.external.service.httpws.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.httpws.service.auth.NoAuth
@@ -18,6 +18,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.Action
@@ -45,7 +46,10 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
 
     // TODO: This will moved under ApiWsFitness once RPC and GraphQL support is completed
     @Inject
-    protected lateinit var externalServiceHandler: ExternalServiceHandler
+    protected lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+
+    @Inject
+    protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
@@ -234,7 +238,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
             }
 
 
-            val dtoNames = info.parsedDtoNames;
+            val dtoNames = info.parsedDtoNames
 
             val noBody = action.parameters.none { it is BodyParam }
             val emptyObject = !noBody &&
@@ -287,15 +291,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
                 throw RuntimeException("BUG: info for DTO $name is not available in the SUT driver")
             }
         }
-        /*
-            need to get all for handling `ref`
-         */
-        val names = infoDto.unitsInfoDto.parsedDtos.keys.toList()
-        val schemas = names.map { infoDto.unitsInfoDto.parsedDtos[it]!! }
-//        val schema: String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
-        //TODO need to check: referType is same with the name?
-        val genes = RestActionBuilderV3.createObjectGeneForDTOs(names, schemas, names)
-        return genes[names.indexOf(name)]
+
+        return ParserDtoUtil.getOrParseDtoWithSutInfo(infoDto)[name]!!
     }
 
     /**
@@ -411,8 +408,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         chainState: MutableMap<String, String>,
         cookies: Map<String, List<NewCookie>>,
         tokens: Map<String, String>
-    )
-            : Boolean {
+    ): Boolean {
 
         searchTimeController.waitForRateLimiter()
 
