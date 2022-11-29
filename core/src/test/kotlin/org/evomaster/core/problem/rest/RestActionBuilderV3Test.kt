@@ -60,6 +60,30 @@ class RestActionBuilderV3Test{
         val postEnums = post.seeTopGenes().flatMap { it.flatView() }.filterIsInstance<EnumGene<*>>()
         assertEquals(1, postEnums.size)
     }
+
+//    @ParameterizedTest
+//    @ValueSource(booleans = [true, false])
+//    fun testArrayAnyOfSchema(enableConstraintHandling : Boolean){
+//        val schema = OpenAPIParser().readLocation("swagger/apisguru-v3/adyen_checkoutservice41.yaml", null, null).openAPI
+//        val actions: MutableMap<String, Action> = mutableMapOf()
+//        RestActionBuilderV3.addActionsFromSwagger(schema, actions, enableConstraintHandling = enableConstraintHandling)
+//
+//        val postPaymentMethodsBalance = actions["POST:/v41/paymentMethods/balance"]
+//        assertTrue(postPaymentMethodsBalance is RestCallAction)
+//        (postPaymentMethodsBalance as RestCallAction).apply {
+//            assertEquals(2, parameters.size)
+//            val requestBody = parameters.filterIsInstance<BodyParam>()
+//            assertEquals(1, requestBody.size)
+//            requestBody.first().genes.first { it.name == "body" }.apply {
+//                val valueGene = ParamUtil.getValueGene(this)
+//                assertTrue(valueGene is ObjectGene)
+//                (valueGene as ObjectGene).fields.find { it.name == "additionalData" }.apply {
+//                    assertNotNull(this)
+//                }
+//            }
+//        }
+//    }
+
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
     fun testAllOfSchema(enableConstraintHandling : Boolean){
@@ -756,6 +780,12 @@ class RestActionBuilderV3Test{
     }
 
     // ----------- V3 --------------
+
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun testadyen_checkoutservice41(enableConstraintHandling : Boolean){
+        loadAndAssertActions("/swagger/apisguru-v3/adyen_checkoutservice41.yaml", 18, enableConstraintHandling = enableConstraintHandling)
+    }
 
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
