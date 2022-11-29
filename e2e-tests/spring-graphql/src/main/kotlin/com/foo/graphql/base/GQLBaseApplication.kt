@@ -29,10 +29,3 @@ fun main(args: Array<String>) {
     SpringApplication.run(GQLBaseApplication::class.java,
             "--graphql.tools.schema-location-pattern=**/${GQLBaseApplication.SCHEMA_NAME}")
 }
-
-//graphql:
-//tools:
-//schema-location-pattern: "**/*.graphqls"
-//# Enable or disable the introspection query. Disabling it puts your server in contravention of the GraphQL
-//# specification and expectations of most clients, so use this option with caution
-//introspection-enabled: true
