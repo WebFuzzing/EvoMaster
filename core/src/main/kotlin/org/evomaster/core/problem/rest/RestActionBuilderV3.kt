@@ -515,7 +515,7 @@ object RestActionBuilderV3 {
         password	    string	password	Used to hint UIs the input needs to be obscured.
          */
 
-        val type = schema.type
+        val type = schema.type?:schema.types?.firstOrNull()
         val format = schema.format
 
         if (schema.enum?.isNotEmpty() == true) {
@@ -731,7 +731,7 @@ object RestActionBuilderV3 {
             if (!additional.`$ref`.isNullOrBlank()) {
                 val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history, enableConstraintHandling)
                 additionalFieldTemplate= PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
-            }else if(!additional.type.isNullOrBlank()){
+            }else if(!additional.type.isNullOrBlank() || additional.types?.isNotEmpty() == true){
                 val valueTemplate = getGene("valueTemplate", additional, swagger, history, null, enableConstraintHandling)
                 additionalFieldTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }
@@ -748,13 +748,13 @@ object RestActionBuilderV3 {
                 Using a map is just a temp solution
              */
 
-            if (fields.isEmpty()) {
-                if (additionalFieldTemplate != null)
-                    return FixedMapGene(name, additionalFieldTemplate)
-
-                // here, the first of pairgene should not be mutable
-                return FixedMapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null, enableConstraintHandling), isFixedFirst = true))
-            }
+//            if (fields.isEmpty()) {
+//                if (additionalFieldTemplate != null)
+//                    return FixedMapGene(name, additionalFieldTemplate)
+//
+//                // here, the first of pairgene should not be mutable
+//                return FixedMapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null, enableConstraintHandling), isFixedFirst = true))
+//            }
         }
 
         return assembleObjectGeneWithConstraints(name, schema, fields, additionalFieldTemplate, swagger, history, referenceTypeName, enableConstraintHandling)
@@ -778,7 +778,7 @@ object RestActionBuilderV3 {
             return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
         }
 
-        val oneOf = schema.anyOf?.map { s->
+        val oneOf = schema.oneOf?.map { s->
             createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
         }
 
@@ -832,6 +832,9 @@ object RestActionBuilderV3 {
 
     private fun assembleObjectGene(name: String, schema: Schema<*>, fields: List<Gene>, additionalFieldTemplate: PairGene<StringGene, *>?, referenceTypeName: String?) : Gene{
         if (fields.isEmpty()) {
+            if (additionalFieldTemplate != null)
+                return FixedMapGene(name, additionalFieldTemplate)
+
             LoggingUtil.uniqueWarn(log,"No fields for object definition: $name")
             // here, the first of pairgene should not be mutable
             return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
