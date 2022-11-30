@@ -2,7 +2,9 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.collection.MapGene
 import org.evomaster.core.search.gene.collection.PairGene
+import org.evomaster.core.search.gene.interfaces.MergeableGene
 import org.evomaster.core.search.gene.optional.FlexibleGene
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -21,7 +23,7 @@ class FlexibleObjectGene<T>(
         val fields: List<out Gene>,
         val template : PairGene<StringGene, T>,
         additionalFields:  List<PairGene<StringGene, T>> = listOf()
-): CompositeGene(name, mutableListOf<Gene>().apply { addAll(fields); addAll(additionalFields) }) where T: Gene{
+): CompositeGene(name, mutableListOf<Gene>().apply { addAll(fields); addAll(additionalFields) }), MergeableGene where T: Gene{
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(FlexibleObjectGene::class.java)
@@ -167,5 +169,9 @@ class FlexibleObjectGene<T>(
 
     override fun isMutable(): Boolean {
         return getViewOfChildren().any { it.isMutable() }
+    }
+
+    override fun isMergeableWith(gene: Gene): Boolean {
+        return gene is ObjectGene || gene is MapGene<*, *> || gene is FlexibleObjectGene<*>
     }
 }
