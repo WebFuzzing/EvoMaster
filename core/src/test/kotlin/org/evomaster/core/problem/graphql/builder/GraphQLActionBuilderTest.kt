@@ -1171,6 +1171,13 @@ class GraphQLActionBuilderTest {
         assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "characters" && it.elements.size==3 && it.lastElementTreatedSpecially })
         assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "staff" && it.elements.size==3 && it.lastElementTreatedSpecially })
         assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "studios" && it.elements.size==3 && it.lastElementTreatedSpecially})
+        /**/
+        val following = actionCluster["Following"] as GraphQLAction
+        assertEquals(3, following.parameters.size)
+        assertTrue(following.parameters[1] is GQInputParam)
+        assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java)!=null)
+        assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(EnumGene::class.java)!=null)
+
     }
 
     @Test
