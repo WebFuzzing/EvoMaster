@@ -3,8 +3,11 @@ package org.evomaster.core.search.gene.collection
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.search.gene.FlexibleObjectGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.interfaces.CollectionGene
+import org.evomaster.core.search.gene.interfaces.MergeableGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -27,7 +30,7 @@ abstract class MapGene<K, V>(
     val maxSize: Int? = null,
     val minSize: Int? = null,
     elements: MutableList<PairGene<K, V>> = mutableListOf()
-) : CollectionGene, CompositeGene(name, elements)
+) : CollectionGene, CompositeGene(name, elements), MergeableGene
         where K : Gene, V: Gene {
 
     private var keyCounter = 0
@@ -280,5 +283,10 @@ abstract class MapGene<K, V>(
 
 
     override fun getDefaultMaxSize() = (if (getMinSizeOrDefault() >= MAX_SIZE) (getMinSizeOrDefault() + MAX_SIZE) else MAX_SIZE)
+
+
+    override fun isMergeableWith(gene: Gene): Boolean {
+        return gene is ObjectGene || gene is MapGene<*, *> || gene is FlexibleObjectGene<*>
+    }
 
 }
