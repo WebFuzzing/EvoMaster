@@ -6,7 +6,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.interfaces.CollectionGene
-import org.evomaster.core.search.gene.interfaces.MergeableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
@@ -65,7 +64,7 @@ class ArrayGene<T>(
         private val openingTag : String = "[",
         private val closingTag : String = "]",
         private val separatorTag : String = ", "
-) : CollectionGene, CompositeGene(name, elements), MergeableGene
+) : CollectionGene, CompositeGene(name, elements)
         where T : Gene {
 
     protected val elements : List<T>
@@ -371,14 +370,5 @@ class ArrayGene<T>(
 
     override fun isPrintable(): Boolean {
         return getViewOfChildren().all { it.isPrintable() }
-    }
-
-    /**
-     * array gene can only be merged with ArrayGene
-     *
-     * TODO might need to have Flexible Array Gene
-     */
-    override fun isMergeableWith(gene: Gene): Boolean {
-        return gene is ArrayGene<*>
     }
 }

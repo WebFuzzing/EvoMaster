@@ -4,7 +4,6 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.collection.MapGene
 import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.interfaces.MergeableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -25,7 +24,7 @@ import java.net.URLEncoder
  * @property refType presents the name of reference type of the object
  */
 open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null
-) : CompositeFixedGene(name, fields), MergeableGene{
+) : CompositeFixedGene(name, fields){
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
@@ -403,7 +402,4 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         return false
     }
 
-    override fun isMergeableWith(gene: Gene): Boolean {
-        return gene is ObjectGene || gene is MapGene<*, *> || gene is FlexibleObjectGene<*>
-    }
 }
