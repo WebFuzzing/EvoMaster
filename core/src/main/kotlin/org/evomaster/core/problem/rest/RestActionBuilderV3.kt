@@ -803,26 +803,37 @@ object RestActionBuilderV3 {
         }
 
         if (!anyOf.isNullOrEmpty()){
-            val one =  listOf(assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)).plus(anyOf)
-            return ChoiceGene(name, (1 until 2.0.pow(one.size * 1.0).toInt()).map { i->
-                assembleObjectGene(
-                        name,
-                        schema,
-                        Integer.toBinaryString(i).toCharArray().mapIndexed { index, c ->
-                            if (c == '1'){
-                                one[index].run {
-                                    when (this) {
-                                        is ObjectGene -> this.fields
-                                        is FlexibleObjectGene<*> -> this.fields
-                                        else -> null
-                                    }
-                                }
-                            }else null
-                        }.filterNotNull().flatten(),
-                        additionalFieldTemplate,
-                        referenceTypeName
-                )
-            })
+            val allFields = anyOf.mapNotNull {
+                when (it) {
+                    is ObjectGene -> it.fields
+                    is FlexibleObjectGene<*> -> it.fields
+                    else -> null
+                }
+            }.flatten()
+            /*
+                currently, we handle anyOf as oneOf plus all combined one
+             */
+            return ChoiceGene(name, if (anyOf.size > 1) anyOf.plus(assembleObjectGene(name, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName)) else anyOf)
+
+//            return ChoiceGene(name, (1 until 2.0.pow(one.size * 1.0).toInt()).map { i->
+//                assembleObjectGene(
+//                        name,
+//                        schema,
+//                        Integer.toBinaryString(i).toCharArray().mapIndexed { index, c ->
+//                            if (c == '1'){
+//                                one[index].run {
+//                                    when (this) {
+//                                        is ObjectGene -> this.fields
+//                                        is FlexibleObjectGene<*> -> this.fields
+//                                        else -> null
+//                                    }
+//                                }
+//                            }else null
+//                        }.filterNotNull().flatten(),
+//                        additionalFieldTemplate,
+//                        referenceTypeName
+//                )
+//            })
         }
 
         return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName)
