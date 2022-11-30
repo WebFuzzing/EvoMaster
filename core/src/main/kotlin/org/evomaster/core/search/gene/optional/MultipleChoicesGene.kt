@@ -1,9 +1,8 @@
 package org.evomaster.core.search.gene.optional
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.interfaces.MergeableGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -34,6 +33,8 @@ class MultipleChoicesGene<T>(
     var combinedChoices: MutableList<Int> = combinedChoices
         private set
 
+    val merageableMap : List<List<Int>>
+
     init {
         if (geneChoices.isEmpty()) {
             throw IllegalArgumentException("The list of gene choices cannot be empty")
@@ -42,6 +43,11 @@ class MultipleChoicesGene<T>(
         if (combinedChoices.any { it < 0 || it >= geneChoices.size}) {
             throw IllegalArgumentException("Active index must be between 0 and ${geneChoices.size - 1}")
         }
+
+        merageableMap = geneChoices.map { g-> if (g !is MergeableGene) listOf() else geneChoices.filter { g.isMergeableWith(it) }.map { geneChoices.indexOf(it) }}
+
+        if (!validateChoices(combinedChoices))
+            throw IllegalArgumentException("genes at ${combinedChoices.joinToString(",")} are not mergeable with each other")
 
         if (minimumChoices < 1 || minimumChoices > combinedChoices.size)
             throw IllegalArgumentException("minimumChoices must be between 1 and ${geneChoices.size}, but it is $minimumChoices")
@@ -134,7 +140,9 @@ class MultipleChoicesGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         } else if (geneChoices.size != other.geneChoices.size) {
             throw IllegalArgumentException("Cannot copy value from another choice gene with  ${other.geneChoices.size} choices (current gene has ${geneChoices.size} choices)")
-        } else {
+        } else if (geneChoices.first()::class.java == other.geneChoices.first()::class.java){
+            throw IllegalArgumentException("cannot copy value from another choice gene which have different types of gene (${geneChoices.first()::class.java.name} vs. ${other.geneChoices.first()::class.java.name})")
+        }else {
             combinedChoices.clear()
             combinedChoices.addAll(other.combinedChoices)
             for (i in geneChoices.indices) {
@@ -159,7 +167,8 @@ class MultipleChoicesGene<T>(
 
 
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        TODO()
+        if (gene !is MultipleChoicesGene<*>) return false
+
     }
 
 
@@ -170,7 +179,13 @@ class MultipleChoicesGene<T>(
 
     override fun isLocallyValid() = geneChoices.all { it.isLocallyValid() }
 
-    override fun isPrintable() = TODO()
+    // all selected genes should be printable
+    override fun isPrintable() = combinedChoices.all { geneChoices[it].isPrintable() }
 
+    private fun validateChoices(indexes : List<Int>) : Boolean{
+        if (indexes.size == 1) return true
+        if (indexes.any {  geneChoices[it] !is MergeableGene }) return false
+        return indexes.all { x-> merageableMap[x].containsAll(indexes.filter { it != x }) }
+    }
 
 }
