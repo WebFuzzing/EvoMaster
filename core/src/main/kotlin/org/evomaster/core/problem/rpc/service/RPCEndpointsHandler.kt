@@ -248,6 +248,7 @@ class RPCEndpointsHandler {
                         interfaceName = dto.interfaceFullName,
                         functionName = dto.functionName,
                         descriptiveInfo = dto.appKey,
+                        inputParamTypes = dto.inputParameterTypes,
                         requestRuleIdentifier = dto.requestRules[index],
                         responseParam = response)
                     Lazy.assert { exkey == externalAction.getName() }
@@ -269,8 +270,10 @@ class RPCEndpointsHandler {
             interfaceFullName = action.interfaceName
             functionName = action.functionName
             appKey = action.descriptiveInfo
+            inputParameterTypes = action.inputParamTypes
             requestRules = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
             responses = listOf(action.response.responseBody.getValueAsPrintableString(mode = mode))
+            responseTypes = if ((action.response as? RPCResponseParam)?.className?.isNotBlank() == true) listOf((action.response as RPCResponseParam).className) else null
         }
     }
 
