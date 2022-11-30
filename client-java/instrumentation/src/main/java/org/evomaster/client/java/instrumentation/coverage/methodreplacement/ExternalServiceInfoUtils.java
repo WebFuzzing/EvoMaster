@@ -7,11 +7,19 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 public class ExternalServiceInfoUtils {
 
     /**
+     * If there is a mock server assigned for the given hostname,
+     * core will try to check the active status and if not active it will
+     * update the respective port and initiate the server. On the next, attempt
+     * SUT will connect to the active WireMock server.
+     *
      * @param remoteHostInfo is the host info collected from the SUT
      * @param remotePort     is the port employed by the SUT
      * @return redirected an array with two elements
      */
     public static String[] collectExternalServiceInfo(ExternalServiceInfo remoteHostInfo, int remotePort) {
+        // Note: Checking whether there is any active mapping or not will reduce the amount
+        // of time the same info gets added again and again. To do this, have to change the
+        // data structure of the external service mapping inside ExecutionTracer
         ExecutionTracer.addExternalServiceHost(remoteHostInfo);
 
         if (!ExecutionTracer.hasMockServer(remoteHostInfo.getHostname())) {

@@ -1,18 +1,13 @@
 package org.evomaster.core.problem.external.service.httpws
 
-import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isReservedIP
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.nextIPAddress
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
-import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

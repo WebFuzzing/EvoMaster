@@ -24,7 +24,7 @@ class HttpWsExternalService(
     private var ip: String,
 ) {
 
-    companion object{
+    companion object {
 
         private const val WIREMOCK_DEFAULT_RESPONSE_CODE = 404
         private const val WIREMOCK_DEFAULT_RESPONSE_MESSAGE = "Not Found"
@@ -33,7 +33,7 @@ class HttpWsExternalService(
     }
 
     /**
-     * Initiated WireMock server for the external service
+     * WireMock server to mock the external service
      */
     private var wireMockServer: WireMockServer? = null
 
@@ -46,17 +46,18 @@ class HttpWsExternalService(
 
             // TODO: Port need to be changed to the remote service port
             //  In CI also using remote ports as 80 and 443 fails
-            val config =  WireMockConfiguration()
+            val config = WireMockConfiguration()
                 .bindAddress(ip)
                 .extensions(ResponseTemplateTransformer(false))
 
             if (!externalServiceInfo.isHttp() && !externalServiceInfo.isHttps())
                 LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($ip)")
-            val applyHttps = externalServiceInfo.isHttps() || (!externalServiceInfo.isHttp() && externalServiceInfo.isDerivedHttps())
+            val applyHttps =
+                externalServiceInfo.isHttps() || (!externalServiceInfo.isHttp() && externalServiceInfo.isDerivedHttps())
 
-            if (applyHttps){
+            if (applyHttps) {
                 config.httpsPort(port)
-            }else {
+            } else {
                 config.port(port)
             }
 
@@ -66,7 +67,7 @@ class HttpWsExternalService(
                 for SUT, its first connection is re-directed to a given ip address,
                 to keep same behavior in generated tests, we do not start the WM accordingly
              */
-            if (externalServiceInfo !is DefaultHttpExternalServiceInfo){
+            if (externalServiceInfo !is DefaultHttpExternalServiceInfo) {
                 wm.start()
                 wm.stubFor(getDefaultWMMappingBuilder())
             }
@@ -85,15 +86,17 @@ class HttpWsExternalService(
     /**
      * @return the default response setup for WM instance
      */
-    fun getDefaultWMMappingBuilder() : MappingBuilder{
-        return WireMock.any(WireMock.anyUrl()).atPriority(getWMDefaultPriority()).willReturn(
+    fun getDefaultWMMappingBuilder(): MappingBuilder {
+        return WireMock.any(WireMock.anyUrl())
+            .atPriority(getWMDefaultPriority())
+            .willReturn(
                 WireMock.aResponse()
                     .withStatus(getWMDefaultCode())
                     .withBody(getWMDefaultMessage())
-                    /*
-                        do not set close connection in search
-                        however, it will be needed in the generated tests
-                     */
+                /*
+                    do not set close connection in search
+                    however, it will be needed in the generated tests
+                 */
 //                    .withHeader("Connection",getWMDefaultConnectionHeader())
             )
     }
@@ -158,10 +161,10 @@ class HttpWsExternalService(
                 it.request.absoluteUrl,
                 it.wasMatched,
                 getSignature(),
-                externalServiceInfo.getDescriptiveURLPath()+it.request.url,
+                externalServiceInfo.getDescriptiveURLPath() + it.request.url,
                 // separated by a comma, https://www.rfc-editor.org/rfc/rfc9110.html#name-field-order
-                it.request.headers?.all()?.filter { h-> h.key() != null }
-                    ?.associate {h-> h.key() to h.values().filterNotNull().joinToString(",") } ?: emptyMap(),
+                it.request.headers?.all()?.filter { h -> h.key() != null }
+                    ?.associate { h -> h.key() to h.values().filterNotNull().joinToString(",") } ?: emptyMap(),
                 it.request.bodyAsString
             )
         }.toList()
