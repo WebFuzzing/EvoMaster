@@ -1,8 +1,6 @@
 package org.evomaster.client.java.controller;
 
 import com.ea.agentloader.AgentLoader;
-import com.sun.corba.se.impl.orbutil.closure.Constant;
-import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.InstrumentingAgent;
