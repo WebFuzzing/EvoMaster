@@ -217,10 +217,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         // new obj
         CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstanceObject(typeName, varName), indent+1);
         for (NamedTypedValue f : getValue()){
-            if (f.accessibleSchema == null || f.accessibleSchema.isAccessible){
-                String fName = varName+"."+f.getName();
-                codes.addAll(f.newInstanceWithJava(false, true, fName, indent+1));
-            }else{
+            if (accessibleSchema != null && accessibleSchema.setterMethodName != null){
                 String fName = varName;
                 boolean fdeclar = false;
                 if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
@@ -232,6 +229,9 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
                 if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
                     CodeJavaGenerator.addCode(codes, CodeJavaGenerator.methodInvocation(varName, f.accessibleSchema.setterMethodName, fName)+CodeJavaGenerator.appendLast(),indent+1);
                 }
+            }else {
+                String fName = varName+"."+f.getName();
+                codes.addAll(f.newInstanceWithJava(false, true, fName, indent+1));
             }
         }
 
