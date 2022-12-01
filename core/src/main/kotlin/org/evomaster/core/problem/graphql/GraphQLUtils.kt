@@ -195,11 +195,7 @@ object GraphQLUtils {
         val printableInputGene = mutableListOf<String>()
         for (gene in inputGenes) {
             if (gene is EnumGene<*> ||
-                (gene is OptionalGene && gene.gene is EnumGene<*>) ||
-                (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>) ||
-                (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>) ||
-                (gene is ArrayGene<*> && gene.template is EnumGene<*>) ||
-                (gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
+                (gene is OptionalGene && gene.gene is EnumGene<*>)
             ) {
                 val i = gene.getValueAsRawString()
                 printableInputGene.add("${gene.name} : $i")
