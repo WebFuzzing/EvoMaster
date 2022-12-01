@@ -34,6 +34,11 @@ public class SeededRPCActionDto {
      */
     public List<String> inputParamTypes;
 
-    // assertion, excepted results ?
+    /**
+     * expected response if has
+     *
+     * currently, we only support json format
+     */
+    public String expectedResponse;
 
 }
