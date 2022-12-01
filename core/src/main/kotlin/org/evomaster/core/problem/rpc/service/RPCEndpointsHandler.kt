@@ -141,7 +141,7 @@ class RPCEndpointsHandler {
     }
 
     /**
-     * handle customized tests with post actions after search
+     * handle customized test generation with post actions after search
      */
     fun handleCustomizedTests(individuals : List<EvaluatedIndividual<RPCIndividual>>){
         val postSearchActionDto = PostSearchActionDto()
