@@ -35,17 +35,31 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         try {
             Object instance = clazz.newInstance();
             for (NamedTypedValue v: getValue()){
-                if (v.accessibleSchema == null || v.accessibleSchema.isAccessible){
+                boolean setWithSetter = false;
+
+                /*
+                    if setter exists, we should prioritize the usage of the setter
+                    for thrift, the setter contains additional info
+                 */
+                if(v.accessibleSchema != null && v.accessibleSchema.setterMethodName != null){
+                    Method m =  getSetter(clazz, v.accessibleSchema.setterMethodName, v.getType(), v.getType().getClazz(), 0);
+                            //clazz.getMethod(v.accessibleSchema.setterMethodName, v.getType().getClazz());
+                    try {
+                        m.invoke(instance, v.newInstance());
+                        setWithSetter = true;
+                    } catch (InvocationTargetException e) {
+                        SimpleLogger.uniqueWarn("fail to access the method:"+clazzName+" with error msg:"+e.getMessage());
+                    }
+                }
+
+                if (!setWithSetter){
                     Field f = clazz.getField(v.getName());
                     f.setAccessible(true);
                     Object vins = v.newInstance();
                     if (vins != null)
                         f.set(instance, vins);
-                } else if(v.accessibleSchema.setterMethodName != null){
-                    Method m =  getSetter(clazz, v.accessibleSchema.setterMethodName, v.getType(), v.getType().getClazz(), 0);
-                            //clazz.getMethod(v.accessibleSchema.setterMethodName, v.getType().getClazz());
-                    m.invoke(instance, v.newInstance());
                 }
+
             }
             return instance;
         } catch (InstantiationException e) {
@@ -56,8 +70,6 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
             throw new RuntimeException("fail to access the field:"+clazzName+" with error msg:"+e.getMessage());
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("fail to access the method:"+clazzName+" with error msg:"+e.getMessage());
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("fail to invoke the setter method:"+clazzName+" with error msg:"+e.getMessage());
         }
     }
 

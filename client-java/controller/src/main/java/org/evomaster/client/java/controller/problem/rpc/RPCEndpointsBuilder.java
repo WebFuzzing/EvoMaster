@@ -548,15 +548,12 @@ public class RPCEndpointsBuilder {
                         if (doSkipReflection(f.getName()))
                             continue;
 
-                        AccessibleSchema faccessSchema = null;
+                        // always try to find the setter and getter
+                        AccessibleSchema faccessSchema = new AccessibleSchema(Modifier.isPublic(f.getModifiers()), findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
                         //check accessible
-                        if (Modifier.isPublic(f.getModifiers())){
-                            faccessSchema = new AccessibleSchema();
-                        } else{
-                            // find getter and setter
-                            faccessSchema = new AccessibleSchema(false, findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
+                        if (!Modifier.isPublic(f.getModifiers())){
                             if (faccessSchema.getterMethodName == null || faccessSchema.setterMethodName == null){
-                                SimpleLogger.warn("Error: skip the field "+f.getName()+" since its setter/getter is not found");
+                                SimpleLogger.uniqueWarn("Error: skip the field "+f.getName()+" since its setter/getter is not found");
                                 continue;
                             }
                         }
