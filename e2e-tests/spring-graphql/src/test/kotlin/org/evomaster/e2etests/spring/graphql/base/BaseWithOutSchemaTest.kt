@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
@@ -39,6 +40,7 @@ class BaseWithOutSchemaTest: SpringTestBase() {
                 fail("Should had crashed")
             } catch (e: Exception){
                 //expected, as introspective query is disabled
+                assertEquals(SutProblemException::class.java, e.cause!!.javaClass)
             }
         },
                 1)
