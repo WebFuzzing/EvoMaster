@@ -12,6 +12,7 @@ import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -256,6 +257,35 @@ internal class GeneUtilsTest {
         GeneUtils.repairBooleanSelection(objBoolean)
 
         assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
+    }
+
+    @Test
+    fun testRepairBooleanSectionOptionalTuple() {
+
+        val booleanGene = BooleanGene("Boolean", value = false)
+
+        val obj = ObjectGene(
+            "object1", listOf(
+                (OptionalGene(
+                    "optional",
+                    TupleGene(
+                        "optionalTuple",
+                        listOf(
+                            IntegerGene("IntegerGene"),
+                            OptionalGene(
+                                "optionalObject",
+                                ObjectGene("object2", listOf(booleanGene))
+                            )
+                        ),
+                        lastElementTreatedSpecially = true
+                    )
+                )),
+                TupleGene("NonOptionalTuple", listOf(CycleObjectGene("cycle")), lastElementTreatedSpecially = true)
+            )
+        )
+        assertFalse(booleanGene.value)
+        GeneUtils.repairBooleanSelection(obj)
+        assertTrue(booleanGene.value)
     }
 
 
