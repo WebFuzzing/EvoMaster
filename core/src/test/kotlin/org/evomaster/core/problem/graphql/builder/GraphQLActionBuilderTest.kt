@@ -1181,6 +1181,27 @@ class GraphQLActionBuilderTest {
     }
 
     @Test
+    fun arrayEnumInputTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/arrayEnumInput.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(1, actionCluster.size)
+
+        val flowersByType = actionCluster["flowersByType"] as GraphQLAction
+        assertEquals(2, flowersByType.parameters.size)
+        assertTrue(flowersByType.parameters[0] is GQInputParam)
+        assertTrue(flowersByType.parameters[1] is GQReturnParam)
+
+        assertTrue(flowersByType.parameters[0].gene.getWrappedGene(ArrayGene::class.java)!=null)
+
+        assertTrue(flowersByType.parameters[0].gene.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(EnumGene::class.java)!=null)
+
+    }
+
+    @Test
     fun gitLabSchemaTest() {
         val actionCluster = mutableMapOf<String, Action>()
         val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/GitLab.json").readText()
