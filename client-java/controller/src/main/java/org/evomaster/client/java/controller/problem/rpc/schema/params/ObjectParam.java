@@ -217,7 +217,7 @@ public class ObjectParam extends NamedTypedValue<ObjectType, List<NamedTypedValu
         // new obj
         CodeJavaGenerator.addCode(codes, CodeJavaGenerator.setInstanceObject(typeName, varName), indent+1);
         for (NamedTypedValue f : getValue()){
-            if (accessibleSchema != null && accessibleSchema.setterMethodName != null){
+            if (f.accessibleSchema != null && f.accessibleSchema.setterMethodName != null){
                 String fName = varName;
                 boolean fdeclar = false;
                 if (f instanceof ObjectParam || f instanceof MapParam || f instanceof CollectionParam || f instanceof DateParam || f instanceof  BigDecimalParam || f instanceof BigIntegerParam){
