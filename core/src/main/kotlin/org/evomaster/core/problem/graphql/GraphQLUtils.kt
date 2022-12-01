@@ -71,16 +71,8 @@ object GraphQLUtils {
                 """.trimIndent()
                         )
 
-                    } else if (returnGene.name.endsWith(GqlConst.UNION_TAG)) {//The first is a union type
-
-                        var query = getQuery(returnGene, a)//todo remove the name for the first union
-                        Entity.json(
-                            """
-                   {"query" : " {  ${a.methodName} ($printableInputGenes)  { $query }  }   ","variables":null}
-                """.trimIndent()
-                        )
-
-                    } else {
+                    } else
+                        {
                         val query = getQuery(returnGene, a)
                         Entity.json(
                             """
@@ -99,16 +91,7 @@ object GraphQLUtils {
                 """.trimIndent()
                         )
 
-                    } else if (returnGene.name.endsWith(GqlConst.UNION_TAG)) {//The first is a union type
-
-                        var query = getQuery(returnGene, a)//todo remove the name for the first union
-                        Entity.json(
-                            """
-                   {"query" : " {  ${a.methodName} $printableInputGenes  { $query }  }   ","variables":null}
-                """.trimIndent()
-                        )
-
-                    } else {
+                    }  else {
                         val query = getQuery(returnGene, a)
                         Entity.json(
                             """
