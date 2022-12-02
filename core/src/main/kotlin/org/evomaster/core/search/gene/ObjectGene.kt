@@ -108,7 +108,19 @@ class ObjectGene(
         fixedFields.filter { it.isMutable() }
                 .forEach { it.randomize(randomness, tryToForceNewValue) }
 
-        //TODO for additional fields
+        if (!isFixed){
+            Lazy.assert {
+                template != null && additionalFields != null
+            }
+            killAllChildren()
+            val num = randomness.nextInt(MAX_SIZE_ADDITIONAL_FIELDS)
+            repeat(num){
+                val added = addElement(randomness)
+                if (added != null){
+                    addChild(added)
+                }
+            }
+        }
     }
 
     override fun customShouldApplyShallowMutation(randomness: Randomness, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
@@ -156,6 +168,10 @@ class ObjectGene(
 
         if (existingKey(copy)){
             copy.randomize(randomness, false)
+        }
+
+        if(this.initialized){
+            copy.markAllAsInitialized()
         }
 
         if (existingKey(copy))
