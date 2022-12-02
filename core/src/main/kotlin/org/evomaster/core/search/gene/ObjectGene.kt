@@ -112,7 +112,8 @@ class ObjectGene(
             Lazy.assert {
                 template != null && additionalFields != null
             }
-            killAllChildren()
+            if (additionalFields!!.isNotEmpty())
+                killChildren(additionalFields!!)
             val num = randomness.nextInt(MAX_SIZE_ADDITIONAL_FIELDS)
             repeat(num){
                 val added = addElement(randomness)
@@ -285,7 +286,7 @@ class ObjectGene(
 
         if (additionalGeneMutationInfo.impact != null
                 && additionalGeneMutationInfo.impact is ObjectGeneImpact) {
-            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.fields.getValue(it.name) }
+            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.fixedFields.getValue(it.name) }
             val selected = mwc.selectSubGene(
                     internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
             )

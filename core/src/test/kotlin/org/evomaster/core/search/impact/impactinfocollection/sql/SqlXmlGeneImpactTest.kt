@@ -74,8 +74,8 @@ class SqlXmlGeneImpactTest : GeneImpactTest() {
         assertImpact(impact, updateImpact, ImpactOptions.IMPACT_IMPROVEMENT)
         assertImpact(impact.geneImpact, updateImpact.geneImpact, ImpactOptions.IMPACT_IMPROVEMENT)
 
-        assertImpact(impact.geneImpact.fields.getValue(f1), updateImpact.geneImpact.fields.getValue(f1), ImpactOptions.IMPACT_IMPROVEMENT)
-        assertImpact(impact.geneImpact.fields.getValue(f2), updateImpact.geneImpact.fields.getValue(f2), ImpactOptions.NONE)
+        assertImpact(impact.geneImpact.fixedFields.getValue(f1), updateImpact.geneImpact.fixedFields.getValue(f1), ImpactOptions.IMPACT_IMPROVEMENT)
+        assertImpact(impact.geneImpact.fixedFields.getValue(f2), updateImpact.geneImpact.fixedFields.getValue(f2), ImpactOptions.NONE)
 
         impact = updateImpact
 
@@ -84,8 +84,8 @@ class SqlXmlGeneImpactTest : GeneImpactTest() {
 
         assertImpact(impact, updateImpact, ImpactOptions.NO_IMPACT)
         assertImpact(impact.geneImpact, updateImpact.geneImpact, ImpactOptions.NO_IMPACT)
-        assertImpact(impact.geneImpact.fields.getValue(f1), updateImpact.geneImpact.fields.getValue(f1), ImpactOptions.NONE)
-        assertImpact(impact.geneImpact.fields.getValue(f2), updateImpact.geneImpact.fields.getValue(f2), ImpactOptions.NO_IMPACT)
+        assertImpact(impact.geneImpact.fixedFields.getValue(f1), updateImpact.geneImpact.fixedFields.getValue(f1), ImpactOptions.NONE)
+        assertImpact(impact.geneImpact.fixedFields.getValue(f2), updateImpact.geneImpact.fixedFields.getValue(f2), ImpactOptions.NO_IMPACT)
 
     }
 }
