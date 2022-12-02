@@ -679,7 +679,7 @@ object RestActionBuilderV3 {
              see more with https://docs.readme.com/docs/openapi-compatibility-chart
          */
 
-        var additionalFieldTemplate : PairGene<StringGene, *>? = null
+        var additionalFieldTemplate : PairGene<StringGene, Gene>? = null
         /*
             Can be either a boolean or a Schema
          */
@@ -735,7 +735,7 @@ object RestActionBuilderV3 {
         }
 
         if (additionalFieldTemplate!=null){
-            return FlexibleObjectGene(name, fields, additionalFieldTemplate)
+            return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null, false, additionalFieldTemplate, mutableListOf())
         }
 
         /*

@@ -93,10 +93,10 @@ class RestActionBuilderV3Test{
         val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema, null)
         assertEquals(name, gene.name)
 
-        assertTrue(gene is FlexibleObjectGene<*>)
-        (gene as FlexibleObjectGene<*>).apply {
-            assertEquals(4, fields.size)
-            assertTrue(template.second is FixedMapGene<*, *>)
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(4, fixedFields.size)
+            assertTrue(template!!.second is FixedMapGene<*, *>)
         }
     }
 

@@ -112,7 +112,6 @@ object GeneSamplerForTests {
             FixedMapGene::class -> sampleFixedMapGene(rand) as T
             FlexibleMapGene::class -> sampleFlexibleMapGene(rand) as T
             FlexibleGene::class -> samplePrintableFlexibleGene(rand) as T
-            FlexibleObjectGene::class -> sampleFlexibleObjectGene(rand) as T
             NumericStringGene::class -> sampleNumericStringGene(rand) as T
             ObjectGene::class -> sampleObjectGene(rand) as T
             OptionalGene::class -> sampleOptionalGene(rand) as T
@@ -553,15 +552,32 @@ object GeneSamplerForTests {
     fun sampleObjectGene(rand: Randomness): ObjectGene {
 
         val selection = geneClasses.filter { !it.isAbstract }
+        val isFixed = rand.nextBoolean()
 
-        return ObjectGene(
-                name = "rand ObjectGene ${rand.nextInt()}",
-                fields = listOf(
-                        sample(rand.choose(selection), rand),
-                        sample(rand.choose(selection), rand),
-                        sample(rand.choose(selection), rand)
-                )
-        )
+
+        return if (isFixed) {
+            ObjectGene(
+                    name = "rand ObjectGene ${rand.nextInt()}",
+                    fields = listOf(
+                            sample(rand.choose(selection), rand),
+                            sample(rand.choose(selection), rand),
+                            sample(rand.choose(selection), rand)
+                    )
+            )
+        }else{
+            ObjectGene(
+                    name = "rand ObjectGene ${rand.nextInt()}",
+                    fixedFields = listOf(
+                            sample(rand.choose(selection), rand),
+                            sample(rand.choose(selection), rand),
+                            sample(rand.choose(selection), rand)
+                    ),
+                    refType = null,
+                    isFixed = isFixed,
+                    template = PairGene("template", sampleStringGene(rand), samplePrintableTemplate(selection, rand)),
+                    additionalFields = mutableListOf()
+            )
+        }
     }
 
     fun sampleNumericStringGene(rand: Randomness): NumericStringGene {
@@ -593,20 +609,6 @@ object GeneSamplerForTests {
             minSize = rand.choose(listOf(null, min)),
             maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3))),
             template = samplePrintableFlexiblePairGene(rand)
-        )
-    }
-
-    fun sampleFlexibleObjectGene(rand: Randomness) : FlexibleObjectGene<*>{
-        val selection = geneClasses.filter { !it.isAbstract }
-
-        return FlexibleObjectGene(
-                name = "rand ObjectGene ${rand.nextInt()}",
-                fields = listOf(
-                        sample(rand.choose(selection), rand),
-                        sample(rand.choose(selection), rand),
-                        sample(rand.choose(selection), rand)
-                ),
-                template = PairGene("template", sampleStringGene(rand), samplePrintableTemplate(selection, rand))
         )
     }
 
