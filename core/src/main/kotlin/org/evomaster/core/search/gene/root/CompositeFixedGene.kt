@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.root
 
-import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.CompositeFixedGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
@@ -11,7 +10,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 abstract class CompositeFixedGene(
         name: String,
         children: List<out Gene>
-) : CompositeGene(name, children.toMutableList()) {
+) : CompositeConditionalFixedGene(name, true, children.toMutableList()) {
 
     constructor(name: String, child: Gene) : this(name, mutableListOf(child))
 
@@ -21,42 +20,9 @@ abstract class CompositeFixedGene(
         }
     }
 
-    open fun canBeChildless() = false
+    override fun canBeChildless() = false
 
 
-    private val errorChildMsg = "BUG in EvoMaster: cannot modify children of fixed ${this.javaClass}"
-
-    override fun addChild(child: StructuralElement) {
-        throw IllegalStateException(errorChildMsg)
-    }
-
-    override fun addChild(position: Int, child: StructuralElement){
-        throw IllegalStateException(errorChildMsg)
-    }
-
-    override fun addChildren(position: Int, list : List<StructuralElement>){
-        throw IllegalStateException(errorChildMsg)
-    }
-
-    override fun killAllChildren(){
-        throw IllegalStateException(errorChildMsg)
-    }
-
-    override fun killChild(child: StructuralElement){
-        throw IllegalStateException(errorChildMsg)
-    }
-
-    override fun killChildByIndex(index: Int) : StructuralElement {
-        throw IllegalStateException(errorChildMsg)
-    }
-
-    override fun killChildren(predicate: (StructuralElement) -> Boolean){
-        throw IllegalStateException(errorChildMsg)
-    }
-
-    override fun killChildren(toKill: List<out StructuralElement>){
-        throw IllegalStateException(errorChildMsg)
-    }
 
     override fun adaptiveSelectSubsetToMutate(
         randomness: Randomness,
