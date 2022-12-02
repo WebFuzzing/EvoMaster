@@ -378,7 +378,7 @@ public class RPCSutControllerTest {
         assertEquals(expect, responseDto.rpcResponse.stringValue);
 
         List<String> assertionScript = responseDto.assertionScript;
-        assertEquals("assertEquals(\"BigNumberObj{bdPositiveFloat=10.12, bdNegativeFloat=-10.12, bdPositiveOrZeroFloat=0.00, bdNegativeOrZeroFloat=-2.16, biPositive=10, biPositiveOrZero=0, biNegative=-10, biNegativeOrZero=-2}\", res1);", assertionScript.get(0));
+        assertEquals("//assertEquals(\"BigNumberObj{bdPositiveFloat=10.12, bdNegativeFloat=-10.12, bdPositiveOrZeroFloat=0.00, bdNegativeOrZeroFloat=-2.16, biPositive=10, biPositiveOrZero=0, biNegative=-10, biNegativeOrZero=-2}\", res1);", assertionScript.get(0));
     }
 
     @Test
@@ -712,8 +712,8 @@ public class RPCSutControllerTest {
         assertEquals("}", responseDto.testScript.get(9));
 
         assertEquals(2, responseDto.assertionScript.size());
-        assertEquals("assertEquals(\"childppcode\", res1.getCode());", responseDto.assertionScript.get(0));
-        assertEquals("assertEquals(\"childpmsg\", res1.getMessage());", responseDto.assertionScript.get(1));
+        assertEquals("//assertEquals(\"childppcode\", res1.getCode());", responseDto.assertionScript.get(0));
+        assertEquals("//assertEquals(\"childpmsg\", res1.getMessage());", responseDto.assertionScript.get(1));
     }
 
 

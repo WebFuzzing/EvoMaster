@@ -763,7 +763,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(\"1\", res1.getStringList().get(0));", assertionJavaCode.get(3));
         assertEquals("assertEquals(\"2\", res1.getStringList().get(1));", assertionJavaCode.get(4));
         assertEquals("assertEquals(\"3\", res1.getStringList().get(2));", assertionJavaCode.get(5));
-        assertEquals("assertEquals(com.thrift.example.artificial.EnumKind.ONE, res1.getPriEnum());", assertionJavaCode.get(6));
+        assertEquals("//assertEquals(com.thrift.example.artificial.EnumKind.ONE, res1.getPriEnum());", assertionJavaCode.get(6));
         assertEquals("assertEquals(true, res1.getPriBoolean().booleanValue());", assertionJavaCode.get(7));
         assertEquals("assertEquals(false, res1.isPribool());", assertionJavaCode.get(8));
         assertEquals("assertEquals(15, res1.getPriBByte().byteValue());", assertionJavaCode.get(9));
@@ -839,7 +839,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
         assertEquals("assertEquals(\"1\", res1.getPriRequest().getStringList().get(0));", assertionJavaCodeForResponse.get(4));
         assertEquals("assertEquals(\"2\", res1.getPriRequest().getStringList().get(1));", assertionJavaCodeForResponse.get(5));
         assertEquals("assertEquals(\"3\", res1.getPriRequest().getStringList().get(2));", assertionJavaCodeForResponse.get(6));
-        assertEquals("assertEquals(com.thrift.example.artificial.EnumKind.ONE, res1.getPriRequest().getPriEnum());", assertionJavaCodeForResponse.get(7));
+        assertEquals("//assertEquals(com.thrift.example.artificial.EnumKind.ONE, res1.getPriRequest().getPriEnum());", assertionJavaCodeForResponse.get(7));
         assertEquals("assertEquals(true, res1.getPriRequest().getPriBoolean().booleanValue());", assertionJavaCodeForResponse.get(8));
         assertEquals("assertEquals(false, res1.getPriRequest().isPribool());", assertionJavaCodeForResponse.get(9));
         assertEquals("assertEquals(15, res1.getPriRequest().getPriBByte().byteValue());", assertionJavaCodeForResponse.get(10));
