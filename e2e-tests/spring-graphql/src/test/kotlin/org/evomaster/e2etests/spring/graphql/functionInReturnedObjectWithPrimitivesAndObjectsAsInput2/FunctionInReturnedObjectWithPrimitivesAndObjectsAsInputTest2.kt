@@ -22,7 +22,7 @@ class FunctionInReturnedObjectWithPrimitivesAndObjectsAsInputTest2 : SpringTestB
         runTestHandlingFlakyAndCompilation(
             "GQL_FunctionInReturnedObjectWithPrimitivesAndObjectsAsInput2EM",
             "org.foo.graphql.FunctionInReturnedObjectWithPrimitivesAndObjectsAsInput2EM",
-            100
+            20
         ) { args: MutableList<String> ->
 
             val solution = initAndRun(args)

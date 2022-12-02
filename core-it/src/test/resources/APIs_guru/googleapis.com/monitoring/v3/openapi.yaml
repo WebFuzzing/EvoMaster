@@ -318,7 +318,7 @@ paths:
       - $ref: "#/components/parameters/upload_protocol"
       - $ref: "#/components/parameters/uploadType"
     post:
-      description: Creates a new alerting policy.
+      description: Creates a new alerting policy.Design your application to single-thread API calls that modify the state of alerting policies in a single project. This includes calls to CreateAlertPolicy, DeleteAlertPolicy and UpdateAlertPolicy.
       operationId: monitoring.projects.alertPolicies.create
       parameters:
         - description: "Required. The project (https://cloud.google.com/monitoring/api/v3#project_name) in which to create the alerting policy. The format is: projects/[PROJECT_ID_OR_NUMBER] Note that this field names the parent container in which the alerting policy will be written, not the name of the created policy. |name| must be a host project of a Metrics Scope, otherwise INVALID_ARGUMENT error will return. The alerting policy that is returned will have a name that contains a normalized representation of this name as a prefix but adds a suffix of the form /alertPolicies/[ALERT_POLICY_ID], identifying the policy in the container."
@@ -643,7 +643,7 @@ paths:
       - $ref: "#/components/parameters/upload_protocol"
       - $ref: "#/components/parameters/uploadType"
     post:
-      description: Creates a new metric descriptor. The creation is executed asynchronously and callers may check the returned operation to track its progress. User-created metric descriptors define custom metrics (https://cloud.google.com/monitoring/custom-metrics).
+      description: Creates a new metric descriptor. The creation is executed asynchronously. User-created metric descriptors define custom metrics (https://cloud.google.com/monitoring/custom-metrics). The metric descriptor is updated if it already exists, except that metric labels are never removed.
       operationId: monitoring.projects.metricDescriptors.create
       parameters:
         - description: "Required. The project (https://cloud.google.com/monitoring/api/v3#project_name) on which to execute the request. The format is: 4 projects/PROJECT_ID_OR_NUMBER"
@@ -864,7 +864,7 @@ paths:
       - $ref: "#/components/parameters/upload_protocol"
       - $ref: "#/components/parameters/uploadType"
     post:
-      description: Creates a new notification channel, representing a single notification endpoint such as an email address, SMS number, or PagerDuty service.
+      description: Creates a new notification channel, representing a single notification endpoint such as an email address, SMS number, or PagerDuty service.Design your application to single-thread API calls that modify the state of notification channels in a single project. This includes calls to CreateNotificationChannel, DeleteNotificationChannel and UpdateNotificationChannel.
       operationId: monitoring.projects.notificationChannels.create
       parameters:
         - description: "Required. The project (https://cloud.google.com/monitoring/api/v3#project_name) on which to execute the request. The format is: projects/[PROJECT_ID_OR_NUMBER] This names the container into which the channel will be written, this does not name the newly created channel. The resulting channel's name will have a normalized version of this field as a prefix, but will add /notificationChannels/[CHANNEL_ID] to identify the channel."
@@ -1588,6 +1588,11 @@ paths:
           required: true
           schema:
             type: string
+        - description: If provided, this field specifies the criteria that must be met by uptime checks to be included in the response.For more details, see Filtering syntax (https://cloud.google.com/monitoring/api/v3/sorting-and-filtering#filter_syntax).
+          in: query
+          name: filter
+          schema:
+            type: string
         - description: The maximum number of results to return in a single response. The server may further constrain the maximum number of results returned in a single page. If the page_size is <=0, the server will decide the number of results to be returned.
           in: query
           name: pageSize
@@ -1878,6 +1883,18 @@ components:
           description: The username to use when authenticating with the HTTP server.
           type: string
       type: object
+    BasicService:
+      description: A well-known service type, defined by its service type and service labels. Documentation and examples here (https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/api/api-structures#basic-svc-w-basic-sli).
+      properties:
+        serviceLabels:
+          additionalProperties:
+            type: string
+          description: Labels that specify the resource that emits the monitoring data which is used for SLO reporting of this Service. Documentation and valid values for given service types here (https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/api/api-structures#basic-svc-w-basic-sli).
+          type: object
+        serviceType:
+          description: The type of service that this basic service defines, e.g. APP_ENGINE service type. Documentation and valid values here (https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/api/api-structures#basic-svc-w-basic-sli).
+          type: string
+      type: object
     BasicSli:
       description: An SLI measuring performance on a well-known service type. Performance will be computed on the basis of pre-defined metrics. The type of the service_resource determines the metrics to use and the service_resource.labels and metric_labels are used to construct a monitoring filter to filter that metric down to just the data relevant to this service.
       properties:
@@ -2126,7 +2143,7 @@ components:
           type: integer
       type: object
     Custom:
-      description: Custom view of service telemetry. Currently a place-holder pending final design.
+      description: Use a custom service to designate a service that you want to monitor when none of the other service types (like App Engine, Cloud Run, or a GKE type) matches your intended service.
       properties: {}
       type: object
     Distribution:
@@ -2173,13 +2190,16 @@ components:
           description: Range of values considered "good." For a one-sided range, set one bound to an infinite value.
       type: object
     Documentation:
-      description: A content string and a MIME type that describes the content string's format.
+      description: User-defined documentation of the generated notification.
       properties:
         content:
-          description: The text of the documentation, interpreted according to mime_type. The content may not exceed 8,192 Unicode characters and may not exceed more than 10,240 bytes when encoded in UTF-8 format, whichever is smaller. This text can be templatized by using variables (https://cloud.google.com/monitoring/alerts/doc-variables).
+          description: The body of the notification, interpreted according to mime_type. The content may not exceed 8,192 Unicode characters and may not exceed more than 10,240 bytes when encoded in UTF-8 format, whichever is smaller. This text can be templatized by using variables (https://cloud.google.com/monitoring/alerts/doc-variables).
           type: string
         mimeType:
           description: The format of the content field. Presently, only the value "text/markdown" is supported. See Markdown (https://en.wikipedia.org/wiki/Markdown) for more information.
+          type: string
+        subject:
+          description: A public comment for an internal field, because the linter insists that all fields must have a comment. Sigh.
           type: string
       type: object
     DroppedLabels:
@@ -2427,6 +2447,11 @@ components:
     HttpCheck:
       description: Information involved in an HTTP/HTTPS Uptime check request.
       properties:
+        acceptedResponseStatusCodes:
+          description: If present, the check will only pass if the HTTP response status code is in this set of status codes. If empty, the HTTP status code will only pass if the HTTP status code is 200-299.
+          items:
+            $ref: "#/components/schemas/ResponseStatusCode"
+          type: array
         authInfo:
           $ref: "#/components/schemas/BasicAuthentication"
           description: The authentication information. Optional when creating an HTTP check; defaults to empty.
@@ -2451,6 +2476,9 @@ components:
         path:
           description: Optional (defaults to "/"). The path to the page against which to run the check. Will be combined with the host (specified within the monitored_resource) and port to construct the full URL. If the provided path does not begin with "/", a "/" will be prepended automatically.
           type: string
+        pingConfig:
+          $ref: "#/components/schemas/PingConfig"
+          description: Contains information needed to add pings to an HTTP check.
         port:
           description: Optional (defaults to 80 when use_ssl is false, and 443 when use_ssl is true). The TCP port on the HTTP server against which to run the check. Will be combined with host (specified within the monitored_resource) and path to construct the full URL.
           format: int32
@@ -3181,6 +3209,14 @@ components:
           format: double
           type: number
       type: object
+    PingConfig:
+      description: Information involved in sending ICMP pings alongside public HTTP/TCP checks. For HTTP, the pings are performed for each part of the redirect chain.
+      properties:
+        pingsCount:
+          description: Number of ICMP pings. A maximum of 3 ICMP pings is currently supported.
+          format: int32
+          type: integer
+      type: object
     Point:
       description: A single data point in a time series.
       properties:
@@ -3273,6 +3309,25 @@ components:
             - AWS_ELB_LOAD_BALANCER
           type: string
       type: object
+    ResponseStatusCode:
+      description: A status to accept. Either a status code class like "2xx", or an integer status code like "200".
+      properties:
+        statusClass:
+          description: A class of status codes to accept.
+          enum:
+            - STATUS_CLASS_UNSPECIFIED
+            - STATUS_CLASS_1XX
+            - STATUS_CLASS_2XX
+            - STATUS_CLASS_3XX
+            - STATUS_CLASS_4XX
+            - STATUS_CLASS_5XX
+            - STATUS_CLASS_ANY
+          type: string
+        statusValue:
+          description: A status code to accept.
+          format: int32
+          type: integer
+      type: object
     SendNotificationChannelVerificationCodeRequest:
       description: The SendNotificationChannelVerificationCode request.
       properties: {}
@@ -3283,6 +3338,9 @@ components:
         appEngine:
           $ref: "#/components/schemas/AppEngine"
           description: Type used for App Engine services.
+        basicService:
+          $ref: "#/components/schemas/BasicService"
+          description: Message that contains the service type and service labels of this service if it is a basic service. Documentation and examples here (https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/api/api-structures#basic-svc-w-basic-sli).
         cloudEndpoints:
           $ref: "#/components/schemas/CloudEndpoints"
           description: Type used for Cloud Endpoints services.
@@ -3411,6 +3469,9 @@ components:
     TcpCheck:
       description: Information required for a TCP Uptime check request.
       properties:
+        pingConfig:
+          $ref: "#/components/schemas/PingConfig"
+          description: Contains information needed to add pings to a TCP check.
         port:
           description: The TCP port on the server against which to run the check. Will be combined with host (specified within the monitored_resource) to construct the full URL. Required.
           format: int32
@@ -3611,7 +3672,7 @@ components:
           type: boolean
         monitoredResource:
           $ref: "#/components/schemas/MonitoredResource"
-          description: "The monitored resource (https://cloud.google.com/monitoring/api/resources) associated with the configuration. The following monitored resource types are valid for this field: uptime_url, gce_instance, gae_app, aws_ec2_instance, aws_elb_load_balancer k8s_service servicedirectory_service"
+          description: "The monitored resource (https://cloud.google.com/monitoring/api/resources) associated with the configuration. The following monitored resource types are valid for this field: uptime_url, gce_instance, gae_app, aws_ec2_instance, aws_elb_load_balancer k8s_service servicedirectory_service cloud_run_revision"
         name:
           description: "A unique resource name for this Uptime check configuration. The format is: projects/[PROJECT_ID_OR_NUMBER]/uptimeCheckConfigs/[UPTIME_CHECK_ID] [PROJECT_ID_OR_NUMBER] is the Workspace host project associated with the Uptime check.This field should be omitted when creating the Uptime check configuration; on create, the resource name is assigned by the server and included in the response."
           type: string
@@ -3640,6 +3701,11 @@ components:
           description: The maximum amount of time to wait for the request to complete (must be between 1 and 60 seconds). Required.
           format: google-duration
           type: string
+        userLabels:
+          additionalProperties:
+            type: string
+          description: User-supplied key/value data to be used for organizing and identifying the UptimeCheckConfig objects.The field can contain up to 64 entries. Each key and value is limited to 63 Unicode characters or 128 bytes, whichever is smaller. Labels and values can contain only lowercase letters, numerals, underscores, and dashes. Keys must begin with a letter.
+          type: object
       type: object
     UptimeCheckIp:
       description: Contains the region, location, and list of IP addresses where checkers in the location run from.

@@ -1562,7 +1562,7 @@ components:
           $ref: "#/components/schemas/Expr"
           description: The condition that is associated with this binding. If the condition evaluates to `true`, then this binding applies to the current request. If the condition evaluates to `false`, then this binding does not apply to the current request. However, a different role binding might grant the same role to one or more of the principals in this binding. To learn which resources support conditions in their IAM policies, see the [IAM documentation](https://cloud.google.com/iam/help/conditions/resource-policies).
         members:
-          description: "Specifies the principals requesting access for a Google Cloud resource. `members` can have the following values: * `allUsers`: A special identifier that represents anyone who is on the internet; with or without a Google account. * `allAuthenticatedUsers`: A special identifier that represents anyone who is authenticated with a Google account or a service account. * `user:{emailid}`: An email address that represents a specific Google account. For example, `alice@example.com` . * `serviceAccount:{emailid}`: An email address that represents a service account. For example, `my-other-app@appspot.gserviceaccount.com`. * `group:{emailid}`: An email address that represents a Google group. For example, `admins@example.com`. * `deleted:user:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a user that has been recently deleted. For example, `alice@example.com?uid=123456789012345678901`. If the user is recovered, this value reverts to `user:{emailid}` and the recovered user retains the role in the binding. * `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a service account that has been recently deleted. For example, `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`. If the service account is undeleted, this value reverts to `serviceAccount:{emailid}` and the undeleted service account retains the role in the binding. * `deleted:group:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a Google group that has been recently deleted. For example, `admins@example.com?uid=123456789012345678901`. If the group is recovered, this value reverts to `group:{emailid}` and the recovered group retains the role in the binding. * `domain:{domain}`: The G Suite domain (primary) that represents all the users of that domain. For example, `google.com` or `example.com`. "
+          description: "Specifies the principals requesting access for a Google Cloud resource. `members` can have the following values: * `allUsers`: A special identifier that represents anyone who is on the internet; with or without a Google account. * `allAuthenticatedUsers`: A special identifier that represents anyone who is authenticated with a Google account or a service account. Does not include identities that come from external identity providers (IdPs) through identity federation. * `user:{emailid}`: An email address that represents a specific Google account. For example, `alice@example.com` . * `serviceAccount:{emailid}`: An email address that represents a Google service account. For example, `my-other-app@appspot.gserviceaccount.com`. * `serviceAccount:{projectid}.svc.id.goog[{namespace}/{kubernetes-sa}]`: An identifier for a [Kubernetes service account](https://cloud.google.com/kubernetes-engine/docs/how-to/kubernetes-service-accounts). For example, `my-project.svc.id.goog[my-namespace/my-kubernetes-sa]`. * `group:{emailid}`: An email address that represents a Google group. For example, `admins@example.com`. * `deleted:user:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a user that has been recently deleted. For example, `alice@example.com?uid=123456789012345678901`. If the user is recovered, this value reverts to `user:{emailid}` and the recovered user retains the role in the binding. * `deleted:serviceAccount:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a service account that has been recently deleted. For example, `my-other-app@appspot.gserviceaccount.com?uid=123456789012345678901`. If the service account is undeleted, this value reverts to `serviceAccount:{emailid}` and the undeleted service account retains the role in the binding. * `deleted:group:{emailid}?uid={uniqueid}`: An email address (plus unique identifier) representing a Google group that has been recently deleted. For example, `admins@example.com?uid=123456789012345678901`. If the group is recovered, this value reverts to `group:{emailid}` and the recovered group retains the role in the binding. * `domain:{domain}`: The G Suite domain (primary) that represents all the users of that domain. For example, `google.com` or `example.com`. "
           items:
             type: string
           type: array
@@ -1715,6 +1715,10 @@ components:
             - EC_SIGN_P384_SHA384
             - EC_SIGN_SECP256K1_SHA256
             - HMAC_SHA256
+            - HMAC_SHA1
+            - HMAC_SHA384
+            - HMAC_SHA512
+            - HMAC_SHA224
             - EXTERNAL_SYMMETRIC_ENCRYPTION
           readOnly: true
           type: string
@@ -1819,6 +1823,10 @@ components:
             - EC_SIGN_P384_SHA384
             - EC_SIGN_SECP256K1_SHA256
             - HMAC_SHA256
+            - HMAC_SHA1
+            - HMAC_SHA384
+            - HMAC_SHA512
+            - HMAC_SHA224
             - EXTERNAL_SYMMETRIC_ENCRYPTION
           type: string
         protectionLevel:
@@ -1904,7 +1912,7 @@ components:
           readOnly: true
           type: string
         etag:
-          description: Optional. This checksum is computed by the server based on the value of other fields, and may be sent on update requests to ensure the client has an up-to-date value before proceeding.
+          description: Optional. Etag of the currently stored EkmConnection.
           type: string
         name:
           description: Output only. The resource name for the EkmConnection in the format `projects/*/locations/*/ekmConnections/*`.
@@ -2051,6 +2059,10 @@ components:
             - EC_SIGN_P384_SHA384
             - EC_SIGN_SECP256K1_SHA256
             - HMAC_SHA256
+            - HMAC_SHA1
+            - HMAC_SHA384
+            - HMAC_SHA512
+            - HMAC_SHA224
             - EXTERNAL_SYMMETRIC_ENCRYPTION
           type: string
         cryptoKeyVersion:
@@ -2060,7 +2072,11 @@ components:
           description: Required. The name of the ImportJob that was used to wrap this key material.
           type: string
         rsaAesWrappedKey:
-          description: "Wrapped key material produced with RSA_OAEP_3072_SHA1_AES_256 or RSA_OAEP_4096_SHA1_AES_256. This field contains the concatenation of two wrapped keys: 1. An ephemeral AES-256 wrapping key wrapped with the public_key using RSAES-OAEP with SHA-1/SHA-256, MGF1 with SHA-1/SHA-256, and an empty label. 2. The key to be imported, wrapped with the ephemeral AES-256 key using AES-KWP (RFC 5649). If importing symmetric key material, it is expected that the unwrapped key contains plain bytes. If importing asymmetric key material, it is expected that the unwrapped key is in PKCS#8-encoded DER format (the PrivateKeyInfo structure from RFC 5208). This format is the same as the format produced by PKCS#11 mechanism CKM_RSA_AES_KEY_WRAP."
+          description: Optional. This field has the same meaning as wrapped_key. Prefer to use that field in new work. Either that field or this field (but not both) must be specified.
+          format: byte
+          type: string
+        wrappedKey:
+          description: "Optional. The wrapped key material to import. Before wrapping, key material must be formatted. If importing symmetric key material, the expected key material format is plain bytes. If importing asymmetric key material, the expected key material format is PKCS#8-encoded DER (the PrivateKeyInfo structure from RFC 5208). When wrapping with import methods (RSA_OAEP_3072_SHA1_AES_256 or RSA_OAEP_4096_SHA1_AES_256 or RSA_OAEP_3072_SHA256_AES_256 or RSA_OAEP_4096_SHA256_AES_256), this field must contain the concatenation of: 1. An ephemeral AES-256 wrapping key wrapped with the public_key using RSAES-OAEP with SHA-1/SHA-256, MGF1 with SHA-1/SHA-256, and an empty label. 2. The formatted key to be imported, wrapped with the ephemeral AES-256 key using AES-KWP (RFC 5649). This format is the same as the format produced by PKCS#11 mechanism CKM_RSA_AES_KEY_WRAP. When wrapping with import methods (RSA_OAEP_3072_SHA256 or RSA_OAEP_4096_SHA256), this field must contain the formatted key to be imported, wrapped with the public_key using RSAES-OAEP with SHA-256, MGF1 with SHA-256, and an empty label."
           format: byte
           type: string
       type: object
@@ -2097,6 +2113,10 @@ components:
             - IMPORT_METHOD_UNSPECIFIED
             - RSA_OAEP_3072_SHA1_AES_256
             - RSA_OAEP_4096_SHA1_AES_256
+            - RSA_OAEP_3072_SHA256_AES_256
+            - RSA_OAEP_4096_SHA256_AES_256
+            - RSA_OAEP_3072_SHA256
+            - RSA_OAEP_4096_SHA256
           type: string
         name:
           description: Output only. The resource name for this ImportJob in the format `projects/*/locations/*/keyRings/*/importJobs/*`.
@@ -2192,7 +2212,7 @@ components:
           type: integer
       type: object
     ListEkmConnectionsResponse:
-      description: Response message for KeyManagementService.ListEkmConnections.
+      description: Response message for EkmService.ListEkmConnections.
       properties:
         ekmConnections:
           description: The list of EkmConnections.
@@ -2423,6 +2443,10 @@ components:
             - EC_SIGN_P384_SHA384
             - EC_SIGN_SECP256K1_SHA256
             - HMAC_SHA256
+            - HMAC_SHA1
+            - HMAC_SHA384
+            - HMAC_SHA512
+            - HMAC_SHA224
             - EXTERNAL_SYMMETRIC_ENCRYPTION
           type: string
         name:

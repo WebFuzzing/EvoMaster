@@ -14,15 +14,17 @@ info:
   termsOfService: https://developers.google.com/terms/
   title: Service Networking API
   version: v1beta
+  x-apiClientRegistration:
+    url: https://console.developers.google.com
   x-apisguru-categories:
     - analytics
     - media
   x-logo:
-    url: https://upload.wikimedia.org/wikipedia/commons/e/e1/YouTube_play_buttom_icon_%282013-2017%29.svg
+    url: https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png
   x-origin:
-    - format: google
+    - format: openapi
       url: https://servicenetworking.googleapis.com/$discovery/rest?version=v1beta
-      version: v1
+      version: "3.0"
   x-providerName: googleapis.com
   x-serviceName: servicenetworking
 externalDocs:
@@ -600,6 +602,20 @@ components:
           description: The monitored resource type. The type must be defined in Service.monitored_resources section.
           type: string
       type: object
+    CloudSQLConfig:
+      description: Cloud SQL configuration.
+      properties:
+        service:
+          description: Peering service used for peering with the Cloud SQL project.
+          type: string
+        umbrellaNetwork:
+          description: The name of the umbrella network in the Cloud SQL umbrella project.
+          type: string
+        umbrellaProject:
+          description: The project number of the Cloud SQL umbrella project.
+          format: int64
+          type: string
+      type: object
     Connection:
       description: Represents a private connection resource. A private connection is implemented as a VPC Network Peering connection between a service producer's VPC network and a service consumer's VPC network.
       properties:
@@ -623,6 +639,11 @@ components:
     ConsumerConfig:
       description: Configuration information for a private service access connection.
       properties:
+        cloudsqlConfigs:
+          description: Represents one or multiple Cloud SQL configurations.
+          items:
+            $ref: "#/components/schemas/CloudSQLConfig"
+          type: array
         consumerExportCustomRoutes:
           description: Export custom routes flag value for peering from consumer to producer.
           type: boolean
@@ -1245,17 +1266,6 @@ components:
     MetricRule:
       description: Bind API methods to metrics. Binding a method to a metric causes that metric's configured quota behaviors to apply to the method call.
       properties:
-        dynamicMetricCosts:
-          additionalProperties:
-            enum:
-              - DYNAMIC_COST_TYPE_UNSPECIFIED
-              - REQUEST_BODY_BYTES
-              - REQUEST_BODY_AND_HEADER_BYTES
-              - RESPONSE_BODY_BYTES
-              - RESPONSE_BODY_AND_HEADER_BYTES
-            type: string
-          description: Metrics to update when the selected methods are called. The key of the map is the metric name, the value is the DynamicCostType to specify how to calculate the cost from the request. The cost amount will be increased for the metric against which the quota limits are defined. It is only implemented in CloudESF(go/cloudesf)
-          type: object
         metricCosts:
           additionalProperties:
             format: int64
@@ -1421,15 +1431,15 @@ components:
           type: string
       type: object
     Quota:
-      description: 'Quota configuration helps to achieve fairness and budgeting in service usage. The metric based quota configuration works this way: - The service configuration defines a set of metrics. - For API calls, the quota.metric_rules maps methods to metrics with corresponding costs. - The quota.limits defines limits on the metrics, which will be used for quota checks at runtime. An example quota configuration in yaml format: quota: limits: - name: apiWriteQpsPerProject metric: library.googleapis.com/write_calls unit: "1/min/{project}" # rate limit for consumer projects values: STANDARD: 10000 # The metric rules bind all methods to the read_calls metric, # except for the UpdateBook and DeleteBook methods. These two methods # are mapped to the write_calls metric, with the UpdateBook method # consuming at twice rate as the DeleteBook method. metric_rules: - selector: "*" metric_costs: library.googleapis.com/read_calls: 1 - selector: google.example.library.v1.LibraryService.UpdateBook metric_costs: library.googleapis.com/write_calls: 2 - selector: google.example.library.v1.LibraryService.DeleteBook metric_costs: library.googleapis.com/write_calls: 1 Corresponding Metric definition: metrics: - name: library.googleapis.com/read_calls display_name: Read requests metric_kind: DELTA value_type: INT64 - name: library.googleapis.com/write_calls display_name: Write requests metric_kind: DELTA value_type: INT64 '
+      description: 'Quota configuration helps to achieve fairness and budgeting in service usage. The metric based quota configuration works this way: - The service configuration defines a set of metrics. - For API calls, the quota.metric_rules maps methods to metrics with corresponding costs. - The quota.limits defines limits on the metrics, which will be used for quota checks at runtime. An example quota configuration in yaml format: quota: limits: - name: apiWriteQpsPerProject metric: library.googleapis.com/write_calls unit: "1/min/{project}" # rate limit for consumer projects values: STANDARD: 10000 (The metric rules bind all methods to the read_calls metric, except for the UpdateBook and DeleteBook methods. These two methods are mapped to the write_calls metric, with the UpdateBook method consuming at twice rate as the DeleteBook method.) metric_rules: - selector: "*" metric_costs: library.googleapis.com/read_calls: 1 - selector: google.example.library.v1.LibraryService.UpdateBook metric_costs: library.googleapis.com/write_calls: 2 - selector: google.example.library.v1.LibraryService.DeleteBook metric_costs: library.googleapis.com/write_calls: 1 Corresponding Metric definition: metrics: - name: library.googleapis.com/read_calls display_name: Read requests metric_kind: DELTA value_type: INT64 - name: library.googleapis.com/write_calls display_name: Write requests metric_kind: DELTA value_type: INT64 '
       properties:
         limits:
-          description: List of `QuotaLimit` definitions for the service.
+          description: List of QuotaLimit definitions for the service.
           items:
             $ref: "#/components/schemas/QuotaLimit"
           type: array
         metricRules:
-          description: List of `MetricRule` definitions, each one mapping a selected method to one or more metrics.
+          description: List of MetricRule definitions, each one mapping a selected method to one or more metrics.
           items:
             $ref: "#/components/schemas/MetricRule"
           type: array
@@ -1817,3 +1827,5 @@ components:
             https://www.googleapis.com/auth/service.management: Manage your Google API service configuration
           tokenUrl: https://accounts.google.com/o/oauth2/token
       type: oauth2
+source:
+  url: {}
