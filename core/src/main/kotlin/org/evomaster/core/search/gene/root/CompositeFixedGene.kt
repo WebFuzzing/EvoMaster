@@ -14,14 +14,7 @@ abstract class CompositeFixedGene(
 
     constructor(name: String, child: Gene) : this(name, mutableListOf(child))
 
-    init {
-        if(children.isEmpty() && !canBeChildless()){
-            throw IllegalStateException("A fixed composite gene must have at least 1 internal gene")
-        }
-    }
-
     override fun canBeChildless() = false
-
 
 
     override fun adaptiveSelectSubsetToMutate(
