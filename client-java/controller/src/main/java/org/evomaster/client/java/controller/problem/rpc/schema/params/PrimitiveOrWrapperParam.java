@@ -156,14 +156,14 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
             // ignore instance of primitive types if the value is not assigned
             return Collections.emptyList();
         }
-
-        if (accessibleSchema == null || accessibleSchema.isAccessible){
-            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
-        } else{
-            if (accessibleSchema.setterMethodName == null)
-                throw new IllegalStateException("Error: private field, but there is no setter method");
+        if (accessibleSchema != null && accessibleSchema.setterMethodName != null)
             code = CodeJavaGenerator.oneLineSetterInstance(accessibleSchema.setterMethodName, getCastType(), variableName, getValueAsJavaString());
+        else {
+            if (accessibleSchema != null && !accessibleSchema.isAccessible)
+                throw new IllegalStateException("Error: private field, but there is no setter method");
+            code = CodeJavaGenerator.oneLineInstance(isDeclaration, doesIncludeName, getType().getFullTypeName(), variableName, getValueAsJavaString());
         }
+
         return Collections.singletonList(CodeJavaGenerator.getIndent(indent)+ code);
     }
 
