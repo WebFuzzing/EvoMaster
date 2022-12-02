@@ -106,7 +106,9 @@ class IntrospectiveQuery {
         val withErrors= node.findPath("errors")
 
        if (!withErrors.isEmpty){
-            throw SutProblemException("Failed to retrieve GraphQL schema. Response contains error: $body .")
+            throw SutProblemException("Failed to retrieve GraphQL schema." +
+                    " Are introspective queries enabled on the tested application?" +
+                    " Response contains error: $body .")
        }
 
         return body
