@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.inet
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.inet.InetReplacementController
+import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -8,7 +9,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class InetReplacementTest : SpringTestBase() {
+class InetReplacementEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -26,7 +27,7 @@ class InetReplacementTest : SpringTestBase() {
             "InetReplacementEM",
             "org.foo.InetReplacementEM",
             1000,
-            false,
+            !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
@@ -38,9 +39,9 @@ class InetReplacementTest : SpringTestBase() {
 
                 Assertions.assertTrue(solution.individuals.size >= 1)
 
-//                if (!CIUtils.isRunningGA()) {
+                if (!CIUtils.isRunningGA()) {
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/inet/exp", "OK")
-//                }
+                }
             },
             3
         )

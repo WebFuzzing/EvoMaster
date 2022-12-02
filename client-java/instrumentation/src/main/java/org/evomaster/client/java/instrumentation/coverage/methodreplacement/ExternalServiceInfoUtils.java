@@ -45,12 +45,17 @@ public class ExternalServiceInfoUtils {
         // https://en.wikipedia.org/wiki/Reserved_IP_addresses
         // There could be other possible ranges to ignore since it is not
         // necessary for the moment, following IP address ranges are skipped
-        return hostname.isEmpty()
+        if (hostname.isEmpty()
                 || hostname.startsWith("localhost")
                 || hostname.startsWith("0.0.0")
-                || hostname.startsWith("127.")
                 || hostname.startsWith("10.")
-                || hostname.startsWith("docker.socket");
+                || hostname.startsWith("docker.socket")) {
+            return true;
+        } else if (hostname.startsWith("127.") && !ExecutionTracer.hasMockServer(hostname)) {
+            return true;
+        };
+
+        return false;
     }
 
 

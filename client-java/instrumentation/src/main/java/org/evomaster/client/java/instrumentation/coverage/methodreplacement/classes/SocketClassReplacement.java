@@ -32,10 +32,12 @@ public class SocketClassReplacement implements MethodReplacementClass {
         if (endpoint instanceof InetSocketAddress){
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
-//            if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName()) || ExecutionTracer.skipHostname(socketAddress.getHostName())){
-//                caller.connect(endpoint, timeout);
-//                return;
-//            }
+            if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName())
+                    || ExecutionTracer.skipHostname(socketAddress.getHostName())
+            ){
+                caller.connect(endpoint, timeout);
+                return;
+            }
 
             if (socketAddress.getAddress() instanceof Inet4Address){
 
