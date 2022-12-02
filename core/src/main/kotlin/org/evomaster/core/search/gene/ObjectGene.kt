@@ -1,16 +1,22 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.optional.FlexibleGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
-import org.evomaster.core.search.gene.root.CompositeFixedGene
+import org.evomaster.core.search.gene.root.CompositeConditionalFixedGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.utils.GeneUtils.isInactiveOptionalGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.ObjectGeneImpact
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -20,19 +26,70 @@ import org.slf4j.LoggerFactory
 import java.net.URLEncoder
 
 /**
- * @property refType presents the name of reference type of the object
+ * this is a gene which could have fixed fields [fixedFields] and more additional fields [additionalFields].
+ * The additional fields need to follow the [template] and could have flexible type (eg, T is FlexibleGene)
+ * eg, a schema example
+ *  Person:
+ *      type: object
+ *      additionalProperties:
+ *          oneOf:
+ *              - type: string
+ *              - type: integer
  */
-open class ObjectGene(name: String, val fields: List<out Gene>, val refType: String? = null
-) : CompositeFixedGene(name, fields) {
+class ObjectGene(
+        name: String,
+        val fixedFields: List<out Gene>,
+        val refType: String? = null,
+        /**
+         * represent whether the Object is fixed
+         * which determinate whether it allows to have additional fields
+         */
+        isFixed : Boolean,
+        /**
+         * a template for additionalFields
+         */
+        val template : PairGene<StringGene, Gene>?,
+        /**
+         * additional fields, and its field name is mutable
+         *
+         * note that [additionalFields] is not null only if [isFixed] is true
+         */
+        additionalFields:  MutableList<PairGene<StringGene, Gene>>?
+): CompositeConditionalFixedGene(
+        name, isFixed,
+        mutableListOf<Gene>().apply { addAll(fixedFields); if (additionalFields!=null) addAll(additionalFields) })
+{
 
-    companion object {
+    init {
+        if (isFixed){
+            if (template != null)
+                throw IllegalArgumentException("cannot specify template when the ObjectGene is fixed")
+            if (additionalFields != null)
+                throw IllegalArgumentException("cannot specify additional field when the ObjectGene is fixed")
+        }
+    }
+
+    constructor(name: String, fields: List<out Gene>, refType: String? = null) : this(name, fields, refType, true, null, null)
+
+    companion object{
         private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
-
+        // probability of mutating size of additional fields
+        private const val PROB_MODIFY_SIZE_ADDITIONAL_FIELDS = 0.1
+        // the default maximum size for additional fields
+        private const val MAX_SIZE_ADDITIONAL_FIELDS = 5
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
-    }
+    val fields : List<out Gene>
+        get() {return children}
+
+    /**
+     * @return a view of additional fields
+     */
+    val additionalFields: List<PairGene<StringGene, FlexibleGene>>?
+        get() {
+            if (isFixed) return null
+            return children.filterNot { fixedFields.contains(it) }.filterIsInstance<PairGene<StringGene, FlexibleGene>>()
+        }
 
     /*
         In theory, it is possible to have an object with no fields...
@@ -40,16 +97,95 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     override fun canBeChildless() = true
 
     override fun copyContent(): Gene {
-        return ObjectGene(name, fields.map(Gene::copy), refType)
+        return ObjectGene(name, fixedFields.map(Gene::copy), refType, isFixed, template, additionalFields?.map {it.copy() as PairGene<StringGene, Gene> }?.toMutableList())
+    }
+
+    override fun isLocallyValid(): Boolean {
+        return getViewOfChildren().all { it.isLocallyValid() }
+    }
+
+    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+        fixedFields.filter { it.isMutable() }
+                .forEach { it.randomize(randomness, tryToForceNewValue) }
+
+        //TODO for additional fields
+    }
+
+    override fun customShouldApplyShallowMutation(randomness: Randomness, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+        if (isFixed) return false
+        return randomness.nextBoolean(PROB_MODIFY_SIZE_ADDITIONAL_FIELDS)
+    }
+
+    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
+        if (isFixed)
+            throw IllegalStateException("shallowMutate is not applied to fixed ObjectGene")
+
+        Lazy.assert {
+            additionalFields != null
+            template != null
+        }
+
+        if (additionalFields!!.isEmpty() || (additionalFields!!.size < MAX_SIZE_ADDITIONAL_FIELDS && randomness.nextBoolean(0.5))){
+            val added = addElement(randomness)
+            if (added != null){
+                addChild(added)
+                return true
+            }
+
+
+            if (additionalFields!!.isEmpty()){
+                log.warn("fail to apply shallowMutate for FlexibleObject, i.e., adding or removing additional field")
+                return false
+            }
+        }
+
+        val remove = randomness.choose(additionalFields!!)
+        remove.removeThisFromItsBindingGenes()
+        killChild(remove)
+        return true
+    }
+
+    private fun addElement(randomness: Randomness) : PairGene<StringGene, FlexibleGene>?{
+        if (isFixed)
+            throw IllegalStateException("addElement should not applied when the ObjectGene is fixed")
+        Lazy.assert {
+            template != null && additionalFields != null
+        }
+        val copy = template!!.copy() as PairGene<StringGene, FlexibleGene>
+        copy.randomize(randomness, false)
+
+        if (existingKey(copy)){
+            copy.randomize(randomness, false)
+        }
+
+        if (existingKey(copy))
+            return null
+        return copy
+    }
+
+    private fun existingKey(fieldToAdd: PairGene<StringGene, FlexibleGene>): Boolean{
+        return additionalFields!!.any { it.first.value == fieldToAdd.first.value}
     }
 
     override fun copyValueFrom(other: Gene) {
         if (other !is ObjectGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        for (i in fields.indices) {
-            this.fields[i].copyValueFrom(other.fields[i])
+
+        if (other.isFixed == isFixed)
+            throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
+
+        for (i in fixedFields.indices) {
+            this.fixedFields[i].copyValueFrom(other.fixedFields[i])
         }
+
+        if (isFixed) return
+
+        if (!template!!.possiblySame(other.template!!))
+            throw IllegalArgumentException("different template ${other.template.javaClass}")
+
+
+        //TODO for additional fields
     }
 
 
@@ -62,8 +198,11 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
      */
     fun copyFields(filterGene: ObjectGene): ObjectGene {
 
-        val fields: MutableList<Gene> = mutableListOf()
-        for (fld in this.fields) {
+        if (!isFixed)
+            throw IllegalArgumentException("cannot support copyFields when ObjectGene is not fixed")
+
+        val fixedFields: MutableList<Gene> = mutableListOf()
+        for (fld in this.fixedFields) {
             var exist = false
             for (element in filterGene.fields) {
                 if (fld.name == element.name) {
@@ -72,44 +211,83 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 }
             }
             if (!exist) {
-                fields.add(fld.copy())
+                fixedFields.add(fld.copy())
             }
         }
-        return ObjectGene(this.name, fields)
-    }
 
+
+        // TODO for additional fields
+        return ObjectGene(this.name, fixedFields, refType, isFixed, null, null)
+    }
     override fun isMutable(): Boolean {
-        return fields.any { it.isMutable() }
+        return getViewOfChildren().any { it.isMutable() }
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is ObjectGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.fields.size == other.fields.size
-                && this.fields.zip(other.fields) { thisField, otherField ->
-            thisField.containsSameValueAs(otherField)
-        }.all { it == true }
+
+        if (other.isFixed != isFixed) return false
+
+        if (!isFixed && template!!.possiblySame(other.template!!))
+            throw IllegalArgumentException("different template ${other.template.javaClass}")
+
+        return this.fixedFields.size == other.fixedFields.size
+                && (isFixed || additionalFields!!.size == other.additionalFields!!.size)
+                && this.fixedFields.zip(other.fixedFields) { thisField, otherField -> thisField.containsSameValueAs(otherField) }.all { it }
+                && (isFixed || this.additionalFields!!.zip(other.additionalFields!!) { thisField, otherField -> thisField.containsSameValueAs(otherField) }.all { it }
+        )
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+    override fun bindValueBasedOn(gene: Gene): Boolean {
+        if (gene is ObjectGene
+                && (fixedFields.indices).all { fixedFields[it].possiblySame(gene.fixedFields[it]) }
+                && isFixed == gene.isFixed
+                && (isFixed || template!!.possiblySame(gene.template!!))) {
 
-        fields.filter { it.isMutable() }
-                .forEach { it.randomize(randomness, tryToForceNewValue) }
-    }
+            var result = true
+            (fixedFields.indices).forEach {
+                val r = fixedFields[it].bindValueBasedOn(gene.fixedFields[it])
+                if (!r)
+                    LoggingUtil.uniqueWarn(log, "cannot bind the field ${fixedFields[it].name}")
+                result = result && r
+            }
+            if (!result)
+                LoggingUtil.uniqueWarn(log, "fail to fully bind field values with the ObjectGene")
 
-    override fun customShouldApplyShallowMutation(
-        randomness: Randomness,
-        selectionStrategy: SubsetGeneMutationSelectionStrategy,
-        enableAdaptiveGeneMutation: Boolean,
-        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
-    ): Boolean {
+            //TODO bind additional fields
+
+            return result
+        }
+
+        LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} with ${gene::class.java.simpleName}")
         return false
     }
+
+    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+
+        if (additionalGeneMutationInfo.impact != null
+                && additionalGeneMutationInfo.impact is ObjectGeneImpact) {
+            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.fields.getValue(it.name) }
+            val selected = mwc.selectSubGene(
+                    internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
+            )
+            val map = selected.map { internalGenes.indexOf(it) }
+            return map.map { internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact, gene = internalGenes[it]) }
+        }
+        throw IllegalArgumentException("impact is null or not ObjectGeneImpact, ${additionalGeneMutationInfo.impact}")
+    }
+
+
+    override fun mutationWeight(): Double = fields.map { it.mutationWeight() }.sum()
+
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
+        if (mode != null && mode != GeneUtils.EscapeMode.JSON && !isFixed)
+            throw IllegalStateException("do not support getValueAsPrintableString with mode ($mode) for non-fixed ObjectGene")
         val buffer = StringBuffer()
 
         val includedFields = fields.filter {
@@ -123,6 +301,18 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             includedFields.map {
                 "\"${it.name}\":${it.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
             }.joinTo(buffer, ", ")
+
+
+            if (!isFixed){
+                additionalFields!!.filter {
+                    it.isPrintable() && !isInactiveOptionalGene(it)
+                }.also {
+                    if (it.isNotEmpty() && includedFields.isNotEmpty())
+                        buffer.append(", ")
+                }.joinTo(buffer, ", ") {
+                    "\"${it.first.value}\":${it.second.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
+                }
+            }
 
             buffer.append("}")
 
@@ -214,25 +404,25 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             val s: String = when (it) {
                 is TupleGene -> {
                     it.getValueAsPrintableString(
-                        previousGenes,
-                        GeneUtils.EscapeMode.GQL_NONE_MODE,
-                        targetFormat,
-                        extraCheck = true
+                            previousGenes,
+                            GeneUtils.EscapeMode.GQL_NONE_MODE,
+                            targetFormat,
+                            extraCheck = true
                     )
                 }
                 is OptionalGene -> {
                     assert(it.gene is ObjectGene)
                     it.gene.getValueAsPrintableString(
-                        previousGenes,
-                        GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
-                        targetFormat
+                            previousGenes,
+                            GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
+                            targetFormat
                     )
                 }
                 is ObjectGene -> {//todo check
                     it.getValueAsPrintableString(
-                        previousGenes,
-                        GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
-                        targetFormat
+                            previousGenes,
+                            GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
+                            targetFormat
                     )
                 }
                 is BooleanGene -> {
@@ -363,42 +553,5 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     private fun closeXml(tagName: String) = "</$tagName>"
 
 
-
-
-    override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
-
-        if (additionalGeneMutationInfo.impact != null
-                && additionalGeneMutationInfo.impact is ObjectGeneImpact) {
-            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.fields.getValue(it.name) }
-            val selected = mwc.selectSubGene(
-                    internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
-            )
-            val map = selected.map { internalGenes.indexOf(it) }
-            return map.map { internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact, gene = internalGenes[it]) }
-        }
-        throw IllegalArgumentException("impact is null or not ObjectGeneImpact, ${additionalGeneMutationInfo.impact}")
-    }
-
-
-    override fun mutationWeight(): Double = fields.map { it.mutationWeight() }.sum()
-
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is ObjectGene && (fields.indices).all { fields[it].possiblySame(gene.fields[it]) }) {
-            var result = true
-            (fields.indices).forEach {
-                val r = fields[it].bindValueBasedOn(gene.fields[it])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind the field ${fields[it].name}")
-                result = result && r
-            }
-            if (!result)
-                LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${refType ?: "null"}) with the object gene (with the refType ${gene.refType ?: "null"})")
-            return result
-        }
-        // might be cycle object genet
-        LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${refType ?: "null"}) with ${gene::class.java.simpleName}")
-        return false
-    }
 
 }
