@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 class SqlNullImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
         val gene = IntegerGene("gene", 0)
-        return NullableGene("o", isPresent = false, gene = gene, nullLabel = "NULL")
+        return NullableGene("o", isActive = false, gene = gene, nullLabel = "NULL")
     }
 
     override fun checkImpactType(impact: GeneImpact) {
@@ -27,7 +27,7 @@ class SqlNullImpactTest : GeneImpactTest() {
         geneToMutate.apply {
             when{
                 mutationTag == 0 -> (geneToMutate.gene as IntegerGene).value += 1
-                mutationTag == 1 -> geneToMutate.isPresent = !geneToMutate.isPresent
+                mutationTag == 1 -> geneToMutate.isActive = !geneToMutate.isActive
                 else -> throw IllegalArgumentException("bug")
             }
         }

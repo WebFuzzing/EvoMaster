@@ -746,7 +746,7 @@ object StateBuilder {
                                 KindOfFieldName = __TypeKind.LIST.toString(),
                                 isKindOfFieldNameOptional = false,
 
-                                kindOfFieldType = __TypeKind.SCALAR.toString(),
+                                kindOfFieldType = __TypeKind.ENUM.toString(),
                                 isKindOfFieldTypeOptional = false,
                                 fieldType = elementInArgs.type.ofType.ofType.ofType.name,
                                 fieldName = elementInArgs.name,

@@ -66,7 +66,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
             else -> if (gene is NullableGene) {
                 // if the gene is a nullable gen, the value
                 // could be null if isPresent==true
-                gene.isPresent
+                gene.isActive
             } else {
                 // if the gene is not a nullable gene, then
                 // its value is not null

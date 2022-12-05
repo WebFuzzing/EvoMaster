@@ -1,7 +1,8 @@
 package org.evomaster.core.problem.rest
 
-import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.parser.OpenAPIV3Parser
+import io.swagger.v3.parser.core.models.SwaggerParseResult
 import org.evomaster.core.remote.SutProblemException
 import java.net.ConnectException
 import java.net.URI
@@ -17,13 +18,21 @@ import javax.ws.rs.core.Response
 object OpenApiAccess {
 
     fun getOpenApi(schemaText: String): OpenAPI {
-        val parseResults = try {
-            OpenAPIParser().readContents(schemaText, null, null)
-        } catch (e: Exception) {
-            throw SutProblemException("Failed to parse OpenApi schema: $e")
+
+        var parseResults: SwaggerParseResult? = null
+
+        for (extension in OpenAPIV3Parser.getExtensions()) {
+            parseResults = try {
+                extension.readContents(schemaText, null, null)
+            } catch (e: Exception) {
+                throw SutProblemException("Failed to parse OpenApi schema: $e")
+            }
+            if (parseResults != null && parseResults.openAPI != null) {
+                break
+            }
         }
 
-        return parseResults.openAPI
+        return parseResults!!.openAPI
                 ?: throw SutProblemException("Failed to parse OpenApi schema: " + parseResults.messages.joinToString("\n"))
     }
 
@@ -42,11 +51,14 @@ object OpenApiAccess {
     private fun readFromRemoteServer(openApiUrl: String) : String{
         val response = connectToServer(openApiUrl, 10)
 
+        val body = response.readEntity(String::class.java)
+
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
-            throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiUrl , status=${response.status}")
+            throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiUrl ," +
+                    " status=${response.status} , body: $body")
         }
 
-        return response.readEntity(String::class.java)
+        return body
     }
 
     private fun readFromDisk(openApiUrl: String) : String {

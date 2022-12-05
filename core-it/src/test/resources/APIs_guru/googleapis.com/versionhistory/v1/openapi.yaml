@@ -11,7 +11,7 @@ info:
     name: Creative Commons Attribution 3.0
     url: http://creativecommons.org/licenses/by/3.0/
   termsOfService: https://developers.google.com/terms/
-  title: Version History API
+  title: versionhistory.googleapis.com API
   version: v1
   x-apisguru-categories:
     - analytics
@@ -394,6 +394,8 @@ components:
             - LACROS
             - LACROS_ARM32
             - CHROMEOS
+            - LACROS_ARM64
+            - FUCHSIA
           type: string
       type: object
     Release:

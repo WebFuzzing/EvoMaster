@@ -19,12 +19,11 @@ info:
   x-logo:
     url: https://upload.wikimedia.org/wikipedia/commons/e/e1/YouTube_play_buttom_icon_%282013-2017%29.svg
   x-origin:
-    - format: openapi
+    - format: google
       url: https://dialogflow.googleapis.com/$discovery/rest?version=v3
-      version: "3.0"
+      version: v1
   x-providerName: googleapis.com
   x-serviceName: dialogflow
-  x-preferred: true
 externalDocs:
   url: https://cloud.google.com/dialogflow/
 tags:
@@ -2638,7 +2637,7 @@ components:
         type: string
   schemas:
     GoogleCloudDialogflowCxV3AdvancedSettings:
-      description: "Hierarchical advanced settings for agent/flow/page/fulfillment/parameter. Settings exposed at lower level overrides the settings exposed at higher level. Hierarchy: Agent->Flow->Page->Fulfillment/Parameter."
+      description: "Hierarchical advanced settings for agent/flow/page/fulfillment/parameter. Settings exposed at lower level overrides the settings exposed at higher level. Overriding occurs at the sub-setting level. For example, the playback_interruption_settings at fulfillment level only overrides the playback_interruption_settings at the agent level, leaving other settings at the agent level unchanged. DTMF settings does not override each other. DTMF settings set at different levels define DTMF detections running in parallel. Hierarchy: Agent->Flow->Page->Fulfillment/Parameter."
       properties:
         loggingSettings:
           $ref: "#/components/schemas/GoogleCloudDialogflowCxV3AdvancedSettingsLoggingSettings"
@@ -4681,7 +4680,7 @@ components:
             - REDACT_WITH_SERVICE
           type: string
         retentionWindowDays:
-          description: "Retains data in interaction logging for the specified number of days. This does not apply to Cloud logging, which is owned by the user - not Dialogflow. User must set a value lower than Dialogflow's default 365d TTL. Setting a value higher than that has no effect. A missing value or setting to 0 also means we use Dialogflow's default TTL. Note: Interaction logging is a limited access feature. Talk to your Google representative to check availability for you."
+          description: Retains data in interaction logging for the specified number of days. This does not apply to Cloud logging, which is owned by the user - not Dialogflow. User must set a value lower than Dialogflow's default 365d TTL (time to live). Setting a value higher than that has no effect. A missing value or setting to 0 also means we use Dialogflow's default TTL.
           format: int32
           type: integer
       type: object
@@ -4703,7 +4702,7 @@ components:
           description: Enable audio redaction if it is true.
           type: boolean
         gcsBucket:
-          description: Cloud Storage bucket to export audio record to. You need to grant `service-@gcp-sa-dialogflow.iam.gserviceaccount.com` the `Storage Object Admin` role in this bucket.
+          description: Cloud Storage bucket to export audio record to. Setting this field would grant the Storage Object Creator role to the Dialogflow Service Agent. API caller that tries to modify this field should have the permission of storage.buckets.setIamPolicy.
           type: string
       type: object
     GoogleCloudDialogflowCxV3SecuritySettingsInsightsExportSettings:
@@ -5235,7 +5234,7 @@ components:
           type: string
       type: object
     GoogleCloudDialogflowCxV3WebhookRequest:
-      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases.
+      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases. You may see undocumented fields in an actual request. These fields are used internally by Dialogflow and should be ignored.
       properties:
         detectIntentResponseId:
           description: Always present. The unique identifier of the DetectIntentResponse that will be returned to the API caller.
@@ -6428,7 +6427,7 @@ components:
           type: string
       type: object
     GoogleCloudDialogflowCxV3beta1WebhookRequest:
-      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases.
+      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases. You may see undocumented fields in an actual request. These fields are used internally by Dialogflow and should be ignored.
       properties:
         detectIntentResponseId:
           description: Always present. The unique identifier of the DetectIntentResponse that will be returned to the API caller.
@@ -6750,7 +6749,10 @@ components:
       type: object
     GoogleCloudDialogflowV2CreateConversationDatasetOperationMetadata:
       description: Metadata for ConversationDatasets.
-      properties: {}
+      properties:
+        conversationDataset:
+          description: "The resource name of the conversation dataset that will be created. Format: `projects//locations//conversationDatasets/`"
+          type: string
       type: object
     GoogleCloudDialogflowV2CreateConversationModelEvaluationOperationMetadata:
       description: Metadata for a ConversationModels.CreateConversationModelEvaluation operation.
@@ -7689,7 +7691,7 @@ components:
           description: "This field is set to: - `false` if the matched intent has required parameters and not all of the required parameter values have been collected. - `true` if all required parameter values have been collected, or if the matched intent doesn't contain any required parameters."
           type: boolean
         cancelsSlotFilling:
-          description: Indicates whether the conversational query triggers a cancellation for slot filling.
+          description: Indicates whether the conversational query triggers a cancellation for slot filling. For more information, see the [cancel slot filling documentation](https://cloud.google.com/dialogflow/es/docs/intents-actions-parameters#cancel).
           type: boolean
         diagnosticInfo:
           additionalProperties:
@@ -8036,6 +8038,7 @@ components:
             - ARTICLE_SUGGESTION
             - FAQ
             - SMART_REPLY
+            - CONVERSATION_SUMMARIZATION
           type: string
       type: object
     GoogleCloudDialogflowV2beta1Context:
@@ -9131,7 +9134,7 @@ components:
           description: "This field is set to: - `false` if the matched intent has required parameters and not all of the required parameter values have been collected. - `true` if all required parameter values have been collected, or if the matched intent doesn't contain any required parameters."
           type: boolean
         cancelsSlotFilling:
-          description: Indicates whether the conversational query triggers a cancellation for slot filling.
+          description: Indicates whether the conversational query triggers a cancellation for slot filling. For more information, see the [cancel slot filling documentation](https://cloud.google.com/dialogflow/es/docs/intents-actions-parameters#cancel).
           type: boolean
         diagnosticInfo:
           additionalProperties:
@@ -9251,6 +9254,7 @@ components:
             - ARTICLE_SUGGESTION
             - FAQ
             - SMART_REPLY
+            - CONVERSATION_SUMMARIZATION
           type: string
       type: object
     GoogleCloudDialogflowV2beta1SmartReplyAnswer:

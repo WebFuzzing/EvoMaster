@@ -1083,6 +1083,11 @@ paths:
           required: true
           schema:
             type: string
+        - description: Optional. Filters to restrict results to specific answer records. Marked deprecated as it hasn't been, and isn't currently, supported. For more information about filtering, see [API Filtering](https://aip.dev/160).
+          in: query
+          name: filter
+          schema:
+            type: string
         - description: Optional. The maximum number of records to return in a single page. The server may return fewer records than this. If unspecified, we use 10. The maximum is 100.
           in: query
           name: pageSize
@@ -4130,7 +4135,7 @@ components:
           type: string
       type: object
     GoogleCloudDialogflowCxV3WebhookRequest:
-      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases.
+      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases. You may see undocumented fields in an actual request. These fields are used internally by Dialogflow and should be ignored.
       properties:
         detectIntentResponseId:
           description: Always present. The unique identifier of the DetectIntentResponse that will be returned to the API caller.
@@ -5323,7 +5328,7 @@ components:
           type: string
       type: object
     GoogleCloudDialogflowCxV3beta1WebhookRequest:
-      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases.
+      description: The request message for a webhook call. The request is sent as a JSON object and the field names will be presented in camel cases. You may see undocumented fields in an actual request. These fields are used internally by Dialogflow and should be ignored.
       properties:
         detectIntentResponseId:
           description: Always present. The unique identifier of the DetectIntentResponse that will be returned to the API caller.
@@ -6151,7 +6156,10 @@ components:
       type: object
     GoogleCloudDialogflowV2CreateConversationDatasetOperationMetadata:
       description: Metadata for ConversationDatasets.
-      properties: {}
+      properties:
+        conversationDataset:
+          description: "The resource name of the conversation dataset that will be created. Format: `projects//locations//conversationDatasets/`"
+          type: string
       type: object
     GoogleCloudDialogflowV2CreateConversationModelEvaluationOperationMetadata:
       description: Metadata for a ConversationModels.CreateConversationModelEvaluation operation.
@@ -7969,6 +7977,9 @@ components:
         name:
           description: "Optional. The unique identifier of this participant. Format: `projects//locations//conversations//participants/`."
           type: string
+        obfuscatedExternalUserId:
+          description: "Optional. Obfuscated user id that should be associated with the created participant. You can specify a user id as follows: 1. If you set this field in CreateParticipantRequest or UpdateParticipantRequest, Dialogflow adds the obfuscated user id with the participant. 2. If you set this field in AnalyzeContent or StreamingAnalyzeContent, Dialogflow will update Participant.obfuscated_external_user_id. Dialogflow returns an error if you try to add a user id for a non-END_USER participant. Dialogflow uses this user id for billing and measurement purposes. For example, Dialogflow determines whether a user in one conversation returned in a later conversation. Note: * Please never pass raw user ids to Dialogflow. Always obfuscate your user id first. * Dialogflow only accepts a UTF-8 encoded string, e.g., a hex digest of a hash function like SHA-512. * The length of the user id must be <= 256 characters."
+          type: string
         role:
           description: Immutable. The role this participant plays in the conversation. This field must be set during participant creation and is then immutable.
           enum:
@@ -7992,7 +8003,7 @@ components:
           description: The event to be processed.
         text:
           $ref: "#/components/schemas/GoogleCloudDialogflowV2TextInput"
-          description: The natural language text to be processed.
+          description: The natural language text to be processed. Text length must not exceed 256 character for virtual agent interactions.
       type: object
     GoogleCloudDialogflowV2QueryParameters:
       description: Represents the parameters of the conversational query.
@@ -8040,7 +8051,7 @@ components:
           description: "This field is set to: - `false` if the matched intent has required parameters and not all of the required parameter values have been collected. - `true` if all required parameter values have been collected, or if the matched intent doesn't contain any required parameters."
           type: boolean
         cancelsSlotFilling:
-          description: Indicates whether the conversational query triggers a cancellation for slot filling.
+          description: Indicates whether the conversational query triggers a cancellation for slot filling. For more information, see the [cancel slot filling documentation](https://cloud.google.com/dialogflow/es/docs/intents-actions-parameters#cancel).
           type: boolean
         diagnosticInfo:
           additionalProperties:
@@ -8287,6 +8298,9 @@ components:
     GoogleCloudDialogflowV2SpeechToTextConfig:
       description: Configures speech transcription for ConversationProfile.
       properties:
+        model:
+          description: Which Speech model to select. Select the model best suited to your domain to get best results. If a model is not explicitly specified, then a default model is used. Refer to [Cloud Speech API documentation](https://cloud.google.com/speech-to-text/docs/basics#select-model) for more details.
+          type: string
         speechModelVariant:
           description: The speech model used in speech to text. `SPEECH_MODEL_VARIANT_UNSPECIFIED`, `USE_BEST_AVAILABLE` will be treated as `USE_ENHANCED`. It can be overridden in AnalyzeContentRequest and StreamingAnalyzeContentRequest request. If enhanced model variant is specified and an enhanced version of the specified model for the language does not exist, then it would emit an error.
           enum:
@@ -8440,13 +8454,13 @@ components:
           type: number
       type: object
     GoogleCloudDialogflowV2TextInput:
-      description: Represents the natural language text to be processed.
+      description: ============================================================================ Auxiliary proto messages. Represents the natural language text to be processed.
       properties:
         languageCode:
           description: Required. The language of this conversational query. See [Language Support](https://cloud.google.com/dialogflow/docs/reference/language) for a list of the currently supported language codes. Note that queries in the same session do not necessarily need to specify the same language.
           type: string
         text:
-          description: Required. The UTF-8 encoded natural language text to be processed. Text length must not exceed 256 characters.
+          description: Required. The UTF-8 encoded natural language text to be processed. Text length must not exceed 256 characters for virtual agent interactions.
           type: string
       type: object
     GoogleCloudDialogflowV2TextToSpeechSettings:
@@ -8696,6 +8710,7 @@ components:
             - ARTICLE_SUGGESTION
             - FAQ
             - SMART_REPLY
+            - CONVERSATION_SUMMARIZATION
           type: string
       type: object
     GoogleCloudDialogflowV2beta1Context:
@@ -9791,7 +9806,7 @@ components:
           description: "This field is set to: - `false` if the matched intent has required parameters and not all of the required parameter values have been collected. - `true` if all required parameter values have been collected, or if the matched intent doesn't contain any required parameters."
           type: boolean
         cancelsSlotFilling:
-          description: Indicates whether the conversational query triggers a cancellation for slot filling.
+          description: Indicates whether the conversational query triggers a cancellation for slot filling. For more information, see the [cancel slot filling documentation](https://cloud.google.com/dialogflow/es/docs/intents-actions-parameters#cancel).
           type: boolean
         diagnosticInfo:
           additionalProperties:
@@ -9911,6 +9926,7 @@ components:
             - ARTICLE_SUGGESTION
             - FAQ
             - SMART_REPLY
+            - CONVERSATION_SUMMARIZATION
           type: string
       type: object
     GoogleCloudDialogflowV2beta1SmartReplyAnswer:

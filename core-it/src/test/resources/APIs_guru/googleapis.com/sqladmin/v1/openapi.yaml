@@ -96,7 +96,7 @@ paths:
           name: filter
           schema:
             type: string
-        - description: The maximum number of instances to return. The service may return fewer than this value. The maximum value is 1000; values above 1000 are coerced to 1000.
+        - description: The maximum number of instances to return. The service may return fewer than this value. If unspecified, at most 500 instances are returned. The maximum value is 1000; values above 1000 are coerced to 1000.
           in: query
           name: maxResults
           schema:
@@ -251,7 +251,7 @@ paths:
       - $ref: "#/components/parameters/upload_protocol"
       - $ref: "#/components/parameters/uploadType"
     patch:
-      description: Updates settings of a Cloud SQL instance. This method supports patch semantics.
+      description: Partially updates settings of a Cloud SQL instance by merging the request with the current configuration. This method supports patch semantics.
       operationId: sql.instances.patch
       parameters:
         - description: Project ID of the project that contains the instance.
@@ -2089,6 +2089,59 @@ paths:
             - https://www.googleapis.com/auth/sqlservice.admin
       tags:
         - users
+  "/v1/projects/{project}/instances/{instance}/users/{name}":
+    get:
+      description: Retrieves a resource containing information about a user.
+      operationId: sql.users.get
+      parameters:
+        - description: Project ID of the project that contains the instance.
+          in: path
+          name: project
+          required: true
+          schema:
+            type: string
+        - description: Database instance ID. This does not include the project ID.
+          in: path
+          name: instance
+          required: true
+          schema:
+            type: string
+        - description: User of the instance. If the database user has a host, this is specified as {username}@{host} else as {username}.
+          in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          description: Successful response
+      security:
+        - Oauth2:
+            - https://www.googleapis.com/auth/cloud-platform
+          Oauth2c:
+            - https://www.googleapis.com/auth/cloud-platform
+        - Oauth2:
+            - https://www.googleapis.com/auth/sqlservice.admin
+          Oauth2c:
+            - https://www.googleapis.com/auth/sqlservice.admin
+      tags:
+        - users
+    parameters:
+      - $ref: "#/components/parameters/_.xgafv"
+      - $ref: "#/components/parameters/access_token"
+      - $ref: "#/components/parameters/alt"
+      - $ref: "#/components/parameters/callback"
+      - $ref: "#/components/parameters/fields"
+      - $ref: "#/components/parameters/key"
+      - $ref: "#/components/parameters/oauth_token"
+      - $ref: "#/components/parameters/prettyPrint"
+      - $ref: "#/components/parameters/quotaUser"
+      - $ref: "#/components/parameters/upload_protocol"
+      - $ref: "#/components/parameters/uploadType"
   "/v1/projects/{project}/instances/{instance}/verifyExternalSyncSettings":
     parameters:
       - $ref: "#/components/parameters/_.xgafv"
@@ -2568,8 +2621,11 @@ components:
             - DELETION_FAILED
             - DELETED
           type: string
+        timeZone:
+          description: Backup time zone to prevent restores to an instance with a different time zone. Now relevant only for SQL Server.
+          type: string
         type:
-          description: The type of this run; can be either "AUTOMATED" or "ON_DEMAND". This field defaults to "ON_DEMAND" and is ignored, when specified for insert requests.
+          description: The type of this run; can be either "AUTOMATED" or "ON_DEMAND" or "FINAL". This field defaults to "ON_DEMAND" and is ignored, when specified for insert requests.
           enum:
             - SQL_BACKUP_RUN_TYPE_UNSPECIFIED
             - AUTOMATED
@@ -2613,11 +2669,16 @@ components:
       description: Database instance clone context.
       properties:
         allocatedIpRange:
-          description: 'The name of the allocated ip range for the private ip CloudSQL instance. For example: "google-managed-services-default". If set, the cloned instance ip will be created in the allocated range. The range name must comply with [RFC 1035](https://tools.ietf.org/html/rfc1035). Specifically, the name must be 1-63 characters long and match the regular expression [a-z]([-a-z0-9]*[a-z0-9])?. Reserved for future use.'
+          description: 'The name of the allocated ip range for the private ip Cloud SQL instance. For example: "google-managed-services-default". If set, the cloned instance ip will be created in the allocated range. The range name must comply with [RFC 1035](https://tools.ietf.org/html/rfc1035). Specifically, the name must be 1-63 characters long and match the regular expression [a-z]([-a-z0-9]*[a-z0-9])?. Reserved for future use.'
           type: string
         binLogCoordinates:
           $ref: "#/components/schemas/BinLogCoordinates"
           description: Binary log coordinates, if specified, identify the position up to which the source instance is cloned. If not specified, the source instance is cloned up to the most recent binary log coordinates.
+        databaseNames:
+          description: (SQL Server only) Clone only the specified databases from the source instance. Clone all databases if empty.
+          items:
+            type: string
+          type: array
         destinationInstanceName:
           description: Name of the Cloud SQL instance to be created as a clone.
           type: string
@@ -2652,22 +2713,23 @@ components:
             - MYSQL_5_5
             - MYSQL_5_6
             - MYSQL_5_7
-            - POSTGRES_9_6
-            - POSTGRES_11
             - SQLSERVER_2017_STANDARD
             - SQLSERVER_2017_ENTERPRISE
             - SQLSERVER_2017_EXPRESS
             - SQLSERVER_2017_WEB
+            - POSTGRES_9_6
             - POSTGRES_10
+            - POSTGRES_11
             - POSTGRES_12
+            - POSTGRES_13
+            - POSTGRES_14
             - MYSQL_8_0
             - MYSQL_8_0_18
             - MYSQL_8_0_26
             - MYSQL_8_0_27
             - MYSQL_8_0_28
             - MYSQL_8_0_29
-            - POSTGRES_13
-            - POSTGRES_14
+            - MYSQL_8_0_30
             - SQLSERVER_2019_STANDARD
             - SQLSERVER_2019_ENTERPRISE
             - SQLSERVER_2019_EXPRESS
@@ -2768,22 +2830,23 @@ components:
             - MYSQL_5_5
             - MYSQL_5_6
             - MYSQL_5_7
-            - POSTGRES_9_6
-            - POSTGRES_11
             - SQLSERVER_2017_STANDARD
             - SQLSERVER_2017_ENTERPRISE
             - SQLSERVER_2017_EXPRESS
             - SQLSERVER_2017_WEB
+            - POSTGRES_9_6
             - POSTGRES_10
+            - POSTGRES_11
             - POSTGRES_12
+            - POSTGRES_13
+            - POSTGRES_14
             - MYSQL_8_0
             - MYSQL_8_0_18
             - MYSQL_8_0_26
             - MYSQL_8_0_27
             - MYSQL_8_0_28
             - MYSQL_8_0_29
-            - POSTGRES_13
-            - POSTGRES_14
+            - MYSQL_8_0_30
             - SQLSERVER_2019_STANDARD
             - SQLSERVER_2019_ENTERPRISE
             - SQLSERVER_2019_EXPRESS
@@ -2864,7 +2927,7 @@ components:
             type: string
           type: array
         rootPassword:
-          description: Initial root password. Use only on creation.
+          description: Initial root password. Use only on creation. You must set root passwords before you can connect to PostgreSQL instances.
           type: string
         satisfiesPzs:
           description: The status indicating if instance satisfiesPzs. Reserved for future use.
@@ -3106,22 +3169,23 @@ components:
               - MYSQL_5_5
               - MYSQL_5_6
               - MYSQL_5_7
-              - POSTGRES_9_6
-              - POSTGRES_11
               - SQLSERVER_2017_STANDARD
               - SQLSERVER_2017_ENTERPRISE
               - SQLSERVER_2017_EXPRESS
               - SQLSERVER_2017_WEB
+              - POSTGRES_9_6
               - POSTGRES_10
+              - POSTGRES_11
               - POSTGRES_12
+              - POSTGRES_13
+              - POSTGRES_14
               - MYSQL_8_0
               - MYSQL_8_0_18
               - MYSQL_8_0_26
               - MYSQL_8_0_27
               - MYSQL_8_0_28
               - MYSQL_8_0_29
-              - POSTGRES_13
-              - POSTGRES_14
+              - MYSQL_8_0_30
               - SQLSERVER_2019_STANDARD
               - SQLSERVER_2019_ENTERPRISE
               - SQLSERVER_2019_EXPRESS
@@ -3390,7 +3454,7 @@ components:
       description: IP Management configuration.
       properties:
         allocatedIpRange:
-          description: 'The name of the allocated ip range for the private ip CloudSQL instance. For example: "google-managed-services-default". If set, the instance ip will be created in the allocated range. The range name must comply with [RFC 1035](https://tools.ietf.org/html/rfc1035). Specifically, the name must be 1-63 characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?.`'
+          description: 'The name of the allocated ip range for the private ip Cloud SQL instance. For example: "google-managed-services-default". If set, the instance ip will be created in the allocated range. The range name must comply with [RFC 1035](https://tools.ietf.org/html/rfc1035). Specifically, the name must be 1-63 characters long and match the regular expression `[a-z]([-a-z0-9]*[a-z0-9])?.`'
           type: string
         authorizedNetworks:
           description: "The list of external networks that are allowed to connect to the instance using the IP. In 'CIDR' notation, also known as 'slash' notation (for example: `157.197.200.0/24`)."
@@ -3612,6 +3676,7 @@ components:
             - RESCHEDULE_MAINTENANCE
             - START_EXTERNAL_SYNC
             - LOG_CLEANUP
+            - AUTO_RESTART
           type: string
         selfLink:
           description: The URI of this resource.
@@ -3806,6 +3871,13 @@ components:
         collation:
           description: The name of server Instance collation.
           type: string
+        connectorEnforcement:
+          description: "Specifies if connections must use Cloud SQL connectors. Option values include the following: `NOT_REQUIRED` (Cloud SQL instances can be connected without Cloud SQL Connectors) and `REQUIRED` (Only allow connections that use Cloud SQL Connectors). Note that using REQUIRED disables all existing authorized networks. If this field is not specified when creating a new instance, NOT_REQUIRED is used. If this field is not specified when patching or updating an existing instance, it is left unchanged in the instance."
+          enum:
+            - CONNECTOR_ENFORCEMENT_UNSPECIFIED
+            - NOT_REQUIRED
+            - REQUIRED
+          type: string
         crashSafeReplicationEnabled:
           description: Configuration specific to read replica instances. Indicates whether database flags for crash-safe replication are enabled. This property was only applicable to First Generation instances.
           type: boolean
@@ -3828,6 +3900,9 @@ components:
           type: array
         databaseReplicationEnabled:
           description: "Configuration specific to read replica instances. Indicates whether replication is enabled or not. WARNING: Changing this restarts the instance."
+          type: boolean
+        deletionProtectionEnabled:
+          description: Configuration to protect against accidental instance deletion.
           type: boolean
         denyMaintenancePeriods:
           description: Deny maintenance periods
@@ -3882,6 +3957,9 @@ components:
           type: string
         tier:
           description: "The tier (or machine type) for this instance, for example `db-custom-1-3840`. WARNING: Changing this restarts the instance."
+          type: string
+        timeZone:
+          description: Server timezone, relevant only for Cloud SQL for SQL Server.
           type: string
         userLabels:
           additionalProperties:
@@ -4221,6 +4299,14 @@ components:
     User:
       description: A Cloud SQL user resource.
       properties:
+        dualPasswordType:
+          description: Dual password status for the user.
+          enum:
+            - DUAL_PASSWORD_TYPE_UNSPECIFIED
+            - NO_MODIFY_DUAL_PASSWORD
+            - NO_DUAL_PASSWORD
+            - DUAL_PASSWORD
+          type: string
         etag:
           description: This field is deprecated and will be removed from a future version of the API.
           type: string
@@ -4264,6 +4350,9 @@ components:
           type: integer
         enableFailedAttemptsCheck:
           description: If true, failed login attempts check will be enabled.
+          type: boolean
+        enablePasswordVerification:
+          description: If true, the user must specify the current password before changing the password. This flag is supported only for MySQL.
           type: boolean
         passwordExpirationDuration:
           description: Expiration duration after password is updated.
