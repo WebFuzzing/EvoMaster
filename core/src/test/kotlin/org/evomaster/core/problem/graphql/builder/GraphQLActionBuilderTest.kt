@@ -1171,6 +1171,34 @@ class GraphQLActionBuilderTest {
         assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "characters" && it.elements.size==3 && it.lastElementTreatedSpecially })
         assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "staff" && it.elements.size==3 && it.lastElementTreatedSpecially })
         assertTrue(objFavorites.fields.any { it is TupleGene && it.name == "studios" && it.elements.size==3 && it.lastElementTreatedSpecially})
+        /**/
+        val following = actionCluster["Following"] as GraphQLAction
+        assertEquals(3, following.parameters.size)
+        assertTrue(following.parameters[1] is GQInputParam)
+        assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java)!=null)
+        assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(EnumGene::class.java)!=null)
+
+    }
+
+    @Test
+    fun arrayEnumInputTest() {
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/arrayEnumInput.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(1, actionCluster.size)
+
+        val flowersByType = actionCluster["flowersByType"] as GraphQLAction
+        assertEquals(2, flowersByType.parameters.size)
+        assertTrue(flowersByType.parameters[0] is GQInputParam)
+        assertTrue(flowersByType.parameters[1] is GQReturnParam)
+
+        assertTrue(flowersByType.parameters[0].gene.getWrappedGene(ArrayGene::class.java)!=null)
+
+        assertTrue(flowersByType.parameters[0].gene.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(EnumGene::class.java)!=null)
+
     }
 
     @Test

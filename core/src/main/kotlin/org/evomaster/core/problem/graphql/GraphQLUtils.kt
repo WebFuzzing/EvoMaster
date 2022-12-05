@@ -71,16 +71,8 @@ object GraphQLUtils {
                 """.trimIndent()
                         )
 
-                    } else if (returnGene.name.endsWith(GqlConst.UNION_TAG)) {//The first is a union type
-
-                        var query = getQuery(returnGene, a)//todo remove the name for the first union
-                        Entity.json(
-                            """
-                   {"query" : " {  ${a.methodName} ($printableInputGenes)  { $query }  }   ","variables":null}
-                """.trimIndent()
-                        )
-
-                    } else {
+                    } else
+                        {
                         val query = getQuery(returnGene, a)
                         Entity.json(
                             """
@@ -99,16 +91,7 @@ object GraphQLUtils {
                 """.trimIndent()
                         )
 
-                    } else if (returnGene.name.endsWith(GqlConst.UNION_TAG)) {//The first is a union type
-
-                        var query = getQuery(returnGene, a)//todo remove the name for the first union
-                        Entity.json(
-                            """
-                   {"query" : " {  ${a.methodName} $printableInputGenes  { $query }  }   ","variables":null}
-                """.trimIndent()
-                        )
-
-                    } else {
+                    }  else {
                         val query = getQuery(returnGene, a)
                         Entity.json(
                             """
@@ -195,11 +178,7 @@ object GraphQLUtils {
         val printableInputGene = mutableListOf<String>()
         for (gene in inputGenes) {
             if (gene is EnumGene<*> ||
-                (gene is OptionalGene && gene.gene is EnumGene<*>) ||
-                (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is EnumGene<*>) ||
-                (gene is OptionalGene && gene.gene is ArrayGene<*> && gene.gene.template is OptionalGene && gene.gene.template.gene is EnumGene<*>) ||
-                (gene is ArrayGene<*> && gene.template is EnumGene<*>) ||
-                (gene is ArrayGene<*> && gene.template is OptionalGene && gene.template.gene is EnumGene<*>)
+                (gene is OptionalGene && gene.gene is EnumGene<*>)
             ) {
                 val i = gene.getValueAsRawString()
                 printableInputGene.add("${gene.name} : $i")

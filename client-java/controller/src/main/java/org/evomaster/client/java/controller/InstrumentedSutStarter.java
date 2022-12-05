@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller;
 
 import com.ea.agentloader.AgentLoader;
-import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
 import org.evomaster.client.java.controller.internal.SutController;
+import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 
 /**
@@ -39,6 +39,12 @@ public class InstrumentedSutStarter {
     }
 
     public InstrumentedSutStarter(SutController sutController) {
+
+        //need to be called before ClassesToExclude is loaded into memory
+        String toSkip = sutController.packagesToSkipInstrumentation();
+        if(toSkip != null && !toSkip.isEmpty()) {
+            System.setProperty(Constants.PROP_SKIP_CLASSES, toSkip);
+        }
 
         this.sutController = sutController;
 

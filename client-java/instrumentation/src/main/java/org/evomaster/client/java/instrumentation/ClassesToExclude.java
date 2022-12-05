@@ -18,7 +18,14 @@ public class ClassesToExclude {
         InputStream excludedClassesStream =
                 ClassesToExclude.class.getClassLoader().getResourceAsStream("skipInstrumentationList.txt");
 
-        excludedClasses = Collections.unmodifiableSet(new HashSet<>(getNotCommentedLines(excludedClassesStream)));
+        Set<String> toSkip = new HashSet<>(getNotCommentedLines(excludedClassesStream));
+
+        String custom = System.getProperty(Constants.PROP_SKIP_CLASSES);
+        if(custom != null && !custom.isEmpty()){
+            toSkip.addAll(Arrays.asList(custom.split(",")));
+        }
+
+        excludedClasses = Collections.unmodifiableSet(toSkip);
 
         InputStream includedClassesStream =
                 ClassesToExclude.class.getClassLoader().getResourceAsStream("keepInstrumentationList.txt");

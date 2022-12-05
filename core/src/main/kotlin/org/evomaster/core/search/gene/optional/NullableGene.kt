@@ -15,10 +15,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class NullableGene(name: String,
-                   val gene: Gene,
-                   var isPresent: Boolean = true,
+                    gene: Gene,
+                    isActive: Boolean = true,
                    var nullLabel: String = "null"
-) : CompositeGene(name, mutableListOf(gene)) {
+) : SelectableWrapperGene(name, gene, isActive) {
 
 
 
@@ -27,37 +27,16 @@ class NullableGene(name: String,
         private const val ABSENT = 0.01
     }
 
-    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
-        if(this.javaClass == klass){
-            return this as T
-        }
-        return gene.getWrappedGene(klass)
-    }
-
     override fun isLocallyValid() : Boolean{
         return getViewOfChildren().all { it.isLocallyValid() }
     }
 
     override fun copyContent(): Gene {
-        return NullableGene(name, gene.copy(), isPresent, nullLabel)
+        val g =  NullableGene(name, gene.copy(), isActive, nullLabel)
+        g.selectable = this.selectable
+        return g
     }
 
-    override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-
-        isPresent = if (!isPresent && tryToForceNewValue) {
-            true
-        } else{
-            /*
-                on sampling, we consider a 50-50 chances to be null.
-                then, during mutation, we give less chances to null
-             */
-            randomness.nextBoolean()
-        }
-
-
-        if(gene.isMutable())
-            gene.randomize(randomness, tryToForceNewValue)
-    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
@@ -66,7 +45,7 @@ class NullableGene(name: String,
         additionalGeneMutationInfo: AdditionalGeneMutationInfo?
     ) : Boolean {
 
-        if (!isPresent) return true
+        if (!isActive) return true
 
         //FIXME do impact
 //        if (!enableAdaptiveGeneMutation || additionalGeneMutationInfo?.impact == null){
@@ -94,12 +73,6 @@ class NullableGene(name: String,
         return randomness.nextBoolean(ABSENT);
     }
 
-    override fun mutablePhenotypeChildren(): List<Gene> {
-
-        if (!isPresent) return emptyList()
-
-        return listOf(gene)
-    }
 
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is NullableImpact){
@@ -108,18 +81,10 @@ class NullableGene(name: String,
         throw IllegalArgumentException("impact is null or not SqlNullableImpact")
     }
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
-        isPresent = !isPresent
-        return true
-    }
-
-    override fun isPrintable(): Boolean {
-        return !isPresent || gene.isPrintable()
-    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
-        if (!isPresent) {
+        if (!isActive) {
             return nullLabel
         }
 
@@ -130,7 +95,8 @@ class NullableGene(name: String,
         if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.isPresent = other.isPresent
+        this.isActive = other.isActive
+        this.selectable = other.selectable
         this.nullLabel = other.nullLabel
         this.gene.copyValueFrom(other.gene)
     }
@@ -139,20 +105,16 @@ class NullableGene(name: String,
         if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return this.isPresent == other.isPresent &&
+        return this.isActive == other.isActive &&
+                this.selectable == other.selectable &&
                 this.gene.containsSameValueAs(other.gene)
                 && this.nullLabel == other.nullLabel
     }
 
 
 
-    override fun mutationWeight(): Double {
-        return 1.0 + gene.mutationWeight()
-    }
-
-
     override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is NullableGene) isPresent = gene.isPresent
+        if (gene is NullableGene) isActive = gene.isActive
         return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 }

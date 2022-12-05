@@ -6,7 +6,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 open class HttpExternalServiceInfo(
     val protocol: String,
     val remoteHostname: String,
-    val remotePort: Int
+    var remotePort: Int
 ) {
 
     init {
@@ -63,4 +63,13 @@ open class HttpExternalServiceInfo(
     fun isDerivedHttps() : Boolean = ExternalServiceSharedUtils.isHttps(protocol, remotePort)
 
     fun getDescriptiveURLPath() : String = "${if (isHttps() || (!isHttp() && isDerivedHttps())) "https" else "http"}://${remoteHostname}:${remotePort}"
+
+    /**
+     * To check whether the ExternalServiceInfo has all the information available or not
+     */
+    fun isPartial() : Boolean = remotePort < 0
+
+    fun updateRemotePort(port: Int) {
+        remotePort = port
+    }
 }

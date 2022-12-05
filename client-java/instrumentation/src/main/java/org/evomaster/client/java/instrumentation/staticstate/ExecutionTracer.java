@@ -658,6 +658,10 @@ public class ExecutionTracer {
         return externalServiceMapping.containsKey(hostname);
     }
 
+    public static boolean hasMockServer(String hostname) {
+        return externalServiceMapping.containsValue(hostname);
+    }
+
     public static void registerSkippedHostname(List<String> skipped){
         for(String s: skipped){
             if (!skippedHostName.contains(s.toLowerCase()))
