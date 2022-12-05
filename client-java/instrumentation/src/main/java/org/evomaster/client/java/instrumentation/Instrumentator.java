@@ -51,7 +51,7 @@ public class Instrumentator {
         Objects.requireNonNull(className);
         Objects.requireNonNull(reader);
 
-        if (!ClassesToExclude.checkIfCanInstrument(className)) {
+        if (!ClassesToExclude.checkIfCanInstrument(classLoader, className)) {
             throw new IllegalArgumentException("Cannot instrument " + className);
         }
 
