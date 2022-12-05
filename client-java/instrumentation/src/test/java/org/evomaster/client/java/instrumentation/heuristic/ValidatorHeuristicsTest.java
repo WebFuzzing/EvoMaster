@@ -2,12 +2,15 @@ package org.evomaster.client.java.instrumentation.heuristic;
 
 import org.evomaster.client.java.instrumentation.heuristic.validator.BaseConstraintsBean;
 import org.evomaster.client.java.instrumentation.heuristic.validator.NoConstraintsBean;
+import org.evomaster.client.java.instrumentation.heuristic.validator.SingleConstraintBean;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Positive;
+import javax.validation.metadata.BeanDescriptor;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
@@ -33,14 +36,46 @@ class ValidatorHeuristicsTest {
 
         BaseConstraintsBean bean = new BaseConstraintsBean();
 
+        BeanDescriptor descriptor = validator.getConstraintsForClass(BaseConstraintsBean.class);
+        assertTrue(descriptor.isBeanConstrained());
+        assertEquals(4, descriptor.getConstrainedProperties().size());
+        assertEquals(5, descriptor.getConstrainedProperties().stream()
+                .flatMap(it -> it.getConstraintDescriptors().stream())
+                .count()
+        );
+
         Set<ConstraintViolation<BaseConstraintsBean>> result =  validator.validate(bean);
         //5 constraints, over 4 fields, 1 with none, 1 with 2 constraints.
         // 2 max constraints are satisfied (default int value is 0)
         assertEquals(3, result.size());
-        List<Annotation> annotations = result.stream().map(it ->
-            it.getConstraintDescriptor().getAnnotation()
-        ).collect(Collectors.toList());
+    }
 
-        TODO all checks
+    @Test
+    public void testSingleConstraintBean(){
+
+        SingleConstraintBean bean = new SingleConstraintBean();
+
+        BeanDescriptor descriptor = validator.getConstraintsForClass(SingleConstraintBean.class);
+        assertTrue(descriptor.isBeanConstrained());
+        assertEquals(1, descriptor.getConstrainedProperties().size());
+        assertEquals(1, descriptor.getConstrainedProperties().stream()
+                .flatMap(it -> it.getConstraintDescriptors().stream())
+                .count()
+        );
+
+        bean.x = 42;
+
+        Set<ConstraintViolation<SingleConstraintBean>> result =  validator.validate(bean);
+        assertEquals(0, result.size());
+
+        bean.x = -5;
+
+        result =  validator.validate(bean);
+        assertEquals(1, result.size());
+
+        ConstraintViolation<SingleConstraintBean> failure = result.stream().findFirst().get();
+        assertEquals(-5, failure.getInvalidValue());
+        assertEquals(Min.class, failure.getConstraintDescriptor().getAnnotation().annotationType());
+        assertEquals(1L, failure.getConstraintDescriptor().getAttributes().get("value"));
     }
 }
