@@ -67,7 +67,7 @@ open class HttpExternalServiceInfo(
     /**
      * To check whether the ExternalServiceInfo has all the information available or not
      */
-    fun isPartial() : Boolean = remotePort == -1
+    fun isPartial() : Boolean = remotePort < 0
 
     fun updateRemotePort(port: Int) {
         remotePort = port
