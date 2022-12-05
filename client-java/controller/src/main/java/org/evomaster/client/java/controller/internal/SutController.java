@@ -1175,4 +1175,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             });
         }
     }
+
+    /**
+     *  Comma , separated list of package prefixes of classes to skip.
+     *  This is mainly used as workaround for cases in which EM's instrumentation crashes due
+     *  to some bugs in it.
+     *  (This is also the reason why it is not abstract)
+     *
+     *  Note: we currently cannot test this in a E2E, as agent is loaded _before_ te controller is defined
+     */
+    public String packagesToSkipInstrumentation(){
+        return null;
+    }
 }

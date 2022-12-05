@@ -191,7 +191,7 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         } while (nullableArrayColumn.getDimensionSize(0) != 1)
 
         val sqlNullableGene = nullableArrayColumn.getElement(listOf(0)) as NullableGene
-        sqlNullableGene.isPresent = false
+        sqlNullableGene.isActive = false
 
         assertEquals("\"{NULL}\"", nullableArrayColumn.getValueAsPrintableString())
 
