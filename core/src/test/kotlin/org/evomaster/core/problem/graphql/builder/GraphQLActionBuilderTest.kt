@@ -1413,6 +1413,24 @@ class GraphQLActionBuilderTest {
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
         assertEquals(70, actionCluster.size)
+
+        val teamMemberCreate = actionCluster["teamMemberCreate"] as GraphQLAction
+        assertEquals(2, teamMemberCreate.parameters.size)
+        assertTrue(teamMemberCreate.parameters[1] is GQReturnParam)
+
+        assertTrue(teamMemberCreate.parameters[1].gene is ObjectGene)
+        val objTeamMemberCreate = teamMemberCreate.parameters[1].gene as ObjectGene
+
+        assertEquals(3, objTeamMemberCreate.fields.size)
+        assertTrue(objTeamMemberCreate.fields.any { it is OptionalGene && it.gene is ObjectGene && it.name == "team" })
+
+        val objTeam = (objTeamMemberCreate.fields.first { it.name == "team" } as OptionalGene).gene as ObjectGene
+        assertEquals(17, objTeam.fields.size)
+        assertTrue(objTeam.fields.any {it.getWrappedGene(TupleGene::class.java)?.name == "members" })
+
+        val tupleMembers = (objTeam.fields.first {it.getWrappedGene(TupleGene::class.java)?.name == "members" } as TupleGene)
+        assertEquals(8, tupleMembers.elements.size)
+
     }
 
     @Test
