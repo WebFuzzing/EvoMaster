@@ -298,11 +298,14 @@ object TaintAnalysis {
                         same prefix and postfix. However, it would be extremely rare, and for sure
                         not in any of E2E, unless we explicitly write one for it
                     */
-            log.warn("No taint input found '{}'", taintedInput)
+            //log.warn("No taint input found '{}'", taintedInput)
             /*
                 FIXME put back once debug issue on Linux.
                 The issue is that H2 is caching requests... our fix for that work on local machines (including
                 Linux) but fails somehow on CI
+
+                UPDATE: solution doesn't really work, as SQL commands are analyzed later, after put in a buffer.
+                See: ExecutionTracer.shouldSkipTaint()
              */
             //assert(false) // crash in tests, but not production
         } else {
