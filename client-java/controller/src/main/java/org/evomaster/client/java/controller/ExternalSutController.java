@@ -222,6 +222,11 @@ public abstract class ExternalSutController extends SutController {
             }
         }
 
+        String toSkip = System.getProperty(Constants.PROP_SKIP_CLASSES);
+        if(toSkip != null && !toSkip.isEmpty()){
+            command.add("-D"+Constants.PROP_SKIP_CLASSES+"="+toSkip);
+        }
+
         if (command.stream().noneMatch(s -> s.startsWith("-Xmx"))) {
             command.add("-Xmx2G");
         }

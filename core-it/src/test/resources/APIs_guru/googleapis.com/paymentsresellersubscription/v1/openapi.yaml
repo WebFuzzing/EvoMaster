@@ -220,7 +220,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: 'Optional. Specifies the filters for the products results. The syntax defined in the EBNF grammar: https://google.aip.dev/assets/misc/ebnf-filtering.txt. An error will be thrown if any specified parameter is not supported. Currently, it can only be used by Youtube partners. Allowed parameters are: - regionCodes - zipCode - eligibilityId Multiple parameters can be specified, for example: "regionCodes=US zipCode=94043 eligibilityId=2022H1Campaign"'
+        - description: "Optional. Specifies the filters for the product results. The syntax is defined in https://google.aip.dev/160 with the following caveats: - Only the following features are supported: - Logical operator `AND` - Comparison operator `=` (no wildcards `*`) - Traversal operator `.` - Has operator `:` (no wildcards `*`) - Only the following fields are supported: - `regionCodes` - `youtubePayload.partnerEligibilityId` - `youtubePayload.postalCode` - Unless explicitly mentioned above, other features are not supported. Example: `regionCodes:US AND youtubePayload.postalCode=94043 AND youtubePayload.partnerEligibilityId=eligibility-id`"
           in: query
           name: filter
           schema:
@@ -267,7 +267,7 @@ paths:
           required: true
           schema:
             type: string
-        - description: 'Optional. Specifies the filters for the promotion results. The syntax defined in the EBNF grammar: https://google.aip.dev/assets/misc/ebnf-filtering.txt. An error will be thrown if the specified parameter(s) is not supported. Currently, it can only be used by Youtube partners. Allowed parameters are: - region_codes: "US" - zip_code: "94043" - eligibility_id: "2022H1Campaign" Multiple parameters can be specified, for example: "region_codes=US zip_code=94043 eligibility_id=2022H1Campaign"'
+        - description: "Optional. Specifies the filters for the promotion results. The syntax is defined in https://google.aip.dev/160 with the following caveats: - Only the following features are supported: - Logical operator `AND` - Comparison operator `=` (no wildcards `*`) - Traversal operator `.` - Has operator `:` (no wildcards `*`) - Only the following fields are supported: - `applicableProducts` - `regionCodes` - `youtubePayload.partnerEligibilityId` - `youtubePayload.postalCode` - Unless explicitly mentioned above, other features are not supported. Example: `applicableProducts:partners/partner1/products/product1 AND regionCodes:US AND youtubePayload.postalCode=94043 AND youtubePayload.partnerEligibilityId=eligibility-id`"
           in: query
           name: filter
           schema:
@@ -500,10 +500,21 @@ components:
       schema:
         type: string
   schemas:
+    GoogleCloudPaymentsResellerSubscriptionV1Amount:
+      description: Describes the amount unit including the currency code.
+      properties:
+        amountMicros:
+          description: Required. Amount in micros (1_000_000 micros = 1 currency unit)
+          format: int64
+          type: string
+        currencyCode:
+          description: Required. Currency codes in accordance with [ISO-4217 Currency Codes] (https://en.wikipedia.org/wiki/ISO_4217). For example, USD.
+          type: string
+      type: object
     GoogleCloudPaymentsResellerSubscriptionV1CancelSubscriptionRequest:
       properties:
         cancelImmediately:
-          description: Optional. If true, the subscription will be cancelled immediately. Otherwise, the subscription will be cancelled at renewal_time, and therefore no prorated refund will be issued for the rest of the cycle.
+          description: Optional. If true, Google will cancel the subscription immediately, and issue a prorated refund for the remainder of the billing cycle. Otherwise, Google defers the cancelation at renewal_time, and therefore, will not issue a refund.
           type: boolean
         cancellationReason:
           description: Specifies the reason for the cancellation.
@@ -589,7 +600,7 @@ components:
     GoogleCloudPaymentsResellerSubscriptionV1FindEligiblePromotionsRequest:
       properties:
         filter:
-          description: 'Optional. Specifies the filters for the promotion results. The syntax defined in the EBNF grammar: https://google.aip.dev/assets/misc/ebnf-filtering.txt. An error will be thrown if any specified parameter is not supported. Currently, it can only be used by Youtube partners. Allowed parameters are: - regionCodes - zipCode - eligibilityId - applicableProducts Multiple parameters can be specified, for example: "regionCodes=US zipCode=94043 eligibilityId=2022H1Campaign", or "applicableProducts=partners/p1/products/product2"'
+          description: "Optional. Specifies the filters for the promotion results. The syntax is defined in https://google.aip.dev/160 with the following caveats: - Only the following features are supported: - Logical operator `AND` - Comparison operator `=` (no wildcards `*`) - Traversal operator `.` - Has operator `:` (no wildcards `*`) - Only the following fields are supported: - `applicableProducts` - `regionCodes` - `youtubePayload.partnerEligibilityId` - `youtubePayload.postalCode` - Unless explicitly mentioned above, other features are not supported. Example: `applicableProducts:partners/partner1/products/product1 AND regionCodes:US AND youtubePayload.postalCode=94043 AND youtubePayload.partnerEligibilityId=eligibility-id`"
           type: string
         pageSize:
           description: Optional. The maximum number of promotions to return. The service may return fewer than this value. If unspecified, at most 50 products will be returned. The maximum value is 1000; values above 1000 will be coerced to 1000.
@@ -647,9 +658,15 @@ components:
       description: A Product resource that defines a subscription service that can be resold.
       properties:
         name:
-          description: Output only. Response only. Resource name of the subscription. It will have the format of "partners/{partner_id}/products/{product_id}"
+          description: Output only. Response only. Resource name of the product. It will have the format of "partners/{partner_id}/products/{product_id}"
           readOnly: true
           type: string
+        priceConfigs:
+          description: Output only. Price configs for the product in the available regions.
+          items:
+            $ref: "#/components/schemas/GoogleCloudPaymentsResellerSubscriptionV1ProductPriceConfig"
+          readOnly: true
+          type: array
         regionCodes:
           description: 'Output only. 2-letter ISO region code where the product is available in. Ex. "US" Please refers to: https://en.wikipedia.org/wiki/ISO_3166-1'
           items:
@@ -666,6 +683,18 @@ components:
             $ref: "#/components/schemas/GoogleTypeLocalizedText"
           readOnly: true
           type: array
+      type: object
+    GoogleCloudPaymentsResellerSubscriptionV1ProductPriceConfig:
+      description: Configs the prices in an available region.
+      properties:
+        amount:
+          $ref: "#/components/schemas/GoogleCloudPaymentsResellerSubscriptionV1Amount"
+          description: Output only. The price in the region.
+          readOnly: true
+        regionCode:
+          description: Output only. 2-letter ISO region code where the product is available in. Ex. "US".
+          readOnly: true
+          type: string
       type: object
     GoogleCloudPaymentsResellerSubscriptionV1Promotion:
       description: A Promotion resource that defines a promotion for a subscription that can be resold.
@@ -727,14 +756,39 @@ components:
     GoogleCloudPaymentsResellerSubscriptionV1PromotionIntroductoryPricingDetailsIntroductoryPricingSpec:
       description: The duration of an introductory pricing promotion.
       properties:
+        discountAmount:
+          $ref: "#/components/schemas/GoogleCloudPaymentsResellerSubscriptionV1Amount"
+          description: Output only. The discount amount. The value is positive.
+          readOnly: true
+        discountRatioMicros:
+          description: Output only. The discount percentage in micros. For example, 50,000 represents 5%.
+          format: int64
+          readOnly: true
+          type: string
         recurrenceCount:
           description: Output only. Output Only. The duration of an introductory offer in billing cycles.
           format: int32
           readOnly: true
           type: integer
+        regionCode:
+          description: Output only. 2-letter ISO region code where the product is available in. Ex. "US".
+          readOnly: true
+          type: string
+      type: object
+    GoogleCloudPaymentsResellerSubscriptionV1ServicePeriod:
+      description: A description of what time period or moment in time the product or service is being delivered over.
+      properties:
+        endTime:
+          description: Optional. The end time of the service period. Time is exclusive.
+          format: google-datetime
+          type: string
+        startTime:
+          description: Required. The start time of the service period. Time is inclusive.
+          format: google-datetime
+          type: string
       type: object
     GoogleCloudPaymentsResellerSubscriptionV1Subscription:
-      description: LINT.IfChange A Subscription resource managed by 3P Partners.
+      description: A Subscription resource managed by 3P Partners.
       properties:
         cancellationDetails:
           $ref: "#/components/schemas/GoogleCloudPaymentsResellerSubscriptionV1SubscriptionCancellationDetails"
@@ -765,8 +819,7 @@ components:
             $ref: "#/components/schemas/GoogleCloudPaymentsResellerSubscriptionV1SubscriptionLineItem"
           type: array
         name:
-          description: Output only. Response only. Resource name of the subscription. It will have the format of "partners/{partner_id}/subscriptions/{subscription_id}"
-          readOnly: true
+          description: Optional. Resource name of the subscription. It will have the format of "partners/{partner_id}/subscriptions/{subscription_id}". This is available for authorizeAddon, but otherwise is response only.
           type: string
         partnerUserToken:
           description: Required. Identifier of the end-user in partner’s system. The value is restricted to 63 ASCII characters at the maximum.
@@ -815,6 +868,7 @@ components:
             - STATE_CANCELLED
             - STATE_IN_GRACE_PERIOD
             - STATE_CANCEL_AT_END_OF_CYCLE
+            - STATE_SUSPENDED
           readOnly: true
           type: string
         updateTime:
@@ -844,7 +898,7 @@ components:
           type: string
       type: object
     GoogleCloudPaymentsResellerSubscriptionV1SubscriptionLineItem:
-      description: "Individual line item definition of a subscription. Next id: 6"
+      description: "Individual line item definition of a subscription. Next id: 9"
       properties:
         description:
           description: Output only. Description of this line item.
@@ -860,8 +914,20 @@ components:
           items:
             $ref: "#/components/schemas/GoogleCloudPaymentsResellerSubscriptionV1SubscriptionPromotionSpec"
           type: array
+        oneTimeRecurrenceDetails:
+          $ref: "#/components/schemas/GoogleCloudPaymentsResellerSubscriptionV1SubscriptionLineItemOneTimeRecurrenceDetails"
+          description: Output only. Details only set for a ONE_TIME recurrence line item.
+          readOnly: true
         product:
           description: Required. Product resource name that identifies one the line item The format is 'partners/{partner_id}/products/{product_id}'.
+          type: string
+        recurrenceType:
+          description: Output only. The recurrence type of the line item.
+          enum:
+            - LINE_ITEM_RECURRENCE_TYPE_UNSPECIFIED
+            - LINE_ITEM_RECURRENCE_TYPE_PERIODIC
+            - LINE_ITEM_RECURRENCE_TYPE_ONE_TIME
+          readOnly: true
           type: string
         state:
           description: Output only. The state of the line item.
@@ -874,6 +940,13 @@ components:
             - LINE_ITEM_STATE_DEACTIVATING
           readOnly: true
           type: string
+      type: object
+    GoogleCloudPaymentsResellerSubscriptionV1SubscriptionLineItemOneTimeRecurrenceDetails:
+      description: Details for a ONE_TIME recurrence line item.
+      properties:
+        servicePeriod:
+          $ref: "#/components/schemas/GoogleCloudPaymentsResellerSubscriptionV1ServicePeriod"
+          description: The service period of the ONE_TIME line item.
       type: object
     GoogleCloudPaymentsResellerSubscriptionV1SubscriptionPromotionSpec:
       description: Describes the spec for one promotion.
