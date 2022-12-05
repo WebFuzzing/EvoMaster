@@ -10,7 +10,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -322,4 +327,89 @@ public class HeuristicsCalculatorTest {
 
         checkIncreasingTillCovered("x", Arrays.asList(10, -5, 2), 0, sql);
     }
+
+    @Test
+    public void testTimestampMinorThanEquals(){
+
+        String sql = "select x from Foo where x <= TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2023-11-30 00:00:00"),
+                        Timestamp.valueOf("2023-06-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-12-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 17:00:00.0")
+                ),
+                Timestamp.valueOf("2022-11-30 16:00:00.0"),
+                sql);
+    }
+
+    @Test
+    public void testTimestampMinorThan(){
+
+        String sql = "select x from Foo where x < TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2023-11-30 00:00:00"),
+                        Timestamp.valueOf("2023-06-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-12-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 17:00:00.0")
+                ),
+                Timestamp.valueOf("2022-11-29 16:00:00.0"),
+                sql);
+    }
+
+    @Test
+    public void testTimestampGreaterThan(){
+
+        String sql = "select x from Foo where x > TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2020-11-30 16:00:00"),
+                        Timestamp.valueOf("2021-11-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 15:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 16:00:00.0")
+                ),
+                Timestamp.valueOf("2022-12-01 16:00:00.0"),
+                sql);
+    }
+
+    @Test
+    public void testTimestampGreaterThanEquals(){
+
+        String sql = "select x from Foo where x >= TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2020-11-30 16:00:00"),
+                        Timestamp.valueOf("2021-11-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-30 15:00:00.0")
+                ),
+                Timestamp.valueOf("2022-11-30 16:00:00.0"),
+                sql);
+    }
+
+    @Test
+    public void testTimestampEqualsTo(){
+
+        String sql = "select x from Foo where x = TIMESTAMP '2022-11-30 16:00:00.0'";
+
+        checkIncreasingTillCovered("x", Arrays.asList(
+                        Timestamp.valueOf("2020-11-30 16:00:00"),
+                        Timestamp.valueOf("2021-11-30 16:00:00.0"),
+                        Timestamp.valueOf("2022-11-29 16:00:00.0")
+                ),
+                Timestamp.valueOf("2022-11-30 16:00:00.0"),
+                sql);
+    }
+
+    @Test
+    public void testParseTimestamp() throws ParseException {
+        String timestampValue = "2020-11-30 16:00:00.0";
+        //Instant instant = Timestamp.valueOf(timestampValue).toInstant();
+
+        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S").parse(timestampValue).toInstant();
+//        Instant anotherinstant = LocalDateTime.parse(timestampValue, DateTimeFormatter.ofPattern("yyyy-mm-dd")).toInstant();
+
+    }
+
+
 }
