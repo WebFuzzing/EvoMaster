@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.optional.SelectableWrapperGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -324,7 +325,8 @@ object GeneUtils {
 
         loop@ while (p != null) {
             when (p) {
-                is OptionalGene -> {
+                //TODO possibly include ChoiceGene here?
+                is SelectableWrapperGene -> {
                     p.forbidSelection()
                     break@loop
                 }
@@ -397,10 +399,9 @@ object GeneUtils {
             loop@ while (p != null) {
                 when {
                     /*
-                        TODO there are other cases to handle here,
-                        including Nullable ang Choice
+                        TODO possibly include ChoiceGene here?
                      */
-                    (p is OptionalGene && !p.selectable) ||
+                    (p is SelectableWrapperGene && !p.selectable) ||
                             (p is ArrayGene<*> && p.maxSize == 0)
                     -> {
                         break@loop
