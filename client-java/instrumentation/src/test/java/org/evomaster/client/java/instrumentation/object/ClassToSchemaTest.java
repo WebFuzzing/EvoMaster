@@ -199,7 +199,7 @@ public class ClassToSchemaTest {
     }
 
     @Test
-    public void testEnum(){
+    public void testDtoEnum(){
         String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoEnum.class);
         JsonObject json = parse(schema);
         JsonObject obj = json.get(DtoEnum.class.getName()).getAsJsonObject();
