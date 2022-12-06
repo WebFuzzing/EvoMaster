@@ -239,6 +239,11 @@ public class ClassToSchema {
         }
 
         if (klass != null) {
+            if (klass.isEnum()){
+                String [] items = Arrays.stream(klass.getEnumConstants()).map(e-> getNameEnumConstant(e)).toArray(String[]::new);
+                return fieldEnumSchema(items);
+            }
+
             if (String.class.isAssignableFrom(klass)) {
                 return fieldSchema("string");
             }
@@ -431,5 +436,23 @@ public class ClassToSchema {
 
     private static String fieldSchema(String type, String format) {
         return "{\"type\":\"" + type + "\", \"format\":\"" + format + "\"}";
+    }
+
+    private static String fieldEnumSchema(String[] items) {
+        return "{\"type\":\"string\", \"enum\":["+ Arrays.stream(items).map(s-> "\""+s+"\"").collect(Collectors.joining(",")) +"]}";
+    }
+
+    /*
+        duplicated code from RPCEndpointsBuilder
+     */
+    private static String getNameEnumConstant(Object object) {
+        try {
+            Method name = object.getClass().getMethod("name");
+            name.setAccessible(true);
+            return (String) name.invoke(object);
+        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            SimpleLogger.warn("Driver Error: fail to extract name for enum constant", e);
+            return object.toString();
+        }
     }
 }
