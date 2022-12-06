@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.object;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.evomaster.client.java.instrumentation.object.dtos.*;
@@ -50,6 +51,17 @@ public class ClassToSchemaTest {
         JsonObject field = obj.get("properties").getAsJsonObject().get(fieldName).getAsJsonObject();
         assertEquals(type, field.get("type").getAsString());
         assertEquals(format, field.get("format").getAsString());
+    }
+
+    private void verifyEnumOfFieldInProperties(JsonObject obj, String fieldName, String[] items){
+        JsonObject field = obj.get("properties").getAsJsonObject().get(fieldName).getAsJsonObject();
+        assertEquals("string", field.get("type").getAsString());
+        assertTrue(field.get("enum").isJsonArray());
+        JsonArray array = field.get("enum").getAsJsonArray();
+        assertEquals(items.length, array.size());
+        for (int i = 0; i < items.length; i++){
+            assertEquals(items[i], array.get(i).getAsString());
+        }
     }
 
     @Test
@@ -143,11 +155,11 @@ public class ClassToSchemaTest {
 
     @Test
     public void testMapDto(){
-        String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(MapDto.class);
+        String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(DtoMap.class);
         JsonObject all = parse(schema);
-        JsonObject jsonMapAndArray = all.get(MapDto.class.getName()).getAsJsonObject();
+        JsonObject jsonMapAndArray = all.get(DtoMap.class.getName()).getAsJsonObject();
         assertEquals(2, jsonMapAndArray.size());
-        checkMapDto(jsonMapAndArray.get(MapDto.class.getName()).getAsJsonObject());
+        checkMapDto(jsonMapAndArray.get(DtoMap.class.getName()).getAsJsonObject());
         checkDtoArray(jsonMapAndArray.get(DtoArray.class.getName()).getAsJsonObject());
     }
 
@@ -184,6 +196,16 @@ public class ClassToSchemaTest {
         checkCycleA(jsonAandB.get(CycleDtoA.class.getName()).getAsJsonObject());
         checkCycleB(jsonAandB.get(CycleDtoB.class.getName()).getAsJsonObject());
 
+    }
+
+    @Test
+    public void testEnum(){
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoEnum.class);
+        JsonObject json = parse(schema);
+        JsonObject obj = json.get(DtoEnum.class.getName()).getAsJsonObject();
+        assertEquals(2, obj.get("properties").getAsJsonObject().entrySet().size());
+        verifyTypeOfFieldInProperties(obj, "string", "foo");
+        verifyEnumOfFieldInProperties(obj, "bar", new String[]{"ONE", "TWO", "THREE"});
     }
 
 
