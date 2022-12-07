@@ -68,7 +68,7 @@ public class InstrumentingClassLoader extends ClassLoader {
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
 
-        if (!ClassesToExclude.checkIfCanInstrument(ClassName.get(name))) {
+        if (!ClassesToExclude.checkIfCanInstrument(null, ClassName.get(name))) {
             return loadNonInstrumented(name);
         }
 
