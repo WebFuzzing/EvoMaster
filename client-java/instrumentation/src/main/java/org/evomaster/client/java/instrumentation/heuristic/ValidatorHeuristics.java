@@ -78,11 +78,47 @@ public class ValidatorHeuristics {
         Annotation annotation = (Annotation) descriptor.getClass().getMethod("getAnnotation").invoke(descriptor);
         String annotationType = annotation.annotationType().getName();
 
-        //TODO check Jackarta namespace
+           /*
+        TODO handle all annotations
+        TODO future ll need to handle Jakarta as well
+
+AssertFalse
+AssertTrue
+DecimalMax
+DecimalMin
+Digits
+Email
+Future
+FutureOrPresent
+NotBlank
+NotEmpty
+NotNull
+Null
+Past
+PastOrPresent
+Pattern
+Size
+             */
 
         if(annotationType.equals("javax.validation.constraints.Min")){
             return computeHeuristicForMin(invalidValue, attributes);
         }
+        if(annotationType.equals("javax.validation.constraints.Max")){
+            return computeHeuristicForMax(invalidValue, attributes);
+        }
+        if(annotationType.equals("javax.validation.constraints.Positive")){
+            return computeHeuristicForPositive(invalidValue, attributes);
+        }
+        if(annotationType.equals("javax.validation.constraints.PositiveOrZero")){
+            return computeHeuristicForPositiveOrZero(invalidValue, attributes);
+        }
+        if(annotationType.equals("javax.validation.constraints.Negative")){
+            return computeHeuristicForNegative(invalidValue, attributes);
+        }
+        if(annotationType.equals("javax.validation.constraints.NegativeOrZero")){
+            return computeHeuristicForNegativeOrZero(invalidValue, attributes);
+        }
+
 
         SimpleLogger.warn("Not able to handle constrain type: " + annotationType);
         return 0.5; //actual value here does not matter, as long as positive and less than 1
@@ -96,6 +132,66 @@ public class ValidatorHeuristics {
         assert  x < min; //otherwise it would had not been a violation
 
         double distance = min - x;
+
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+    }
+
+    private static double computeHeuristicForMax(Object invalidValue, Map<String, Object> attributes) {
+
+        double x = ((Number) invalidValue).doubleValue();
+        double max = ((Number)attributes.get("value")).doubleValue();
+
+        assert  x > max; //otherwise it would had not been a violation
+
+        double distance = x - max;
+
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+    }
+
+    private static double computeHeuristicForPositive(Object invalidValue, Map<String, Object> attributes) {
+
+        double x = ((Number) invalidValue).doubleValue();
+        double min = 0d;
+
+        assert  x <= min; //otherwise it would had not been a violation
+
+        double distance = 1d + (min - x);  // we add a base because 0 is not a valid value
+
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+    }
+
+    private static double computeHeuristicForPositiveOrZero(Object invalidValue, Map<String, Object> attributes) {
+
+        double x = ((Number) invalidValue).doubleValue();
+        double min = 0d;
+
+        assert  x < min; //otherwise it would had not been a violation
+
+        double distance = (min - x);
+
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+    }
+
+    private static double computeHeuristicForNegative(Object invalidValue, Map<String, Object> attributes) {
+
+        double x = ((Number) invalidValue).doubleValue();
+        double max = 0d;
+
+        assert  x >= max; //otherwise it would had not been a violation
+
+        double distance = 1d + (x-max);  // we add a base because 0 is not a valid value
+
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+    }
+
+    private static double computeHeuristicForNegativeOrZero(Object invalidValue, Map<String, Object> attributes) {
+
+        double x = ((Number) invalidValue).doubleValue();
+        double max = 0d;
+
+        assert  x > max; //otherwise it would had not been a violation
+
+        double distance = x-max;
 
         return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
     }
@@ -121,32 +217,6 @@ public class ValidatorHeuristics {
         return (int) n;
     }
 
-    /*
-        TODO handle all annotations
-        TODO future ll need to handle Jakarta as well
 
-AssertFalse
-AssertTrue
-DecimalMax
-DecimalMin
-Digits
-Email
-Future
-FutureOrPresent
-Max
-Min
-Negative
-NegativeOrZero
-NotBlank
-NotEmpty
-NotNull
-Null
-Past
-PastOrPresent
-Pattern
-Positive
-PositiveOrZero
-Size
-             */
 
 }

@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.heuristic;
 
 import org.evomaster.client.java.instrumentation.heuristic.validator.BaseConstraintsBean;
+import org.evomaster.client.java.instrumentation.heuristic.validator.IntBean;
 import org.evomaster.client.java.instrumentation.heuristic.validator.NoConstraintsBean;
 import org.evomaster.client.java.instrumentation.heuristic.validator.SingleConstraintBean;
 import org.junit.jupiter.api.Test;
@@ -107,5 +108,42 @@ class ValidatorHeuristicsTest {
         Truthness t1 = ValidatorHeuristics.computeTruthness(validator, bean);
         assertTrue(t1.isTrue());
         assertFalse(t1.isFalse());
+    }
+
+
+    @Test
+    public void testHeuristicForIntBean(){
+
+        IntBean bean = new IntBean();
+
+        Truthness t0 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t0.isTrue());
+
+        bean.a = 50; //min 42
+        Truthness t1 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t1.isTrue());
+        assertTrue(t1.getOfTrue() > t0.getOfTrue());
+
+        bean.b = 1000; // making worse, as max 666
+        Truthness t2 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t2.isTrue());
+        assertTrue(t1.getOfTrue() > t2.getOfTrue());
+
+
+        bean.b = 33;
+        bean.c = -3; // between -5 and -2
+        Truthness t3 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t3.isTrue());
+        assertTrue(t3.getOfTrue() > t1.getOfTrue());
+
+        bean.d = 1; // 0 is not Positive
+        Truthness t4 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t4.isTrue());
+        assertTrue(t4.getOfTrue() > t3.getOfTrue());
+
+        bean.f = -1;
+        Truthness t5 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t5.isTrue());
+        assertFalse(t5.isFalse());
     }
 }
