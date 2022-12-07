@@ -324,7 +324,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                     it.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.GQL_NONE_MODE, targetFormat, extraCheck = true)
                 }
                 is OptionalGene -> {
-                    assert(it.gene is ObjectGene)
+                   // assert(it.gene is ObjectGene)
+                    //could be an object or a tuple
                     it.gene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE, targetFormat, extraCheck = true)
                 }
                 is ObjectGene -> {
