@@ -1,10 +1,15 @@
 package org.evomaster.client.java.instrumentation.heuristic;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -80,24 +85,17 @@ public class ValidatorHeuristics {
 
            /*
         TODO handle all annotations
-        TODO future ll need to handle Jakarta as well
+        TODO future ll need to handle Jakarta namespace as well
 
-AssertFalse
-AssertTrue
 DecimalMax
 DecimalMin
 Digits
 Email
 Future
 FutureOrPresent
-NotBlank
-NotEmpty
-NotNull
-Null
 Past
 PastOrPresent
 Pattern
-Size
              */
 
         if(annotationType.equals("javax.validation.constraints.Min")){
@@ -118,10 +116,107 @@ Size
         if(annotationType.equals("javax.validation.constraints.NegativeOrZero")){
             return computeHeuristicForNegativeOrZero(invalidValue, attributes);
         }
+        if(annotationType.equals("javax.validation.constraints.Size")){
+            return computeHeuristicForSize(invalidValue, attributes);
+        }
+
+
+        //no gradient, apart from rewarding non-null
+        if(annotationType.equals("javax.validation.constraints.NotEmpty")
+                || annotationType.equals("javax.validation.constraints.NotBlank")
+        ){
+            return computeHeuristicForNoGradientButNullIsNotValid(invalidValue);
+        }
+
+
+        final double defaultFailed = 0.5; //actual value here does not matter, as long as positive and less than 1
+
+        //no gradient and null can be valid
+        if(annotationType.equals("javax.validation.constraints.Null")
+            || annotationType.equals("javax.validation.constraints.NotNull")
+                || annotationType.equals("javax.validation.constraints.AssertTrue")
+                || annotationType.equals("javax.validation.constraints.AssertFalse")
+        ){
+            return defaultFailed;
+        }
+
+        if(annotationType.equals("javax.validation.constraints.Pattern")){
+            /*
+                Quite expensive to handle, see RegexDistanceUtils.
+                so, for now, we just ensure we handle taint analysis for this
+             */
+            assert invalidValue != null; // otherwise would had been valid
+            String value = invalidValue.toString();
+            if(ExecutionTracer.isTaintInput(value)){
+                ExecutionTracer.addStringSpecialization(value,
+                        new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE,
+                                attributes.get("value").toString()));
+            }
+
+            return defaultFailed;
+        }
 
 
         SimpleLogger.warn("Not able to handle constrain type: " + annotationType);
-        return 0.5; //actual value here does not matter, as long as positive and less than 1
+        return defaultFailed;
+    }
+
+    private static double computeHeuristicForNoGradientButNullIsNotValid(Object invalidValue){
+        if(invalidValue == null){
+            return DistanceHelper.H_REACHED_BUT_NULL;
+        }
+
+        return DistanceHelper.H_NOT_NULL;
+    }
+
+
+    private static double computeHeuristicForSize(Object invalidValue, Map<String, Object> attributes) {
+
+        assert invalidValue != null; //@Size is true on null element, so would not be a violation
+        //however it is NOT the case for @NotEmpty where null fails.
+        // ie @Size(min=0) != @NotEmpty
+
+        Integer size = computeSize(invalidValue);
+
+        if(size == null) {
+            SimpleLogger.warn("Cannot handle @Size for type: " + invalidValue.getClass().getName());
+            return DistanceHelper.H_NOT_NULL;
+        }
+
+        int min = ((Number) attributes.get("min")).intValue();
+        int max = ((Number) attributes.get("max")).intValue();
+
+        if(min > max){
+            //is this even possible?
+            SimpleLogger.warn("Impossible to satisfy constraint min>max : " + min +">" + max);
+            return DistanceHelper.H_NOT_NULL;
+        }
+
+        int distance = DistanceHelper.distanceToRange(size, min, max);
+        assert distance > 0;
+
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, distance);
+    }
+
+
+    private static Integer computeSize(Object invalidValue){
+
+        int size;
+
+        if(invalidValue instanceof CharSequence){
+            size = ((CharSequence) invalidValue).length();
+        } else if(invalidValue instanceof Collection){
+            size = ((Collection) invalidValue).size();
+        } else if(invalidValue instanceof Map){
+            size = ((Map)invalidValue).size();
+        } else if(invalidValue.getClass().isArray()){
+            size =  Array.getLength(invalidValue);
+        } else {
+            SimpleLogger.warn("Cannot compute size for type: " + invalidValue.getClass().getName());
+            return null;
+        }
+
+        return size;
     }
 
     private static double computeHeuristicForMin(Object invalidValue, Map<String, Object> attributes) {

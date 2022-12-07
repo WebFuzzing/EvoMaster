@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.heuristic.validator;
 
 import javax.validation.constraints.*;
 import java.util.List;
+import java.util.Map;
 
 public class StringBean {
 
@@ -23,6 +24,15 @@ public class StringBean {
     @Size(min = 2, max = 5)
     public String f;
 
-    @Size(min = 1, max = 3)
+    @Size(min = 2, max = 3)
     public List<String> g;
+
+    @NotEmpty
+    public List<String> h;
+
+    @NotEmpty
+    public String[] i;
+
+    @Size(min = 1, max = 3)
+    public Map<String,String> l;
 }
