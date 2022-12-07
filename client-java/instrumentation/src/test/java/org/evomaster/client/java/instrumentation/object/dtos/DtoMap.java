@@ -2,7 +2,7 @@ package org.evomaster.client.java.instrumentation.object.dtos;
 
 import java.util.Map;
 
-public class MapDto {
+public class DtoMap {
 
     public Map<String, DtoArray> mapDtoArray;
 
