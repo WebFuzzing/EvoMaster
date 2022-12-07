@@ -78,4 +78,34 @@ class ValidatorHeuristicsTest {
         assertEquals(Min.class, failure.getConstraintDescriptor().getAnnotation().annotationType());
         assertEquals(1L, failure.getConstraintDescriptor().getAttributes().get("value"));
     }
+
+
+    @Test
+    public void testHeuristicForSingleConstraintBean(){
+
+        SingleConstraintBean bean = new SingleConstraintBean(); //Min 1
+        bean.x = 42;
+
+        Truthness t = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t.isTrue());
+        assertFalse(t.isFalse());
+
+        bean.x = -100;
+        Truthness tm100 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(tm100.isTrue());
+        assertTrue(tm100.isFalse());
+
+        bean.x = -5;
+        Truthness tm5 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(tm5.isTrue());
+        assertTrue(tm5.isFalse());
+
+        assertTrue(tm5.getOfTrue() > tm100.getOfTrue());
+
+
+        bean.x = 1;
+        Truthness t1 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t1.isTrue());
+        assertFalse(t1.isFalse());
+    }
 }
