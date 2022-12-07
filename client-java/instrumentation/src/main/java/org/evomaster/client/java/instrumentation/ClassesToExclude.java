@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.shared.ClassName;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,12 +14,22 @@ public class ClassesToExclude {
     private static final Set<String> excludedClasses;
     private static final Set<String> includedClasses;
 
+    private static final String EM_REPRESENTATIVE_CLASS = "org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer";
+    private static final String EM_CLASS_LOAD_ERROR_MSG = "Fail to load "+ EM_REPRESENTATIVE_CLASS;
+
     static  {
 
         InputStream excludedClassesStream =
                 ClassesToExclude.class.getClassLoader().getResourceAsStream("skipInstrumentationList.txt");
 
-        excludedClasses = Collections.unmodifiableSet(new HashSet<>(getNotCommentedLines(excludedClassesStream)));
+        Set<String> toSkip = new HashSet<>(getNotCommentedLines(excludedClassesStream));
+
+        String custom = System.getProperty(Constants.PROP_SKIP_CLASSES);
+        if(custom != null && !custom.isEmpty()){
+            toSkip.addAll(Arrays.asList(custom.split(",")));
+        }
+
+        excludedClasses = Collections.unmodifiableSet(toSkip);
 
         InputStream includedClassesStream =
                 ClassesToExclude.class.getClassLoader().getResourceAsStream("keepInstrumentationList.txt");
@@ -49,7 +60,29 @@ public class ClassesToExclude {
         return excludedClasses;
     }
 
-    public static boolean checkIfCanInstrument(ClassName cn) {
+    /**
+     *
+     * @param loader
+     * @return if the loader could load EM class
+     */
+    private static boolean canLoadEMClass(ClassLoader loader){
+        try {
+            loader.loadClass(EM_REPRESENTATIVE_CLASS);
+            return true;
+        } catch (ClassNotFoundException e) {
+            // reduce string concatenation, then only print the msg as EM_CLASS_LOAD_ERROR_MSG
+            SimpleLogger.uniqueWarn(EM_CLASS_LOAD_ERROR_MSG);
+            return false;
+        }
+    }
+
+    public static boolean checkIfCanInstrument(ClassLoader loader, ClassName cn) {
+
+        /*
+            if the loader cannot load EM classes, we skip instrumentation for the class, ie, cn
+         */
+        if (loader != null && !canLoadEMClass(loader))
+            return false;
 
         String className = cn.getFullNameWithDots();
 

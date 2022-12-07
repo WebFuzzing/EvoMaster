@@ -1,18 +1,13 @@
 package org.evomaster.core.problem.external.service.httpws
 
-import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isReservedIP
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.nextIPAddress
 import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
-import org.evomaster.core.problem.external.service.param.ResponseParam
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -75,13 +70,12 @@ class HttpWsExternalServiceHandler {
     }
 
 
-
     /**
      * init default WM
      */
-    private fun initDefaultWM(){
-        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE){
-            if (!isDefaultInitialized){
+    private fun initDefaultWM() {
+        if (config.externalServiceIPSelectionStrategy != EMConfig.ExternalServiceIPSelectionStrategy.NONE) {
+            if (!isDefaultInitialized) {
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttps())
                 registerHttpExternalServiceInfo(DefaultHttpExternalServiceInfo.createDefaultHttp())
                 isDefaultInitialized = true
@@ -101,16 +95,33 @@ class HttpWsExternalServiceHandler {
         }
     }
 
-    private fun registerHttpExternalServiceInfo(externalServiceInfo : HttpExternalServiceInfo){
-        if (!externalServices.containsKey(externalServiceInfo.signature())) {
+    private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) {
+        val existing =
+            externalServices.filterValues { it.getIP() == externalServiceInfo.remoteHostname && !it.isActive() }
+
+        if (existing.isNotEmpty()) {
+            existing.forEach { (_, e) ->
+                e.updateRemotePort(externalServiceInfo.remotePort)
+                e.startWireMock()
+            }
+        } else if (!externalServices.containsKey(externalServiceInfo.signature())) {
             val ip = getIP(externalServiceInfo.remotePort)
             lastIPAddress = ip
-            externalServices[externalServiceInfo.signature()] = initWireMockServer(ip, externalServiceInfo)
+
+            val es = HttpWsExternalService(externalServiceInfo, ip)
+
+            if (!externalServiceInfo.isPartial() &&
+                isAddressAvailable(es.getIP(), externalServiceInfo.remotePort)
+            ) {
+                es.startWireMock()
+            }
+
+            externalServices[externalServiceInfo.signature()] = es
         }
     }
 
     fun getExternalServiceMappings(): Map<String, String> {
-        return externalServices.mapValues { it.value.getWireMockAddress() }
+        return externalServices.mapValues { it.value.getIP() }
     }
 
     /**
@@ -118,13 +129,7 @@ class HttpWsExternalServiceHandler {
      * used for external service.
      */
     private fun getNextAvailableAddress(port: Int): String {
-        val nextAddress: String = nextIPAddress(lastIPAddress)
-
-        if (isAddressAvailable(nextAddress, port)) {
-            return nextAddress
-        } else {
-            throw IllegalStateException(nextAddress.plus(" is not available for use"))
-        }
+        return nextIPAddress(lastIPAddress)
     }
 
     /**
@@ -133,19 +138,15 @@ class HttpWsExternalServiceHandler {
      * generate a new one.
      */
     private fun generateRandomAvailableAddress(port: Int): String {
-        val ip = generateRandomIPAddress(randomness)
-        if (isAddressAvailable(ip, port)) {
-            return ip
-        }
-        return generateRandomAvailableAddress(port)
+        return generateRandomIPAddress(randomness)
     }
 
     fun getExternalServices(): Map<String, HttpWsExternalService> {
-        return externalServices
+        return externalServices.filter { it.value.isActive() }
     }
 
     fun reset() {
-        externalServices.forEach {
+        externalServices.filter { it.value.isActive() }.forEach {
             it.value.stopWireMockServer()
         }
     }
@@ -155,13 +156,16 @@ class HttpWsExternalServiceHandler {
      * The WireMock instances will still be up and running
      */
     fun resetServedRequests() {
-        externalServices.forEach { it.value.resetServedRequests() }
+        externalServices.filter { it.value.isActive() }.forEach { it.value.resetServedRequests() }
     }
 
     /**
      * Creates an [HttpExternalServiceAction] based on the given [HttpExternalServiceRequest]
      */
-    fun createExternalServiceAction(request: HttpExternalServiceRequest, responseParam: HttpWsResponseParam?): HttpExternalServiceAction {
+    fun createExternalServiceAction(
+        request: HttpExternalServiceRequest,
+        responseParam: HttpWsResponseParam?
+    ): HttpExternalServiceAction {
         val externalService = getExternalService(request.wireMockSignature)
 
         val action = if (responseParam == null)
@@ -169,8 +173,13 @@ class HttpWsExternalServiceHandler {
                 doInitialize(randomness)
             }
         else
-            HttpExternalServiceAction(request = request, response= responseParam, externalService =  externalService, id = counter++).apply {
-                seeTopGenes().forEach { g-> g.markAllAsInitialized() }
+            HttpExternalServiceAction(
+                request = request,
+                response = responseParam,
+                externalService = externalService,
+                id = counter++
+            ).apply {
+                seeTopGenes().forEach { g -> g.markAllAsInitialized() }
             }
 
         return action
@@ -188,14 +197,16 @@ class HttpWsExternalServiceHandler {
      * as [HttpExternalServiceRequest]
      */
     fun getAllServedExternalServiceRequests(): List<HttpExternalServiceRequest> {
-        return externalServices.values.filter { !isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
+        return externalServices.values.filter { it.isActive() }.filter { !isDefaultSignature(it.getSignature()) }
+            .flatMap { it.getAllServedRequests() }
     }
 
     /**
      * @return a list of the served requests to the default WM
      */
     fun getAllServedRequestsToDefaultWM(): List<HttpExternalServiceRequest> {
-        return externalServices.values.filter { isDefaultSignature(it.getSignature()) }.flatMap { it.getAllServedRequests() }
+        return externalServices.values.filter { isDefaultSignature(it.getSignature()) }
+            .flatMap { it.getAllServedRequests() }
     }
 
     /**
@@ -216,21 +227,19 @@ class HttpWsExternalServiceHandler {
                     generateRandomAvailableAddress(port)
                 }
             }
+
             EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
                 ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
                 } else {
                     if (!isReservedIP(config.externalServiceIP)) {
-                        if (isAddressAvailable(config.externalServiceIP, port)) {
-                            config.externalServiceIP
-                        } else {
-                            throw IllegalStateException("User provided IP address is not available: ${config.externalServiceIP}:$port")
-                        }
+                        config.externalServiceIP
                     } else {
                         throw IllegalStateException("Can not use a reserved IP address: ${config.externalServiceIP}")
                     }
                 }
             }
+
             else -> {
                 ip = if (externalServices.isNotEmpty()) {
                     getNextAvailableAddress(port)
@@ -242,44 +251,6 @@ class HttpWsExternalServiceHandler {
         return ip
     }
 
-    /**
-     * Will initialise WireMock instance on a given IP address for a given port.
-     */
-    private fun initWireMockServer(address: String, info: HttpExternalServiceInfo): HttpWsExternalService {
-        val port = info.remotePort
-
-        // TODO: Port need to be changed to the remote service port
-        //  In CI also using remote ports as 80 and 443 fails
-        val config =  WireMockConfiguration()
-            .bindAddress(address)
-            .extensions(ResponseTemplateTransformer(false))
-
-        if (!info.isHttp() && !info.isHttps())
-            LoggingUtil.uniqueWarn(log, "do not get explicit protocol for address ($address)")
-        val applyHttps = info.isHttps() || (!info.isHttp() && info.isDerivedHttps())
-
-        if (applyHttps){
-            config.httpsPort(port)
-        }else {
-            config.port(port)
-        }
-
-        val wm = WireMockServer(config)
-        val es = HttpWsExternalService(info, wm)
-
-        /*
-            for SUT, its first connection is re-directed to a given ip address,
-            to keep same behavior in generated tests, we do not start the WM accordingly
-         */
-        if (info !is DefaultHttpExternalServiceInfo){
-            wm.start()
-            wireMockSetDefaults(es)
-        }
-
-        return es
-    }
-
-
 
     /**
      * To prevent from the 404 when no matching stub below stub is added
@@ -287,7 +258,6 @@ class HttpWsExternalServiceHandler {
      * to avoid the exception it handled manually
      */
     private fun wireMockSetDefaults(es: HttpWsExternalService) {
-
         es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
     }
 

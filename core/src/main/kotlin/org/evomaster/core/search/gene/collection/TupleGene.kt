@@ -179,7 +179,7 @@ class TupleGene(
     } else {
         if (it is ObjectGene || (it.getWrappedGene(ObjectGene::class.java)!=null)) {
 
-            if ((it.getWrappedGene(NullableGene::class.java)?.isPresent==false)){val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
+            if ((it.getWrappedGene(NullableGene::class.java)?.isActive==false)){val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
                 " ${it.name} : $i"} else {
             val i = it.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
             " $i"}

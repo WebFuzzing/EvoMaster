@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.optional.SelectableWrapperGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -324,7 +325,8 @@ object GeneUtils {
 
         loop@ while (p != null) {
             when (p) {
-                is OptionalGene -> {
+                //TODO possibly include ChoiceGene here?
+                is SelectableWrapperGene -> {
                     p.forbidSelection()
                     break@loop
                 }
@@ -378,6 +380,12 @@ object GeneUtils {
     }
 
 
+    /**
+     * Check if there is any cycle, and, if so, if it has been prevented by deactivating something
+     * in its ancestors.
+     * If this returns true, then we have a major problem, as it would mean a Cycle object ends up
+     * in the phenotype, breaking things.
+     */
     fun hasNonHandledCycles(gene: Gene): Boolean {
 
         val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
@@ -390,7 +398,10 @@ object GeneUtils {
             var p = c.parent
             loop@ while (p != null) {
                 when {
-                    (p is OptionalGene && !p.selectable) ||
+                    /*
+                        TODO possibly include ChoiceGene here?
+                     */
+                    (p is SelectableWrapperGene && !p.selectable) ||
                             (p is ArrayGene<*> && p.maxSize == 0)
                     -> {
                         break@loop

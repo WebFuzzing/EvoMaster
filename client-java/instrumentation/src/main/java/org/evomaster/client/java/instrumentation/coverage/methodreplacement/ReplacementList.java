@@ -39,6 +39,7 @@ public class ReplacementList {
                     new Http11ProcessorReplacementClass(),
                     new HttpServletRequestClassReplacement(),
                     new IntegerClassReplacement(),
+                    new InetAddressClassReplacement(),
                     new JacksonObjectMapperClassReplacement(),
                     new LocalDateClassReplacement(),
                     new LocalDateTimeClassReplacement(),

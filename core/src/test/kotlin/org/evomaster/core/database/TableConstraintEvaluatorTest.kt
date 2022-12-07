@@ -279,7 +279,7 @@ class TableConstraintEvaluatorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=true)
         val table = Table("table0", setOf(column), setOf(), setOf())
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeTopGenes()[0] as NullableGene).isPresent = false
+        (action.seeTopGenes()[0] as NullableGene).isActive = false
 
         val constraint = IsNotNullConstraint("table0", "column0")
         val evaluator = TableConstraintEvaluator()
@@ -292,7 +292,7 @@ class TableConstraintEvaluatorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=true)
         val table = Table("table0", setOf(column), setOf(), setOf())
         val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
-        (action.seeTopGenes()[0] as NullableGene).isPresent = true
+        (action.seeTopGenes()[0] as NullableGene).isActive = true
 
         val constraint = IsNotNullConstraint("table0", "column0")
         val evaluator = TableConstraintEvaluator()

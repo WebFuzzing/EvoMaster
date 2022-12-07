@@ -138,7 +138,7 @@ public class InstrumentingAgent {
 
             ClassName cn = ClassName.get(className);
 
-            if (!ClassesToExclude.checkIfCanInstrument(cn) ||
+            if (!ClassesToExclude.checkIfCanInstrument(loader, cn) ||
                 isAlreadyLoaded(loader, cn.getFullNameWithDots())) {
                 return classfileBuffer;
             }
