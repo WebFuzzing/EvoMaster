@@ -89,9 +89,12 @@ public class RPCEndpointsBuilder {
             try {
                 // TODO cannot get generic types
                 Class<?> clazz = Class.forName(responseType);
-                build(schema, clazz, null, "return", rpcType, new ArrayList<>(), null, null, null, null, null, null, true);
+                Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
+                build(schema, clazz, null, "return", rpcType, new ArrayList<>(), null, null, null, null, null, genericTypeMap, true);
             } catch (ClassNotFoundException e) {
-                SimpleLogger.uniqueWarn("Driver Config Error: cannot identify the class from the driver"+e.getMessage());
+                SimpleLogger.uniqueWarn("Driver Config Error: cannot identify the class from the driver "+e.getMessage());
+            } catch (Exception e){
+                throw new RuntimeException("EM schema parser error: fail to extract mocked response "+ responseType);
             }
         }
     }
