@@ -12,10 +12,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.ActionResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCInterfaceSchemaDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCSupportedDataType;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.junit.jupiter.api.AfterAll;
@@ -98,6 +95,16 @@ public class RPCSutControllerTest {
 
     }
 
+    @Test
+    public void testIdentifiedTypes(){
+        List<String> itypes = Arrays.asList("com.thrift.example.artificial.GenericDto<java.lang.String, java.lang.String>", "com.thrift.example.artificial.GenericDto<java.lang.String, java.lang.Integer>", "com.thrift.example.artificial.NestedStringGenericDto");
+        assertNotNull(interfaceSchemas.get(0).identifiedResponseTypes);
+        List<ParamDto> idtos = interfaceSchemas.get(0).identifiedResponseTypes;
+        assertEquals(3, idtos.size());
+        for (String itype : itypes){
+            assertTrue(idtos.stream().anyMatch(s-> s.type.fullTypeNameWithGenericType.equals(itype)));
+        }
+    }
 
     @Test
     public void testSeedcheck(){
@@ -107,6 +114,14 @@ public class RPCSutControllerTest {
 
         RPCActionDto test_1 = seededTestDtos.get(0).get(0);
         RPCActionDto dto = test_1.copy();
+
+        assertNotNull(dto.mockRPCExternalServiceDtos);
+        assertEquals(1, dto.mockRPCExternalServiceDtos.size());
+        MockRPCExternalServiceDto mdto = dto.mockRPCExternalServiceDtos.get(0);
+        assertEquals(1, mdto.responses.size());
+        assertEquals(mdto.responses.size(), mdto.responseTypes.size());
+
+
 
         dto.doGenerateAssertions = true;
         dto.doGenerateTestScript = true;
