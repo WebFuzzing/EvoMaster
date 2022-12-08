@@ -133,6 +133,9 @@ public class RPCActionDto {
         copy.doGenerateTestScript = doGenerateTestScript;
         copy.maxAssertionForDataInCollection = maxAssertionForDataInCollection;
         copy.isAuthorized = isAuthorized;
+        if (mockRPCExternalServiceDtos != null)
+            copy.mockRPCExternalServiceDtos = mockRPCExternalServiceDtos.stream().map(MockRPCExternalServiceDto::copy).collect(Collectors.toList());
+
         return copy;
     }
 
