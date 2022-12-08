@@ -8,6 +8,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.constraints.Min;
 import javax.validation.metadata.BeanDescriptor;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
@@ -259,10 +260,45 @@ class ValidatorHeuristicsTest {
         assertTrue(t3.isTrue());
     }
 
-    //TODO custom constraints
+    @Test
+    public void testHeuristicCustomBean(){
 
-    //TODO custom constraints from OCVN
+        CustomBean bean = new CustomBean();
+        bean.foo = "bar";
+        bean.bar = "hello";
 
-    //TODO same as OCVN
+        Truthness t0 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t0.isTrue());
 
+        bean.foo = "foo";
+        Truthness t1 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t1.getOfTrue() > t0.getOfTrue()); // 1 out of 2
+
+        bean.bar = "foo";
+        Truthness t2 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t2.getOfTrue() > t1.getOfTrue()); // 2 out of 2
+        assertTrue(t2.isTrue());
+    }
+
+    @Test
+    public void testHeuristicConflictBean(){
+
+        ConflictBean bean = new ConflictBean();
+
+        Truthness t0 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t0.isTrue());
+
+        bean.x = -1_000_000;
+        Truthness t1 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t1.getOfTrue() > t0.getOfTrue());
+
+        bean.x = 0;
+        Truthness t2 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t2.getOfTrue() > t1.getOfTrue());
+
+        bean.x = 42;
+        Truthness t3 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t3.getOfTrue() > t2.getOfTrue());
+        assertTrue(t3.isTrue());
+    }
 }

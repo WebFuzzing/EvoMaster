@@ -19,6 +19,15 @@ import java.util.Set;
  */
 public class ValidatorHeuristics {
 
+
+    /*
+        actual value here does not matter, as long as positive and less than 1.
+        however, need to make sure that, for constraints that are valid on null, they
+        always get higher than this value (this can be achieved by using it as a base).
+        Otherwise, can have nasty side-effects (see ValidatorHeuristicsTest for an example)
+     */
+    private static final double defaultFailed = 0.001;
+
     /**
      *
      * @param validator  A Object reference to a javax.validation.Validator instance.
@@ -129,9 +138,6 @@ Pattern
             return computeHeuristicForNoGradientButNullIsNotValid(invalidValue);
         }
 
-
-        final double defaultFailed = 0.5; //actual value here does not matter, as long as positive and less than 1
-
         //no gradient and null can be valid
         if(annotationType.equals("javax.validation.constraints.Null")
             || annotationType.equals("javax.validation.constraints.NotNull")
@@ -229,7 +235,7 @@ Pattern
 
         double distance = min - x;
 
-        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(defaultFailed, distance);
     }
 
     private static double computeHeuristicForMax(Object invalidValue, Map<String, Object> attributes) {
@@ -241,7 +247,7 @@ Pattern
 
         double distance = x - max;
 
-        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(defaultFailed, distance);
     }
 
     private static double computeHeuristicForPositive(Object invalidValue, Map<String, Object> attributes) {
@@ -253,7 +259,7 @@ Pattern
 
         double distance = 1d + (min - x);  // we add a base because 0 is not a valid value
 
-        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(defaultFailed, distance);
     }
 
     private static double computeHeuristicForPositiveOrZero(Object invalidValue, Map<String, Object> attributes) {
@@ -265,7 +271,7 @@ Pattern
 
         double distance = (min - x);
 
-        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(defaultFailed, distance);
     }
 
     private static double computeHeuristicForNegative(Object invalidValue, Map<String, Object> attributes) {
@@ -277,7 +283,7 @@ Pattern
 
         double distance = 1d + (x-max);  // we add a base because 0 is not a valid value
 
-        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(defaultFailed, distance);
     }
 
     private static double computeHeuristicForNegativeOrZero(Object invalidValue, Map<String, Object> attributes) {
@@ -289,7 +295,7 @@ Pattern
 
         double distance = x-max;
 
-        return DistanceHelper.heuristicFromScaledDistanceWithBase(0, distance);
+        return DistanceHelper.heuristicFromScaledDistanceWithBase(defaultFailed, distance);
     }
 
     private static int getNumberOfTotalConstraints(Object beanDescriptor) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
