@@ -293,7 +293,6 @@ Pattern
     }
 
     private static int getNumberOfTotalConstraints(Object beanDescriptor) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        //TODO handle constraints on whole class
 
         Set<Object> properties = (Set<Object>) beanDescriptor.getClass().getMethod("getConstrainedProperties")
                 .invoke(beanDescriptor);
@@ -309,6 +308,11 @@ Pattern
                     return constraints.stream();
                 })
                 .count();
+
+        //for constraints on whole bean
+        Set<Object> classConstraints = (Set<Object>) beanDescriptor.getClass().getMethod("getConstraintDescriptors")
+                .invoke(beanDescriptor);
+        n += classConstraints.size();
 
         return (int) n;
     }

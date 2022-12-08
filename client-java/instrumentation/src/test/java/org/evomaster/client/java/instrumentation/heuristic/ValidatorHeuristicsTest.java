@@ -234,4 +234,35 @@ class ValidatorHeuristicsTest {
 
         assertTrue(t17.isTrue());
     }
+
+
+    @Test
+    public void testHeuristicForClassConstraints(){
+
+        ClassConstraintsBean bean = new ClassConstraintsBean();
+
+        Truthness t0 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t0.isTrue());
+
+        bean.x = 8;
+        Truthness t1 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t1.isTrue());
+        assertTrue(t1.getOfTrue() > t0.getOfTrue());// even if no gradient (yet), solved 1 out of 3 constraints
+
+        bean.y = 4;
+        Truthness t2 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t2.isTrue());
+        assertTrue(t2.getOfTrue() > t1.getOfTrue());// even if no gradient (yet), solved 2 out of 3 constraints
+
+        bean.z = 20;
+        Truthness t3 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t3.isTrue());
+    }
+
+    //TODO custom constraints
+
+    //TODO custom constraints from OCVN
+
+    //TODO same as OCVN
+
 }
