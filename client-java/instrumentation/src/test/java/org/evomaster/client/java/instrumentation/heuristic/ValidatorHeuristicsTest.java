@@ -7,15 +7,10 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.Positive;
 import javax.validation.metadata.BeanDescriptor;
-
-import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -145,6 +140,16 @@ class ValidatorHeuristicsTest {
         assertTrue(t5.isTrue());
         assertFalse(t5.isFalse());
     }
+
+    @Test
+    public void testHeuristicForIntNullableBean() {
+
+        IntNullableBean bean = new IntNullableBean();
+
+        Truthness t0 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t0.isTrue()); // all null are fine
+    }
+
 
     @Test
     public void testHeuristicForString(){

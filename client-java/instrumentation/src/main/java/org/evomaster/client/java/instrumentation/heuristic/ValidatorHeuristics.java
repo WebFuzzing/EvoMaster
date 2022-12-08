@@ -98,6 +98,7 @@ PastOrPresent
 Pattern
              */
 
+        //Numeric constraints. Note that null values are valid here
         if(annotationType.equals("javax.validation.constraints.Min")){
             return computeHeuristicForMin(invalidValue, attributes);
         }
