@@ -150,4 +150,14 @@ public class RPCActionDto {
         return copy;
     }
 
+    /**
+     *
+     * @return descriptive info for the action, ie, interface::actionName
+     */
+    public String descriptiveInfo(){
+        return ((interfaceId!=null)?interfaceId:"NULL_INTERFACE")+
+                "::"+((actionName!=null)?actionName:"NULL_ACTION_NAME")+
+                "("+ requestParams.stream().map(s-> s.type.type.toString()).collect(Collectors.joining(",")) +")";
+    }
+
 }
