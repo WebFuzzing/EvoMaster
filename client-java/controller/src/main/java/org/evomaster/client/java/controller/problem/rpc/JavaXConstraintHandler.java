@@ -237,7 +237,7 @@ public class JavaXConstraintHandler {
             SimpleLogger.error("ERROR: Can not set MinValue for the class "+ namedTypedValue.getType().getFullTypeName());
 
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
-            ((PrimitiveOrWrapperParam)namedTypedValue).setMin(Long.parseLong(min));
+            ((PrimitiveOrWrapperParam)namedTypedValue).setMin(new BigDecimal(min));
             ((PrimitiveOrWrapperParam<?>) namedTypedValue).setMinInclusive(inclusive);
         } else if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setMin(new BigDecimal(min));
@@ -262,7 +262,7 @@ public class JavaXConstraintHandler {
             SimpleLogger.error("ERROR: Can not set MaxValue for the class "+ namedTypedValue.getType().getFullTypeName());
 
         if (namedTypedValue instanceof PrimitiveOrWrapperParam){
-            ((PrimitiveOrWrapperParam)namedTypedValue).setMax(Long.parseLong(max));
+            ((PrimitiveOrWrapperParam)namedTypedValue).setMax(new BigDecimal(max));
             ((PrimitiveOrWrapperParam<?>) namedTypedValue).setMaxInclusive(inclusive);
         } else if (namedTypedValue instanceof StringParam){
             ((StringParam)namedTypedValue).setMax(new BigDecimal(max));
