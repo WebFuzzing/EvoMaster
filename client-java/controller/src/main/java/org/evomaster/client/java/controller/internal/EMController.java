@@ -237,6 +237,7 @@ public class EMController {
                         msg.append(" with stack:");
                         for (int i = 0; i < Math.min(e.getStackTrace().length, 5); i++){
                             msg.append(e.getStackTrace()[i].toString());
+                            msg.append(System.lineSeparator());
                         }
                     }
                     SimpleLogger.error(msg.toString(), e);
