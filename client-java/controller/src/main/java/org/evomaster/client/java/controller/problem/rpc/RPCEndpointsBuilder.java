@@ -1007,8 +1007,8 @@ public class RPCEndpointsBuilder {
                     }
                     results.add(test);
                 }catch (RuntimeException e){
-
-                    StringBuilder msg = new StringBuilder("Fail to handle specified seeded tests " + e.getMessage());
+                    SimpleLogger.recordErrorMessage("Fail to handle specified seeded test: "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
+                    StringBuilder msg = new StringBuilder("Fail to handle specified seeded test " + e.getMessage());
                     if (e.getStackTrace() != null && e.getStackTrace().length > 0){
                         msg.append(" with stack:");
                         for (int i = 0; i < Math.min(e.getStackTrace().length, 5); i++){
@@ -1019,7 +1019,7 @@ public class RPCEndpointsBuilder {
                     SimpleLogger.recordErrorMessage(msg.toString());
                 }
             } else {
-                SimpleLogger.warn("Seeded Test: empty RPC function calls for the test "+ dto.testName);
+                SimpleLogger.warn("Seeded Test: empty RPC function calls for the test "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
             }
         }
         return results;
