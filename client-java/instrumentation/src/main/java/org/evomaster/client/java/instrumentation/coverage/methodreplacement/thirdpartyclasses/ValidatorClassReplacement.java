@@ -12,7 +12,6 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Set;
 
 public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass {
 
@@ -62,7 +61,8 @@ public class ValidatorClassReplacement extends ThirdPartyMethodReplacementClass 
                 //compute branch distance on the object to validate
                 String actionName = ExecutionTracer.getActionName(); //SHOULD NOT BE NULL
                 String lastLine = ExecutionTracer.getLastExecutedStatement(); //can be null
-                String idTemplate = objectClass.getName()+"__" + actionName + "__" + lastLine;
+                String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT
+                        + "__" + objectClass.getName()+"__" + actionName + "__" + lastLine;
 
                 /*
                     bit special... this is a TRACKER method, but internally we handle it
