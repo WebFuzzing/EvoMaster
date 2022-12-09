@@ -174,6 +174,7 @@ public class EMController {
 
         SutInfoDto dto = new SutInfoDto();
         ProblemInfo info;
+        List<String> errorMsg = new ArrayList<>();
 
         try {
             dto.isSutRunning = noKillSwitch(() -> sutController.isSutRunning());
@@ -224,29 +225,16 @@ public class EMController {
                     }
                 }
 
-                try{
-                    // handled seeded tests
-                    dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
 
-                    if (dto.isSutRunning){
-                        noKillSwitch(() -> sutController.getSeededExternalServiceResponseDto());
-                    }
-                }catch (RuntimeException e){
-                    StringBuilder msg = new StringBuilder("Fail to handle specified seeded tests " + e.getMessage());
-                    if (e.getStackTrace() != null && e.getStackTrace().length > 0){
-                        msg.append(" with stack:");
-                        for (int i = 0; i < Math.min(e.getStackTrace().length, 5); i++){
-                            msg.append(e.getStackTrace()[i].toString());
-                            msg.append(System.lineSeparator());
-                        }
-                    }
-                    SimpleLogger.error(msg.toString(), e);
-                    return Response.status(500).entity(WrappedResponseDto.withError(msg.toString())).build();
-                }
+                // handled seeded tests
+                dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests(dto.isSutRunning));
+
 
                 // set the schemas at the end
                 dto.rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
 
+                // send the recorded error msg to core in order to show the problem during startup
+                dto.errorMsg = SimpleLogger.getRecordedErrorMsg();
             }catch (RuntimeException e){
                 String msg = e.getMessage();
                 SimpleLogger.error(msg, e);

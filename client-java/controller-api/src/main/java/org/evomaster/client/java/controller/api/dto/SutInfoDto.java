@@ -83,4 +83,15 @@ public class SutInfoDto {
      * info collected during SUT boot-time
      */
     public BootTimeInfoDto bootTimeInfoDto;
+
+    /**
+     * there might exist some errors which could be
+     * ignored for the moment in order to make evomaster
+     * still process test generations.
+     * however, such error should be handled propertly in
+     * the future.
+     * to better view such errors, might show them on
+     * the core side
+     */
+    public List<String> errorMsg;
 }
