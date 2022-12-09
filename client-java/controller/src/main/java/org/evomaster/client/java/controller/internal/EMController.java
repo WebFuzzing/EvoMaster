@@ -223,11 +223,24 @@ public class EMController {
                         dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
                     }
                 }
-                // handled seeded tests
-                dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
 
-                if (dto.isSutRunning){
-                    noKillSwitch(() -> sutController.getSeededExternalServiceResponseDto());
+                try{
+                    // handled seeded tests
+                    dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
+
+                    if (dto.isSutRunning){
+                        noKillSwitch(() -> sutController.getSeededExternalServiceResponseDto());
+                    }
+                }catch (RuntimeException e){
+                    StringBuilder msg = new StringBuilder("Fail to handle specified seeded tests " + e.getMessage());
+                    if (e.getStackTrace() != null && e.getStackTrace().length > 0){
+                        msg.append(" with stack:");
+                        for (int i = 0; i < Math.min(e.getStackTrace().length, 5); i++){
+                            msg.append(e.getStackTrace()[i].toString());
+                        }
+                    }
+                    SimpleLogger.error(msg.toString(), e);
+                    return Response.status(500).entity(WrappedResponseDto.withError(msg.toString())).build();
                 }
 
                 // set the schemas at the end

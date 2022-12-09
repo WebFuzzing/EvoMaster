@@ -108,7 +108,7 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     }
 
     public String getName() {
-        return name;
+        return (name != null)? name:"Untitled";
     }
 
     public T getType() {

@@ -143,7 +143,7 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
         if (json == null)  return;
         if (!(json instanceof String))
-            throw new IllegalArgumentException("Cannot set value for StringParam with the type:"+json.getClass().getName());
+            throw new IllegalArgumentException("Cannot set value for StringParam " + getName() + " with the type:"+json.getClass().getName());
         setValue((String) json);
     }
 
