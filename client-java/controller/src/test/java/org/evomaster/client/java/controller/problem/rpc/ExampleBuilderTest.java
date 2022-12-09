@@ -584,8 +584,8 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 assertFalse(f.isNullable());
             } else if (f.getName().equals("longWithMinMax")) {
                 assertTrue(f instanceof LongParam);
-                assertEquals(-100L, ((LongParam) f).getMin());
-                assertEquals(1000L, ((LongParam) f).getMax());
+                assertEquals(-100L, ((LongParam) f).getMin().longValue());
+                assertEquals(1000L, ((LongParam) f).getMax().longValue());
                 assertFalse(f.isNullable());
             } else if (f.getName().equals("notBlankString")) {
                 assertTrue(f instanceof StringParam);
@@ -608,14 +608,14 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                 assertNotNull(((StringParam) f).getPattern());
             }else if(f.getName().equals("longWithDecimalMinMax")){
                 assertTrue(f instanceof LongParam);
-                assertEquals(1L, ((LongParam) f).getMin());
-                assertEquals(10L, ((LongParam) f).getMax());
+                assertEquals(1L, ((LongParam) f).getMin().longValue());
+                assertEquals(10L, ((LongParam) f).getMax().longValue());
                 assertFalse(f.isNullable());
             }else if(f.getName().equals("longWithInclusiveFDecimalMainMax")){
                 assertTrue(f instanceof LongParam);
-                assertEquals(1L, ((LongParam) f).getMin());
+                assertEquals(1L, ((LongParam) f).getMin().longValue());
                 assertFalse(((LongParam) f).getMinInclusive());
-                assertEquals(10L, ((LongParam) f).getMax());
+                assertEquals(10L, ((LongParam) f).getMax().longValue());
                 assertFalse(((LongParam) f).getMaxInclusive());
                 assertTrue(f.isNullable());
             }else
