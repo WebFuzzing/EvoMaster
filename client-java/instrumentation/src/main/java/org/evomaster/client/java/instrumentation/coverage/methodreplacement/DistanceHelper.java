@@ -91,9 +91,13 @@ public class DistanceHelper {
     }
 
     public static int distanceToRange(char c, char minInclusive, char maxInclusive) {
+        return distanceToRange((int) c, (int) minInclusive, (int) maxInclusive);
+    }
 
-        if (minInclusive >= maxInclusive) {
-            throw new IllegalArgumentException("Invalid char range '" + minInclusive + "'-'" + maxInclusive + "'");
+    public static int distanceToRange(int c, int minInclusive, int maxInclusive) {
+
+        if (minInclusive > maxInclusive) {
+            throw new IllegalArgumentException("Invalid range '" + minInclusive + "'-'" + maxInclusive + "'");
         }
 
         int diffAfter = minInclusive - c;

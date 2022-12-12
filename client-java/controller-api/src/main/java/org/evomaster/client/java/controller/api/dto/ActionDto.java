@@ -20,6 +20,13 @@ public class ActionDto {
     public Integer index = null;
 
     /**
+     * The name of the action, used to identify its type.
+     * It is not unique.
+     * Eg, for REST, it could be something like VERB:PATH
+     */
+    public String name = null;
+
+    /**
      * A list (possibly empty) of String values used in the action.
      * This info can be used for different kinds of taint analysis, eg
      * to check how such values are used in the SUT
