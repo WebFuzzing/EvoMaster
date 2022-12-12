@@ -242,7 +242,7 @@ public class EMController {
 
                 // set the schemas at the end
                 dto.rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
-                dto.restProblem.servicesToNotMock = servicesToNotMock;
+//                dto.restProblem.servicesToNotMock = servicesToNotMock;
             }catch (RuntimeException e){
                 String msg = e.getMessage();
                 SimpleLogger.error(msg, e);
