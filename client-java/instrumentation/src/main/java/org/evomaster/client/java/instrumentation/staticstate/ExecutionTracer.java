@@ -338,9 +338,16 @@ public class ExecutionTracer {
             queries to see if differences in results. but those could be tainted values... which mess up
             the taint analysis :( so, as a special case, we need to skip it
          */
-        return Arrays.stream(Thread.currentThread().getStackTrace())
-                .anyMatch(it -> it.getMethodName().equals("sameResultAsLast")
-                        && it.getClassName().equals("org.h2.command.query.Query"));
+//        return Arrays.stream(Thread.currentThread().getStackTrace())
+//                .anyMatch(it -> it.getMethodName().equals("sameResultAsLast")
+//                        && it.getClassName().equals("org.h2.command.query.Query"));
+
+        /*
+            FIXME This does not really work right now, as SQL commands are put on a buffer and analyzed later.
+            Such analysis should be done somehow when SQL commands are intercepted, but it is quite a bit of refactoring
+            to pass around such info
+         */
+        return false;
     }
 
     public static TaintType getTaintType(String input) {
