@@ -129,7 +129,7 @@ public class RPCExceptionHandler {
             }
 
         } catch (ClassNotFoundException ex) {
-            SimpleLogger.uniqueWarn("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
+            SimpleLogger.error("ERROR: in handling Thrift exception with error msg:", ex);
             //throw new IllegalStateException("ERROR: in handling Thrift exception with error msg:"+ex.getMessage());
         }
 
@@ -171,7 +171,7 @@ public class RPCExceptionHandler {
                 with old version of TException, eg thrift 0.9.3
                 there is no getType method, then in this case, we set type based on the exception class name
              */
-            SimpleLogger.uniqueWarn("Fail to get type of TException with getType() "+ex.getMessage());
+            SimpleLogger.error("Fail to get type of TException with getType() ", ex);
         }
         return false;
     }
@@ -183,7 +183,7 @@ public class RPCExceptionHandler {
             getMessage.setAccessible(true);
             return (String) getMessage.invoke(e);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
-            SimpleLogger.uniqueWarn("Error: fail to get message of the exception with "+ex.getMessage());
+            SimpleLogger.error("Error: fail to get message of the exception with ", ex);
             return null;
         }
     }
@@ -201,7 +201,7 @@ public class RPCExceptionHandler {
             getCause.setAccessible(true);
             return getCause.invoke(e);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
-            SimpleLogger.uniqueWarn("Error: fail to get message of the exception with "+ex.getMessage());
+            SimpleLogger.error("Error: fail to get message of the exception with ", ex);
             return null;
         }
     }
