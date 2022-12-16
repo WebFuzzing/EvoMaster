@@ -206,31 +206,7 @@ public class EMController {
             dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
         } else if(info instanceof RPCProblem){
             try {
-                dto.rpcProblem = new RPCProblemDto();
-                // extract RPCSchema
-                noKillSwitch(() -> sutController.extractRPCSchema());
-                Map<String, InterfaceSchema> rpcSchemas = noKillSwitch(() ->sutController.getRPCSchema());
-                if (rpcSchemas == null || rpcSchemas.isEmpty()){
-                    return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();
-                }
-
-                Map<Integer, LocalAuthSetupSchema> localMap = noKillSwitch(() ->sutController.getLocalAuthSetupSchemaMap());
-                if (localMap!= null && !localMap.isEmpty()){
-                    dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
-                    dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
-                    for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
-                        dto.rpcProblem.localAuthEndpointReferences.add(e.getKey());
-                        dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
-                    }
-                }
-
-
-                // handled seeded tests
-                dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests(dto.isSutRunning));
-
-
-                // set the schemas at the end
-                dto.rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
+                dto.rpcProblem = noKillSwitch(() -> sutController.extractRPCProblemDto(dto.isSutRunning));
 
                 // send the recorded error msg to core in order to show the problem during startup
                 dto.errorMsg = SimpleLogger.getRecordedErrorMsg();

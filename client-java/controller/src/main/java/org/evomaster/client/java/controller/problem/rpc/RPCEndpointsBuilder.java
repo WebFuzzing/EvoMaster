@@ -983,7 +983,7 @@ public class RPCEndpointsBuilder {
                                     NamedTypedValue p = copy.getRequestParams().get(i);
                                     try {
                                         String stringValue = actionDto.inputParams.get(i);
-                                        //                                    Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
+                                        // Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
                                         p.setValueBasedOnInstanceOrJson(stringValue);
 
                                     } catch (JsonProcessingException e) {
@@ -1009,10 +1009,12 @@ public class RPCEndpointsBuilder {
                 }catch (RuntimeException e){
                     SimpleLogger.recordErrorMessage("Fail to handle specified seeded test: "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
                     StringBuilder msg = new StringBuilder("Fail to handle specified seeded test " + e.getMessage());
-                    if (e.getStackTrace() != null && e.getStackTrace().length > 0){
+                    // reduce multiple copy of the stack
+                    StackTraceElement[] exceptionStack = e.getStackTrace();
+                    if (exceptionStack != null && exceptionStack.length > 0){
                         msg.append(" with stack:");
-                        for (int i = 0; i < Math.min(e.getStackTrace().length, 5); i++){
-                            msg.append(e.getStackTrace()[i].toString());
+                        for (int i = 0; i < Math.min(exceptionStack.length, 5); i++){
+                            msg.append(exceptionStack.toString());
                             msg.append(System.lineSeparator());
                         }
                     }

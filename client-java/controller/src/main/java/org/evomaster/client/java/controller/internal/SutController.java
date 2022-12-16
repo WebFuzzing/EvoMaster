@@ -519,6 +519,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public RPCProblemDto extractRPCProblemDto(boolean isSutRunning){
         RPCProblemDto rpcProblem =  new RPCProblemDto();
+
         // extract RPCSchema
         extractRPCSchema();
 
@@ -537,24 +538,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             }
         }
 
-        try{
-            // handled seeded tests
-            rpcProblem.seededTestDtos = handleSeededTests();
-
-            if (isSutRunning){
-                getSeededExternalServiceResponseDto();
-            }
-        }catch (RuntimeException e){
-            StringBuilder msg = new StringBuilder("Fail to handle specified seeded tests " + e.getMessage());
-            StackTraceElement[] exceptionStack = e.getStackTrace();
-            if (exceptionStack != null && exceptionStack.length > 0){
-                msg.append(" with stack:");
-                for (int i = 0; i < Math.min(exceptionStack.length, 5); i++){
-                    msg.append(exceptionStack[i].toString());
-                }
-            }
-            throw new RuntimeException(msg.toString());
-        }
+        // handled seeded tests
+        rpcProblem.seededTestDtos = handleSeededTests(isSutRunning);
 
         // set the schemas at the end
         rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
@@ -597,7 +582,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             if (local!=null && !local.isEmpty())
                 localAuthSetupSchemaMap.putAll(local);
         }catch (Exception e){
-//            SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
             throw new RuntimeException("Failed to extract the RPC Schema: " + e.getMessage());
         }
     }
