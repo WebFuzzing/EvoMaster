@@ -12,6 +12,7 @@ import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
+import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
@@ -43,6 +44,7 @@ import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
+import javax.ws.rs.core.Response;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -512,6 +514,49 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public Map<Integer, LocalAuthSetupSchema> getLocalAuthSetupSchemaMap() {
         return localAuthSetupSchemaMap;
+    }
+
+    public RPCProblemDto extractRPCProblemDto(boolean isSutRunning){
+        RPCProblemDto rpcProblem =  new RPCProblemDto();
+        // extract RPCSchema
+        extractRPCSchema();
+
+        Map<String, InterfaceSchema> rpcSchemas = getRPCSchema();
+        if (rpcSchemas == null || rpcSchemas.isEmpty()){
+            throw new RuntimeException("Fail to extract RPC interface schema");
+        }
+
+        Map<Integer, LocalAuthSetupSchema> localMap = getLocalAuthSetupSchemaMap();
+        if (localMap!= null && !localMap.isEmpty()){
+            rpcProblem.localAuthEndpointReferences = new ArrayList<>();
+            rpcProblem.localAuthEndpoints = new ArrayList<>();
+            for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
+                rpcProblem.localAuthEndpointReferences.add(e.getKey());
+                rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
+            }
+        }
+
+        try{
+            // handled seeded tests
+            rpcProblem.seededTestDtos = handleSeededTests();
+
+            if (isSutRunning){
+                getSeededExternalServiceResponseDto();
+            }
+        }catch (RuntimeException e){
+            StringBuilder msg = new StringBuilder("Fail to handle specified seeded tests " + e.getMessage());
+            if (e.getStackTrace() != null && e.getStackTrace().length > 0){
+                msg.append(" with stack:");
+                for (int i = 0; i < Math.min(e.getStackTrace().length, 5); i++){
+                    msg.append(e.getStackTrace()[i].toString());
+                }
+            }
+            throw new RuntimeException(msg.toString());
+        }
+
+        // set the schemas at the end
+        rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
+        return rpcProblem;
     }
 
     /**
