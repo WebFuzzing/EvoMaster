@@ -308,6 +308,8 @@ public class CodeJavaGenerator {
             if length of expected value is more than 10, comment out this assertion for the moment
 
             TODO need to better handle flakiness later
+
+            https://trello.com/c/v5XRNyml/707-flakiness-configurable-fields-to-skip
          */
         if (expectedValue.length() > 10)
             return "//" + assertionScript;
