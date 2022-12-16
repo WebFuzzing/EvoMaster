@@ -7,23 +7,24 @@ import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleS
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * Primitive types Param
  */
-public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> implements NumericConstraintBase<Long> {
+public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<PrimitiveOrWrapperType, V> implements NumericConstraintBase<BigDecimal> {
 
     /**
      * min value if it is specified
      */
-    private Long min;
+    private BigDecimal min;
 
     /**
      * max value of it is specified
      */
-    private Long max;
+    private BigDecimal max;
 
     private boolean minInclusive = true;
 
@@ -119,28 +120,24 @@ public abstract class PrimitiveOrWrapperParam<V> extends NamedTypedValue<Primiti
     }
 
     @Override
-    public Long getMin() {
+    public BigDecimal getMin() {
         return min;
     }
 
     @Override
-    public void setMin(Long min) {
-        if (this.min != null){
-            this.min = Math.max(this.min, min);
-        }else
+    public void setMin(BigDecimal min) {
+        if (this.min == null || (min != null && this.min.compareTo(min) < 0) )
             this.min = min;
     }
 
     @Override
-    public Long getMax() {
+    public BigDecimal getMax() {
         return max;
     }
 
     @Override
-    public void setMax(Long max) {
-        if (this.max != null)
-            this.max = Math.min(this.max, max);
-        else
+    public void setMax(BigDecimal max) {
+        if (this.max == null || (max != null && this.max.compareTo(max) > 0) )
             this.max = max;
     }
 

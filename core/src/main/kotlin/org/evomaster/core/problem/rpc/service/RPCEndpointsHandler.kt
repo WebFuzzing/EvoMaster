@@ -449,6 +449,8 @@ class RPCEndpointsHandler {
 
         // report statistic of endpoints
         reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 }, infoDto.rpcProblem?.seededTestDtos?.size?:0)
+
+        reportMsgLog(infoDto.errorMsg)
     }
 
     private fun buildTypeCache(type: ParamDto){
@@ -464,6 +466,17 @@ class RPCEndpointsHandler {
             info("There are $numSchema defined RPC interfaces with ${actionSchemaCluster.size} accessible endpoints and $skipped skipped endpoints.")
             if (numSeededTest > 0)
                 info("$numSeededTest test${if (numSeededTest > 1) "s are" else " is"} seeded.")
+        }
+    }
+
+    private fun reportMsgLog(msg : List<String>?){
+        msg?:return
+        LoggingUtil.getInfoLogger().apply {
+            if (msg.isNotEmpty())
+                info("Errors in extraction of RPC schema and seeded tests:")
+            msg.forEach {
+                info(it)
+            }
         }
     }
 

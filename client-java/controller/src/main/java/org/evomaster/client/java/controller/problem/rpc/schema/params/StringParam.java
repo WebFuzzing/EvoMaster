@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.CodeJavaGenerator;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.StringType;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -142,9 +143,16 @@ public class StringParam extends NamedTypedValue<StringType, String> implements 
     @Override
     public void setValueBasedOnInstanceOrJson(Object json) throws JsonProcessingException {
         if (json == null)  return;
-        if (!(json instanceof String))
-            throw new IllegalArgumentException("Cannot set value for StringParam " + getName() + " with the type:"+json.getClass().getName());
-        setValue((String) json);
+
+        if (json instanceof Number){
+            SimpleLogger.recordErrorMessage("Warning: invalid date type in json for StringParam, attempt to set the value with number value for param "+getName());
+            setValue(json.toString());
+        }else {
+            if (!(json instanceof String))
+                throw new IllegalArgumentException("Cannot set value for StringParam " + getName() + " with the type:"+json.getClass().getName());
+            setValue((String) json);
+        }
+
     }
 
     @Override
