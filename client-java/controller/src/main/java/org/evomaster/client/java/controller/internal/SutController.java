@@ -545,10 +545,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             }
         }catch (RuntimeException e){
             StringBuilder msg = new StringBuilder("Fail to handle specified seeded tests " + e.getMessage());
-            if (e.getStackTrace() != null && e.getStackTrace().length > 0){
+            StackTraceElement[] exceptionStack = e.getStackTrace();
+            if (exceptionStack != null && exceptionStack.length > 0){
                 msg.append(" with stack:");
-                for (int i = 0; i < Math.min(e.getStackTrace().length, 5); i++){
-                    msg.append(e.getStackTrace()[i].toString());
+                for (int i = 0; i < Math.min(exceptionStack.length, 5); i++){
+                    msg.append(exceptionStack[i].toString());
                 }
             }
             throw new RuntimeException(msg.toString());
