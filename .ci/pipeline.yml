@@ -1,6 +1,6 @@
 project_info:
   - &git-main-branch-name main
-  - &git-uri git@github.com:gozego/utility-java-framework.git
+  - &git-uri git@github.com:gozego/EvoMaster.git
   - &slack-notify-url ((ci-utility-notices))
 
 jobs:  
