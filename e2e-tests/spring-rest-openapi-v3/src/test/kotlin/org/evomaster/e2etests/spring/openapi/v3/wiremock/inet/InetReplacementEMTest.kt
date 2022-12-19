@@ -27,7 +27,8 @@ class InetReplacementEMTest : SpringTestBase() {
             "InetReplacementEM",
             "org.foo.InetReplacementEM",
             1000,
-            !CIUtils.isRunningGA(),
+//            !CIUtils.isRunningGA(),
+            false,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
