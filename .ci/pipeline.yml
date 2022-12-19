@@ -1,0 +1,67 @@
+project_info:
+  - &git-main-branch-name main
+  - &git-uri git@github.com:gozego/utility-java-framework.git
+  - &slack-notify-url ((ci-utility-notices))
+
+jobs:  
+  # Begin Job Definition - pull-request
+  - name: run-test-suite
+    public: false
+    plan:
+      # Get main branch
+      - get: git-main
+        trigger: false
+      - task: unit-test
+        config:
+          image_resource:
+            source:
+              repository: markhobson/maven-chrome
+              tag: latest
+            type: docker-image
+          inputs:
+            - name: git-main
+          platform: linux
+          run:
+            args:
+              - -xce
+              - |
+                cd git-main
+                cd dotnet test
+                echo "WIP replace with actual implementation!"
+            path: /bin/sh
+        on_failure:
+          do:
+            - put: notify
+              params:
+                alert_type: failed
+                message: Test Suite Run Failed!
+                mode: normal_with_info
+     
+      # Send success alert via slack
+      - put: notify
+        params:
+          alert_type: success
+          message: Pull Request Build complete
+          mode: normal_with_info
+
+resource_types:
+  - name: slack-notifier
+    type: docker-image
+    source:
+      repository: 489055453904.dkr.ecr.us-east-2.amazonaws.com/engineering/concourse-slack-notifier
+      tag: latest
+
+resources:
+  - name: git-main
+    type: git
+    icon: github
+    source:
+      uri: *git-uri
+      branch: *git-main-branch-name
+      private_key: ((git-private-key))
+
+  - name: notify
+    type: slack-notifier
+    icon: slack
+    source:
+      url: *slack-notify-url
