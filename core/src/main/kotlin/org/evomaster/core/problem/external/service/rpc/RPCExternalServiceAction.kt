@@ -16,6 +16,11 @@ class RPCExternalServiceAction(
     val functionName: String,
 
     /**
+     * types of input params for the RPC function (ie, [functionName]) if exists
+     */
+    val inputParamTypes : List<String>?,
+
+    /**
      * descriptive info for the external service if needed
      * eg, app key for identifying the external service
      */
@@ -55,14 +60,14 @@ class RPCExternalServiceAction(
     }
 
     override fun copyContent(): RPCExternalServiceAction {
-        return RPCExternalServiceAction(interfaceName, functionName, descriptiveInfo, requestRuleIdentifier, response.copy() as RPCResponseParam, active, used)
+        return RPCExternalServiceAction(interfaceName, functionName, inputParamTypes?.toList(), descriptiveInfo, requestRuleIdentifier, response.copy() as RPCResponseParam, active, used)
     }
 
     /**
      * @return a copy of this and release its restricted request identifier
      */
     fun getUnrestrictedRPCExternalServiceAction(): RPCExternalServiceAction{
-        return RPCExternalServiceAction(interfaceName, functionName, descriptiveInfo, null, response.copy() as RPCResponseParam)
+        return RPCExternalServiceAction(interfaceName, functionName, inputParamTypes?.toList(), descriptiveInfo, null, response.copy() as RPCResponseParam)
     }
 
     fun addUpdateForParam(param: Param){

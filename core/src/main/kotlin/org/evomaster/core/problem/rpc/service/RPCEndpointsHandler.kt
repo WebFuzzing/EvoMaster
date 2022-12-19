@@ -141,7 +141,7 @@ class RPCEndpointsHandler {
     }
 
     /**
-     * handle customized tests with post actions after search
+     * handle customized test generation with post actions after search
      */
     fun handleCustomizedTests(individuals : List<EvaluatedIndividual<RPCIndividual>>){
         val postSearchActionDto = PostSearchActionDto()
@@ -248,6 +248,7 @@ class RPCEndpointsHandler {
                         interfaceName = dto.interfaceFullName,
                         functionName = dto.functionName,
                         descriptiveInfo = dto.appKey,
+                        inputParamTypes = dto.inputParameterTypes,
                         requestRuleIdentifier = dto.requestRules[index],
                         responseParam = response)
                     Lazy.assert { exkey == externalAction.getName() }
@@ -269,8 +270,10 @@ class RPCEndpointsHandler {
             interfaceFullName = action.interfaceName
             functionName = action.functionName
             appKey = action.descriptiveInfo
+            inputParameterTypes = action.inputParamTypes
             requestRules = if (action.requestRuleIdentifier.isNullOrEmpty()) null else listOf(action.requestRuleIdentifier)
             responses = listOf(action.response.responseBody.getValueAsPrintableString(mode = mode))
+            responseTypes = if ((action.response as? RPCResponseParam)?.className?.isNotBlank() == true) listOf((action.response as RPCResponseParam).className) else null
         }
     }
 
@@ -446,6 +449,8 @@ class RPCEndpointsHandler {
 
         // report statistic of endpoints
         reportEndpointsStatistics(problem.schemas.size, problem.schemas.sumOf { it.skippedEndpoints?.size ?: 0 }, infoDto.rpcProblem?.seededTestDtos?.size?:0)
+
+        reportMsgLog(infoDto.errorMsg)
     }
 
     private fun buildTypeCache(type: ParamDto){
@@ -461,6 +466,17 @@ class RPCEndpointsHandler {
             info("There are $numSchema defined RPC interfaces with ${actionSchemaCluster.size} accessible endpoints and $skipped skipped endpoints.")
             if (numSeededTest > 0)
                 info("$numSeededTest test${if (numSeededTest > 1) "s are" else " is"} seeded.")
+        }
+    }
+
+    private fun reportMsgLog(msg : List<String>?){
+        msg?:return
+        LoggingUtil.getInfoLogger().apply {
+            if (msg.isNotEmpty())
+                info("Errors in extraction of RPC schema and seeded tests:")
+            msg.forEach {
+                info(it)
+            }
         }
     }
 

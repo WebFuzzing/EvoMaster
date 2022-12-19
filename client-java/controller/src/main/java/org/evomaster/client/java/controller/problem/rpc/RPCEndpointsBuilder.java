@@ -6,10 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.JsonAuthRPCEndpointDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.params.*;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.*;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class RPCEndpointsBuilder {
 
     private final static ObjectMapper objectMapper = new ObjectMapper();
-
+    
     private final static String OBJECT_FLAG = "OBJECT";
     private static String getObjectTypeNameWithFlag(Class<?> clazz, String name) {
         if (isNotCustomizedObject(clazz)) return name;
@@ -89,9 +89,12 @@ public class RPCEndpointsBuilder {
             try {
                 // TODO cannot get generic types
                 Class<?> clazz = Class.forName(responseType);
-                build(schema, clazz, null, "return", rpcType, new ArrayList<>(), null, null, null, null, null, null, true);
+                Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
+                build(schema, clazz, null, "return", rpcType, new ArrayList<>(), null, null, null, null, null, genericTypeMap, true);
             } catch (ClassNotFoundException e) {
-                SimpleLogger.uniqueWarn("Driver Config Error: cannot identify the class from the driver"+e.getMessage());
+                SimpleLogger.recordErrorMessage("Driver Config Error: cannot identify the class from the driver "+e.getMessage());
+            } catch (Exception e){
+                throw new RuntimeException("EM schema parser error: fail to extract mocked response "+ responseType);
             }
         }
     }
@@ -184,7 +187,7 @@ public class RPCEndpointsBuilder {
                         /*
                             TODO might send such log to core in order to better identify problems which is not handled yet
                          */
-                        SimpleLogger.error("EM Driver Error: fail to handle the endpoint schema "+m.getName()+" with the error msg:"+exception.getMessage());
+                        SimpleLogger.recordErrorMessage("EM Driver Error: fail to handle the endpoint schema "+m.getName()+" with the error msg:"+exception.getMessage());
                     }
                 } else {
                     skippedEndpoints.add(m.getName());
@@ -211,7 +214,7 @@ public class RPCEndpointsBuilder {
                             authEndpoints.put(index, copy);
                         }
                     }catch (RuntimeException exception){
-                        SimpleLogger.error("EM Driver Error: fail to handle the authEndpoint schema "+m.getName()+" with the error msg:"+exception.getMessage());
+                        SimpleLogger.recordErrorMessage("EM Driver Error: fail to handle the authEndpoint schema "+m.getName()+" with the error msg:"+exception.getMessage());
                     }
                 }
             }
@@ -261,7 +264,7 @@ public class RPCEndpointsBuilder {
                     Object value = objectMapper.readValue(jsonString, clazz);
                     inputParam.setValueBasedOnInstance(value);
                 } catch (JsonProcessingException e) {
-                    SimpleLogger.uniqueWarn("Driver Config Error: a jsonPayload at ("+i+") cannot be read as the object "+jsonAuthEndpoint.classNames.get(i));
+                    SimpleLogger.recordErrorMessage("Driver Config Error: a jsonPayload at ("+i+") cannot be read as the object "+jsonAuthEndpoint.classNames.get(i));
                     setNamedValueBasedOnJsonString(inputParam,jsonString, i);
                 }
             }
@@ -282,12 +285,12 @@ public class RPCEndpointsBuilder {
                         setNamedValueBasedOnCandidates(f, node.textValue());
                         fields.add(v);
                     }else {
-                        SimpleLogger.uniqueWarn("Driver Config Error: cannot find field with the name "+v.getName()+" in the specified json");
+                        SimpleLogger.recordErrorMessage("Driver Config Error: cannot find field with the name "+v.getName()+" in the specified json");
                     }
                 }
                 inputParam.setValue(fields);
             } catch (JsonProcessingException ex) {
-                SimpleLogger.uniqueWarn("Driver Config Error: a jsonPayload at ("+index+") cannot be read as a JSON object with error:" +ex.getMessage());
+                SimpleLogger.recordErrorMessage("Driver Config Error: a jsonPayload at ("+index+") cannot be read as a JSON object with error:" +ex.getMessage());
             }
         }
     }
@@ -298,7 +301,7 @@ public class RPCEndpointsBuilder {
         if (authenticationDtos == null) return null;
         for (AuthenticationDto dto : authenticationDtos){
             if (dto.localAuthSetup == null && (dto.jsonAuthEndpoint == null || dto.jsonAuthEndpoint.endpointName == null || dto.jsonAuthEndpoint.interfaceName == null)){
-                SimpleLogger.uniqueWarn("Driver Config Error: To specify auth for RPC, either localAuthSetup or jsonAuthEndpoint should be specified." +
+                SimpleLogger.recordErrorMessage("Driver Config Error: To specify auth for RPC, either localAuthSetup or jsonAuthEndpoint should be specified." +
                         "For JsonAuthRPCEndpointDto, endpointName and interfaceName cannot be null");
             }
         }
@@ -350,12 +353,12 @@ public class RPCEndpointsBuilder {
 
         Class<?>[] clazz = client.getClass().getInterfaces();
         if (clazz.length == 0){
-            SimpleLogger.error("Error: the client is not related to any interface");
+            SimpleLogger.recordErrorMessage("Error: the client is not related to any interface");
             return null;
         }
 
         if (clazz.length > 1)
-            SimpleLogger.error("ERROR: the client has more than one interfaces");
+            SimpleLogger.recordErrorMessage("ERROR: the client has more than one interfaces");
 
         return clazz[0].getName();
 
@@ -548,15 +551,12 @@ public class RPCEndpointsBuilder {
                         if (doSkipReflection(f.getName()))
                             continue;
 
-                        AccessibleSchema faccessSchema = null;
+                        // always try to find the setter and getter
+                        AccessibleSchema faccessSchema = new AccessibleSchema(Modifier.isPublic(f.getModifiers()), findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
                         //check accessible
-                        if (Modifier.isPublic(f.getModifiers())){
-                            faccessSchema = new AccessibleSchema();
-                        } else{
-                            // find getter and setter
-                            faccessSchema = new AccessibleSchema(false, findGetterOrSetter(clazz, f, false), findGetterOrSetter(clazz, f, true));
+                        if (!Modifier.isPublic(f.getModifiers())){
                             if (faccessSchema.getterMethodName == null || faccessSchema.setterMethodName == null){
-                                SimpleLogger.warn("Error: skip the field "+f.getName()+" since its setter/getter is not found");
+                                SimpleLogger.recordErrorMessage("Error: skip the field "+f.getName()+" since its setter/getter is not found");
                                 continue;
                             }
                         }
@@ -623,7 +623,7 @@ public class RPCEndpointsBuilder {
             name.setAccessible(true);
             return (String) name.invoke(object);
         } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            SimpleLogger.warn("Driver Error: fail to extract name for enum constant", e);
+            SimpleLogger.recordErrorMessage("Driver Error: fail to extract name for enum constant:"+ e.getMessage());
             return object.toString();
         }
     }
@@ -717,11 +717,11 @@ public class RPCEndpointsBuilder {
                 instead of throwing the exception,
                 provide a warning and use the first one
              */
-            SimpleLogger.uniqueWarn(msg);
+            SimpleLogger.recordErrorMessage(msg);
             return found.get(0).getName();
         }
 
-        SimpleLogger.uniqueWarn(msg);
+        SimpleLogger.recordErrorMessage(msg);
         return null;
 
     }
@@ -793,7 +793,7 @@ public class RPCEndpointsBuilder {
                 candidates.add(copy);
             }
         }else {
-            SimpleLogger.uniqueWarn("Error: Do not support configuring pre-defined values for the type "+namedTypedValue.getType().getFullTypeName());
+            SimpleLogger.recordErrorMessage("Error: Do not support configuring pre-defined values for the type "+namedTypedValue.getType().getFullTypeName());
             return;
         }
 
@@ -813,7 +813,7 @@ public class RPCEndpointsBuilder {
 
 
         }catch (RuntimeException exception){
-            SimpleLogger.uniqueWarn("Error: fail to generate candidates with string value "+value+" for "+copy.getName() +" with type "+copy.getType().getFullTypeName());
+            SimpleLogger.recordErrorMessage("Error: fail to generate candidates with string value "+value+" for "+copy.getName() +" with type "+copy.getType().getFullTypeName());
             return false;
         }
         return true;
@@ -838,7 +838,7 @@ public class RPCEndpointsBuilder {
                 try {
                     return annotation.annotationType().getDeclaredMethod(notNullAnnotations.annotationMethod).invoke(annotation).equals(notNullAnnotations.equalsTo);
                 } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                    SimpleLogger.uniqueWarn("Error: fail to invoke the specified method in the annotation with the error msg:"+e.getMessage());
+                    SimpleLogger.recordErrorMessage("Error: fail to invoke the specified method in the annotation with the error msg:"+e.getMessage());
                     return false;
                 }
             }
@@ -905,7 +905,7 @@ public class RPCEndpointsBuilder {
             }
 
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            SimpleLogger.uniqueWarn("Error: fail to get the metaDataMap field in native dto");
+            SimpleLogger.recordErrorMessage("Error: fail to get the metaDataMap field in native dto");
         }
 
     }
@@ -917,7 +917,7 @@ public class RPCEndpointsBuilder {
                 if (isMetaMap(metaMap_field))
                     handleMetaMap(metaMap_field, fields);
             } catch (NoSuchFieldException e) {
-                SimpleLogger.uniqueWarn("Error: fail to get the metaDataMap field in native dto");
+                SimpleLogger.recordErrorMessage("Error: fail to get the metaDataMap field in native dto");
             }
         }
 
@@ -942,12 +942,12 @@ public class RPCEndpointsBuilder {
                             field.setNullable(false);
                         // TODO for handling default
                     }else {
-                        SimpleLogger.uniqueWarn("Error: fail to find field in list but exist in metaMap, and the field name is "+ name);
+                        SimpleLogger.recordErrorMessage("Error: fail to find field in list but exist in metaMap, and the field name is "+ name);
                     }
                 }
             }
         } catch (IllegalAccessException | NoSuchFieldException e) {
-            SimpleLogger.uniqueWarn("Error: fail to set isNull based on metaMap of Thrift struct "+e.getMessage());
+            SimpleLogger.recordErrorMessage("Error: fail to set isNull based on metaMap of Thrift struct "+e.getMessage());
         }
     }
 
@@ -962,5 +962,68 @@ public class RPCEndpointsBuilder {
         String tag = getObjectTypeNameWithFlag(clazz, clazzFullNameWithGeneric);
         int start = Math.max(0, depth.lastIndexOf(tag));
         return depth.subList(start, depth.size()).stream().filter(s-> !s.equals(tag) && s.startsWith(OBJECT_FLAG)).collect(Collectors.toSet()).size();
+    }
+
+    public static List<List<RPCActionDto>> buildSeededTest(Map<String, InterfaceSchema> rpcInterfaceSchema, List<SeededRPCTestDto> seedRPCTests, RPCType rpcType){
+        List<List<RPCActionDto>> results = new ArrayList<>();
+
+
+        for (SeededRPCTestDto dto: seedRPCTests){
+            if (dto.rpcFunctions != null && !dto.rpcFunctions.isEmpty()){
+                List<RPCActionDto> test = new ArrayList<>();
+                try{
+                    for (SeededRPCActionDto actionDto : dto.rpcFunctions){
+                        InterfaceSchema schema = rpcInterfaceSchema.get(actionDto.interfaceName);
+                        if (schema != null){
+                            EndpointSchema actionSchema = schema.getOneEndpointWithSeededDto(actionDto);
+                            if (actionSchema != null){
+                                EndpointSchema copy = actionSchema.copyStructure();
+                                for (int i = 0; i < copy.getRequestParams().size(); i++){
+                                    // TODO need to check if generic type could be handled with jackson
+                                    NamedTypedValue p = copy.getRequestParams().get(i);
+                                    try {
+                                        String stringValue = actionDto.inputParams.get(i);
+                                        // Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
+                                        p.setValueBasedOnInstanceOrJson(stringValue);
+
+                                    } catch (JsonProcessingException e) {
+                                        SimpleLogger.recordErrorMessage(
+                                                String.format("Seeded Test Error: cannot parse the seeded test %s at the parameter %d with error msg: %s", actionDto, i, e.getMessage()));
+                                    }
+                                }
+                                RPCActionDto rpcActionDto = copy.getDto();
+                                rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
+                                if (actionDto.mockRPCExternalServiceDtos!= null && !actionDto.mockRPCExternalServiceDtos.isEmpty())
+                                    buildExternalServiceResponse(schema,
+                                            actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
+                                            rpcType);
+                                test.add(rpcActionDto);
+                            }else {
+                                SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the action "+actionDto.functionName);
+                            }
+                        } else {
+                            SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the interface "+ actionDto.interfaceName);
+                        }
+                    }
+                    results.add(test);
+                }catch (RuntimeException e){
+                    SimpleLogger.recordErrorMessage("Fail to handle specified seeded test: "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
+                    StringBuilder msg = new StringBuilder("Fail to handle specified seeded test " + e.getMessage());
+                    // reduce multiple copy of the stack
+                    StackTraceElement[] exceptionStack = e.getStackTrace();
+                    if (exceptionStack != null && exceptionStack.length > 0){
+                        msg.append(" with stack:");
+                        for (int i = 0; i < Math.min(exceptionStack.length, 5); i++){
+                            msg.append(exceptionStack.toString());
+                            msg.append(System.lineSeparator());
+                        }
+                    }
+                    SimpleLogger.recordErrorMessage(msg.toString());
+                }
+            } else {
+                SimpleLogger.warn("Seeded Test: empty RPC function calls for the test "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
+            }
+        }
+        return results;
     }
 }
