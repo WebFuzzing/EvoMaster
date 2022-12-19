@@ -33,7 +33,7 @@ class InetReplacementEMTest : SpringTestBase() {
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.5")
+                args.add("127.0.0.2")
 
                 val solution = initAndRun(args)
 

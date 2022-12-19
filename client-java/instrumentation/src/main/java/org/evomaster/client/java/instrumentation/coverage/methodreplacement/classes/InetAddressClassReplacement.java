@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Exte
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -36,13 +37,11 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
         if (ExternalServiceInfoUtils.skipHostnameOrIp(host))
             return InetAddress.getByName(host);
 
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, -1);
+        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, host, -1);
         try {
             if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
                 String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
                 return InetAddress.getByName(ip);
-            } else {
-                ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             }
             return InetAddress.getByName(host);
         } catch (UnknownHostException e) {
@@ -60,13 +59,11 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
     public static InetAddress[] getAllByName(String host) throws UnknownHostException {
         if (ExternalServiceInfoUtils.skipHostnameOrIp(host))
             return InetAddress.getAllByName(host);
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, -1);
+        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, host, -1);
         try {
             if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
                 String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
                 return new InetAddress[]{InetAddress.getByName(ip)};
-            } else {
-                ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             }
             return InetAddress.getAllByName(host);
         } catch (UnknownHostException e) {
