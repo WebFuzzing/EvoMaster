@@ -3,6 +3,7 @@ package org.evomaster.core.problem.external.service.httpws
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isReservedIP
@@ -47,6 +48,12 @@ class HttpWsExternalServiceHandler {
      * Mapped against to signature of the [HttpWsExternalService].
      */
     private val externalServices: MutableMap<String, HttpWsExternalService> = mutableMapOf()
+
+    /**
+     * Map from hostname (used in SUT for external services) and local ip addresses, that we resolve
+     * those hostname (ie like DNS)
+     */
+    private val localTestDns: MutableMap<String, String> = mutableMapOf()
 
 
     /**
@@ -96,36 +103,25 @@ class HttpWsExternalServiceHandler {
     }
 
     private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) {
-        val existing =
-            externalServices.filterValues { it.getIP() == externalServiceInfo.remoteHostname && !it.isActive() }
 
-        if (existing.isNotEmpty()) {
-            existing.forEach { (k, e) ->
-                e.updateRemotePort(externalServiceInfo.remotePort)
-                e.startWireMock()
-
-                // Note: Signature contains port as a value. After the port is updated
-                // signature will be changed according to the new value. Key in external
-                // services map is the signature which is not updated to the new value.
-                // So when the subsequent value tries to access it with the updated port,
-                // there will be no value to represent it. This will throw an exception.
-                // TODO: Fix will be make the signature unique. Time based signature
-                //  generation would not work. Instead have to rely on a constant, which
-                //  can be easily reproducible.
-                externalServices[e.getSignature()] = e
-                externalServices.remove(k)
+        val ip: String = localTestDns[externalServiceInfo.remoteHostname]
+            ?: run {
+                val x = getIP(externalServiceInfo.remotePort)
+                lastIPAddress = x
+                localTestDns[externalServiceInfo.remoteHostname] = x
+                x
             }
-        } else if (!externalServices.containsKey(externalServiceInfo.signature())) {
-            val ip = getIP(externalServiceInfo.remotePort)
-            lastIPAddress = ip
 
+        if(externalServiceInfo.isPartial()){
+            return // nothing to do more
+        }
+
+        if (!externalServices.containsKey(externalServiceInfo.signature())) {
             val es = HttpWsExternalService(externalServiceInfo, ip)
 
-            if (!externalServiceInfo.isPartial() &&
-                isAddressAvailable(es.getIP(), externalServiceInfo.remotePort)
-            ) {
-                es.startWireMock()
-            }
+            Lazy.assert { isAddressAvailable(es.getIP(), externalServiceInfo.remotePort) }
+
+            es.startWireMock()
 
             externalServices[externalServiceInfo.signature()] = es
         }
