@@ -60,14 +60,19 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
     public static InetAddress[] getAllByName(String host) throws UnknownHostException {
         if (ExternalServiceInfoUtils.skipHostnameOrIp(host) || ExecutionTracer.skipHostname(host))
             return InetAddress.getAllByName(host);
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, host, -1);
+
         try {
-            if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-                String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
+            if (ExecutionTracer.hasLocalDNSMapping(host)) {
+                String ip = ExecutionTracer.getLocalDNS(host);
                 return new InetAddress[]{InetAddress.getByName(ip)};
             }
             return InetAddress.getAllByName(host);
         } catch (UnknownHostException e) {
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                    host,
+                    -1
+            );
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             throw e;
         }

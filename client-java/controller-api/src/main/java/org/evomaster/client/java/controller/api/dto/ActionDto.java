@@ -44,4 +44,6 @@ public class ActionDto {
      * instance addresses.
      */
     public Map<String, String> externalServiceMapping = new HashMap<>();
+
+    public Map<String, String> localDNSMapping = new HashMap<>();
 }

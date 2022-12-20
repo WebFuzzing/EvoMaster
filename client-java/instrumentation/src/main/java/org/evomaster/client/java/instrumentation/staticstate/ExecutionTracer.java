@@ -73,6 +73,9 @@ public class ExecutionTracer {
      */
     private static Map<String, String> externalServiceMapping = new HashMap<>();
 
+
+    private static Map<String, String> localDNSMapping = new HashMap<>();
+
     /**
      * Besides code coverage, there might be other events that we want to
      * keep track during test execution.
@@ -210,6 +213,7 @@ public class ExecutionTracer {
 
             if (action.getIndex() == 0) {
                 externalServiceMapping = action.getExternalServiceMapping();
+                localDNSMapping = action.getLocalDNSMapping();
             }
         }
     }
@@ -673,16 +677,24 @@ public class ExecutionTracer {
      * Return the WireMock IP if there is a mapping for the hostname. If there is
      * no mapping NULL will be returned
      */
-    public static String getExternalMapping(String hostname) {
-        return externalServiceMapping.get(hostname);
+    public static String getExternalMapping(String signature) {
+        return externalServiceMapping.get(signature);
     }
 
-    public static boolean hasExternalMapping(String hostname) {
-        return externalServiceMapping.containsKey(hostname);
+    public static boolean hasExternalMapping(String signature) {
+        return externalServiceMapping.containsKey(signature);
     }
 
     public static boolean hasMockServer(String hostname) {
         return externalServiceMapping.containsValue(hostname);
+    }
+
+    public static boolean hasLocalDNSMapping(String hostname) {
+        return localDNSMapping.containsKey(hostname);
+    }
+
+    public static String getLocalDNS(String hostname) {
+        return localDNSMapping.get(hostname);
     }
 
     public static void registerSkippedHostname(List<String> skipped){
