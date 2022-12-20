@@ -106,7 +106,7 @@ class HttpWsExternalServiceHandler {
 
         val ip: String = localDNSMapping[externalServiceInfo.remoteHostname]
             ?: run {
-                val x = getIP(externalServiceInfo.remotePort)
+                val x = getNewIP()
                 lastIPAddress = x
                 localDNSMapping[externalServiceInfo.remoteHostname] = x
                 x
@@ -139,7 +139,7 @@ class HttpWsExternalServiceHandler {
      * Will return the next available IP address from the last know IP address
      * used for external service.
      */
-    private fun getNextAvailableAddress(port: Int): String {
+    private fun getNextAvailableAddress(): String {
         return nextIPAddress(lastIPAddress)
     }
 
@@ -148,7 +148,7 @@ class HttpWsExternalServiceHandler {
      * while checking the availability. If not available will
      * generate a new one.
      */
-    private fun generateRandomAvailableAddress(port: Int): String {
+    private fun generateRandomAvailableAddress(): String {
         return generateRandomIPAddress(randomness)
     }
 
@@ -226,22 +226,22 @@ class HttpWsExternalServiceHandler {
      * If user provided IP address isn't available on the port
      * IllegalStateException will be thrown.
      */
-    private fun getIP(port: Int): String {
+    private fun getNewIP(): String {
         val ip: String
         when (config.externalServiceIPSelectionStrategy) {
             // Although the default address will be a random, this
             // option allows selecting explicitly
             EMConfig.ExternalServiceIPSelectionStrategy.RANDOM -> {
                 ip = if (externalServices.isNotEmpty()) {
-                    getNextAvailableAddress(port)
+                    getNextAvailableAddress()
                 } else {
-                    generateRandomAvailableAddress(port)
+                    generateRandomAvailableAddress()
                 }
             }
 
             EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
                 ip = if (externalServices.isNotEmpty()) {
-                    getNextAvailableAddress(port)
+                    getNextAvailableAddress()
                 } else {
                     if (!isReservedIP(config.externalServiceIP)) {
                         config.externalServiceIP
@@ -253,9 +253,9 @@ class HttpWsExternalServiceHandler {
 
             else -> {
                 ip = if (externalServices.isNotEmpty()) {
-                    getNextAvailableAddress(port)
+                    getNextAvailableAddress()
                 } else {
-                    generateRandomAvailableAddress(port)
+                    generateRandomAvailableAddress()
                 }
             }
         }
