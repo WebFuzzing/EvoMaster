@@ -545,7 +545,7 @@ object GeneUtils {
         if (selected.isEmpty() || selected.size == failedRepairCount) {
             /*
              * we did not find fields that are already selected, or we ended up deselecting all of them.
-             * must select at least one among the others that were of
+             * must select at least one among the others that were off
              */
             val candidates = obj.fields.filter {
                 (it is OptionalGene && it.selectable && !it.isActive)
@@ -570,12 +570,20 @@ object GeneUtils {
                         }
                         return true //we just need one
                     } else if (selectedGene.gene is TupleGene){
-                        val lastElement = selectedGene.gene.elements.last()
-                        repairTupleLastElement(lastElement)
+                        var ok = true
+                        if(selectedGene.gene.lastElementTreatedSpecially){
+                            val lastElement = selectedGene.gene.elements.last()
+                            ok = repairTupleLastElement(lastElement)
+                        }
+                        return ok
                     }
                 } else if (selectedGene is TupleGene) {
-                    val lastElement = selectedGene.elements.last()
-                    repairTupleLastElement(lastElement)
+                    var ok = true
+                    if(selectedGene.lastElementTreatedSpecially) {
+                        val lastElement = selectedGene.elements.last()
+                        ok = repairTupleLastElement(lastElement)
+                    }
+                    return ok
                 } else {
                     (selectedGene as BooleanGene).value = true
                     return true
