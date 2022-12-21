@@ -24,6 +24,7 @@ import org.evomaster.client.java.controller.db.DbCleaner;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
+import org.evomaster.client.java.controller.internal.db.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
@@ -69,6 +70,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
     private final SqlHandler sqlHandler = new SqlHandler();
+
+    private final MongoHandler mongoHandler = new MongoHandler();
 
     private Server controllerServer;
 
@@ -334,6 +337,34 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         return dto;
+    }
+
+    public final void computeMongoHeuristics(){
+        //MongoExecutionDto dto = new MongoExecutionDto();
+
+        if(mongoHandler.isCalculateHeuristics()){
+
+            List<AdditionalInfo> list = getAdditionalInfoList();
+            if(!list.isEmpty()) {
+                AdditionalInfo last = list.get(list.size() - 1);
+                last.getMongoInfoData().forEach(it -> {
+                    try {
+                        mongoHandler.handle(it);
+                    } catch (Exception e){
+                        SimpleLogger.error("FAILED TO HANDLE MONGO COMMAND");
+                        assert false;
+                    }
+                });
+            }
+        }
+
+
+        /*
+        if(mongoHandler.isCalculateHeuristics()) {
+            mongoHandler.getDistances()
+        }
+
+         */
     }
 
     /**

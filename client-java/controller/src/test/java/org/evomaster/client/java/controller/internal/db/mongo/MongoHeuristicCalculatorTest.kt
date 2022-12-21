@@ -1,0 +1,142 @@
+package org.evomaster.client.java.controller.internal.mongo
+
+import com.mongodb.client.model.Filters
+import org.bson.Document
+import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+
+class MongoHeuristicCalculatorTest {
+
+    @Test
+    fun testNotEquals() {
+        val doc = Document().append("age", 10)
+        val bsonTrue = Filters.ne("age", 26)
+        val bsonFalse = Filters.ne("age", 10)
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(1.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testGreaterThan() {
+        val doc = Document().append("age", 10)
+        val bsonTrue = Filters.gt("age", 5)
+        val bsonFalse = Filters.gt("age", 13)
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(4.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testGreaterThanEquals() {
+        val doc = Document().append("age", 10)
+        val bsonTrue = Filters.gte("age", 5)
+        val bsonFalse = Filters.gte("age", 13)
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(3.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testLessThan() {
+        val doc = Document().append("age", 10)
+        val bsonTrue = Filters.lt("age", 11)
+        val bsonFalse = Filters.lt("age", 7)
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(4.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testLessThanEquals() {
+        val doc = Document().append("age", 10)
+        val bsonTrue = Filters.lt("age", 11)
+        val bsonFalse = Filters.lt("age", 7)
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(4.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testOr() {
+        val doc = Document().append("age", 10)
+        val bsonTrue = Filters.or(Filters.gt("age", 9), Filters.lt("age",20))
+        val bsonFalse = Filters.or(Filters.gt("age", 17), Filters.lt("age",8))
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(3.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testAnd() {
+        val doc = Document().append("age", 10)
+        val bsonTrue = Filters.and(Filters.gt("age", 9), Filters.lt("age",20))
+        val bsonFalse = Filters.and(Filters.gt("age", 10), Filters.lt("age",8))
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(4.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testIn() {
+        val doc = Document().append("age", 10)
+        val bsonTrue = Filters.`in`("age", listOf(1, 10, 8))
+        val bsonFalse = Filters.`in`("age", listOf(1, 15))
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(5.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testAll() {
+        val doc = Document().append("employees", listOf(1,5,6))
+        val bsonTrue = Filters.all("employees", listOf(1, 5, 6))
+        val bsonFalse = Filters.all("employees", listOf(1, 7, 8))
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(3.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testSize() {
+        val doc = Document().append("employees", listOf(1,5,6))
+        val bsonTrue = Filters.size("employees", 3)
+        val bsonFalse = Filters.size("employees", 5)
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(2.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testMod() {
+        val doc = Document().append("age", 20)
+        val bsonTrue = Filters.mod("age", 3, 2)
+        val bsonFalse = Filters.mod("age", 3, 0)
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(2.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testNot() {
+        val doc = Document().append("age", 20)
+        val bsonTrue = Filters.not(Filters.gt("age", 10))
+        val bsonFalse = Filters.not(Filters.gt("age", 30))
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(10.0, distanceNotMatch)
+    }
+}
