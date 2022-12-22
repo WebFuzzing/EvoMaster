@@ -689,14 +689,24 @@ public class ExecutionTracer {
         return externalServiceMapping.containsValue(hostname);
     }
 
+    /**
+     * Check whether there is a local IP address available for the given
+     * remote hostname.
+     */
     public static boolean hasLocalAddress(String hostname) {
         return localAddressMapping.containsKey(hostname);
     }
 
-    public static boolean hasLocalAddressReplacement(String hostname) {
-        return localAddressMapping.containsValue(hostname);
+    /**
+     * Checks for any replacement available to given local IP address.
+     */
+    public static boolean hasLocalAddressReplacement(String localAddress) {
+        return localAddressMapping.containsValue(localAddress);
     }
 
+    /**
+     * Return the respective remote hostname for the given local IP address
+     */
     public static String getRemoteHostname(String localAddress) {
         return localAddressMapping.entrySet()
                 .stream()
