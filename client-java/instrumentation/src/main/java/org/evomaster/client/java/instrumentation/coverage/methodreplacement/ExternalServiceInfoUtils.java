@@ -49,11 +49,10 @@ public class ExternalServiceInfoUtils {
                 || hostname.startsWith("localhost")
                 || hostname.startsWith("0.0.0")
                 || hostname.startsWith("10.")
-                || hostname.startsWith("docker.socket")) {
+                || hostname.startsWith("docker.socket")
+                || (hostname.startsWith("127.") && !ExecutionTracer.hasLocalAddressReplacement(hostname))) {
             return true;
-        } else if (hostname.startsWith("127.") && !ExecutionTracer.hasMockServer(hostname)) {
-            return true;
-        };
+        }
 
         return false;
     }

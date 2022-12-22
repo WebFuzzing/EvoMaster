@@ -689,8 +689,12 @@ public class ExecutionTracer {
         return externalServiceMapping.containsValue(hostname);
     }
 
-    public static boolean hasLocalAddressMapping(String hostname) {
+    public static boolean hasLocalAddress(String hostname) {
         return localAddressMapping.containsKey(hostname);
+    }
+
+    public static boolean hasLocalAddressReplacement(String hostname) {
+        return localAddressMapping.containsValue(hostname);
     }
 
     public static String getLocalAddress(String hostname) {

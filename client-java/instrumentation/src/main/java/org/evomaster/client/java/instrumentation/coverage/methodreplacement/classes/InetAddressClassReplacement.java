@@ -40,7 +40,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
         ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, host, -1);
         // Skip if there is a mock server
         try {
-            if (ExecutionTracer.hasLocalAddressMapping(remoteHostInfo.signature())) {
+            if (ExecutionTracer.hasLocalAddress(remoteHostInfo.signature())) {
                 String ip = ExecutionTracer.getLocalAddress(remoteHostInfo.signature());
                 return InetAddress.getByName(ip);
             }
@@ -62,7 +62,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             return InetAddress.getAllByName(host);
 
         try {
-            if (ExecutionTracer.hasLocalAddressMapping(host)) {
+            if (ExecutionTracer.hasLocalAddress(host)) {
                 String ip = ExecutionTracer.getLocalAddress(host);
                 return new InetAddress[]{InetAddress.getByName(ip)};
             }
