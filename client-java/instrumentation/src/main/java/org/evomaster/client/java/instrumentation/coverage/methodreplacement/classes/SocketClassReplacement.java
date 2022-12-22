@@ -40,6 +40,15 @@ public class SocketClassReplacement implements MethodReplacementClass {
             }
 
             if (socketAddress.getAddress() instanceof Inet4Address) {
+                /*
+                    Socket information will be replaced if there is a mapping available for the given address.
+                    Inet replacement will pass down the local IP address to Socket instead of the remote host name.
+                    Which will create another entry to mock. This will work, but created test case will have
+                    local IP address as the DNS record. Actual remote hostname will be lost since Socket will keep
+                    passing the replaced IP information to core with port. To avoid this, a reverse lookup is done
+                    and if there is a mapping available then Socket will use that value to connect. Otherwise,
+                    nothing will happen.
+                 */
                 if (ExecutionTracer.hasLocalAddressReplacement(socketAddress.getHostName())) {
                     ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
                             ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
