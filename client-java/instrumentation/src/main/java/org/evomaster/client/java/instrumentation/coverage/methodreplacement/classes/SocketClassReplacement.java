@@ -29,24 +29,30 @@ public class SocketClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static void connect(Socket caller, SocketAddress endpoint, int timeout) throws IOException {
-        if (endpoint instanceof InetSocketAddress){
+        if (endpoint instanceof InetSocketAddress) {
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
             if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName())
                     || ExecutionTracer.skipHostname(socketAddress.getHostName())
-            ){
+            ) {
                 caller.connect(endpoint, timeout);
                 return;
             }
 
-            if (socketAddress.getAddress() instanceof Inet4Address){
+            if (socketAddress.getAddress() instanceof Inet4Address) {
+                if (ExecutionTracer.hasLocalAddressReplacement(socketAddress.getHostName())) {
+                    ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                            ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                            ExecutionTracer.getRemoteHostname(socketAddress.getHostName()),
+                            socketAddress.getPort()
+                    );
 
-                ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, socketAddress.getHostName(), socketAddress.getPort());
-                String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, socketAddress.getPort());
+                    String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, socketAddress.getPort());
 
-                InetSocketAddress replaced = new InetSocketAddress(InetAddress.getByName(ipAndPort[0]), Integer.parseInt(ipAndPort[1]));
-                caller.connect(replaced, timeout);
-                return;
+                    InetSocketAddress replaced = new InetSocketAddress(InetAddress.getByName(ipAndPort[0]), Integer.parseInt(ipAndPort[1]));
+                    caller.connect(replaced, timeout);
+                    return;
+                }
             }
         }
         SimpleLogger.warn("not handle the type of endpoint yet:" + endpoint.getClass().getName());

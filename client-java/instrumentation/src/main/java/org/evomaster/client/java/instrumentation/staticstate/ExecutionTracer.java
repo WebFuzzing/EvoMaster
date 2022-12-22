@@ -697,6 +697,14 @@ public class ExecutionTracer {
         return localAddressMapping.containsValue(hostname);
     }
 
+    public static String getRemoteHostname(String localAddress) {
+        return localAddressMapping.entrySet()
+                .stream()
+                .filter(entry -> localAddress.equals(entry.getKey()))
+                .map(Map.Entry::getKey)
+                .findFirst().get();
+    }
+
     public static String getLocalAddress(String hostname) {
         return localAddressMapping.get(hostname);
     }

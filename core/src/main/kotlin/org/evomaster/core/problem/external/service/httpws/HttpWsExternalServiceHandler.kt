@@ -112,18 +112,33 @@ class HttpWsExternalServiceHandler {
                 x
             }
 
-        if(externalServiceInfo.isPartial()){
-            return // nothing to do more
+        val registered = externalServices.filterValues {
+            it.getRemoteHostName() == externalServiceInfo.remoteHostname &&
+                    !it.isActive()
         }
 
-        if (!externalServices.containsKey(externalServiceInfo.signature())) {
-            val es = HttpWsExternalService(externalServiceInfo, ip)
+        if (registered.isNotEmpty()) {
+            registered.forEach { (k, e) ->
+                e.updateRemotePort(externalServiceInfo.remotePort)
 
-            Lazy.assert { isAddressAvailable(es.getIP(), externalServiceInfo.remotePort) }
+                Lazy.assert { isAddressAvailable(e.getIP(), externalServiceInfo.remotePort) }
 
-            es.startWireMock()
+                e.startWireMock()
 
-            externalServices[externalServiceInfo.signature()] = es
+                externalServices[e.getSignature()] = e
+                externalServices.remove(k)
+            }
+        } else {
+            if (!externalServices.containsKey(externalServiceInfo.signature())) {
+                val es = HttpWsExternalService(externalServiceInfo, ip)
+
+                if (!externalServiceInfo.isPartial()) {
+                    Lazy.assert { isAddressAvailable(es.getIP(), externalServiceInfo.remotePort) }
+                    es.startWireMock()
+                }
+
+                externalServices[es.getSignature()] = es
+            }
         }
     }
 
