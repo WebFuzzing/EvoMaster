@@ -117,39 +117,37 @@ class HttpWsExternalServiceHandler {
                     !it.isActive()
         }
 
-        return
-//
-//        if (registered.isNotEmpty()) {
-//            registered.forEach { (k, e) ->
-//                if (!externalServiceInfo.isPartial()) {
-//                    e.updateRemotePort(externalServiceInfo.remotePort)
-//                    e.startWireMock()
-//                    /*
-//                        Signature should be updated after the port is updated
-//                        So the existing element will be removed from the map.
-//                        After port information is updated element will be added
-//                        to the map with the new key.
-//                     */
-//                    externalServices[e.getSignature()] = e
-//                    externalServices.remove(k)
-//                }
-//            }
-//        } else {
-//            if (!externalServices.containsKey(externalServiceInfo.signature())) {
-//                val es = HttpWsExternalService(externalServiceInfo, ip)
-//
-//                if (!externalServiceInfo.isPartial()) {
-//                    Lazy.assert { isAddressAvailable(es.getIP(), externalServiceInfo.remotePort) }
-//                    es.startWireMock()
-//                }
-//
-//                /*
-//                    External service information will be added if it is not there
-//                    in the map already.
-//                 */
-//                externalServices[es.getSignature()] = es
-//            }
-//        }
+        if (registered.isNotEmpty()) {
+            registered.forEach { (k, e) ->
+                if (!externalServiceInfo.isPartial()) {
+                    e.updateRemotePort(externalServiceInfo.remotePort)
+                    e.startWireMock()
+                    /*
+                        Signature should be updated after the port is updated
+                        So the existing element will be removed from the map.
+                        After port information is updated element will be added
+                        to the map with the new key.
+                     */
+                    externalServices[e.getSignature()] = e
+                    externalServices.remove(k)
+                }
+            }
+        } else {
+            if (!externalServices.containsKey(externalServiceInfo.signature())) {
+                val es = HttpWsExternalService(externalServiceInfo, ip)
+
+                if (!externalServiceInfo.isPartial()) {
+                    Lazy.assert { isAddressAvailable(es.getIP(), externalServiceInfo.remotePort) }
+                    es.startWireMock()
+                }
+
+                /*
+                    External service information will be added if it is not there
+                    in the map already.
+                 */
+                externalServices[es.getSignature()] = es
+            }
+        }
     }
 
     fun getExternalServiceMappings(): Map<String, String> {
