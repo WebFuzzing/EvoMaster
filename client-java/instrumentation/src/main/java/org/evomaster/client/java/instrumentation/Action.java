@@ -24,14 +24,14 @@ public class Action implements Serializable {
      */
     private final Map<String, String> externalServiceMapping;
 
-    private final Map<String, String> localDNSMapping;
+    private final Map<String, String> localAddressMapping;
 
-    public Action(int index, String name, Collection<String> inputVariables, Map<String, String> externalServiceMapping, Map<String, String> localDNSMapping) {
+    public Action(int index, String name, Collection<String> inputVariables, Map<String, String> externalServiceMapping, Map<String, String> localAddressMapping) {
         this.index = index;
         this.name = name;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
         this.externalServiceMapping = Collections.unmodifiableMap(new HashMap<>(externalServiceMapping));
-        this.localDNSMapping = Collections.unmodifiableMap(new HashMap<>(localDNSMapping));
+        this.localAddressMapping = Collections.unmodifiableMap(new HashMap<>(localAddressMapping));
     }
 
     public int getIndex() {
@@ -44,7 +44,7 @@ public class Action implements Serializable {
 
     public Map<String, String> getExternalServiceMapping() { return externalServiceMapping; }
 
-    public Map<String, String> getLocalDNSMapping() { return localDNSMapping; }
+    public Map<String, String> getLocalAddressMapping() { return localAddressMapping; }
 
     public String getName() {
         return name;

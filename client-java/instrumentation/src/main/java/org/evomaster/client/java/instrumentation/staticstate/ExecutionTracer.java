@@ -74,7 +74,7 @@ public class ExecutionTracer {
     private static Map<String, String> externalServiceMapping = new HashMap<>();
 
 
-    private static Map<String, String> localDNSMapping = new HashMap<>();
+    private static Map<String, String> localAddressMapping = new HashMap<>();
 
     /**
      * Besides code coverage, there might be other events that we want to
@@ -213,7 +213,7 @@ public class ExecutionTracer {
 
             if (action.getIndex() == 0) {
                 externalServiceMapping = action.getExternalServiceMapping();
-                localDNSMapping = action.getLocalDNSMapping();
+                localAddressMapping = action.getLocalAddressMapping();
             }
         }
     }
@@ -689,12 +689,12 @@ public class ExecutionTracer {
         return externalServiceMapping.containsValue(hostname);
     }
 
-    public static boolean hasLocalDNSMapping(String hostname) {
-        return localDNSMapping.containsKey(hostname);
+    public static boolean hasLocalAddressMapping(String hostname) {
+        return localAddressMapping.containsKey(hostname);
     }
 
-    public static String getLocalDNS(String hostname) {
-        return localDNSMapping.get(hostname);
+    public static String getLocalAddress(String hostname) {
+        return localAddressMapping.get(hostname);
     }
 
     public static void registerSkippedHostname(List<String> skipped){

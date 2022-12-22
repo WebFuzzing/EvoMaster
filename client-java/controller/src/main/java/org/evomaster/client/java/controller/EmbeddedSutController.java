@@ -61,7 +61,7 @@ public abstract class EmbeddedSutController extends SutController {
 
     @Override
     public final void newActionSpecificHandler(ActionDto dto){
-        ExecutionTracer.setAction(new Action(dto.index, dto.name, dto.inputVariables, dto.externalServiceMapping, dto.localDNSMapping));
+        ExecutionTracer.setAction(new Action(dto.index, dto.name, dto.inputVariables, dto.externalServiceMapping, dto.localAddressMapping));
     }
 
     @Override

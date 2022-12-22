@@ -53,7 +53,7 @@ class HttpWsExternalServiceHandler {
      * Map from hostname (used in SUT for external services) and local ip addresses, that we resolve
      * those hostname (ie like DNS)
      */
-    private val localDNSMapping: MutableMap<String, String> = mutableMapOf()
+    private val localAddressMapping: MutableMap<String, String> = mutableMapOf()
 
 
     /**
@@ -104,11 +104,11 @@ class HttpWsExternalServiceHandler {
 
     private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) {
 
-        val ip: String = localDNSMapping[externalServiceInfo.remoteHostname]
+        val ip: String = localAddressMapping[externalServiceInfo.remoteHostname]
             ?: run {
                 val x = getNewIP()
                 lastIPAddress = x
-                localDNSMapping[externalServiceInfo.remoteHostname] = x
+                localAddressMapping[externalServiceInfo.remoteHostname] = x
                 x
             }
 
@@ -131,8 +131,8 @@ class HttpWsExternalServiceHandler {
         return externalServices.mapValues { it.value.getIP() }
     }
 
-    fun getLocalDNSMapping(): Map<String, String> {
-        return localDNSMapping.toMap()
+    fun getLocalAddressMapping(): Map<String, String> {
+        return localAddressMapping
     }
 
     /**

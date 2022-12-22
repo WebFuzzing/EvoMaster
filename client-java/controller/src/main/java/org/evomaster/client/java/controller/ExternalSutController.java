@@ -391,7 +391,7 @@ public abstract class ExternalSutController extends SutController {
     @Override
     public final void newActionSpecificHandler(ActionDto dto) {
         if (isInstrumentationActivated()) {
-            serverController.setAction(new Action(dto.index, dto.name, dto.inputVariables, dto.externalServiceMapping, dto.localDNSMapping));
+            serverController.setAction(new Action(dto.index, dto.name, dto.inputVariables, dto.externalServiceMapping, dto.localAddressMapping));
         }
     }
 
