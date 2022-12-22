@@ -132,7 +132,7 @@ class HttpWsExternalServiceHandler {
     }
 
     fun getLocalDNSMapping(): Map<String, String> {
-        return localDNSMapping
+        return localDNSMapping.toMap()
     }
 
     /**
