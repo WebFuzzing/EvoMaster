@@ -119,22 +119,16 @@ class HttpWsExternalServiceHandler {
 
         if (registered.isNotEmpty()) {
             registered.forEach { (k, e) ->
-//                if (!e.hasPartialInformation()) {
-                    e.updateRemotePort(externalServiceInfo.remotePort)
-
-                    Lazy.assert { isAddressAvailable(e.getIP(), externalServiceInfo.remotePort) }
-
-                    e.startWireMock()
-
-                    /*
-                        Signature should be updated after the port is updated
-                        So the existing element will be removed from the map.
-                        After port information is updated element will be added
-                        to the map with the new key.
-                     */
-                    externalServices[e.getSignature()] = e
-                    externalServices.remove(k)
-//                }
+                e.updateRemotePort(externalServiceInfo.remotePort)
+                e.startWireMock()
+                /*
+                    Signature should be updated after the port is updated
+                    So the existing element will be removed from the map.
+                    After port information is updated element will be added
+                    to the map with the new key.
+                 */
+                externalServices[e.getSignature()] = e
+                externalServices.remove(k)
             }
         } else {
             if (!externalServices.containsKey(externalServiceInfo.signature())) {
