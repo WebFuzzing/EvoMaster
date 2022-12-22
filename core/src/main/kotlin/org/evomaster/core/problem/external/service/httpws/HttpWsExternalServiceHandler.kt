@@ -119,7 +119,7 @@ class HttpWsExternalServiceHandler {
 
         if (registered.isNotEmpty()) {
             registered.forEach { (k, e) ->
-                if (!e.hasPartialInformation()) {
+//                if (!e.hasPartialInformation()) {
                     e.updateRemotePort(externalServiceInfo.remotePort)
 
                     Lazy.assert { isAddressAvailable(e.getIP(), externalServiceInfo.remotePort) }
@@ -134,7 +134,7 @@ class HttpWsExternalServiceHandler {
                      */
                     externalServices[e.getSignature()] = e
                     externalServices.remove(k)
-                }
+//                }
             }
         } else {
             if (!externalServices.containsKey(externalServiceInfo.signature())) {
