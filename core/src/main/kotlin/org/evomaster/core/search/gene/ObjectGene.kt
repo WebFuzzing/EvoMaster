@@ -221,7 +221,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                     )
                 }
                 is OptionalGene -> {
-                    assert(it.gene is ObjectGene)
+//                    assert(it.gene is ObjectGene)
                     it.gene.getValueAsPrintableString(
                         previousGenes,
                         GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE,
