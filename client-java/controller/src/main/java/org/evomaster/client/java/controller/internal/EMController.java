@@ -214,13 +214,12 @@ public class EMController {
             GraphQlProblem p = (GraphQlProblem) info;
             dto.graphQLProblem = new GraphQLProblemDto();
             dto.graphQLProblem.endpoint = removePrefix(p.getEndpoint(), baseUrlOfSUT);
-            dto.restProblem.servicesToNotMock = servicesToNotMock;
+            dto.graphQLProblem.servicesToNotMock = servicesToNotMock;
 
         } else if (info instanceof RPCProblem) {
             try {
-                dto.restProblem.servicesToNotMock = servicesToNotMock;
-
                 dto.rpcProblem = noKillSwitch(() -> sutController.extractRPCProblemDto(dto.isSutRunning));
+                dto.rpcProblem.servicesToNotMock = servicesToNotMock;
 
                 // send the recorded error msg to core in order to show the problem during startup
                 dto.errorMsg = SimpleLogger.getRecordedErrorMsg();
