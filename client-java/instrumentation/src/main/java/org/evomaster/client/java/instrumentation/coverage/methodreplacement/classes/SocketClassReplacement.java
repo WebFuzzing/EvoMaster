@@ -33,7 +33,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
             if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName())
-                    || ExecutionTracer.skipHostname(socketAddress.getHostName())
+                    || ExecutionTracer.skipHostnameAndPort(socketAddress.getHostName(), socketAddress.getPort())
             ){
                 caller.connect(endpoint, timeout);
                 return;
