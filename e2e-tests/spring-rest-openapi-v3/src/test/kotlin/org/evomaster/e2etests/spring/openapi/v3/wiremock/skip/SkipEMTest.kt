@@ -28,8 +28,7 @@ class SkipEMTest : SpringTestBase() {
             "SkipExternalServiceEM",
             "org.foo.SkipExternalServiceEM",
             1000,
-//            !CIUtils.isRunningGA(),
-            false,
+            !CIUtils.isRunningGA(),
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
