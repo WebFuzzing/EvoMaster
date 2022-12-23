@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Methods of this class will be injected in the SUT to
@@ -94,7 +95,7 @@ public class ExecutionTracer {
      * Keep track of expensive operations. Might want to skip doing them if too many.
      * This should be re-set for each action
      */
-    private static  int expensiveOperation = 0;
+    private static int expensiveOperation = 0;
 
     private static final Object lock = new Object();
 
@@ -144,19 +145,19 @@ public class ExecutionTracer {
 
     public static final String SET_LAST_CALLER_CLASS_DESC = "(Ljava/lang/String;)V";
 
-    public static void setLastCallerClass(String className){
+    public static void setLastCallerClass(String className) {
         lastCallerClass = ClassName.get(className).getFullNameWithDots();
     }
 
-    public static ClassLoader getLastCallerClassLoader(){
+    public static ClassLoader getLastCallerClassLoader() {
         return UnitsInfoRecorder.getInstance().getClassLoaders(getLastCallerClass()).get(0);
     }
 
-    public static String getLastCallerClass(){
+    public static String getLastCallerClass() {
         return lastCallerClass;
     }
 
-    public static void reportSleeping(){
+    public static void reportSleeping() {
         sleepingThreads.add(Thread.currentThread());
     }
 
@@ -166,10 +167,10 @@ public class ExecutionTracer {
 
     public static void setKillSwitch(boolean killSwitch) {
         ExecutionTracer.killSwitch = killSwitch;
-        if(killSwitch){
-            synchronized (lock){
-                for(Thread t : sleepingThreads){
-                    if(t.isAlive()){
+        if (killSwitch) {
+            synchronized (lock) {
+                for (Thread t : sleepingThreads) {
+                    if (t.isAlive()) {
                         t.interrupt();
                     }
                 }
@@ -218,11 +219,11 @@ public class ExecutionTracer {
         }
     }
 
-    public static void increaseExpensiveOperationCount(){
+    public static void increaseExpensiveOperationCount() {
         expensiveOperation++;
     }
 
-    public static boolean isTooManyExpensiveOperations(){
+    public static boolean isTooManyExpensiveOperations() {
         return expensiveOperation >= 50;
     }
 
@@ -237,7 +238,7 @@ public class ExecutionTracer {
         return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
     }
 
-    public static void handleExtraParamTaint(String left, String right){
+    public static void handleExtraParamTaint(String left, String right) {
 
         if (left == null || left.isEmpty() || right == null || right.isEmpty()) {
             //nothing to do?
@@ -247,20 +248,20 @@ public class ExecutionTracer {
         boolean taintedLeft = left.equals(TaintInputName.EXTRA_PARAM_TAINT);
         boolean taintedRight = right.equals(TaintInputName.EXTRA_PARAM_TAINT);
 
-        if(taintedLeft && taintedRight){
+        if (taintedLeft && taintedRight) {
             //nothing to do?
             return;
         }
 
-        if(taintedLeft){
+        if (taintedLeft) {
             ExecutionTracer.addQueryParameter(right);
         }
-        if(taintedRight){
+        if (taintedRight) {
             ExecutionTracer.addQueryParameter(left);
         }
     }
 
-    public static void handleExtraHeaderTaint(String left, String right){
+    public static void handleExtraHeaderTaint(String left, String right) {
 
         if (left == null || left.isEmpty() || right == null || right.isEmpty()) {
             //nothing to do?
@@ -270,15 +271,15 @@ public class ExecutionTracer {
         boolean taintedLeft = left.equals(TaintInputName.EXTRA_HEADER_TAINT);
         boolean taintedRight = right.equals(TaintInputName.EXTRA_HEADER_TAINT);
 
-        if(taintedLeft && taintedRight){
+        if (taintedLeft && taintedRight) {
             //nothing to do?
             return;
         }
 
-        if(taintedLeft){
+        if (taintedLeft) {
             ExecutionTracer.addHeader(right);
         }
-        if(taintedRight){
+        if (taintedRight) {
             ExecutionTracer.addHeader(left);
         }
     }
@@ -308,7 +309,7 @@ public class ExecutionTracer {
                 return;
             }
 
-            if(shouldSkipTaint()){
+            if (shouldSkipTaint()) {
                 return;
             }
 
@@ -324,7 +325,7 @@ public class ExecutionTracer {
 
         if (taintedLeft || taintedRight) {
 
-            if(shouldSkipTaint()){
+            if (shouldSkipTaint()) {
                 return;
             }
 
@@ -336,7 +337,7 @@ public class ExecutionTracer {
         }
     }
 
-    private static boolean shouldSkipTaint(){
+    private static boolean shouldSkipTaint() {
         /*
             Very tricky... H2 can cache some results. When executing queries, it can check inputs in previous
             queries to see if differences in results. but those could be tainted values... which mess up
@@ -403,7 +404,7 @@ public class ExecutionTracer {
         getCurrentAdditionalInfo().addSpecialization(taintInputName, info);
     }
 
-    public static void addSqlInfo(SqlInfo info){
+    public static void addSqlInfo(SqlInfo info) {
         if (!executingInitSql)
             getCurrentAdditionalInfo().addSqlInfo(info);
     }
@@ -412,7 +413,7 @@ public class ExecutionTracer {
         getCurrentAdditionalInfo().pushLastExecutedStatement(lastLine, lastMethod);
     }
 
-    public static String getLastExecutedStatement(){
+    public static String getLastExecutedStatement() {
         return getCurrentAdditionalInfo().getLastExecutedStatement();
     }
 
@@ -509,7 +510,7 @@ public class ExecutionTracer {
             Considering the fact that the method has been executed, and so reached, cannot happen
             that any of the heuristic values is 0
          */
-        assert t.getOfTrue() != 0 && t.getOfFalse() !=0;
+        assert t.getOfTrue() != 0 && t.getOfFalse() != 0;
 
         String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
         String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);
@@ -710,17 +711,17 @@ public class ExecutionTracer {
     public static String getRemoteHostname(String localAddress) {
         return localAddressMapping.entrySet()
                 .stream()
-                .filter(entry -> localAddress.equals(entry.getKey()))
+                .filter(e -> e.getValue().equals(localAddress))
                 .map(Map.Entry::getKey)
-                .findFirst().get();
+                .findFirst().get().toString();
     }
 
     public static String getLocalAddress(String hostname) {
         return localAddressMapping.get(hostname);
     }
 
-    public static void registerSkippedHostname(List<String> skipped){
-        for(String s: skipped){
+    public static void registerSkippedHostname(List<String> skipped) {
+        for (String s : skipped) {
             if (!skippedHostName.contains(s.toLowerCase()))
                 skipped.add(s.toLowerCase());
         }

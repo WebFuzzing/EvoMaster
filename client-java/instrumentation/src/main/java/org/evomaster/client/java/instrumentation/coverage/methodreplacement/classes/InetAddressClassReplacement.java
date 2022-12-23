@@ -37,15 +37,18 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
         if (ExternalServiceInfoUtils.skipHostnameOrIp(host) || ExecutionTracer.skipHostname(host))
             return InetAddress.getByName(host);
 
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, host, -1);
-        // Skip if there is a mock server
         try {
-            if (ExecutionTracer.hasLocalAddress(remoteHostInfo.signature())) {
-                String ip = ExecutionTracer.getLocalAddress(remoteHostInfo.signature());
+            if (ExecutionTracer.hasLocalAddress(host)) {
+                String ip = ExecutionTracer.getLocalAddress(host);
                 return InetAddress.getByName(ip);
             }
             return InetAddress.getByName(host);
         } catch (UnknownHostException e) {
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                    host,
+                    -1
+            );
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             throw e;
         }
