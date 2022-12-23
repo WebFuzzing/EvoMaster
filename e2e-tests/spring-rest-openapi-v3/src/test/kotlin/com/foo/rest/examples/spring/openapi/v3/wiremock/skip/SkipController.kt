@@ -9,7 +9,7 @@ class SkipController : SpringController(SkipApplication::class.java) {
 
     override fun getProblemInfo(): ProblemInfo {
         val services: MutableList<ExternalService> = mutableListOf()
-        services.add(ExternalService("http://darpa.int/", 8080))
+        services.add(ExternalService("darpa.int", 8080))
 
         return RestProblem(
             "http://localhost:$sutPort/v3/api-docs",

@@ -33,7 +33,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static InetAddress getByName(String host) throws UnknownHostException {
-        if (ExternalServiceInfoUtils.skipHostnameOrIp(host))
+        if (ExternalServiceInfoUtils.skipHostnameOrIp(host) || ExecutionTracer.skipHostname(host))
             return InetAddress.getByName(host);
 
         ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, -1);
@@ -58,7 +58,7 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static InetAddress[] getAllByName(String host) throws UnknownHostException {
-        if (ExternalServiceInfoUtils.skipHostnameOrIp(host))
+        if (ExternalServiceInfoUtils.skipHostnameOrIp(host) || ExecutionTracer.skipHostname(host))
             return InetAddress.getAllByName(host);
         ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, -1);
         try {
