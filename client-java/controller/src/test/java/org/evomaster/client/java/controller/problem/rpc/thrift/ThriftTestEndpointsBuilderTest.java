@@ -294,6 +294,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
     @Test
     public void testStruct() throws ClassNotFoundException {
+
         EndpointSchema endpoint = getOneEndpoint("testStruct");
         NamedTypedValue response = endpoint.getResponse();
         assertNotNull(response);
@@ -347,10 +348,10 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("com.thrift.example.real.thrift.test.Xtruct arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
         assertEquals(" arg0 = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(2));
-        assertEquals(" arg0.string_thing = \"foo\";", javaCode.get(3));
-        assertEquals(" arg0.byte_thing = 42;", javaCode.get(4));
-        assertEquals(" arg0.i32_thing = 42;", javaCode.get(5));
-        assertEquals(" arg0.i64_thing = 42L;", javaCode.get(6));
+        assertEquals(" arg0.setString_thing(\"foo\");", javaCode.get(3));
+        assertEquals(" arg0.setByte_thing(((byte)(42)));", javaCode.get(4));
+        assertEquals(" arg0.setI32_thing(42);", javaCode.get(5));
+        assertEquals(" arg0.setI64_thing(42L);", javaCode.get(6));
         assertEquals("}", javaCode.get(7));
 
 
@@ -370,9 +371,9 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
         assertEquals("com.thrift.example.real.thrift.test.Xtruct arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
         assertEquals(" arg0 = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(2));
-        assertEquals(" arg0.byte_thing = 0;", javaCode.get(4));
-        assertEquals(" arg0.i32_thing = 0;", javaCode.get(5));
-        assertEquals(" arg0.i64_thing = 0L;", javaCode.get(6));
+        assertEquals(" arg0.setByte_thing(((byte)(0)));", javaCode.get(4));
+        assertEquals(" arg0.setI32_thing(0);", javaCode.get(5));
+        assertEquals(" arg0.setI64_thing(0L);", javaCode.get(6));
         assertEquals("}", javaCode.get(7));
 
 
@@ -463,21 +464,22 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         List<String> javaCode = request.newInstanceWithJava(0);
 
-        assertEquals(14, javaCode.size());
+        assertEquals(15, javaCode.size());
         assertEquals("com.thrift.example.real.thrift.test.Xtruct2 arg0 = null;", javaCode.get(0));
         assertEquals("{", javaCode.get(1));
         assertEquals(" arg0 = new com.thrift.example.real.thrift.test.Xtruct2();", javaCode.get(2));
-        assertEquals(" arg0.byte_thing = 42;", javaCode.get(3));
-        assertEquals(" arg0.struct_thing = null;", javaCode.get(4));
+        assertEquals(" arg0.setByte_thing(((byte)(42)));", javaCode.get(3));
+        assertEquals(" com.thrift.example.real.thrift.test.Xtruct arg0_struct_thing = null;", javaCode.get(4));
         assertEquals(" {", javaCode.get(5));
-        assertEquals("  arg0.struct_thing = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(6));
-        assertEquals("  arg0.struct_thing.string_thing = \"bar\";", javaCode.get(7));
-        assertEquals("  arg0.struct_thing.byte_thing = 100;", javaCode.get(8));
-        assertEquals("  arg0.struct_thing.i32_thing = 100;", javaCode.get(9));
-        assertEquals("  arg0.struct_thing.i64_thing = 100L;", javaCode.get(10));
+        assertEquals("  arg0_struct_thing = new com.thrift.example.real.thrift.test.Xtruct();", javaCode.get(6));
+        assertEquals("  arg0_struct_thing.setString_thing(\"bar\");", javaCode.get(7));
+        assertEquals("  arg0_struct_thing.setByte_thing(((byte)(100)));", javaCode.get(8));
+        assertEquals("  arg0_struct_thing.setI32_thing(100);", javaCode.get(9));
+        assertEquals("  arg0_struct_thing.setI64_thing(100L);", javaCode.get(10));
         assertEquals(" }", javaCode.get(11));
-        assertEquals(" arg0.i32_thing = 42;", javaCode.get(12));
-        assertEquals("}", javaCode.get(13));
+        assertEquals(" arg0.setStruct_thing(arg0_struct_thing);", javaCode.get(12));
+        assertEquals(" arg0.setI32_thing(42);", javaCode.get(13));
+        assertEquals("}", javaCode.get(14));
 
 
 
@@ -799,7 +801,7 @@ public class ThriftTestEndpointsBuilderTest extends RPCEndpointsBuilderTestBase 
 
         List<String> assertionJavaCode = p1.newAssertionWithJava(0, "res1", -1);
         assertEquals(1, assertionJavaCode.size());
-        assertEquals("assertEquals(com.thrift.example.real.thrift.test.Numberz.TWO, res1);", assertionJavaCode.get(0));
+        assertEquals("//assertEquals(com.thrift.example.real.thrift.test.Numberz.TWO, res1);", assertionJavaCode.get(0));
     }
 
     @Test

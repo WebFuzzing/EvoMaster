@@ -12,10 +12,12 @@ import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
+import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunnerCached;
 import org.evomaster.client.java.controller.internal.db.DbSpecification;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
+import org.evomaster.client.java.controller.problem.rpc.JavaXConstraintHandler;
 import org.evomaster.client.java.controller.problem.rpc.RPCExceptionHandler;
 import org.evomaster.client.java.controller.problem.rpc.schema.EndpointSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.InterfaceSchema;
@@ -43,6 +45,7 @@ import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
+import javax.ws.rs.core.Response;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -514,6 +517,35 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return localAuthSetupSchemaMap;
     }
 
+    public RPCProblemDto extractRPCProblemDto(boolean isSutRunning){
+        RPCProblemDto rpcProblem =  new RPCProblemDto();
+
+        // extract RPCSchema
+        extractRPCSchema();
+
+        Map<String, InterfaceSchema> rpcSchemas = getRPCSchema();
+        if (rpcSchemas == null || rpcSchemas.isEmpty()){
+            throw new RuntimeException("Fail to extract RPC interface schema");
+        }
+
+        Map<Integer, LocalAuthSetupSchema> localMap = getLocalAuthSetupSchemaMap();
+        if (localMap!= null && !localMap.isEmpty()){
+            rpcProblem.localAuthEndpointReferences = new ArrayList<>();
+            rpcProblem.localAuthEndpoints = new ArrayList<>();
+            for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
+                rpcProblem.localAuthEndpointReferences.add(e.getKey());
+                rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
+            }
+        }
+
+        // handled seeded tests
+        rpcProblem.seededTestDtos = handleSeededTests(isSutRunning);
+
+        // set the schemas at the end
+        rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
+        return rpcProblem;
+    }
+
     /**
      * extract endpoints info of the RPC interface by reflection based on the specified service interface name
      */
@@ -550,7 +582,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             if (local!=null && !local.isEmpty())
                 localAuthSetupSchemaMap.putAll(local);
         }catch (Exception e){
-//            SimpleLogger.error("Failed to extract the RPC Schema: " + e.getMessage());
             throw new RuntimeException("Failed to extract the RPC Schema: " + e.getMessage());
         }
     }
@@ -559,9 +590,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * parse seeded tests for RPC
      * @return a list of tests, and each test is a list of RCPActionDto
      */
-    public List<List<RPCActionDto>> handleSeededTests(){
+    public List<List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
+        List<SeededRPCTestDto> seedRPCTests;
 
-        if (seedRPCTests() == null || seedRPCTests().isEmpty()) return null;
+        try {
+            // customized implementation might bring some exception
+            seedRPCTests = seedRPCTests();
+        }catch (Exception e){
+            throw new RuntimeException("cannot process the implemented method 'seedRPCTests' due to ", e);
+        }
+
+        if (seedRPCTests == null || seedRPCTests.isEmpty()) return null;
 
         if (rpcInterfaceSchema.isEmpty())
             throw new IllegalStateException("empty RPC interface: The RPC interface schemas are not extracted yet");
@@ -571,52 +610,31 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        List<List<RPCActionDto>> results = new ArrayList<>();
+        List<List<RPCActionDto>> results = RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
 
-        for (SeededRPCTestDto dto: seedRPCTests()){
-            if (dto.rpcFunctions != null && !dto.rpcFunctions.isEmpty()){
-                List<RPCActionDto> test = new ArrayList<>();
-                for (SeededRPCActionDto actionDto : dto.rpcFunctions){
-                    InterfaceSchema schema = rpcInterfaceSchema.get(actionDto.interfaceName);
-                    if (schema != null){
-                        EndpointSchema actionSchema = schema.getOneEndpointWithSeededDto(actionDto);
-                        if (actionSchema != null){
-                            EndpointSchema copy = actionSchema.copyStructure();
-                            for (int i = 0; i < copy.getRequestParams().size(); i++){
-                                // TODO need to check if generic type could be handled with jackson
-                                NamedTypedValue p = copy.getRequestParams().get(i);
-                                try {
-                                    String stringValue = actionDto.inputParams.get(i);
-//                                    Object value = objectMapper.readValue(stringValue, p.getType().getClazz());
-                                    p.setValueBasedOnInstanceOrJson(stringValue);
-
-                                } catch (JsonProcessingException e) {
-                                    throw new IllegalStateException(
-                                            String.format("Seeded Test Error: cannot parse the seeded test %s at the parameter %d with error msg: %s", actionDto, i, e.getMessage()));
-                                }
-                            }
-                            RPCActionDto rpcActionDto = copy.getDto();
-                            rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
-                            if (actionDto.mockRPCExternalServiceDtos!= null && !actionDto.mockRPCExternalServiceDtos.isEmpty())
-                                RPCEndpointsBuilder.buildExternalServiceResponse(schema,
-                                        actionDto.mockRPCExternalServiceDtos.stream().flatMap(s-> s.responseTypes.stream()).distinct().collect(Collectors.toList()),
-                                        rpcType);
-                            test.add(rpcActionDto);
-                        }else {
-                            throw new IllegalStateException("Seeded Test Error: cannot find the action "+actionDto.functionName);
-                        }
-                    } else {
-                        throw new IllegalStateException("Seeded Test Error: cannot find the interface "+ actionDto.interfaceName);
-                    }
+        try{
+            if (isSUTRunning){
+                if (jvmClassToExtract.isEmpty()){
+                /*
+                    distinct might be a bit expensive, however, the specified responses are probably limited
+                 */
+                    Set<String> dtoNames = seedRPCTests.stream()
+                            .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
+                                    .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
+                                            .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
+                    if (dtoNames != null && !dtoNames.isEmpty())
+                        jvmClassToExtract.addAll(dtoNames);
                 }
-                results.add(test);
-            } else {
-                SimpleLogger.warn("Seeded Test: empty RPC function calls for the test "+ dto.testName);
+
+                if (!jvmClassToExtract.isEmpty())
+                    getJvmDtoSchema(jvmClassToExtract);
             }
+        }catch (Exception e){
+            SimpleLogger.recordErrorMessage("Fail to extract JVM Class due to "+ e.getMessage());
         }
+
         return results;
     }
-
 
 
     /**
@@ -1055,23 +1073,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void getJvmDtoSchema(List<String> dtoNames);
 
-    public void getSeededExternalServiceResponseDto(){
+    private void getSeededExternalServiceResponseDto(){
         if (seedRPCTests() != null && !seedRPCTests().isEmpty() ){
 
-            if (jvmClassToExtract.isEmpty()){
-                /*
-                    distinct might be a bit expensive, however, the specified responses are probably limited
-                 */
-                Set<String> dtoNames = seedRPCTests().stream()
-                        .flatMap(s-> s.rpcFunctions == null? Stream.empty() : s.rpcFunctions.stream()
-                                .flatMap(f-> f.mockRPCExternalServiceDtos == null ? Stream.empty() : f.mockRPCExternalServiceDtos.stream()
-                                        .flatMap(e-> e.responseTypes == null ? Stream.empty(): e.responseTypes.stream()))).collect(Collectors.toSet());
-                if (dtoNames != null && !dtoNames.isEmpty())
-                    jvmClassToExtract.addAll(dtoNames);
-            }
 
-            if (!jvmClassToExtract.isEmpty())
-                getJvmDtoSchema(jvmClassToExtract);
         }
     }
 

@@ -10,6 +10,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.oracles.ImplementedOracle
 import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
+import org.evomaster.core.problem.api.service.ApiWsIndividual
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.service.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -141,8 +142,8 @@ class PartialOracles {
      * changes are made to the [EvaluatedIndividual] objects themselves.
      *
      */
-    fun failByOracle(individuals: List<EvaluatedIndividual<RestIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<RestIndividual>>>{
-        val oracleInds = mutableMapOf<String, MutableList<EvaluatedIndividual<RestIndividual>>>()
+    fun failByOracle(individuals: List<EvaluatedIndividual<ApiWsIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<ApiWsIndividual>>>{
+        val oracleInds = mutableMapOf<String, MutableList<EvaluatedIndividual<ApiWsIndividual>>>()
         oracles.forEach { oracle ->
             val failindInds = individuals.filter {
                 it.evaluatedMainActions().any { oracle.selectForClustering(it) }
