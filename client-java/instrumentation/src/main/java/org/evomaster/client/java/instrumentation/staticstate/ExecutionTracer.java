@@ -95,7 +95,7 @@ public class ExecutionTracer {
 
     private static final Object lock = new Object();
 
-    private static final Set<ExternalService> skippedExternalService = new CopyOnWriteArraySet<>();
+    private static List<ExternalService> skippedExternalServices = new CopyOnWriteArrayList<>();
     /**
      * One problem is that, once a test case is evaluated, some background tests might still be running.
      * We want to kill them to avoid issue (eg, when evaluating new tests while previous threads
@@ -127,7 +127,7 @@ public class ExecutionTracer {
             executingAction = false;
             sleepingThreads.clear();
             lastCallerClass = null;
-            skippedExternalService.clear();
+            skippedExternalServices = new ArrayList<>();
         }
     }
 
@@ -210,6 +210,7 @@ public class ExecutionTracer {
 
             if (action.getIndex() == 0) {
                 externalServiceMapping = action.getExternalServiceMapping();
+                skippedExternalServices = action.getSkippedExternalServices();
             }
         }
     }
@@ -687,14 +688,14 @@ public class ExecutionTracer {
 
 
     public static boolean skipHostname(String hostname) {
-        return skippedExternalService
+        return skippedExternalServices
                 .stream()
                 .filter(e -> e.getHostname().equals(hostname.toLowerCase()))
                 .count() > 0;
     }
 
     public static boolean skipHostnameAndPort(String hostname, int port) {
-        return skippedExternalService
+        return skippedExternalServices
                 .stream()
                 .filter(e -> e.getHostname().equals(hostname.toLowerCase()) && e.getPort() == port)
                 .count() > 0;

@@ -20,12 +20,12 @@ class SkipRest {
             val data = connection.getInputStream().bufferedReader().use(BufferedReader::readText)
 
             if (data == "\"HELLO THERE!!!\""){
-                ResponseEntity.ok("OK")
-            } else{
                 ResponseEntity.status(500).build()
+            } else{
+                ResponseEntity.ok("OK")
             }
         } catch (e: Exception) {
-            ResponseEntity.status(500).build()
+            ResponseEntity.ok("OK")
         }
     }
 }

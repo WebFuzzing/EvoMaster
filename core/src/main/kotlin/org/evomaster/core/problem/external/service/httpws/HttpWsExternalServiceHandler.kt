@@ -103,7 +103,7 @@ class HttpWsExternalServiceHandler {
         if (skippedExternalServices.contains(externalServiceInfo.toExternalService())) {
             return
         }
-        
+
         val existing =
             externalServices.filterValues { it.getIP() == externalServiceInfo.remoteHostname && !it.isActive() }
 
@@ -271,6 +271,17 @@ class HttpWsExternalServiceHandler {
 
     fun registerExternalServiceToSkip(service: ExternalService) {
         skippedExternalServices.add(service)
+    }
+
+    fun getSkippedExternalServices(): List<ExternalServiceDto> {
+        val output: MutableList<ExternalServiceDto> = mutableListOf()
+        skippedExternalServices.forEach {
+            val dto = ExternalServiceDto()
+            dto.hostname = it.getHostName()
+            dto.port = it.getPort()
+            output.add(dto)
+        }
+        return output
     }
 
 }

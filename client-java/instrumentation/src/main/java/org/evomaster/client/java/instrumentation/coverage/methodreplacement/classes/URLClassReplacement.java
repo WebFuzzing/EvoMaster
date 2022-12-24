@@ -142,10 +142,6 @@ public class URLClassReplacement implements MethodReplacementClass {
     }
 
     private static URL getReplacedURL(URL caller) throws java.io.IOException {
-        /*
-          Add the external service hostname to the ExecutionTracer
-          */
-
         String protocol = caller.getProtocol();
 
         int port = caller.getPort();
