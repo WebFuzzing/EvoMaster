@@ -107,7 +107,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         initExternalServiceInfo(infoDto)
 
         // TODO: temp
-        registerExternalServicesToSkip(problem.servicesToNotMock)
+        if (problem.servicesToNotMock != null) {
+            registerExternalServicesToSkip(problem.servicesToNotMock)
+        }
 
         initAdHocInitialIndividuals()
 
