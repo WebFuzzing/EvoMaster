@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.SeededRPCActionD
 import org.evomaster.client.java.controller.problem.rpc.schema.params.NamedTypedValue;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.CycleObjectType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -187,9 +188,9 @@ public final class InterfaceSchema{
             return list.get(0);
 
         if (list.size() > 1)
-            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified dto");
+            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified dto "+dto.descriptiveInfo());
 
-        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified dto");
+        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified dto " + dto.descriptiveInfo());
     }
 
 
@@ -205,9 +206,14 @@ public final class InterfaceSchema{
             return list.get(0);
 
         if (list.size() > 1)
-            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified seeded test dto");
+            throw new RuntimeException("ERROR: there exists more than 1 endpoint which conforms with the specified seeded test dto "+dto.descriptiveInfo());
 
-        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified seeded test dto");
+        if (skippedEndpoints.contains(dto.functionName)){
+            SimpleLogger.uniqueWarn("Fail to handle the ");
+            return null;
+        }
+
+        throw new RuntimeException("ERROR: there does not exist any endpoint which conforms with the specified seeded test dto "+dto.descriptiveInfo());
     }
 
     public String getName() {

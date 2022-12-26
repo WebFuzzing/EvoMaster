@@ -14,6 +14,7 @@ import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.*
 import com.google.gson.*
+import org.evomaster.core.problem.api.service.ApiWsIndividual
 
 /**
  * Created by arcuri82 on 11-Nov-19.
@@ -78,7 +79,7 @@ object TestSuiteSplitter {
                     // TODO: BMR - what is the executive summary behaviour for 1 or fewer errors?
                     splitResult.executiveSummary = sol
                 } else {
-                    val clusters = conductClustering(sol as Solution<RestIndividual>, oracles, config, metrics, splitResult)
+                    val clusters = conductClustering(sol as Solution<ApiWsIndividual>, oracles, config, metrics, splitResult)
                     splitByCluster(clusters, sol, oracles, splitResult, config)
                 }
 
@@ -89,7 +90,7 @@ object TestSuiteSplitter {
         return splitResult
     }
 
-    private fun conductClustering(solution: Solution<RestIndividual>,
+    private fun conductClustering(solution: Solution<ApiWsIndividual>,
                                   oracles: PartialOracles = PartialOracles(),
                                   config: EMConfig,
                                   metrics: List<DistanceMetric<HttpWsCallResult>>,
@@ -152,13 +153,13 @@ object TestSuiteSplitter {
      */
 
     private fun execSummary(clusters : MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
-                            solution: Solution<RestIndividual>,
+                            solution: Solution<ApiWsIndividual>,
                             oracles: PartialOracles,
                             splitResult: SplitResult
-            ) : Solution<RestIndividual> {
+            ) : Solution<ApiWsIndividual> {
 
         // MutableSet is used here to ensure the uniqueness of TestCases selected for the executive summary.
-        val execSol = mutableSetOf<EvaluatedIndividual<RestIndividual>>()
+        val execSol = mutableSetOf<EvaluatedIndividual<ApiWsIndividual>>()
         clusters.values.forEach { it.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
                 ind.evaluatedMainActions().any { ac -> clu.contains(ac.result as HttpWsCallResult) }
@@ -177,7 +178,7 @@ object TestSuiteSplitter {
     }
 
     private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<HttpWsCallResult>>>,
-                               solution: Solution<RestIndividual>,
+                               solution: Solution<ApiWsIndividual>,
                                oracles: PartialOracles,
                                splitResult: SplitResult,
                                config: EMConfig) : SplitResult {
@@ -206,7 +207,7 @@ object TestSuiteSplitter {
         val solRemainder = Solution(remainder, solution.testSuiteNamePrefix, solution.testSuiteNameSuffix, Termination.OTHER)
 
         // Failures by cluster
-        val sumSol = mutableSetOf<EvaluatedIndividual<RestIndividual>>()
+        val sumSol = mutableSetOf<EvaluatedIndividual<ApiWsIndividual>>()
         sumSol.addAll(solution.individuals.filter { it.clusterAssignments.size > 0 })
 
         val skipped = solution.individuals.filter { ind ->

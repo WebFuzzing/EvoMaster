@@ -261,6 +261,7 @@ abstract class ApiWsFitness<T> : FitnessFunction<T>() where T : Individual {
             this.index = index
             //for now, we only include specialized regex
             this.inputVariables = TaintAnalysis.getRegexTaintedValues(action)
+            this.name = action.getName()
         }
     }
 }

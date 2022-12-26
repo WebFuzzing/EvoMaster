@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * seeded RPC action
@@ -34,6 +35,20 @@ public class SeededRPCActionDto {
      */
     public List<String> inputParamTypes;
 
-    // assertion, excepted results ?
+    /**
+     * expected response if has
+     *
+     * currently, we only support json format
+     */
+    public String expectedResponse;
+
+    /**
+     *
+     * @return descriptive info for the action, ie, interface::actionName
+     */
+    public String descriptiveInfo(){
+        return ((interfaceName!=null)?interfaceName:"SEED_TEST_NULL_INTERFACE")+
+                "::"+((functionName!=null)?functionName:"SEED_TEST_NULL_ACTION_NAME");
+    }
 
 }

@@ -116,7 +116,7 @@ Depending on the year, we might have funding for _postdoc_ and _PhD student_ pos
 
 Current positions:
 * 2023: 3 PhD students ([apply here](https://www.kristiania.no/en/about-kristiania/vacant-positions/?rmpage=job&rmjob=549&rmlang=UK)) 
-  and 1 postdoc ([apply here](https://www.kristiania.no/en/about-kristiania/vacant-positions/?rmpage=job&rmjob=556&rmlang=UK))
+ 
 
 For questions on these positions, please contact Prof. Andrea Arcuri. 
 
