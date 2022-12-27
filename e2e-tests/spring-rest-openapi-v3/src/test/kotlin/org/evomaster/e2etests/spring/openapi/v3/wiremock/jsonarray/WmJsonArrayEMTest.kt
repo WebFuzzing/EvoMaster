@@ -34,7 +34,7 @@ class WmJsonArrayEMTest : SpringTestBase() {
             "WmJsonArrayEM",
             "org.foo.WmJsonArrayEM",
             1000,
-            !CIUtils.isRunningGA(), //TODO skip test generation due to https://github.com/alibaba/java-dns-cache-manipulator/issues/115
+            true,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
