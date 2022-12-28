@@ -1,6 +1,6 @@
 package org.evomaster.client.java.instrumentation.heuristic;
 
-import org.evomaster.client.java.instrumentation.heuristic.validator.*;
+import org.evomaster.client.java.instrumentation.heuristic.validator.javax.*;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.ConstraintViolation;
