@@ -26,6 +26,7 @@
         <module>client-java</module>
         <module>e2e-tests</module>
         <module>report</module>
+        <module>test-old-libraries</module>
     </modules>
 
     <issueManagement>

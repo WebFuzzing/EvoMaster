@@ -9,10 +9,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Heuristics calculation for Java Beans, when dealing with javax.validation constraints
@@ -161,39 +159,13 @@ ScriptAssert
 UniqueElements
 URL
 
-
 MISSING Jakarta
 TODO
-
-MISSING  JIRUKTA
-EachAssertFalse
-EachAssertTrue
-EachConstraint
-EachCreditCardNumber
-EachDecimalMax
-EachDecimalMin
-EachDigits
-EachEAN
-EachEmail
-EachFuture
-EachLength
-EachLuhnCheck
-EachMax
-EachMin
-EachMod10Check
-EachMod11Check
-EachNotBlank
-EachNotEmpty
-EachNotNull
-EachPast
-EachPattern
-EachRange
-EachSafeHtml
-EachScriptAssert
-EachSize
-EachURL
-
              */
+
+        if(jirukta){
+            return handleJiruktaConstraint(annotationType, invalidValue, attributes);
+        }
 
         //Numeric constraints. Note that null values are valid here
         if(annotationType.endsWith(".Min")){
@@ -256,6 +228,80 @@ EachURL
         return defaultFailed;
     }
 
+    private static double handleJiruktaConstraint(String annotationType, Object invalidValue, Map<String, Object> attributes) {
+
+       /*
+        Old library, which is deprecated. Recent javax.validation can handle collections.
+        So, handling all cases here is likely low priority.
+        Originally handled due its use in OCVN.
+
+       MISSING  JIRUKTA
+EachAssertFalse
+EachAssertTrue
+EachConstraint
+EachCreditCardNumber
+EachDecimalMax
+EachDecimalMin
+EachDigits
+EachEAN
+EachEmail
+EachFuture
+EachLength
+EachLuhnCheck
+EachMax
+EachMin
+EachMod10Check
+EachMod11Check
+EachNotBlank
+EachNotEmpty
+EachNotNull
+EachPast
+EachSafeHtml
+EachScriptAssert
+EachSize
+EachURL
+        */
+
+        if(annotationType.endsWith(".EachRange")){
+            List<Integer> values = (List<Integer>) invalidValue;
+
+            int sum = 0;
+
+            for(Integer k : values){
+                sum += getDistanceForRange(k, attributes);
+            }
+
+            return DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, sum);
+        }
+
+        if(annotationType.endsWith(".EachPattern")) {
+
+            List<String> values = (List<String>) invalidValue;
+            String regexp = attributes.get("regexp").toString();
+
+            int mismatches = 0;
+
+            for(String value : values) {
+                if (ExecutionTracer.isTaintInput(value)) {
+                    ExecutionTracer.addStringSpecialization(value,
+                            new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regexp));
+                }
+
+                boolean matched = value.matches(regexp);
+                if(!matched){
+                    mismatches++;
+                }
+            }
+
+            assert mismatches > 0;
+
+            return DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, mismatches);
+        }
+
+        SimpleLogger.warn("Not able to handle constrain type: " + annotationType);
+        return defaultFailed;
+    }
+
     private static double computeHeuristicForNoGradientButNullIsNotValid(Object invalidValue){
         if(invalidValue == null){
             return DistanceHelper.H_REACHED_BUT_NULL;
@@ -264,8 +310,7 @@ EachURL
         return DistanceHelper.H_NOT_NULL;
     }
 
-
-    private static double computeHeuristicForSize(Object invalidValue, Map<String, Object> attributes) {
+    private static double computeHeuristicForSize(Object invalidValue, Map<String, Object> attributes){
 
         assert invalidValue != null; //@Size is true on null element, so would not be a violation
         //however it is NOT the case for @NotEmpty where null fails.
@@ -278,17 +323,32 @@ EachURL
             return DistanceHelper.H_NOT_NULL;
         }
 
+        return computeHeuristicForRange(size, attributes);
+    }
+
+    private static int getDistanceForRange(Object invalidValue, Map<String, Object> attributes){
+
+        int value = ((Number)invalidValue).intValue();
+
         int min = ((Number) attributes.get("min")).intValue();
         int max = ((Number) attributes.get("max")).intValue();
 
         if(min > max){
             //is this even possible?
             SimpleLogger.warn("Impossible to satisfy constraint min>max : " + min +">" + max);
-            return DistanceHelper.H_NOT_NULL;
+            return -1;
         }
 
-        int distance = DistanceHelper.distanceToRange(size, min, max);
-        assert distance > 0;
+        return DistanceHelper.distanceToRange(value, min, max);
+    }
+
+    private static double computeHeuristicForRange(Object invalidValue, Map<String, Object> attributes) {
+
+        int distance = getDistanceForRange(invalidValue, attributes);
+        if(distance < 0){
+            return DistanceHelper.H_NOT_NULL;
+        }
+        assert distance != 0;
 
         return DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, distance);
     }
@@ -397,11 +457,20 @@ EachURL
                     try {
                         constraints = (Set<Object>) it.getClass().getMethod("getConstraintDescriptors")
                                         .invoke(it);
-                        collectionConstraints = (Set<Object>) it.getClass().getMethod("getConstrainedContainerElementTypes")
-                                .invoke(it);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
+
+                    try {
+                        collectionConstraints = (Set<Object>) it.getClass().getMethod("getConstrainedContainerElementTypes")
+                                .invoke(it);
+                    } catch (NoSuchMethodException e){
+                        //old versions of Hibernate do not have this method
+                        collectionConstraints = new HashSet<>();
+                    } catch (Exception e){
+                        throw new RuntimeException(e);
+                    }
+
                     return constraints.size() + collectionConstraints.size();
                 })
                 .sum();
