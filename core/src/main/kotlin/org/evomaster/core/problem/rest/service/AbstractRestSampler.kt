@@ -3,9 +3,11 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.external.service.ExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
@@ -103,6 +105,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         initSqlInfo(infoDto)
 
         initExternalServiceInfo(infoDto)
+
+        // TODO: temp
+        if (problem.servicesToNotMock != null) {
+            registerExternalServicesToSkip(problem.servicesToNotMock)
+        }
 
         initAdHocInitialIndividuals()
 
@@ -338,7 +345,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }
     }
 
-    fun getExternalService(): HttpWsExternalServiceHandler {
-        return externalServiceHandler
+    private fun registerExternalServicesToSkip(services: List<ExternalServiceDto>) {
+        services.forEach {
+            externalServiceHandler.registerExternalServiceToSkip(ExternalService(
+                it.hostname,
+                it.port
+            ))
+        }
     }
+
 }

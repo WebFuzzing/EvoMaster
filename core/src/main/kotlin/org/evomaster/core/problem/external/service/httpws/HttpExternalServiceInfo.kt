@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.external.service.httpws
 
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
+import org.evomaster.core.problem.external.service.ExternalService
 
 
 open class HttpExternalServiceInfo(
@@ -71,5 +72,9 @@ open class HttpExternalServiceInfo(
 
     fun updateRemotePort(port: Int) {
         remotePort = port
+    }
+
+    fun toExternalService() : ExternalService {
+        return ExternalService(remoteHostname, remotePort)
     }
 }

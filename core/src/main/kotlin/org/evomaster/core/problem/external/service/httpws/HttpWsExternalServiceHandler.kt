@@ -1,8 +1,10 @@
 package org.evomaster.core.problem.external.service.httpws
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.external.service.ExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isAddressAvailable
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isReservedIP
@@ -47,6 +49,8 @@ class HttpWsExternalServiceHandler {
      * Mapped against to signature of the [HttpWsExternalService].
      */
     private val externalServices: MutableMap<String, HttpWsExternalService> = mutableMapOf()
+
+    private val skippedExternalServices: MutableList<ExternalService> = mutableListOf()
 
 
     /**
@@ -96,6 +100,10 @@ class HttpWsExternalServiceHandler {
     }
 
     private fun registerHttpExternalServiceInfo(externalServiceInfo: HttpExternalServiceInfo) {
+        if (skippedExternalServices.contains(externalServiceInfo.toExternalService())) {
+            return
+        }
+
         val existing =
             externalServices.filterValues { it.getIP() == externalServiceInfo.remoteHostname && !it.isActive() }
 
@@ -261,5 +269,19 @@ class HttpWsExternalServiceHandler {
         es.getWireMockServer().stubFor(es.getDefaultWMMappingBuilder())
     }
 
+    fun registerExternalServiceToSkip(service: ExternalService) {
+        skippedExternalServices.add(service)
+    }
+
+    fun getSkippedExternalServices(): List<ExternalServiceDto> {
+        val output: MutableList<ExternalServiceDto> = mutableListOf()
+        skippedExternalServices.forEach {
+            val dto = ExternalServiceDto()
+            dto.hostname = it.getHostName()
+            dto.port = it.getPort()
+            output.add(dto)
+        }
+        return output
+    }
 
 }
