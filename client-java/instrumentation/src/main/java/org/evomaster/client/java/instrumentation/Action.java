@@ -24,8 +24,15 @@ public class Action implements Serializable {
      */
     private final Map<String, String> externalServiceMapping;
 
+    /**
+     * A map of external service domain name against to the local IP
+     * address used inside external service handling.
+     */
     private final Map<String, String> localAddressMapping;
 
+    /**
+     * A list of external services, which will be skipped from handling.
+     */
     private final List<ExternalService> skippedExternalServices;
 
     public Action(int index, String name, Collection<String> inputVariables, Map<String, String> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {

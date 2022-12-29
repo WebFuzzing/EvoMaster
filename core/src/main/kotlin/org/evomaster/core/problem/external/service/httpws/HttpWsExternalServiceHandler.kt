@@ -57,6 +57,10 @@ class HttpWsExternalServiceHandler {
      */
     private val localAddressMapping: MutableMap<String, String> = mutableMapOf()
 
+    /**
+     * Skipped external services information provided through the driver to skip from
+     * handling.
+     */
     private val skippedExternalServices: MutableList<ExternalService> = mutableListOf()
 
     /**
