@@ -1,11 +1,9 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by arcuri82 on 16-Sep-19.
@@ -46,4 +44,7 @@ public class ActionDto {
     public Map<String, String> externalServiceMapping = new HashMap<>();
 
     public Map<String, String> localAddressMapping = new HashMap<>();
+
+    public List<ExternalServiceDto> skippedExternalServices = new ArrayList<>();
+
 }

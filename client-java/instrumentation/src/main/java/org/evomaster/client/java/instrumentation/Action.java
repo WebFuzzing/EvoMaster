@@ -26,12 +26,15 @@ public class Action implements Serializable {
 
     private final Map<String, String> localAddressMapping;
 
-    public Action(int index, String name, Collection<String> inputVariables, Map<String, String> externalServiceMapping, Map<String, String> localAddressMapping) {
+    private final List<ExternalService> skippedExternalServices;
+
+    public Action(int index, String name, Collection<String> inputVariables, Map<String, String> externalServiceMapping, Map<String, String> localAddressMapping, List<ExternalService> skippedExternalServices) {
         this.index = index;
         this.name = name;
         this.inputVariables = Collections.unmodifiableSet(new HashSet<>(inputVariables));
         this.externalServiceMapping = Collections.unmodifiableMap(new HashMap<>(externalServiceMapping));
         this.localAddressMapping = Collections.unmodifiableMap(new HashMap<>(localAddressMapping));
+        this.skippedExternalServices = Collections.unmodifiableList(new ArrayList<>(skippedExternalServices));
     }
 
     public int getIndex() {
@@ -42,9 +45,17 @@ public class Action implements Serializable {
         return inputVariables;
     }
 
-    public Map<String, String> getExternalServiceMapping() { return externalServiceMapping; }
+    public Map<String, String> getExternalServiceMapping() {
+        return externalServiceMapping;
+    }
 
-    public Map<String, String> getLocalAddressMapping() { return localAddressMapping; }
+    public Map<String, String> getLocalAddressMapping() {
+        return localAddressMapping;
+    }
+
+    public List<ExternalService> getSkippedExternalServices() {
+        return skippedExternalServices;
+    }
 
     public String getName() {
         return name;

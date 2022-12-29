@@ -99,7 +99,7 @@ public class ExecutionTracer {
 
     private static final Object lock = new Object();
 
-    private static final Set<String> skippedHostName = new CopyOnWriteArraySet<>();
+    private static List<ExternalService> skippedExternalServices = new CopyOnWriteArrayList<>();
     /**
      * One problem is that, once a test case is evaluated, some background tests might still be running.
      * We want to kill them to avoid issue (eg, when evaluating new tests while previous threads
@@ -131,7 +131,7 @@ public class ExecutionTracer {
             executingAction = false;
             sleepingThreads.clear();
             lastCallerClass = null;
-            skippedHostName.clear();
+            skippedExternalServices = new ArrayList<>();
         }
     }
 
@@ -215,6 +215,7 @@ public class ExecutionTracer {
             if (action.getIndex() == 0) {
                 externalServiceMapping = action.getExternalServiceMapping();
                 localAddressMapping = action.getLocalAddressMapping();
+                skippedExternalServices = action.getSkippedExternalServices();
             }
         }
     }
@@ -720,16 +721,18 @@ public class ExecutionTracer {
         return localAddressMapping.get(hostname);
     }
 
-    public static void registerSkippedHostname(List<String> skipped) {
-        for (String s : skipped) {
-            if (!skippedHostName.contains(s.toLowerCase()))
-                skipped.add(s.toLowerCase());
-        }
-    }
-
     public static boolean skipHostname(String hostname) {
-        return skippedHostName.contains(hostname.toLowerCase());
+        return skippedExternalServices
+                .stream()
+                .filter(e -> e.getHostname().equals(hostname.toLowerCase()))
+                .count() > 0;
     }
 
+    public static boolean skipHostnameAndPort(String hostname, int port) {
+        return skippedExternalServices
+                .stream()
+                .filter(e -> e.getHostname().equals(hostname.toLowerCase()) && e.getPort() == port)
+                .count() > 0;
+    }
 
 }

@@ -33,7 +33,7 @@ public class SocketClassReplacement implements MethodReplacementClass {
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
             if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName())
-                    || ExecutionTracer.skipHostname(socketAddress.getHostName())
+                    || ExecutionTracer.skipHostnameAndPort(socketAddress.getHostName(), socketAddress.getPort())
             ) {
                 caller.connect(endpoint, timeout);
                 return;
@@ -49,15 +49,14 @@ public class SocketClassReplacement implements MethodReplacementClass {
                     and if there is a mapping available then Socket will use that value to connect. Otherwise,
                     nothing will happen.
                  */
-                    if (ExecutionTracer.hasLocalAddressReplacement(socketAddress.getHostName())) {
-                        String newHostname = ExecutionTracer.getRemoteHostname(socketAddress.getHostName());
-                        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
-                                ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
-                                newHostname,
-                                socketAddress.getPort()
-                        );
-
-                        String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, socketAddress.getPort());
+                if (ExecutionTracer.hasLocalAddressReplacement(socketAddress.getHostName())) {
+                    String newHostname = ExecutionTracer.getRemoteHostname(socketAddress.getHostName());
+                    ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                            ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                            newHostname,
+                            socketAddress.getPort()
+                    );
+                    String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, socketAddress.getPort());
 
                     InetSocketAddress replaced = new InetSocketAddress(InetAddress.getByName(ipAndPort[0]), Integer.parseInt(ipAndPort[1]));
                     caller.connect(replaced, timeout);
