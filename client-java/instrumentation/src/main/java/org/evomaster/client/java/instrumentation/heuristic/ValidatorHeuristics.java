@@ -232,8 +232,11 @@ TODO
 
        /*
         Old library, which is deprecated. Recent javax.validation can handle collections.
-        So, handling all cases here is likely low priority.
+        TODO: So, handling all cases here is likely low priority.
         Originally handled due its use in OCVN.
+
+        Note: tests for these are in different module, to handle conflicting libraries.
+        See ValidationHeuristicsJiruktaTest
 
        MISSING  JIRUKTA
 EachAssertFalse
