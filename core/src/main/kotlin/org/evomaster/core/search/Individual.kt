@@ -4,8 +4,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.problem.external.service.ApiExternalServiceAction
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState

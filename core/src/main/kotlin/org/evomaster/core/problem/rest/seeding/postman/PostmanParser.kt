@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.seeding.postman
 
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.seeding.AbstractParser

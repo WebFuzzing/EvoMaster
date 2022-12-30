@@ -2,9 +2,9 @@ package org.evomaster.core.problem.graphql
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene

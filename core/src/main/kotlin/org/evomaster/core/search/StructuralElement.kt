@@ -1,7 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.slf4j.LoggerFactory

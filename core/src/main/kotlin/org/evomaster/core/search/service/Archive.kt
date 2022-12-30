@@ -6,9 +6,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
 import org.evomaster.core.Lazy
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.Termination
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.*
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor

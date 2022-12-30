@@ -6,9 +6,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
 import org.evomaster.core.output.service.TestWriterUtils.Companion.handleDefaultStubForAsJavaOrKotlin
-import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.external.service.httpws.HttpWsExternalService
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual

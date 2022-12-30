@@ -9,7 +9,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
