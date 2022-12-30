@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.web.service
+package org.evomaster.core.problem.webfrontend.service
 
 import com.google.inject.AbstractModule
 
