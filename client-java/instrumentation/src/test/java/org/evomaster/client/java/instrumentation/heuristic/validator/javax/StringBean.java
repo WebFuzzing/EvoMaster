@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation.heuristic.validator;
+package org.evomaster.client.java.instrumentation.heuristic.validator.javax;
 
 import javax.validation.constraints.*;
 import java.util.List;

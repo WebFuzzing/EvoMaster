@@ -1,6 +1,6 @@
-package org.evomaster.client.java.instrumentation.heuristic.validator.custom;
+package org.evomaster.client.java.instrumentation.heuristic.validator.javax.custom;
 
-import org.evomaster.client.java.instrumentation.heuristic.validator.ClassConstraintsBean;
+import org.evomaster.client.java.instrumentation.heuristic.validator.javax.ClassConstraintsBean;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
