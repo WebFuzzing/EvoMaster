@@ -824,6 +824,7 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
+            actionDto.localAddressMapping = externalServiceHandler.getLocalAddressMapping()
             actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
         }
         return actionDto

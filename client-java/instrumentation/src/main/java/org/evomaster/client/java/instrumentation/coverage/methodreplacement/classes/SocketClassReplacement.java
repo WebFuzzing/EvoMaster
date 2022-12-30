@@ -29,23 +29,39 @@ public class SocketClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static void connect(Socket caller, SocketAddress endpoint, int timeout) throws IOException {
-        if (endpoint instanceof InetSocketAddress){
+        if (endpoint instanceof InetSocketAddress) {
             InetSocketAddress socketAddress = (InetSocketAddress) endpoint;
 
             if (ExternalServiceInfoUtils.skipHostnameOrIp(socketAddress.getHostName())
                     || ExecutionTracer.skipHostnameAndPort(socketAddress.getHostName(), socketAddress.getPort())
-            ){
+            ) {
                 caller.connect(endpoint, timeout);
                 return;
             }
 
-            if (socketAddress.getAddress() instanceof Inet4Address){
-                ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL, socketAddress.getHostName(), socketAddress.getPort());
-                String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, socketAddress.getPort());
+            if (socketAddress.getAddress() instanceof Inet4Address) {
+                /*
+                    Socket information will be replaced if there is a mapping available for the given address.
+                    Inet replacement will pass down the local IP address to Socket instead of the remote host name.
+                    Which will create another entry to mock. This will work, but created test case will have
+                    local IP address as the DNS record. Actual remote hostname will be lost since Socket will keep
+                    passing the replaced IP information to core with port. To avoid this, a reverse lookup is done
+                    and if there is a mapping available then Socket will use that value to connect. Otherwise,
+                    nothing will happen.
+                 */
+                if (ExecutionTracer.hasLocalAddressReplacement(socketAddress.getHostName())) {
+                    String newHostname = ExecutionTracer.getRemoteHostname(socketAddress.getHostName());
+                    ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                            ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                            newHostname,
+                            socketAddress.getPort()
+                    );
+                    String[] ipAndPort = collectExternalServiceInfo(remoteHostInfo, socketAddress.getPort());
 
-                InetSocketAddress replaced = new InetSocketAddress(InetAddress.getByName(ipAndPort[0]), Integer.parseInt(ipAndPort[1]));
-                caller.connect(replaced, timeout);
-                return;
+                    InetSocketAddress replaced = new InetSocketAddress(InetAddress.getByName(ipAndPort[0]), Integer.parseInt(ipAndPort[1]));
+                    caller.connect(replaced, timeout);
+                    return;
+                }
             }
         }
         SimpleLogger.warn("not handle the type of endpoint yet:" + endpoint.getClass().getName());

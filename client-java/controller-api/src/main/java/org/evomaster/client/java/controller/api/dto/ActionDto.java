@@ -43,5 +43,17 @@ public class ActionDto {
      */
     public Map<String, String> externalServiceMapping = new HashMap<>();
 
+    /**
+     * Mapping of external service domain name and local address used
+     * for mocking.
+     */
+    public Map<String, String> localAddressMapping = new HashMap<>();
+
+    /**
+     * List of skipped external services from handling inside core.
+     * Information will be retrieved from [ProblemInfo] provided inside the
+     * driver.
+     */
     public List<ExternalServiceDto> skippedExternalServices = new ArrayList<>();
+
 }

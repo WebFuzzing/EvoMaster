@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.isDefaultSignature
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.problem.external.service.ExternalService
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.generateRandomIPAddress
 import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceUtils.isAddressAvailable
@@ -50,8 +51,17 @@ class HttpWsExternalServiceHandler {
      */
     private val externalServices: MutableMap<String, HttpWsExternalService> = mutableMapOf()
 
-    private val skippedExternalServices: MutableList<ExternalService> = mutableListOf()
+    /**
+     * Map from hostname (used in SUT for external services) and local ip addresses, that we resolve
+     * those hostname (ie like DNS)
+     */
+    private val localAddressMapping: MutableMap<String, String> = mutableMapOf()
 
+    /**
+     * Skipped external services information provided through the driver to skip from
+     * handling.
+     */
+    private val skippedExternalServices: MutableList<ExternalService> = mutableListOf()
 
     /**
      * Contains last used loopback address for reference when creating
@@ -107,24 +117,49 @@ class HttpWsExternalServiceHandler {
         val existing =
             externalServices.filterValues { it.getIP() == externalServiceInfo.remoteHostname && !it.isActive() }
 
-        if (existing.isNotEmpty()) {
-            existing.forEach { (_, e) ->
-                e.updateRemotePort(externalServiceInfo.remotePort)
-                e.startWireMock()
-            }
-        } else if (!externalServices.containsKey(externalServiceInfo.signature())) {
-            val ip = getIP(externalServiceInfo.remotePort)
-            lastIPAddress = ip
-
-            val es = HttpWsExternalService(externalServiceInfo, ip)
-
-            if (!externalServiceInfo.isPartial() &&
-                isAddressAvailable(es.getIP(), externalServiceInfo.remotePort)
-            ) {
-                es.startWireMock()
+        val ip: String = localAddressMapping[externalServiceInfo.remoteHostname]
+            ?: run {
+                val x = getNewIP()
+                lastIPAddress = x
+                localAddressMapping[externalServiceInfo.remoteHostname] = x
+                x
             }
 
-            externalServices[externalServiceInfo.signature()] = es
+        val registered = externalServices.filterValues {
+            it.getRemoteHostName() == externalServiceInfo.remoteHostname &&
+                    !it.isActive()
+        }
+
+        if (registered.isNotEmpty()) {
+            registered.forEach { (k, e) ->
+                if (!externalServiceInfo.isPartial()) {
+                    e.updateRemotePort(externalServiceInfo.remotePort)
+                    e.startWireMock()
+                    /*
+                        Signature should be updated after the port is updated
+                        So the existing element will be removed from the map.
+                        After port information is updated element will be added
+                        to the map with the new key.
+                     */
+                    externalServices[e.getSignature()] = e
+                    externalServices.remove(k)
+                }
+            }
+        } else {
+            if (!externalServices.containsKey(externalServiceInfo.signature())) {
+                val es = HttpWsExternalService(externalServiceInfo, ip)
+
+                if (!externalServiceInfo.isPartial()) {
+                    Lazy.assert { isAddressAvailable(es.getIP(), externalServiceInfo.remotePort) }
+                    es.startWireMock()
+                }
+
+                /*
+                    External service information will be added if it is not there
+                    in the map already.
+                 */
+                externalServices[es.getSignature()] = es
+            }
         }
     }
 
@@ -132,11 +167,15 @@ class HttpWsExternalServiceHandler {
         return externalServices.mapValues { it.value.getIP() }
     }
 
+    fun getLocalAddressMapping(): Map<String, String> {
+        return localAddressMapping
+    }
+
     /**
      * Will return the next available IP address from the last know IP address
      * used for external service.
      */
-    private fun getNextAvailableAddress(port: Int): String {
+    private fun getNextAvailableAddress(): String {
         return nextIPAddress(lastIPAddress)
     }
 
@@ -145,7 +184,7 @@ class HttpWsExternalServiceHandler {
      * while checking the availability. If not available will
      * generate a new one.
      */
-    private fun generateRandomAvailableAddress(port: Int): String {
+    private fun generateRandomAvailableAddress(): String {
         return generateRandomIPAddress(randomness)
     }
 
@@ -223,22 +262,22 @@ class HttpWsExternalServiceHandler {
      * If user provided IP address isn't available on the port
      * IllegalStateException will be thrown.
      */
-    private fun getIP(port: Int): String {
+    private fun getNewIP(): String {
         val ip: String
         when (config.externalServiceIPSelectionStrategy) {
             // Although the default address will be a random, this
             // option allows selecting explicitly
             EMConfig.ExternalServiceIPSelectionStrategy.RANDOM -> {
                 ip = if (externalServices.isNotEmpty()) {
-                    getNextAvailableAddress(port)
+                    getNextAvailableAddress()
                 } else {
-                    generateRandomAvailableAddress(port)
+                    generateRandomAvailableAddress()
                 }
             }
 
             EMConfig.ExternalServiceIPSelectionStrategy.USER -> {
                 ip = if (externalServices.isNotEmpty()) {
-                    getNextAvailableAddress(port)
+                    getNextAvailableAddress()
                 } else {
                     if (!isReservedIP(config.externalServiceIP)) {
                         config.externalServiceIP
@@ -250,9 +289,9 @@ class HttpWsExternalServiceHandler {
 
             else -> {
                 ip = if (externalServices.isNotEmpty()) {
-                    getNextAvailableAddress(port)
+                    getNextAvailableAddress()
                 } else {
-                    generateRandomAvailableAddress(port)
+                    generateRandomAvailableAddress()
                 }
             }
         }

@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Methods of this class will be injected in the SUT to
@@ -72,6 +73,9 @@ public class ExecutionTracer {
      * A map of external service hostname and WireMock IP mapping information
      */
     private static Map<String, String> externalServiceMapping = new HashMap<>();
+
+
+    private static Map<String, String> localAddressMapping = new HashMap<>();
 
     /**
      * Besides code coverage, there might be other events that we want to
@@ -210,6 +214,7 @@ public class ExecutionTracer {
 
             if (action.getIndex() == 0) {
                 externalServiceMapping = action.getExternalServiceMapping();
+                localAddressMapping = action.getLocalAddressMapping();
                 skippedExternalServices = action.getSkippedExternalServices();
             }
         }
@@ -674,18 +679,47 @@ public class ExecutionTracer {
      * Return the WireMock IP if there is a mapping for the hostname. If there is
      * no mapping NULL will be returned
      */
-    public static String getExternalMapping(String hostname) {
-        return externalServiceMapping.get(hostname);
+    public static String getExternalMapping(String signature) {
+        return externalServiceMapping.get(signature);
     }
 
-    public static boolean hasExternalMapping(String hostname) {
-        return externalServiceMapping.containsKey(hostname);
+    public static boolean hasExternalMapping(String signature) {
+        return externalServiceMapping.containsKey(signature);
     }
 
     public static boolean hasMockServer(String hostname) {
         return externalServiceMapping.containsValue(hostname);
     }
 
+    /**
+     * Check whether there is a local IP address available for the given
+     * remote hostname.
+     */
+    public static boolean hasLocalAddress(String hostname) {
+        return localAddressMapping.containsKey(hostname);
+    }
+
+    /**
+     * Checks for any replacement available to given local IP address.
+     */
+    public static boolean hasLocalAddressReplacement(String localAddress) {
+        return localAddressMapping.containsValue(localAddress);
+    }
+
+    /**
+     * Return the respective remote hostname for the given local IP address
+     */
+    public static String getRemoteHostname(String localAddress) {
+        return localAddressMapping.entrySet()
+                .stream()
+                .filter(e -> e.getValue().equals(localAddress))
+                .map(Map.Entry::getKey)
+                .findFirst().get().toString();
+    }
+
+    public static String getLocalAddress(String hostname) {
+        return localAddressMapping.get(hostname);
+    }
 
     public static boolean skipHostname(String hostname) {
         return skippedExternalServices

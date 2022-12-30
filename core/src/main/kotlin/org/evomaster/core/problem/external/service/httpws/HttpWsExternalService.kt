@@ -123,6 +123,13 @@ class HttpWsExternalService(
         return externalServiceInfo.remoteHostname
     }
 
+    /**
+     * Return ExternalServiceInfo information state, partial or not.
+     */
+    fun hasPartialInformation(): Boolean {
+        return externalServiceInfo.isPartial()
+    }
+
     fun getWireMockAbsoluteAddress(): String {
         return getWireMockAddress().plus(":").plus(getWireMockPort())
     }
