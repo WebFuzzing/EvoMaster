@@ -4,8 +4,12 @@ import org.evomaster.client.java.controller.api.dto.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
-import org.evomaster.core.problem.httpws.service.auth.*
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
+import org.evomaster.core.problem.httpws.auth.CookieLogin
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.JsonTokenPostLogin
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Individual
 import org.slf4j.Logger

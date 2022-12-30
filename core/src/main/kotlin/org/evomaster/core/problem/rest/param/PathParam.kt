@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.param
 
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 
 

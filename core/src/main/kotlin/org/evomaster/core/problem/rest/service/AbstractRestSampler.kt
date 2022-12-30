@@ -7,9 +7,9 @@ import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.external.service.ExternalService
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
-import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.ExternalService
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
@@ -347,10 +347,12 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private fun registerExternalServicesToSkip(services: List<ExternalServiceDto>) {
         services.forEach {
-            externalServiceHandler.registerExternalServiceToSkip(ExternalService(
+            externalServiceHandler.registerExternalServiceToSkip(
+                ExternalService(
                 it.hostname,
                 it.port
-            ))
+            )
+            )
         }
     }
 

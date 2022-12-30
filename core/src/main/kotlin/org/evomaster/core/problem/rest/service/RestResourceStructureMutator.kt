@@ -7,7 +7,7 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual

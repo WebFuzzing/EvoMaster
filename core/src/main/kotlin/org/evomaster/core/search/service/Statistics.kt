@@ -6,7 +6,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger

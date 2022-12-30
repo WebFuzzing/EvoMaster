@@ -11,11 +11,11 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.parser.RegexHandler
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.ApiExternalServiceAction
-import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
-import org.evomaster.core.problem.external.service.rpc.parm.RPCResponseParam
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.parm.RPCResponseParam
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult

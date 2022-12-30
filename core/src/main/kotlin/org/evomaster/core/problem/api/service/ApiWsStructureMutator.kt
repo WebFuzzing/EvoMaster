@@ -6,11 +6,12 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.httpws.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
-import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
+import org.evomaster.core.problem.externalservice.httpws.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren

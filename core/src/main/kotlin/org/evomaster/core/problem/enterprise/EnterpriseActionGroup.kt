@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.enterprise
 
-import org.evomaster.core.problem.external.service.ApiExternalServiceAction
+import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.*
 
 

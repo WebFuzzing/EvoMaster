@@ -2,7 +2,7 @@ package org.evomaster.e2etests.spring.openapi.v3.wiremock.skip
 
 import com.foo.rest.examples.spring.openapi.v3.wiremock.skip.SkipController
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
