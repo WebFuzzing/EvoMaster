@@ -49,6 +49,9 @@ class RestPath(path: String) {
 
     private val elements: List<Element>
 
+    //memoized the value, as expensive to compute, called often, and this object is immutable anyway...
+    private val computedToString: String
+
     init {
         if (path.contains("?") || path.contains("#")) {
             throw IllegalArgumentException("The path contains invalid characters. " +
@@ -58,6 +61,8 @@ class RestPath(path: String) {
         elements = path.split("/")
                 .filter { !it.isBlank() }
                 .map { extractElement(it) }
+
+        computedToString = "/" + elements.joinToString("/")
     }
 
 
@@ -109,7 +114,7 @@ class RestPath(path: String) {
     }
 
     override fun toString(): String {
-        return "/" + elements.joinToString("/")
+        return computedToString
     }
 
     /**

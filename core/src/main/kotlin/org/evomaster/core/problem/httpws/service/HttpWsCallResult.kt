@@ -3,6 +3,7 @@ package org.evomaster.core.problem.httpws.service
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.google.gson.JsonSyntaxException
 import org.evomaster.core.search.ActionResult
 import javax.ws.rs.core.MediaType
 
@@ -17,6 +18,7 @@ abstract class HttpWsCallResult : ActionResult {
         const val STATUS_CODE = "STATUS_CODE"
         const val BODY = "BODY"
         const val BODY_TYPE = "BODY_TYPE"
+        const val ERROR_MESSAGE = "ERROR_MESSAGE"
         const val TOO_LARGE_BODY = "TOO_LARGE_BODY"
         const val INFINITE_LOOP = "INFINITE_LOOP"
         const val TIMEDOUT = "TIMEDOUT"
@@ -50,8 +52,33 @@ abstract class HttpWsCallResult : ActionResult {
     /*
         FIXME should rather be a byte[]
      */
-    fun setBody(body: String) = addResultValue(BODY, body)
+    fun setBody(body: String){
+
+        /*
+            Try to infer if there is any error message in the body response.
+            TODO this is very limited and adhoc. Should be refactored/extended with
+            more heuristics.
+         */
+        var errorMsg : String? = null;
+        val bodyType = getBodyType()
+        if(getStatusCode() == 500
+            && (bodyType != null && bodyType.isCompatible(MediaType.APPLICATION_JSON_TYPE))) {
+            errorMsg = try {
+                Gson().fromJson(body, Map::class.java)?.get("message").toString() ?: ""
+            } catch (e: JsonSyntaxException) {
+                null
+            }
+        }
+        if(errorMsg != null){
+            addResultValue(ERROR_MESSAGE, errorMsg)
+        }
+
+        return addResultValue(BODY, body)
+    }
+
     fun getBody(): String? = getResultValue(BODY)
+
+    fun getErrorMsg() : String? = getResultValue(ERROR_MESSAGE)
 
     fun setBodyType(bodyType: MediaType) = addResultValue(BODY_TYPE, bodyType.toString())
     fun getBodyType(): MediaType? {
