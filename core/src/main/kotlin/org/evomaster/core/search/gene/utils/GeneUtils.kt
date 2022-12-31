@@ -638,14 +638,20 @@ object GeneUtils {
                     if (gene.gene is ArrayGene<*>)
                         handleBooleanSelection(gene.gene.template)
                     else
-                        if (gene.gene is TupleGene && gene.gene.lastElementTreatedSpecially)//opt tuple
-                        /*  TupleGene(
-                                  gene.name,
-                                  gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last())),
-                                  lastElementTreatedSpecially = true)*/
-                            OptionalGene(gene.name, handleBooleanSelection(gene.gene))
-                        else if (gene.gene is TupleGene)
-                            gene
+                        if (gene.gene is TupleGene && gene.gene.lastElementTreatedSpecially) {//opt tuple
+                            /*  TupleGene(
+                                      gene.name,
+                                      gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last())),
+                                      lastElementTreatedSpecially = true)*/
+                            if ((gene.gene.elements.last() is ObjectGene || gene.gene.elements.last().getWrappedGene(OptionalGene::class.java)?.gene is ObjectGene))
+                                TupleGene(
+                                    gene.name,
+                                    gene.gene.elements.dropLast(1)
+                                        .plus(handleBooleanSelection(gene.gene.elements.last())),
+                                    lastElementTreatedSpecially = true)
+                            else
+                                OptionalGene(gene.name, handleBooleanSelection(gene.gene))
+                        } else if (gene.gene is TupleGene) gene
                         else if (gene.gene is LimitObjectGene) gene
                         else if (gene.gene is CycleObjectGene) gene
                         else
