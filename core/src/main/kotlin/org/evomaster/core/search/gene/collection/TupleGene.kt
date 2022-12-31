@@ -127,8 +127,6 @@ class TupleGene(
                                 )
                             } else ""
                     )
-                }else{
-                    //
                 }
             } else {
                 //tuple contains only inputs
