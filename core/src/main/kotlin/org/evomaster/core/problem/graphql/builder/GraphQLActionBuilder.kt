@@ -2,7 +2,7 @@ package org.evomaster.core.problem.graphql.builder
 
 import com.google.gson.Gson
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.graphql.GQMethodType
 import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.problem.graphql.GraphQLAction

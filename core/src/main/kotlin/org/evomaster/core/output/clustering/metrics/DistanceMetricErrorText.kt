@@ -1,8 +1,6 @@
 package org.evomaster.core.output.clustering.metrics
 
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import javax.ws.rs.core.MediaType
 
 

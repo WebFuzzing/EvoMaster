@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.ActionResult
 import javax.ws.rs.core.MediaType

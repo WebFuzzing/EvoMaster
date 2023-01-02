@@ -2,7 +2,7 @@ package org.evomaster.core.search
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.Termination
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 
 
 class Solution<T>(

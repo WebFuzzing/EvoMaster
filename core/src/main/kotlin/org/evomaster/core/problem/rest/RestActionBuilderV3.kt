@@ -14,7 +14,7 @@ import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENA
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action

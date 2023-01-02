@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.httpws.service.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
