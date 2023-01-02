@@ -17,7 +17,9 @@ public class ThreadMethodReplacement implements MethodReplacementClass {
     @Replacement(replacingStatic = true,
             type = ReplacementType.TRACKER,
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.EXT_0)
+            category = ReplacementCategory.EXT_0,
+            packagesToSkip = {"org.apache.catalina.","org.apache.coyote"} //internal in Tomcat server
+    )
     public static void sleep(long millis) throws InterruptedException {
         sleep(millis,0);
     }
@@ -25,10 +27,12 @@ public class ThreadMethodReplacement implements MethodReplacementClass {
     @Replacement(replacingStatic = true,
             type = ReplacementType.TRACKER,
             usageFilter = UsageFilter.ANY,
-            category = ReplacementCategory.EXT_0)
+            category = ReplacementCategory.EXT_0,
+            packagesToSkip = {"org.apache.catalina.","org.apache.coyote"} //internal in Tomcat server
+    )
     public static void sleep(long millis, int nanos) throws InterruptedException {
 
-        int limit = 100;
+        int limit = 1000;
 
         if(millis >= limit){
             millis = limit;
