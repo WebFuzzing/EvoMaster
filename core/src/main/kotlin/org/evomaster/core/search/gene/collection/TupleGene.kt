@@ -81,7 +81,8 @@ class TupleGene(
 
         val buffer = StringBuffer()
 
-        if (mode == GeneUtils.EscapeMode.GQL_NONE_MODE) {
+        if (mode == GeneUtils.EscapeMode.GQL_NONE_MODE || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_NESTED_MODE
+            || mode == GeneUtils.EscapeMode.BOOLEAN_SELECTION_MODE) {
 
             if (lastElementTreatedSpecially) {
                 val returnGene = elements.last()
@@ -128,12 +129,19 @@ class TupleGene(
                     )
                 }
             } else {
+                //tuple contains only inputs
+                //if it is opt , it should be active
+                val nonOptOrOptActive = elements.filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
+
+                if (nonOptOrOptActive.isNotEmpty()){
+
                 //need the name for inputs only
                 buffer.append(name)
-                //printout only the inputs, since there is no return (is a primitive type)
-                val s = elements
+
+                //printout only the inputs (that are non opt or opt active), since there is no return (is a primitive type)
+                val s = nonOptOrOptActive
                     //.filter { it !is OptionalGene || it.isActive }
-                    .filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
+                    //.filter { it.getWrappedGene(OptionalGene::class.java)?.isActive ?: true }
                     .joinToString(",") {
                         gqlInputsPrinting(it, targetFormat)
                     }.replace("\"", "\\\"")
@@ -144,7 +152,9 @@ class TupleGene(
                     buffer.append(")")
                 }
 
-            }
+            }else {
+                //input in the tuple is optional-> print only the name
+                buffer.append(name)}}
         } else {
             "[" + elements.filter { it.isPrintable() }.joinTo(buffer, ", ") {
                 it.getValueAsPrintableString(

@@ -13,6 +13,11 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+
+* A. Golmohammadi, M. Zhang, A. Arcuri.
+  *Testing RESTful APIs: A Survey*.
+  [[arxiv](https://arxiv.org/abs/2212.14604)]
+
 * A. Belhadi, M. Zhang, A. Arcuri.
   *White-Box and Black-Box Fuzzing for GraphQL APIs*.
   [[arXiv](https://arxiv.org/abs/2209.05833)]
