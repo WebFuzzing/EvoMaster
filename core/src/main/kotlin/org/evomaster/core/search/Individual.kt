@@ -181,13 +181,12 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
     /**
      * @return actions based on the specified [filter].
-     * By default, only [ActionFilter.ALL] is supported.
+     * By default, only [ActionFilter.ALL] and [ActionFilter.NO_INIT] are supported.
      */
     open fun seeActions(filter: ActionFilter) : List<Action>{
-        if(filter == ActionFilter.ALL){
+        if(filter == ActionFilter.ALL || filter == ActionFilter.NO_INIT){
             return seeAllActions()
         }
-
         LoggingUtil.uniqueWarn(log,"Default implementation only support ALL filter")
         return listOf()
     }
