@@ -67,9 +67,10 @@ public class MethodClassReplacement implements MethodReplacementClass {
         String name = caller.getName();
         String desc = ReplacementUtils.getDescriptor(caller, 0, 0);
         boolean isInSUT = false; //FIXME
+        String contextClassName = null; //FIXME same as above
 
         Optional<Method> r = ReplacementUtils.chooseMethodFromCandidateReplacement(
-                isInSUT, name, desc, candidateClasses, false);
+                isInSUT, name, desc, candidateClasses, false, contextClassName);
         if(! r.isPresent()){
             return caller.invoke(obj, args);
         }

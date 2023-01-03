@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.InputProperties;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.Type;
@@ -117,7 +118,13 @@ public class ReplacementUtils {
             /**
              * Force selection of only pure function replacements (if any available)
              */
-            boolean requirePure
+            boolean requirePure,
+            /**
+             * The name of class in which the method call replacement is going to be applied on.
+             * There are cases in which we do not want to apply replacements on specific libraries, but
+             * just for some specific methods, not all
+             */
+            String contextClassName
     ) {
         Optional<Method> r = candidateClasses.stream()
                 .filter(i -> {
@@ -157,6 +164,13 @@ public class ReplacementUtils {
 
                     if(categories == null || !Arrays.stream(categories.split(",")).anyMatch(c -> c.equals(ctg))){
                         return false;
+                    }
+
+                    if(br.packagesToSkip().length > 0 && contextClassName != null) {
+                        String ctx = ClassName.get(contextClassName).getFullNameWithDots();
+                        if (Arrays.stream(br.packagesToSkip()).anyMatch(ctx::startsWith)){
+                            return false;
+                        }
                     }
 
                     boolean isConstructor = name.equals(Constants.INIT_METHOD);
