@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
+import org.evomaster.client.java.controller.api.dto.problem.WebProblem;
 
 import java.util.List;
 
@@ -26,6 +27,12 @@ public class SutInfoDto {
      * on how to interact with it
      */
     public RPCProblemDto rpcProblem;
+
+    /**
+     * If the SUT has a Web Frontend, here there will be the info
+     * on how to interact with it
+     */
+    public WebProblem webProblem;
 
     /**
      * Whether the SUT is running or not
