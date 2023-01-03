@@ -2,8 +2,8 @@ package org.evomaster.core.output
 
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.output.service.ApiTestCaseWriter
-import org.evomaster.core.problem.httpws.service.HttpWsAction
-import org.evomaster.core.problem.httpws.service.auth.JsonTokenPostLogin
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.auth.JsonTokenPostLogin
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 

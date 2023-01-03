@@ -9,10 +9,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Heuristics calculation for Java Beans, when dealing with javax.validation constraints
@@ -27,6 +25,12 @@ public class ValidatorHeuristics {
         Otherwise, can have nasty side-effects (see ValidatorHeuristicsTest for an example)
      */
     private static final double defaultFailed = 0.001;
+
+
+    private static final String PREFIX_JAVAX = "javax.validation.constraints.";
+    private static final String PREFIX_JAKARTA = "TODO"; //TODO
+    private static final String PREFIX_HIBERNATE = "org.hibernate.validator.constraints.";
+    private static final String PREFIX_JIRUKTA = "cz.jirutka.validator.collection.constraints.";
 
     /**
      *
@@ -55,12 +59,18 @@ public class ValidatorHeuristics {
 
             int n = getNumberOfTotalConstraints(beanDescriptor);
 
+            n = n * 1000; // heuristics to handle collection constrains
+                          // note that actual value of n does not matter, as long as equation gives gradient
+
             Set<Object> constraintViolations = (Set<Object>) validatorClass.getMethod("validate", Object.class, Class[].class)
                     .invoke(validator, bean, new Class[]{});
 
-            assert constraintViolations.size() <= n; //this will fail if we do not handle all types of constraints
-
-            double solved = n - constraintViolations.size();
+            /*
+                This was not true... a collection constraint count as one, but each single element
+                in the collection can create a violation
+             */
+            //assert constraintViolations.size() <= n; //this will fail if we do not handle all types of constraints
+            double solved = Math.max(0 , n - constraintViolations.size());
 
             for(Object violation : constraintViolations){
                 double h = computeHeuristicToSolveFailedConstraint(violation);
@@ -92,10 +102,23 @@ public class ValidatorHeuristics {
         Annotation annotation = (Annotation) descriptor.getClass().getMethod("getAnnotation").invoke(descriptor);
         String annotationType = annotation.annotationType().getName();
 
+        boolean javax = annotationType.startsWith(PREFIX_JAVAX);
+        boolean jakarta = annotationType.startsWith(PREFIX_JAKARTA);
+        boolean hibernate = annotationType.startsWith(PREFIX_HIBERNATE);
+        boolean jirukta = annotationType.startsWith(PREFIX_JIRUKTA);
+
+        if(!javax && !jakarta && !hibernate && !jirukta) {
+            SimpleLogger.warn("Not recognized constraint library. Not able to handle constrain type: " + annotationType);
+            return defaultFailed;
+        }
+
+
            /*
         TODO handle all annotations
         TODO future ll need to handle Jakarta namespace as well
+        TODO hibernate and jirutka as well
 
+MISSING javax.
 DecimalMax
 DecimalMin
 Digits
@@ -104,50 +127,87 @@ Future
 FutureOrPresent
 Past
 PastOrPresent
-Pattern
+
+MISSING Hibernate
+CNPJ
+CPF
+TituloEleitoral
+NIP
+PESEL
+REGON
+INN
+DurationMax
+DurationMin
+CodePointLength
+ConstraintComposition
+CreditCardNumber
+Currency
+EAN
+Email
+ISBN
+Length
+LuhnCheck
+Mod10Check
+Mod11Check
+ModCheck
+Normalized
+NotBlank
+NotEmpty
+ParameterScriptAssert
+Range
+ScriptAssert
+UniqueElements
+URL
+
+MISSING Jakarta
+TODO
              */
 
+        if(jirukta){
+            return handleJiruktaConstraint(annotationType, invalidValue, attributes);
+        }
+
         //Numeric constraints. Note that null values are valid here
-        if(annotationType.equals("javax.validation.constraints.Min")){
+        if(annotationType.endsWith(".Min")){
             return computeHeuristicForMin(invalidValue, attributes);
         }
-        if(annotationType.equals("javax.validation.constraints.Max")){
+        if(annotationType.endsWith(".Max")){
             return computeHeuristicForMax(invalidValue, attributes);
         }
-        if(annotationType.equals("javax.validation.constraints.Positive")){
+        if(annotationType.endsWith(".Positive")){
             return computeHeuristicForPositive(invalidValue, attributes);
         }
-        if(annotationType.equals("javax.validation.constraints.PositiveOrZero")){
+        if(annotationType.endsWith(".PositiveOrZero")){
             return computeHeuristicForPositiveOrZero(invalidValue, attributes);
         }
-        if(annotationType.equals("javax.validation.constraints.Negative")){
+        if(annotationType.endsWith(".Negative")){
             return computeHeuristicForNegative(invalidValue, attributes);
         }
-        if(annotationType.equals("javax.validation.constraints.NegativeOrZero")){
+        if(annotationType.endsWith(".NegativeOrZero")){
             return computeHeuristicForNegativeOrZero(invalidValue, attributes);
         }
-        if(annotationType.equals("javax.validation.constraints.Size")){
+        if(annotationType.endsWith(".Size")){
             return computeHeuristicForSize(invalidValue, attributes);
         }
 
 
         //no gradient, apart from rewarding non-null
-        if(annotationType.equals("javax.validation.constraints.NotEmpty")
-                || annotationType.equals("javax.validation.constraints.NotBlank")
+        if(annotationType.endsWith(".NotEmpty")
+                || annotationType.endsWith(".NotBlank")
         ){
             return computeHeuristicForNoGradientButNullIsNotValid(invalidValue);
         }
 
         //no gradient and null can be valid
-        if(annotationType.equals("javax.validation.constraints.Null")
-            || annotationType.equals("javax.validation.constraints.NotNull")
-                || annotationType.equals("javax.validation.constraints.AssertTrue")
-                || annotationType.equals("javax.validation.constraints.AssertFalse")
+        if(annotationType.endsWith(".Null")
+            || annotationType.endsWith(".NotNull")
+                || annotationType.endsWith(".AssertTrue")
+                || annotationType.endsWith(".AssertFalse")
         ){
             return defaultFailed;
         }
 
-        if(annotationType.equals("javax.validation.constraints.Pattern")){
+        if(annotationType.endsWith(".Pattern")){
             /*
                 Quite expensive to handle, see RegexDistanceUtils.
                 so, for now, we just ensure we handle taint analysis for this
@@ -168,6 +228,83 @@ Pattern
         return defaultFailed;
     }
 
+    private static double handleJiruktaConstraint(String annotationType, Object invalidValue, Map<String, Object> attributes) {
+
+       /*
+        Old library, which is deprecated. Recent javax.validation can handle collections.
+        TODO: So, handling all cases here is likely low priority.
+        Originally handled due its use in OCVN.
+
+        Note: tests for these are in different module, to handle conflicting libraries.
+        See ValidationHeuristicsJiruktaTest
+
+       MISSING  JIRUKTA
+EachAssertFalse
+EachAssertTrue
+EachConstraint
+EachCreditCardNumber
+EachDecimalMax
+EachDecimalMin
+EachDigits
+EachEAN
+EachEmail
+EachFuture
+EachLength
+EachLuhnCheck
+EachMax
+EachMin
+EachMod10Check
+EachMod11Check
+EachNotBlank
+EachNotEmpty
+EachNotNull
+EachPast
+EachSafeHtml
+EachScriptAssert
+EachSize
+EachURL
+        */
+
+        if(annotationType.endsWith(".EachRange")){
+            List<Integer> values = (List<Integer>) invalidValue;
+
+            int sum = 0;
+
+            for(Integer k : values){
+                sum += getDistanceForRange(k, attributes);
+            }
+
+            return DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, sum);
+        }
+
+        if(annotationType.endsWith(".EachPattern")) {
+
+            List<String> values = (List<String>) invalidValue;
+            String regexp = attributes.get("regexp").toString();
+
+            int mismatches = 0;
+
+            for(String value : values) {
+                if (ExecutionTracer.isTaintInput(value)) {
+                    ExecutionTracer.addStringSpecialization(value,
+                            new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE, regexp));
+                }
+
+                boolean matched = value.matches(regexp);
+                if(!matched){
+                    mismatches++;
+                }
+            }
+
+            assert mismatches > 0;
+
+            return DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, mismatches);
+        }
+
+        SimpleLogger.warn("Not able to handle constrain type: " + annotationType);
+        return defaultFailed;
+    }
+
     private static double computeHeuristicForNoGradientButNullIsNotValid(Object invalidValue){
         if(invalidValue == null){
             return DistanceHelper.H_REACHED_BUT_NULL;
@@ -176,8 +313,7 @@ Pattern
         return DistanceHelper.H_NOT_NULL;
     }
 
-
-    private static double computeHeuristicForSize(Object invalidValue, Map<String, Object> attributes) {
+    private static double computeHeuristicForSize(Object invalidValue, Map<String, Object> attributes){
 
         assert invalidValue != null; //@Size is true on null element, so would not be a violation
         //however it is NOT the case for @NotEmpty where null fails.
@@ -190,17 +326,32 @@ Pattern
             return DistanceHelper.H_NOT_NULL;
         }
 
+        return computeHeuristicForRange(size, attributes);
+    }
+
+    private static int getDistanceForRange(Object invalidValue, Map<String, Object> attributes){
+
+        int value = ((Number)invalidValue).intValue();
+
         int min = ((Number) attributes.get("min")).intValue();
         int max = ((Number) attributes.get("max")).intValue();
 
         if(min > max){
             //is this even possible?
             SimpleLogger.warn("Impossible to satisfy constraint min>max : " + min +">" + max);
-            return DistanceHelper.H_NOT_NULL;
+            return -1;
         }
 
-        int distance = DistanceHelper.distanceToRange(size, min, max);
-        assert distance > 0;
+        return DistanceHelper.distanceToRange(value, min, max);
+    }
+
+    private static double computeHeuristicForRange(Object invalidValue, Map<String, Object> attributes) {
+
+        int distance = getDistanceForRange(invalidValue, attributes);
+        if(distance < 0){
+            return DistanceHelper.H_NOT_NULL;
+        }
+        assert distance != 0;
 
         return DistanceHelper.heuristicFromScaledDistanceWithBase(DistanceHelper.H_NOT_NULL, distance);
     }
@@ -303,17 +454,29 @@ Pattern
         Set<Object> properties = (Set<Object>) beanDescriptor.getClass().getMethod("getConstrainedProperties")
                 .invoke(beanDescriptor);
         long n = properties.stream()
-                .flatMap(it -> {
+                .mapToInt(it -> {
                     Set<Object> constraints = null;
+                    Set<Object> collectionConstraints = null;
                     try {
                         constraints = (Set<Object>) it.getClass().getMethod("getConstraintDescriptors")
                                         .invoke(it);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                    return constraints.stream();
+
+                    try {
+                        collectionConstraints = (Set<Object>) it.getClass().getMethod("getConstrainedContainerElementTypes")
+                                .invoke(it);
+                    } catch (NoSuchMethodException e){
+                        //old versions of Hibernate do not have this method
+                        collectionConstraints = new HashSet<>();
+                    } catch (Exception e){
+                        throw new RuntimeException(e);
+                    }
+
+                    return constraints.size() + collectionConstraints.size();
                 })
-                .count();
+                .sum();
 
         //for constraints on whole bean
         Set<Object> classConstraints = (Set<Object>) beanDescriptor.getClass().getMethod("getConstraintDescriptors")

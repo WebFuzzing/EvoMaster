@@ -2,55 +2,52 @@ package org.evomaster.client.java.controller.problem;
 
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCType;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * define RPCProblem used in driver
  */
-public class RPCProblem implements ProblemInfo{
+public class RPCProblem extends ProblemInfo{
 
     /**
      * a map of interfaces with corresponding client
      * Key - a full name of the interface
      * Value - an instance of the client
      */
-    public final Map<String, Object> mapOfInterfaceAndClient;
+    private final Map<String, Object> mapOfInterfaceAndClient;
 
     /**
      * the type of the interface
      */
-    public final RPCType type;
+    private final RPCType type;
 
     /**
      * a map of endpoints to be skipped for each interface
      * Key - name of interface
      * Value - a list of names of endpoints to be skipped
      */
-    public final Map<String, List<String>> skipEndpointsByName;
+    private final Map<String, List<String>> skipEndpointsByName;
 
     /**
      * a map of endpoints to be skipped for each interface
      * Key - name of the interface
      * Value - a list of annotations. endpoints are skipped if they applied the annotation
      */
-    public final Map<String, List<String>> skipEndpointsByAnnotation;
+    private final Map<String, List<String>> skipEndpointsByAnnotation;
 
     /**
      * a map of endpoints to be involved for each interface
      * Key - name of interface
      * Value - a list of names of endpoints to be involved
      */
-    public final Map<String, List<String>> involveEndpointsByName;
+    private final Map<String, List<String>> involveEndpointsByName;
 
     /**
      * a map of endpoints to be involved for each interface
      * Key - name of the interface
      * Value - a list of annotations. endpoints are involved if they applied the annotation
      */
-    public final Map<String, List<String>> involveEndpointsByAnnotation;
+    private final Map<String, List<String>> involveEndpointsByAnnotation;
 
 
     /**
@@ -93,12 +90,13 @@ public class RPCProblem implements ProblemInfo{
                       Map<String, List<String>> skipEndpointsByName,
                       Map<String, List<String>> skipEndpointsByAnnotation,
                       Map<String, List<String>> involveEndpointsByName,
-                      Map<String, List<String>> involveEndpointsByAnnotation, RPCType type){
-        this.mapOfInterfaceAndClient = mapOfInterfaceAndClient;
-        this.involveEndpointsByAnnotation = involveEndpointsByAnnotation;
-        this.involveEndpointsByName = involveEndpointsByName;
-        this.skipEndpointsByAnnotation = skipEndpointsByAnnotation;
-        this.skipEndpointsByName = skipEndpointsByName;
+                      Map<String, List<String>> involveEndpointsByAnnotation,
+                      RPCType type){
+        this.mapOfInterfaceAndClient = mapOfInterfaceAndClient == null ? new HashMap<>() : new HashMap<>(mapOfInterfaceAndClient);
+        this.involveEndpointsByAnnotation = involveEndpointsByAnnotation == null ? new HashMap<>() : new HashMap<>(involveEndpointsByAnnotation);
+        this.involveEndpointsByName = involveEndpointsByName == null ? new HashMap<>() : new HashMap<>(involveEndpointsByName);
+        this.skipEndpointsByAnnotation = skipEndpointsByAnnotation == null ? new HashMap<>() : new HashMap<>(skipEndpointsByAnnotation);
+        this.skipEndpointsByName = skipEndpointsByName == null ? new HashMap<>() : new HashMap<>(skipEndpointsByName);
         this.type = type;
 
     }
@@ -107,7 +105,7 @@ public class RPCProblem implements ProblemInfo{
      *
      * @return a set of interface names for the RPC problem
      */
-    public Set<String> getMapOfInterfaceAndClient() {
+    public Set<String> getKeysOfMapOfInterfaceAndClient() {
         return mapOfInterfaceAndClient.keySet();
     }
 
@@ -118,6 +116,26 @@ public class RPCProblem implements ProblemInfo{
         return type;
     }
 
+    public Map<String, Object> getMapOfInterfaceAndClient() {
+        return Collections.unmodifiableMap(mapOfInterfaceAndClient);
+    }
+
+    public Map<String, List<String>> getSkipEndpointsByName() {
+        return Collections.unmodifiableMap(skipEndpointsByName);
+    }
+
+    public Map<String, List<String>> getSkipEndpointsByAnnotation() {
+        return Collections.unmodifiableMap(skipEndpointsByAnnotation);
+    }
+
+    public Map<String, List<String>> getInvolveEndpointsByName() {
+        return Collections.unmodifiableMap(involveEndpointsByName);
+    }
+
+    public Map<String, List<String>> getInvolveEndpointsByAnnotation() {
+        return Collections.unmodifiableMap(involveEndpointsByAnnotation);
+    }
+
     /**
      *
      * @param interfaceId is the full name of the interface
@@ -125,5 +143,18 @@ public class RPCProblem implements ProblemInfo{
      */
     public Object getClient(String interfaceId){
         return mapOfInterfaceAndClient.get(interfaceId);
+    }
+
+
+    @Override
+    public RPCProblem withServicesToNotMock(List<ExternalService> servicesToNotMock){
+        RPCProblem p =  new RPCProblem(this.mapOfInterfaceAndClient,
+                this.skipEndpointsByName,
+                this.skipEndpointsByAnnotation,
+                this.involveEndpointsByName,
+                this.involveEndpointsByAnnotation,
+                this.type);
+        p.servicesToNotMock.addAll(servicesToNotMock);
+        return p;
     }
 }

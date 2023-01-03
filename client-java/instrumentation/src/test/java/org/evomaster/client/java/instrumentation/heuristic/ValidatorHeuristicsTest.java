@@ -1,6 +1,6 @@
 package org.evomaster.client.java.instrumentation.heuristic;
 
-import org.evomaster.client.java.instrumentation.heuristic.validator.*;
+import org.evomaster.client.java.instrumentation.heuristic.validator.javax.*;
 import org.junit.jupiter.api.Test;
 
 import javax.validation.ConstraintViolation;
@@ -8,7 +8,6 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.constraints.Min;
 import javax.validation.metadata.BeanDescriptor;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
@@ -20,7 +19,7 @@ class ValidatorHeuristicsTest {
     private static final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @Test
-    public void testNoConstraintsBean(){
+    public void testNoConstraintsBean() {
 
         NoConstraintsBean bean = new NoConstraintsBean();
 
@@ -28,7 +27,7 @@ class ValidatorHeuristicsTest {
     }
 
     @Test
-    public void testBaseConstraintsBean(){
+    public void testBaseConstraintsBean() {
 
         BaseConstraintsBean bean = new BaseConstraintsBean();
 
@@ -40,14 +39,14 @@ class ValidatorHeuristicsTest {
                 .count()
         );
 
-        Set<ConstraintViolation<BaseConstraintsBean>> result =  validator.validate(bean);
+        Set<ConstraintViolation<BaseConstraintsBean>> result = validator.validate(bean);
         //5 constraints, over 4 fields, 1 with none, 1 with 2 constraints.
         // 2 max constraints are satisfied (default int value is 0)
         assertEquals(3, result.size());
     }
 
     @Test
-    public void testSingleConstraintBean(){
+    public void testSingleConstraintBean() {
 
         SingleConstraintBean bean = new SingleConstraintBean();
 
@@ -61,12 +60,12 @@ class ValidatorHeuristicsTest {
 
         bean.x = 42;
 
-        Set<ConstraintViolation<SingleConstraintBean>> result =  validator.validate(bean);
+        Set<ConstraintViolation<SingleConstraintBean>> result = validator.validate(bean);
         assertEquals(0, result.size());
 
         bean.x = -5;
 
-        result =  validator.validate(bean);
+        result = validator.validate(bean);
         assertEquals(1, result.size());
 
         ConstraintViolation<SingleConstraintBean> failure = result.stream().findFirst().get();
@@ -77,7 +76,7 @@ class ValidatorHeuristicsTest {
 
 
     @Test
-    public void testHeuristicForSingleConstraintBean(){
+    public void testHeuristicForSingleConstraintBean() {
 
         SingleConstraintBean bean = new SingleConstraintBean(); //Min 1
         bean.x = 42;
@@ -107,7 +106,7 @@ class ValidatorHeuristicsTest {
 
 
     @Test
-    public void testHeuristicForIntBean(){
+    public void testHeuristicForIntBean() {
 
         IntBean bean = new IntBean();
 
@@ -153,7 +152,7 @@ class ValidatorHeuristicsTest {
 
 
     @Test
-    public void testHeuristicForString(){
+    public void testHeuristicForString() {
 
         StringBean bean = new StringBean();
 
@@ -209,7 +208,7 @@ class ValidatorHeuristicsTest {
         Truthness t11 = ValidatorHeuristics.computeTruthness(validator, bean);
         assertTrue(t10.getOfTrue() > t11.getOfTrue()); //worse, as null was valid
 
-        bean.g = Arrays.asList("a","b");
+        bean.g = Arrays.asList("a", "b");
         Truthness t12 = ValidatorHeuristics.computeTruthness(validator, bean);
         assertEquals(t10.getOfTrue(), t12.getOfTrue(), 0.00001); // null and valid size are the same
 
@@ -229,7 +228,7 @@ class ValidatorHeuristicsTest {
         Truthness t16 = ValidatorHeuristics.computeTruthness(validator, bean);
         assertTrue(t15.getOfTrue() > t16.getOfTrue()); //worse, as null was valid
 
-        bean.l.put("A","A");
+        bean.l.put("A", "A");
         Truthness t17 = ValidatorHeuristics.computeTruthness(validator, bean);
         assertTrue(t17.getOfTrue() > t16.getOfTrue());
 
@@ -238,7 +237,7 @@ class ValidatorHeuristicsTest {
 
 
     @Test
-    public void testHeuristicForClassConstraints(){
+    public void testHeuristicForClassConstraints() {
 
         ClassConstraintsBean bean = new ClassConstraintsBean();
 
@@ -261,7 +260,7 @@ class ValidatorHeuristicsTest {
     }
 
     @Test
-    public void testHeuristicCustomBean(){
+    public void testHeuristicCustomBean() {
 
         CustomBean bean = new CustomBean();
         bean.foo = "bar";
@@ -281,7 +280,7 @@ class ValidatorHeuristicsTest {
     }
 
     @Test
-    public void testHeuristicConflictBean(){
+    public void testHeuristicConflictBean() {
 
         ConflictBean bean = new ConflictBean();
 
@@ -301,4 +300,86 @@ class ValidatorHeuristicsTest {
         assertTrue(t3.getOfTrue() > t2.getOfTrue());
         assertTrue(t3.isTrue());
     }
+
+    @Test
+    public void testCollectionBeanProperties() {
+
+        CollectionBean bean = new CollectionBean();
+
+        BeanDescriptor descriptor = validator.getConstraintsForClass(CollectionBean.class);
+        assertTrue(descriptor.isBeanConstrained());
+        assertEquals(1, descriptor.getConstrainedProperties().size());
+        assertEquals(1, descriptor.getConstrainedProperties().stream()
+                .flatMap(it -> it.getConstrainedContainerElementTypes().stream())
+                .count()
+        );
+
+        Set<ConstraintViolation<CollectionBean>> result = validator.validate(bean);
+        assertEquals(0, result.size());
+
+        bean.list.add(-5);
+        bean.list.add(-2);
+        bean.list.add(10);
+        bean.list.add(42);
+        bean.list.add(100);
+        bean.list.add(-111);
+
+        result = validator.validate(bean);
+        assertEquals(3, result.size());
+    }
+
+    @Test
+    public void testCollectionBean() {
+
+        CollectionBean bean = new CollectionBean();
+
+        Truthness t0 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t0.isTrue()); //empty is truthy
+
+        bean.list.add(-1_000_000);
+        Truthness t1 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t1.isTrue());
+
+        bean.list.add(5);
+        Truthness t2 = ValidatorHeuristics.computeTruthness(validator, bean);
+        //assertTrue( t2.getOfTrue() > t1.getOfTrue()); //adding truthy element increases truthness
+        assertEquals(t2.getOfTrue(), t1.getOfTrue(), 0.00001); //adding truthy elements should have no impact
+
+        bean.list.set(0, -2);
+        Truthness t3 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t3.getOfTrue() > t2.getOfTrue()); //improving one false element
+
+        bean.list.set(0, 42);
+        Truthness t4 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t4.getOfTrue() > t3.getOfTrue());
+        assertTrue(t4.isTrue());
+    }
+
+
+    @Test
+    public void testCollectionBeanMultiViolations() {
+
+        CollectionBean bean = new CollectionBean();
+
+        Truthness t0 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t0.isTrue()); //empty is truthy
+
+        bean.list.add(-1);
+        bean.list.add(-1);
+        bean.list.add(-1);
+        bean.list.add(-1);
+        bean.list.add(-1);
+        Truthness t1 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertFalse(t1.isTrue());
+
+        bean.list.clear();
+        bean.list.add(1);
+        bean.list.add(1);
+        bean.list.add(1);
+        bean.list.add(1);
+        bean.list.add(1);
+        Truthness t2 = ValidatorHeuristics.computeTruthness(validator, bean);
+        assertTrue(t2.isTrue());
+    }
+
 }
