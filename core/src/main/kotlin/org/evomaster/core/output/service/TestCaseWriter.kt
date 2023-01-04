@@ -97,7 +97,9 @@ abstract class TestCaseWriter {
     protected fun handleDnsForExternalServiceActions(
         lines: Lines,
         actions: List<HttpExternalServiceAction>,
-        exToWM: Map<String, HttpWsExternalService>?) : Boolean{
+        exToWM: Map<String, HttpWsExternalService>?
+    ) : Boolean{
+
         var any = false
 
         exToWM?.forEach {
@@ -106,13 +108,13 @@ abstract class TestCaseWriter {
             any = true
         }
 
-        actions
-            .filterNot { exToWM?.containsKey(it.externalService.getRemoteHostName()) == true }
-            .forEach {action->
-            lines.add("DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${action.externalService.getWireMockAddress()}\")")
-            lines.appendSemicolon(format)
-            any = true
-        }
+        actions.filterNot { exToWM?.containsKey(it.externalService.getRemoteHostName()) == true }
+                .distinctBy { it.externalService.getRemoteHostName() }
+                .forEach {action->
+                    lines.add("DnsCacheManipulator.setDnsCache(\"${action.externalService.getRemoteHostName()}\", \"${action.externalService.getWireMockAddress()}\")")
+                    lines.appendSemicolon(format)
+                    any = true
+                }
         return any
     }
 
