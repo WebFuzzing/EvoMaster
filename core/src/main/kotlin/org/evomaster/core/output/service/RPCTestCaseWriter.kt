@@ -5,7 +5,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
-import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
+import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -64,7 +64,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
         val rpcCallAction = (action as? RPCCallAction)?: throw IllegalStateException("action must be RPCCallAction, but it is ${action::class.java.simpleName}")
         val rpcCallResult = (result as? RPCCallResult)?: throw IllegalStateException("result must be RPCCallResult, but it is ${action::class.java.simpleName}")
 
-
+        // generate actions for handling external services with customized methods
+        handleCustomizedExternalServiceHandling(action, true, lines)
 
         val resVarName = createUniqueResponseVariableName()
 
@@ -244,7 +245,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
      * @param actionIndex the index of action
      * @param lines are generated lines which save the generated test scripts
      */
-    fun handleCustomizedExternalServiceHandling(action: Action, actionIndex: Int, enable: Boolean, lines: Lines){
+    fun handleCustomizedExternalServiceHandling(action: Action, enable: Boolean, lines: Lines){
         if(config.enableCustomizedExternalServiceHandling && action.parent is EnterpriseActionGroup){
             val group = action.parent as EnterpriseActionGroup
 
