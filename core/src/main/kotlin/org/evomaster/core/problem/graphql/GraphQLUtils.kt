@@ -177,11 +177,12 @@ object GraphQLUtils {
     fun getPrintableInputGene(inputGenes: List<Gene>, targetFormat: OutputFormat? = null): MutableList<String> {
         val printableInputGene = mutableListOf<String>()
         for (gene in inputGenes) {
-            if (gene is EnumGene<*> ||
-                (gene is OptionalGene && gene.gene is EnumGene<*>)
-            ) {
-                val i = gene.getValueAsRawString()
-                printableInputGene.add("${gene.name} : $i")
+            if  (gene.getWrappedGene(EnumGene::class.java)!=null) {//enum gene
+                //if it is optional it should be active
+                if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)||(gene.getWrappedGene(OptionalGene::class.java) == null)) {
+                    val i = gene.getValueAsRawString()
+                    printableInputGene.add("${gene.name} : $i")
+                }
             } else {
                 if (gene is ObjectGene || (gene is OptionalGene && gene.gene is ObjectGene)) {
                     val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
