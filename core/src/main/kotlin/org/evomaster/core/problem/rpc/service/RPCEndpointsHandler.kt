@@ -177,7 +177,6 @@ class RPCEndpointsHandler {
                             val exAction = externalServiceCluster[
                                     RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
                             ]!!.copy() as ApiExternalServiceAction
-                            // disable handling of response
                             try {
                                 setGeneBasedOnString(exAction.response.responseBody, r)
                                 exAction
