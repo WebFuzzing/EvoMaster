@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.internal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
@@ -1191,5 +1192,28 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public String packagesToSkipInstrumentation(){
         return null;
+    }
+
+
+    /**
+     * <p>
+     *     a method to employ customized mocking of RPC based external services
+     * </p>
+     * @param externalServiceDtos contains info about how to setup responses with json format, note that the json should
+     *                            be able to be coverted to List<MockRPCExternalServiceDto>
+     * @param enabled reflect to enable (set it true) or disable (set it false) the specified external service dtos.
+     *                Note that null [externalServiceDtos] with false [enabled] means that all existing external service setup should be disabled.
+     * @return whether the mocked instance starts successfully,
+     */
+    public final boolean mockRPCExternalServicesWithCustomizedHandling(String externalServiceDtos, boolean enabled){
+        List<MockRPCExternalServiceDto> exDto = null;
+        try {
+            if (externalServiceDtos != null && !externalServiceDtos.isEmpty())
+                exDto = objectMapper.readValue(externalServiceDtos, new TypeReference<List<MockRPCExternalServiceDto>>(){});
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Fail to handle the given external service dto with the info:", e);
+        }
+
+        return customizeMockingRPCExternalService(exDto, enabled);
     }
 }

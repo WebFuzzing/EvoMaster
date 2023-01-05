@@ -260,7 +260,7 @@ class RPCEndpointsHandler {
         }
     }
 
-    private fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
+    fun transformMockRPCExternalServiceDto(action: ApiExternalServiceAction) : MockRPCExternalServiceDto{
         if (action !is RPCExternalServiceAction)
             throw IllegalStateException("only support RPC external service action for the moment")
 
@@ -587,9 +587,9 @@ class RPCEndpointsHandler {
     }
 
     /**
-     * @return a string json of a RPC param [dto]
+     * @return a string json of a [dto] object
      */
-    fun getParamDtoJson(dto: ParamDto) : String {
+    fun getJsonStringFromDto(dto: Any) : String {
         return objectMapper.writeValueAsString(dto)
     }
 

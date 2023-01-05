@@ -136,7 +136,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                     actionResult.setRPCException(response.exceptionInfoDto)
                     if (response.exceptionInfoDto.type == RPCExceptionType.CUSTOMIZED_EXCEPTION){
                         if (response.exceptionInfoDto.exceptionDto!=null){
-                            actionResult.setCustomizedExceptionBody(rpcHandler.getParamDtoJson(response.exceptionInfoDto.exceptionDto))
+                            actionResult.setCustomizedExceptionBody(rpcHandler.getJsonStringFromDto(response.exceptionInfoDto.exceptionDto))
                         } else
                             log.warn("ERROR: missing customized exception dto")
                     }

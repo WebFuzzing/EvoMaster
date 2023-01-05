@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.formatter.OutputFormatter
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
@@ -23,6 +25,11 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RPCTestCaseWriter::class.java)
+
+        /**
+         * name of method for customizing handling of external services for RPC problem
+         */
+        private const val CUSTOMIZED_EXTERNAL_SERVICES = "mockRPCExternalServicesWithCustomizedHandling"
     }
 
     @Inject
@@ -228,6 +235,38 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                 else -> throw IllegalStateException("NOT SUPPORT for the format : ${config.outputFormat}")
             }
             lines.appendSemicolon(format)
+        }
+    }
+
+    /**
+     * handle generation of customized external service handling
+     * @param action is the call to be generated
+     * @param actionIndex the index of action
+     * @param lines are generated lines which save the generated test scripts
+     */
+    fun handleCustomizedExternalServiceHandling(action: Action, actionIndex: Int, enable: Boolean, lines: Lines){
+        if(config.enableCustomizedExternalServiceHandling && action.parent is EnterpriseActionGroup){
+            val group = action.parent as EnterpriseActionGroup
+
+            /*
+                now only support customized handling of external service for RPC problem
+                TODO for other problems when needed
+             */
+            val exActions = group.getExternalServiceActions()
+                    .filterIsInstance<RPCExternalServiceAction>()
+                    .map { rpcHandler.transformMockRPCExternalServiceDto(it) }
+
+            when {
+                format.isKotlin() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_EXTERNAL_SERVICES(")
+                format.isJava() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_EXTERNAL_SERVICES(")
+            }
+
+            printExecutionJson(rpcHandler.getJsonStringFromDto(exActions), lines)
+
+            when {
+                format.isKotlin() -> lines.append(",$enable)")
+                format.isJava() -> lines.append(",$enable);")
+            }
         }
     }
 
