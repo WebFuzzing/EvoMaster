@@ -1773,6 +1773,9 @@ class EMConfig {
     @Regex("^127\\.((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){2}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\$")
     var externalServiceIP : String = "127.0.0.2"
 
+    @Experimental
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService') to handle external services.")
+    var enableCustomizedExternalServiceHandling = false
 
     @Experimental
     @Cfg("Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic." +
