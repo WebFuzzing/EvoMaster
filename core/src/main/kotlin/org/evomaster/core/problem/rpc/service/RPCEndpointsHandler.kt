@@ -178,13 +178,15 @@ class RPCEndpointsHandler {
                                     RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
                             ]!!.copy() as ApiExternalServiceAction
                             // disable handling of response
-//                            try {
-//                                setGeneBasedOnString(exAction.response.responseBody, r)
-//                            }catch (e: Exception){
-//                                throw RuntimeException("Fail to handle mocked responses", e)
-//                            }
-                            exAction
-                        }
+                            try {
+                                setGeneBasedOnString(exAction.response.responseBody, r)
+                                exAction
+                            }catch (e: Exception){
+                                log.warn("Fail to handle mocked responses:${e.message}")
+                                //throw RuntimeException("Fail to handle mocked responses", e)
+                                null
+                            }
+                        }.filterNotNull()
                     }.flatten()
                 else mutableListOf()
 
