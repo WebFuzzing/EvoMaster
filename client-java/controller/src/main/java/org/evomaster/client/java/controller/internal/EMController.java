@@ -383,6 +383,11 @@ public class EMController {
                         try {
                             // clean db with accessed tables
                             noKillSwitchForceCheck(() -> sutController.cleanAccessedTables());
+
+                            if (dto.resetMockedExternalServicesWithCustomizedMethod){
+                                noKillSwitch(()-> sutController.resetMockedExternalServicesWithCustomizedMethod());
+                            }
+
                             /*
                                 This should not fail... but, as it is user code, it might fail...
                                 When it does, it is a major issue, as it can leave the system in

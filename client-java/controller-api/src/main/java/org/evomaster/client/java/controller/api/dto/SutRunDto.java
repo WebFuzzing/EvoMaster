@@ -13,6 +13,11 @@ public class SutRunDto {
     public Boolean resetState;
 
     /**
+     * Whether to reset the mocked external services with customized method
+     */
+    public Boolean resetMockedExternalServicesWithCustomizedMethod;
+
+    /**
      *  Whether SQL heuristics should be computed.
      *  Note: those can be very expensive
      */
