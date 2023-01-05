@@ -740,6 +740,10 @@ class TestSuiteWriter {
                             lines.appendSemicolon(format)
                         }
                 }
+
+                if (config.enableCustomizedExternalServiceHandling && testCaseWriter is RPCTestCaseWriter)
+                    lines.add((testCaseWriter as RPCTestCaseWriter).resetExternalServicesWithCustomizedMethod())
+
             } else if (format.isCsharp()) {
                 addStatement("$fixture = fixture", lines)
                 //TODO add resetDatabase

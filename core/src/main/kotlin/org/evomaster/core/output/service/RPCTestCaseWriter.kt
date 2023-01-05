@@ -29,7 +29,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
         /**
          * name of method for customizing handling of external services for RPC problem
          */
-        private const val CUSTOMIZED_EXTERNAL_SERVICES = "mockRPCExternalServicesWithCustomizedHandling"
+        const val CUSTOMIZED_EXTERNAL_SERVICES = "mockRPCExternalServicesWithCustomizedHandling"
     }
 
     @Inject
@@ -269,6 +269,12 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                 format.isJava() -> lines.append(",$enable);")
             }
         }
+    }
+
+    fun resetExternalServicesWithCustomizedMethod() : String {
+        if (!format.isJavaOrKotlin())
+            throw IllegalStateException("Only support to generate Java/Kotlin tests with a reset of RPC external services with customized method")
+        return "${TestSuiteWriter.controller}.$CUSTOMIZED_EXTERNAL_SERVICES(null,false)${if (format.isJava()) ";" else ""}"
     }
 
     /*
