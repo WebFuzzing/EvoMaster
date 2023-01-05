@@ -267,7 +267,7 @@ object ParserDtoUtil {
     }
 
     private fun getTextForStringGene(gene: Gene, node: JsonNode) : String{
-        if (ParamUtil.getValueGene(gene).run { this is StringGene || (this is EnumGene<*>) } && node.isTextual)
+        if (ParamUtil.getValueGene(gene).run { this is StringGene || this is EnumGene<*> || this is NumberGene<*>} && node.isTextual)
             return node.asText()
         return node.toPrettyString()
     }
