@@ -257,17 +257,20 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                     .filterIsInstance<RPCExternalServiceAction>()
                     .map { rpcHandler.transformMockRPCExternalServiceDto(it) }
 
-            when {
-                format.isKotlin() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_EXTERNAL_SERVICES(")
-                format.isJava() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_EXTERNAL_SERVICES(")
+            if (exActions.isNotEmpty()){
+                when {
+                    format.isKotlin() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_EXTERNAL_SERVICES(")
+                    format.isJava() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_EXTERNAL_SERVICES(")
+                }
+
+                printExecutionJson(rpcHandler.getJsonStringFromDto(exActions), lines)
+
+                when {
+                    format.isKotlin() -> lines.append(",$enable)")
+                    format.isJava() -> lines.append(",$enable);")
+                }
             }
 
-            printExecutionJson(rpcHandler.getJsonStringFromDto(exActions), lines)
-
-            when {
-                format.isKotlin() -> lines.append(",$enable)")
-                format.isJava() -> lines.append(",$enable);")
-            }
         }
     }
 
