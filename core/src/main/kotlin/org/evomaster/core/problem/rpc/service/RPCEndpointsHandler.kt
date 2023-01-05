@@ -177,11 +177,12 @@ class RPCEndpointsHandler {
                             val exAction = externalServiceCluster[
                                     RPCExternalServiceAction.getRPCExternalServiceActionName(e.interfaceFullName, e.functionName, e.requestRules[index], e.responseTypes[index])
                             ]!!.copy() as ApiExternalServiceAction
-                            try {
-                                setGeneBasedOnString(exAction.response.responseBody, r)
-                            }catch (e: Exception){
-                                throw RuntimeException("Fail to handle mocked responses", e)
-                            }
+                            // disable handling of response
+//                            try {
+//                                setGeneBasedOnString(exAction.response.responseBody, r)
+//                            }catch (e: Exception){
+//                                throw RuntimeException("Fail to handle mocked responses", e)
+//                            }
                             exAction
                         }
                     }.flatten()
