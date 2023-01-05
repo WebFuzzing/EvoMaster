@@ -14,13 +14,13 @@ enum FlowerType{
 #A flower of the API
 type Flower {
     #The id of the flower
-    id: Int!
+    id: Int
     #The name of the flower
-    name: String!
+    name: String
     #The type of the flower
     type: String!
     #The color of the flower
-    color: String!
+    color: String
     #The price of the flower
-    price: Int!
+    price: Int
 }
