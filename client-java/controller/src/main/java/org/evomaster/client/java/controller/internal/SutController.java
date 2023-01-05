@@ -1200,7 +1200,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *     a method to employ customized mocking of RPC based external services
      * </p>
      * @param externalServiceDtos contains info about how to setup responses with json format, note that the json should
-     *                            be able to be coverted to List<MockRPCExternalServiceDto>
+     *                            be able to be coverted to a list of MockRPCExternalServiceDto
      * @param enabled reflect to enable (set it true) or disable (set it false) the specified external service dtos.
      *                Note that null [externalServiceDtos] with false [enabled] means that all existing external service setup should be disabled.
      * @return whether the mocked instance starts successfully,
