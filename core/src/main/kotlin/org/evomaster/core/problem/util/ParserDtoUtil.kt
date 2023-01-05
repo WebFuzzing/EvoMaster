@@ -143,7 +143,7 @@ object ParserDtoUtil {
     fun setGeneBasedOnString(gene: Gene, stringValue: String?){
         val valueGene = ParamUtil.getValueGene(gene)
 
-        if (stringValue != null){
+        if (stringValue != null && !stringValue.equals("null", ignoreCase = true)){
             when(valueGene){
                 is IntegerGene -> valueGene.setValueWithRawString(stringValue)
                 is DoubleGene -> valueGene.setValueWithRawString(stringValue)
