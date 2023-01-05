@@ -5,8 +5,8 @@ import org.evomaster.core.output.clustering.DBSCANClusterer
 import org.evomaster.core.output.clustering.metrics.DistanceMetric
 import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.api.service.ApiWsIndividual
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Solution
 

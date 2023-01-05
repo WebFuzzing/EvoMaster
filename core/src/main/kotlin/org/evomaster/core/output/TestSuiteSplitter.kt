@@ -8,13 +8,13 @@ import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQlCallResult
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.*
 import com.google.gson.*
-import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.api.ApiWsIndividual
 
 /**
  * Created by arcuri82 on 11-Nov-19.

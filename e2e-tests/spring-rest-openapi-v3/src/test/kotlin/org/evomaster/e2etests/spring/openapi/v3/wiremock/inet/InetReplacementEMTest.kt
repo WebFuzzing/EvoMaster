@@ -27,13 +27,14 @@ class InetReplacementEMTest : SpringTestBase() {
             "InetReplacementEM",
             "org.foo.InetReplacementEM",
             1000,
-            !CIUtils.isRunningGA(),
+//            !CIUtils.isRunningGA(),
+            false,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.5")
+                args.add("127.0.0.2")
 
                 val solution = initAndRun(args)
 

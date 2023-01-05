@@ -8,11 +8,11 @@ import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils.getWMDefaultSignature
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.external.service.httpws.HarvestActualHttpWsResponseHandler
-import org.evomaster.core.problem.external.service.httpws.HttpWsExternalServiceHandler
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.externalservice.httpws.HarvestActualHttpWsResponseHandler
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
-import org.evomaster.core.problem.httpws.service.auth.NoAuth
+import org.evomaster.core.problem.httpws.auth.NoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
@@ -824,6 +824,8 @@ abstract class AbstractRestFitness<T> : HttpWsFitness<T>() where T : Individual 
         // TODO: Need to move under ApiWsFitness after the GraphQL and RPC support is completed
         if (index == 0) {
             actionDto.externalServiceMapping = externalServiceHandler.getExternalServiceMappings()
+            actionDto.localAddressMapping = externalServiceHandler.getLocalAddressMapping()
+            actionDto.skippedExternalServices = externalServiceHandler.getSkippedExternalServices()
         }
         return actionDto
     }

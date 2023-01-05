@@ -7,6 +7,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Array;
 
 /**
  * Mark a static method as a replacement one for a method in the Java API.
@@ -79,4 +80,6 @@ public @interface Replacement {
      * This is necessary for 3rd-party replacements only.
      */
     String castTo() default "";
+
+    String[] packagesToSkip() default {};
 }

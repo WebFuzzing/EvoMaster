@@ -9,7 +9,9 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.CookieWriter
 import org.evomaster.core.output.TokenWriter
 import org.evomaster.core.problem.api.service.ApiWsFitness
-import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.httpws.HttpWsAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.remote.SutProblemException

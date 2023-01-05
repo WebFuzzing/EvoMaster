@@ -3,9 +3,9 @@ package org.evomaster.core.output.service
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.formatter.OutputFormatter
-import org.evomaster.core.problem.external.service.httpws.HttpWsExternalService
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceAction
-import org.evomaster.core.problem.external.service.httpws.param.HttpWsResponseParam
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
+import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.search.gene.utils.GeneUtils
 
 /**

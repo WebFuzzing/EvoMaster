@@ -5,8 +5,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.external.service.httpws.HttpWsExternalService
-import org.evomaster.core.problem.external.service.httpws.HttpExternalServiceRequest
+import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
+import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.slf4j.Logger

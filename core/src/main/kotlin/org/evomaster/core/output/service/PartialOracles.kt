@@ -10,9 +10,9 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.oracles.ImplementedOracle
 import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
-import org.evomaster.core.problem.api.service.ApiWsIndividual
+import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual

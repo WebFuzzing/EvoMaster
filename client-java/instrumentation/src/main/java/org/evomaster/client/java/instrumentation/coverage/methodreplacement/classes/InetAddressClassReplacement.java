@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Exte
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -33,19 +34,21 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static InetAddress getByName(String host) throws UnknownHostException {
-        if (ExternalServiceInfoUtils.skipHostnameOrIp(host))
+        if (ExternalServiceInfoUtils.skipHostnameOrIp(host) || ExecutionTracer.skipHostname(host))
             return InetAddress.getByName(host);
 
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, -1);
         try {
-            if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-                String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
+            if (ExecutionTracer.hasLocalAddress(host)) {
+                String ip = ExecutionTracer.getLocalAddress(host);
                 return InetAddress.getByName(ip);
-            } else {
-                ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             }
             return InetAddress.getByName(host);
         } catch (UnknownHostException e) {
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                    host,
+                    -1
+            );
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             throw e;
         }
@@ -58,18 +61,21 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static InetAddress[] getAllByName(String host) throws UnknownHostException {
-        if (ExternalServiceInfoUtils.skipHostnameOrIp(host))
+        if (ExternalServiceInfoUtils.skipHostnameOrIp(host) || ExecutionTracer.skipHostname(host))
             return InetAddress.getAllByName(host);
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, -1);
+
         try {
-            if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())) {
-                String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
+            if (ExecutionTracer.hasLocalAddress(host)) {
+                String ip = ExecutionTracer.getLocalAddress(host);
                 return new InetAddress[]{InetAddress.getByName(ip)};
-            } else {
-                ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             }
             return InetAddress.getAllByName(host);
         } catch (UnknownHostException e) {
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                    host,
+                    -1
+            );
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             throw e;
         }

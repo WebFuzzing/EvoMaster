@@ -545,7 +545,7 @@ object GeneUtils {
         if (selected.isEmpty() || selected.size == failedRepairCount) {
             /*
              * we did not find fields that are already selected, or we ended up deselecting all of them.
-             * must select at least one among the others that were of
+             * must select at least one among the others that were off
              */
             val candidates = obj.fields.filter {
                 (it is OptionalGene && it.selectable && !it.isActive)
@@ -570,12 +570,20 @@ object GeneUtils {
                         }
                         return true //we just need one
                     } else if (selectedGene.gene is TupleGene){
-                        val lastElement = selectedGene.gene.elements.last()
-                        repairTupleLastElement(lastElement)
+                        var ok = true
+                        if(selectedGene.gene.lastElementTreatedSpecially){
+                            val lastElement = selectedGene.gene.elements.last()
+                            ok = repairTupleLastElement(lastElement)
+                        }
+                        return ok
                     }
                 } else if (selectedGene is TupleGene) {
-                    val lastElement = selectedGene.elements.last()
-                    repairTupleLastElement(lastElement)
+                    var ok = true
+                    if(selectedGene.lastElementTreatedSpecially) {
+                        val lastElement = selectedGene.elements.last()
+                        ok = repairTupleLastElement(lastElement)
+                    }
+                    return ok
                 } else {
                     (selectedGene as BooleanGene).value = true
                     return true
@@ -630,13 +638,22 @@ object GeneUtils {
                     if (gene.gene is ArrayGene<*>)
                         handleBooleanSelection(gene.gene.template)
                     else
-                        if (gene.gene is TupleGene && gene.gene.lastElementTreatedSpecially)//opt tuple
-                            TupleGene(
+                        if (gene.gene is TupleGene && gene.gene.lastElementTreatedSpecially) {//opt tuple
+                            /*  TupleGene(
+                                      gene.name,
+                                      gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last())),
+                                      lastElementTreatedSpecially = true)*/
+                            if ((gene.gene.elements.last() is ObjectGene || gene.gene.elements.last().getWrappedGene(OptionalGene::class.java)?.gene is ObjectGene))
+                                TupleGene(
                                     gene.name,
-                                    gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last())),
-                                    lastElementTreatedSpecially = true
-                            ) else if (gene.gene is TupleGene)
-                            gene.gene else if (gene.gene is LimitObjectGene) gene else if (gene.gene is CycleObjectGene) gene
+                                    gene.gene.elements.dropLast(1)
+                                        .plus(handleBooleanSelection(gene.gene.elements.last())),
+                                    lastElementTreatedSpecially = true)
+                            else
+                                OptionalGene(gene.name, handleBooleanSelection(gene.gene))
+                        } else if (gene.gene is TupleGene) gene
+                        else if (gene.gene is LimitObjectGene) gene
+                        else if (gene.gene is CycleObjectGene) gene
                         else
                         // on by default, but can be deselected during the search
                             BooleanGene(gene.name, true)

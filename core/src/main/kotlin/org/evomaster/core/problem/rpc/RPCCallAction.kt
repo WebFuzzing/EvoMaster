@@ -1,8 +1,7 @@
 package org.evomaster.core.problem.rpc
 
-import org.evomaster.core.problem.api.service.ApiWsAction
-import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.ApiWsAction
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam

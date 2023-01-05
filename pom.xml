@@ -26,6 +26,7 @@
         <module>client-java</module>
         <module>e2e-tests</module>
         <module>report</module>
+        <module>test-old-libraries</module>
     </modules>
 
     <issueManagement>
@@ -138,7 +139,7 @@
         <apache.http.client.version>4.5.13</apache.http.client.version>
         <okhttp3.client.version>4.9.3</okhttp3.client.version>
         <okhttp.client.version>2.4.0</okhttp.client.version>
-        <dns.cache.manipulator.version>1.8.0-RC1</dns.cache.manipulator.version>
+        <dns.cache.manipulator.version>1.8.0</dns.cache.manipulator.version>
         <jakarta.annotation.version>2.0.0</jakarta.annotation.version>
         <micronaut.version>3.2.7</micronaut.version>
         <micronaut.openapi.version>3.2.0</micronaut.openapi.version>

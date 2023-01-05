@@ -567,12 +567,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             RPCEndpointsBuilder.validateCustomizedValueInRequests(getCustomizedValueInRequests());
             RPCEndpointsBuilder.validateCustomizedNotNullAnnotationForRPCDto(specifyCustomizedNotNullAnnotation());
             RPCProblem rpcp = (RPCProblem) getProblemInfo();
-            for (String interfaceName: rpcp.getMapOfInterfaceAndClient()){
+            for (String interfaceName: rpcp.getKeysOfMapOfInterfaceAndClient()){
                 InterfaceSchema schema = RPCEndpointsBuilder.build(interfaceName, rpcp.getType(), rpcp.getClient(interfaceName),
-                        rpcp.skipEndpointsByName!=null? rpcp.skipEndpointsByName.get(interfaceName):null,
-                        rpcp.skipEndpointsByAnnotation!=null?rpcp.skipEndpointsByAnnotation.get(interfaceName):null,
-                        rpcp.involveEndpointsByName!=null? rpcp.involveEndpointsByName.get(interfaceName):null,
-                        rpcp.involveEndpointsByAnnotation!=null? rpcp.involveEndpointsByAnnotation.get(interfaceName):null,
+                        rpcp.getSkipEndpointsByName()!=null? rpcp.getSkipEndpointsByName().get(interfaceName):null,
+                        rpcp.getSkipEndpointsByAnnotation()!=null?rpcp.getSkipEndpointsByAnnotation().get(interfaceName):null,
+                        rpcp.getInvolveEndpointsByName()!=null? rpcp.getInvolveEndpointsByName().get(interfaceName):null,
+                        rpcp.getInvolveEndpointsByAnnotation()!=null? rpcp.getInvolveEndpointsByAnnotation().get(interfaceName):null,
                         getInfoForAuthentication(),
                         getCustomizedValueInRequests(),
                         specifyCustomizedNotNullAnnotation());
