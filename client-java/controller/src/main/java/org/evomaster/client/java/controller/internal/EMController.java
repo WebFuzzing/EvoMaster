@@ -384,7 +384,7 @@ public class EMController {
                             // clean db with accessed tables
                             noKillSwitchForceCheck(() -> sutController.cleanAccessedTables());
 
-                            if (dto.resetMockedExternalServicesWithCustomizedMethod){
+                            if (dto.resetMockedExternalServicesWithCustomizedMethod != null && dto.resetMockedExternalServicesWithCustomizedMethod){
                                 noKillSwitch(()-> sutController.resetMockedExternalServicesWithCustomizedMethod());
                             }
 
