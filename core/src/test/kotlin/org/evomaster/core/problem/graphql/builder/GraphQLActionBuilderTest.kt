@@ -1250,7 +1250,11 @@ class GraphQLActionBuilderTest {
         assertTrue(following.parameters[1] is GQInputParam)
         assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java) != null)
         assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(EnumGene::class.java) != null)
-
+        /**/
+        val review = actionCluster["Review"] as GraphQLAction
+        assertEquals(6, review.parameters.size)
+        assertTrue(review.parameters[3] is GQInputParam)
+        assertTrue(review.parameters[3].gene.getWrappedGene(EnumGene::class.java) != null)
     }
 
     @Test
