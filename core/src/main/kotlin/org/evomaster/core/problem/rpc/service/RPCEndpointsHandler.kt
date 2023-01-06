@@ -40,6 +40,7 @@ import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -783,6 +784,8 @@ class RPCEndpointsHandler {
             }
         }else{
             if (gene is OptionalGene && dto.isNullable)
+                gene.isActive = false
+            if (gene is NullableGene && dto.isNullable)
                 gene.isActive = false
             else
                 log.warn("could not retrieve value of ${dto.name?:"untitled"}")
