@@ -787,8 +787,14 @@ class RPCEndpointsHandler {
                 gene.isActive = false
             else if (gene is NullableGene && dto.isNullable)
                 gene.isActive = false
-            else
-                log.warn("could not retrieve value of ${dto.name?:"untitled"} with ${gene::class.java.simpleName}")
+            else{
+                /*
+                    such case might exist in seeded tests
+                    later might support robustness testing for RPC to handle, eg, set null for non-nullable parameter
+                 */
+                LoggingUtil.uniqueWarn(log, "could not retrieve value of ${dto.name?:"untitled"} with ${gene::class.java.simpleName}")
+            }
+
         }
     }
 
