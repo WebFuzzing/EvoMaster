@@ -800,12 +800,16 @@ object GraphQLActionBuilder {
                 return getReturnGene(state, history, initAccum, treeDepth, copy)
             }
 
-            GqlConst.ENUM ->
-                return createEnumGene(
+            GqlConst.ENUM -> {
+               if(element.kindOfFieldType.lowercase() == GqlConst.LIST) return createEnumGene(
+                   element.fieldName,
+                   element.enumValues,
+               )
+               else return createEnumGene(
                     element.KindOfFieldName,
                     element.enumValues,
                 )
-
+            }
             GqlConst.SCALAR -> {
                 if (element.kindOfFieldType.lowercase() == GqlConst.LIST)
                     return createScalarGene(
