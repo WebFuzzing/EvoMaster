@@ -788,7 +788,7 @@ class RPCEndpointsHandler {
             else if (gene is NullableGene && dto.isNullable)
                 gene.isActive = false
             else
-                log.warn("could not retrieve value of ${dto.name?:"untitled"}")
+                log.warn("could not retrieve value of ${dto.name?:"untitled"} with ${gene::class.java.simpleName}")
         }
     }
 
