@@ -91,6 +91,12 @@ class NullableGene(name: String,
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
+    override fun getValueAsRawString(): String {
+        if(!isActive)
+            return nullLabel
+        return gene.getValueAsRawString()
+    }
+
     override fun copyValueFrom(other: Gene) {
         if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")

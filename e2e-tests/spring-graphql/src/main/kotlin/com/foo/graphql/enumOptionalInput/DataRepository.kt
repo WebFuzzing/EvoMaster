@@ -1,7 +1,8 @@
-package com.foo.graphql.enumInput
+package com.foo.graphql.enumOptionalInput
 
-import com.foo.graphql.enumInput.type.FlowerType
-import com.foo.graphql.enumInput.type.Flower
+
+import com.foo.graphql.enumOptionalInput.type.Flower
+import com.foo.graphql.enumOptionalInput.type.FlowerType
 import org.springframework.stereotype.Component
 
 
@@ -20,9 +21,12 @@ open class DataRepository {
     }
 
 
-    fun findByFlTy(type: FlowerType): Flower? {
-        return flowers[type]
-
+    fun findByFlTy(type: FlowerType?): Flower? {
+        return if(type==null){
+            Flower(null, "NullFlower", FlowerType.LILIES , "null", null)
+        }else {
+            flowers[type]
+        }
     }
 
 }

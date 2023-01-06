@@ -40,6 +40,14 @@ where T : Individual {
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is HttpExternalServiceAction && a.active } }
     }
 
+    fun hasAnyUsageOfDefaultExternalService() : Boolean{
+        return individuals.any{ind -> ind.fitness.getViewEmployedDefaultWM().isNotEmpty()}
+    }
+
+    fun needsMockedDns() : Boolean{
+        return hasAnyActiveHttpExternalServiceAction() || hasAnyUsageOfDefaultExternalService()
+    }
+
     fun hasAnySqlAction() : Boolean{
         return individuals.any { ind -> ind.individual.seeAllActions().any { a ->  a is DbAction}}
     }

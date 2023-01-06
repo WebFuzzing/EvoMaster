@@ -146,7 +146,8 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             return;
         }
 
-        Optional<Method> r = ReplacementUtils.chooseMethodFromCandidateReplacement(isInSUT, name, desc, candidateClasses, false);
+        Optional<Method> r = ReplacementUtils.chooseMethodFromCandidateReplacement(
+                isInSUT, name, desc, candidateClasses, false, className);
 
         if (!r.isPresent()) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);

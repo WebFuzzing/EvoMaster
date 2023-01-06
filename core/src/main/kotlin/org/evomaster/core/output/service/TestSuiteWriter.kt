@@ -346,6 +346,9 @@ class TestSuiteWriter {
                     "com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer",
                     lines
                 )
+            }
+
+            if(config.isEnabledExternalServiceMocking() && solution.needsMockedDns() ){
                 addImport("com.alibaba.dcm.DnsCacheManipulator", lines)
             }
 
@@ -676,7 +679,7 @@ class TestSuiteWriter {
                         addStatement("$controller.stopSut()", lines)
                         if (format.isJavaOrKotlin()
                             && config.isEnabledExternalServiceMocking()
-                            && solution.hasAnyActiveHttpExternalServiceAction()
+                            && solution.needsMockedDns()
                         ) {
                             getWireMockServerActions(solution)
                                 .forEach { action ->
@@ -745,7 +748,7 @@ class TestSuiteWriter {
 
             if (format.isJavaOrKotlin()
                 && config.isEnabledExternalServiceMocking()
-                && solution.hasAnyActiveHttpExternalServiceAction()
+                && solution.needsMockedDns()
             ) {
                 addStatement("DnsCacheManipulator.clearDnsCache()", lines)
             }

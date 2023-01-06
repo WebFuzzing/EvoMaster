@@ -1251,6 +1251,11 @@ class GraphQLActionBuilderTest {
         assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java) != null)
         assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(EnumGene::class.java) != null)
         /**/
+        val review = actionCluster["Review"] as GraphQLAction
+        assertEquals(6, review.parameters.size)
+        assertTrue(review.parameters[3] is GQInputParam)
+        assertTrue(review.parameters[3].gene.getWrappedGene(EnumGene::class.java) != null)
+        /**/
         val  activityReply = actionCluster["ActivityReply"] as GraphQLAction
         assertEquals(3, activityReply.parameters.size)
         assertTrue(activityReply.parameters[2] is GQReturnParam)
@@ -1267,6 +1272,7 @@ class GraphQLActionBuilderTest {
         val optTupleScores = objAnime.fields.first { it.getWrappedGene(TupleGene::class.java)?.name == "scores"}
         val tupleScores = optTupleScores.getWrappedGene(TupleGene::class.java)
         if (tupleScores != null) {assertEquals(3, tupleScores.elements.size)}
+
     }
 
     @Test
