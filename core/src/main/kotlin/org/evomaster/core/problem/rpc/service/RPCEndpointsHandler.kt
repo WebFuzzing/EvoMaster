@@ -785,7 +785,7 @@ class RPCEndpointsHandler {
         }else{
             if (gene is OptionalGene && dto.isNullable)
                 gene.isActive = false
-            if (gene is NullableGene && dto.isNullable)
+            else if (gene is NullableGene && dto.isNullable)
                 gene.isActive = false
             else
                 log.warn("could not retrieve value of ${dto.name?:"untitled"}")
