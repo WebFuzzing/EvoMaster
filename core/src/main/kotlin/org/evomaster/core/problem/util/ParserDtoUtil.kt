@@ -259,12 +259,11 @@ object ParserDtoUtil {
                 else -> throw IllegalStateException("Not support setGeneBasedOnParamDto with gene ${gene::class.java.simpleName} and stringValue ($stringValue)")
             }
         }else{
-            if (gene is OptionalGene)
-                gene.isActive = false
-            if (gene is NullableGene)
-                gene.isActive = false
-            else
-                log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
+            when (gene) {
+                is OptionalGene -> gene.isActive = false
+                is NullableGene -> gene.isActive = false
+                else -> log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
+            }
         }
     }
 
