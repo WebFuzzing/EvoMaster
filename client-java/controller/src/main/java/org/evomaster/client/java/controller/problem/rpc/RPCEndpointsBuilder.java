@@ -737,7 +737,10 @@ public class RPCEndpointsBuilder {
 
     private static boolean isGetter(String fieldName, String methodName, String type){
         boolean isBoolean = type.equals(Boolean.class.getName()) || type.equals(boolean.class.getName());
-        return methodName.equalsIgnoreCase("get"+fieldName) || (isBoolean && (methodName.equalsIgnoreCase(fieldName) || methodName.equalsIgnoreCase("is"+fieldName)));
+        return methodName.equalsIgnoreCase("get"+fieldName)
+                || (isBoolean && (methodName.equalsIgnoreCase(fieldName)
+                || methodName.equalsIgnoreCase("is"+fieldName)))
+                || (isBoolean && fieldName.startsWith("is") && methodName.equalsIgnoreCase(fieldName.replaceFirst("is", "get")));
     }
 
     private static void handleNamedValueWithCustomizedDto(NamedTypedValue namedTypedValue, Map<Integer, CustomizedRequestValueDto> customizationDtos, Set<String> relatedCustomization){
