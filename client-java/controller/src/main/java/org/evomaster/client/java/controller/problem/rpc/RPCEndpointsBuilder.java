@@ -285,7 +285,7 @@ public class RPCEndpointsBuilder {
                         setNamedValueBasedOnCandidates(f, node.textValue());
                         fields.add(v);
                     }else {
-                        SimpleLogger.recordErrorMessage("Driver Config Error: cannot find field with the name "+v.getName()+" in the specified json");
+                        SimpleLogger.recordErrorMessage("Warning: cannot find field with the name "+v.getName()+" in the specified json");
                     }
                 }
                 inputParam.setValue(fields);
