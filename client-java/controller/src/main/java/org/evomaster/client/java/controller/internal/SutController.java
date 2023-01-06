@@ -47,9 +47,14 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import javax.ws.rs.core.Response;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -1227,5 +1232,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         return customizeMockingRPCExternalService(exDto, enabled);
+    }
+
+    /**
+     *
+     * @param fileName the name of file which exist in the same directory of the class
+     * @return content of file with the specified file
+     */
+    public final String readFileAsStringFromClassDirectory(String fileName){
+        return (new BufferedReader(new InputStreamReader(Objects.requireNonNull(this.getClass().getResourceAsStream(fileName)))))
+                .lines().collect(Collectors.joining(System.lineSeparator()));
     }
 }
