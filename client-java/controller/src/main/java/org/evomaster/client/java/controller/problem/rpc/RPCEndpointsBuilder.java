@@ -92,7 +92,7 @@ public class RPCEndpointsBuilder {
                 Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
                 build(schema, clazz, null, "return", rpcType, new ArrayList<>(), null, null, null, null, null, genericTypeMap, true);
             } catch (ClassNotFoundException e) {
-                SimpleLogger.recordErrorMessage("Driver Config Error: cannot identify the class from the driver "+e.getMessage());
+                SimpleLogger.recordErrorMessage("Warning: cannot identify the class from the driver "+e.getMessage());
             } catch (Exception e){
                 throw new RuntimeException("EM schema parser error: fail to extract mocked response "+ responseType);
             }

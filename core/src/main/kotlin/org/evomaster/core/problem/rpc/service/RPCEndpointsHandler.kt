@@ -475,7 +475,7 @@ class RPCEndpointsHandler {
         msg?:return
         LoggingUtil.getInfoLogger().apply {
             if (msg.isNotEmpty())
-                info("Errors in extraction of RPC schema and seeded tests:")
+                info("Errors/Warnings in extraction of RPC schema and seeded tests:")
             msg.forEach {
                 info(it)
             }
