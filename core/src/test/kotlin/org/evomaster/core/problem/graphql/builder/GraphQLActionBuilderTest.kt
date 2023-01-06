@@ -1273,6 +1273,10 @@ class GraphQLActionBuilderTest {
         val tupleScores = optTupleScores.getWrappedGene(TupleGene::class.java)
         if (tupleScores != null) {assertEquals(3, tupleScores.elements.size)}
 
+        assertTrue(objAnime.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "lengths" })
+        val optTupleLengths = objAnime.fields.first { it.getWrappedGene(TupleGene::class.java)?.name == "lengths"}
+        val tupleLengths = optTupleLengths.getWrappedGene(TupleGene::class.java)
+        if (tupleLengths != null) {assertEquals(3, tupleLengths.elements.size)}
     }
 
     @Test
