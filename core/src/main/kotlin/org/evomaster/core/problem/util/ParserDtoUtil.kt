@@ -261,6 +261,8 @@ object ParserDtoUtil {
         }else{
             if (gene is OptionalGene)
                 gene.isActive = false
+            if (gene is NullableGene)
+                gene.isActive = false
             else
                 log.warn("could not set null for ${gene.name} with type (${gene::class.java.simpleName})")
         }
