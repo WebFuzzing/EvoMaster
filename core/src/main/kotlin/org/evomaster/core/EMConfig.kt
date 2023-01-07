@@ -1778,6 +1778,10 @@ class EMConfig {
     var enableCustomizedExternalServiceHandling = false
 
     @Experimental
+    @Cfg("Whether to save mocked responses as separated files")
+    var saveMockedResponseAsSeparatedFile = false
+
+    @Experimental
     @Cfg("Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic." +
             " An example is javax/jakarta annotation constraints defined on JPA entities.")
     @Probability(true)
