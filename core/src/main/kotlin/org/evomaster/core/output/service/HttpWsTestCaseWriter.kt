@@ -248,7 +248,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val res = evaluatedAction.result as HttpWsCallResult
 
         if (res.failedCall()) {
-            addActionInTryCatch(call, lines, res, testSuitePath, baseUrlOfSut,, )
+            addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
             addActionLines(call,index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         }

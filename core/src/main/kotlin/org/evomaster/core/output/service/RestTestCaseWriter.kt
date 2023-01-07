@@ -117,7 +117,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 //actions
                 c.second.forEach { a ->
                     val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
-                    handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testSuitePath, baseUrlOfSut, )
+                    handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
                 }
             }
         }
