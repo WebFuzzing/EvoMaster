@@ -14,6 +14,7 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
+import java.nio.file.Path
 
 class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
@@ -24,15 +25,15 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     @Inject
     protected lateinit var fitness: GraphQLFitness
 
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>){
+    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>, testCaseName: String, testSuitePath: Path){
         if (ind.individual is GraphQLIndividual) {
             ind.evaluatedMainActions().forEachIndexed { index,  a ->
-                handleSingleCall(a, index, ind.fitness, lines, baseUrlOfSut)
+                handleSingleCall(a, index, ind.fitness, lines, testSuitePath, baseUrlOfSut, )
             }
         }
     }
 
-    override fun addActionLines(action: Action, lines: Lines, result: ActionResult, baseUrlOfSut: String) {
+    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path, baseUrlOfSut: String) {
         addGraphQlCallLines(action as GraphQLAction, lines, result as GraphQlCallResult, baseUrlOfSut)
     }
 

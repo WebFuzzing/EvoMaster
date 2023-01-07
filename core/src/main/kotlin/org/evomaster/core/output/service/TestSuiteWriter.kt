@@ -18,6 +18,7 @@ import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.ZonedDateTime
 
@@ -118,15 +119,16 @@ class TestSuiteWriter {
             solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
         }
 
+        val testSuitePath = getTestSuitePath(testSuiteFileName, config)
         for (test in tests) {
             lines.addEmpty(2)
 
             // catch writing problems on an individual test case basis
             val testLines = try {
                 if (config.outputFormat.isCsharp())
-                    testCaseWriter.convertToCompilableTestCode(test, "$fixture.$baseUrlOfSut")
+                    testCaseWriter.convertToCompilableTestCode(test, testSuitePath,"$fixture.$baseUrlOfSut")
                 else
-                    testCaseWriter.convertToCompilableTestCode(test, baseUrlOfSut)
+                    testCaseWriter.convertToCompilableTestCode(test, testSuitePath, baseUrlOfSut)
             } catch (ex: Exception) {
                 log.warn(
                     "A failure has occurred in writing test ${test.name}. \n "
@@ -185,13 +187,17 @@ class TestSuiteWriter {
         testSuiteFileName: TestSuiteFileName
     ) {
 
-        val path = Paths.get(config.outputFolder, testSuiteFileName.getAsPath(config.outputFormat))
+        val path = getTestSuitePath(testSuiteFileName, config)
 
         Files.createDirectories(path.parent)
         Files.deleteIfExists(path)
         Files.createFile(path)
 
         path.toFile().appendText(testFileContent)
+    }
+
+    private fun getTestSuitePath(testSuiteFileName: TestSuiteFileName, config: EMConfig) : Path{
+        return Paths.get(config.outputFolder, testSuiteFileName.getAsPath(config.outputFormat));
     }
 
     private fun removeFromDisk(
