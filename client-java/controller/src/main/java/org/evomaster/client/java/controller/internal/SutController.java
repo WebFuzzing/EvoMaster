@@ -1205,6 +1205,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *     a method to reset mocked external services with customized method
      * </p>
      */
+    @Override
     public final boolean resetMockedExternalServicesWithCustomizedMethod(){
         if (getProblemInfo() instanceof RPCProblem){
             return mockRPCExternalServicesWithCustomizedHandling(null, false);
@@ -1222,6 +1223,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *                Note that null [externalServiceDtos] with false [enabled] means that all existing external service setup should be disabled.
      * @return whether the mocked instance starts successfully,
      */
+    @Override
     public final boolean mockRPCExternalServicesWithCustomizedHandling(String externalServiceDtos, boolean enabled){
         List<MockRPCExternalServiceDto> exDto = null;
         try {
