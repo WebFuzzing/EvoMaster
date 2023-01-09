@@ -1,6 +1,11 @@
 package org.evomaster.client.java.instrumentation;
 
-public class ExternalService {
+import java.io.Serializable;
+
+/*
+    TODO likely to merge with ExternalServiceInfo
+ */
+public class ExternalService implements Serializable {
 
     /**
      * The hostname of the external service.
