@@ -192,7 +192,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
 
         saveTextToDisk(body, testSuitePath, fileName)
 
-        lines.append("${TestSuiteWriter.controller}.readFileAsStringFromClassDirectory($fileName)")
+        lines.append("${TestSuiteWriter.controller}.readFileAsStringFromClassDirectory(\"$fileName\")")
     }
 
     private fun getFileNameToSaveMockedResponsesDtoAsJson(testCaseName: String, actionIndex: Int) = "${testCaseName}_MockedResponseInfo_$actionIndex.json"
