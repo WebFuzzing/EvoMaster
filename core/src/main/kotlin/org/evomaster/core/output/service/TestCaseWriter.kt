@@ -58,9 +58,9 @@ abstract class TestCaseWriter {
     }
 
     fun convertToCompilableTestCode(
-        test: TestCase,
-        testSuitePath: Path,
-        baseUrlOfSut: String
+            test: TestCase,
+            baseUrlOfSut: String,
+            testSuitePath: Path? = null
     ): Lines {
 
         counter = 0
@@ -101,7 +101,7 @@ abstract class TestCaseWriter {
             val ind = test.test
             val insertionVars = mutableListOf<Pair<String, String>>()
             handleFieldDeclarations(lines, baseUrlOfSut, ind, insertionVars)
-            handleActionCalls(lines, baseUrlOfSut, ind, insertionVars,testCaseName = test.name, testSuitePath)
+            handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
         }
 
         lines.add("}")
@@ -196,7 +196,7 @@ abstract class TestCaseWriter {
             ind: EvaluatedIndividual<*>,
             insertionVars: MutableList<Pair<String, String>>,
             testCaseName: String,
-            testSuitePath: Path
+            testSuitePath: Path?
     )
 
     /**
@@ -206,7 +206,7 @@ abstract class TestCaseWriter {
      * @param result is the execution result of the action
      * @param baseUrlOfSut is the base url of sut
      */
-    protected abstract fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path, baseUrlOfSut: String)
+    protected abstract fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)
 
     protected abstract fun shouldFailIfException(result: ActionResult): Boolean
 
@@ -227,7 +227,7 @@ abstract class TestCaseWriter {
             testCaseName: String,
             lines: Lines,
             res: ActionResult,
-            testSuitePath: Path,
+            testSuitePath: Path?,
             baseUrlOfSut: String
     ) {
         when {

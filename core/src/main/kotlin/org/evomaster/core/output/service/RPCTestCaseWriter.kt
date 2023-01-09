@@ -42,7 +42,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
             ind: EvaluatedIndividual<*>,
             insertionVars: MutableList<Pair<String, String>>,
             testCaseName: String,
-            testSuitePath: Path
+            testSuitePath: Path?
     ) {
 
         if (ind.individual is RPCIndividual){
@@ -62,7 +62,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path, baseUrlOfSut: String) {
+    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
 
         val rpcCallAction = (action as? RPCCallAction)?: throw IllegalStateException("action must be RPCCallAction, but it is ${action::class.java.simpleName}")
         val rpcCallResult = (result as? RPCCallResult)?: throw IllegalStateException("result must be RPCCallResult, but it is ${action::class.java.simpleName}")
@@ -268,7 +268,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
      * @param enable a configuration to enable/disable specified mocking configuration
      * @param lines are generated lines which save the generated test scripts
      */
-    fun handleCustomizedExternalServiceHandling(action: Action, index: Int, testCaseName: String, enable: Boolean, lines: Lines, testSuitePath: Path){
+    fun handleCustomizedExternalServiceHandling(action: Action, index: Int, testCaseName: String, enable: Boolean, lines: Lines, testSuitePath: Path?){
         if(config.enableCustomizedExternalServiceHandling && action.parent is EnterpriseActionGroup){
             val group = action.parent as EnterpriseActionGroup
 
@@ -289,6 +289,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                 val mockedConfigAsJson = rpcHandler.getJsonStringFromDto(exActions)
 
                 if (config.saveMockedResponseAsSeparatedFile){
+                    if (testSuitePath == null)
+                        throw IllegalArgumentException("testSuitePath cannot be null if it is required to save mocked responses in separated files")
                     saveJsonAndPrintReadJson(testCaseName,index,mockedConfigAsJson, testSuitePath, lines)
                 }else
                     printExecutionJson(mockedConfigAsJson, lines)

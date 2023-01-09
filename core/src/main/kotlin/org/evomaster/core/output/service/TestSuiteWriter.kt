@@ -126,9 +126,9 @@ class TestSuiteWriter {
             // catch writing problems on an individual test case basis
             val testLines = try {
                 if (config.outputFormat.isCsharp())
-                    testCaseWriter.convertToCompilableTestCode(test, testSuitePath,"$fixture.$baseUrlOfSut")
+                    testCaseWriter.convertToCompilableTestCode(test, "$fixture.$baseUrlOfSut", testSuitePath)
                 else
-                    testCaseWriter.convertToCompilableTestCode(test, testSuitePath, baseUrlOfSut)
+                    testCaseWriter.convertToCompilableTestCode(test, baseUrlOfSut, testSuitePath)
             } catch (ex: Exception) {
                 log.warn(
                     "A failure has occurred in writing test ${test.name}. \n "

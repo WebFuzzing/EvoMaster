@@ -215,7 +215,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             fv: FitnessValue,
             lines: Lines,
             testCaseName: String,
-            testSuitePath: Path,
+            testSuitePath: Path?,
             baseUrlOfSut: String
     ) {
 

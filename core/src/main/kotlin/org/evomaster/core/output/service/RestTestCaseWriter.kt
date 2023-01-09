@@ -98,7 +98,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             ind: EvaluatedIndividual<*>,
             insertionVars: MutableList<Pair<String, String>>,
             testCaseName: String,
-            testSuitePath: Path
+            testSuitePath: Path?
     ) {
         //SQL actions are generated in between
         if (ind.individual is RestIndividual) {
@@ -141,7 +141,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path, baseUrlOfSut: String) {
+    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
         addRestCallLines(action as RestCallAction, lines, result as RestCallResult, baseUrlOfSut)
     }
 

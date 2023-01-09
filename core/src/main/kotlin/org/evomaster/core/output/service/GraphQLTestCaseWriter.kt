@@ -25,7 +25,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     @Inject
     protected lateinit var fitness: GraphQLFitness
 
-    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>, testCaseName: String, testSuitePath: Path){
+    override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>, testCaseName: String, testSuitePath: Path?){
         if (ind.individual is GraphQLIndividual) {
             ind.evaluatedMainActions().forEachIndexed { index,  a ->
                 handleSingleCall(a, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
@@ -33,7 +33,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         }
     }
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path, baseUrlOfSut: String) {
+    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
         addGraphQlCallLines(action as GraphQLAction, lines, result as GraphQlCallResult, baseUrlOfSut)
     }
 
