@@ -800,12 +800,16 @@ object GraphQLActionBuilder {
                 return getReturnGene(state, history, initAccum, treeDepth, copy)
             }
 
-            GqlConst.ENUM ->
-                return createEnumGene(
+            GqlConst.ENUM -> {
+               if(element.kindOfFieldType.lowercase() == GqlConst.LIST) return createEnumGene(
+                   element.fieldName,
+                   element.enumValues,
+               )
+               else return createEnumGene(
                     element.KindOfFieldName,
                     element.enumValues,
                 )
-
+            }
             GqlConst.SCALAR -> {
                 if (element.kindOfFieldType.lowercase() == GqlConst.LIST)
                     return createScalarGene(
@@ -941,8 +945,10 @@ object GraphQLActionBuilder {
             ((lastElements is ArrayGene<*>) && (lastElements.template is ObjectGene)) ||
             ((lastElements is ArrayGene<*>) && (lastElements.template is OptionalGene) && (lastElements.template.gene is ObjectGene)) ||
             ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is ObjectGene)) ||
-            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is ObjectGene))||
-            ((lastElements is OptionalGene) && (lastElements.gene is LimitObjectGene))
+            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is ObjectGene)) ||
+            ((lastElements is OptionalGene) && (lastElements.gene is LimitObjectGene) ||
+            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is LimitObjectGene))
+             )
             )
 
     private fun constructReturn(

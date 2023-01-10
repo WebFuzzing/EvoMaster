@@ -13,7 +13,7 @@ open class QueryResolver(
 
 
 
-    fun flowersById(id: Int?): Flower?{
+    fun flowersById(id: Int): Flower?{
         return dataRepo.findById(id)
     }
 

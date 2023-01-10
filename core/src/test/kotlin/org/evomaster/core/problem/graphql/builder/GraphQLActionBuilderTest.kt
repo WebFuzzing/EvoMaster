@@ -1250,8 +1250,55 @@ class GraphQLActionBuilderTest {
         assertTrue(following.parameters[1] is GQInputParam)
         assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java) != null)
         assertTrue(following.parameters[1].gene.getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(EnumGene::class.java) != null)
+        /**/
+        val review = actionCluster["Review"] as GraphQLAction
+        assertEquals(6, review.parameters.size)
+        assertTrue(review.parameters[3] is GQInputParam)
+        assertTrue(review.parameters[3].gene.getWrappedGene(EnumGene::class.java) != null)
+        /**/
+        val  activityReply = actionCluster["ActivityReply"] as GraphQLAction
+        assertEquals(3, activityReply.parameters.size)
+        assertTrue(activityReply.parameters[2] is GQReturnParam)
+        val objActivityReply = activityReply.parameters[2].gene as ObjectGene
+        assertTrue(objActivityReply.fields[7] is OptionalGene)//user
+        val objUser4 = (objActivityReply.fields[7] as OptionalGene).gene as ObjectGene
+        objUser4.fields.any { it is ObjectGene && it.name == "statistics" }
+        assertTrue(objUser4.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "statistics" })
+        val objStatistics = (objUser4.fields[12] as OptionalGene).gene as ObjectGene
+        objStatistics.fields.any { it is ObjectGene && it.name == "anime" }
+        val objAnime = (objStatistics.fields[0] as OptionalGene).gene as ObjectGene
+
+        assertTrue(objAnime.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "scores" })
+        val optTupleScores = objAnime.fields.first { it.getWrappedGene(TupleGene::class.java)?.name == "scores"}
+        val tupleScores = optTupleScores.getWrappedGene(TupleGene::class.java)
+        if (tupleScores != null) {assertEquals(3, tupleScores.elements.size)}
+
+        assertTrue(objAnime.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "lengths" })
+        val optTupleLengths = objAnime.fields.first { it.getWrappedGene(TupleGene::class.java)?.name == "lengths"}
+        val tupleLengths = optTupleLengths.getWrappedGene(TupleGene::class.java)
+        if (tupleLengths != null) {assertEquals(3, tupleLengths.elements.size)}
 
     }
+
+    @Test
+    fun anigListSchemaV2Test() {
+        // An updated schema of anigList
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/online/AniListV2.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+        assertEquals(56, actionCluster.size)
+        val  activityReply = actionCluster["ActivityReply"] as GraphQLAction
+        assertEquals(3, activityReply.parameters.size)
+        assertTrue(activityReply.parameters[2] is GQReturnParam)
+        val objActivityReply = activityReply.parameters[2].gene as ObjectGene
+        assertTrue(objActivityReply.fields[7] is OptionalGene)//user
+        val objUser4 = (objActivityReply.fields[7] as OptionalGene).gene as ObjectGene
+        assertTrue(objUser4.fields.any { it.getWrappedGene(BooleanGene::class.java)?.name == "moderatorRoles" })
+
+    }
+
 
     @Test
     fun arrayEnumInputTest() {
