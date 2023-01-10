@@ -1,0 +1,23 @@
+type Query {
+
+    flowers: [Flower]
+}
+
+type Mutation {
+
+    addFlower(price: Price ): Flower
+}
+
+
+type Flower{
+    id: Int,
+    name: String
+
+}
+
+
+input Price{
+    month: Int
+    year: Int
+
+}
