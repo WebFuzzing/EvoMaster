@@ -369,6 +369,9 @@ class EMConfig {
             throw IllegalArgumentException("Max length at sampling time $maxLengthForStringsAtSamplingTime" +
                     " cannot be greater than maximum string length $maxLengthForStrings")
         }
+
+        if (saveMockedResponseAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
+            throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files (ie, saveMockedResponseAsSeparatedFile=true)")
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {

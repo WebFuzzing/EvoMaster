@@ -183,7 +183,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
     }
 
 
-    private fun saveJsonAndPrintReadJson(testCaseName: String, actionIndex: Int, json: String, testSuitePath: Path, lines: Lines){
+    private fun saveJsonAndPrintReadJson(testCaseName: String, actionIndex: Int, json: String, lines: Lines){
         val fileName = getFileNameToSaveMockedResponsesDtoAsJson(testCaseName, actionIndex)
 
         val body = if (OutputFormatter.JSON_FORMATTER.isValid(json)) {
@@ -293,9 +293,9 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
                 val mockedConfigAsJson = rpcHandler.getJsonStringFromDto(exActions)
 
                 if (config.saveMockedResponseAsSeparatedFile){
-                    if (testSuitePath == null)
-                        throw IllegalArgumentException("testSuitePath cannot be null if it is required to save mocked responses in separated files")
-                    saveJsonAndPrintReadJson(testCaseName,index,mockedConfigAsJson, testSuitePath, lines)
+                    if (config.testResourcePathToSaveMockedResponse.isBlank())
+                        throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files")
+                    saveJsonAndPrintReadJson(testCaseName,index,mockedConfigAsJson, lines)
                 }else
                     printExecutionJson(mockedConfigAsJson, lines)
 
