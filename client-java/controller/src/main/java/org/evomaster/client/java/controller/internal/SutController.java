@@ -1241,8 +1241,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * @param fileName the name of file which exist in the same directory of the class
      * @return content of file with the specified file
      */
-    public final String readFileAsStringFromClassDirectory(String fileName){
-        return (new BufferedReader(new InputStreamReader(Objects.requireNonNull(this.getClass().getResourceAsStream(fileName)))))
+    public final String readFileAsStringFromTestResource(String fileName){
+        return (new BufferedReader(new InputStreamReader(Objects.requireNonNull(this.getClass().getClassLoader().getResourceAsStream(fileName)))))
                 .lines().collect(Collectors.joining(System.lineSeparator()));
     }
 }

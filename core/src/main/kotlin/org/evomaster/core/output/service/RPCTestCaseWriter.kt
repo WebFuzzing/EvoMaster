@@ -16,7 +16,9 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.math.max
 
 /**
@@ -190,9 +192,11 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
             json
         }
 
-        saveTextToDisk(body, testSuitePath, fileName)
+        val testResourcePath = Paths.get(config.testResourcePathToSaveMockedResponse)
 
-        lines.append("${TestSuiteWriter.controller}.readFileAsStringFromClassDirectory(\"$fileName\")")
+        saveTextToDisk(body, testResourcePath, fileName)
+
+        lines.append("${TestSuiteWriter.controller}.readFileAsStringFromTestResource(\"$fileName\")")
     }
 
     private fun getFileNameToSaveMockedResponsesDtoAsJson(testCaseName: String, actionIndex: Int) = "${testCaseName}_MockedResponseInfo_$actionIndex.json"

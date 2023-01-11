@@ -44,13 +44,13 @@ abstract class TestCaseWriter {
 
 
     /**
-     * save content to the same folder where [testSuitePath] is with a file name [fileName]
+     * save content to the same folder where [testResourcePath] is with a file name [fileName]
      */
-    protected fun saveTextToDisk(text: String, testSuitePath: Path, fileName: String){
-        val dir = testSuitePath.parent
-        Files.createDirectories(dir)
+    protected fun saveTextToDisk(text: String, testResourcePath: Path, fileName: String){
+        if (!Files.exists(testResourcePath))
+            Files.createDirectories(testResourcePath)
 
-        val textToFile = Paths.get(dir.toFile().path, fileName)
+        val textToFile = Paths.get(testResourcePath.toFile().path, fileName)
         Files.deleteIfExists(textToFile)
         Files.createFile(textToFile)
 
