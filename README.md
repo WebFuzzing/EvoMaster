@@ -115,7 +115,7 @@ case studies in [EMB](https://github.com/EMResearch/EMB).
 Depending on the year, we might have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
 
 Current positions:
-* 2023: 3 PhD students ([apply here](https://www.kristiania.no/en/about-kristiania/vacant-positions/?rmpage=job&rmjob=549&rmlang=UK)) 
+* 2023: likely new PhD and postdoc positions will be available, but they are not announced yet.
  
 
 For questions on these positions, please contact Prof. Andrea Arcuri. 
