@@ -1782,6 +1782,10 @@ class EMConfig {
     var saveMockedResponseAsSeparatedFile = false
 
     @Experimental
+    @Cfg("Specify test resource path where to save mocked responses as separated files")
+    var testResourcePathToSaveMockedResponse = ""
+
+    @Experimental
     @Cfg("Whether to analyze how SQL databases are accessed to infer extra constraints from the business logic." +
             " An example is javax/jakarta annotation constraints defined on JPA entities.")
     @Probability(true)
