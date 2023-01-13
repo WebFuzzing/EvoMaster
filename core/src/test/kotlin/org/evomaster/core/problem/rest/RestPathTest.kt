@@ -1,7 +1,9 @@
 package org.evomaster.core.problem.rest
 
+import io.swagger.v3.oas.models.parameters.Parameter
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -386,4 +388,54 @@ internal class RestPathTest{
 
         assertNull(action)
     }
+
+    @Test
+    fun testArrayExplode(){
+
+        val path = RestPath("/x")
+
+        val array = ArrayGene("a", IntegerGene("template"),
+            elements = mutableListOf(IntegerGene("a", 1), IntegerGene("a", 2)))
+
+        val a = QueryParam("a", array, explode = true)
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x?a=1&a=2", uri)
+    }
+
+    @Test
+    fun testArrayNotExplode(){
+
+        val path = RestPath("/x")
+
+        val array = ArrayGene("a", IntegerGene("template"),
+            elements = mutableListOf(IntegerGene("a", 1), IntegerGene("a", 2)))
+
+        val a = QueryParam("a", array, explode = false)
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x?a=1%2C2", uri)
+    }
+
+    @Test
+    fun testArrayNotExplodeSpace(){
+
+        val path = RestPath("/x")
+
+        val array = ArrayGene("a", IntegerGene("template"),
+            elements = mutableListOf(IntegerGene("a", 1), IntegerGene("a", 2)))
+
+        val a = QueryParam("a", array, explode = false, style = Parameter.StyleEnum.SPACEDELIMITED)
+
+        val uri = path.resolve(listOf(a))
+
+        /*
+            spaces could be encoded with %20 or + (depending on context)
+            TODO double-check if here should really be + and not %20
+         */
+        assertEquals("/x?a=1+2", uri)
+    }
+
 }
