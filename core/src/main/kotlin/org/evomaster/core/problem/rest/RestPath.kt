@@ -226,7 +226,7 @@ class RestPath(path: String) {
                 val name = encode(q.name)
 
                 val gene = GeneUtils.getWrappedValueGene(q.getGeneForQuery(), true)
-                if(gene is ArrayGene<*> && q.explode){
+                if(gene is ArrayGene<*> && q.explode && gene.getViewOfElements().isNotEmpty()){
                     gene.getViewOfElements()
                         .joinToString("&") { "$name=${encode(it.getValueAsRawString())}" }
                 } else {
