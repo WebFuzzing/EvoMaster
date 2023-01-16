@@ -57,6 +57,10 @@ class Main {
                 printLogo()
                 printVersion()
 
+                if(!JdkIssue.checkAddOpens()){
+                    return
+                }
+
                 /*
                     Before running anything, check if the input
                     configurations are valid
