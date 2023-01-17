@@ -1566,7 +1566,23 @@ class GraphQLActionBuilderTest {
 
         val tupleMembers = optMembers.getWrappedGene(TupleGene::class.java)
         assertEquals(8, tupleMembers?.elements?.size)
+        /**/
+        val pipelineSchedule = actionCluster["pipelineSchedule"] as GraphQLAction
+        assertEquals(2, pipelineSchedule.parameters.size)
+        assertTrue(pipelineSchedule.parameters[1] is GQReturnParam)
 
+    }
+
+    @Test
+    fun buildkite2Test() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/buildkite.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(4, actionCluster.size)
     }
 
     @Test
