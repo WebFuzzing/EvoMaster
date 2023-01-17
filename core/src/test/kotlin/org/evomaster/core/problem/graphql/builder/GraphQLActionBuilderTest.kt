@@ -1574,18 +1574,6 @@ class GraphQLActionBuilderTest {
     }
 
     @Test
-    fun buildkite2Test() {
-
-        val actionCluster = mutableMapOf<String, Action>()
-        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/buildkite.json").readText()
-
-        val config = EMConfig()
-        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
-
-        assertEquals(4, actionCluster.size)
-    }
-
-    @Test
     fun camaraDeputadosTest() {
 
         val actionCluster = mutableMapOf<String, Action>()

@@ -157,8 +157,6 @@ object GraphQLActionBuilder {
         state: TempState,
 
     ) {
-        //val action = GraphQLAction(actionId, element.fieldName, type, params)
-        // actionCluster[action.getName()] = action
         if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true) {
             val action = GraphQLAction(actionId, state.inputTypeName[element.fieldName].toString(), type, params)
             actionCluster[action.getName()] = action
@@ -295,7 +293,6 @@ object GraphQLActionBuilder {
             for (input in selectionInArgs) {
                 if (input.kindOfFieldType == SCALAR.toString() || input.kindOfFieldType == ENUM.toString()) {//array scalar type or array enum type, the gene is constructed from getInputGene to take the correct names
                     val gene = getInputScalarListOrEnumListGene(state, input)
-                    //params.add(GQInputParam(input.fieldName, gene))
 
                     if (state.inputTypeName[input.fieldName]?.isNotEmpty() == true)
                         params.add(GQInputParam(state.inputTypeName[input.fieldName].toString(), gene))
@@ -325,7 +322,6 @@ object GraphQLActionBuilder {
 
         //Remove primitive types (scalar and enum) from return params
         if (isReturnNotPrimitive(gene)) {
-           // params.add(GQReturnParam(element.fieldName, gene))
             if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true)
                 params.add(GQReturnParam(state.inputTypeName[element.fieldName].toString(), gene))
             else
