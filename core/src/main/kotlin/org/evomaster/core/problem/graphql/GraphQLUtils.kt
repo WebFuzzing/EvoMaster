@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -188,12 +189,20 @@ object GraphQLUtils {
                 }
 
             } else {
-                if (gene.getWrappedGene(ObjectGene::class.java)!=null) {//object gene
+                if (gene.getWrappedGene(ObjectGene::class.java) != null) {//object gene
                     //if it is optional it should be active
-                    if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true)||(gene.getWrappedGene(OptionalGene::class.java) == null)) {
-
+                    if ((gene.getWrappedGene(OptionalGene::class.java)?.isActive == true) || (gene.getWrappedGene(OptionalGene::class.java) == null)) {
                         val i = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.GQL_INPUT_MODE)
-                        printableInputGene.add(" $i")
+
+                        if (gene.getWrappedGene(NullableGene::class.java)?.isActive == true) {
+
+                            printableInputGene.add(" $i")
+
+                        } else {
+                            //Need the name of the object when it takes "null" as a value, since it will not access the object
+                            //where the name is printed
+                            printableInputGene.add("${gene.name} : $i")
+                        }
 
                     }
 
