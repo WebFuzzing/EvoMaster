@@ -157,14 +157,12 @@ object GraphQLActionBuilder {
         state: TempState,
 
     ) {
-        if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true) {
-            val action = GraphQLAction(actionId, state.inputTypeName[element.fieldName].toString(), type, params)
-            actionCluster[action.getName()] = action
-        } else {
-            val action = GraphQLAction(actionId, element.fieldName, type, params)
-            actionCluster[action.getName()] = action
-        }
+        val action:GraphQLAction = if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true)
+                GraphQLAction(actionId, state.inputTypeName[element.fieldName].toString(), type, params)
+             else
+                GraphQLAction(actionId, element.fieldName, type, params)
 
+        actionCluster[action.getName()] = action
     }
 
     private fun handleAllCyclesAndLimitInObjectFields(
