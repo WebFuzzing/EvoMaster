@@ -266,7 +266,7 @@ EachURL
         */
 
         if(annotationType.endsWith(".EachRange")){
-            List<Integer> values = (List<Integer>) invalidValue;
+            Collection<Integer> values = (Collection<Integer>) invalidValue;
 
             int sum = 0;
 
@@ -279,7 +279,7 @@ EachURL
 
         if(annotationType.endsWith(".EachPattern")) {
 
-            List<String> values = (List<String>) invalidValue;
+            Collection<String> values = (Collection<String>) invalidValue;
             String regexp = attributes.get("regexp").toString();
 
             int mismatches = 0;

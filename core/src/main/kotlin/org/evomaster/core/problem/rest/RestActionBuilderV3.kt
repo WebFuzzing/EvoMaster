@@ -347,7 +347,10 @@ object RestActionBuilderV3 {
         //TODO could exploit "x-example" if available in OpenApi
 
         when (p.`in`) {
-            "query" -> params.add(QueryParam(name, gene))
+
+            "query" -> {
+                params.add(QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM))
+            }
             /*
                 a path is inside a Disruptive Gene, because there are cases in which we want to prevent
                 mutation. Note that 1.0 means can always be mutated
@@ -464,7 +467,7 @@ object RestActionBuilderV3 {
             name: String,
             schema: Schema<*>,
             swagger: OpenAPI,
-            history: Deque<String> = ArrayDeque<String>(),
+            history: Deque<String> = ArrayDeque(),
             referenceClassDef: String?
     ): Gene {
 

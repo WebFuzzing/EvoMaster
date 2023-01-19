@@ -140,10 +140,10 @@ object GraphQLActionBuilder {
         if (params.any { p -> p is GQReturnParam }) {
 
             if (!params.find { p -> p is GQReturnParam }?.let { isAllLimitInObjectFields(it) }!!)
-                createAction(actionId, element, type, params, actionCluster)
+                createAction(actionId, element, type, params, actionCluster,state)
 
         } else
-            createAction(actionId, element, type, params, actionCluster)
+            createAction(actionId, element, type, params, actionCluster,state)
 
 
     }
@@ -153,9 +153,15 @@ object GraphQLActionBuilder {
         element: Table,
         type: GQMethodType,
         params: MutableList<Param>,
-        actionCluster: MutableMap<String, Action>
+        actionCluster: MutableMap<String, Action>,
+        state: TempState,
+
     ) {
-        val action = GraphQLAction(actionId, element.fieldName, type, params)
+        val action:GraphQLAction = if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true)
+                GraphQLAction(actionId, state.inputTypeName[element.fieldName].toString(), type, params)
+             else
+                GraphQLAction(actionId, element.fieldName, type, params)
+
         actionCluster[action.getName()] = action
     }
 
@@ -285,7 +291,12 @@ object GraphQLActionBuilder {
             for (input in selectionInArgs) {
                 if (input.kindOfFieldType == SCALAR.toString() || input.kindOfFieldType == ENUM.toString()) {//array scalar type or array enum type, the gene is constructed from getInputGene to take the correct names
                     val gene = getInputScalarListOrEnumListGene(state, input)
-                    params.add(GQInputParam(input.fieldName, gene))
+
+                    if (state.inputTypeName[input.fieldName]?.isNotEmpty() == true)
+                        params.add(GQInputParam(state.inputTypeName[input.fieldName].toString(), gene))
+                    else
+                        params.add(GQInputParam(input.fieldName, gene))
+
                 } else {//for input objects types and objects types
                     val gene = getInputGene(
                         state,
@@ -308,7 +319,12 @@ object GraphQLActionBuilder {
         )
 
         //Remove primitive types (scalar and enum) from return params
-        if (isReturnNotPrimitive(gene)) params.add(GQReturnParam(element.fieldName, gene))
+        if (isReturnNotPrimitive(gene)) {
+            if (state.inputTypeName[element.fieldName]?.isNotEmpty() == true)
+                params.add(GQReturnParam(state.inputTypeName[element.fieldName].toString(), gene))
+            else
+                params.add(GQReturnParam(element.fieldName, gene))
+        }
 
         return params
     }
@@ -800,12 +816,16 @@ object GraphQLActionBuilder {
                 return getReturnGene(state, history, initAccum, treeDepth, copy)
             }
 
-            GqlConst.ENUM ->
-                return createEnumGene(
+            GqlConst.ENUM -> {
+               if(element.kindOfFieldType.lowercase() == GqlConst.LIST) return createEnumGene(
+                   element.fieldName,
+                   element.enumValues,
+               )
+               else return createEnumGene(
                     element.KindOfFieldName,
                     element.enumValues,
                 )
-
+            }
             GqlConst.SCALAR -> {
                 if (element.kindOfFieldType.lowercase() == GqlConst.LIST)
                     return createScalarGene(
@@ -941,8 +961,10 @@ object GraphQLActionBuilder {
             ((lastElements is ArrayGene<*>) && (lastElements.template is ObjectGene)) ||
             ((lastElements is ArrayGene<*>) && (lastElements.template is OptionalGene) && (lastElements.template.gene is ObjectGene)) ||
             ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is ObjectGene)) ||
-            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is ObjectGene))||
-            ((lastElements is OptionalGene) && (lastElements.gene is LimitObjectGene))
+            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is ObjectGene)) ||
+            ((lastElements is OptionalGene) && (lastElements.gene is LimitObjectGene) ||
+            ((lastElements is OptionalGene) && (lastElements.gene is ArrayGene<*>) && (lastElements.gene.template is OptionalGene) && (lastElements.gene.template.gene is LimitObjectGene))
+             )
             )
 
     private fun constructReturn(
