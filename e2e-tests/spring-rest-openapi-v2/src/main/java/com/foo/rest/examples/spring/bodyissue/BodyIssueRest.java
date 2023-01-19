@@ -13,7 +13,7 @@ public class BodyIssueRest {
 
 
     @PostMapping(value = "/api/bodyissue", consumes = "application/x-www-form-urlencoded")
-    public int postUrl( @RequestBody(required = true) Object dto){
+    public int postUrl( ){
         return 42;
     }
 
