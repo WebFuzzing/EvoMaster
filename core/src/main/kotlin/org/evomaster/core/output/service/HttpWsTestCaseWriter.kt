@@ -474,6 +474,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(".assertThat()")
         }
 
+        if(res.getTooLargeBody()){
+            lines.add("// the response payload was too large, above the threshold of ${config.maxResponseByteSize} bytes." +
+                    " No assertion on it is therefore generated.")
+            return
+        }
+
         val bodyString = res.getBody()
 
         if (bodyString.isNullOrBlank()) {
