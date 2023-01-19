@@ -7,6 +7,7 @@ import org.bson.codecs.DecoderContext
 import org.bson.codecs.DocumentCodec
 import org.bson.conversions.Bson
 import org.evomaster.client.java.controller.mongo.operations.*
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper
 import org.evomaster.core.mongo.QueryParser
 
 class MongoHeuristicsCalculator {
@@ -30,6 +31,7 @@ class MongoHeuristicsCalculator {
             is OrOperation -> calculateDistanceForOr(operation, doc)
             is NorOperation -> calculateDistanceForNor(operation, doc)
             is InOperation<*> -> calculateDistanceForIn(operation, doc)
+            is NotInOperation<*> -> calculateDistanceForNotIn(operation, doc)
             is AllOperation<*> -> calculateDistanceForAll(operation, doc)
             is SizeOperation -> calculateDistanceForSize(operation, doc)
             is ElemMatchOperation -> calculateDistanceForElemMatch(operation, doc)
@@ -73,6 +75,11 @@ class MongoHeuristicsCalculator {
         calculate: (Double) -> Double
     ): Double {
         val expectedValue = operation.value
+
+        if (!doc.keys.contains(operation.fieldName)) {
+            return if (operation is NotEqualsOperation<V>) 0.0 else 1.0
+        }
+
         val actualValue = doc[operation.fieldName]
         return if (actualValue is Number && expectedValue is Number) {
             val difference = actualValue.toDouble() - expectedValue.toDouble()
@@ -102,6 +109,20 @@ class MongoHeuristicsCalculator {
             }
         }
         return min
+    }
+
+    private fun <V> calculateDistanceForNotIn(operation: NotInOperation<V>, doc: Document): Double {
+        val unexpectedValues = operation.values
+
+        if (!doc.keys.contains(operation.fieldName)) {
+            return 0.0
+        }
+
+        val actualValue = doc[operation.fieldName]
+        val hasUnexpectedElement =
+            unexpectedValues.any { value -> actualValue is Number && value is Number && value == actualValue }
+
+        return if (hasUnexpectedElement) 1.0 else 0.0
     }
 
     private fun <V> calculateDistanceForAll(operation: AllOperation<V>, doc: Document): Double {
@@ -140,41 +161,45 @@ class MongoHeuristicsCalculator {
     }
 
     private fun calculateDistanceForExists(operation: ExistsOperation, doc: Document): Double {
-        // NOT FINISHED
-        // Only handling the case where boolean is true
-        val fieldName = operation.fieldName
+        val expectedField = operation.fieldName
         val actualFields = doc.keys
-        // Define distance between string
-        return Double.MAX_VALUE
+
+        val dist =
+            if (operation.boolean) {
+                actualFields.minOf { field -> DistanceHelper.getLeftAlignmentDistance(field, expectedField) }.toDouble()
+            } else {
+                // 1.0 or MAX_VALUE?
+                if (!actualFields.contains(expectedField)) 0.0 else 1.0
+            }
+        return dist
     }
 
     private fun calculateDistanceForMod(operation: ModOperation, doc: Document): Double {
         val actualValue = doc[operation.fieldName]
-        if(actualValue is Int){
+        if (actualValue is Int) {
             val actualRemainder = actualValue.mod(operation.divisor)
             val expectedRemainder = operation.remainder
-            return  kotlin.math.abs(actualRemainder.toDouble() - expectedRemainder.toDouble())
+            return kotlin.math.abs(actualRemainder.toDouble() - expectedRemainder.toDouble())
         }
         return Double.MAX_VALUE
     }
 
     private fun calculateDistanceForNot(operation: NotOperation, doc: Document): Double {
-        // NOT FINISHED
         val fieldName = operation.fieldName
         val filter = operation.filter
-        val actualValue = doc[fieldName]
 
-        if (actualValue == null) return 0.0
+        if (doc[fieldName] == null) return 0.0
         val negatedOperation = negateOperation(filter)
         return calculateDistance(negatedOperation, doc)
     }
 
     private fun calculateDistanceForNor(operation: NorOperation, doc: Document): Double {
-        // NOT FINISHED
-        return operation.filters.sumOf { filter -> calculateDistance(negateOperation(filter), doc)}
+        // NOT FINISHED. Must include cases where field is not defined.
+        return operation.filters.sumOf { filter -> calculateDistance(negateOperation(filter), doc) }
     }
 
     private fun negateOperation(operation: QueryOperation): QueryOperation {
+        // NOT FINISHED
         return when (operation) {
             is EqualsOperation<*> -> NotEqualsOperation(operation.fieldName, operation.value)
             is NotEqualsOperation<*> -> EqualsOperation(operation.fieldName, operation.value)

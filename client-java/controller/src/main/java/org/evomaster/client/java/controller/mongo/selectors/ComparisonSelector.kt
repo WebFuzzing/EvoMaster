@@ -19,6 +19,10 @@ abstract class ComparisonSelector: QuerySelector() {
                 val comparisonValue = value[actualOperator]
                 if(actualOperator == operator()) return operation(fieldName, comparisonValue)
             }
+        }else{
+            if(value !is ArrayList<*>)
+            // Implicit $eq
+            return operation(fieldName, value)
         }
 
         return null

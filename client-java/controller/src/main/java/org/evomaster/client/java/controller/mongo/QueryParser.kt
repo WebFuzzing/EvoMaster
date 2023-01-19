@@ -17,10 +17,12 @@ class QueryParser {
             AndSelector(),
             OrSelector(),
             InSelector(),
+            NotInSelector(),
             AllSelector(),
             SizeSelector(),
             ModSelector(),
-            NotSelector()
+            NotSelector(),
+            ExistsSelector()
         )
         return selectors.firstNotNullOf { it.getOperation(query) }
     }
