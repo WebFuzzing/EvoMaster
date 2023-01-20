@@ -189,16 +189,16 @@ class MongoHeuristicsCalculator {
         val filter = operation.filter
 
         if (doc[fieldName] == null) return 0.0
-        val negatedOperation = negateOperation(filter)
-        return calculateDistance(negatedOperation, doc)
+        val invertedOperation = invertOperation(filter)
+        return calculateDistance(invertedOperation, doc)
     }
 
     private fun calculateDistanceForNor(operation: NorOperation, doc: Document): Double {
         // NOT FINISHED. Must include cases where field is not defined.
-        return operation.filters.sumOf { filter -> calculateDistance(negateOperation(filter), doc) }
+        return operation.filters.sumOf { filter -> calculateDistance(invertOperation(filter), doc) }
     }
 
-    private fun negateOperation(operation: QueryOperation): QueryOperation {
+    private fun invertOperation(operation: QueryOperation): QueryOperation {
         // NOT FINISHED
         return when (operation) {
             is EqualsOperation<*> -> NotEqualsOperation(operation.fieldName, operation.value)
