@@ -1,20 +1,14 @@
 package org.evomaster.client.java.controller.mongo.selectors
 
-import org.bson.Document
 import org.evomaster.client.java.controller.mongo.operations.*
-import org.evomaster.core.mongo.QueryParser
 
-class AllSelector : QuerySelector() {
-    override fun getOperation(query: Document): QueryOperation? {
-        if (!isUniqueEntry(query)) return null
+class AllSelector : SingleConditionQuerySelector() {
+    override fun operator(): String = "\$all"
 
-        val fieldName = query.keys.first()
-        val allOperator = (query[fieldName] as Document).keys.first()
-
-        if (allOperator != "\$all") return null
-
-        val values = (query[fieldName] as Document)[allOperator] as List<*>
-
-        return AllOperation(fieldName, values)
+    override fun parseValue(fieldName: String, value: Any?): QueryOperation? {
+        return when (value) {
+            is List<*> -> AllOperation(fieldName, value)
+            else -> null
+        }
     }
 }

@@ -1,19 +1,15 @@
 package org.evomaster.client.java.controller.mongo.selectors
 
-import org.bson.Document
 import org.evomaster.client.java.controller.mongo.operations.*
 
-class ModSelector : QuerySelector() {
-    override fun getOperation(query: Document): QueryOperation? {
-        if (!isUniqueEntry(query)) return null
+class ModSelector : SingleConditionQuerySelector() {
+    override fun operator(): String = "\$mod"
 
-        val fieldName = query.keys.first()
-        val modOperator = (query[fieldName] as Document).keys.first()
-
-        if (modOperator != "\$mod") return null
-
-        val values = (query[fieldName] as Document)[modOperator] as List<*>
-
-        return ModOperation(fieldName, values[0] as Long, values[1] as Long)
+    override fun parseValue(fieldName: String, value: Any?): QueryOperation? {
+        return when (value) {
+            // Validate remainder and divisor
+            is List<*> -> ModOperation(fieldName, value[0] as Long, value[1] as Long)
+            else -> null
+        }
     }
 }

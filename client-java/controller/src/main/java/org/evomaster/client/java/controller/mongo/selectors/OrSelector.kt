@@ -4,16 +4,16 @@ import org.bson.Document
 import org.evomaster.client.java.controller.mongo.operations.*
 import org.evomaster.core.mongo.QueryParser
 
-class OrSelector : QuerySelector() {
-    override fun getOperation(query: Document): QueryOperation? {
-        if (!isUniqueEntry(query)) return null
+class OrSelector : MultiConditionQuerySelector() {
+    override fun operator(): String = "\$or"
 
-        val orOperator = query.keys.first()
-
-        if (orOperator != "\$or") return null
-
-        val filters = (query[orOperator] as List<*>).map { filter -> QueryParser().parse(filter as Document)}
-
-        return OrOperation(filters)
+    override fun parseConditions(value: Any?): QueryOperation? {
+        return when (value) {
+            is List<*> -> {
+                val filters = value.map { filter -> QueryParser().parse(filter as Document)}
+                OrOperation(filters)
+            }
+            else -> null
+        }
     }
 }

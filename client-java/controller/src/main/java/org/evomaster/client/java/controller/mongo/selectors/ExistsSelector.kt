@@ -1,21 +1,14 @@
 package org.evomaster.client.java.controller.mongo.selectors
 
-import org.bson.Document
 import org.evomaster.client.java.controller.mongo.operations.*
 
-class ExistsSelector : QuerySelector() {
-    override fun getOperation(query: Document): QueryOperation? {
-        if (!isUniqueEntry(query)) return null
+class ExistsSelector : SingleConditionQuerySelector() {
+    override fun operator(): String = "\$exists"
 
-        val fieldName = query.keys.first()
-        val existsOperator = (query[fieldName] as Document).keys.first()
-
-        if (existsOperator != "\$exists") return null
-
-        val boolean = (query[fieldName] as Document)[existsOperator]
-
-        if(boolean !is Boolean) return null
-
-        return ExistsOperation(fieldName, boolean)
+    override fun parseValue(fieldName: String, value: Any?): QueryOperation? {
+        return when (value) {
+            is Boolean -> ExistsOperation(fieldName, value)
+            else -> null
+        }
     }
 }

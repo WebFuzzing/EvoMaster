@@ -1,15 +1,12 @@
 package org.evomaster.client.java.controller.mongo.selectors
 
-import org.evomaster.client.java.controller.mongo.operations.ComparisonOperation
 import org.evomaster.client.java.controller.mongo.operations.LessThanEqualsOperation
+import org.evomaster.client.java.controller.mongo.operations.QueryOperation
 
-class LessThanEqualsSelector : ComparisonSelector() {
+class LessThanEqualsSelector : SingleConditionQuerySelector() {
     override fun operator(): String {
         return "\$lte"
     }
 
-    override fun <V> operation(fieldName: String, value: V): ComparisonOperation<V> {
-        return LessThanEqualsOperation(fieldName,value)
-    }
-
+    override fun parseValue(fieldName: String, value: Any?): QueryOperation = LessThanEqualsOperation(fieldName,value)
 }

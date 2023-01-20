@@ -4,16 +4,16 @@ import org.bson.Document
 import org.evomaster.client.java.controller.mongo.operations.*
 import org.evomaster.core.mongo.QueryParser
 
-class ElemMatchSelector : QuerySelector() {
-    override fun getOperation(query: Document): QueryOperation? {
-        if (!isUniqueEntry(query)) return null
+class ElemMatchSelector : MultiConditionQuerySelector() {
+    override fun operator(): String = "\$elemMatch"
 
-        val elemMatchOperator = query.keys.first()
-
-        if (elemMatchOperator != "\$elemMatch") return null
-
-        val filters = (query[elemMatchOperator] as List<*>).map { filter -> QueryParser().parse(filter as Document)}
-
-        return ElemMatchOperation(filters)
+    override fun parseConditions(value: Any?): QueryOperation? {
+        return when (value) {
+            is List<*> -> {
+                val filters = value.map { filter -> QueryParser().parse(filter as Document)}
+                ElemMatchOperation(filters)
+            }
+            else -> null
+        }
     }
 }

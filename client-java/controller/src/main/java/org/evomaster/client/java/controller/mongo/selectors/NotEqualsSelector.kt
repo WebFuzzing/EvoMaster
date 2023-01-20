@@ -1,14 +1,12 @@
 package org.evomaster.client.java.controller.mongo.selectors
 
-import org.evomaster.client.java.controller.mongo.operations.ComparisonOperation
 import org.evomaster.client.java.controller.mongo.operations.NotEqualsOperation
+import org.evomaster.client.java.controller.mongo.operations.QueryOperation
 
-class NotEqualsSelector : ComparisonSelector() {
+class NotEqualsSelector : SingleConditionQuerySelector() {
     override fun operator(): String {
         return "\$ne"
     }
 
-    override fun <V> operation(fieldName: String, value: V): ComparisonOperation<V> {
-        return NotEqualsOperation(fieldName,value)
-    }
+    override fun parseValue(fieldName: String, value: Any?): QueryOperation = NotEqualsOperation(fieldName,value)
 }
