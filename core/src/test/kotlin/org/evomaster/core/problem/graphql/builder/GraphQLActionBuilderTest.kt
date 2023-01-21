@@ -1570,6 +1570,45 @@ class GraphQLActionBuilderTest {
         val pipelineSchedule = actionCluster["pipelineSchedule"] as GraphQLAction
         assertEquals(2, pipelineSchedule.parameters.size)
         assertTrue(pipelineSchedule.parameters[1] is GQReturnParam)
+        /**/
+
+        val organizationInvitationCreate = actionCluster["organizationInvitationCreate"] as GraphQLAction
+        assertEquals(2, organizationInvitationCreate.parameters.size)
+        assertTrue(organizationInvitationCreate.parameters[0] is GQInputParam)
+
+        assertTrue(organizationInvitationCreate.parameters[0].name == "input")
+        assertTrue((organizationInvitationCreate.parameters[0].gene.getWrappedGene(ObjectGene::class.java) != null))
+        val objOrganizationInvitationCreate = organizationInvitationCreate.parameters[0].gene.getWrappedGene(ObjectGene::class.java)
+        if ( objOrganizationInvitationCreate != null) {
+
+           assertTrue( objOrganizationInvitationCreate.fields.any { it.getWrappedGene(ArrayGene::class.java)?.name == "emails" }) }
+
+
+    }
+
+    @Test
+    fun buildkite2Test() {
+
+        val actionCluster = mutableMapOf<String, Action>()
+        val json = GraphQLActionBuilderTest::class.java.getResource("/graphql/artificial/buildkite.json").readText()
+
+        val config = EMConfig()
+        GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
+
+        assertEquals(1, actionCluster.size)
+        val organizationInvitationCreate = actionCluster["organizationInvitationCreate"] as GraphQLAction
+        assertEquals(2, organizationInvitationCreate.parameters.size)
+        assertTrue(organizationInvitationCreate.parameters[0] is GQInputParam)
+
+        assertTrue(organizationInvitationCreate.parameters[0].name == "input")
+        assertTrue((organizationInvitationCreate.parameters[0].gene.getWrappedGene(ObjectGene::class.java) != null))
+        val objOrganizationInvitationCreate =
+            organizationInvitationCreate.parameters[0].gene.getWrappedGene(ObjectGene::class.java)
+        if (objOrganizationInvitationCreate != null) {
+
+            assertTrue(objOrganizationInvitationCreate.fields.any { it.getWrappedGene(ArrayGene::class.java)?.name == "emails" })
+        }
+
 
     }
 
