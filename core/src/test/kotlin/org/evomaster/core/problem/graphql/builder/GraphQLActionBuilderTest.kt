@@ -1607,6 +1607,8 @@ class GraphQLActionBuilderTest {
         if (objOrganizationInvitationCreate != null) {
 
             assertTrue(objOrganizationInvitationCreate.fields.any { it.getWrappedGene(ArrayGene::class.java)?.name == "emails" })
+            assertTrue(objOrganizationInvitationCreate.fields.any { it.getWrappedGene(ObjectGene::class.java)?.name == "sso" })
+            assertTrue(objOrganizationInvitationCreate.fields.any { it.getWrappedGene(ArrayGene::class.java)?.name == "teams" })
         }
 
 
