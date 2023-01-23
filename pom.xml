@@ -121,9 +121,10 @@
         <javax.el.version>2.2.5</javax.el.version>
         <jackson.version>2.11.0</jackson.version>
         <asm.version>9.2</asm.version>
-        <testcontainers.version>1.16.0</testcontainers.version>
+        <testcontainers.version>1.17.6</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
+        <selenium.version>4.7.2</selenium.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.9.2</antlr.version>
         <nlp.version>4.3.1</nlp.version>
@@ -725,6 +726,24 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
                 <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>selenium</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-remote-driver</artifactId>
+                <version>${selenium.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-chrome-driver</artifactId>
+                <version>${selenium.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

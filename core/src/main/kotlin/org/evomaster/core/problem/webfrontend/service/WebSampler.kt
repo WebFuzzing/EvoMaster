@@ -67,6 +67,9 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
         return ind
     }
 
+    /**
+     * @See [WebAction.isDefined]
+     */
     fun sampleUndefinedAction() : WebAction{
         return WebAction()
     }

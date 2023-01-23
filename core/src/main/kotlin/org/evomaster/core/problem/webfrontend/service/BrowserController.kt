@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.webfrontend.service
 
 import org.evomaster.core.problem.webfrontend.WebUserInteraction
+import org.openqa.selenium.chrome.ChromeOptions
+import org.testcontainers.containers.BrowserWebDriverContainer
 
 /**
  * Class used to control a browser.
@@ -9,6 +11,8 @@ import org.evomaster.core.problem.webfrontend.WebUserInteraction
 class BrowserController {
 
     var urlOfStartingPage : String = ""
+
+   // val  chrome : BrowserWebDriverContainer<*> =  BrowserWebDriverContainer().withCapabilities(ChromeOptions())
 
     fun startChromeInDocker(){
         //TODO
