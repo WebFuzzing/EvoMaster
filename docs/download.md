@@ -34,6 +34,7 @@ They might not work when trying to use these installers on older operating syste
 
 Regarding the _driver_ library, it depends on the language/environment.
 For example, the JVM support is available from [Maven Central](https://mvnrepository.com/artifact/org.evomaster). 
-If your are building such library from [source code](./build.md), then make sure to
+If you are building such library from [source code](./build.md), then make sure to
 use the Maven `install` option to copy it over your local `~/.m2` repository.
+You might also want to use `-DskipTests` the option. 
  
