@@ -38,7 +38,8 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
         val startingPage = infoDto.webProblem.urlOfStartingPage
             ?: throw SutProblemException("Not specified urlOfStartingPage")
 
-        browserController.urlOfStartingPage = startingPage
+        browserController.initUrlOfStartingPage(startingPage,true)
+        browserController.startChromeInDocker()
 
        // setupAuthentication(infoDto)
 
