@@ -7,7 +7,7 @@ class InSelector : SingleConditionQuerySelector() {
 
     override fun parseValue(fieldName: String, value: Any?): QueryOperation? {
         return when (value) {
-            is List<*> -> InOperation(fieldName, value)
+            is ArrayList<*> -> InOperation(fieldName, value)
             else -> null
         }
     }

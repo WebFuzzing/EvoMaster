@@ -9,6 +9,7 @@ import org.bson.conversions.Bson
 import org.evomaster.client.java.controller.mongo.operations.*
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper
 import org.evomaster.core.mongo.QueryParser
+import kotlin.math.abs
 
 class MongoHeuristicsCalculator {
 
@@ -43,7 +44,7 @@ class MongoHeuristicsCalculator {
     }
 
     private fun <V> calculateDistanceForEquals(operation: EqualsOperation<V>, doc: Document): Double {
-        return calculateDistanceForComparisonOperation(operation, doc) { dif -> kotlin.math.abs(dif) }
+        return calculateDistanceForComparisonOperation(operation, doc) { dif -> abs(dif) }
     }
 
     private fun <V> calculateDistanceForNotEquals(operation: NotEqualsOperation<V>, doc: Document): Double {
@@ -72,23 +73,22 @@ class MongoHeuristicsCalculator {
     private fun <V> calculateDistanceForComparisonOperation(
         operation: ComparisonOperation<V>,
         doc: Document,
-        calculate: (Double) -> Double
+        calculateDistance: (Double) -> Double
     ): Double {
         val expectedValue = operation.value
+        val field = operation.fieldName
 
-        if (!doc.keys.contains(operation.fieldName)) {
+        if (!documentContainsField(doc, field)) {
             return if (operation is NotEqualsOperation<V>) 0.0 else 1.0
         }
 
         val actualValue = doc[operation.fieldName]
-        return if (actualValue is Number && expectedValue is Number) {
-            val difference = actualValue.toDouble() - expectedValue.toDouble()
-            calculate(difference)
-        } else {
-            Double.MAX_VALUE
+
+        return when (val dif = compareValues(actualValue, expectedValue)) {
+            null -> Double.MAX_VALUE
+            else -> calculateDistance(dif)
         }
     }
-
 
     private fun calculateDistanceForOr(operation: OrOperation, doc: Document): Double {
         return operation.filters.minOf { filter -> calculateDistance(filter, doc) }
@@ -100,59 +100,43 @@ class MongoHeuristicsCalculator {
 
     private fun <V> calculateDistanceForIn(operation: InOperation<V>, doc: Document): Double {
         val expectedValues = operation.values
-        val actualValue = doc[operation.fieldName]
-        var min = Double.MAX_VALUE
-        expectedValues.forEach { value ->
-            if (actualValue is Number && value is Number) {
-                val dif = kotlin.math.abs(actualValue.toDouble() - value.toDouble())
-                if (dif < min) min = dif
+
+        return when (val actualValue = doc[operation.fieldName]) {
+            is ArrayList<*> -> expectedValues.minOf { value -> distanceToClosestElem(actualValue, value) }
+            else -> {
+                distanceToClosestElem(expectedValues, actualValue)
             }
         }
-        return min
     }
 
     private fun <V> calculateDistanceForNotIn(operation: NotInOperation<V>, doc: Document): Double {
         val unexpectedValues = operation.values
 
-        if (!doc.keys.contains(operation.fieldName)) {
-            return 0.0
-        }
+        if (!documentContainsField(doc, operation.fieldName)) return 0.0
 
         val actualValue = doc[operation.fieldName]
         val hasUnexpectedElement =
-            unexpectedValues.any { value -> actualValue is Number && value is Number && value == actualValue }
+            unexpectedValues.any { value -> compareValues(actualValue, value) == 0.0 }
 
         return if (hasUnexpectedElement) 1.0 else 0.0
     }
 
     private fun <V> calculateDistanceForAll(operation: AllOperation<V>, doc: Document): Double {
         val expectedValues = operation.values
-        val actualValues = doc[operation.fieldName]
-        val distances = expectedValues.map { value ->
-            var min = Double.MAX_VALUE
-            if (actualValues is List<*> && value is Number) {
-                actualValues.forEach { actualValue ->
-                    if (actualValue is Number) {
-                        val dif = kotlin.math.abs(actualValue.toDouble() - value.toDouble())
-                        if (dif < min) min = dif
-                    }
-                }
-            }
-            min
+
+        return when (val actualValues = doc[operation.fieldName]) {
+            is ArrayList<*> -> expectedValues.sumOf { value -> distanceToClosestElem(actualValues, value) }
+            else -> Double.MAX_VALUE
         }
-        return distances.sum()
     }
 
     private fun calculateDistanceForSize(operation: SizeOperation, doc: Document): Double {
         val expectedValue = operation.value
-        val actualValue = doc[operation.fieldName]
-        val distance =
-            if (actualValue is List<*>) {
-                kotlin.math.abs(actualValue.size.toDouble() - expectedValue.toDouble())
-            } else {
-                Double.MAX_VALUE
-            }
-        return distance
+
+        return when (val actualValue = doc[operation.fieldName]) {
+            is List<*> -> abs(actualValue.size.toDouble() - expectedValue.toDouble())
+            else -> Double.MAX_VALUE
+        }
     }
 
     private fun calculateDistanceForElemMatch(operation: ElemMatchOperation, doc: Document): Double {
@@ -164,32 +148,38 @@ class MongoHeuristicsCalculator {
         val expectedField = operation.fieldName
         val actualFields = doc.keys
 
-        val dist =
-            if (operation.boolean) {
-                actualFields.minOf { field -> DistanceHelper.getLeftAlignmentDistance(field, expectedField) }.toDouble()
-            } else {
+        return when (operation.boolean) {
+            true -> actualFields.minOf { field -> DistanceHelper.getLeftAlignmentDistance(field, expectedField) }
+                .toDouble()
+
+            else -> {
                 // 1.0 or MAX_VALUE?
-                if (!actualFields.contains(expectedField)) 0.0 else 1.0
+                if (!documentContainsField(doc, expectedField)) 0.0 else 1.0
             }
-        return dist
+        }
     }
 
     private fun calculateDistanceForMod(operation: ModOperation, doc: Document): Double {
-        val actualValue = doc[operation.fieldName]
-        if (actualValue is Int) {
-            val actualRemainder = actualValue.mod(operation.divisor)
-            val expectedRemainder = operation.remainder
-            return kotlin.math.abs(actualRemainder.toDouble() - expectedRemainder.toDouble())
+        val expectedRemainder = operation.remainder
+
+        return when (val actualValue = doc[operation.fieldName]) {
+            // Change to number?
+            is Int -> {
+                val actualRemainder = actualValue.mod(operation.divisor)
+                return abs(actualRemainder.toDouble() - expectedRemainder.toDouble())
+            }
+
+            else -> Double.MAX_VALUE
         }
-        return Double.MAX_VALUE
     }
 
     private fun calculateDistanceForNot(operation: NotOperation, doc: Document): Double {
         val fieldName = operation.fieldName
-        val filter = operation.filter
-
         if (doc[fieldName] == null) return 0.0
+
+        val filter = operation.filter
         val invertedOperation = invertOperation(filter)
+
         return calculateDistance(invertedOperation, doc)
     }
 
@@ -209,5 +199,46 @@ class MongoHeuristicsCalculator {
             is LessThanEqualsOperation<*> -> GreaterThanOperation(operation.fieldName, operation.value)
             else -> operation
         }
+    }
+
+    private fun <T1, T2> compareValues(val1: T1, val2: T2): Double? {
+
+        if (val1 is Double && val2 is Double) {
+            return val1 - val2
+        }
+
+        if (val1 is Long && val2 is Long) {
+            return (val1 - val2).toDouble()
+        }
+
+        if (val1 is Int && val2 is Int) {
+            return (val1 - val2).toDouble()
+        }
+
+        if (val1 is String && val2 is String) {
+            return DistanceHelper.getLeftAlignmentDistance(val1, val2).toDouble()
+        }
+
+        if (val1 is ArrayList<*> && val2 is ArrayList<*>) {
+            return 1.0
+        }
+
+        return null
+    }
+
+    private fun documentContainsField(doc: Document, field: String) = doc.keys.contains(field)
+
+    private fun distanceToClosestElem(list: ArrayList<*>, value: Any?): Double {
+        var minDist = Double.MAX_VALUE
+
+        list.forEach { elem ->
+            val dif = compareValues(elem, value)
+            if (dif != null) {
+                val absDif = abs(dif)
+                if (absDif < minDist) minDist = absDif
+            }
+        }
+
+        return minDist
     }
 }

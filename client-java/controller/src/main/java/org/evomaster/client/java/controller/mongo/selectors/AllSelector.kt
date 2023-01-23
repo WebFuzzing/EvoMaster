@@ -7,7 +7,7 @@ class AllSelector : SingleConditionQuerySelector() {
 
     override fun parseValue(fieldName: String, value: Any?): QueryOperation? {
         return when (value) {
-            is List<*> -> AllOperation(fieldName, value)
+            is ArrayList<*> -> AllOperation(fieldName, value)
             else -> null
         }
     }
