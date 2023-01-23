@@ -19,6 +19,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URLEncoder
 
 abstract class MapGene<K, V>(
     name: String,
@@ -124,10 +125,22 @@ abstract class MapGene<K, V>(
             throw IllegalStateException("Trying to print a Map with unprintable template")
         }
 
+        val includedFields = elements.filter { f ->
+            isPrintable(f) && !isInactiveOptionalGene(f.first) && !isInactiveOptionalGene(f.second)
+        }
+
+        if (mode == GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED) {
+
+            return includedFields.joinToString("&") { f ->
+                val name = URLEncoder.encode(getKeyValueAsPrintableString(f.first, targetFormat), "UTF-8")
+                val value = URLEncoder.encode(f.second.getValueAsPrintableString(targetFormat = targetFormat), "UTF-8")
+                "$name=$value"
+            }
+
+        }
+
         return "{" +
-                elements.filter { f ->
-                    isPrintable(f) && !isInactiveOptionalGene(f.first) && !isInactiveOptionalGene(f.second)
-                }.joinToString(",") { f ->
+                includedFields.joinToString(",") { f ->
                     """
                     ${getKeyValueAsPrintableString(f.first, targetFormat)}:${
                         f.second.getValueAsPrintableString(
