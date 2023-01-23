@@ -1069,12 +1069,46 @@ object StateBuilder {
 
 
 
+                            else
+
+                                if(kind0 == __TypeKind.LIST){
+
+                                    if(kind1 == __TypeKind.NON_NULL){
+                                        if(kind2 == __TypeKind.INPUT_OBJECT){
+                                            state.tempArgsTables.add(
+                                                Table(
+                                                    KindOfFieldName=__TypeKind.LIST.toString(),
+                                                    isKindOfFieldNameOptional=true,
+
+                                                    typeName = elementIntypes.name,
+                                                    kindOfFieldType = kind2.toString(),
+                                                    isKindOfFieldTypeOptional = false,
+                                                    fieldType = elementInInputFields.type.ofType.ofType.name,
+                                                    fieldName = elementInInputFields.name,
+                                                )
+                                            )
+                                        }
+                                    }
+                                }else
 
 
 
 
 
-                            else // optional scalar or enum
+
+                                if (kind0 == __TypeKind.INPUT_OBJECT){
+                                    state.tempArgsTables.add(
+                                        Table(
+                                            typeName = elementIntypes.name,
+                                            kindOfFieldType = kind0.toString(),
+                                            isKindOfFieldTypeOptional = true,
+                                            fieldType = elementInInputFields.type.name,
+                                            fieldName = elementInInputFields.name,
+                                        )
+                                    )
+                                }else
+
+                                // optional scalar or enum
                                 if (kind0 == __TypeKind.SCALAR || kind0 == __TypeKind.ENUM) {// optional scalar or enum
                                     if (kind0 == __TypeKind.ENUM) {
                                         val enumElement: MutableList<String> =
