@@ -977,41 +977,104 @@ object StateBuilder {
                 for (elementIntypes in schemaObj.data.__schema.types)
                     if ((elementInInputParamTable.fieldType == elementIntypes.name) && (elementIntypes.kind == __TypeKind.INPUT_OBJECT))
                         for (elementInInputFields in elementIntypes.inputFields) {
-                            val kind0 = elementInInputFields.type.kind
-                            val kind1 = elementInInputFields?.type?.ofType?.kind
-                            if (kind0 == __TypeKind.NON_NULL) {//non optional scalar or enum
-                                if (kind1 == __TypeKind.SCALAR || kind1 == __TypeKind.ENUM) { // non optional scalar or enum
 
-                                    if (kind1 == __TypeKind.ENUM) {
-                                        val enumElement: MutableList<String> =
-                                            collectEnumElementsInTable(
-                                                schemaObj,
-                                                elementInInputFields.type.ofType.name
-                                            )
+                            /* val kind0 = elementInInputFields.type.kind
+                            val kind1 = elementInInputFields?.type?.ofType?.kind*/
 
-                                        state.tempArgsTables.add(
-                                            Table(
-                                                typeName = elementIntypes.name,
-                                                kindOfFieldType = kind1.toString(),
-                                                isKindOfFieldTypeOptional = false,
-                                                fieldType = elementInInputFields.type.ofType.name,
-                                                fieldName = elementInInputFields.name,
+                            val (kind0, kind1, kind2, kind3)= quadKindsInInputs(elementInInputFields)
 
-                                                enumValues = enumElement
+
+                            if (kind0 == __TypeKind.NON_NULL) {////non optional list or scalar or enum
+                                if (kind1 == __TypeKind.LIST) {//nn optional list in the top
+                                    if (kind2 == __TypeKind.NON_NULL) {//nn optional scalar or enum or inpu->todo
+                                        when (kind3) {
+                                            __TypeKind.ENUM -> {
+                                                val enumElement: MutableList<String> =
+                                                    collectEnumElementsInTable(
+                                                        schemaObj,
+                                                        elementInInputFields.type.ofType.ofType.ofType.name)
+                                                state.tempArgsTables.add(
+                                                    Table(
+                                                        KindOfFieldName=__TypeKind.LIST.toString(),
+                                                        isKindOfFieldNameOptional=false,
+
+                                                        typeName = elementIntypes.name,
+                                                        kindOfFieldType = kind3.toString(),
+                                                        isKindOfFieldTypeOptional = false,
+                                                        fieldType = elementInInputFields.type.ofType.ofType.ofType.name,
+                                                        fieldName = elementInInputFields.name,
+                                                        enumValues = enumElement
+                                                    )
+                                                )
+
+
+                                            }
+                                            __TypeKind.SCALAR -> {state.tempArgsTables.add(
+                                                Table(
+                                                    KindOfFieldName=__TypeKind.LIST.toString(),
+                                                    isKindOfFieldNameOptional=false,
+
+                                                    typeName = elementIntypes.name,
+                                                    kindOfFieldType = kind3.toString(),
+                                                    isKindOfFieldTypeOptional = false,
+                                                    fieldType = elementInInputFields.type.ofType.ofType.ofType.name,
+                                                    fieldName = elementInInputFields.name
+                                                )
+                                            )}
+                                        }
+
+
+                                    }
+
+                                }else {
+                                    if (kind1 == __TypeKind.SCALAR || kind1 == __TypeKind.ENUM) { // non optional scalar or enum
+
+                                        if (kind1 == __TypeKind.ENUM) {
+                                            val enumElement: MutableList<String> =
+                                                collectEnumElementsInTable(
+                                                    schemaObj,
+                                                    elementInInputFields.type.ofType.name
+                                                )
+
+                                            state.tempArgsTables.add(
+                                                Table(
+                                                    typeName = elementIntypes.name,
+                                                    kindOfFieldType = kind1.toString(),
+                                                    isKindOfFieldTypeOptional = false,
+                                                    fieldType = elementInInputFields.type.ofType.name,
+                                                    fieldName = elementInInputFields.name,
+
+                                                    enumValues = enumElement
+                                                )
                                             )
-                                        )
-                                    } else
-                                        state.tempArgsTables.add(
-                                            Table(
-                                                typeName = elementIntypes.name,
-                                                kindOfFieldType = kind1.toString(),
-                                                isKindOfFieldTypeOptional = false,
-                                                fieldType = elementInInputFields.type.ofType.name,
-                                                fieldName = elementInInputFields.name
+                                        } else
+                                            state.tempArgsTables.add(
+                                                Table(
+                                                    typeName = elementIntypes.name,
+                                                    kindOfFieldType = kind1.toString(),
+                                                    isKindOfFieldTypeOptional = false,
+                                                    fieldType = elementInInputFields.type.ofType.name,
+                                                    fieldName = elementInInputFields.name
+                                                )
                                             )
-                                        )
+                                    }
+
                                 }
-                            } else // optional scalar or enum
+
+                            }
+
+
+
+
+
+
+
+
+
+
+
+
+                            else // optional scalar or enum
                                 if (kind0 == __TypeKind.SCALAR || kind0 == __TypeKind.ENUM) {// optional scalar or enum
                                     if (kind0 == __TypeKind.ENUM) {
                                         val enumElement: MutableList<String> =
