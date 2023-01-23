@@ -28,6 +28,9 @@ By default, _EvoMaster_ will get installed at:
 * On OSX: `/Applications/evomaster.app/Contents/MacOS/evomaster`
 * On Linux: ` /opt/evomaster/bin/evomaster`
 
+Also notice that these installer files are built with the latest versions
+of these operating systems on GitHub Actions.
+They might not work when trying to use these installers on older operating system versions.
 
 Regarding the _driver_ library, it depends on the language/environment.
 For example, the JVM support is available from [Maven Central](https://mvnrepository.com/artifact/org.evomaster). 
