@@ -943,6 +943,9 @@
                     <version>${kotlin.version}</version>
                     <configuration>
                         <jvmTarget>${java.version}</jvmTarget>
+                        <args>
+                            <arg>"--add-opens java.base/java.io=ALL-UNNAMED"</arg>
+                        </args>
                     </configuration>
                     <executions>
                         <execution>
