@@ -22,7 +22,8 @@ public class MethodClassReplacement implements MethodReplacementClass {
         return Method.class;
     }
 
-    @Replacement(type = ReplacementType.TRACKER, category = ReplacementCategory.EXT_0)
+    @Replacement(type = ReplacementType.TRACKER, category = ReplacementCategory.EXT_0,
+    packagesToSkip = {"com.fasterxml.jackson.",".com.fasterxml.jackson."})
     public static Object invoke(Method caller, Object obj, Object... args) throws InvocationTargetException, IllegalAccessException {
 
         /*
@@ -49,7 +50,8 @@ public class MethodClassReplacement implements MethodReplacementClass {
             return caller.invoke(obj, args);
         }
 
-        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(targetClassName);
+        //due to performance reasons, here we do strict check
+        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(targetClassName,true);
         if(candidateClasses.isEmpty()){
             toSkipCache.add(targetClassName);
             return caller.invoke(obj, args);

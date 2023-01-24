@@ -168,7 +168,8 @@ public class ReplacementUtils {
 
                     if(br.packagesToSkip().length > 0 && contextClassName != null) {
                         String ctx = ClassName.get(contextClassName).getFullNameWithDots();
-                        if (Arrays.stream(br.packagesToSkip()).anyMatch(ctx::startsWith)){
+                        if (Arrays.stream(br.packagesToSkip()).anyMatch(
+                                it -> ctx.startsWith(it) || (it.startsWith(".") && ctx.contains(it)))){
                             return false;
                         }
                     }
