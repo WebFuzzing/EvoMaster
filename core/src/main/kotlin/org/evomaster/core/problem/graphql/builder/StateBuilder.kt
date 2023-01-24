@@ -1021,6 +1021,21 @@ object StateBuilder {
                                                     fieldName = elementInInputFields.name
                                                 )
                                             )}
+
+//                                            __TypeKind.INPUT_OBJECT ->{
+//                                                state.tempArgsTables.add(
+//                                                    Table(
+//                                                        KindOfFieldName=__TypeKind.LIST.toString(),
+//                                                        isKindOfFieldNameOptional=false,
+//
+//                                                        typeName = elementIntypes.name,
+//                                                        kindOfFieldType = kind3.toString(),
+//                                                        isKindOfFieldTypeOptional = false,
+//                                                        fieldType = elementInInputFields.type.ofType.ofType.ofType.name,
+//                                                        fieldName = elementInInputFields.name
+//                                                    )
+//                                                )
+//                                            }
                                         }
 
 
