@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.internal.mongo
 
 import com.mongodb.client.model.Filters
+import org.bson.BsonType
 import org.bson.Document
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -185,6 +186,29 @@ class MongoHeuristicCalculatorTest {
         val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
         assertEquals(0.0, distanceMatch)
         assertEquals(1.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testTypeExplicitVersion() {
+        val doc = Document().append("age", 20)
+        val bsonTrue = Filters.type("age", BsonType.INT32)
+        val bsonFalse = Filters.type("age", BsonType.DOUBLE)
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(65551.0, distanceNotMatch)
+    }
+
+    @Test
+    fun testTypeAliasVersion() {
+        // This is not exactly the alias. Should be?
+        val doc = Document().append("age", 20)
+        val bsonTrue = Filters.type("age", BsonType.INT32.name)
+        val bsonFalse = Filters.type("age", BsonType.DOUBLE.name)
+        val distanceMatch = MongoHeuristicsCalculator().computeExpression(bsonTrue, doc)
+        val distanceNotMatch = MongoHeuristicsCalculator().computeExpression(bsonFalse, doc)
+        assertEquals(0.0, distanceMatch)
+        assertEquals(65551.0, distanceNotMatch)
     }
 
     /*

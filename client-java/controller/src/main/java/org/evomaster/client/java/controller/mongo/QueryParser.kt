@@ -23,6 +23,7 @@ class QueryParser {
             ModSelector(),
             NotSelector(),
             ExistsSelector(),
+            TypeSelector(),
             ImplicitEqualsSelector()
         )
         return selectors.firstNotNullOf { it.getOperation(query) }

@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.mongo
 import com.mongodb.MongoClientSettings
 import org.bson.BsonDocument
 import org.bson.Document
+import org.bson.codecs.BsonTypeClassMap
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.DocumentCodec
 import org.bson.conversions.Bson
@@ -39,6 +40,7 @@ class MongoHeuristicsCalculator {
             is ExistsOperation -> calculateDistanceForExists(operation, doc)
             is ModOperation -> calculateDistanceForMod(operation, doc)
             is NotOperation -> calculateDistanceForNot(operation, doc)
+            is TypeOperation -> calculateDistanceForType(operation, doc)
             else -> Double.MAX_VALUE
         }
     }
@@ -186,6 +188,17 @@ class MongoHeuristicsCalculator {
     private fun calculateDistanceForNor(operation: NorOperation, doc: Document): Double {
         // NOT FINISHED. Must include cases where field is not defined.
         return operation.filters.sumOf { filter -> calculateDistance(invertOperation(filter), doc) }
+    }
+
+    private fun calculateDistanceForType(operation: TypeOperation, doc: Document): Double {
+        val field = operation.fieldName
+        val expectedType = BsonTypeClassMap().get(operation.type).typeName
+        val actualType = when (val value = doc[field]) {
+            null -> "null"
+            else -> value::class.java.typeName
+        }
+
+        return DistanceHelper.getLeftAlignmentDistance(actualType, expectedType).toDouble()
     }
 
     private fun invertOperation(operation: QueryOperation): QueryOperation {
