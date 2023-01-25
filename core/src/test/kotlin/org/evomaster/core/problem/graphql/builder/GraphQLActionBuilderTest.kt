@@ -1389,7 +1389,8 @@ class GraphQLActionBuilderTest {
         assertEquals(1, objPage.fields.size)
         assertTrue(objPage.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "users" })
 
-        val optUsers = objPage.fields.first {  it.name == "users" && it is TupleGene }
+        val optUsers = objPage.fields.first { it.name == "users" && it is OptionalGene }
+
         val tupleUsers = optUsers.getWrappedGene(TupleGene::class.java)
 
         if (tupleUsers != null) {
