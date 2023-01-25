@@ -621,32 +621,19 @@ object GeneUtils {
                     But for objects we need to use an Optional
                  */
                 if (gene.gene is ObjectGene) {
-                    if (gene.parent !is TupleGene) {
+                    if (gene.parent !is TupleGene)
                         OptionalGene(gene.name, handleBooleanSelection(gene.gene))
-                    } else {
-
+                     else
                         ObjectGene(gene.name, gene.gene.fields.map { handleBooleanSelection(it) })
-                    }
 
-                }
-                else
+                } else
                     if (gene.gene is ArrayGene<*>)
                         handleBooleanSelection(gene.gene.template)
                     else
-                        if (gene.gene is TupleGene && gene.gene.lastElementTreatedSpecially) {//opt tuple
-                            /*  TupleGene(
-                                      gene.name,
-                                      gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last())),
-                                      lastElementTreatedSpecially = true)*/
-                            if ((gene.gene.elements.last() is ObjectGene || gene.gene.elements.last().getWrappedGene(OptionalGene::class.java)?.gene is ObjectGene))
-                                TupleGene(
-                                    gene.name,
-                                    gene.gene.elements.dropLast(1)
-                                        .plus(handleBooleanSelection(gene.gene.elements.last())),
-                                    lastElementTreatedSpecially = true)
-                            else
-                                OptionalGene(gene.name, handleBooleanSelection(gene.gene))
-                        } else if (gene.gene is TupleGene) gene
+                        if (gene.gene is TupleGene && gene.gene.lastElementTreatedSpecially) //opt tuple
+                        //putting the tuple into optional gene
+                            OptionalGene(gene.name, handleBooleanSelection(gene.gene))//putting the tuple into optional
+                        else if (gene.gene is TupleGene) gene//since it contains only inputs
                         else if (gene.gene is LimitObjectGene) gene
                         else if (gene.gene is CycleObjectGene) gene
                         else
@@ -666,15 +653,15 @@ object GeneUtils {
                 //need to look at each field
                 ObjectGene(gene.name, gene.fields.map { handleBooleanSelection(it) })
             }
-
             is ArrayGene<*> -> handleBooleanSelection(gene.template)
+
             is TupleGene -> {//not opt tuple
                 if (gene.lastElementTreatedSpecially)
-                    TupleGene(
-                            gene.name,
-                            gene.elements.dropLast(1).plus(handleBooleanSelection(gene.elements.last())),
-                            lastElementTreatedSpecially = true
-                    ) else gene
+                    TupleGene(//returning a tuple, with the last element handled by the Boolean selection
+                        gene.name,
+                        gene.elements.dropLast(1).plus(handleBooleanSelection(gene.elements.last())),
+                        lastElementTreatedSpecially = true
+                    ) else gene// contains only inputs
             }
 
             else -> {
