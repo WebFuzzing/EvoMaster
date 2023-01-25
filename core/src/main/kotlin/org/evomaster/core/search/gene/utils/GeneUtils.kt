@@ -497,7 +497,7 @@ object GeneUtils {
         val selected = obj.fields.filter {
             ((it is OptionalGene && it.isActive) ||
                     (it is BooleanGene && it.value) ||
-                    (it is OptionalGene && it.gene is TupleGene && it.gene.lastElementTreatedSpecially && isLastSelected(
+                    (it is OptionalGene && it.isActive && it.gene is TupleGene && it.gene.lastElementTreatedSpecially && isLastSelected(
                         it.gene
                     )) ||
                     (it is TupleGene && it.lastElementTreatedSpecially && isLastSelected(it))
@@ -521,21 +521,14 @@ object GeneUtils {
                             it.isActive = false
                             failedRepairCount++
                         }
-                    } else if (it.gene is TupleGene && isLastElementInTupleOptionalObjetNotCycleNotLimit(it.gene)) {
-                        val tupleOutputOptional = it.gene.elements.last() as OptionalGene
-                        val tupleOutputObject = tupleOutputOptional.gene as ObjectGene
-                        if (!repairBooleanSelection(tupleOutputObject)) {
-                            tupleOutputOptional.isActive = false
+                    } else if (it.gene is TupleGene && isLastElementInTupleObjetNotCycleNotLimit(it.gene)) {
+                        if (!repairBooleanSelection(it.gene.elements.last() as ObjectGene)) {
                             failedRepairCount++
                         }
                     }
                 } else
-                    if (it is TupleGene && isLastElementInTupleOptionalObjetNotCycleNotLimit(it)) {
-                        //looking into objects inside a tuple
-                        val tupleOutputOptional = it.elements.last() as OptionalGene
-                        val tupleOutputObject = tupleOutputOptional.gene as ObjectGene
-                        if (!repairBooleanSelection(tupleOutputObject)) {
-                            tupleOutputOptional.isActive = false
+                    if (it is TupleGene && isLastElementInTupleObjetNotCycleNotLimit(it)){
+                        if (!repairBooleanSelection(it.elements.last() as ObjectGene)) {
                             failedRepairCount++
                         }
                     }
@@ -598,15 +591,10 @@ object GeneUtils {
     }
 
     private fun repairTupleLastElement(lastElement: Gene): Boolean {
-        if (lastElement is OptionalGene) {
-            lastElement.isActive = true
-            if (lastElement.gene is ObjectGene) {
-                if (!repairBooleanSelection(lastElement.gene)) {
-                    lastElement.isActive = false
-                }
-                return true //we just need one
-            }
-        } else
+
+        if ((lastElement is ObjectGene) && (repairBooleanSelection(lastElement)))
+            return true //we just need one
+        else
             if (lastElement is BooleanGene) {
                 lastElement.value = true
                 return true
@@ -632,8 +620,15 @@ object GeneUtils {
                     Any basic field will be represented with a BooleanGene (selected/unselected).
                     But for objects we need to use an Optional
                  */
-                if (gene.gene is ObjectGene)
-                    OptionalGene(gene.name, handleBooleanSelection(gene.gene))
+                if (gene.gene is ObjectGene) {
+                    if (gene.parent !is TupleGene) {
+                        OptionalGene(gene.name, handleBooleanSelection(gene.gene))
+                    } else {
+
+                        ObjectGene(gene.name, gene.gene.fields.map { handleBooleanSelection(it) })
+                    }
+
+                }
                 else
                     if (gene.gene is ArrayGene<*>)
                         handleBooleanSelection(gene.gene.template)
@@ -699,7 +694,8 @@ object GeneUtils {
     private fun isLastSelected(gene: TupleGene): Boolean {
         val lastElement = gene.elements[gene.elements.size - 1]
         return (lastElement is OptionalGene && lastElement.isActive) ||
-                (lastElement is BooleanGene && lastElement.value)
+                (lastElement is BooleanGene && lastElement.value)||
+                (lastElement is ObjectGene)
 
     }
 
@@ -709,11 +705,12 @@ object GeneUtils {
 
     }
 
-    private fun isLastElementInTupleOptionalObjetNotCycleNotLimit(gene: TupleGene): Boolean {
+
+    private fun isLastElementInTupleObjetNotCycleNotLimit(gene: TupleGene): Boolean {
         return (gene.lastElementTreatedSpecially &&
-                gene.elements.last() is OptionalGene &&
-                (gene.elements.last() as OptionalGene).gene is ObjectGene &&
-                (((gene.elements.last() as OptionalGene).gene !is CycleObjectGene) || ((gene.elements.last() as OptionalGene).gene !is LimitObjectGene)))
+                gene.elements.last() is ObjectGene &&
+                ( (gene.elements.last() !is CycleObjectGene)||(gene.elements.last() !is LimitObjectGene))
+                )
     }
 
     /**
