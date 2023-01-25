@@ -250,6 +250,60 @@ internal class GeneUtilsTest {
     }
 
     @Test
+    fun testBooleanSectionInTupleLastElementOptObject() {
+
+        val tupleInObject = ObjectGene(
+            "foo", listOf(
+                TupleGene(
+                    "tuple", listOf(
+                        OptionalGene(
+                            "optObj",
+                            ObjectGene(
+                                "ObjInLastTuple",
+                                listOf(StringGene("string"))
+                            ), isActive = true
+                        )
+                    ),
+                    lastElementTreatedSpecially = true
+                )
+            )
+        )
+
+        val selection = GeneUtils.getBooleanSelection(tupleInObject)
+        val tuple = selection.fields.first { it is TupleGene } as TupleGene
+        assertTrue(tuple.elements.last() is ObjectGene)//And not Optional object
+
+    }
+
+    @Test
+    fun testRepairBooleanSectionInTupleLastElementObject() {
+
+        val objBooleanAndOptional = ObjectGene(
+            "foo", listOf(
+                BooleanGene("boolean",value = false),//to see if it is repaired
+                OptionalGene("opt",
+                    TupleGene(
+                    "tuple1",
+                        listOf(
+                            ObjectGene(
+                                "ObjInLastTuple",
+                                listOf(BooleanGene("boolean"))
+                            ),
+                    ),
+                    lastElementTreatedSpecially = true
+                ),isActive = false)//to see if it is repaired
+            )
+        )
+
+        val tuple = TupleGene("tuple2", listOf(objBooleanAndOptional), lastElementTreatedSpecially = true)
+        val rootObj = ObjectGene("rootObj", listOf(tuple))
+        GeneUtils.repairBooleanSelection(rootObj)
+
+        val objBoolAndOptRepaired=(rootObj.fields.first { it is TupleGene } as TupleGene).elements.last() as ObjectGene
+        assertTrue(objBoolAndOptRepaired.fields.any { (it is BooleanGene && it.value) || (it is OptionalGene && it.isActive) })
+    }
+
+    @Test
     fun testRepairBooleanSectionFF() {
 
         val objBoolean = ObjectGene("foo", listOf(BooleanGene("a", false), (BooleanGene("b", false))))
