@@ -22,17 +22,33 @@ public class MethodClassReplacement implements MethodReplacementClass {
      * key -> unique identifier for method
      * value -> replacement method. can be null
      */
-    private final static Map<String,Method> methodCache = Collections.synchronizedMap(new HashMap<>());
-           //cannot use ConcurrentHashMap, as it does not accept null values
-            //new ConcurrentHashMap<>();
+    private final static Map<String, Method> methodCache = Collections.synchronizedMap(new HashMap<>());
+    //cannot use ConcurrentHashMap, as it does not accept null values
+    //new ConcurrentHashMap<>();
 
     @Override
     public Class<?> getTargetClass() {
         return Method.class;
     }
 
-    @Replacement(type = ReplacementType.TRACKER, category = ReplacementCategory.EXT_0,
-    packagesToSkip = {"com.fasterxml.jackson.",".com.fasterxml.jackson."})
+    @Replacement(type = ReplacementType.TRACKER,
+            category = ReplacementCategory.EXT_0,
+            //unfortunately, ANY kills performance (50%-70%!!!), at least on OCVN
+            //debugged with profiler, seems like reflection is treated very specially inside the JVM
+            //FIXME: but needed otherwise with ONLY_SUT we miss most of SQL handling :( need alternative solution.
+            //an example is org.apache.tomcat.jdbc.pool.StatementFacade$StatementProxy
+            //trying to exclude packages that are unlikely to be useful to handle
+            usageFilter = UsageFilter.ONLY_SUT,
+            packagesToSkip = {
+                    ".fasterxml.jackson.", //written like this, without "com", to avoid bug in shade plugin
+                    "org.springframework.",
+                    "ch.qos.logback.",
+                    "org.apache.tomcat.util.",
+                    "org.jboss.logging",
+                    "net.sf.ehcache.config"
+            },
+            extraPackagesToConsider = {"org.apache.tomcat.jdbc."}
+    )
     public static Object invoke(Method caller, Object obj, Object... args) throws InvocationTargetException, IllegalAccessException {
 
         /*
@@ -40,7 +56,7 @@ public class MethodClassReplacement implements MethodReplacementClass {
             This actually happens for example in
             org.apache.tomcat.jdbc.pool.StatementFacade$StatementProxy
          */
-        if(caller==null){
+        if (caller == null) {
             //sure NPE
             return caller.invoke(obj, args);
         }
@@ -50,18 +66,22 @@ public class MethodClassReplacement implements MethodReplacementClass {
             so, we cannot guarantee to preserve the semantic, and must set it
             accessible
             TODO in theory it should not have any impact whatsoever, but you never know...
+            actually, it can! eg, if caller would fail in its context...
+            FIXME to do it right, should manually check contextClassName, and put it accessible to
+            true only temporarily for this internal call.
+            could check: sun.reflect.Reflection.getCallerClass();
          */
         caller.setAccessible(true);
 
         String targetClassName = caller.getDeclaringClass().getName();
 
-        if(toSkipCache.contains(targetClassName)){
+        if (toSkipCache.contains(targetClassName)) {
             return caller.invoke(obj, args);
         }
 
         //due to performance reasons, here we do strict check
-        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(targetClassName,true);
-        if(candidateClasses.isEmpty()){
+        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(targetClassName, true);
+        if (candidateClasses.isEmpty()) {
             toSkipCache.add(targetClassName);
             return caller.invoke(obj, args);
         }
@@ -81,7 +101,7 @@ public class MethodClassReplacement implements MethodReplacementClass {
 
         Method replacement = null;
 
-        if(methodCache.containsKey(id)){
+        if (methodCache.containsKey(id)) {
             replacement = methodCache.get(id);
         } else {
             boolean isInSUT = false; //FIXME
@@ -93,20 +113,20 @@ public class MethodClassReplacement implements MethodReplacementClass {
             methodCache.put(id, replacement);
         }
 
-        if(replacement == null){
+        if (replacement == null) {
             return caller.invoke(obj, args);
         }
 
         Replacement br = replacement.getAnnotation(Replacement.class);
 
         List<Object> tmp = new LinkedList<>();
-        if(args != null) {
+        if (args != null) {
             tmp.addAll(Arrays.asList(args));
         }
-        if(!br.replacingStatic()){
+        if (!br.replacingStatic()) {
             tmp.add(0, obj);
         }
-        if(br.type() != ReplacementType.TRACKER){
+        if (br.type() != ReplacementType.TRACKER) {
             tmp.add(null); // null template at the end
         }
 

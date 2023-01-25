@@ -154,7 +154,11 @@ public class ReplacementUtils {
                         return false;
                     }
                     if(!isInSUT && br.usageFilter() == UsageFilter.ONLY_SUT){
-                        return false;
+                        String ctx = ClassName.get(contextClassName).getFullNameWithDots();
+                        if(br.extraPackagesToConsider().length == 0
+                                || Arrays.stream(br.packagesToSkip()).noneMatch(it -> ctx.startsWith(it))) {
+                            return false;
+                        }
                     }
                     if(requirePure && !br.isPure()){
                         return false;

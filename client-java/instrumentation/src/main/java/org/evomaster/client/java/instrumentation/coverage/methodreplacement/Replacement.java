@@ -87,4 +87,9 @@ public @interface Replacement {
      * This latter is useful when dealing with packages that are shaded
      */
     String[] packagesToSkip() default {};
+
+    /**
+     * Only applicable if UsageFilter is ONLY_SUT
+     */
+    String[] extraPackagesToConsider() default {};
 }
