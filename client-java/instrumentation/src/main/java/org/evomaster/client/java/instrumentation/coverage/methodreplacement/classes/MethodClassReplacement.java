@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class MethodClassReplacement implements MethodReplacementClass {
@@ -16,6 +17,14 @@ public class MethodClassReplacement implements MethodReplacementClass {
      * to be careful about performance here
      */
     private final static Set<String> toSkipCache = new CopyOnWriteArraySet<>();
+
+    /**
+     * key -> unique identifier for method
+     * value -> replacement method. can be null
+     */
+    private final static Map<String,Method> methodCache = Collections.synchronizedMap(new HashMap<>());
+           //cannot use ConcurrentHashMap, as it does not accept null values
+            //new ConcurrentHashMap<>();
 
     @Override
     public Class<?> getTargetClass() {
@@ -68,16 +77,26 @@ public class MethodClassReplacement implements MethodReplacementClass {
 
         String name = caller.getName();
         String desc = ReplacementUtils.getDescriptor(caller, 0, 0);
-        boolean isInSUT = false; //FIXME
-        String contextClassName = null; //FIXME same as above
+        String id = targetClassName + "." + name + desc;
 
-        Optional<Method> r = ReplacementUtils.chooseMethodFromCandidateReplacement(
-                isInSUT, name, desc, candidateClasses, false, contextClassName);
-        if(! r.isPresent()){
+        Method replacement = null;
+
+        if(methodCache.containsKey(id)){
+            replacement = methodCache.get(id);
+        } else {
+            boolean isInSUT = false; //FIXME
+            String contextClassName = null; //FIXME same as above
+
+            Optional<Method> r = ReplacementUtils.chooseMethodFromCandidateReplacement(
+                    isInSUT, name, desc, candidateClasses, false, contextClassName);
+            replacement = r.orElse(null);
+            methodCache.put(id, replacement);
+        }
+
+        if(replacement == null){
             return caller.invoke(obj, args);
         }
 
-        Method replacement = r.get();
         Replacement br = replacement.getAnnotation(Replacement.class);
 
         List<Object> tmp = new LinkedList<>();
