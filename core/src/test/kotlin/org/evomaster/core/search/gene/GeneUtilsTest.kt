@@ -276,6 +276,36 @@ internal class GeneUtilsTest {
     }
 
     @Test
+    fun testBooleanSectionInOptTupleLastElementOptObject() {
+
+        val tupleInObject = ObjectGene(
+            "foo", listOf(
+                OptionalGene(
+                    "optTuple",
+                    TupleGene(
+                        "tuple", listOf(
+                            OptionalGene(
+                                "optObj",
+                                ObjectGene(
+                                    "ObjInLastTuple",
+                                    listOf(StringGene("string"))
+                                ), isActive = true
+                            )
+                        ),
+                        lastElementTreatedSpecially = true
+                    )
+                )
+            )
+        )
+
+        val selection = GeneUtils.getBooleanSelection(tupleInObject)
+        val tuple =
+            (selection.fields.first { it.getWrappedGene(TupleGene::class.java) != null } as OptionalGene).gene as TupleGene
+        assertTrue(tuple.elements.last() is ObjectGene)//And not Optional object
+
+    }
+
+    @Test
     fun testRepairBooleanSectionInTupleLastElementObject() {
 
         val objBooleanAndOptional = ObjectGene(
