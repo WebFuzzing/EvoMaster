@@ -1,7 +1,10 @@
 package org.evomaster.core.problem.webfrontend.service
 
+import org.evomaster.client.java.controller.api.SeleniumEMUtils
+import org.evomaster.core.problem.webfrontend.UserActionType
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -47,4 +50,38 @@ internal class BrowserControllerDockerTest{
         assertEquals(0, actions.size)
     }
 
+    @Test
+    fun testAlinks(){
+
+        browser.initUrlOfStartingPage("http://localhost:${getPort()}/frontend/alinks/index.html",true)
+        browser.goToStartingPage()
+
+        var actions = browser.computePossibleUserInteractions()
+        assertEquals(1, actions.size)
+        val homePage = browser.getCurrentUrl()
+        assertTrue(homePage.endsWith("index.html"), homePage)
+        val a = actions[0]
+        assertEquals(UserActionType.CLICK, a.userActionType)
+
+        browser.clickAndWaitPageLoad(a.cssSelector)
+        val aPage = browser.getCurrentUrl()
+        assertTrue(aPage.endsWith("a.html"), aPage)
+
+        actions = browser.computePossibleUserInteractions()
+        assertEquals(2, actions.size)
+        val backHome = actions.first { it.cssSelector.contains("#backhome") }
+        browser.clickAndWaitPageLoad(backHome.cssSelector)
+        assertEquals(homePage, browser.getCurrentUrl())
+
+        browser.clickAndWaitPageLoad(a.cssSelector)
+        val tob = actions.first { it.cssSelector.contains("#tob") }
+        browser.clickAndWaitPageLoad(tob.cssSelector)
+        val bPage = browser.getCurrentUrl()
+        assertTrue(bPage.endsWith("b.html"), bPage)
+        actions = browser.computePossibleUserInteractions()
+        assertEquals(0, actions.size)
+
+        browser.goBack()
+        assertEquals(aPage, browser.getCurrentUrl())
+    }
 }

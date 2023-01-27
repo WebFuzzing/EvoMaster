@@ -652,6 +652,13 @@
                 <version>2.3.1</version>
             </dependency>
 
+            <!--    HTML   -->
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>1.15.3</version>
+            </dependency>
+
             <!--  GraphQL             -->
             <dependency>
                 <groupId>com.graphql-java-kickstart</groupId>
@@ -743,6 +750,12 @@
             <dependency>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>selenium-chrome-driver</artifactId>
+                <version>${selenium.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-support</artifactId>
                 <version>${selenium.version}</version>
                 <scope>test</scope>
             </dependency>

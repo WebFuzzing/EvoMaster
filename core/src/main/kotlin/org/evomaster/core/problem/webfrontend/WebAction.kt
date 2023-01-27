@@ -23,7 +23,7 @@ class WebAction(
             throw IllegalArgumentException("Mismatch between $nFillText fill text actions and ${textData.size} genes for it")
         }
         for(key in textData.keys){
-            if(! userInteractions.any { it.htmlSelector == key }){
+            if(! userInteractions.any { it.cssSelector == key }){
                 throw IllegalArgumentException("Missing info for input: $key")
             }
         }
@@ -42,7 +42,7 @@ class WebAction(
             return "Undefined"
         }
         val x = userInteractions.last()
-        return "${x.userActionType}:${x.htmlSelector}"
+        return "${x.userActionType}:${x.cssSelector}"
     }
 
     override fun seeTopGenes(): List<out Gene> {

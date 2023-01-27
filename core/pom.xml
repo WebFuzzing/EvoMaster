@@ -79,6 +79,15 @@
             <artifactId>selenium-chrome-driver</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-support</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>net.sf.jopt-simple</groupId>

@@ -1,8 +1,10 @@
 package org.evomaster.core.problem.webfrontend.service
 
+import org.evomaster.client.java.controller.api.SeleniumEMUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.webfrontend.BrowserActionBuilder
 import org.evomaster.core.problem.webfrontend.WebUserInteraction
+import org.evomaster.core.remote.SutProblemException
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.testcontainers.Testcontainers
@@ -83,8 +85,16 @@ class BrowserController {
     }
 
     fun goToStartingPage(){
-
-        driver.get(urlOfStartingPage)
+        try {
+            driver.get(urlOfStartingPage)
+        } catch (e :Exception){
+            throw SutProblemException("Failed to open home page at '$urlOfStartingPage' : ${e.message}")
+        }
+        val timeoutSecs = 10 // first time can wait a bit, eg if need to download quite a few resources
+        val loaded = SeleniumEMUtils.waitForPageToLoad(driver, timeoutSecs)
+        if(!loaded){
+            throw SutProblemException("Failed to load home page within $timeoutSecs seconds")
+        }
     }
 
     fun computePossibleUserInteractions() : List<WebUserInteraction>{
@@ -97,5 +107,14 @@ class BrowserController {
 
     fun getCurrentUrl(): String{
         return driver.currentUrl
+    }
+
+    fun clickAndWaitPageLoad(cssSelector: String){
+        SeleniumEMUtils.clickAndWaitPageLoad(driver, cssSelector)
+    }
+
+    fun goBack(){
+        driver.navigate().back()
+        SeleniumEMUtils.waitForPageToLoad(driver,2)
     }
 }
