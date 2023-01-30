@@ -12,7 +12,7 @@ class WebAction(
      */
     val userInteractions: List<WebUserInteraction> = listOf(),
     /**
-     * Map from htmlLocator (coming from [userInteractions]) for text input to StringGene representing its value
+     * Map from cssLocator (coming from [userInteractions]) for text input to StringGene representing its value
      */
     val textData : Map<String, StringGene> = mapOf()
 ) : GuiAction(textData.values.map { it }) {
@@ -28,6 +28,7 @@ class WebAction(
             }
         }
     }
+
 
     override fun isDefined() : Boolean {
         return userInteractions.isNotEmpty()
@@ -59,4 +60,9 @@ class WebAction(
             textData.entries.associate { it.key to it.value.copy() as StringGene }
         )
     }
+
+    fun copyValueFrom(other: WebAction){
+        userInteractions
+    }
+
 }

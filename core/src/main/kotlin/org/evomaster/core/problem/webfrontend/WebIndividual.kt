@@ -3,6 +3,7 @@ package org.evomaster.core.problem.webfrontend
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.gui.GuiIndividual
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.ActionComponent
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.StructuralElement
@@ -34,5 +35,9 @@ class WebIndividual(
 
     override fun verifyInitializationActions(): Boolean {
         TODO("Not yet implemented")
+    }
+
+    override fun seeMainExecutableActions(): List<WebAction> {
+        return super.seeMainExecutableActions() as List<WebAction>
     }
 }
