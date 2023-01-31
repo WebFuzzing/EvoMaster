@@ -45,7 +45,7 @@
         <profile>
             <id>Configs for JDK >= 17</id>
             <activation>
-                <jdk>17</jdk>
+                <jdk>[17,)</jdk>
             </activation>
             <properties>
                 <addOpens> --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
@@ -944,7 +944,8 @@
                     <configuration>
                         <jvmTarget>${java.version}</jvmTarget>
                         <args>
-                            <arg>"--add-opens java.base/java.io=ALL-UNNAMED"</arg>
+<!--                            <arg>&#45;&#45;add-opens=java.base/java.io=ALL-UNNAMED</arg>-->
+<!--                            <arg>&#45;&#45;add-opens=java.base/java.lang=ALL-UNNAMED</arg>-->
                         </args>
                     </configuration>
                     <executions>
