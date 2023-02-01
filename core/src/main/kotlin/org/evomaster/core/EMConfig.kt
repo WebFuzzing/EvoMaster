@@ -260,6 +260,13 @@ class EMConfig {
             They can be check only once all fields have been updated
          */
 
+        if(!blackBox && bbSwaggerUrl.isNotBlank()){
+            throw IllegalArgumentException("'bbSwaggerUrl' should be set only in black-box mode")
+        }
+        if(!blackBox && bbTargetUrl.isNotBlank()){
+            throw IllegalArgumentException("'bbTargetUrl' should be set only in black-box mode")
+        }
+
         if (blackBox && !bbExperiments) {
 
             if(problemType == ProblemType.DEFAULT){
