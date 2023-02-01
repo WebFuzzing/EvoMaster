@@ -8,6 +8,7 @@ import org.bson.codecs.DecoderContext
 import org.bson.codecs.DocumentCodec
 import org.bson.conversions.Bson
 import org.evomaster.client.java.controller.mongo.operations.*
+import org.evomaster.client.java.controller.mongo.operations.synthetic.*
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper
 import org.evomaster.core.mongo.QueryParser
 import kotlin.math.abs
@@ -35,12 +36,16 @@ class MongoHeuristicsCalculator {
             is InOperation<*> -> calculateDistanceForIn(operation, doc)
             is NotInOperation<*> -> calculateDistanceForNotIn(operation, doc)
             is AllOperation<*> -> calculateDistanceForAll(operation, doc)
+            is InvertedAllOperation<*> -> calculateDistanceForInvertedAll(operation, doc)
             is SizeOperation -> calculateDistanceForSize(operation, doc)
+            is InvertedSizeOperation -> calculateDistanceForInvertedSize(operation, doc)
             is ElemMatchOperation -> calculateDistanceForElemMatch(operation, doc)
             is ExistsOperation -> calculateDistanceForExists(operation, doc)
             is ModOperation -> calculateDistanceForMod(operation, doc)
+            is InvertedModOperation -> calculateDistanceForInvertedMod(operation, doc)
             is NotOperation -> calculateDistanceForNot(operation, doc)
             is TypeOperation -> calculateDistanceForType(operation, doc)
+            is InvertedTypeOperation -> calculateDistanceForInvertedType(operation, doc)
             else -> Double.MAX_VALUE
         }
     }
@@ -132,18 +137,40 @@ class MongoHeuristicsCalculator {
         }
     }
 
+    private fun <V> calculateDistanceForInvertedAll(operation: InvertedAllOperation<V>, doc: Document): Double {
+        val expectedValues = operation.values
+
+        return when (val actualValues = doc[operation.fieldName]) {
+            is ArrayList<*> -> if(actualValues.containsAll(expectedValues)) 1.0 else 0.0
+            else -> 0.0
+        }
+    }
+
     private fun calculateDistanceForSize(operation: SizeOperation, doc: Document): Double {
-        val expectedValue = operation.value
+        val expectedSize = operation.value
 
         return when (val actualValue = doc[operation.fieldName]) {
-            is List<*> -> abs(actualValue.size.toDouble() - expectedValue.toDouble())
+            is ArrayList<*> -> abs(actualValue.size.toDouble() - expectedSize.toDouble())
             else -> Double.MAX_VALUE
         }
     }
 
+    private fun calculateDistanceForInvertedSize(operation: InvertedSizeOperation, doc: Document): Double {
+        val expectedSize = operation.value
+
+        return when (val actualValue = doc[operation.fieldName]) {
+            is ArrayList<*> -> if(actualValue.size ==  expectedSize) 1.0 else 0.0
+            else -> 0.0
+        }
+    }
+
     private fun calculateDistanceForElemMatch(operation: ElemMatchOperation, doc: Document): Double {
-        // NOT FINISHED, FIX
-        return operation.filters.sumOf { filter -> calculateDistance(filter, doc) }
+        return when (val actualValue = doc[operation.fieldName]) {
+            is ArrayList<*> -> actualValue.minOf { elem ->
+                calculateDistance(operation.filter, Document().append(operation.fieldName, elem))
+            }
+            else -> Double.MAX_VALUE
+        }
     }
 
     private fun calculateDistanceForExists(operation: ExistsOperation, doc: Document): Double {
@@ -168,10 +195,24 @@ class MongoHeuristicsCalculator {
             // Change to number?
             is Int -> {
                 val actualRemainder = actualValue.mod(operation.divisor)
-                return abs(actualRemainder.toDouble() - expectedRemainder.toDouble())
+                abs(actualRemainder.toDouble() - expectedRemainder.toDouble())
             }
 
             else -> Double.MAX_VALUE
+        }
+    }
+
+    private fun calculateDistanceForInvertedMod(operation: InvertedModOperation, doc: Document): Double {
+        val expectedRemainder = operation.remainder
+
+        return when (val actualValue = doc[operation.fieldName]) {
+            // Change to number?
+            is Int -> {
+                val actualRemainder = actualValue.mod(operation.divisor)
+                if(actualRemainder ==  expectedRemainder) 1.0 else 0.0
+            }
+
+            else -> 0.0
         }
     }
 
@@ -186,7 +227,6 @@ class MongoHeuristicsCalculator {
     }
 
     private fun calculateDistanceForNor(operation: NorOperation, doc: Document): Double {
-        // NOT FINISHED. Must include cases where field is not defined.
         return operation.filters.sumOf { filter -> calculateDistance(invertOperation(filter), doc) }
     }
 
@@ -201,8 +241,18 @@ class MongoHeuristicsCalculator {
         return DistanceHelper.getLeftAlignmentDistance(actualType, expectedType).toDouble()
     }
 
+    private fun calculateDistanceForInvertedType(operation: InvertedTypeOperation, doc: Document): Double {
+        val field = operation.fieldName
+        val expectedType = BsonTypeClassMap().get(operation.type).typeName
+        val actualType = when (val value = doc[field]) {
+            null -> "null"
+            else -> value::class.java.typeName
+        }
+        // el else ??
+        return if(actualType != expectedType) 0.0 else 1.0
+    }
+
     private fun invertOperation(operation: QueryOperation): QueryOperation {
-        // NOT FINISHED
         return when (operation) {
             is EqualsOperation<*> -> NotEqualsOperation(operation.fieldName, operation.value)
             is NotEqualsOperation<*> -> EqualsOperation(operation.fieldName, operation.value)
@@ -210,6 +260,21 @@ class MongoHeuristicsCalculator {
             is GreaterThanEqualsOperation<*> -> LessThanOperation(operation.fieldName, operation.value)
             is LessThanOperation<*> -> GreaterThanEqualsOperation(operation.fieldName, operation.value)
             is LessThanEqualsOperation<*> -> GreaterThanOperation(operation.fieldName, operation.value)
+            is NotOperation -> operation.filter
+            is AllOperation<*> -> InvertedAllOperation(operation.fieldName, operation.values)
+            is InvertedAllOperation<*> -> AllOperation(operation.fieldName, operation.values)
+            is AndOperation -> OrOperation(operation.filters.map { filter -> invertOperation(filter) })
+            is OrOperation -> NorOperation(operation.filters)
+            is ExistsOperation -> ExistsOperation(operation.fieldName, !operation.boolean)
+            is InOperation<*> -> NotInOperation(operation.fieldName, operation.values)
+            is NotInOperation<*> -> InOperation(operation.fieldName, operation.values)
+            is ModOperation -> InvertedModOperation(operation.fieldName, operation.divisor, operation.remainder)
+            is InvertedModOperation -> ModOperation(operation.fieldName, operation.divisor, operation.remainder)
+            is NorOperation -> OrOperation(operation.filters)
+            is SizeOperation -> InvertedSizeOperation(operation.fieldName, operation.value)
+            is InvertedSizeOperation -> SizeOperation(operation.fieldName, operation.value)
+            is TypeOperation -> InvertedTypeOperation(operation.fieldName, operation.type)
+            is InvertedTypeOperation -> TypeOperation(operation.fieldName, operation.type)
             else -> operation
         }
     }
@@ -233,6 +298,7 @@ class MongoHeuristicsCalculator {
         }
 
         if (val1 is ArrayList<*> && val2 is ArrayList<*>) {
+            // Modify
             return 1.0
         }
 

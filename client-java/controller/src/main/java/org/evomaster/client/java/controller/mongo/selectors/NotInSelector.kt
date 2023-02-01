@@ -7,7 +7,7 @@ class NotInSelector : SingleConditionQuerySelector() {
 
     override fun parseValue(fieldName: String, value: Any?): QueryOperation? {
         return when (value) {
-            is List<*> -> NotInOperation(fieldName, value)
+            is ArrayList<*> -> NotInOperation(fieldName, value)
             else -> null
         }
     }

@@ -20,6 +20,7 @@ class QueryParser {
             NotInSelector(),
             AllSelector(),
             SizeSelector(),
+            ElemMatchSelector(),
             ModSelector(),
             NotSelector(),
             ExistsSelector(),
