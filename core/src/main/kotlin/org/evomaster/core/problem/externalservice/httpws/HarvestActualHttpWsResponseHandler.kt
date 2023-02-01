@@ -36,6 +36,8 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
+import javax.ws.rs.core.CacheControl
+import javax.ws.rs.core.HttpHeaders
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import kotlin.math.max
@@ -129,7 +131,7 @@ class HarvestActualHttpWsResponseHandler {
         skip headers if they depend on the client
         shall we skip Connection?
      */
-    private val skipHeaders = listOf("user-agent","host","accept-encoding")
+    private val skipHeaders = listOf("user-agent","host","accept-encoding", HttpHeaders.CACHE_CONTROL.lowercase())
 
     @PostConstruct
     fun initialize() {
@@ -269,6 +271,11 @@ class HarvestActualHttpWsResponseHandler {
             val handledHeaders = httpRequest.headers.filterNot { skipHeaders.contains(it.key.lowercase()) }
             if (handledHeaders.isNotEmpty())
                 handledHeaders.forEach { (t, u) -> this.header(t, u) }
+            this.cacheControl(CacheControl().apply {
+                this.isPrivate = true
+                this.isNoCache = true
+                this.isNoStore = true
+            })
         }
 
         val bodyEntity = if (httpRequest.body != null) {
