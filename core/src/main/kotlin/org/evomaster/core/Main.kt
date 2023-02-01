@@ -228,6 +228,7 @@ class Main {
                         val p = String.format("%.0f", (k.toDouble()/n) * 100 )
                         info("Successfully executed (no 'errors') $k endpoints out of $n ($p%)")
                     }
+                    else -> {}
                     //TODO others, eg RPC
                 }
 

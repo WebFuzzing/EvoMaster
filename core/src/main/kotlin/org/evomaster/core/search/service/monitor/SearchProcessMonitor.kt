@@ -184,6 +184,7 @@ class SearchProcessMonitor: SearchListener {
                         Paths.get(getOverallProcessAsPath()),
                         getGsonBuilder()?.toJson(this.overall)?:throw IllegalStateException("gson builder is null"))
             }
+            else ->{}
         }
 
     }
