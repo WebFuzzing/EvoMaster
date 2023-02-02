@@ -1566,6 +1566,10 @@ class GraphQLActionBuilderTest {
 
         val tupleMembers = optMembers.getWrappedGene(TupleGene::class.java)
         assertEquals(8, tupleMembers?.elements?.size)
+        /**/
+        val pipelineSchedule = actionCluster["pipelineSchedule"] as GraphQLAction
+        assertEquals(2, pipelineSchedule.parameters.size)
+        assertTrue(pipelineSchedule.parameters[1] is GQReturnParam)
 
     }
 

@@ -57,6 +57,10 @@ class Main {
                 printLogo()
                 printVersion()
 
+                if(!JdkIssue.checkAddOpens()){
+                    return
+                }
+
                 /*
                     Before running anything, check if the input
                     configurations are valid
@@ -224,6 +228,7 @@ class Main {
                         val p = String.format("%.0f", (k.toDouble()/n) * 100 )
                         info("Successfully executed (no 'errors') $k endpoints out of $n ($p%)")
                     }
+                    else -> {}
                     //TODO others, eg RPC
                 }
 

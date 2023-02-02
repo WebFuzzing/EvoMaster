@@ -108,7 +108,7 @@ public class ValidatorHeuristics {
         boolean jirukta = annotationType.startsWith(PREFIX_JIRUKTA);
 
         if(!javax && !jakarta && !hibernate && !jirukta) {
-            SimpleLogger.warn("Not recognized constraint library. Not able to handle constrain type: " + annotationType);
+            SimpleLogger.warn("Not recognized constraint library. Not able to handle constraint type: " + annotationType);
             return defaultFailed;
         }
 
@@ -154,7 +154,6 @@ Normalized
 NotBlank
 NotEmpty
 ParameterScriptAssert
-Range
 ScriptAssert
 UniqueElements
 URL
@@ -167,62 +166,69 @@ TODO
             return handleJiruktaConstraint(annotationType, invalidValue, attributes);
         }
 
-        //Numeric constraints. Note that null values are valid here
-        if(annotationType.endsWith(".Min")){
-            return computeHeuristicForMin(invalidValue, attributes);
-        }
-        if(annotationType.endsWith(".Max")){
-            return computeHeuristicForMax(invalidValue, attributes);
-        }
-        if(annotationType.endsWith(".Positive")){
-            return computeHeuristicForPositive(invalidValue, attributes);
-        }
-        if(annotationType.endsWith(".PositiveOrZero")){
-            return computeHeuristicForPositiveOrZero(invalidValue, attributes);
-        }
-        if(annotationType.endsWith(".Negative")){
-            return computeHeuristicForNegative(invalidValue, attributes);
-        }
-        if(annotationType.endsWith(".NegativeOrZero")){
-            return computeHeuristicForNegativeOrZero(invalidValue, attributes);
-        }
-        if(annotationType.endsWith(".Size")){
-            return computeHeuristicForSize(invalidValue, attributes);
+        if(hibernate){
+            if(annotationType.endsWith(".Range")){
+                return computeHeuristicForRange(invalidValue, attributes);
+            }
         }
 
+        if(javax) {
+            //Numeric constraints. Note that null values are valid here
+            if (annotationType.endsWith(".Min")) {
+                return computeHeuristicForMin(invalidValue, attributes);
+            }
+            if (annotationType.endsWith(".Max")) {
+                return computeHeuristicForMax(invalidValue, attributes);
+            }
+            if (annotationType.endsWith(".Positive")) {
+                return computeHeuristicForPositive(invalidValue, attributes);
+            }
+            if (annotationType.endsWith(".PositiveOrZero")) {
+                return computeHeuristicForPositiveOrZero(invalidValue, attributes);
+            }
+            if (annotationType.endsWith(".Negative")) {
+                return computeHeuristicForNegative(invalidValue, attributes);
+            }
+            if (annotationType.endsWith(".NegativeOrZero")) {
+                return computeHeuristicForNegativeOrZero(invalidValue, attributes);
+            }
+            if (annotationType.endsWith(".Size")) {
+                return computeHeuristicForSize(invalidValue, attributes);
+            }
 
-        //no gradient, apart from rewarding non-null
-        if(annotationType.endsWith(".NotEmpty")
-                || annotationType.endsWith(".NotBlank")
-        ){
-            return computeHeuristicForNoGradientButNullIsNotValid(invalidValue);
-        }
 
-        //no gradient and null can be valid
-        if(annotationType.endsWith(".Null")
-            || annotationType.endsWith(".NotNull")
-                || annotationType.endsWith(".AssertTrue")
-                || annotationType.endsWith(".AssertFalse")
-        ){
-            return defaultFailed;
-        }
+            //no gradient, apart from rewarding non-null
+            if (annotationType.endsWith(".NotEmpty")
+                    || annotationType.endsWith(".NotBlank")
+            ) {
+                return computeHeuristicForNoGradientButNullIsNotValid(invalidValue);
+            }
 
-        if(annotationType.endsWith(".Pattern")){
+            //no gradient and null can be valid
+            if (annotationType.endsWith(".Null")
+                    || annotationType.endsWith(".NotNull")
+                    || annotationType.endsWith(".AssertTrue")
+                    || annotationType.endsWith(".AssertFalse")
+            ) {
+                return defaultFailed;
+            }
+
+            if (annotationType.endsWith(".Pattern")) {
             /*
                 Quite expensive to handle, see RegexDistanceUtils.
                 so, for now, we just ensure we handle taint analysis for this
              */
-            assert invalidValue != null; // otherwise would had been valid
-            String value = invalidValue.toString();
-            if(ExecutionTracer.isTaintInput(value)){
-                ExecutionTracer.addStringSpecialization(value,
-                        new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE,
-                                attributes.get("value").toString()));
+                assert invalidValue != null; // otherwise would had been valid
+                String value = invalidValue.toString();
+                if (ExecutionTracer.isTaintInput(value)) {
+                    ExecutionTracer.addStringSpecialization(value,
+                            new StringSpecializationInfo(StringSpecialization.REGEX_WHOLE,
+                                    attributes.get("value").toString()));
+                }
+
+                return defaultFailed;
             }
-
-            return defaultFailed;
         }
-
 
         SimpleLogger.warn("Not able to handle constrain type: " + annotationType);
         return defaultFailed;
@@ -266,9 +272,9 @@ EachURL
         */
 
         if(annotationType.endsWith(".EachRange")){
-            List<Integer> values = (List<Integer>) invalidValue;
+            Collection<Integer> values = (Collection<Integer>) invalidValue;
 
-            int sum = 0;
+            long sum = 0;
 
             for(Integer k : values){
                 sum += getDistanceForRange(k, attributes);
@@ -279,7 +285,7 @@ EachURL
 
         if(annotationType.endsWith(".EachPattern")) {
 
-            List<String> values = (List<String>) invalidValue;
+            Collection<String> values = (Collection<String>) invalidValue;
             String regexp = attributes.get("regexp").toString();
 
             int mismatches = 0;
@@ -348,7 +354,7 @@ EachURL
     private static double computeHeuristicForRange(Object invalidValue, Map<String, Object> attributes) {
 
         int distance = getDistanceForRange(invalidValue, attributes);
-        if(distance < 0){
+        if(distance < 0){ //this could happen if min/max are invalid
             return DistanceHelper.H_NOT_NULL;
         }
         assert distance != 0;
