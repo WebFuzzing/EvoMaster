@@ -24,9 +24,6 @@ Also, some of these papers provides full replication packages, which are linked 
   [[Script 0](exp/arxiv_gql_bb.py)]
   [[Script 1](exp/arxiv_gql_wb.py)]
 
-* M. Zhang, A. Arcuri, Y. Li, Y. Liu, K. Xue.
-  *White-box Fuzzing RPC-based APIs with EvoMaster: An Industrial Case Study*.
-  [[arXiv](https://arxiv.org/abs/2208.12743)]
 
 * M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
@@ -44,6 +41,12 @@ Also, some of these papers provides full replication packages, which are linked 
 
 
 ### 2023
+
+* M. Zhang, A. Arcuri, Y. Li, Y. Liu, K. Xue.
+  *White-box Fuzzing RPC-based APIs with EvoMaster: An Industrial Case Study*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM).
+  [[PDF](publications/2023_tosem_rpc.pdf)]
+
 
 * A. Arcuri, M. Zhang, A. Golmohammadi, A. Belhadi, J. P. Galeotti, B. Marculescu, S. Seran.
  *EMB: A Curated Corpus of Web/Enterprise
