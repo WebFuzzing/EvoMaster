@@ -24,7 +24,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
-import org.evomaster.core.problem.web.service.WebModule
+import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
@@ -315,7 +315,7 @@ class Main {
                     }
                 }
 
-                EMConfig.ProblemType.WEB -> WebModule()
+                EMConfig.ProblemType.WEBFRONTEND -> WebModule()
 
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: ${config.problemType}")
