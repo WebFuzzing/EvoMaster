@@ -863,9 +863,11 @@ class TestSuiteWriter {
      * Returns a distinct List of [HttpExternalServiceAction] from the given solution
      */
     private fun getWireMockServerActions(solution: Solution<*>): List<HttpWsExternalService> {
-        return solution.individuals.filter { i -> i.individual is RestIndividual }
+        return solution.individuals
+            .map{ it.individual}
+            .filterIsInstance<RestIndividual>()
             .flatMap {
-                it.individual.seeExternalServiceActions()
+                it.seeExternalServiceActions()
                     .filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active }
                     .map { it.externalService }
