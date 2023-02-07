@@ -13,30 +13,33 @@ import java.net.URL
 @RestController
 @RequestMapping(path = ["/api/wm/harvester"])
 class HarvestOptimisationRest {
-//
-//    @Value("\${external.url}")
-//    private lateinit var url: String
 
-//    @GetMapping(path = ["/external"])
-//    fun getMockExternalResponse(): ResponseEntity<String> {
-//        val url = URL("http://localhost:65530/api/mock")
-//
-//        val request = Request.Builder().url(url).build()
-//        val client = OkHttpClient()
-//        val mapper = ObjectMapper()
-//
-//        return try {
-//            val data = client.newCall(request).execute()
-//            val body = data.body()?.string()
-//            val code = data.code()
-//            val dto = mapper.readValue(body, MockResponseDto::class.java)
-//            if (code != 200)
-//                return ResponseEntity.status(400).build()
-//            val message = dto.message
-//            val msg = "$code:${if (message.equals("Working")) "WORKING" else "Not Working"}"
-//            ResponseEntity.ok(msg)
-//        } catch (e: Exception) {
-//            ResponseEntity.status(500).build()
-//        }
-//    }
+
+    @Value("\${external}")
+    private var externalURL: String? = null
+
+    @GetMapping(path = ["/external"])
+    fun getMockExternalResponse(): ResponseEntity<String> {
+
+
+        val url = URL("${externalURL}/api/mock")
+
+        val request = Request.Builder().url(url).build()
+        val client = OkHttpClient()
+        val mapper = ObjectMapper()
+
+        return try {
+            val data = client.newCall(request).execute()
+            val body = data.body()?.string()
+            val code = data.code()
+            val dto = mapper.readValue(body, MockResponseDto::class.java)
+            if (code != 200)
+                return ResponseEntity.status(400).build()
+            val message = dto.message
+            val msg = "${if (message.equals("Working")) "Working" else "Not Working"}"
+            ResponseEntity.ok(msg)
+        } catch (e: Exception) {
+            ResponseEntity.status(500).build()
+        }
+    }
 }

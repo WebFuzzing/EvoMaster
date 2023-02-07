@@ -46,7 +46,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
                 val solution = initAndRun(args)
 
                 Assertions.assertTrue(solution.individuals.size >= 1)
-                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvester/external", "WORKING")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/wm/harvester/external", "Working")
             },
             3
         )

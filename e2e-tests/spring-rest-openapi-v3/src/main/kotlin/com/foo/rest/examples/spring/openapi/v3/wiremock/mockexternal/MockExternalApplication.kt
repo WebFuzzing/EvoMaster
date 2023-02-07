@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.wiremock.harvestoptimisation
+package com.foo.rest.examples.spring.openapi.v3.wiremock.mockexternal
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
