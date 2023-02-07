@@ -28,6 +28,7 @@ import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.ws.rs.ProcessingException
@@ -68,6 +69,8 @@ class HarvestActualHttpWsResponseHandler {
      * might have a pool of threads to send requests
      */
     private lateinit var threadToHandleRequest: Thread
+
+    private var threadWorker = Executors.newFixedThreadPool(10)
 
 
     companion object {
@@ -146,14 +149,17 @@ class HarvestActualHttpWsResponseHandler {
                 .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
                 .withConfig(clientConfiguration).build()
 
-            threadToHandleRequest = object :Thread() {
-                override fun run() {
-                    while (!this.isInterrupted) {
-                        sendRequestToRealExternalService()
-                    }
-                }
-            }
-            threadToHandleRequest.start()
+//            threadToHandleRequest = object :Thread() {
+//                override fun run() {
+//                    while (!this.isInterrupted) {
+//                        sendRequestToRealExternalService()
+//                    }
+//                }
+//            }
+//            threadToHandleRequest.start()
+
+            val worker = Runnable { sendRequestToRealExternalService() }
+            threadWorker.execute(worker)
         }
     }
 
@@ -167,10 +173,11 @@ class HarvestActualHttpWsResponseHandler {
     fun shutdown(){
         Lazy.assert { config.doHarvestActualResponse() }
         synchronized(lock){
-            if (threadToHandleRequest.isAlive)
-                threadToHandleRequest.interrupt()
+//            if (threadToHandleRequest.isAlive)
+//                threadToHandleRequest.interrupt()
             httpWsClient.close()
         }
+        threadWorker.shutdown()
     }
 
     @Synchronized

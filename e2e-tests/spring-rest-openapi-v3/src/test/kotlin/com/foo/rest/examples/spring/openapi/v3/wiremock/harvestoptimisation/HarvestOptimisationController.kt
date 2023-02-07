@@ -6,17 +6,20 @@ import org.springframework.context.ConfigurableApplicationContext
 
 class HarvestOptimisationController(): SpringController(HarvestOptimisationApplication::class.java) {
 
-    var mockApplicationContext: ConfigurableApplicationContext? = null
+    private var mockApplicationContext: ConfigurableApplicationContext? = null
 
     override fun startSut(): String {
-        mockApplicationContext = SpringApplication.run(MockExternalApplication::class.java, "--server.port=9001")
-        return super.startSut()
+        mockApplicationContext = SpringApplication.run(MockExternalApplication::class.java, "--server.port=0")
+
+        ctx = SpringApplication.run(applicationClass, "--server.port=0,--external.url=${getFakeApplicationURL()}")
+
+        return "http://localhost:$sutPort"
     }
 
     override fun stopSut() {
-        super.stopSut()
         mockApplicationContext?.stop()
         mockApplicationContext?.close()
+        super.stopSut()
     }
 
     private fun getFakeApplicationURL() : String{
