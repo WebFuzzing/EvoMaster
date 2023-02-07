@@ -620,12 +620,12 @@ object GeneUtils {
                         handleBooleanSelection(gene.gene.template)
                     else
                         if (gene.gene is TupleGene && gene.gene.lastElementTreatedSpecially)//opt tuple
-                            TupleGene(
-                                    gene.name,
-                                    gene.gene.elements.dropLast(1).plus(handleBooleanSelection(gene.gene.elements.last())),
-                                    lastElementTreatedSpecially = true
-                            ) else if (gene.gene is TupleGene)
-                            gene.gene else if (gene.gene is LimitObjectGene) gene else if (gene.gene is CycleObjectGene) gene
+                        //putting the tuple into optional gene
+                            OptionalGene(gene.name, handleBooleanSelection(gene.gene))//putting the tuple into optional
+                        else if (gene.gene is TupleGene)
+
+                            gene //since it contains only inputs
+                        else if (gene.gene is LimitObjectGene) gene else if (gene.gene is CycleObjectGene) gene
                         else
                         // on by default, but can be deselected during the search
                             BooleanGene(gene.name, true)
@@ -647,11 +647,12 @@ object GeneUtils {
             is ArrayGene<*> -> handleBooleanSelection(gene.template)
             is TupleGene -> {//not opt tuple
                 if (gene.lastElementTreatedSpecially)
+                //returning a tuple, with the last element handled by the Boolean selection
                     TupleGene(
                             gene.name,
                             gene.elements.dropLast(1).plus(handleBooleanSelection(gene.elements.last())),
                             lastElementTreatedSpecially = true
-                    ) else gene
+                    ) else gene // contains only inputs
             }
 
             else -> {
