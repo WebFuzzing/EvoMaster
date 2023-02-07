@@ -1278,7 +1278,12 @@ class GraphQLActionBuilderTest {
         val optTupleLengths = objAnime.fields.first { it.getWrappedGene(TupleGene::class.java)?.name == "lengths"}
         val tupleLengths = optTupleLengths.getWrappedGene(TupleGene::class.java)
         if (tupleLengths != null) {assertEquals(3, tupleLengths.elements.size)}
-
+        /**/
+        val  siteStatistics = actionCluster["SiteStatistics"] as GraphQLAction
+        assertEquals(1, siteStatistics.parameters.size)
+        assertTrue(siteStatistics.parameters[0] is GQReturnParam)
+        val objSiteStatistics = siteStatistics.parameters[0].gene as ObjectGene
+        assertEquals(7,objSiteStatistics.fields.size)
     }
 
     @Test
