@@ -3,14 +3,52 @@ package org.evomaster.client.java.controller.api;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testcontainers.Testcontainers;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 
 /**
  * Utility functions used in the generated tests to handle browser operations with Selenium
  */
 public class SeleniumEMUtils {
+
+    public static final String TESTCONTAINERS_HOST = "host.testcontainers.internal";
+
+    public static String initUrlOfStartingPageForDocker(String url, boolean modifyLocalHost){
+        if(url.isEmpty()){
+            throw new IllegalArgumentException("Starting page is not defined");
+        }
+        URI uri = null;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e){
+            throw new IllegalArgumentException("Provided Home Page link is not a valid URL: " + e.getMessage());
+        }
+        //see https://www.testcontainers.org/modules/webdriver_containers/
+        Testcontainers.exposeHostPorts(uri.getPort());
+
+        if(modifyLocalHost && uri.getHost().equalsIgnoreCase( "localhost")) {
+            try {
+                uri = new URI(
+                        uri.getScheme().toLowerCase(Locale.US),
+                        uri.getUserInfo(),
+                        TESTCONTAINERS_HOST,
+                        uri.getPort(),
+                        uri.getPath(),
+                        uri.getQuery(),
+                        uri.getFragment()
+                );
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return uri.toString();
+    }
 
     public static boolean waitForPageToLoad(WebDriver driver, int timeoutSecond) {
         JavascriptExecutor jsExecutor = (JavascriptExecutor) driver;

@@ -35,10 +35,12 @@ class TestSuiteWriter {
          * variable name of Sut handler
          */
         const val controller = "controller"
+        const val driver = "driver"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
+        private const val browser = "browser"
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
@@ -387,6 +389,13 @@ class TestSuiteWriter {
                     addImport("io.restassured.path.json.JsonPath", lines)
                 addImport("java.util.Arrays", lines)
             }
+
+            if (config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                addImport("org.testcontainers.containers.BrowserWebDriverContainer", lines)
+                addImport("org.openqa.selenium.chrome.ChromeOptions", lines)
+                addImport("org.openqa.selenium.remote.RemoteWebDriver", lines)
+                addImport("org.evomaster.client.java.controller.api.SeleniumEMUtils", lines)
+            }
         }
 
         if (format.isJavaScript()) {
@@ -487,6 +496,15 @@ class TestSuiteWriter {
                         addStatement("private static WireMockServer ${getWireMockVariableName(externalService)}", lines)
                     }
             }
+            if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                lines.add("private static final BrowserWebDriverContainer $browser = new BrowserWebDriverContainer()")
+                lines.indented {
+                    lines.add(".withCapabilities(ChromeOptions())")
+                    lines.add(".withAccessToHost(true)")
+                    lines.append(";")
+                }
+                lines.add("private static RemoteWebDriver $driver;")
+            }
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName($executable)")
@@ -502,6 +520,15 @@ class TestSuiteWriter {
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
                     }
             }
+            if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                lines.add("private val $browser : BrowserWebDriverContainer<*> =  BrowserWebDriverContainer()")
+                lines.indented {
+                    lines.add(".withCapabilities(ChromeOptions())")
+                    lines.add(".withAccessToHost(true)")
+                }
+                lines.add("private lateinit var $driver : RemoteWebDriver")
+            }
+
         } else if (config.outputFormat.isJavaScript()) {
 
             if (!config.blackBox || config.bbExperiments) {
@@ -563,11 +590,14 @@ class TestSuiteWriter {
                 when {
                     config.outputFormat.isJavaScript() -> {
                         addStatement("await $controller.setupForGeneratedTest()", lines)
-                        addStatement("baseUrlOfSut = await $controller.startSut()", lines)
+                        addStatement("$baseUrlOfSut = await $controller.startSut()", lines)
                     }
                     config.outputFormat.isJavaOrKotlin() -> {
                         addStatement("$controller.setupForGeneratedTest()", lines)
-                        addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                        addStatement("$baseUrlOfSut = $controller.startSut()", lines)
+                        if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                            addStatement("$baseUrlOfSut = SeleniumEMUtils.initUrlOfStartingPageForDocker($baseUrlOfSut, true)", lines)
+                        }
                         /*
                             now only support white-box
                             TODO remove this later if we do not use test generation with driver
@@ -581,6 +611,19 @@ class TestSuiteWriter {
                 when {
                     format.isJavaOrKotlin() -> addStatement("assertNotNull(baseUrlOfSut)", lines)
                     format.isJavaScript() -> addStatement("expect(baseUrlOfSut).toBeTruthy()", lines)
+                }
+            }
+
+            if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                if(format.isJavaOrKotlin()){
+                    addStatement("$browser.start()", lines)
+
+                    if(format.isJava()) {
+                        addStatement("$driver = new RemoteWebDriver($browser.seleniumAddress, new ChromeOptions())", lines)
+                    }
+                    if(format.isKotlin()){
+                        addStatement("$driver = RemoteWebDriver($browser.seleniumAddress, new ChromeOptions())", lines)
+                    }
                 }
             }
 
@@ -686,6 +729,9 @@ class TestSuiteWriter {
                                     addStatement("${getWireMockVariableName(action)}.stop()", lines)
                                 }
                             addStatement("DnsCacheManipulator.clearDnsCache()", lines)
+                        }
+                        if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
+                            addStatement("$browser.stop()", lines)
                         }
                     }
                 }

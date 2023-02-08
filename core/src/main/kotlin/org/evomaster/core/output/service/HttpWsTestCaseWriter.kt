@@ -28,7 +28,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     abstract fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String
 
 
-    override fun shouldFailIfException(result: ActionResult): Boolean {
+    override fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean {
         /*
             Fail test if exception is not thrown, but not if it was a timeout,
             otherwise the test would become flaky
