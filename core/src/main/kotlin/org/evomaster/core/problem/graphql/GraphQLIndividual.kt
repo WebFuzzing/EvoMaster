@@ -49,27 +49,13 @@ class GraphQLIndividual(
         return seeMainExecutableActions().size
     }
 
-    override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(seeInitializingActions().filterIsInstance<DbAction>())
-    }
-
 
     fun addGQLAction(relativePosition: Int = -1, action: GraphQLAction){
-
-        val main = GroupsOfChildren.MAIN
-        val g = EnterpriseActionGroup(mutableListOf(action), GraphQLAction::class.java)
-
-        if (relativePosition == -1) {
-            addChildToGroup(g, main)
-        } else{
-            val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
-            val position = base + relativePosition
-            addChildToGroup(position, action, main)
-        }
+        addMainActionInEmptyEnterpriseGroup(relativePosition, action)
     }
 
     fun removeGQLActionAt(relativePosition: Int){
-        //FIXME
+        //FIXME isn't this wrong by ignoring initializing actions?
         killChildByIndex(relativePosition)
     }
 
