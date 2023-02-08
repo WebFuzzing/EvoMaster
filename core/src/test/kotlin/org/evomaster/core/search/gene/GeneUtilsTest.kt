@@ -272,10 +272,9 @@ internal class GeneUtilsTest {
                         "optionalTuple",
                         listOf(
                             IntegerGene("IntegerGene"),
-                            OptionalGene(
-                                "optionalObject",
-                                ObjectGene("object2", listOf(booleanGene))
-                            )
+
+                            ObjectGene("object2", listOf(booleanGene))// could never be an opt
+
                         ),
                         lastElementTreatedSpecially = true
                     )
