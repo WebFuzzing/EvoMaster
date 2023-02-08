@@ -865,7 +865,7 @@ object GraphQLActionBuilder {
             val selectionInArgs = state.argsTablesIndexedByName[tableElement.fieldName] ?: listOf()
 
             //Contains the elements of a tuple
-            val tupleElements: MutableList<Gene> = mutableListOf()
+            var tupleElements: MutableList<Gene> = mutableListOf()
 
             /*
             The field is with arguments (it is a tuple): construct its arguments (n-1 elements) and;
@@ -902,35 +902,43 @@ object GraphQLActionBuilder {
                     tupleElements
                 )
 
-                val constructedTuple = if (isLastNotPrimitive(tupleElements.last()))
+                val constructedTuple =
 
-                    if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
-                    OptionalGene(
-                        state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
-                            state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
-                            lastElementTreatedSpecially = true
+                    if (isLastNotPrimitive(tupleElements.last())) {
+                        if ((tupleElements.last().getWrappedGene(ObjectGene::class.java) != null)) {
+                            val nnOptionalObject = tupleElements.last().getWrappedGene(ObjectGene::class.java) as ObjectGene
+                            tupleElements=tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
+                        }
+
+                        if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
+                            OptionalGene(
+                                state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
+                                    state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
+                                    lastElementTreatedSpecially = true
+                                )
+                            ) else OptionalGene(
+                            tupleElements.last().name, TupleGene(
+                                tupleElements.last().name, tupleElements,
+                                lastElementTreatedSpecially = true
+                            )
                         )
-                    )else OptionalGene(
-                        tupleElements.last().name, TupleGene(
-                            tupleElements.last().name, tupleElements,
-                            lastElementTreatedSpecially = true
-                        )
-                    )
-                else
-                //Dropping the last element since it is a primitive type
-                    if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
-                        OptionalGene(
-                            state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
-                                state.inputTypeName[tupleElements.last().name].toString(), tupleElements.dropLast(1),
+                    } else {
+                        //Dropping the last element since it is a primitive type
+                        if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
+                            OptionalGene(
+                                state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
+                                    state.inputTypeName[tupleElements.last().name].toString(),
+                                    tupleElements.dropLast(1),
+                                    lastElementTreatedSpecially = false
+                                )
+                            )
+                        else OptionalGene(
+                            tupleElements.last().name, TupleGene(
+                                tupleElements.last().name, tupleElements.dropLast(1),
                                 lastElementTreatedSpecially = false
                             )
                         )
-                    else OptionalGene(
-                        tupleElements.last().name, TupleGene(
-                            tupleElements.last().name, tupleElements.dropLast(1),
-                            lastElementTreatedSpecially = false
-                        )
-                    )
+                    }
 
                 fields.add(constructedTuple)
 
