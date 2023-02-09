@@ -1,11 +1,13 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.harvestoptimisation
 
+import com.alibaba.dcm.DnsCacheManipulator
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestoptimisation.HarvestOptimisationController
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseController
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -21,6 +23,18 @@ class HarvestOptimisationEMTest: SpringTestBase() {
             initClass(HarvestOptimisationController(), config)
 
             CIUtils.skipIfOnGA()
+
+            /**
+             * If the host name is localhost or starts with 127, host replacement will
+             * skip it from handling external service. To avoid that fake host name used.
+             */
+            DnsCacheManipulator.setDnsCache("imaginary-host.local", "127.0.0.1")
+        }
+
+        @AfterAll
+        @JvmStatic
+        fun shutdown() {
+            DnsCacheManipulator.clearDnsCache()
         }
     }
 
@@ -28,8 +42,8 @@ class HarvestOptimisationEMTest: SpringTestBase() {
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-            "WmHarvestResponseEM",
-            "org.foo.WmHarvestResponseEM",
+            "HarvestOptimisationEM",
+            "org.foo.HarvestOptimisationEM",
             1000,
             !CIUtils.isRunningGA(),
             { args: MutableList<String> ->

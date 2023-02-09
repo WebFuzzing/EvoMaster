@@ -32,7 +32,7 @@ class TestWriterUtils {
          * server inside generated test cases.
          */
         fun getWireMockVariableName(externalService: HttpWsExternalService): String {
-            return "wireMock__" + externalService.getSignature().replace(".", "_")
+            return "wireMock__" + externalService.getSignature().replace(".", "_").replace("-", "_")
         }
 
         /**

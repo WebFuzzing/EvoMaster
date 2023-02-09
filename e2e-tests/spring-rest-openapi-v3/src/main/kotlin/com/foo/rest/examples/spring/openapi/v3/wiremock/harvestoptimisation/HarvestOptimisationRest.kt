@@ -1,6 +1,7 @@
 package com.foo.rest.examples.spring.openapi.v3.wiremock.harvestoptimisation
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.ListlyMetaSearchResponseDto
 import com.squareup.okhttp.OkHttpClient
 import com.squareup.okhttp.Request
 import org.springframework.beans.factory.annotation.Value
@@ -14,7 +15,6 @@ import java.net.URL
 @RequestMapping(path = ["/api/wm/harvester"])
 class HarvestOptimisationRest {
 
-
     @Value("\${external}")
     private var externalURL: String? = null
 
@@ -22,6 +22,7 @@ class HarvestOptimisationRest {
     fun getMockExternalResponse(): ResponseEntity<String> {
 
 
+//        val url = URL("https://list.ly/api/v4/meta?url=http%3A%2F%2Fabc.com")
         val url = URL("${externalURL}/api/mock")
 
         val request = Request.Builder().url(url).build()
@@ -36,6 +37,7 @@ class HarvestOptimisationRest {
             if (code != 200)
                 return ResponseEntity.status(400).build()
             val message = dto.message
+//            val num = dto?.metadata?.images?.size?:0
             val msg = "${if (message.equals("Working")) "Working" else "Not Working"}"
             ResponseEntity.ok(msg)
         } catch (e: Exception) {

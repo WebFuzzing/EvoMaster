@@ -27,6 +27,7 @@ import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
@@ -94,7 +95,8 @@ class HarvestActualHttpWsResponseHandler {
      *      ie, "method:absoluteURL[headers]{body payload}",
      * value is an actual response info
      */
-    private val actualResponses = mutableMapOf<String, ActualResponseInfo>()
+    private val actualResponses = ConcurrentHashMap<String, ActualResponseInfo>()
+//    private val actualResponses = mutableMapOf<String, ActualResponseInfo>()
 
     /**
      * cache collected requests
@@ -103,7 +105,8 @@ class HarvestActualHttpWsResponseHandler {
      *      ie, "method:absoluteURL[headers]{body payload}",
      * value is an example of HttpExternalServiceRequest
      */
-    private val cachedRequests = mutableMapOf<String, HttpExternalServiceRequest>()
+    private val cachedRequests = ConcurrentHashMap<String, HttpExternalServiceRequest>()
+//    private val cachedRequests = mutableMapOf<String, HttpExternalServiceRequest>()
 
     /**
      * track a list of actual responses which have been seeded in the search based on
