@@ -147,7 +147,7 @@ class GraphQLActionBuilderTest {
         assertTrue(algorand.parameters[1].gene is ObjectGene)
         val objAlgorand = algorand.parameters[1].gene as ObjectGene
         assertEquals(7, objAlgorand.fields.size)
-        assertTrue(objAlgorand.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "address" })
+        assertTrue(objAlgorand.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "address" })//1st
 
     }
 
@@ -1131,7 +1131,7 @@ class GraphQLActionBuilderTest {
 
         assertTrue(objPage.fields.any {
             it.getWrappedGene(TupleGene::class.java)?.name == "activities" &&
-                    it.getWrappedGene(TupleGene::class.java)?.lastElementTreatedSpecially == true })
+                    it.getWrappedGene(TupleGene::class.java)?.lastElementTreatedSpecially == true })//nbr12
 
         val optActivities = objPage.fields.first { it.getWrappedGene(TupleGene::class.java)?.name == "activities" }
 
@@ -1140,7 +1140,7 @@ class GraphQLActionBuilderTest {
             assertTrue(tupleActivities.elements.any { it.getWrappedGene(ObjectGene::class.java)?.name == "activities#UNION#" })
         }
 
-        val unionObjectActivities = (tupleActivities?.elements?.last() as OptionalGene).gene as ObjectGene
+        val unionObjectActivities = tupleActivities?.elements?.last() as ObjectGene
 
         assertEquals(3, unionObjectActivities.fields.size)
 
@@ -1770,7 +1770,7 @@ class GraphQLActionBuilderTest {
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
-        assertEquals(1, actionCluster.size)
+        assertEquals(19, actionCluster.size)
 
         val live = actionCluster["live"] as GraphQLAction
         assertEquals(1, live.parameters.size)
