@@ -905,10 +905,7 @@ object GraphQLActionBuilder {
                 val constructedTuple =
 
                     if (isLastNotPrimitive(tupleElements.last())) {
-                        if ((tupleElements.last().getWrappedGene(ObjectGene::class.java) != null)) {
-                            val nnOptionalObject = tupleElements.last().getWrappedGene(ObjectGene::class.java) as ObjectGene
-                            tupleElements=tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
-                        }
+                        tupleElements = iSKindOfObjects(tupleElements)
 
                         if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
                             OptionalGene(
@@ -963,6 +960,27 @@ object GraphQLActionBuilder {
             ObjectGene(state.inputTypeName[element.fieldName].toString(), fields)
         else ObjectGene(element.fieldName, fields)
     }
+
+    private fun iSKindOfObjects(tupleElements: MutableList<Gene>): MutableList<Gene> {
+        var tupleElements1 = tupleElements
+        if ((tupleElements1.last().getWrappedGene(ObjectGene::class.java) != null) ||
+            (tupleElements1.last()
+                .getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(ObjectGene::class.java) != null)
+        ) {
+            if (tupleElements1.last().getWrappedGene(ObjectGene::class.java) != null) {
+                val nnOptionalObject = tupleElements1.last().getWrappedGene(ObjectGene::class.java) as ObjectGene
+                tupleElements1 = tupleElements1.dropLast(1).plus(nnOptionalObject).toMutableList()
+            } else if (tupleElements1.last().getWrappedGene(ArrayGene::class.java) != null) {
+                val last = tupleElements1.last().getWrappedGene(ArrayGene::class.java)
+                if (last?.template?.getWrappedGene(ObjectGene::class.java) != null) {
+                    val nnOptionalObject = last.template.getWrappedGene(ObjectGene::class.java) as ObjectGene
+                    tupleElements1 = tupleElements1.dropLast(1).plus(nnOptionalObject).toMutableList()
+                }
+            }
+        }
+        return tupleElements1
+    }
+
 
     private fun isLastNotPrimitive(lastElements: Gene) = ((lastElements is ObjectGene) ||
             ((lastElements is OptionalGene) && (lastElements.gene is ObjectGene)) ||
