@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
-@RequestMapping(path = ["/api"])
+@RequestMapping(path = ["/"])
 open class MockExternalApplication {
 
     companion object {
@@ -18,8 +18,13 @@ open class MockExternalApplication {
         }
     }
 
-    @GetMapping(path = ["/mock"])
-    open fun login() : ResponseEntity<String> {
+    @GetMapping("/")
+    open fun index(): ResponseEntity<String> {
+        return ResponseEntity.ok("Dummy API Index")
+    }
+
+    @GetMapping(path = ["/api/mock"])
+    open fun dummyAPI() : ResponseEntity<String> {
         return ResponseEntity.ok("{\"message\":\"Working\"}")
     }
 }

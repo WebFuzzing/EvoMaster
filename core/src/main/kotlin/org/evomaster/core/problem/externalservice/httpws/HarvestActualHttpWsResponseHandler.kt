@@ -65,13 +65,9 @@ class HarvestActualHttpWsResponseHandler {
 
 
     /**
-     * TODO
-     * to further improve the efficiency of collecting actual responses,
-     * might have a pool of threads to send requests
+     * TODO: Add EMConfig option to set value as config
      */
-    private lateinit var threadToHandleRequest: Thread
-
-    private var threadWorker = Executors.newFixedThreadPool(10)
+    private var threadWorker = Executors.newFixedThreadPool(1)
 
 
     companion object {
@@ -96,7 +92,6 @@ class HarvestActualHttpWsResponseHandler {
      * value is an actual response info
      */
     private val actualResponses = ConcurrentHashMap<String, ActualResponseInfo>()
-//    private val actualResponses = mutableMapOf<String, ActualResponseInfo>()
 
     /**
      * cache collected requests
@@ -106,7 +101,6 @@ class HarvestActualHttpWsResponseHandler {
      * value is an example of HttpExternalServiceRequest
      */
     private val cachedRequests = ConcurrentHashMap<String, HttpExternalServiceRequest>()
-//    private val cachedRequests = mutableMapOf<String, HttpExternalServiceRequest>()
 
     /**
      * track a list of actual responses which have been seeded in the search based on
@@ -152,16 +146,8 @@ class HarvestActualHttpWsResponseHandler {
                 .hostnameVerifier(PreDefinedSSLInfo.allowAllHostNames()) // configure all hostnames
                 .withConfig(clientConfiguration).build()
 
-//            threadToHandleRequest = object :Thread() {
-//                override fun run() {
-//                    while (!this.isInterrupted) {
-//                        sendRequestToRealExternalService()
-//                    }
-//                }
-//            }
-//            threadToHandleRequest.start()
-
             val worker = Runnable { sendRequestToRealExternalService() }
+
             threadWorker.execute(worker)
         }
     }
@@ -176,8 +162,6 @@ class HarvestActualHttpWsResponseHandler {
     fun shutdown(){
         Lazy.assert { config.doHarvestActualResponse() }
         synchronized(lock){
-//            if (threadToHandleRequest.isAlive)
-//                threadToHandleRequest.interrupt()
             httpWsClient.close()
         }
         threadWorker.shutdown()

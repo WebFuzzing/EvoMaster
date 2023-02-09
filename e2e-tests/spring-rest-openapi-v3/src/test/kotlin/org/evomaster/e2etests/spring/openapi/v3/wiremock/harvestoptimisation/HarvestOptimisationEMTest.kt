@@ -28,7 +28,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
              * If the host name is localhost or starts with 127, host replacement will
              * skip it from handling external service. To avoid that fake host name used.
              */
-            DnsCacheManipulator.setDnsCache("imaginary-host.local", "127.0.0.1")
+            DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.2")
         }
 
         @AfterAll
@@ -45,13 +45,14 @@ class HarvestOptimisationEMTest: SpringTestBase() {
             "HarvestOptimisationEM",
             "org.foo.HarvestOptimisationEM",
             1000,
-            !CIUtils.isRunningGA(),
+//            !CIUtils.isRunningGA(),
+            false,
             { args: MutableList<String> ->
 
                 args.add("--externalServiceIPSelectionStrategy")
                 args.add("USER")
                 args.add("--externalServiceIP")
-                args.add("127.0.0.2")
+                args.add("127.0.0.3")
                 args.add("--probOfHarvestingResponsesFromActualExternalServices")
                 args.add("0.9")
                 args.add("--probOfMutatingResponsesBasedOnActualResponse")
