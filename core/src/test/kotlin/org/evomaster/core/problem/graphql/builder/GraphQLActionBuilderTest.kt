@@ -1457,7 +1457,7 @@ class GraphQLActionBuilderTest {
 
         val tupleDataSetMetadataList = optDataSetMetadataList.getWrappedGene(TupleGene::class.java)
         assertEquals(3, tupleDataSetMetadataList?.elements?.size)
-        assertTrue((tupleDataSetMetadataList?.elements?.last() as OptionalGene).gene !is CycleObjectGene)
+        assertTrue(tupleDataSetMetadataList?.elements?.last() !is CycleObjectGene)
     }
 
     //@Disabled("this gives lot of GC issues")
@@ -1770,7 +1770,24 @@ class GraphQLActionBuilderTest {
         val config = EMConfig()
         GraphQLActionBuilder.addActionsFromSchema(json, actionCluster, config.treeDepth)
 
-        assertEquals(19, actionCluster.size)
+        assertEquals(1, actionCluster.size)
+
+        val live = actionCluster["live"] as GraphQLAction
+        assertEquals(1, live.parameters.size)
+        assertTrue(live.parameters[0] is GQReturnParam)
+        assertTrue(live.parameters[0].gene is ObjectGene)
+
+        val objLive = live.parameters[0].gene as ObjectGene
+        assertTrue(objLive.fields.any { it.getWrappedGene(TupleGene::class.java)?.name == "matches" })
+
+        val optMatches = objLive.fields.first { it.name == "matches" }
+
+        val tupleMatches = optMatches.getWrappedGene(TupleGene::class.java)
+        if (tupleMatches != null) {
+            assertEquals(2, tupleMatches.elements.size)
+            assertTrue(tupleMatches.elements.any { it is ObjectGene && it.name == "matches" })
+        }
+
     }
 
     @Test
