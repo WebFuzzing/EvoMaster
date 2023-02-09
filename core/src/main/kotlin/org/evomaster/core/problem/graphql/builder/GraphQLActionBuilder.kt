@@ -905,20 +905,56 @@ object GraphQLActionBuilder {
                 val constructedTuple =
 
                     if (isLastNotPrimitive(tupleElements.last())) {
-                        tupleElements = iSKindOfObjects(tupleElements)
+                        var tupleName:String?=null
 
-                        if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
-                            OptionalGene(
-                                state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
-                                    state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
+                        if ((tupleElements.last().getWrappedGene(ObjectGene::class.java) != null) ||
+                            (tupleElements.last()
+                                .getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(ObjectGene::class.java) != null)
+                        ) {
+                            if (tupleElements.last().getWrappedGene(ObjectGene::class.java) != null) {
+                                val nnOptionalObject = tupleElements.last().getWrappedGene(ObjectGene::class.java) as ObjectGene
+                                tupleElements = tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
+                            }
+                            else if (tupleElements.last().getWrappedGene(ArrayGene::class.java) != null) {
+                                val last = tupleElements.last().getWrappedGene(ArrayGene::class.java)
+                                tupleName = last?.name
+                                if (last?.template?.getWrappedGene(ObjectGene::class.java) != null) {
+                                    val nnOptionalObject = last.template.getWrappedGene(ObjectGene::class.java) as ObjectGene
+                                    tupleElements = tupleElements.dropLast(1).plus(nnOptionalObject).toMutableList()
+                                }
+                            }
+                        }
+
+                        //Due to arrays in return
+                        if (tupleName == null) {
+                            if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
+                                OptionalGene(
+                                    state.inputTypeName[tupleElements.last().name].toString(), TupleGene(
+                                        state.inputTypeName[tupleElements.last().name].toString(), tupleElements,
+                                        lastElementTreatedSpecially = true
+                                    )
+                                ) else OptionalGene(
+                                tupleElements.last().name, TupleGene(
+                                    tupleElements.last().name, tupleElements,
                                     lastElementTreatedSpecially = true
                                 )
-                            ) else OptionalGene(
-                            tupleElements.last().name, TupleGene(
-                                tupleElements.last().name, tupleElements,
-                                lastElementTreatedSpecially = true
                             )
-                        )
+                        } else {
+
+                            if (state.inputTypeName[tupleName]?.isNotEmpty() == true)
+                                OptionalGene(
+                                    state.inputTypeName[tupleName].toString(), TupleGene(
+                                        state.inputTypeName[tupleName].toString(), tupleElements,
+                                        lastElementTreatedSpecially = true
+                                    )
+                                ) else OptionalGene(
+                                tupleName, TupleGene(
+                                    tupleName, tupleElements,
+                                    lastElementTreatedSpecially = true
+                                )
+                            )
+
+                        }
                     } else {
                         //Dropping the last element since it is a primitive type
                         if (state.inputTypeName[tupleElements.last().name]?.isNotEmpty() == true)
@@ -960,27 +996,6 @@ object GraphQLActionBuilder {
             ObjectGene(state.inputTypeName[element.fieldName].toString(), fields)
         else ObjectGene(element.fieldName, fields)
     }
-
-    private fun iSKindOfObjects(tupleElements: MutableList<Gene>): MutableList<Gene> {
-        var tupleElements1 = tupleElements
-        if ((tupleElements1.last().getWrappedGene(ObjectGene::class.java) != null) ||
-            (tupleElements1.last()
-                .getWrappedGene(ArrayGene::class.java)?.template?.getWrappedGene(ObjectGene::class.java) != null)
-        ) {
-            if (tupleElements1.last().getWrappedGene(ObjectGene::class.java) != null) {
-                val nnOptionalObject = tupleElements1.last().getWrappedGene(ObjectGene::class.java) as ObjectGene
-                tupleElements1 = tupleElements1.dropLast(1).plus(nnOptionalObject).toMutableList()
-            } else if (tupleElements1.last().getWrappedGene(ArrayGene::class.java) != null) {
-                val last = tupleElements1.last().getWrappedGene(ArrayGene::class.java)
-                if (last?.template?.getWrappedGene(ObjectGene::class.java) != null) {
-                    val nnOptionalObject = last.template.getWrappedGene(ObjectGene::class.java) as ObjectGene
-                    tupleElements1 = tupleElements1.dropLast(1).plus(nnOptionalObject).toMutableList()
-                }
-            }
-        }
-        return tupleElements1
-    }
-
 
     private fun isLastNotPrimitive(lastElements: Gene) = ((lastElements is ObjectGene) ||
             ((lastElements is OptionalGene) && (lastElements.gene is ObjectGene)) ||
