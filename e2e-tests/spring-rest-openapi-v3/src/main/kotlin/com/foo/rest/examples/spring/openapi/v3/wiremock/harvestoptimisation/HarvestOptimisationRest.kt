@@ -21,8 +21,6 @@ class HarvestOptimisationRest {
     @GetMapping(path = ["/external"])
     fun getMockExternalResponse(): ResponseEntity<String> {
 
-
-//        val url = URL("https://list.ly/api/v4/meta?url=http%3A%2F%2Fabc.com")
         val url = URL("${externalURL}/api/mock")
 
         val request = Request.Builder().url(url).build()
@@ -37,7 +35,6 @@ class HarvestOptimisationRest {
             if (code != 200)
                 return ResponseEntity.status(400).build()
             val message = dto.message
-//            val num = dto?.metadata?.images?.size?:0
             val msg = "${if (message.equals("Working")) "Working" else "Not Working"}"
             ResponseEntity.ok(msg)
         } catch (e: Exception) {

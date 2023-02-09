@@ -11,10 +11,8 @@ class HarvestOptimisationController(): SpringController(HarvestOptimisationAppli
     private var mockApplicationContext: ConfigurableApplicationContext? = null
 
     override fun startSut(): String {
-        // If the port set to 0, mostly it takes a port above 60000
-        val port: Int = SocketUtils.findAvailableTcpPort(9000, 10000)
-
-        mockApplicationContext = SpringApplication.run(MockExternalApplication::class.java, "--server.port=9000")
+        val mockArgs = arrayOf("--server.port=0", "--server.address=127.0.0.4")
+        mockApplicationContext = SpringApplication.run(MockExternalApplication::class.java, *mockArgs)
 
         val args = arrayOf("--server.port=0", "--external=${getMockApplicationURL()}")
         ctx = SpringApplication.run(applicationClass, *args)
