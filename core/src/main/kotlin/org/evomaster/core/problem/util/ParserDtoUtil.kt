@@ -100,7 +100,7 @@ object ParserDtoUtil {
             jsonNode.isNull -> {
                 Lazy.assert {  objectGeneCluster == null }
                 // TODO change it to NullGene later
-                return NullableGene(name, StringGene(name)).also { it.isPresent = false }
+                return NullableGene(name, StringGene(name)).also { it.isActive = false }
             }
             else -> throw IllegalStateException("Not support to parse json object with the type ${jsonNode.nodeType.name}")
         }

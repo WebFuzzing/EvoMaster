@@ -13,15 +13,17 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
+
+* A. Golmohammadi, M. Zhang, A. Arcuri.
+  *Testing RESTful APIs: A Survey*.
+  [[arxiv](https://arxiv.org/abs/2212.14604)]
+
 * A. Belhadi, M. Zhang, A. Arcuri.
   *White-Box and Black-Box Fuzzing for GraphQL APIs*.
   [[arXiv](https://arxiv.org/abs/2209.05833)]
   [[Script 0](exp/arxiv_gql_bb.py)]
   [[Script 1](exp/arxiv_gql_wb.py)]
 
-* M. Zhang, A. Arcuri, Y. Li, Y. Liu, K. Xue.
-  *White-box Fuzzing RPC-based APIs with EvoMaster: An Industrial Case Study*.
-  [[arXiv](https://arxiv.org/abs/2208.12743)]
 
 * M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
@@ -37,6 +39,29 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Peer-Reviewed Publications
 
+
+### 2023
+
+* A. Arcuri, M Zhang, A. Belhadi, B. Marculescu, A. Golmohammadi, J. P. Galeotti, S. Seran.
+  *Building An Open-Source System Test Generation Tool: Lessons Learned And Empirical Analyses with EvoMaster*.
+  Software Quality Journal (SQJ). 
+  *(to appear)*
+  [[PDF](publications/2023_sqj_tool.pdf)]
+
+* M. Zhang, A. Arcuri, Y. Li, Y. Liu, K. Xue.
+  *White-box Fuzzing RPC-based APIs with EvoMaster: An Industrial Case Study*.
+  ACM Transactions on Software Engineering and Methodology (TOSEM). 
+  *(to appear)*
+  [[PDF](publications/2023_tosem_rpc.pdf)]
+
+
+* A. Arcuri, M. Zhang, A. Golmohammadi, A. Belhadi, J. P. Galeotti, B. Marculescu, S. Seran.
+ *EMB: A Curated Corpus of Web/Enterprise
+  Applications And Library Support for Software
+  Testing Research*.
+  IEEE International Conference on Software Testing, Validation and Verification (ICST).
+  *(to appear)*
+  [[PDF](publications/2023_icst_emb.pdf)]
 
 ### 2022
 

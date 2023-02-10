@@ -1,9 +1,11 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.ExternalServiceInfo;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ExternalServiceInfoUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -14,10 +16,9 @@ import java.net.*;
  * with socket connection, it will first do host lookup with java.net.InetAddress#getByName
  * if it does not exist, UnknownHostException will be thrown,
  * then the `socket.connect` cannot be reached.
- *
- * in order to make it connected, we could do replacement for 1) collecting host info, and
+ * in order to make it connected, we could do replacement for
+ * 1) collecting host info
  * 2) providing an ip address
- *
  * note that it is not used now, ie, not register it into ReplacementList
  */
 public class InetAddressClassReplacement implements MethodReplacementClass {
@@ -33,20 +34,24 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static InetAddress getByName(String host) throws UnknownHostException {
-        if (host.startsWith("localhost") || host.startsWith("127.0.0") || host.startsWith("0.0.0"))
+        if (ExternalServiceInfoUtils.skipHostnameOrIp(host) || ExecutionTracer.skipHostname(host))
             return InetAddress.getByName(host);
-        // FIXME -1 leads a crash, but do we really need the real port info here. might use specified one
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, 80);
-         try{
-             if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())){
-                 String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
-                 return InetAddress.getByName(ip);
-             }
-             return InetAddress.getByName(host);
-         }catch (UnknownHostException e){
-             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
-             throw e;
-         }
+
+        try {
+            if (ExecutionTracer.hasLocalAddress(host)) {
+                String ip = ExecutionTracer.getLocalAddress(host);
+                return InetAddress.getByName(ip);
+            }
+            return InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                    host,
+                    -1
+            );
+            ExecutionTracer.addExternalServiceHost(remoteHostInfo);
+            throw e;
+        }
     }
 
     @Replacement(
@@ -56,17 +61,21 @@ public class InetAddressClassReplacement implements MethodReplacementClass {
             usageFilter = UsageFilter.ANY
     )
     public static InetAddress[] getAllByName(String host) throws UnknownHostException {
-        if (host.startsWith("localhost") || host.startsWith("127.0.0") || host.startsWith("0.0.0"))
+        if (ExternalServiceInfoUtils.skipHostnameOrIp(host) || ExecutionTracer.skipHostname(host))
             return InetAddress.getAllByName(host);
-        // FIXME -1 leads a crash, but do we really need the real port info here. might use specified one
-        ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo("TCP", host, 80);
-        try{
-            if (ExecutionTracer.hasExternalMapping(remoteHostInfo.signature())){
-                String ip = ExecutionTracer.getExternalMapping(remoteHostInfo.signature());
+
+        try {
+            if (ExecutionTracer.hasLocalAddress(host)) {
+                String ip = ExecutionTracer.getLocalAddress(host);
                 return new InetAddress[]{InetAddress.getByName(ip)};
             }
             return InetAddress.getAllByName(host);
-        }catch (UnknownHostException e){
+        } catch (UnknownHostException e) {
+            ExternalServiceInfo remoteHostInfo = new ExternalServiceInfo(
+                    ExternalServiceSharedUtils.DEFAULT_SOCKET_CONNECT_PROTOCOL,
+                    host,
+                    -1
+            );
             ExecutionTracer.addExternalServiceHost(remoteHostInfo);
             throw e;
         }

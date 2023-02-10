@@ -90,6 +90,7 @@ abstract class GeneImpactTest {
             ImpactOptions.NO_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(setOf()), impactTargets = setOf(), improvedTargets =  setOf(), onlyManipulation = false)
             ImpactOptions.ONLY_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(fakeImpactTargets), impactTargets = fakeImpactTargets, improvedTargets = setOf(), onlyManipulation = false)
             ImpactOptions.IMPACT_IMPROVEMENT-> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(fakeImpactTargets), impactTargets = fakeImpactTargets, improvedTargets = fakeImprovedTarget, onlyManipulation = false)
+            else ->{}
         }
     }
 

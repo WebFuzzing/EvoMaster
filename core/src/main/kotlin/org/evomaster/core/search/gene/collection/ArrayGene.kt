@@ -52,9 +52,9 @@ class ArrayGene<T>(
          *
          */
         elements: MutableList<T> = mutableListOf(),
-        private val openingTag : String = "[",
-        private val closingTag : String = "]",
-        private val separatorTag : String = ", "
+        private var openingTag : String = "[",
+        private var closingTag : String = "]",
+        private var separatorTag : String = ", "
 ) : CollectionGene, CompositeGene(name, elements)
         where T : Gene {
 
@@ -86,6 +86,15 @@ class ArrayGene<T>(
         const val MAX_SIZE = 5
     }
 
+    /**
+     * Should only be called when an action is built, and not during mutation, as it
+     * only affect how the gene is going to be represented as a string
+     */
+    fun modifyPrinting(open: String, close: String, sep: String){
+        openingTag = open
+        closingTag = close
+        separatorTag = sep
+    }
 
     fun forceToOnlyEmpty(){
         maxSize = 0
@@ -252,6 +261,7 @@ class ArrayGene<T>(
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
+            elements.forEach { it.resetLocalIdRecursively() }
             addChildren(elements)
             return true
         }

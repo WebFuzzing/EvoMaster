@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.util
 
-import org.evomaster.core.problem.api.service.param.Param
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.optional.NullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 
 /**
  * this class used to handle binding values among params
@@ -278,21 +279,10 @@ class ParamUtil {
 
         fun generateParamId(list: Array<String>): String = list.joinToString(separator)
 
+        @Deprecated(message = "Rather use GeneUtils.getWrappedValueGene(gene)",
+            replaceWith = ReplaceWith("GeneUtils.getWrappedValueGene(gene)"))
         fun getValueGene(gene: Gene): Gene {
-            if (gene is OptionalGene) {
-                return getValueGene(gene.gene)
-            } else if (gene is CustomMutationRateGene<*>)
-                return getValueGene(gene.gene)
-            else if (gene is SqlPrimaryKeyGene) {
-                if (gene.gene is SqlAutoIncrementGene)
-                    return gene
-                else return getValueGene(gene.gene)
-            } else if (gene is NullableGene) {
-                return getValueGene(gene.gene)
-            } else if (gene is FlexibleGene){
-                return  getValueGene(gene.gene)
-            }
-            return gene
+           return GeneUtils.getWrappedValueGene(gene,false)!!
         }
 
         fun getObjectGene(gene: Gene): ObjectGene? {

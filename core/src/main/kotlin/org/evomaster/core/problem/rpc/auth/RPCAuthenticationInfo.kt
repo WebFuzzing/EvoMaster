@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rpc.auth
 
-import org.evomaster.core.problem.api.service.auth.AuthenticationInfo
+import org.evomaster.core.problem.api.auth.AuthenticationInfo
 import org.evomaster.core.search.Action
 
 open class RPCAuthenticationInfo(

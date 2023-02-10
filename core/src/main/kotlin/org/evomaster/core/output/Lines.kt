@@ -106,7 +106,7 @@ class Lines {
     }
 
     override fun toString(): String {
-        val s = StringBuffer(buffer.sumBy(String::length))
+        val s = StringBuffer(buffer.sumOf{it.length + 2})
         buffer.forEach { v -> s.append("$v\n") }
         return s.toString()
     }

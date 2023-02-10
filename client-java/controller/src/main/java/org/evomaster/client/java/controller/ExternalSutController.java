@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public abstract class ExternalSutController extends SutController {
 
@@ -222,6 +223,11 @@ public abstract class ExternalSutController extends SutController {
             }
         }
 
+        String toSkip = System.getProperty(Constants.PROP_SKIP_CLASSES);
+        if(toSkip != null && !toSkip.isEmpty()){
+            command.add("-D"+Constants.PROP_SKIP_CLASSES+"="+toSkip);
+        }
+
         if (command.stream().noneMatch(s -> s.startsWith("-Xmx"))) {
             command.add("-Xmx2G");
         }
@@ -386,7 +392,14 @@ public abstract class ExternalSutController extends SutController {
     @Override
     public final void newActionSpecificHandler(ActionDto dto) {
         if (isInstrumentationActivated()) {
-            serverController.setAction(new Action(dto.index, dto.inputVariables, dto.externalServiceMapping));
+            serverController.setAction(new Action(
+                    dto.index,
+                    dto.name,
+                    dto.inputVariables,
+                    dto.externalServiceMapping,
+                    dto.localAddressMapping,
+                    dto.skippedExternalServices.stream().map(e -> new ExternalService(e.hostname, e.port)).collect(Collectors.toList())
+            ));
         }
     }
 

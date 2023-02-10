@@ -8,9 +8,12 @@ import org.evomaster.core.problem.graphql.PetClinicCheckMain
 import org.evomaster.core.problem.graphql.param.GQReturnParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.placeholder.CycleObjectGene
+import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.junit.jupiter.api.Assertions.*
@@ -247,7 +250,7 @@ internal class GeneUtilsTest {
     }
 
     @Test
-    fun testRepaireBooleanSectionFF() {
+    fun testRepairBooleanSectionFF() {
 
         val objBoolean = ObjectGene("foo", listOf(BooleanGene("a", false), (BooleanGene("b", false))))
 
@@ -255,7 +258,62 @@ internal class GeneUtilsTest {
 
         assertTrue(objBoolean.fields.any { it is BooleanGene && it.value == true })
     }
-    
+
+    @Test
+    fun testRepairBooleanSectionOptionalTuple() {
+
+        val booleanGene = BooleanGene("Boolean", value = false)
+
+        val obj = ObjectGene(
+            "object1", listOf(
+                (OptionalGene(
+                    "optional",
+                    TupleGene(
+                        "optionalTuple",
+                        listOf(
+                            IntegerGene("IntegerGene"),
+
+                            ObjectGene("object2", listOf(booleanGene))// could never be an opt
+
+                        ),
+                        lastElementTreatedSpecially = true
+                    )
+                )),
+                TupleGene("NonOptionalTuple", listOf(CycleObjectGene("cycle")), lastElementTreatedSpecially = true)
+            )
+        )
+        assertFalse(booleanGene.value)
+        GeneUtils.repairBooleanSelection(obj)
+        assertTrue(booleanGene.value)
+    }
+
+    @Test
+    fun testRepairBooleanSectionInTupleLastElementObject() {
+
+        val objBooleanAndOptional = ObjectGene(
+            "foo", listOf(
+                BooleanGene("boolean",value = false),//to see if it is repaired
+                OptionalGene("opt",
+                    TupleGene(
+                        "tuple1",
+                        listOf(
+                            ObjectGene(
+                                "ObjInLastTuple",
+                                listOf(BooleanGene("boolean"))
+                            ),
+                        ),
+                        lastElementTreatedSpecially = true
+                    ),isActive = false)//to see if it is repaired
+            )
+        )
+
+        val tuple = TupleGene("tuple2", listOf(objBooleanAndOptional), lastElementTreatedSpecially = true)
+        val rootObj = ObjectGene("rootObj", listOf(tuple))
+        GeneUtils.repairBooleanSelection(rootObj)
+
+        val objBoolAndOptRepaired=(rootObj.fields.first { it is TupleGene } as TupleGene).elements.last() as ObjectGene
+        assertTrue(objBoolAndOptRepaired.fields.any { (it is BooleanGene && it.value) || (it is OptionalGene && it.isActive) })
+    }
 
     @Test
     fun testRepairInPetclinic() {

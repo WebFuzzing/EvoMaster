@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.param
 
-import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.problem.api.service.param.UpdateForParam
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.api.param.UpdateForParam
 import org.evomaster.core.search.gene.Gene
 
 /**
@@ -13,7 +13,8 @@ import org.evomaster.core.search.gene.Gene
  * So we add info to modify the individual at its next mutation
  *
  */
-class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body.seeGenes().toMutableList()), UpdateForParam {
+class UpdateForBodyParam(val body: BodyParam) : Param("updateForBodyParam", body.seeGenes().toMutableList()),
+    UpdateForParam {
 
     /*
         TODO check if issue after refactoring. Previously it was:

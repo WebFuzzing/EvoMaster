@@ -133,6 +133,9 @@ public class RPCActionDto {
         copy.doGenerateTestScript = doGenerateTestScript;
         copy.maxAssertionForDataInCollection = maxAssertionForDataInCollection;
         copy.isAuthorized = isAuthorized;
+        if (mockRPCExternalServiceDtos != null)
+            copy.mockRPCExternalServiceDtos = mockRPCExternalServiceDtos.stream().map(MockRPCExternalServiceDto::copy).collect(Collectors.toList());
+
         return copy;
     }
 
@@ -148,6 +151,16 @@ public class RPCActionDto {
         if (copy.relatedCustomization != null)
             copy.relatedCustomization = new HashSet<>(relatedCustomization);
         return copy;
+    }
+
+    /**
+     *
+     * @return descriptive info for the action, ie, interface::actionName
+     */
+    public String descriptiveInfo(){
+        return ((interfaceId!=null)?interfaceId:"NULL_INTERFACE")+
+                "::"+((actionName!=null)?actionName:"NULL_ACTION_NAME")+
+                "("+ requestParams.stream().map(s-> s.type.type.toString()).collect(Collectors.joining(",")) +")";
     }
 
 }

@@ -6,7 +6,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.httpws.service.HttpWsCallResult
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual

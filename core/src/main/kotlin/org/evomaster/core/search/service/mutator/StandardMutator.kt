@@ -7,16 +7,15 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.service.ApiWsAction
-import org.evomaster.core.problem.api.service.param.Param
-import org.evomaster.core.problem.api.service.param.UpdateForParam
-import org.evomaster.core.problem.external.service.rpc.RPCExternalServiceAction
+import org.evomaster.core.problem.api.ApiWsAction
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.api.param.UpdateForParam
+import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
-import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.ActionFilter
@@ -26,7 +25,6 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -160,7 +158,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     private fun mutationPreProcessing(individual: T) {
 
         for(a in individual.seeAllActions()){
-            val update =if(a is ApiWsAction ) {
+            val update =if(a is ApiWsAction) {
                 a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
             }else if (a is RPCExternalServiceAction){
                 a.responses.find { it is UpdateForParam } as? UpdateForParam

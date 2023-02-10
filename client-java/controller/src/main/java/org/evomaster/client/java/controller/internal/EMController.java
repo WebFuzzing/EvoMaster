@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
@@ -97,8 +98,7 @@ public class EMController {
         connectedClientsSoFar.clear();
     }
 
-    private static String removePrefix(String s, String prefix)
-    {
+    private static String removePrefix(String s, String prefix) {
         if (s != null && prefix != null && s.startsWith(prefix)) {
             return s.substring(prefix.length());
         }
@@ -182,7 +182,7 @@ public class EMController {
             dto.sqlSchemaDto = noKillSwitch(() -> sutController.getSqlDatabaseSchema());
             dto.defaultOutputFormat = noKillSwitch(() -> sutController.getPreferredOutputFormat());
             info = noKillSwitch(() -> sutController.getProblemInfo());
-            dto.bootTimeInfoDto = noKillSwitch(()-> sutController.getBootTimeInfoDto());
+            dto.bootTimeInfoDto = noKillSwitch(() -> sutController.getBootTimeInfoDto());
         } catch (RuntimeException e) {
             String msg = e.getMessage();
             SimpleLogger.error(msg, e);
@@ -193,47 +193,37 @@ public class EMController {
             String msg = "Undefined problem type in the EM Controller";
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
-        } else if (info instanceof RestProblem) {
+        }
+
+        List<ExternalServiceDto> servicesToNotMock = info.getServicesToNotMock().stream()
+                .map(s -> new ExternalServiceDto() {{
+                    hostname = s.getHostname();
+                    port = s.getPort();
+                }})
+                .collect(Collectors.toList());
+
+        if (info instanceof RestProblem) {
             RestProblem rp = (RestProblem) info;
             dto.restProblem = new RestProblemDto();
             dto.restProblem.openApiUrl = rp.getOpenApiUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
             dto.restProblem.openApiSchema = rp.getOpenApiSchema();
+            dto.restProblem.servicesToNotMock = servicesToNotMock;
 
         } else if (info instanceof GraphQlProblem) {
             GraphQlProblem p = (GraphQlProblem) info;
             dto.graphQLProblem = new GraphQLProblemDto();
-            dto.graphQLProblem.endpoint= removePrefix(p.getEndpoint(), baseUrlOfSUT);
-        } else if(info instanceof RPCProblem){
+            dto.graphQLProblem.endpoint = removePrefix(p.getEndpoint(), baseUrlOfSUT);
+            dto.graphQLProblem.servicesToNotMock = servicesToNotMock;
+
+        } else if (info instanceof RPCProblem) {
             try {
-                dto.rpcProblem = new RPCProblemDto();
-                // extract RPCSchema
-                noKillSwitch(() -> sutController.extractRPCSchema());
-                Map<String, InterfaceSchema> rpcSchemas = noKillSwitch(() ->sutController.getRPCSchema());
-                if (rpcSchemas == null || rpcSchemas.isEmpty()){
-                    return Response.status(500).entity(WrappedResponseDto.withError("Fail to extract RPC interface schema")).build();
-                }
+                dto.rpcProblem = noKillSwitch(() -> sutController.extractRPCProblemDto(dto.isSutRunning));
+                dto.rpcProblem.servicesToNotMock = servicesToNotMock;
 
-                Map<Integer, LocalAuthSetupSchema> localMap = noKillSwitch(() ->sutController.getLocalAuthSetupSchemaMap());
-                if (localMap!= null && !localMap.isEmpty()){
-                    dto.rpcProblem.localAuthEndpointReferences = new ArrayList<>();
-                    dto.rpcProblem.localAuthEndpoints = new ArrayList<>();
-                    for (Map.Entry<Integer, LocalAuthSetupSchema> e : localMap.entrySet()){
-                        dto.rpcProblem.localAuthEndpointReferences.add(e.getKey());
-                        dto.rpcProblem.localAuthEndpoints.add(e.getValue().getDto());
-                    }
-                }
-                // handled seeded tests
-                dto.rpcProblem.seededTestDtos = noKillSwitch(() -> sutController.handleSeededTests());
-
-                if (dto.isSutRunning){
-                    noKillSwitch(() -> sutController.getSeededExternalServiceResponseDto());
-                }
-
-                // set the schemas at the end
-                dto.rpcProblem.schemas = rpcSchemas.values().stream().map(s-> s.getDto()).collect(Collectors.toList());
-
-            }catch (RuntimeException e){
+                // send the recorded error msg to core in order to show the problem during startup
+                dto.errorMsg = SimpleLogger.getRecordedErrorMsg();
+            } catch (RuntimeException e) {
                 String msg = e.getMessage();
                 SimpleLogger.error(msg, e);
                 return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
@@ -261,7 +251,7 @@ public class EMController {
                                          @QueryParam(ControllerConstants.METHOD_REPLACEMENT_CATEGORIES) String methodReplacementCategories) {
 
         //as the controller methods here might load classes, we need to handle this immediately
-        if(methodReplacementCategories != null && !methodReplacementCategories.isEmpty()) {
+        if (methodReplacementCategories != null && !methodReplacementCategories.isEmpty()) {
             System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, methodReplacementCategories);
         }
 
@@ -289,7 +279,6 @@ public class EMController {
     }
 
 
-
     @Path(ControllerConstants.POST_SEARCH_ACTION)
     @POST
     @Consumes(Formats.JSON_V1)
@@ -297,10 +286,10 @@ public class EMController {
 
         assert trackRequestSource(httpServletRequest);
 
-        try{
+        try {
             noKillSwitch(() -> sutController.postSearchAction(dto));
-        }catch (RuntimeException e){
-            String msg = "Failed to process post actions after search:" +e.getMessage();
+        } catch (RuntimeException e) {
+            String msg = "Failed to process post actions after search:" + e.getMessage();
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
@@ -314,11 +303,11 @@ public class EMController {
     @Consumes(Formats.JSON_V1)
     public Response runSut(SutRunDto dto, @Context HttpServletRequest httpServletRequest) {
 
-        if(dto != null){
+        if (dto != null) {
             /*
                 As this has impact on instrumentation, must be done ASAP
              */
-            if(dto.methodReplacementCategories != null && !dto.methodReplacementCategories.isEmpty()) {
+            if (dto.methodReplacementCategories != null && !dto.methodReplacementCategories.isEmpty()) {
                 System.setProperty(InputProperties.REPLACEMENT_CATEGORIES, dto.methodReplacementCategories);
             }
         }
@@ -440,13 +429,13 @@ public class EMController {
     public Response getTestResults(
             @QueryParam("ids")
             @DefaultValue("")
-                    String idList,
+            String idList,
             @QueryParam("killSwitch") @DefaultValue("false")
-                    boolean killSwitch,
+            boolean killSwitch,
             @Context HttpServletRequest httpServletRequest) {
 
         // notify that actions execution is done.
-        noKillSwitch(()->sutController.setExecutingAction(false));
+        noKillSwitch(() -> sutController.setExecutingAction(false));
 
         assert trackRequestSource(httpServletRequest);
 
@@ -566,7 +555,7 @@ public class EMController {
     @PUT
     public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
         // notify that the action is executing
-        noKillSwitch(()-> sutController.setExecutingAction(true));
+        noKillSwitch(() -> sutController.setExecutingAction(true));
 
         // executingInitSql should be false when reaching here
         assert (!ExecutionTracer.isExecutingInitSql());
@@ -585,17 +574,17 @@ public class EMController {
             //this MUST not be inside a noKillSwitch, as it sets to false
             sutController.newAction(dto);
 
-            if (dto.rpcCall != null){
+            if (dto.rpcCall != null) {
                 ActionResponseDto authResponseDto = null;
-                if (dto.rpcCall.authSetup != null){
+                if (dto.rpcCall.authSetup != null) {
                     // execute auth setup
                     authResponseDto = new ActionResponseDto();
-                    try{
-                        if (LocalAuthSetupSchema.isLocalAuthSetup(dto.rpcCall.authSetup)){
+                    try {
+                        if (LocalAuthSetupSchema.isLocalAuthSetup(dto.rpcCall.authSetup)) {
                             sutController.executeHandleLocalAuthenticationSetup(dto.rpcCall.authSetup, authResponseDto);
-                        }else
+                        } else
                             sutController.executeAction(dto.rpcCall.authSetup, authResponseDto);
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         String msg = "Fail to execute auth setup and thrown exception: " + e.getMessage();
                         SimpleLogger.error(msg, e);
                     }
@@ -603,13 +592,13 @@ public class EMController {
 
                 ActionResponseDto responseDto = new ActionResponseDto();
                 responseDto.index = index;
-                try{
+                try {
                     sutController.executeAction(dto.rpcCall, responseDto);
-                    if (authResponseDto!= null && authResponseDto.testScript!=null && !authResponseDto.testScript.isEmpty()){
+                    if (authResponseDto != null && authResponseDto.testScript != null && !authResponseDto.testScript.isEmpty()) {
                         responseDto.testScript.addAll(0, authResponseDto.testScript);
                     }
                     return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
-                }catch (Exception e){
+                } catch (Exception e) {
                     // TODO handle exception on responseDto later
                     String msg = "Thrown exception: " + e.getMessage();
                     SimpleLogger.error(msg, e);
@@ -659,7 +648,7 @@ public class EMController {
             sutController.setExecutingInitSql(true);
 
             // collect info about tables to insert
-            noKillSwitch(()-> sutController.addTableToInserted(dto.insertions.stream().map(x-> x.targetTable).collect(Collectors.toList())));
+            noKillSwitch(() -> sutController.addTableToInserted(dto.insertions.stream().map(x -> x.targetTable).collect(Collectors.toList())));
 
             SimpleLogger.debug("Received database command");
 

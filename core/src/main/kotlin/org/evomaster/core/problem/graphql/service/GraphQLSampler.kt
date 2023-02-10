@@ -77,7 +77,7 @@ class GraphQLSampler : HttpWsSampler<GraphQLIndividual>() {
 
         updateConfigBasedOnSutInfoDto(infoDto)
 
-        log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
+        log.debug("Done initializing {}", GraphQLSampler::class.simpleName)
     }
 
     private fun initForBlackBox() {
